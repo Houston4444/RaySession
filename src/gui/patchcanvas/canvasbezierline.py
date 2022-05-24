@@ -29,18 +29,18 @@ from .init_values import (
     CallbackAct,
     PortType)
 
-from .canvasbox import CanvasBox
-from .canvasport import CanvasPort
+if TYPE_CHECKING:
+    from .canvasport import CanvasPort
 
 
 class CanvasBezierLine(QGraphicsPathItem):
-    def __init__(self, item1: CanvasPort, item2: CanvasPort, parent: CanvasBox):
+    def __init__(self, connection_id: int,
+                 item1: 'CanvasPort', item2: 'CanvasPort'):
         QGraphicsPathItem.__init__(self)
-        self.setParentItem(parent)
-
         self.item1 = item1
         self.item2 = item2
-        
+        self._connection_id = connection_id
+
         # is true when the connection will be undo by user if (s)he
         # leaves the mouse button
         self.ready_to_disc = False        
@@ -51,18 +51,13 @@ class CanvasBezierLine(QGraphicsPathItem):
         self.setGraphicsEffect(None)
         self.update_line_pos()
 
-    def set_line_selected(self, yesno: bool):
+    def check_select_state(self):
         self._line_selected = bool(self.item1.isSelected()
                                    or self.item2.isSelected())
         self.update_line_gradient()
 
     def trigger_disconnect(self):
-        for connection in canvas.connection_list:
-            if (connection.port_out_id == self.item1.get_port_id()
-                    and connection.port_in_id == self.item2.get_port_id()):
-                canvas.callback(CallbackAct.PORTS_DISCONNECT,
-                                connection.connection_id)
-                break
+        canvas.callback(CallbackAct.PORTS_DISCONNECT, self._connection_id)
 
     def semi_hide(self, yesno: bool):
         self._semi_hidden = yesno
@@ -141,8 +136,7 @@ class CanvasBezierLine(QGraphicsPathItem):
             if self._semi_hidden:
                 shd = canvas.semi_hide_opacity
                 bgcolor = canvas.theme.background_color_
-                
-                
+
                 color_main = QColor(
                     int(color_main.red() * shd + bgcolor.red() * (1.0 - shd) + 0.5),
                     int(color_main.green() * shd + bgcolor.green() * (1.0 - shd)+ 0.5),

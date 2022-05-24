@@ -1002,7 +1002,6 @@ def connect_ports(connection_id: int, group_out_id: int, port_out_id: int,
             if port_in is not None:
                 port_in_parent = port_in.parentItem()
         
-    # FIXME
     if not (port_out and port_in and port_out_parent and port_in_parent):
         _LOGGER.critical(f"{_LOGGING_STR} - unable to find ports to connect")
         return
@@ -1013,21 +1012,23 @@ def connect_ports(connection_id: int, group_out_id: int, port_out_id: int,
     connection.port_in_id = port_in_id
     connection.group_out_id = group_out_id
     connection.port_out_id = port_out_id
-    connection.widget = CanvasBezierLine(port_out, port_in, None)
+    connection.widget = CanvasBezierLine(connection_id, port_out, port_in)
 
     canvas.scene.addItem(connection.widget)
 
-    port_out_parent.add_line_from_group(connection.widget, connection_id)
-    port_in_parent.add_line_from_group(connection.widget, connection_id)
-
-    canvas.last_z_value += 1
-    port_out_parent.setZValue(canvas.last_z_value)
-    port_in_parent.setZValue(canvas.last_z_value)
-
-    canvas.last_z_value += 1
-    connection.widget.setZValue(canvas.last_z_value)
-
     canvas.connection_list.append(connection)
+    port_out_parent.add_line_to_box(connection.widget, connection_id)
+    port_in_parent.add_line_to_box(connection.widget, connection_id)
+    port_out.add_line_to_port(connection.widget)
+    port_in.add_line_to_port(connection.widget)
+
+    # canvas.last_z_value += 1
+    # port_out_parent.setZValue(canvas.last_z_value)
+    # port_in_parent.setZValue(canvas.last_z_value)
+
+    # canvas.last_z_value += 1
+    # connection.widget.setZValue(canvas.last_z_value)
+
 
     canvas.qobject.connection_added.emit(connection_id)
     
@@ -1068,8 +1069,10 @@ def disconnect_ports(connection_id: int):
         _LOGGER.critical(f"{_LOGGING_STR} - unable to find input port")
         return
 
-    item1.parentItem().remove_line_from_group(connection_id)
-    item2.parentItem().remove_line_from_group(connection_id)
+    item1.parentItem().remove_line_from_box(connection_id)
+    item2.parentItem().remove_line_from_box(connection_id)
+    item1.remove_line_from_port(connection)
+    item2.remove_line_from_port(connection)
 
     canvas.scene.removeItem(line)
     del line

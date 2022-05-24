@@ -32,6 +32,7 @@ from PyQt5.QtGui import (
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 
 
+
 # Imports (Custom)
 from .init_values import (
     CanvasItemType,
@@ -47,10 +48,12 @@ import patchcanvas.utils as utils
 from .canvasconnectable import CanvasConnectable
 from .canvasbezierlinemov import CanvasBezierLineMov
 from .connect_menu import MainPortContextMenu
+from .canvasbezierline import CanvasBezierLine
 
 if TYPE_CHECKING:
     from .canvasbox import CanvasBox
     from .canvasportgroup import CanvasPortGroup
+    
 
 # --------------------
 _translate = QApplication.translate
@@ -93,9 +96,11 @@ class CanvasPort(CanvasConnectable):
         
         self._theme = theme
         self._port_font = theme.font()
-        
+
         self._portgrp_widget = None
         self._loop_select_done = False
+
+        self._lines_widgets = list[CanvasBezierLine]()
 
     def get_port_id(self) -> int:
         return self._port_id
@@ -205,8 +210,12 @@ class CanvasPort(CanvasConnectable):
         
         return QPointF(cx, cy)
 
-    def parentItem(self) -> 'CanvasBox':
-        return super().parentItem()
+    def add_line_to_port(self, line: 'CanvasBezierLine'):
+        self._lines_widgets.append(line)
+
+    def remove_line_from_port(self, line: 'CanvasBezierLine'):
+        if line in self._lines_widgets:
+            self._lines_widgets.remove(line)
 
     def itemChange(self, change: int, value: bool):
         if change == QGraphicsItem.ItemSelectedHasChanged:
@@ -218,17 +227,16 @@ class CanvasPort(CanvasConnectable):
 
             if self._portgrp_widget is not None:
                 if self._portgrp_widget.mouse_releasing:
-                    # if not value:            
-                        self.setSelected(self._portgrp_widget.isSelected())
+                    self.setSelected(self._portgrp_widget.isSelected())
                 elif not self._portgrp_widget.changing_select_state:
                     self._portgrp_widget.ensure_selection_with_ports()
-                # else:
-                #     self._loop_select_done = False
-                    # return
             
-            for connection in canvas.connection_list:
-                if connection.concerns(self._group_id, self._port_ids):
-                    connection.widget.set_line_selected(value)
+            if self._lines_widgets:
+                for line in self._lines_widgets:
+                    line.check_select_state()
+                    if self.isSelected():
+                        line.setZValue(canvas.last_z_value)
+                canvas.last_z_value += 1
 
             self.changing_select_state = False
 

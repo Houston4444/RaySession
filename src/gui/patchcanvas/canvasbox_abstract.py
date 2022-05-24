@@ -51,7 +51,7 @@ from .canvasboxshadow import CanvasBoxShadow
 from .canvasicon import CanvasSvgIcon, CanvasIconPixmap
 from .canvasport import CanvasPort
 from .canvasportgroup import CanvasPortGroup
-from .theme import BoxStyleAttributer, Theme
+from .theme import BoxStyleAttributer
 
 if TYPE_CHECKING:
     from .canvasbezierline import CanvasBezierLine
@@ -367,10 +367,11 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         return new_widget
 
-    def add_line_from_group(self, line: 'CanvasBezierLine', connection_id: int):
+    def add_line_to_box(self, line: 'CanvasBezierLine', connection_id: int):
         self._connection_lines.append(CbLine(line, connection_id))
+        self.reset_lines_z_value(self.isSelected())
 
-    def remove_line_from_group(self, connection_id: int):
+    def remove_line_from_box(self, connection_id: int):
         for connection in self._connection_lines:
             if connection.connection_id == connection_id:
                 self._connection_lines.remove(connection)
@@ -380,21 +381,23 @@ class CanvasBoxAbstract(QGraphicsItem):
                          " - unable to find line to remove")            
 
     def check_item_pos(self):
-        if not canvas.size_rect.isNull():
-            pos = self.scenePos()
-            if not (canvas.size_rect.contains(pos) and
-                    canvas.size_rect.contains(
-                        pos + QPointF(self._width, self._height))):
-                if pos.x() < canvas.size_rect.x():
-                    self.setPos(canvas.size_rect.x(), pos.y())
-                elif pos.x() + self._width > canvas.size_rect.width():
-                    self.setPos(canvas.size_rect.width() - self._width, pos.y())
+        if canvas.size_rect.isNull():
+            return
+        
+        pos = self.scenePos()
+        if not (canvas.size_rect.contains(pos) and
+                canvas.size_rect.contains(
+                    pos + QPointF(self._width, self._height))):
+            if pos.x() < canvas.size_rect.x():
+                self.setPos(canvas.size_rect.x(), pos.y())
+            elif pos.x() + self._width > canvas.size_rect.width():
+                self.setPos(canvas.size_rect.width() - self._width, pos.y())
 
-                pos = self.scenePos()
-                if pos.y() < canvas.size_rect.y():
-                    self.setPos(pos.x(), canvas.size_rect.y())
-                elif pos.y() + self._height > canvas.size_rect.height():
-                    self.setPos(pos.x(), canvas.size_rect.height() - self._height)
+            pos = self.scenePos()
+            if pos.y() < canvas.size_rect.y():
+                self.setPos(pos.x(), canvas.size_rect.y())
+            elif pos.y() + self._height > canvas.size_rect.height():
+                self.setPos(pos.x(), canvas.size_rect.height() - self._height)
 
     def remove_icon_from_scene(self):
         if self.top_icon is None:
@@ -508,15 +511,26 @@ class CanvasBoxAbstract(QGraphicsItem):
 
         self._last_pos = self.pos()
 
-    def resetLinesZValue(self):
+    def reset_lines_z_value(self, under: bool):
+        if self._current_port_mode is not PortMode.BOTH:
+            return
+        
         for connection in canvas.connection_list:
-            if (connection.port_out_id in self._port_list_ids
-                    and connection.port_in_id in self._port_list_ids):
-                z_value = canvas.last_z_value
-            else:
-                z_value = canvas.last_z_value - 1
+            if (connection.group_in_id == connection.group_out_id == self._group_id
+                    and connection.widget is not None):
+                connection.widget.setZValue(
+                    self.zValue() - 1 if under else self.zValue() + 1)
+                
+        # for connection in canvas.connection_list:
+            
+            
+        #     if (connection.port_out_id in self._port_list_ids
+        #             and connection.port_in_id in self._port_list_ids):
+        #         z_value = canvas.last_z_value
+        #     else:
+        #         z_value = canvas.last_z_value - 1
 
-            connection.widget.setZValue(z_value)
+        #     connection.widget.setZValue(z_value)
 
     def semi_hide(self, yesno: bool):
         self._is_semi_hidden = yesno
@@ -538,6 +552,13 @@ class CanvasBoxAbstract(QGraphicsItem):
 
     def type(self) -> CanvasItemType:
         return CanvasItemType.BOX
+
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemSelectedHasChanged:
+            # if not value:
+                self.reset_lines_z_value(bool(value))
+
+        return super().itemChange(change, value)
 
     def contextMenuEvent(self, event):
         if canvas.is_line_mov:
@@ -800,9 +821,11 @@ class CanvasBoxAbstract(QGraphicsItem):
         QGraphicsItem.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
+        print('mousepress box')
         canvas.last_z_value += 1
         self.setZValue(canvas.last_z_value)
-        self.resetLinesZValue()
+        
+        # self.reset_lines_z_value()
         self._cursor_moving = False
         if event.button() == Qt.RightButton:
             event.accept()

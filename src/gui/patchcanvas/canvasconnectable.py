@@ -3,15 +3,10 @@ import time
 from typing import TYPE_CHECKING
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QCursor
-from PyQt5.QtWidgets import QGraphicsItem, QApplication
+from PyQt5.QtWidgets import QGraphicsItem
 
-from .init_values import (
-    CallbackAct,
-    ConnectionObject,
-    PortMode,
-    PortType,
-    canvas,
-    options)
+from .init_values import (CallbackAct, ConnectionObject, PortMode,
+                          PortType, canvas, options)
 from .canvasbezierlinemov import CanvasBezierLineMov
 
 if TYPE_CHECKING:
@@ -72,6 +67,7 @@ class CanvasConnectable(QGraphicsItem):
         return self._is_alternate
 
     def get_connection_distance(self) -> float:
+        # overclassed
         return 0.0
 
     def trigger_disconnect(self):
