@@ -1,7 +1,7 @@
 
 import time
 from typing import TYPE_CHECKING
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QRectF, QPointF
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QGraphicsItem
 
@@ -47,6 +47,8 @@ class ConnectableWidget(QGraphicsItem):
         self._mouse_down = False
         self._cursor_moving = False
         self._has_connections = False
+        
+        self._last_mouse_point = QPointF(0.0, 0.0)
         
         self.mouse_releasing = False
         self.changing_select_state = False
@@ -271,7 +273,7 @@ class ConnectableWidget(QGraphicsItem):
                             connection.widget.update_line_gradient()
                 else:
                     box_under = canvas.scene.get_box_at(event.scenePos())
-                    if box_under is not None:
+                    if box_under is not None and box_under is not self.parentItem():
                         box_under.wrap_unwrap_at_point(event.scenePos())
 
         QGraphicsItem.mousePressEvent(self, event)

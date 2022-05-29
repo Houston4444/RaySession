@@ -319,7 +319,7 @@ class DraggableGraphicsView(QGraphicsView):
     def __init__(self, parent):
         QGraphicsView.__init__(self, parent)
 
-        self.panning = False
+        self._panning = False
 
         try:
             self._middle_button = Qt.MiddleButton
@@ -329,7 +329,7 @@ class DraggableGraphicsView(QGraphicsView):
     def mousePressEvent(self, event):
         if (event.button() == self._middle_button
                 and not QApplication.keyboardModifiers() & Qt.ControlModifier):
-            self.panning = True
+            self._panning = True
             self.setDragMode(QGraphicsView.ScrollHandDrag)
             event = QMouseEvent(event.type(), event.pos(), Qt.LeftButton,
                                 Qt.LeftButton, event.modifiers())
@@ -339,12 +339,12 @@ class DraggableGraphicsView(QGraphicsView):
     def mouseReleaseEvent(self, event):
         QGraphicsView.mouseReleaseEvent(self, event)
 
-        if not self.panning:
+        if not self._panning:
             return
 
-        self.panning = False
+        self._panning = False
         self.setDragMode(QGraphicsView.NoDrag)
-        self.setCursor(QCursor(Qt.ArrowCursor))
+        # self.setCursor(QCursor(Qt.ArrowCursor))
 
 
 class CanvasSplitterHandle(QSplitterHandle):

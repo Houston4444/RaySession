@@ -21,17 +21,20 @@
 # Imports (Globals)
 import logging
 from math import floor
+import math
+from shutil import move
 import time
 
 from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot,
                           Qt, QPoint, QPointF, QRectF, QTimer, QMarginsF)
 from PyQt5.QtGui import QCursor, QPixmap, QPolygonF, QBrush
 from PyQt5.QtWidgets import (QGraphicsRectItem, QGraphicsScene, QApplication,
-                             QGraphicsView, QGraphicsItem)
+                             QGraphicsView, QGraphicsItem, QGraphicsSceneMouseEvent)
 
 # Imports (locals)
 from .init_values import (
     CanvasItemType,
+    Direction,
     canvas,
     options,
     CallbackAct,
@@ -114,6 +117,14 @@ class PatchSceneMoth(QGraphicsScene):
         self._move_box_timer.timeout.connect(self.move_boxes_animation)
 
         self.resizing_scene = False
+        self.translating_view = False
+        self._last_border_translate = QPointF(0.0, 0.0)
+
+        self._view_translator_timer = QTimer()
+        self._view_translator_timer.setInterval(50)
+        self._view_translator_timer.timeout.connect(self._cursor_view_navigation)
+        self._last_view_cpos = QPointF()
+        self._allowed_nav_directions = set[Direction]()
 
         self.selectionChanged.connect(self._slot_selection_changed)
 
@@ -155,6 +166,105 @@ class PatchSceneMoth(QGraphicsScene):
             self.scale_changed.emit(transform.m11())
 
         return fix
+
+    def _cursor_view_navigation(self):
+        ''' This function is called every 50 ms when mouse
+            left button is pressed. It moves the view if the mouse cursor
+            is near a border of the view (in the limits of the scene size). '''
+        # max speed of the drag when mouse is at a side pixel of the view  
+        SPEED = 0.8
+        
+        # Acceleration, doesn't affect max speed
+        POWER = 14
+
+        view_width = self._view.width()
+        view_height = self._view.height()
+        if self._view.verticalScrollBar().isVisible():
+            view_width -= self._view.verticalScrollBar().width()
+        if self._view.horizontalScrollBar().isVisible():
+            view_height -= self._view.horizontalScrollBar().height()
+        
+        view_cpos = self._view.mapFromGlobal(QCursor.pos())
+        scene_cpos = self._view.mapToScene(view_cpos)
+        
+        # The scene relative area we want to be visible in the view 
+        ensure_rect = QRectF(scene_cpos.x() - 1.0,
+                             scene_cpos.y() - 1.0,
+                             2.0, 2.0)
+        
+        # the scene relative area currently visible in the view
+        vs_rect = QRectF(
+            QPointF(self._view.mapToScene(0, 0)),
+            QPointF(self._view.mapToScene(view_width - 1, view_height -1)))
+        
+        # The speed of the move depends on the scene size
+        # to allow fast moves from one scene corner to another one.
+        speed_hor = (SPEED * (self.sceneRect().width() - vs_rect.width())
+                     / vs_rect.width()) 
+        speed_ver = (SPEED * (self.sceneRect().height() - vs_rect.height())
+                     / vs_rect.height())
+
+        interval_hor = vs_rect.width() / 2
+        interval_ver = vs_rect.height() / 2
+        
+        # Navigation is allowed in a direction only if mouse cursor has
+        # already been moved in this direction, in order to prevent unintended
+        # moves when user just pressed the mouse button.
+        if self._last_view_cpos.isNull():
+            self._allowed_nav_directions.clear()
+        elif len(self._allowed_nav_directions) < 4:
+            if view_cpos.x() < self._last_view_cpos.x():
+                self._allowed_nav_directions.add(Direction.LEFT)
+            elif view_cpos.x() > self._last_view_cpos.x():
+                self._allowed_nav_directions.add(Direction.RIGHT)
+
+            if view_cpos.y() < self._last_view_cpos.y():
+                self._allowed_nav_directions.add(Direction.UP)
+            elif view_cpos.y() > self._last_view_cpos.y():
+                self._allowed_nav_directions.add(Direction.DOWN)
+
+        self._last_view_cpos = view_cpos
+        
+        # Define the limits we want to see in the view
+        # Note that the zone where there is no move is defined by the fact
+        # the move in a direction is converted from float to int.
+        # This way, a move lower than 1.0 pixel will be ignored.
+        # By chance, the lower possible speed is good
+        # 1.0 pixel * (1s / 0.050s) = 20 pixels/second. 
+        
+        if (Direction.LEFT in self._allowed_nav_directions
+                and scene_cpos.x() < vs_rect.center().x()):
+            offset = vs_rect.center().x() - max(scene_cpos.x(), vs_rect.left())
+            ratio_x = offset / interval_hor
+            move_x = - speed_hor * ((ratio_x ** POWER) * interval_hor)
+            left = vs_rect.left() + int(move_x)
+            ensure_rect.moveLeft(max(left, self.sceneRect().left()))
+
+        elif (Direction.RIGHT in self._allowed_nav_directions
+                and scene_cpos.x() > vs_rect.center().x()):
+            offset = min(scene_cpos.x(), vs_rect.right()) - vs_rect.center().x()
+            ratio_x = offset / interval_hor
+            move_x = speed_hor * ((ratio_x ** POWER) * interval_hor)
+            right = vs_rect.right() + int(move_x)
+            ensure_rect.moveRight(min(right, self.sceneRect().right()))
+            
+        if (Direction.UP in self._allowed_nav_directions
+                and scene_cpos.y() < vs_rect.center().y()):
+            offset = vs_rect.center().y() - max(scene_cpos.y(), vs_rect.top())
+            ratio_y = offset / interval_ver
+            move_y = - speed_ver * ((ratio_y ** POWER) * interval_ver)
+            top = vs_rect.top() + int(move_y)
+            ensure_rect.moveTop(max(top, self.sceneRect().top()))
+        
+        elif (Direction.DOWN in self._allowed_nav_directions
+                and scene_cpos.y() > vs_rect.center().y()):
+            offset = min(scene_cpos.y(), vs_rect.bottom()) - vs_rect.center().y()
+            ratio_y = offset / interval_ver
+            move_y = speed_ver * ((ratio_y ** POWER) * interval_ver)
+            bottom = vs_rect.bottom() + int(move_y)
+            ensure_rect.moveBottom(min(bottom, self.sceneRect().bottom()))
+            
+        self._view.ensureVisible(ensure_rect, 0.0, 0.0)
 
     def fix_temporary_scroll_bars(self):
         if self._view is None:
@@ -535,7 +645,7 @@ class PatchSceneMoth(QGraphicsScene):
         if self._cursor_cut:
             self._view.viewport().setCursor(self._cursor_cut)
 
-    def zoom_wheel(self, delta):
+    def zoom_wheel(self, delta: int):
         transform = self._view.transform()
         scale = transform.m11()
 
@@ -546,7 +656,7 @@ class PatchSceneMoth(QGraphicsScene):
                 rect = self.sceneRect()
 
                 top_left_vw = self._view.mapFromScene(rect.topLeft())
-                bottom_right_vw = self._view.mapFromScene(rect.bottomRight())
+                # bottom_right_vw = self._view.mapFromScene(rect.bottomRight())
 
                 if (top_left_vw.x() > self._view.width() / 4
                         and top_left_vw.y() > self._view.height() / 4):
@@ -584,26 +694,30 @@ class PatchSceneMoth(QGraphicsScene):
 
     def mousePressEvent(self, event):
         self._mouse_down_init = (
-            (event.button() == Qt.LeftButton)
-            or ((event.button() == Qt.RightButton)
-                and QApplication.keyboardModifiers() & Qt.ControlModifier))
+            event.button() in (Qt.LeftButton, Qt.RightButton)
+            and not QApplication.keyboardModifiers() & Qt.ControlModifier)
         self._mouse_rubberband = False
 
-        if (event.button() == Qt.MidButton
-                and QApplication.keyboardModifiers() & Qt.ControlModifier):
-            self._mid_button_down = True
-            self._start_connection_cut()
+        if event.button() == Qt.MidButton:
+            if QApplication.keyboardModifiers() & Qt.ControlModifier:
+                self._mid_button_down = True
+                self._start_connection_cut()
 
-            pos = event.scenePos()
-            self._pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
+                pos = event.scenePos()
+                self._pointer_border.moveTo(floor(pos.x()), floor(pos.y()))
 
-            for item in self.items(self._pointer_border):
-                if isinstance(item, (ConnectableWidget, LineWidget)):
-                    item.trigger_disconnect()
+                for item in self.items(self._pointer_border):
+                    if isinstance(item, (ConnectableWidget, LineWidget)):
+                        item.trigger_disconnect()
 
         QGraphicsScene.mousePressEvent(self, event)
 
-    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.LeftButton:
+            if not self._view_translator_timer.isActive():
+                self._last_view_cpos = QPointF()
+                self._view_translator_timer.start()
+
+    def mouseMoveEvent(self, event):        
         if self._mouse_down_init:
             self._mouse_down_init = False
             topmost = self.itemAt(event.scenePos(), self._view.transform())
@@ -630,6 +744,8 @@ class PatchSceneMoth(QGraphicsScene):
                                      y+lineHinting,
                                      abs(pos_x - rubberband_orig_point.x()),
                                      abs(pos_y - rubberband_orig_point.y()))
+            if not self._view_translator_timer.isActive():
+                self._view_translator_timer.start()
             return
 
         if (self._mid_button_down
@@ -684,6 +800,9 @@ class PatchSceneMoth(QGraphicsScene):
 
         self._mouse_down_init = False
         self._mouse_rubberband = False
+
+        if event.button() == Qt.LeftButton:
+            self._view_translator_timer.stop()
 
         if event.button() == Qt.MidButton:
             event.accept()
