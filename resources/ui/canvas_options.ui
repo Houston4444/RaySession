@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>224</width>
-    <height>320</height>
+    <height>350</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -60,6 +60,16 @@
        </property>
        <property name="text">
         <string>Elastic canvas</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="checkBoxBordersNavigation">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows navigation on borders.&lt;/p&gt;&lt;p&gt;While connecting, moving or selecting boxes, the view is moved when cursor is near a border. &lt;/p&gt;&lt;p&gt;This way, no need to scroll mouse wheel, press shift button or move scroll bars.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This has strictly no effect if the entire scene is visible in the view.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Navigate on borders</string>
        </property>
       </widget>
      </item>
@@ -136,7 +146,8 @@
              <string>Duplicate</string>
             </property>
             <property name="icon">
-             <iconset theme="edit-duplicate"/>
+             <iconset theme="edit-duplicate">
+              <normaloff>.</normaloff>.</iconset>
             </property>
            </widget>
           </item>

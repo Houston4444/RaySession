@@ -587,7 +587,7 @@ def redraw_all_groups():
     
     box_count = 0
     if prevent_overlap:
-        canvas.scene.set_prevent_overlap(True)
+        options.prevent_overlap = True
         for group in canvas.group_list:
             for box in group.widgets:
                 if box is not None:
@@ -1166,11 +1166,15 @@ def set_elastic(yesno: bool):
 
 @patchbay_api
 def set_prevent_overlap(yesno: bool):
-    canvas.scene.set_prevent_overlap(yesno)
+    options.prevent_overlap = yesno
     
     if yesno:
         redraw_all_groups()
-    
+
+@patchbay_api
+def set_borders_navigation(yesno: bool):
+    options.borders_navigation = yesno
+
 @patchbay_api
 def set_max_port_width(width: int):
     options.max_port_width = width

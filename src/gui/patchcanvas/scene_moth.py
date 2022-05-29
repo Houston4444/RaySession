@@ -120,9 +120,9 @@ class PatchSceneMoth(QGraphicsScene):
         self.translating_view = False
         self._last_border_translate = QPointF(0.0, 0.0)
 
-        self._view_translator_timer = QTimer()
-        self._view_translator_timer.setInterval(50)
-        self._view_translator_timer.timeout.connect(self._cursor_view_navigation)
+        self._borders_nav_timer = QTimer()
+        self._borders_nav_timer.setInterval(50)
+        self._borders_nav_timer.timeout.connect(self._cursor_view_navigation)
         self._last_view_cpos = QPointF()
         self._allowed_nav_directions = set[Direction]()
 
@@ -481,9 +481,6 @@ class PatchSceneMoth(QGraphicsScene):
             self.update()
             self.removeItem(fake_item)
 
-    def set_prevent_overlap(self, yesno: bool):
-        options.prevent_overlap = yesno
-
     def zoom_ratio(self, percent: float):
         ratio = percent / 100.0
         transform = self._view.transform()
@@ -713,9 +710,10 @@ class PatchSceneMoth(QGraphicsScene):
         QGraphicsScene.mousePressEvent(self, event)
 
         if event.buttons() == Qt.LeftButton:
-            if not self._view_translator_timer.isActive():
+            if (options.borders_navigation
+                    and not self._borders_nav_timer.isActive()):
                 self._last_view_cpos = QPointF()
-                self._view_translator_timer.start()
+                self._borders_nav_timer.start()
 
     def mouseMoveEvent(self, event):        
         if self._mouse_down_init:
@@ -744,8 +742,8 @@ class PatchSceneMoth(QGraphicsScene):
                                      y+lineHinting,
                                      abs(pos_x - rubberband_orig_point.x()),
                                      abs(pos_y - rubberband_orig_point.y()))
-            if not self._view_translator_timer.isActive():
-                self._view_translator_timer.start()
+            if not self._borders_nav_timer.isActive():
+                self._borders_nav_timer.start()
             return
 
         if (self._mid_button_down
@@ -802,7 +800,7 @@ class PatchSceneMoth(QGraphicsScene):
         self._mouse_rubberband = False
 
         if event.button() == Qt.LeftButton:
-            self._view_translator_timer.stop()
+            self._borders_nav_timer.stop()
 
         if event.button() == Qt.MidButton:
             event.accept()

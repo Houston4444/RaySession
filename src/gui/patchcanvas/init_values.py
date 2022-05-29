@@ -143,23 +143,42 @@ class CanvasItemType(IntEnum):
 
 # Canvas options
 class CanvasOptionsObject:
-    theme_name: str
-    auto_hide_groups: bool
-    auto_select_items: bool
-    eyecandy: int
-    inline_displays: int
-    elastic: bool
-    prevent_overlap: bool
-    max_port_width: int
+    theme_name = ""
+    auto_hide_groups = True
+    auto_select_items = False
+    eyecandy = EyeCandy.NONE
+    inline_displays = 0
+    elastic = True
+    borders_navigation = True
+    prevent_overlap = True
+    max_port_width = 180
+    
+    # def __init__(self):
+    #     self.theme_name = ""
+    #     self.auto_hide_groups = True
+    #     self.auto_select_items = False
+    #     self.eyecandy = EyeCandy.SMALL
+    #     self.inline_displays = 0
+    #     self.elastic = True
+    #     self.borders_navigation = True
+    #     self.prevent_overlap = True
+    #     self.max_port_width = 180
 
 
 # Canvas features
 class CanvasFeaturesObject:
-    group_info: bool
-    group_rename: bool
-    port_info: bool
-    port_rename: bool
-    handle_group_pos: bool
+    group_info = False
+    group_rename = False
+    port_info = True
+    port_rename = False
+    handle_group_pos = False
+    
+    # def __init__(self):
+    #     self.group_info = False
+    #     self.group_rename = False
+    #     self.port_info = True
+    #     self.port_rename = False
+    #     self.handle_group_pos = False
 
 
 # Main Canvas object
@@ -191,14 +210,15 @@ class Canvas:
         self.semi_hide_opacity = 0.17
         self.loading_items = False
         
-        # This is only to get theme object methods in IDE
-        # everywhere.
+        # This is only to get object methods in IDE everywhere.
         if TYPE_CHECKING:
             self.qobject = CanvasObject()
             self.theme = Theme()
             self.theme_manager = ThemeManager()
             self.scene = PatchScene()
             self.settings = QSettings()
+            self.options = CanvasOptionsObject()
+            self.features = CanvasFeaturesObject()
 
     def callback(self, action: CallbackAct, value1: int,
                  value2: int, value_str: str):
@@ -335,6 +355,7 @@ options.eyecandy = EyeCandy.NONE
 options.inline_displays = False
 options.elastic = True
 options.prevent_overlap = True
+options.borders_navigation = True
 options.max_port_width = 160
 
 features = CanvasFeaturesObject()
