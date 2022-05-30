@@ -16,6 +16,7 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
+from xml.dom.minidom import Element
 from PyQt5.QtCore import pyqtSlot, QCoreApplication
 from PyQt5.QtWidgets import QWidgetAction, QMenu, QCheckBox, QAction
 from PyQt5.QtGui import QIcon, QPixmap
@@ -37,9 +38,12 @@ DANGEROUS_NO_CARE = 0
 DANGEROUS_NO = 1
 DANGEROUS_YES = 2
 
+
+
+
 class PortData:
-    def __init__(self, group_id: int, port_id: int, port_type: int,
-                 port_mode: int, portgrp_id: int, is_alternate: bool):
+    def __init__(self, group_id: int, port_id: int, port_type: PortType,
+                 port_mode: PortMode, portgrp_id: int, is_alternate: bool):
         self._group_id = group_id
         self._port_id = port_id
         self._port_type = port_type
@@ -83,6 +87,13 @@ class PortCheckBox(QCheckBox):
             self._port_id, self._portgrp_id, not self.isChecked())
 
 
+class DataConnElement:
+    port_id: int
+    portgrp_id: int
+    action: QWidgetAction
+    check_box: PortCheckBox
+
+
 class SubMenu(QMenu):
     def __init__(self, name: str, port_data: PortData, parent):
         QMenu.__init__(self, name, parent)
@@ -106,14 +117,14 @@ class ConnectGroupMenu(SubMenu):
         SubMenu.__init__(self, group_name, port_data, parent)
         self._parent = parent
         self._menu_group_id = group_id
-        self.elements = []
+        self._elements = list[DataConnElement]()
 
         self._last_portgrp_id = 0
 
         for port in canvas.port_list:
             if (port.group_id == self._menu_group_id
-                    and port.port_type == self._port_type
-                    and port.port_mode != self._port_mode):
+                    and port.port_type is self._port_type
+                    and port.port_mode is not self._port_mode):
                 if self._portgrp_id and port.portgrp_id:
                     if port.portgrp_id != self._last_portgrp_id:
                         for portgrp in canvas.portgrp_list:
@@ -146,7 +157,7 @@ class ConnectGroupMenu(SubMenu):
     def add_element(self, port_id: int, portgrp_id: int,
                     port_name: str, is_alternate=False):
         if self._port_type == PortType.AUDIO_JACK and is_alternate:
-            port_name = "CV| %s" % port_name
+            port_name = f"CV| {port_name}"
 
         check_box = PortCheckBox(port_id, portgrp_id, port_name,
                                  self._port_type, self)
@@ -159,24 +170,26 @@ class ConnectGroupMenu(SubMenu):
 
         self.addAction(action)
 
-        self.elements.append(
-            {'port_id': port_id, 'portgrp_id': portgrp_id,
-             'action': action, 'check_box': check_box})
+        element = DataConnElement()
+        element.port_id = port_id
+        element.portgrp_id = portgrp_id
+        element.action = action
+        element.check_box = check_box
+        self._elements.append(element)
 
     def remove_element(self, port_id: int, portgrp_id: int):
-        for element in self.elements:
-            if (element['port_id'] == port_id
-                    and element['portgrp_id'] == portgrp_id):
-                self.removeAction(element['action'])
-                self.elements.remove(element)
+        for element in self._elements:
+            if (element.port_id == port_id
+                    and element.portgrp_id == portgrp_id):
+                self.removeAction(element.action)
+                self._elements.remove(element)
                 break
 
     def check_element(self, port_id: int, portgrp_id: int, check_state: int):
-        for element in self.elements:
-            if (element['port_id'] == port_id
-                    and element['portgrp_id'] == portgrp_id):
-                check_box = element['check_box']
-                check_box.setCheckState(check_state)
+        for element in self._elements:
+            if (element.port_id == port_id
+                    and element.portgrp_id == portgrp_id):
+                element.check_box.setCheckState(check_state)
                 break
 
     def connection_asked_from_box(self, port_id: int, portgrp_id: int,
@@ -190,7 +203,7 @@ class DangerousMenu(SubMenu):
         self.setIcon(QIcon.fromTheme('emblem-warning'))
 
         self.group_menus = list[ConnectGroupMenu]()
-        self.connection_list = []
+        self.connection_list = list[ConnectionObject]()
 
     def add_group_menu(self, group_id: int, group_name: str):
         if len(group_name) > 15:
@@ -237,7 +250,7 @@ class ConnectMenu(SubMenu):
         #canvas.qobject.port_removed.connect(self.port_removed_from_canvas)
 
         self.group_menus = list[ConnectGroupMenu]()
-        self.connection_list = []
+        self.connection_list = list[ConnectionObject]()
 
         dangerous_name = ''
 
