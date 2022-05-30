@@ -122,7 +122,7 @@ class ThemeManager:
         self.activate_watcher(os.access(self.current_theme_file, os.R_OK))
         return True
     
-    def list_themes(self) -> list:
+    def list_themes(self) -> list[dict]:
         themes_set = set()
         conf = configparser.ConfigParser()
         themes_dicts = []

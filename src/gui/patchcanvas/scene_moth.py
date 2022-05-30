@@ -411,9 +411,11 @@ class PatchSceneMoth(QGraphicsScene):
         self._rubberband.setPen(canvas.theme.rubberband.fill_pen())
         self._rubberband.setBrush(canvas.theme.rubberband.background_color())
 
-        cur_color = "black" if canvas.theme.scene_background_color.blackF() < 0.5 else "white"
-        self._cursor_cut = QCursor(QPixmap(":/cursors/cut-"+cur_color+".png"), 1, 1)
-        self._cursor_zoom_area = QCursor(QPixmap(":/cursors/zoom-area-"+cur_color+".png"), 8, 7)
+        cur_color = ("black" if canvas.theme.scene_background_color.blackF() < 0.5
+                     else "white")
+        self._cursor_cut = QCursor(QPixmap(f":/cursors/cut-{cur_color}.png"), 1, 1)
+        self._cursor_zoom_area = QCursor(
+            QPixmap(f":/cursors/zoom-area-{cur_color}.png"), 8, 7)
 
     def drawBackground(self, painter, rect):
         painter.save()
@@ -494,37 +496,30 @@ class PatchSceneMoth(QGraphicsScene):
                     widget.top_icon.update_zoom(ratio)
 
     def zoom_fit(self):
-        min_x = min_y = max_x = max_y = None
-        first_value = True
+        if self._view is None:
+            return
 
-        items_list = self.items()
-
-        if len(items_list) > 0:
-            for item in items_list:
-                if isinstance(item, BoxWidget) and item.isVisible():
-                    pos = item.scenePos()
-                    rect = item.boundingRect()
-
-                    x = pos.x() + rect.left()
-                    y = pos.y() + rect.top()
-                    if first_value:
-                        first_value = False
-                        min_x, min_y = x, y
-                        max_x = x + rect.width()
-                        max_y = y + rect.height()
-                    else:
-                        min_x = min(min_x, x)
-                        min_y = min(min_y, y)
-                        max_x = max(max_x, x + rect.width())
-                        max_y = max(max_y, y + rect.height())
-
-            if not first_value:
-                self._view.fitInView(min_x, min_y, abs(max_x - min_x),
-                                      abs(max_y - min_y), Qt.KeepAspectRatio)
-                self.fix_scale_factor()
-
-        if self._view:
-            self.scale_changed.emit(self._view.transform().m11())
+        full_rect = QRectF()
+        
+        for item in self.items():
+            if isinstance(item, BoxWidget) and item.isVisible():
+                rect = item.sceneBoundingRect()
+                
+                if full_rect.isNull():
+                    full_rect = rect
+                    continue
+                
+                full_rect.setLeft(min(full_rect.left(), rect.left()))
+                full_rect.setRight(max(full_rect.right(), rect.right()))
+                full_rect.setTop(min(full_rect.top(), rect.top()))
+                full_rect.setBottom(max(full_rect.bottom(), rect.bottom()))
+                
+        if full_rect.isNull():
+            return
+        
+        self._view.fitInView(full_rect, Qt.KeepAspectRatio)
+        self.fix_scale_factor()
+        self.scale_changed.emit(self._view.transform().m11())
 
     def zoom_in(self):
         view = self._view
@@ -580,15 +575,12 @@ class PatchSceneMoth(QGraphicsScene):
         self.plugin_selected.emit(plugin_list)
 
     def _trigger_rubberband_scale(self):
+        # TODO, should enable an auto-zoom on 
+        # Ctrl+Right clic + drag (rubberband)
         self._scale_area = True
 
         if self._cursor_zoom_area:
             self._view.viewport().setCursor(self._cursor_zoom_area)
-
-    def send_zoom_to_zoom_widget(self):
-        if not self._view:
-            return
-        canvas.qobject.zoom_changed.emit(self._view.transform().m11() * 100)
 
     def get_zoom_scale(self):
         return self._view.transform().m11()
@@ -621,11 +613,6 @@ class PatchSceneMoth(QGraphicsScene):
             if event.key() == Qt.Key_1:
                 event.accept()
                 self.zoom_reset()
-                return
-            
-            if event.key() == Qt.Key_T:
-                event.accept()
-                self.update_theme()
                 return
 
         QGraphicsScene.keyPressEvent(self, event)
@@ -690,13 +677,15 @@ class PatchSceneMoth(QGraphicsScene):
         QGraphicsScene.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
-        self._mouse_down_init = (
-            event.button() in (Qt.LeftButton, Qt.RightButton)
-            and not QApplication.keyboardModifiers() & Qt.ControlModifier)
+        ctrl_pressed = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
+        self._mouse_down_init = bool(
+            (event.button() == Qt.LeftButton and not ctrl_pressed)
+            or (event.button() == Qt.RightButton and ctrl_pressed))
+        
         self._mouse_rubberband = False
 
         if event.button() == Qt.MidButton:
-            if QApplication.keyboardModifiers() & Qt.ControlModifier:
+            if ctrl_pressed:
                 self._mid_button_down = True
                 self._start_connection_cut()
 
@@ -715,13 +704,14 @@ class PatchSceneMoth(QGraphicsScene):
                 self._last_view_cpos = QPointF()
                 self._borders_nav_timer.start()
 
-    def mouseMoveEvent(self, event):        
+    def mouseMoveEvent(self, event):
         if self._mouse_down_init:
+        # if self._mouse_down_init and event.buttons() & Qt.LeftButton:
             self._mouse_down_init = False
             topmost = self.itemAt(event.scenePos(), self._view.transform())
             self._mouse_rubberband = not (
                 isinstance(topmost, (BoxWidget, ConnectableWidget,
-                                     IconPixmapWidget, IconSvgWidget))) 
+                                     IconPixmapWidget, IconSvgWidget)))
 
         if self._mouse_rubberband:
             event.accept()
@@ -732,19 +722,16 @@ class PatchSceneMoth(QGraphicsScene):
                 self._rubberband.show()
                 self._rubberband_selection = True
                 self._rubberband_orig_point = pos
-            rubberband_orig_point = self._rubberband_orig_point
+            rubb_orig_point = self._rubberband_orig_point
 
-            x = min(pos_x, rubberband_orig_point.x())
-            y = min(pos_y, rubberband_orig_point.y())
+            x = min(pos_x, rubb_orig_point.x())
+            y = min(pos_y, rubb_orig_point.y())
 
-            lineHinting = canvas.theme.rubberband.fill_pen().widthF() / 2.0
-            self._rubberband.setRect(x+lineHinting,
-                                     y+lineHinting,
-                                     abs(pos_x - rubberband_orig_point.x()),
-                                     abs(pos_y - rubberband_orig_point.y()))
-            if not self._borders_nav_timer.isActive():
-                self._borders_nav_timer.start()
-            return
+            line_hinting = canvas.theme.rubberband.fill_pen().widthF() / 2.0
+            self._rubberband.setRect(
+                x + line_hinting, y + line_hinting,
+                abs(pos_x - rubb_orig_point.x()),
+                abs(pos_y - rubb_orig_point.y()))
 
         if (self._mid_button_down
                 and QApplication.keyboardModifiers() & Qt.ControlModifier):
@@ -774,12 +761,7 @@ class PatchSceneMoth(QGraphicsScene):
                 for item in self.items():
                     if isinstance(item, BoxWidget):
                         item_rect = item.sceneBoundingRect()
-                        item_top_left = QPointF(item_rect.x(), item_rect.y())
-                        item_bottom_right = QPointF(item_rect.x() + item_rect.width(),
-                                                    item_rect.y() + item_rect.height())
-
-                        if (self._rubberband.contains(item_top_left)
-                                and self._rubberband.contains(item_bottom_right)):
+                        if self._rubberband.rect().contains(item_rect):
                             item.setSelected(True)
 
             self._rubberband.hide()

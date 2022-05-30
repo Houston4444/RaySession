@@ -42,12 +42,9 @@ class CanvasOptionsDialog(QDialog):
         self.ui.checkBoxPreventOverlap.setChecked(prevent_overlap)
         self.ui.spinBoxMaxPortWidth.setValue(max_port_width)
 
-        self.ui.comboBoxTheme.activated.connect(
-            self._theme_box_activated)
-        self.ui.pushButtonEditTheme.clicked.connect(
-            self._edit_theme)
-        self.ui.pushButtonDuplicateTheme.clicked.connect(
-            self._duplicate_theme)
+        self.ui.comboBoxTheme.activated.connect(self._theme_box_activated)
+        self.ui.pushButtonEditTheme.clicked.connect(self._edit_theme)
+        self.ui.pushButtonDuplicateTheme.clicked.connect(self._duplicate_theme)
         
         self._current_theme_ref = ''
         self._theme_list = []
@@ -106,7 +103,7 @@ class CanvasOptionsDialog(QDialog):
                 QProcess.startDetached('xdg-open', [theme_dict['file_path']])
                 break
 
-    def set_theme_list(self, theme_list: list):
+    def set_theme_list(self, theme_list: list[dict]):
         self.ui.comboBoxTheme.clear()
         del self._theme_list
         self._theme_list = theme_list
@@ -170,6 +167,8 @@ class CanvasOptionsDialog(QDialog):
                              self.get_group_shadows())
         RS.settings.setValue('Canvas/elastic',
                              self.get_elastic())
+        RS.settings.setValue('Canvas/borders_navigation',
+                             self.get_borders_nav())
         RS.settings.setValue('Canvas/prevent_overlap',
                              self.get_prevent_overlap())
         RS.settings.setValue('Canvas/max_port_width',

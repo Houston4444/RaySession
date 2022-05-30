@@ -1089,7 +1089,7 @@ def get_theme() -> str:
     return canvas.theme_manager.get_theme()
 
 @patchbay_api
-def list_themes() -> list:
+def list_themes() -> list[dict]:
     return canvas.theme_manager.list_themes()
 
 @patchbay_api

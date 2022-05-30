@@ -66,7 +66,7 @@
      <item>
       <widget class="QCheckBox" name="checkBoxBordersNavigation">
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows navigation on borders.&lt;/p&gt;&lt;p&gt;While connecting, moving or selecting boxes, the view is moved when cursor is near a border. &lt;/p&gt;&lt;p&gt;This way, no need to scroll mouse wheel, press shift button or move scroll bars.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This has strictly no effect if the entire scene is visible in the view.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows navigation on borders.&lt;/p&gt;&lt;p&gt;While connecting, moving or selecting boxes, the view is moved when cursor is near a border.&lt;br/&gt;This way, no need to scroll mouse wheel, press shift button or move scroll bars.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;This has strictly no effect if the entire scene is visible in the view.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>Navigate on borders</string>
