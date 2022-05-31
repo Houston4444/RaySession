@@ -18,10 +18,6 @@ Commenter plus
 #enlever les qcritical -> logger
 # Bug: connection non sélectionnée après clic droit
 
-button wrapper en graphicsitem
-# renommage général
+# button wrapper en graphicsitem -> trop de taf, fonctionne bien comme ça
 xdg pour le cache (var de classes ?)
-# version du cache
-bug de connection de paires par menu context
 bug positionnement boîte midi
-Interdire emballer sa propre boîte par clic droit
