@@ -47,7 +47,6 @@ class LineWidget(QGraphicsPathItem):
         self._item2 = item2
         self._connection_id = connection_id
 
-        self._line_selected = False
         self._semi_hidden = False
 
         self.setBrush(QColor(0, 0, 0, 0))
@@ -55,8 +54,6 @@ class LineWidget(QGraphicsPathItem):
         self.update_line_pos()
 
     def check_select_state(self):
-        self._line_selected = bool(self._item1.isSelected()
-                                   or self._item2.isSelected())
         self.update_line_gradient()
 
     def trigger_disconnect(self):
@@ -94,7 +91,6 @@ class LineWidget(QGraphicsPathItem):
                      item2_x, item2_y)
         self.setPath(path)
 
-        self._line_selected = False
         self.update_line_gradient()
 
     def type(self) -> CanvasItemType:
@@ -122,7 +118,7 @@ class LineWidget(QGraphicsPathItem):
             elif port_type1 == PortType.MIDI_JACK:
                 theme = theme.midi
 
-            if self._line_selected:
+            if self._item1.isSelected() or self._item2.isSelected():
                 theme = theme.selected
 
         base_pen = theme.fill_pen()

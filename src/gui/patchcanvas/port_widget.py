@@ -232,7 +232,7 @@ class PortWidget(ConnectableWidget):
             
             if self._lines_widgets:
                 for line in self._lines_widgets:
-                    line.check_select_state()
+                    line.update_line_gradient()
                     if self.isSelected():
                         line.setZValue(canvas.last_z_value)
                 canvas.last_z_value += 1

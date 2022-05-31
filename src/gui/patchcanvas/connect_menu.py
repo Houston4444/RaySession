@@ -16,14 +16,16 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-from xml.dom.minidom import Element
-from PyQt5.QtCore import pyqtSlot, QCoreApplication
-from PyQt5.QtWidgets import QWidgetAction, QMenu, QCheckBox, QAction
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtCore import pyqtSlot, QCoreApplication, Qt
+from PyQt5.QtWidgets import (QWidgetAction, QMenu, QCheckBox, QAction,
+                             QFrame, QHBoxLayout, QLabel, QSpacerItem, QSizePolicy)
+from PyQt5.QtGui import QIcon, QPixmap, QPen
+
 
 import patchcanvas.utils as utils
-
+from .theme import StyleAttributer
 from .init_values import (
+    IconType,
     canvas,
     ClipboardElement,
     CallbackAct,
@@ -39,6 +41,12 @@ DANGEROUS_NO = 1
 DANGEROUS_YES = 2
 
 
+def theme_css(theme: StyleAttributer) -> str:
+    pen = theme.fill_pen()
+    
+    return (f"background-color: {theme.background_color().name()};"
+            f"color: {theme.text_color().name()};"
+            f"border: {pen.widthF()}px solid {pen.color().name()}")
 
 
 class PortData:
@@ -58,40 +66,198 @@ class PortData:
 
 
 class PortCheckBox(QCheckBox):
-    def __init__(self, port_id: int, portgrp_id: int, port_name: str,
+    def __init__(self, port_id: int, portgrp_id: int, pg_pos: int, pg_len: int, port_name: str,
                  port_type: PortType, parent: 'ConnectGroupMenu'):
-        QCheckBox.__init__(self, port_name, parent)
+        QCheckBox.__init__(self, "", parent)
         self.setTristate(True)
-        self.setMinimumHeight(23)
-        self.setMinimumWidth(100)
 
-        # border_color = canvas.theme.port_audio_jack_pen.color().name()
-        # sel_bg = canvas.theme.port_audio_jack_bg.name()
-        # sel_text_color = canvas.theme.port_audio_jack_text.color().name()
-
-        # if port_type == PortType.MIDI_JACK:
-        #     border_color = canvas.theme.port_midi_jack_pen.color().name()
-        #     sel_bg = canvas.theme.port_midi_jack_bg.name()
-        #     sel_text_color = canvas.theme.port_midi_jack_text.color().name()
-
-        # #self.setStyleSheet(
-        #     #"""QCheckBox:hover{background-color: %s;color: %s}
-        #     #QCheckBox::indicator:hover{background-color: #202020;color: white}""" % (
-        #         #sel_bg, sel_text_color))
         self._parent = parent
         self._port_id = port_id
         self._portgrp_id = portgrp_id
+        self._port_type = port_type
+        self._pg_pos = pg_pos
+        self._pg_len = pg_len
+        self.set_theme()
+
+    def set_theme(self):
+        theme = canvas.theme.port
+        line_theme = canvas.theme.line
+        if self._port_id == -1:
+            theme = canvas.theme.portgroup
+            
+        if self._port_type is PortType.AUDIO_JACK:
+            theme = theme.audio
+            line_theme = line_theme.audio
+        elif self._port_type is PortType.MIDI_JACK:
+            theme = theme.midi
+            line_theme = line_theme.midi
+
+        bg = theme.background_color().name()
+        text_color = theme.text_color().name()
+        border_color = theme.fill_pen().color().name()
+        h_bg = theme.selected.background_color().name()
+        h_text_color = theme.selected.text_color().name()
+        ind_bg = canvas.theme.scene_background_color.name()
+        checked_bg = line_theme.selected.background_color().name()
+        
+        border_width = theme.fill_pen().widthF()
+        
+        TOP, RIGHT, BOTTOM, LEFT = 0, 1, 2, 3
+        SIDES = ['top', 'right', 'bottom', 'left']
+        margin_texts = [f"margin-{side}: 2px" for side in SIDES]
+        border_texts = [f"border-{side}: {border_width}px solid {border_color}"
+                        for side in SIDES]
+        radius_text = ""
+        
+        if self._port_id >= 0 and self._portgrp_id:
+            if self._pg_pos == 0:
+                margin_texts.pop(BOTTOM)
+                # border_texts[BOTTOM] = f"border-bottom: {border_width / 2}px solid {border_color}"
+                radius_text = "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
+            elif self._pg_pos + 1 == self._pg_len:
+                margin_texts.pop(TOP)
+                # border_texts[TOP] = f"border-top: {border_width / 2}px solid {border_color}"
+                radius_text = "border-top-left-radius: 0px; border-top-right-radius: 0px"
+                
+            if self._pg_pos != 0:
+                border_texts[TOP] = f"border-top: 0px solid transparent"
+
+        margins_text = ';'.join(margin_texts)
+
+        self.setStyleSheet(
+            f"QCheckBox{{background-color: none;color: {text_color}; spacing: 0px;"
+            f"border-radius: 3px; {radius_text};}}"
+            f"QCheckBox:hover{{background-color: none;color: {h_text_color}}}"
+            f"QCheckBox::indicator{{background-color: {ind_bg};margin: 3px; border-radius: 3px; border: 1px solid {theme.fill_pen().color().name()}}}"
+            f"QCheckBox::indicator:checked{{background-color: {checked_bg}; border: 3px solid {ind_bg}}}"
+            f"QCheckBox::indicator:indeterminate{{background-color: {checked_bg}; margin-left: 8px; border: 4px solid {ind_bg}}}")
 
     def nextCheckState(self):
         self._parent.connection_asked_from_box(
             self._port_id, self._portgrp_id, not self.isChecked())
 
 
+class CheckFrame(QFrame):
+    def __init__(self, port_id: int, portgrp_id: int, pg_pos: int, pg_len: int, port_name: str, port_name_end: str,
+                 port_type: PortType, parent: 'ConnectGroupMenu'):
+        QFrame.__init__(self, parent)
+        self._port_id = port_id
+        self._portgrp_id = portgrp_id
+        self._pg_pos = pg_pos
+        self._pg_len = pg_len
+        self._port_name = port_name
+        self._port_type = port_type
+        self._parent = parent
+        
+        self._check_box = PortCheckBox(
+            port_id, portgrp_id, pg_pos, pg_len, port_name, port_type, parent)
+        self._label_left = QLabel(port_name)
+        self._layout = QHBoxLayout(self)
+        self._layout.setSpacing(0)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.addWidget(self._check_box)
+        self._layout.addWidget(self._label_left)
+        spacer = QSpacerItem(2, 2, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self._layout.addSpacerItem(spacer)
+        self._label_right = None
+        if port_name_end:
+            self._label_right = QLabel(port_name_end)
+            self._layout.addWidget(self._label_right)
+        self._set_theme()
+
+    def _set_theme(self):
+        theme = canvas.theme.port
+        line_theme = canvas.theme.line
+        if self._port_id == -1:
+            theme = canvas.theme.portgroup
+            
+        if self._port_type is PortType.AUDIO_JACK:
+            theme = theme.audio
+            line_theme = line_theme.audio
+        elif self._port_type is PortType.MIDI_JACK:
+            theme = theme.midi
+            line_theme = line_theme.midi
+
+        text_color = theme.text_color().name()
+        border_color = theme.fill_pen().color().name()
+        h_text_color = theme.selected.text_color().name()
+        
+        border_width = theme.fill_pen().widthF()
+        
+        TOP, RIGHT, BOTTOM, LEFT = 0, 1, 2, 3
+        SIDES = ['top', 'right', 'bottom', 'left']
+        margin_texts = [f"margin-{side}: 2px" for side in SIDES]
+        border_texts = [f"border-{side}: {border_width}px solid {border_color}"
+                        for side in SIDES]
+        radius_text = ""
+        
+        if self._port_id >= 0 and self._portgrp_id:
+            if self._pg_pos == 0:
+                margin_texts.pop(BOTTOM)
+                radius_text = "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
+            elif self._pg_pos + 1 == self._pg_len:
+                margin_texts.pop(TOP)
+                radius_text = "border-top-left-radius: 0px; border-top-right-radius: 0px"
+                
+            if self._pg_pos != 0:
+                border_texts[TOP] = f"border-top: 0px solid transparent"
+
+        margins_text = ';'.join(margin_texts)
+        borders_text = ';'.join(border_texts)
+
+        self.setFont(theme.font())
+        self.setStyleSheet(
+            f"CheckFrame{{{theme_css(theme)}; spacing: 0px;"
+            f"{borders_text}; border-radius: 3px; {radius_text}; {margins_text}; padding-right: 0px}}"
+            f"CheckFrame:hover{{{theme_css(theme.selected)}}}")
+        
+        self._label_left.setFont(theme.font())
+        self._label_left.setStyleSheet(
+            f"QLabel{{color: {text_color}}};QLabel:hover{{color: {h_text_color}}} "
+        )
+        
+        if self._label_right is not None:
+            port_theme = canvas.theme.port
+            if self._port_type is PortType.AUDIO_JACK:
+                port_theme = port_theme.audio
+            elif self._port_type is PortType.MIDI_JACK:
+                port_theme = port_theme.midi
+
+            self._label_right.setFont(port_theme.font())
+            self._label_right.setStyleSheet(
+                f"QLabel{{margin-left: 3px; margin-right: 0px; padding: 0px; {theme_css(port_theme)}}};"
+                f"QLabel:hover{{{theme_css(port_theme.selected)}}}")
+
+    def set_check_state(self, check_state: int):
+        self._check_box.setCheckState(check_state)
+
+    def connection_asked_from_box(self, group_id: int, port_id: int,
+                                  portgrp_id: int, yesno: bool):
+        self._parent.connection_asked_from_box(group_id, port_id, portgrp_id, yesno)
+    
+    def mousePressEvent(self, event):
+        self._check_box.nextCheckState()
+        
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key_Space,):
+            self._check_box.nextCheckState()
+            return
+        QFrame.keyPressEvent(self, event)
+            
+
+
 class DataConnElement:
     port_id: int
     portgrp_id: int
     action: QWidgetAction
-    check_box: PortCheckBox
+    check_box: CheckFrame
+
+
+class DataDisconnElement:
+    group_id: int
+    portgrp_id: int
+    port_id_list: list[int]
+    action: QAction
 
 
 class SubMenu(QMenu):
@@ -120,6 +286,22 @@ class ConnectGroupMenu(SubMenu):
         self._elements = list[DataConnElement]()
 
         self._last_portgrp_id = 0
+        
+        theme = canvas.theme.box
+        
+        for group in canvas.group_list:
+            if group.group_id == group_id:
+                if group.icon_type == IconType.CLIENT:
+                    theme = theme.client
+                elif group.icon_type == IconType.HARDWARE:
+                    theme = theme.hardware
+                break
+
+        bg_color = theme.background_color().name()
+        border_color = theme.fill_pen().color().name()
+        
+        self.setStyleSheet(
+            f"QMenu{{background-color:{bg_color}; border: 1px solid {border_color}}}")
 
         for port in canvas.port_list:
             if (port.group_id == self._menu_group_id
@@ -132,12 +314,14 @@ class ConnectGroupMenu(SubMenu):
                                     and portgrp.portgrp_id == port.portgrp_id):
                                 portgrp_full_name = utils.get_portgroup_full_name(
                                     portgrp.group_id, portgrp.portgrp_id)
-                                portgrp_name = '‖ ' \
-                                    + portgrp_full_name.partition(':')[2]
+                                portgrp_name = portgrp_full_name.partition(':')[2]
 
+                                pg_name, pts_name = utils.get_portgroup_short_name_splitted(
+                                    portgrp.group_id, portgrp.portgrp_id)
+                                
                                 # all portgroups items will have -1 as port_id
-                                self.add_element(-1, port.portgrp_id,
-                                                 portgrp_name)
+                                self.add_element(-1, port.portgrp_id, 0, 1,
+                                                 pg_name, pts_name)
                                 break
                 else:
                     if (dangerous_mode == DANGEROUS_YES
@@ -147,25 +331,30 @@ class ConnectGroupMenu(SubMenu):
                     if (dangerous_mode == DANGEROUS_NO
                             and self._is_alternate != port.is_alternate):
                         continue
+                    
+                    pg_pos, pg_len = 0, 1
+                    if port.portgrp_id:
+                        pg_pos, pg_len = utils.get_portgroup_position(
+                            port.group_id, port.port_id, port.portgrp_id)
 
-                    self.add_element(port.port_id, port.portgrp_id,
-                                     port.port_name, port.is_alternate)
+                    self.add_element(port.port_id, port.portgrp_id, pg_pos, pg_len,
+                                     port.port_name, '', port.is_alternate)
 
     def group_id(self)->int:
         return self._menu_group_id
 
-    def add_element(self, port_id: int, portgrp_id: int,
-                    port_name: str, is_alternate=False):
-        if self._port_type == PortType.AUDIO_JACK and is_alternate:
+    def add_element(self, port_id: int, portgrp_id: int, pg_pos: int, pg_len: int,
+                    port_name: str, port_name_end: str, is_alternate=False):
+        if self._port_type is PortType.AUDIO_JACK and is_alternate:
             port_name = f"CV| {port_name}"
 
-        check_box = PortCheckBox(port_id, portgrp_id, port_name,
+        check_box = CheckFrame(port_id, portgrp_id, pg_pos, pg_len, port_name, port_name_end,
                                  self._port_type, self)
         action = QWidgetAction(self._parent)
         action.setDefaultWidget(check_box)
 
-        if not self._portgrp_id and portgrp_id != self._last_portgrp_id:
-            self.addSeparator()
+        # if not self._portgrp_id and portgrp_id != self._last_portgrp_id:
+        #     self.addSeparator()
         self._last_portgrp_id = portgrp_id
 
         self.addAction(action)
@@ -189,7 +378,7 @@ class ConnectGroupMenu(SubMenu):
         for element in self._elements:
             if (element.port_id == port_id
                     and element.portgrp_id == portgrp_id):
-                element.check_box.setCheckState(check_state)
+                element.check_box.set_check_state(check_state)
                 break
 
     def connection_asked_from_box(self, port_id: int, portgrp_id: int,
@@ -276,10 +465,10 @@ class ConnectMenu(SubMenu):
 
             for port in canvas.port_list:
                 if (port.group_id == group.group_id
-                        and port.port_type == self._port_type
-                        and port.port_mode != self._port_mode):
+                        and port.port_type is self._port_type
+                        and port.port_mode is not self._port_mode):
 
-                    if (self._port_type == PortType.AUDIO_JACK
+                    if (self._port_type is PortType.AUDIO_JACK
                             and (self._port_mode is PortMode.OUTPUT
                                  and self._is_alternate
                                  and not port.is_alternate)
@@ -387,11 +576,14 @@ class ConnectMenu(SubMenu):
                 #break
 
 
+
+
+
 class DisconnectMenu(SubMenu):
     def __init__(self, port_data, parent):
         SubMenu.__init__(self, _translate('patchbay', "Disconnect"),
                          port_data, parent)
-        self.elements = []
+        self._elements = list[DataDisconnElement]()
 
         self._no_action_title = _translate('patchbay', 'No connections')
         self._no_action = self.addAction(self._no_action_title)
@@ -403,12 +595,12 @@ class DisconnectMenu(SubMenu):
         if action is None:
             return
 
-        for element in self.elements:
-            if element['action'] == action:
+        for element in self._elements:
+            if element.action is action:
                 for connection in canvas.connection_list:
                     if connection.matches(
                             self._group_id, self._port_id_list,
-                            element['group_id'], element['port_id_list']):
+                            element.group_id, element.port_id_list):
                         utils.canvas_callback(
                             CallbackAct.PORTS_DISCONNECT,
                             connection.connection_id)
@@ -419,9 +611,9 @@ class DisconnectMenu(SubMenu):
         if not port_id_list:
             return
 
-        for element in self.elements:
-            if (element['group_id'] == group_id
-                    and element['port_id_list'] == port_id_list):
+        for element in self._elements:
+            if (element.group_id == group_id
+                    and element.port_id_list == port_id_list):
                 # element already exists
                 return
 
@@ -429,11 +621,11 @@ class DisconnectMenu(SubMenu):
         i = 0
         following_action = None
 
-        for element in self.elements:
-            if (element['group_id'] > group_id
-                    or (element['group_id'] == group_id
-                        and element['port_id_list'][0] > port_id_list[-1])):
-                following_action = element['action']
+        for element in self._elements:
+            if (element.group_id > group_id
+                    or (element.group_id == group_id
+                        and element.port_id_list[0] > port_id_list[-1])):
+                following_action = element.action
                 break
             i += 1
 
@@ -455,12 +647,12 @@ class DisconnectMenu(SubMenu):
         else:
             self.insertAction(following_action, action)
 
-        element = {'group_id': group_id,
-                   'port_id_list': port_id_list,
-                   'portgrp_id': portgrp_id,
-                   'action': action}
-
-        self.elements.insert(i, element)
+        element = DataDisconnElement()
+        element.group_id = group_id
+        element.portgrp_id = portgrp_id
+        element.port_id_list = port_id_list
+        element.action = action
+        self._elements.insert(i, element)
 
         # remove "no connections" fake action
         if self._no_action is not None:
@@ -469,17 +661,17 @@ class DisconnectMenu(SubMenu):
 
     def remove_element(self, group_id: int, port_id_list: int,
                        portgrp_id: int):
-        for element in self.elements:
-            if (element['group_id'] == group_id
-                    and element['portgrp_id'] == portgrp_id
-                    and element['port_id_list'] == port_id_list):
-                self.removeAction(element['action'])
-                self.elements.remove(element)
+        for element in self._elements:
+            if (element.group_id == group_id
+                    and element.portgrp_id == portgrp_id
+                    and element.port_id_list == port_id_list):
+                self.removeAction(element.action)
+                self._elements.remove(element)
                 break
         else:
             return
 
-        if not self.elements:
+        if not self._elements:
             self._no_action = self.addAction(self._no_action_title)
             self._no_action.setEnabled(False)
 
@@ -524,7 +716,7 @@ class ClipboardMenu(SubMenu):
         canvas.clipboard_cut = cut
 
         for self_port_id in self._port_id_list:
-            group_port_ids = []
+            group_port_ids = list[tuple[int]]()
 
             for connection in canvas.connection_list:
                 if self._port_mode is PortMode.OUTPUT:
@@ -591,12 +783,6 @@ class MainPortContextMenu(PortData, QMenu):
     def __init__(self, group_id: int, port_id: int, portgrp_id=0):
         QMenu.__init__(self)
 
-        #self.setStyleSheet(
-            #"""QMenu{background-color:#202020; border: 1px solid;
-            #border-color: red; border-radius: 4px};
-            #QMenu::item{background-color:#999900};
-            #QMenu::item:selected{background-color: red}""")
-
         if portgrp_id:
             # menu is for a portgroup
             for portgrp in canvas.portgrp_list:
@@ -619,24 +805,6 @@ class MainPortContextMenu(PortData, QMenu):
             else:
                 return
 
-        # border_color = canvas.theme.port_audio_jack_pen.color().name()
-        # sel_bg = canvas.theme.port_audio_jack_bg.name()
-        # sel_text_color = canvas.theme.port_audio_jack_text.color().name()
-
-        # if port_type == PortType.MIDI_JACK:
-        #     border_color = canvas.theme.port_midi_jack_pen.color().name()
-        #     sel_bg = canvas.theme.port_midi_jack_bg.name()
-        #     sel_text_color = canvas.theme.port_midi_jack_text.color().name()
-
-        # style_str = """QMenu{background-color:#202020; border: 1px solid;
-        #     border-color: %s; border-radius: 4px}
-        #     QMenu::item{background-color: #202020;color: white}
-        #     QMenu::item:disabled{color: #777777}
-        #     QMenu::item:selected{background-color: %s; color:%s}""" % (
-        #         border_color, sel_bg, sel_text_color)
-
-        # #self.setStyleSheet(style_str)
-
         PortData.__init__(self, group_id, port_id, port_type,
                           port_mode, portgrp_id, is_alternate)
 
@@ -646,6 +814,35 @@ class MainPortContextMenu(PortData, QMenu):
             self.connection_added_to_canvas)
         canvas.qobject.connection_removed.connect(
             self.connection_removed_from_canvas)
+
+        theme = canvas.theme.port
+
+        if self._port_type == PortType.AUDIO_JACK:
+            if self._is_alternate:
+                theme = theme.cv
+            else:
+                theme = theme.audio
+        elif self._port_type == PortType.MIDI_JACK:
+            theme = theme.midi
+
+        poly_color = theme.background_color()
+        poly_color_alter = theme.background2_color()
+        poly_pen = theme.fill_pen()
+        text_pen = QPen(theme.text_color())
+
+        border_color = poly_pen.color().name()
+        sel_bg = poly_color.name()
+        sel_text_color = text_pen.color().name()
+
+        style_str = (
+            f"QMenu{{background-color:#202020; border: 1px solid;"
+                f"border-color: {border_color}; border-radius: 4px}}"
+            f"QMenu::item{{background-color: {sel_bg};color: white}}"
+            f"QMenu::item:disabled{{color: #777777}}"
+            f"QMenu::item:selected{{background-color: {sel_bg};"
+                f"color:{sel_text_color}}}")
+
+        # self.setStyleSheet(style_str)
 
         port_data = PortData(group_id, port_id, port_type,
                              port_mode, portgrp_id, is_alternate)
@@ -730,8 +927,9 @@ class MainPortContextMenu(PortData, QMenu):
     def connection_added_to_canvas(self, connection_id: int):
         for connection in canvas.connection_list:
             if connection.connection_id == connection_id:
-                if connection.concerns(self._group_id, self._port_id_list):
-                    return
+                # if connection.concerns(self._group_id, self._port_id_list):
+                #     print('maikoilala')
+                #     return
 
                 self.add_connection(connection)
 

@@ -300,6 +300,17 @@ def get_portgroup_full_name(group_id: int, portgrp_id: int) -> str:
 
     return ""
 
+def get_portgroup_short_name_splitted(group_id: int, portgrp_id: int) -> tuple[str]:
+    for portgrp in canvas.portgrp_list:
+        if (portgrp.group_id == group_id
+                and portgrp.portgrp_id == portgrp_id):
+            portgrp_name = get_portgroup_name(
+                group_id, portgrp.port_id_list)
+            
+            return (portgrp_name, 
+                    '/'.join([get_port_print_name(group_id, port_id, portgrp_id)
+                              for port_id in portgrp.port_id_list]))
+
 def get_group_icon(group_id: int, port_mode: int) -> QIcon:
     # port_mode is here reversed
     group_port_mode = PortMode.INPUT
