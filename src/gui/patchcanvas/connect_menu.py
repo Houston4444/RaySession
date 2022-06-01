@@ -24,6 +24,7 @@ from PyQt5.QtGui import QIcon, QPixmap, QPen
 
 import patchcanvas.utils as utils
 from .init_values import (
+    GroupObject,
     IconType,
     PortObject,
     PortgrpObject,
@@ -33,7 +34,7 @@ from .init_values import (
     PortType,
     PortMode,
     ConnectionObject)
-from .connect_menu_widgets import CheckFrame, GroupFrame
+from .connect_menu_widgets import CheckFrame
 
 
 _translate = QCoreApplication.translate
@@ -93,26 +94,28 @@ class SubMenu(QMenu):
 
 
 class GroupConnectMenu(SubMenu):
-    def __init__(self, group_name: str, group_id: str, port_data, parent: 'SubMenu',
+    def __init__(self, group: GroupObject, port_data, parent: 'SubMenu',
                  dangerous_mode=Dangerous.NO_CARE):
-        SubMenu.__init__(self, group_name, port_data, parent)
+        short_group_name = group.group_name
+        
+        if len(short_group_name) > 15 and '/' in short_group_name:
+            short_group_name = short_group_name.partition('/')[2]
+
+        SubMenu.__init__(self, short_group_name, port_data, parent)
+        self.setIcon(utils.get_group_icon(group.group_id, self._port_mode))
         self.hovered.connect(self._mouse_hover_menu)
         
         self._parent = parent
-        self._menu_group_id = group_id
+        self._group = group
         self._elements = list[DataConnElement]()
 
         self._last_portgrp_id = 0
         
         theme = canvas.theme.box
-        
-        for group in canvas.group_list:
-            if group.group_id == group_id:
-                if group.icon_type == IconType.CLIENT:
-                    theme = theme.client
-                elif group.icon_type == IconType.HARDWARE:
-                    theme = theme.hardware
-                break
+        if group.icon_type == IconType.CLIENT:
+            theme = theme.client
+        elif group.icon_type == IconType.HARDWARE:
+            theme = theme.hardware
 
         bg_color = theme.background_color().name()
         border_color = theme.fill_pen().color().name()
@@ -121,7 +124,7 @@ class GroupConnectMenu(SubMenu):
             f"QMenu{{background-color:{bg_color}; border: 1px solid {border_color}}}")
 
         for port in canvas.port_list:
-            if (port.group_id == self._menu_group_id
+            if (port.group_id == group.group_id
                     and port.port_type is self._port_type
                     and port.port_mode is not self._port_mode):
                 if self._portgrp_id and port.portgrp_id:
@@ -145,8 +148,8 @@ class GroupConnectMenu(SubMenu):
 
                     self.add_element(port, port.port_name, '', port.is_alternate)
 
-    def group_id(self)->int:
-        return self._menu_group_id
+    def group_id(self) -> int:
+        return self._group.group_id
 
     def add_element(self, p_object: Union[PortObject, PortgrpObject],
                     port_name: str, port_name_end: str, is_alternate=False):
@@ -190,7 +193,7 @@ class GroupConnectMenu(SubMenu):
 
     def connection_asked_from_box(self, port_id: int, portgrp_id: int,
                                   yesno: bool):
-        self._parent.connection_asked_from_box(self._menu_group_id, port_id,
+        self._parent.connection_asked_from_box(self.group_id(), port_id,
                                                portgrp_id, yesno)
 
     def keyPressEvent(self, event) -> None:
@@ -209,16 +212,9 @@ class DangerousMenu(SubMenu):
         self.group_menus = list[GroupConnectMenu]()
         self.connection_list = list[ConnectionObject]()
 
-    def add_group_menu(self, group_id: int, group_name: str):
-        if len(group_name) > 15:
-            if '/' in group_name:
-                group_name = group_name.partition('/')[2]
-
-        group_menu = GroupConnectMenu(group_name, group_id,
-                                      self._port_data, self,
+    def add_group_menu(self, group: GroupObject):
+        group_menu = GroupConnectMenu(group, self._port_data, self,
                                       dangerous_mode=Dangerous.YES)
-        group_icon = utils.get_group_icon(group_id, self._port_mode)
-        group_menu.setIcon(group_icon)
         self.group_menus.append(group_menu)
         self.addMenu(group_menu)
 
@@ -290,13 +286,12 @@ class ConnectMenu(SubMenu):
                                      and not self._is_alternate
                                      and port.is_alternate))):
                         if not grp_has_dangerous:
-                            self.dangerous_submenu.add_group_menu(
-                                group.group_id, group.group_name)
+                            self.dangerous_submenu.add_group_menu(group)
                         grp_has_dangerous = True
                         has_dangerous_global = True
                     else:
                         if not grp_has_regular:
-                            self.add_group_menu(group.group_id, group.group_name)
+                            self.add_group_menu(group)
                         grp_has_regular = True
 
                     if grp_has_dangerous and grp_has_regular:
@@ -306,10 +301,7 @@ class ConnectMenu(SubMenu):
             self.addSeparator()
             self.addMenu(self.dangerous_submenu)
 
-    def add_group_menu(self, group_id: int, group_name: str):
-        if len(group_name) > 15 and '/' in group_name:
-            group_name = group_name.partition('/')[2]
-
+    def add_group_menu(self, group: GroupObject):
         dangerous = Dangerous.NO_CARE
         if (self._port_type == PortType.AUDIO_JACK
                 and ((self._port_mode is PortMode.OUTPUT
@@ -318,32 +310,10 @@ class ConnectMenu(SubMenu):
                          and not self._is_alternate))):
             dangerous = Dangerous.NO
 
-        group_menu = GroupConnectMenu(group_name, group_id,
-                                      self._port_data, self,
+        group_menu = GroupConnectMenu(group, self._port_data, self,
                                       dangerous_mode=dangerous)
-        group_menu.setIcon(utils.get_group_icon(group_id, self._port_mode))
         self.group_menus.append(group_menu)
-        
-        if False and group_menu.count_elements() <= 1:
-            print('je veux pas de :', group_name)
-            
-            element = group_menu.get_first_element()
-            orig_action = element.action
-            orig_action.releaseWidget(element.check_frame)
-            action = QWidgetAction(self)
-            action.setDefaultWidget(element.check_frame)
-            print(action.defaultWidget())
-            # action.setParent(self)
-            self.addAction(action)
-        else:
-            self.addMenu(group_menu)
-        
-        # group_menu.setStyleSheet(f"QMenu::item{{background-color: yellow}}")
-        # for group in canvas.group_list:
-        #     if group.group_id == group_id: 
-        #         action = QWidgetAction(self)
-        #         action.setDefaultWidget(GroupFrame(group, self))
-        #         break
+        self.addMenu(group_menu)
 
     def connection_asked_from_box(self, group_id: int, port_id: int,
                                   portgrp_id: int, yesno: bool):

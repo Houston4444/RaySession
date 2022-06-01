@@ -238,14 +238,17 @@ class GroupObject:
         return group_copy
 
 
-class PortObject:
+class ConnectableObject:
     group_id: int
-    port_id: int
-    port_name: str
     port_mode: PortMode
     port_type: PortType
     portgrp_id: int
     is_alternate: bool
+
+
+class PortObject(ConnectableObject):
+    port_id: int
+    port_name: str
     widget: object
     if TYPE_CHECKING:
         widget: PortWidget
@@ -267,11 +270,7 @@ class PortObject:
             self.widget.set_portgroup_id(pg_id, pg_pos, pg_len)
 
 
-class PortgrpObject:
-    portgrp_id: int
-    group_id: int
-    port_mode: PortMode
-    port_type: PortType
+class PortgrpObject(ConnectableObject):
     port_id_list: list[int]
     widget: object
     if TYPE_CHECKING:
