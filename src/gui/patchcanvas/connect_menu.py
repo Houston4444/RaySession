@@ -438,8 +438,9 @@ class ConnectMenu(SubMenu):
         self.connection_list = list[ConnectionObject]()
 
         dangerous_name = ''
+        has_dangerous_global = False
 
-        if self._port_type == PortType.AUDIO_JACK:
+        if self._port_type is PortType.AUDIO_JACK:
             if (self._port_mode is PortMode.OUTPUT
                     and self._is_alternate):
                 dangerous_name = _translate(
@@ -452,8 +453,6 @@ class ConnectMenu(SubMenu):
         self.dangerous_submenu = DangerousMenu(
             dangerous_name, port_data, self)
 
-        has_dangerous_global = False
-
         # add the needed groups (not the ports)
         for group in canvas.group_list:
             has_dangerous = False
@@ -465,12 +464,12 @@ class ConnectMenu(SubMenu):
                         and port.port_mode is not self._port_mode):
 
                     if (self._port_type is PortType.AUDIO_JACK
-                            and (self._port_mode is PortMode.OUTPUT
-                                 and self._is_alternate
-                                 and not port.is_alternate)
-                                or (self._port_mode is PortMode.INPUT
-                                    and not self._is_alternate
-                                    and port.is_alternate)):
+                            and ((self._port_mode is PortMode.OUTPUT
+                                  and self._is_alternate
+                                  and not port.is_alternate)
+                                 or (self._port_mode is PortMode.INPUT
+                                     and not self._is_alternate
+                                     and port.is_alternate))):
                         if not has_dangerous:
                             self.dangerous_submenu.add_group_menu(
                                 group.group_id, group.group_name)
@@ -495,10 +494,8 @@ class ConnectMenu(SubMenu):
 
         dangerous = DANGEROUS_NO_CARE
         if (self._port_type == PortType.AUDIO_JACK
-                and (self._port_mode is PortMode.OUTPUT
-                     and self._is_alternate)
-                    or (self._port_mode is PortMode.INPUT
-                        and not self._is_alternate)):
+                and ((self._port_mode is PortMode.OUTPUT and self._is_alternate)
+                     or (self._port_mode is PortMode.INPUT and not self._is_alternate))):
             dangerous = DANGEROUS_NO
 
         group_menu = ConnectGroupMenu(group_name, group_id,
