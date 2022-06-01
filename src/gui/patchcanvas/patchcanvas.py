@@ -922,12 +922,14 @@ def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
     for port in canvas.port_list:
         if (port.group_id == group_id
                 and port.port_id in port_id_list):
-            port.portgrp_id = portgrp_id
-            if port.widget is not None:
-                port.widget.set_portgroup_id(
-                    portgrp_id,
-                    port_id_list.index(port.port_id),
-                    len(port_id_list))
+            port.set_portgroup_id(
+                portgrp_id, port_id_list.index(port.port_id), len(port_id_list))
+            # port.portgrp_id = portgrp_id
+            # if port.widget is not None:
+            #     port.widget.set_portgroup_id(
+            #         portgrp_id,
+            #         port_id_list.index(port.port_id),
+            #         len(port_id_list))
 
     canvas.portgrp_list.append(portgrp_dict)
     
@@ -958,14 +960,11 @@ def remove_portgroup(group_id: int, portgrp_id: int):
             for port in canvas.port_list:
                 if (port.group_id == group_id
                         and port.portgrp_id == portgrp_id):
-                    port.portgrp_id = 0
-
-                    if port.widget is not None:
-                        port.widget.set_portgroup_id(0, 0, 1)
-                        box_widget = port.widget.parentItem()
+                    port.set_portgroup_id(0, 0, 1)
 
             if portgrp.widget is not None:
                 item = portgrp.widget
+                box_widget = item.parentItem()
                 canvas.scene.removeItem(item)
                 del item
                 portgrp.widget = None

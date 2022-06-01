@@ -131,7 +131,7 @@ class CanvasItemType(IntEnum):
     # but never really used.
     # Prefer use isinstance(item, type) if possible
     # because IDE will know easier with which class
-    # we are dealing. 
+    # we are dealing.
     BOX = QGraphicsItem.UserType + 1
     ICON = QGraphicsItem.UserType + 2
     PORT = QGraphicsItem.UserType + 3
@@ -152,17 +152,6 @@ class CanvasOptionsObject:
     borders_navigation = True
     prevent_overlap = True
     max_port_width = 180
-    
-    # def __init__(self):
-    #     self.theme_name = ""
-    #     self.auto_hide_groups = True
-    #     self.auto_select_items = False
-    #     self.eyecandy = EyeCandy.SMALL
-    #     self.inline_displays = 0
-    #     self.elastic = True
-    #     self.borders_navigation = True
-    #     self.prevent_overlap = True
-    #     self.max_port_width = 180
 
 
 # Canvas features
@@ -172,13 +161,6 @@ class CanvasFeaturesObject:
     port_info = True
     port_rename = False
     handle_group_pos = False
-    
-    # def __init__(self):
-    #     self.group_info = False
-    #     self.group_rename = False
-    #     self.port_info = True
-    #     self.port_rename = False
-    #     self.handle_group_pos = False
 
 
 # Main Canvas object
@@ -268,11 +250,21 @@ class PortObject:
     if TYPE_CHECKING:
         widget: PortWidget
 
+    pg_pos = 0 # index in the portgroup (if any)
+    pg_len = 1 # length of the portgroup (if any)
+
     def copy_no_widget(self):
         port_copy = PortObject()
         port_copy.__dict__ = self.__dict__.copy()
         port_copy.widget = None
         return port_copy
+
+    def set_portgroup_id(self, pg_id: int, pg_pos: int, pg_len: int):
+        self.portgrp_id = pg_id
+        self.pg_pos = pg_pos
+        self.pg_len = pg_len
+        if self.widget is not None:
+            self.widget.set_portgroup_id(pg_id, pg_pos, pg_len)
 
 
 class PortgrpObject:
@@ -284,6 +276,8 @@ class PortgrpObject:
     widget: object
     if TYPE_CHECKING:
         widget: PortgroupWidget
+        
+    is_alternate = False
 
     def copy_no_widget(self):
         portgrp_copy = PortgrpObject()
