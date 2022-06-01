@@ -1,11 +1,15 @@
 
 from typing import TYPE_CHECKING, Union
-from PyQt5.QtCore import QCoreApplication, Qt
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import (QCheckBox, QFrame, QHBoxLayout, QLabel, 
                              QSpacerItem, QSizePolicy)
+from PyQt5.QtGui import QPixmap
 
+
+import patchcanvas.utils as utils
 from .theme import StyleAttributer
 from .init_values import (
+    GroupObject,
     IconType,
     PortObject,
     PortgrpObject,
@@ -13,7 +17,7 @@ from .init_values import (
     PortType)
 
 if TYPE_CHECKING:
-    from .connect_menu import ConnectGroupMenu
+    from .connect_menu import SubMenu
 
 
 def theme_css(theme: StyleAttributer) -> str:
@@ -26,7 +30,7 @@ def theme_css(theme: StyleAttributer) -> str:
     
 class PortCheckBox(QCheckBox):
     def __init__(self, p_object:  Union[PortObject, PortgrpObject],
-                 parent: 'ConnectGroupMenu'):
+                 parent: 'SubMenu'):
         QCheckBox.__init__(self, "", parent)
         self.setTristate(True)
         self._p_object = p_object
@@ -100,7 +104,7 @@ class PortCheckBox(QCheckBox):
 class CheckFrame(QFrame):
     def __init__(self, p_object: Union[PortObject, PortgrpObject],
                  port_name: str, port_name_end: str,
-                 parent: 'ConnectGroupMenu'):
+                 parent: 'SubMenu'):
         QFrame.__init__(self, parent)
         self._p_object = p_object
         self._parent = parent
@@ -121,18 +125,18 @@ class CheckFrame(QFrame):
         self._set_theme()
 
     def _set_theme(self):
-        p_object = self._p_object
+        po = self._p_object
 
         theme = canvas.theme.port
         line_theme = canvas.theme.line        
 
-        if isinstance(p_object, PortgrpObject):
+        if isinstance(po, PortgrpObject):
             theme = canvas.theme.portgroup
             
-        if p_object.port_type is PortType.AUDIO_JACK:
+        if po.port_type is PortType.AUDIO_JACK:
             theme = theme.audio
             line_theme = line_theme.audio
-        elif p_object.port_type is PortType.MIDI_JACK:
+        elif po.port_type is PortType.MIDI_JACK:
             theme = theme.midi
             line_theme = line_theme.midi
 
@@ -149,15 +153,15 @@ class CheckFrame(QFrame):
                         for side in SIDES]
         radius_text = ""
         
-        if isinstance(p_object, PortObject) and p_object.portgrp_id:
-            if p_object.pg_pos == 0:
+        if isinstance(po, PortObject) and po.portgrp_id:
+            if po.pg_pos == 0:
                 margin_texts.pop(BOTTOM)
                 radius_text = "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
-            elif p_object.pg_pos + 1 == p_object.pg_len:
+            elif po.pg_pos + 1 == po.pg_len:
                 margin_texts.pop(TOP)
                 radius_text = "border-top-left-radius: 0px; border-top-right-radius: 0px"
                 
-            if p_object.pg_pos != 0:
+            if po.pg_pos != 0:
                 border_texts[TOP] = f"border-top: 0px solid transparent"
 
         margins_text = ';'.join(margin_texts)
@@ -176,9 +180,9 @@ class CheckFrame(QFrame):
         
         if self._label_right is not None:
             port_theme = canvas.theme.port
-            if p_object.port_type is PortType.AUDIO_JACK:
+            if po.port_type is PortType.AUDIO_JACK:
                 port_theme = port_theme.audio
-            elif p_object.port_type is PortType.MIDI_JACK:
+            elif po.port_type is PortType.MIDI_JACK:
                 port_theme = port_theme.midi
 
             self._label_right.setFont(port_theme.font())
@@ -197,6 +201,7 @@ class CheckFrame(QFrame):
         self._check_box.nextCheckState()
         
     def keyPressEvent(self, event):
+        print('hfif')
         if event.key() in (Qt.Key_Space, Qt.Key_Return):
             self._check_box.nextCheckState()
             return
@@ -205,3 +210,25 @@ class CheckFrame(QFrame):
     def enterEvent(self, event):
         super().enterEvent(event)
         self.setFocus()
+        
+
+class GroupFrame(QFrame):
+    def __init__(self, group: GroupObject, parent: 'SubMenu'):
+        super().__init__(parent)
+        self._group = group
+        
+        icon = utils.get_group_icon(group.group_id, parent._port_mode)
+        self._label_icon = QLabel()
+        self._label_icon.setPixmap(icon.pixmap(QSize(16, 16)))
+        self._label_group_name = QLabel(group.group_name)
+
+        self._layout = QHBoxLayout(self)
+        self._layout.setSpacing(0)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.addWidget(self._label_icon)
+        self._layout.addWidget(self._label_group_name)
+        
+        print('ror', group.group_name)
+        theme = canvas.theme.box
+        self._label_group_name.setStyleSheet(f"GroupFrame{{{theme_css(theme)}}}")
+        

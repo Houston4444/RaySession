@@ -18,14 +18,11 @@
 
 from enum import Enum
 from typing import Union
-from PyQt5.QtCore import pyqtSlot, QCoreApplication, Qt
-from PyQt5.QtWidgets import (QWidgetAction, QMenu, QCheckBox, QAction,
-                             QFrame, QHBoxLayout, QLabel, QSpacerItem, QSizePolicy)
+from PyQt5.QtCore import pyqtSlot, QCoreApplication
+from PyQt5.QtWidgets import QWidgetAction, QMenu, QAction
 from PyQt5.QtGui import QIcon, QPixmap, QPen
 
-
 import patchcanvas.utils as utils
-from .theme import StyleAttributer
 from .init_values import (
     IconType,
     PortObject,
@@ -36,17 +33,10 @@ from .init_values import (
     PortType,
     PortMode,
     ConnectionObject)
+from .connect_menu_widgets import CheckFrame, GroupFrame
 
 
 _translate = QCoreApplication.translate
-
-
-def theme_css(theme: StyleAttributer) -> str:
-    pen = theme.fill_pen()
-    
-    return (f"background-color: {theme.background_color().name()};"
-            f"color: {theme.text_color().name()};"
-            f"border: {pen.widthF()}px solid {pen.color().name()}")
 
 
 class Dangerous(Enum):
@@ -71,194 +61,11 @@ class PortData:
                 group_id, portgrp_id)
 
 
-class PortCheckBox(QCheckBox):
-    def __init__(self, p_object:  Union[PortObject, PortgrpObject],
-                 parent: 'ConnectGroupMenu'):
-        QCheckBox.__init__(self, "", parent)
-        self.setTristate(True)
-        self._p_object = p_object
-        self._parent = parent
-        self.set_theme()
-
-    def set_theme(self):
-        po = self._p_object
-        
-        theme = canvas.theme.port
-        line_theme = canvas.theme.line
-        
-        if isinstance(po, PortgrpObject):
-            theme = canvas.theme.portgroup
-            
-        if po.port_type is PortType.AUDIO_JACK:
-            theme = theme.audio
-            line_theme = line_theme.audio
-        elif po.port_type is PortType.MIDI_JACK:
-            theme = theme.midi
-            line_theme = line_theme.midi
-
-        bg = theme.background_color().name()
-        text_color = theme.text_color().name()
-        border_color = theme.fill_pen().color().name()
-        h_bg = theme.selected.background_color().name()
-        h_text_color = theme.selected.text_color().name()
-        ind_bg = canvas.theme.scene_background_color.name()
-        checked_bg = line_theme.selected.background_color().name()
-        
-        border_width = theme.fill_pen().widthF()
-        
-        TOP, RIGHT, BOTTOM, LEFT = 0, 1, 2, 3
-        SIDES = ['top', 'right', 'bottom', 'left']
-        margin_texts = [f"margin-{side}: 2px" for side in SIDES]
-        border_texts = [f"border-{side}: {border_width}px solid {border_color}"
-                        for side in SIDES]
-        radius_text = ""
-        
-        if isinstance(po, PortObject) and po.portgrp_id:
-            if po.pg_pos == 0:
-                margin_texts.pop(BOTTOM)
-                radius_text = "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
-            elif po.pg_pos + 1 == po.pg_len:
-                margin_texts.pop(TOP)
-                radius_text = "border-top-left-radius: 0px; border-top-right-radius: 0px"
-                
-            if po.pg_pos != 0:
-                border_texts[TOP] = f"border-top: 0px solid transparent"
-
-        self.setStyleSheet(
-            f"QCheckBox{{background-color: none;color: {text_color}; spacing: 0px;"
-                       f"border-radius: 3px; {radius_text};}}"
-            f"QCheckBox:hover{{background-color: none;color: {h_text_color}}}"
-            f"QCheckBox::indicator{{background-color: {ind_bg};margin: 3px;"
-                                  f"border-radius: 3px; border: 1px solid "
-                                  f"{theme.fill_pen().color().name()}}}"
-            f"QCheckBox::indicator:checked{{"
-                f"background-color: {checked_bg}; border: 3px solid {ind_bg}}}"
-            f"QCheckBox::indicator:indeterminate{{"
-                f"background-color: {checked_bg}; margin-left: 8px; border: 4px solid {ind_bg}}}")
-
-    def nextCheckState(self):
-        po = self._p_object
-        port_id = po.port_id if isinstance(po, PortObject) else -1
-        
-        self._parent.connection_asked_from_box(
-            port_id, po.portgrp_id, not self.isChecked())
-
-
-class CheckFrame(QFrame):
-    def __init__(self, p_object: Union[PortObject, PortgrpObject],
-                 port_name: str, port_name_end: str,
-                 parent: 'ConnectGroupMenu'):
-        QFrame.__init__(self, parent)
-        self._p_object = p_object
-        self._parent = parent
-        
-        self._check_box = PortCheckBox(p_object, parent)
-        self._label_left = QLabel(port_name)
-        self._layout = QHBoxLayout(self)
-        self._layout.setSpacing(0)
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.addWidget(self._check_box)
-        self._layout.addWidget(self._label_left)
-        spacer = QSpacerItem(2, 2, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self._layout.addSpacerItem(spacer)
-        self._label_right = None
-        if port_name_end:
-            self._label_right = QLabel(port_name_end)
-            self._layout.addWidget(self._label_right)
-        self._set_theme()
-
-    def _set_theme(self):
-        p_object = self._p_object
-
-        theme = canvas.theme.port
-        line_theme = canvas.theme.line        
-
-        if isinstance(p_object, PortgrpObject):
-            theme = canvas.theme.portgroup
-            
-        if p_object.port_type is PortType.AUDIO_JACK:
-            theme = theme.audio
-            line_theme = line_theme.audio
-        elif p_object.port_type is PortType.MIDI_JACK:
-            theme = theme.midi
-            line_theme = line_theme.midi
-
-        text_color = theme.text_color().name()
-        border_color = theme.fill_pen().color().name()
-        h_text_color = theme.selected.text_color().name()
-        
-        border_width = theme.fill_pen().widthF()
-        
-        TOP, RIGHT, BOTTOM, LEFT = 0, 1, 2, 3
-        SIDES = ['top', 'right', 'bottom', 'left']
-        margin_texts = [f"margin-{side}: 2px" for side in SIDES]
-        border_texts = [f"border-{side}: {border_width}px solid {border_color}"
-                        for side in SIDES]
-        radius_text = ""
-        
-        if isinstance(p_object, PortObject) and p_object.portgrp_id:
-            if p_object.pg_pos == 0:
-                margin_texts.pop(BOTTOM)
-                radius_text = "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
-            elif p_object.pg_pos + 1 == p_object.pg_len:
-                margin_texts.pop(TOP)
-                radius_text = "border-top-left-radius: 0px; border-top-right-radius: 0px"
-                
-            if p_object.pg_pos != 0:
-                border_texts[TOP] = f"border-top: 0px solid transparent"
-
-        margins_text = ';'.join(margin_texts)
-        borders_text = ';'.join(border_texts)
-
-        self.setFont(theme.font())
-        self.setStyleSheet(
-            f"CheckFrame{{{theme_css(theme)}; spacing: 0px;"
-            f"{borders_text}; border-radius: 3px; {radius_text}; {margins_text}; padding-right: 0px}}"
-            f"CheckFrame:focus{{{theme_css(theme.selected)}}};")
-        
-        self._label_left.setFont(theme.font())
-        self._label_left.setStyleSheet(
-            f"QLabel{{color: {text_color}}};QLabel:focus{{color: {h_text_color}}} "
-        )
-        
-        if self._label_right is not None:
-            port_theme = canvas.theme.port
-            if p_object.port_type is PortType.AUDIO_JACK:
-                port_theme = port_theme.audio
-            elif p_object.port_type is PortType.MIDI_JACK:
-                port_theme = port_theme.midi
-
-            self._label_right.setFont(port_theme.font())
-            self._label_right.setStyleSheet(
-                f"QLabel{{margin-left: 3px; margin-right: 0px; padding: 0px; {theme_css(port_theme)}}};"
-                f"QLabel:selected{{{theme_css(port_theme.selected)}}}")
-
-    def set_check_state(self, check_state: int):
-        self._check_box.setCheckState(check_state)
-
-    def connection_asked_from_box(self, group_id: int, port_id: int,
-                                  portgrp_id: int, yesno: bool):
-        self._parent.connection_asked_from_box(group_id, port_id, portgrp_id, yesno)
-    
-    def mousePressEvent(self, event):
-        self._check_box.nextCheckState()
-        
-    def keyPressEvent(self, event):
-        if event.key() in (Qt.Key_Space, Qt.Key_Return):
-            self._check_box.nextCheckState()
-            return
-        QFrame.keyPressEvent(self, event)
-        
-    def enterEvent(self, event):
-        super().enterEvent(event)
-        self.setFocus()
-
-
 class DataConnElement:
     port_id: int
     portgrp_id: int
     action: QWidgetAction
-    check_box: CheckFrame
+    check_frame: CheckFrame
 
 
 class DataDisconnElement:
@@ -285,11 +92,11 @@ class SubMenu(QMenu):
         pass
 
 
-class ConnectGroupMenu(SubMenu):
+class GroupConnectMenu(SubMenu):
     def __init__(self, group_name: str, group_id: str, port_data, parent: 'SubMenu',
                  dangerous_mode=Dangerous.NO_CARE):
         SubMenu.__init__(self, group_name, port_data, parent)
-        self.hovered.connect(self._tatata)
+        self.hovered.connect(self._mouse_hover_menu)
         
         self._parent = parent
         self._menu_group_id = group_id
@@ -346,10 +153,9 @@ class ConnectGroupMenu(SubMenu):
         if self._port_type is PortType.AUDIO_JACK and is_alternate:
             port_name = f"CV| {port_name}"
 
-        check_box = CheckFrame(p_object, port_name, port_name_end, self)
-        # action = QWidgetAction(self._parent)
+        check_frame = CheckFrame(p_object, port_name, port_name_end, self)
         action = QWidgetAction(self)
-        action.setDefaultWidget(check_box)
+        action.setDefaultWidget(check_frame)
         self.addAction(action)
 
         self._last_portgrp_id = p_object.portgrp_id
@@ -358,7 +164,7 @@ class ConnectGroupMenu(SubMenu):
         element.port_id = p_object.port_id if isinstance(p_object, PortObject) else -1
         element.portgrp_id = p_object.portgrp_id
         element.action = action
-        element.check_box = check_box
+        element.check_frame = check_frame
         self._elements.append(element)
 
     def remove_element(self, port_id: int, portgrp_id: int):
@@ -369,11 +175,17 @@ class ConnectGroupMenu(SubMenu):
                 self._elements.remove(element)
                 break
 
+    def count_elements(self) -> int:
+        return len(self._elements)
+
+    def get_first_element(self) -> DataConnElement:
+        return self._elements[0]
+
     def check_element(self, port_id: int, portgrp_id: int, check_state: int):
         for element in self._elements:
             if (element.port_id == port_id
                     and element.portgrp_id == portgrp_id):
-                element.check_box.set_check_state(check_state)
+                element.check_frame.set_check_state(check_state)
                 break
 
     def connection_asked_from_box(self, port_id: int, portgrp_id: int,
@@ -384,7 +196,7 @@ class ConnectGroupMenu(SubMenu):
     def keyPressEvent(self, event) -> None:
         return super().keyPressEvent(event)
 
-    def _tatata(self, action: QWidgetAction):
+    def _mouse_hover_menu(self, action: QWidgetAction):
         action.defaultWidget().setFocus()
         pass
 
@@ -394,7 +206,7 @@ class DangerousMenu(SubMenu):
         SubMenu.__init__(self, name, port_data, parent)
         self.setIcon(QIcon.fromTheme('emblem-warning'))
 
-        self.group_menus = list[ConnectGroupMenu]()
+        self.group_menus = list[GroupConnectMenu]()
         self.connection_list = list[ConnectionObject]()
 
     def add_group_menu(self, group_id: int, group_name: str):
@@ -402,7 +214,7 @@ class DangerousMenu(SubMenu):
             if '/' in group_name:
                 group_name = group_name.partition('/')[2]
 
-        group_menu = ConnectGroupMenu(group_name, group_id,
+        group_menu = GroupConnectMenu(group_name, group_id,
                                       self._port_data, self,
                                       dangerous_mode=Dangerous.YES)
         group_icon = utils.get_group_icon(group_id, self._port_mode)
@@ -441,7 +253,7 @@ class ConnectMenu(SubMenu):
         #canvas.qobject.port_added.connect(self.port_added_to_canvas)
         #canvas.qobject.port_removed.connect(self.port_removed_from_canvas)
 
-        self.group_menus = list[ConnectGroupMenu]()
+        self.group_menus = list[GroupConnectMenu]()
         self.connection_list = list[ConnectionObject]()
 
         dangerous_name = ''
@@ -495,9 +307,8 @@ class ConnectMenu(SubMenu):
             self.addMenu(self.dangerous_submenu)
 
     def add_group_menu(self, group_id: int, group_name: str):
-        if len(group_name) > 15:
-            if '/' in group_name:
-                group_name = group_name.partition('/')[2]
+        if len(group_name) > 15 and '/' in group_name:
+            group_name = group_name.partition('/')[2]
 
         dangerous = Dangerous.NO_CARE
         if (self._port_type == PortType.AUDIO_JACK
@@ -507,14 +318,32 @@ class ConnectMenu(SubMenu):
                          and not self._is_alternate))):
             dangerous = Dangerous.NO
 
-        group_menu = ConnectGroupMenu(group_name, group_id,
+        group_menu = GroupConnectMenu(group_name, group_id,
                                       self._port_data, self,
                                       dangerous_mode=dangerous)
         group_menu.setIcon(utils.get_group_icon(group_id, self._port_mode))
         self.group_menus.append(group_menu)
-        self.addMenu(group_menu)
-        action = QWidgetAction(self)
-        # action.setDefaultWidget()
+        
+        if False and group_menu.count_elements() <= 1:
+            print('je veux pas de :', group_name)
+            
+            element = group_menu.get_first_element()
+            orig_action = element.action
+            orig_action.releaseWidget(element.check_frame)
+            action = QWidgetAction(self)
+            action.setDefaultWidget(element.check_frame)
+            print(action.defaultWidget())
+            # action.setParent(self)
+            self.addAction(action)
+        else:
+            self.addMenu(group_menu)
+        
+        # group_menu.setStyleSheet(f"QMenu::item{{background-color: yellow}}")
+        # for group in canvas.group_list:
+        #     if group.group_id == group_id: 
+        #         action = QWidgetAction(self)
+        #         action.setDefaultWidget(GroupFrame(group, self))
+        #         break
 
     def connection_asked_from_box(self, group_id: int, port_id: int,
                                   portgrp_id: int, yesno: bool):
@@ -548,43 +377,6 @@ class ConnectMenu(SubMenu):
     # when port was added or removed
     # for portgroup it seems to be much complicated
     # user will just have to re-open the menu
-
-    #def port_added_to_canvas(self, group_id: int, port_id: int):
-        #for port in canvas.port_list:
-            #if port.group_id == group_id and port.port_id == port_id:
-                #if (port.port_type != self._port_type
-                        #or port.port_mode == self._port_mode):
-                    #continue
-
-                #for group_menu in self.group_menus:
-                    #if group_menu.group_id() == port.group_id:
-                        #if (self._portgrp_id and port.portgrp_id
-                                #and group_menu.elements
-                                #and (group_menu.elements[-1]['portgrp_id']
-                                        #== port.portgrp_id)):
-                            #pass
-                        #else:
-                            #group_menu.add_element(
-                                #port.port_id, port.portgrp_id,
-                                #port.port_name)
-                        #break
-                #else:
-                    #for group in canvas.group_list:
-                        #if group.group_id == port.group_id:
-                            #self.add_group_menu(
-                                #group.group_id, group.group_name)
-                            ## this group menu will see itself the port
-                            #break
-                #break
-
-    #def port_removed_from_canvas(self, group_id: int, port_id: int):
-        #for group_menu in self.group_menus:
-            #if group_menu.group_id() == group_id:
-                #group_menu.remove_element(port_id, 0)
-                #break
-
-
-
 
 
 class DisconnectMenu(SubMenu):
