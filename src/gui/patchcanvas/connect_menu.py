@@ -16,6 +16,7 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
+from enum import Enum
 from typing import Union
 from PyQt5.QtCore import pyqtSlot, QCoreApplication, Qt
 from PyQt5.QtWidgets import (QWidgetAction, QMenu, QCheckBox, QAction,
@@ -39,10 +40,6 @@ from .init_values import (
 
 _translate = QCoreApplication.translate
 
-DANGEROUS_NO_CARE = 0
-DANGEROUS_NO = 1
-DANGEROUS_YES = 2
-
 
 def theme_css(theme: StyleAttributer) -> str:
     pen = theme.fill_pen()
@@ -50,6 +47,12 @@ def theme_css(theme: StyleAttributer) -> str:
     return (f"background-color: {theme.background_color().name()};"
             f"color: {theme.text_color().name()};"
             f"border: {pen.widthF()}px solid {pen.color().name()}")
+
+
+class Dangerous(Enum):
+    NO_CARE = 0
+    NO = 1
+    YES = 2
 
 
 class PortData:
@@ -111,7 +114,6 @@ class PortCheckBox(QCheckBox):
         radius_text = ""
         
         if isinstance(po, PortObject) and po.portgrp_id:
-        # if self._port_id >= 0 and self._portgrp_id:
             if po.pg_pos == 0:
                 margin_texts.pop(BOTTOM)
                 radius_text = "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"
@@ -124,11 +126,15 @@ class PortCheckBox(QCheckBox):
 
         self.setStyleSheet(
             f"QCheckBox{{background-color: none;color: {text_color}; spacing: 0px;"
-            f"border-radius: 3px; {radius_text};}}"
+                       f"border-radius: 3px; {radius_text};}}"
             f"QCheckBox:hover{{background-color: none;color: {h_text_color}}}"
-            f"QCheckBox::indicator{{background-color: {ind_bg};margin: 3px; border-radius: 3px; border: 1px solid {theme.fill_pen().color().name()}}}"
-            f"QCheckBox::indicator:checked{{background-color: {checked_bg}; border: 3px solid {ind_bg}}}"
-            f"QCheckBox::indicator:indeterminate{{background-color: {checked_bg}; margin-left: 8px; border: 4px solid {ind_bg}}}")
+            f"QCheckBox::indicator{{background-color: {ind_bg};margin: 3px;"
+                                  f"border-radius: 3px; border: 1px solid "
+                                  f"{theme.fill_pen().color().name()}}}"
+            f"QCheckBox::indicator:checked{{"
+                f"background-color: {checked_bg}; border: 3px solid {ind_bg}}}"
+            f"QCheckBox::indicator:indeterminate{{"
+                f"background-color: {checked_bg}; margin-left: 8px; border: 4px solid {ind_bg}}}")
 
     def nextCheckState(self):
         po = self._p_object
@@ -136,6 +142,7 @@ class PortCheckBox(QCheckBox):
         
         self._parent.connection_asked_from_box(
             port_id, po.portgrp_id, not self.isChecked())
+
 
 class CheckFrame(QFrame):
     def __init__(self, p_object: Union[PortObject, PortgrpObject],
@@ -280,7 +287,7 @@ class SubMenu(QMenu):
 
 class ConnectGroupMenu(SubMenu):
     def __init__(self, group_name: str, group_id: str, port_data, parent: 'SubMenu',
-                 dangerous_mode=DANGEROUS_NO_CARE):
+                 dangerous_mode=Dangerous.NO_CARE):
         SubMenu.__init__(self, group_name, port_data, parent)
         self.hovered.connect(self._tatata)
         
@@ -321,11 +328,11 @@ class ConnectGroupMenu(SubMenu):
                                 self.add_element(portgrp, pg_name, pts_name)
                                 break
                 else:
-                    if (dangerous_mode == DANGEROUS_YES
+                    if (dangerous_mode is Dangerous.YES
                             and self._is_alternate == port.is_alternate):
                         continue
 
-                    if (dangerous_mode == DANGEROUS_NO
+                    if (dangerous_mode is Dangerous.NO
                             and self._is_alternate != port.is_alternate):
                         continue
 
@@ -397,7 +404,7 @@ class DangerousMenu(SubMenu):
 
         group_menu = ConnectGroupMenu(group_name, group_id,
                                       self._port_data, self,
-                                      dangerous_mode=DANGEROUS_YES)
+                                      dangerous_mode=Dangerous.YES)
         group_icon = utils.get_group_icon(group_id, self._port_mode)
         group_menu.setIcon(group_icon)
         self.group_menus.append(group_menu)
@@ -455,8 +462,8 @@ class ConnectMenu(SubMenu):
 
         # add the needed groups (not the ports)
         for group in canvas.group_list:
-            has_dangerous = False
-            has_regular = False
+            grp_has_dangerous = False
+            grp_has_regular = False
 
             for port in canvas.port_list:
                 if (port.group_id == group.group_id
@@ -470,17 +477,17 @@ class ConnectMenu(SubMenu):
                                  or (self._port_mode is PortMode.INPUT
                                      and not self._is_alternate
                                      and port.is_alternate))):
-                        if not has_dangerous:
+                        if not grp_has_dangerous:
                             self.dangerous_submenu.add_group_menu(
                                 group.group_id, group.group_name)
-                        has_dangerous = True
+                        grp_has_dangerous = True
                         has_dangerous_global = True
                     else:
-                        if not has_regular:
+                        if not grp_has_regular:
                             self.add_group_menu(group.group_id, group.group_name)
-                        has_regular = True
+                        grp_has_regular = True
 
-                    if has_dangerous and has_regular:
+                    if grp_has_dangerous and grp_has_regular:
                         break
 
         if has_dangerous_global:
@@ -492,19 +499,22 @@ class ConnectMenu(SubMenu):
             if '/' in group_name:
                 group_name = group_name.partition('/')[2]
 
-        dangerous = DANGEROUS_NO_CARE
+        dangerous = Dangerous.NO_CARE
         if (self._port_type == PortType.AUDIO_JACK
-                and ((self._port_mode is PortMode.OUTPUT and self._is_alternate)
-                     or (self._port_mode is PortMode.INPUT and not self._is_alternate))):
-            dangerous = DANGEROUS_NO
+                and ((self._port_mode is PortMode.OUTPUT
+                      and self._is_alternate)
+                     or (self._port_mode is PortMode.INPUT
+                         and not self._is_alternate))):
+            dangerous = Dangerous.NO
 
         group_menu = ConnectGroupMenu(group_name, group_id,
                                       self._port_data, self,
                                       dangerous_mode=dangerous)
-        group_icon = utils.get_group_icon(group_id, self._port_mode)
-        group_menu.setIcon(group_icon)
+        group_menu.setIcon(utils.get_group_icon(group_id, self._port_mode))
         self.group_menus.append(group_menu)
         self.addMenu(group_menu)
+        action = QWidgetAction(self)
+        # action.setDefaultWidget()
 
     def connection_asked_from_box(self, group_id: int, port_id: int,
                                   portgrp_id: int, yesno: bool):
