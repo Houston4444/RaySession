@@ -161,11 +161,11 @@ class CheckFrame(QFrame):
         self._set_theme()
 
     def _set_theme(self):
-        theme = canvas.theme.port
-        line_theme = canvas.theme.line
-        
         p_object = self._p_object
-        
+
+        theme = canvas.theme.port
+        line_theme = canvas.theme.line        
+
         if isinstance(p_object, PortgrpObject):
             theme = canvas.theme.portgroup
             
@@ -190,7 +190,6 @@ class CheckFrame(QFrame):
         radius_text = ""
         
         if isinstance(p_object, PortObject) and p_object.portgrp_id:
-        # if self._port_id >= 0 and self._portgrp_id:
             if p_object.pg_pos == 0:
                 margin_texts.pop(BOTTOM)
                 radius_text = "border-bottom-left-radius: 0px; border-bottom-right-radius: 0px"

@@ -54,17 +54,6 @@ class BoxWidget(CanvasWidgetMoth):
             self, group_id, group_name, icon_type, icon_name)
         self._port_list = list[PortObject]()
         self._portgrp_list = list[PortgrpObject]()
-    
-    def _get_portgroup_position(self, port_id: int, portgrp_id: int)->tuple:
-        if portgrp_id <= 0:
-            return (0, 1)
-
-        for portgrp in self._portgrp_list:
-            if portgrp.portgrp_id == portgrp_id:
-                for i in range(len(portgrp.port_id_list)):
-                    if port_id == portgrp.port_id_list[i]:
-                        return (i, len(portgrp.port_id_list))
-        return (0, 1)
 
     def _get_portgroup_name(self, portgrp_id: int):
         return utils.get_portgroup_name_from_ports_names(
@@ -132,10 +121,7 @@ class BoxWidget(CanvasWidgetMoth):
                             or port.is_alternate != alternate):
                         continue
 
-                    port_pos, pg_len = self._get_portgroup_position(
-                        port.port_id, port.portgrp_id)
-                    # first_of_portgrp = bool(port_pos == 0)
-                    last_of_portgrp = bool(port_pos + 1 == pg_len)
+                    last_of_portgrp = bool(port.pg_pos + 1 == port.pg_len)
                     size = 0
                     max_pwidth = options.max_port_width
 
@@ -217,23 +203,22 @@ class BoxWidget(CanvasWidgetMoth):
             for port_type in PortType:
                 if port_type is PortType.NULL:
                     continue
-                
+
                 for alternate in (False, True):
                     for port in self._port_list:
-                        if (port.port_type != port_type
+                        if (port.port_type is not port_type
                                 or port.is_alternate != alternate):
                             continue
-                        
+
                         if (port.port_type, port.is_alternate) != last_type_alter:
                             if last_type_alter != (PortType.NULL, False):
                                 last_inout_pos += port_type_spacing
                             last_type_alter = (port.port_type, port.is_alternate)
-                        
-                        port_pos, pg_len = self._get_portgroup_position(
-                            port.port_id, port.portgrp_id)
-                        if port_pos:
+
+                        if port.pg_pos:
                             continue
-                        last_inout_pos += pg_len * canvas.theme.port_height
+
+                        last_inout_pos += port.pg_len * canvas.theme.port_height
                         last_inout_pos += port_spacing
                         
                         last_port_mode = port.port_mode
@@ -289,9 +274,7 @@ class BoxWidget(CanvasWidgetMoth):
                     if one_column:
                         last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
                     
-                    port_pos, pg_len = self._get_portgroup_position(
-                        port.port_id, port.portgrp_id)
-                    first_of_portgrp = bool(port_pos == 0)
+                    first_of_portgrp = bool(port.pg_pos == 0)
                     if port.portgrp_id and not first_of_portgrp:
                         continue
                     

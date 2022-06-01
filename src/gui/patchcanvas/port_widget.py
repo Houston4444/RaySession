@@ -72,8 +72,8 @@ class PortWidget(ConnectableWidget):
         self._port_id = port_id
         self._port_name = port_name
         self._portgrp_id = 0
-        self._portgrp_index = 0
-        self._portgrp_len = 1
+        self._pg_pos = 0
+        self._pg_len = 1
         self._is_alternate = is_alternate
         self._print_name = port_name
         self._print_name_right = ''
@@ -113,14 +113,10 @@ class PortWidget(ConnectableWidget):
     def get_port_width(self) -> float:
         return self._port_width
 
-    def get_portgroup_position(self) -> tuple:
-        return utils.get_portgroup_position(
-            self._group_id, self._port_id, self._portgrp_id)
-
     def set_portgroup_id(self, portgrp_id: int, index: int, portgrp_len: int):
         self._portgrp_id = portgrp_id
-        self._portgrp_index = index
-        self._portgrp_len = portgrp_len
+        self._pg_pos = index
+        self._pg_len = portgrp_len
 
     def set_portgroup_widget(self, widget: 'PortgroupWidget'):
         self._portgrp_widget = widget
@@ -184,7 +180,7 @@ class PortWidget(ConnectableWidget):
 
     def connect_pos(self):
         scene_pos = self.scenePos()
-        phi = 0.75 if self._portgrp_len > 2 else 0.62
+        phi = 0.75 if self._pg_len > 2 else 0.62
         
         cx = scene_pos.x()
         if self._port_mode is PortMode.OUTPUT:
@@ -193,13 +189,13 @@ class PortWidget(ConnectableWidget):
         height = canvas.theme.port_height
         y_delta = canvas.theme.port_height / 2
         
-        if self._portgrp_len >= 2:
+        if self._pg_len >= 2:
             first_old_y = height * phi
-            last_old_y = height * (self._portgrp_len - phi)
-            delta = (last_old_y - first_old_y) / (self._portgrp_len -1)
+            last_old_y = height * (self._pg_len - phi)
+            delta = (last_old_y - first_old_y) / (self._pg_len -1)
             y_delta = (first_old_y
-                      + (self._portgrp_index * delta)
-                      - (height * self._portgrp_index))
+                      + (self._pg_pos * delta)
+                      - (height * self._pg_pos))
             
         if not self.isVisible():
             # item is hidden port when its box is folded
