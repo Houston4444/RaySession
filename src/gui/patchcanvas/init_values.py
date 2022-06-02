@@ -244,6 +244,9 @@ class ConnectableObject:
     port_type: PortType
     portgrp_id: int
     is_alternate: bool
+    
+    def get_port_ids(self) -> tuple[int]:
+        return ()
 
 
 class PortObject(ConnectableObject):
@@ -261,6 +264,9 @@ class PortObject(ConnectableObject):
         port_copy.__dict__ = self.__dict__.copy()
         port_copy.widget = None
         return port_copy
+
+    def get_port_ids(self) -> tuple[int]:
+        return (self.port_id,)
 
     def set_portgroup_id(self, pg_id: int, pg_pos: int, pg_len: int):
         self.portgrp_id = pg_id
@@ -283,6 +289,9 @@ class PortgrpObject(ConnectableObject):
         portgrp_copy.__dict__ = self.__dict__.copy()
         portgrp_copy.widget = None
         return portgrp_copy
+    
+    def get_port_ids(self) -> tuple[int]:
+        return tuple(self.port_id_list)
 
 
 class ConnectionObject:
