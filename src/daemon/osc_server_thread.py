@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import time
 from typing import TYPE_CHECKING
-import over_liblo as liblo
+import liblo
 
 from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtXml import QDomDocument

@@ -23,3 +23,5 @@ xdg pour le cache (var de classes ?)
 bug positionnement boîte midi
 
 changer _is_alternate en subtype
+decouper patchbay_manager
+voire plantage du démon avec ray_control

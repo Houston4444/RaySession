@@ -15,6 +15,7 @@ from gui_tools import CommandLineArgs, ErrDaemon, _translate
 if TYPE_CHECKING:
     from gui_session import SignaledSession
 
+
 class DaemonManager(QObject):
     def __init__(self, session: 'SignaledSession'):
         QObject.__init__(self)

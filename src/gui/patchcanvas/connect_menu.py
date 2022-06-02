@@ -40,20 +40,20 @@ from .connect_menu_widgets import CheckFrame
 _translate = QCoreApplication.translate
 
 
-class Dangerous(Enum):
+class _Dangerous(Enum):
     NO_CARE = 0
     NO = 1
     YES = 2
 
 
-class DataConnElement:
+class _DataConnElement:
     port_id: int
     portgrp_id: int
     action: QWidgetAction
     check_frame: CheckFrame
 
 
-class DataDisconnElement:
+class _DataDisconnElement:
     group_id: int
     portgrp_id: int
     port_id_list: list[int]
@@ -73,7 +73,7 @@ class SubMenu(QMenu):
 class GroupConnectMenu(SubMenu):
     def __init__(self, group: GroupObject, p_object: Union[PortObject, PortgrpObject],
                  parent: 'SubMenu',
-                 dangerous_mode=Dangerous.NO_CARE):
+                 dangerous_mode=_Dangerous.NO_CARE):
         short_group_name = group.group_name
         
         if len(short_group_name) > 15 and '/' in short_group_name:
@@ -88,7 +88,7 @@ class GroupConnectMenu(SubMenu):
         
         self._parent = parent
         self._group = group
-        self._elements = list[DataConnElement]()
+        self._elements = list[_DataConnElement]()
 
         self._last_portgrp_id = 0
         
@@ -119,11 +119,11 @@ class GroupConnectMenu(SubMenu):
                                 self.add_element(portgrp, pg_name, pts_name)
                                 break
                 else:
-                    if (dangerous_mode is Dangerous.YES
+                    if (dangerous_mode is _Dangerous.YES
                             and po.is_alternate == port.is_alternate):
                         continue
 
-                    if (dangerous_mode is Dangerous.NO
+                    if (dangerous_mode is _Dangerous.NO
                             and po.is_alternate != port.is_alternate):
                         continue
 
@@ -144,7 +144,7 @@ class GroupConnectMenu(SubMenu):
 
         self._last_portgrp_id = p_object.portgrp_id
 
-        element = DataConnElement()
+        element = _DataConnElement()
         element.port_id = p_object.port_id if isinstance(p_object, PortObject) else -1
         element.portgrp_id = p_object.portgrp_id
         element.action = action
@@ -162,7 +162,7 @@ class GroupConnectMenu(SubMenu):
     def count_elements(self) -> int:
         return len(self._elements)
 
-    def get_first_element(self) -> DataConnElement:
+    def get_first_element(self) -> _DataConnElement:
         return self._elements[0]
 
     def check_element(self, port_id: int, portgrp_id: int, check_state: int):
@@ -195,7 +195,7 @@ class DangerousMenu(SubMenu):
 
     def add_group_menu(self, group: GroupObject):
         group_menu = GroupConnectMenu(group, self._p_object, self,
-                                      dangerous_mode=Dangerous.YES)
+                                      dangerous_mode=_Dangerous.YES)
         self.group_menus.append(group_menu)
         self.addMenu(group_menu)
 
@@ -288,13 +288,13 @@ class ConnectMenu(SubMenu):
 
     def add_group_menu(self, group: GroupObject):
         po = self._p_object
-        dangerous = Dangerous.NO_CARE
+        dangerous = _Dangerous.NO_CARE
         if (po.port_type == PortType.AUDIO_JACK
                 and ((po.port_mode is PortMode.OUTPUT
                       and po.is_alternate)
                      or (po.port_mode is PortMode.INPUT
                          and not po.is_alternate))):
-            dangerous = Dangerous.NO
+            dangerous = _Dangerous.NO
 
         group_menu = GroupConnectMenu(group, self._p_object, self,
                                       dangerous_mode=dangerous)
@@ -343,7 +343,7 @@ class DisconnectMenu(SubMenu):
     def __init__(self, p_object: Union[PortObject, PortgrpObject], parent):
         SubMenu.__init__(self, _translate('patchbay', "Disconnect"),
                          p_object, parent)
-        self._elements = list[DataDisconnElement]()
+        self._elements = list[_DataDisconnElement]()
 
         self._no_action_title = _translate('patchbay', 'No connections')
         self._no_action = self.addAction(self._no_action_title)
@@ -407,7 +407,7 @@ class DisconnectMenu(SubMenu):
         else:
             self.insertAction(following_action, action)
 
-        element = DataDisconnElement()
+        element = _DataDisconnElement()
         element.group_id = group_id
         element.portgrp_id = portgrp_id
         element.port_id_list = port_id_list

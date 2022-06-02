@@ -6,7 +6,7 @@ import json
 import subprocess
 from typing import TYPE_CHECKING
 
-from over_liblo import Server, Address, make_method
+from liblo import Server, Address
 
 import jacklib
 
@@ -211,8 +211,8 @@ class OscJackPatch(Server):
         # so here, it is faster, and prevent OSC saturation.
         # json format (and not binary with pickle) is choosen
         # this way, code language of the GUI is not a blocker
-        patchbay_data = {'ports': [], 'connections': [],
-                         'metadatas': [], 'clients': []}
+        patchbay_data = {'ports': list[dict](), 'connections': list[dict](),
+                         'metadatas': list[dict](), 'clients': list[dict]()}
         for port in self.port_list:
             port_dict = {'name': port.name, 'type': port.type,
                          'flags': port.flags, 'uuid': port.uuid}

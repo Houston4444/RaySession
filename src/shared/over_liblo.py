@@ -36,14 +36,15 @@ class ServerThread(liblo.ServerThread):
 
 ''' seems impossible to overinstance Message,
     it may be checked with type() function'''
-# class Message(liblo.Message):
-#     def __init__(self, *args, **kwargs):
-#         liblo.Message(self, *args, **kwargs)
+class Message(liblo.Message):
+    def __init__(self, *args, **kwargs):
+        liblo.Message(self, *args, **kwargs)
 
 
 class Address(liblo.Address):
     hostname: str
     url: str
+    port: int
     
     def __init__(self, *args):
         liblo.Address.__init__(self, *args)

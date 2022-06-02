@@ -1,7 +1,7 @@
 import os
 import sys
 from typing import TYPE_CHECKING
-import over_liblo as liblo
+import liblo
 
 import ray
 from gui_tools import CommandLineArgs
