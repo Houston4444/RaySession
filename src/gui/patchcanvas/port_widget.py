@@ -249,7 +249,7 @@ class PortWidget(ConnectableWidget):
         canvas.scene.clearSelection()
         self.setSelected(True)
 
-        menu = ConnectableContextMenu(self._group_id, self._port_id)
+        menu = ConnectableContextMenu(self._port)
 
         act_x_sep_1 = menu.addSeparator()
 

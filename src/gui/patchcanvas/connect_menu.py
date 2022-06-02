@@ -546,28 +546,11 @@ class ClipboardMenu(SubMenu):
 
 
 class ConnectableContextMenu(QMenu):
-    def __init__(self, group_id: int, port_id: int, portgrp_id=0):
+    def __init__(self, p_object: Union[PortObject, PortgrpObject]):
         QMenu.__init__(self)
 
-        self._p_object = None
-
-        if portgrp_id:
-            # menu is for a portgroup
-            for portgrp in canvas.portgrp_list:
-                if (portgrp.group_id == group_id
-                        and portgrp.portgrp_id == portgrp_id):
-                    self._p_object = portgrp
-                    break
-            else:
-                return
-        else:
-            # menu is for a port
-            for port in canvas.port_list:
-                if port.group_id == group_id and port.port_id == port_id:
-                    self._p_object = port
-                    break
-            else:
-                return
+        self._p_object = p_object
+        po = self._p_object
 
         self.connection_list = list[ConnectionObject]()
 
@@ -575,17 +558,6 @@ class ConnectableContextMenu(QMenu):
             self.connection_added_to_canvas)
         canvas.qobject.connection_removed.connect(
             self.connection_removed_from_canvas)
-
-        po = self._p_object
-        theme = canvas.theme.port
-
-        if po.port_type is PortType.AUDIO_JACK:
-            if po.is_alternate:
-                theme = theme.cv
-            else:
-                theme = theme.audio
-        elif po.port_type is PortType.MIDI_JACK:
-            theme = theme.midi
 
         dark = '-dark' if utils.is_dark_theme(self) else ''
 

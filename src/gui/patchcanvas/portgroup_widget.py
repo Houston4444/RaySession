@@ -189,8 +189,7 @@ class PortgroupWidget(ConnectableWidget):
         canvas.scene.clearSelection()
         self.setSelected(True)
 
-        menu = ConnectableContextMenu(self._group_id, 0, self._portgrp_id)
-
+        menu = ConnectableContextMenu(self._portgrp)
         act_x_setasmono = menu.addAction(
             _translate('patchbay', "Split to Monos"))
         act_selected = menu.exec_(event.screenPos())
