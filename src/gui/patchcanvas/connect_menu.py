@@ -46,23 +46,6 @@ class Dangerous(Enum):
     YES = 2
 
 
-class PortData:
-    def __init__(self, group_id: int, port_id: int, port_type: PortType,
-                 port_mode: PortMode, portgrp_id: int, is_alternate: bool):
-        pass
-        # self._group_id = group_id
-        # self._port_id = port_id
-        # self._port_type = port_type
-        # self._port_mode = port_mode
-        # self._portgrp_id = portgrp_id
-        # self._is_alternate = is_alternate
-        # self._port_id_list = [port_id]
-
-        # if portgrp_id:
-        #     self._port_id_list = utils.get_portgroup_port_list(
-        #         group_id, portgrp_id)
-
-
 class DataConnElement:
     port_id: int
     portgrp_id: int
@@ -78,18 +61,9 @@ class DataDisconnElement:
 
 
 class SubMenu(QMenu):
-    def __init__(self, name: str, port_data: PortData,
-                 p_oject: Union[PortObject, PortgrpObject], parent):
+    def __init__(self, name: str, p_object: Union[PortObject, PortgrpObject], parent):
         QMenu.__init__(self, name, parent)
-        self._p_object = p_oject
-        self._port_data = port_data
-        # self._group_id = port_data._group_id
-        # self._port_id = port_data._port_id
-        # self._port_type = port_data._port_type
-        # self._port_mode = port_data._port_mode
-        # self._portgrp_id = port_data._portgrp_id
-        # self._is_alternate = port_data._is_alternate
-        # self._port_id_list = port_data._port_id_list
+        self._p_object = p_object
 
     def connection_asked_from_box(
             self, port_id: int, portgrp_id: int, connect: bool):
@@ -97,7 +71,7 @@ class SubMenu(QMenu):
 
 
 class GroupConnectMenu(SubMenu):
-    def __init__(self, group: GroupObject, port_data, p_object: Union[PortObject, PortgrpObject],
+    def __init__(self, group: GroupObject, p_object: Union[PortObject, PortgrpObject],
                  parent: 'SubMenu',
                  dangerous_mode=Dangerous.NO_CARE):
         short_group_name = group.group_name
@@ -105,7 +79,7 @@ class GroupConnectMenu(SubMenu):
         if len(short_group_name) > 15 and '/' in short_group_name:
             short_group_name = short_group_name.partition('/')[2]
 
-        SubMenu.__init__(self, short_group_name, port_data, p_object, parent)
+        SubMenu.__init__(self, short_group_name, p_object, parent)
         
         po = self._p_object
         
@@ -135,7 +109,6 @@ class GroupConnectMenu(SubMenu):
                     and port.port_type is po.port_type
                     and port.port_mode is not po.port_mode):
                 if isinstance(po, PortgrpObject) and port.portgrp_id:
-                # if self._portgrp_id and port.portgrp_id:
                     if port.portgrp_id != self._last_portgrp_id:
                         for portgrp in canvas.portgrp_list:
                             if (portgrp.group_id == port.group_id
@@ -213,16 +186,16 @@ class GroupConnectMenu(SubMenu):
 
 
 class DangerousMenu(SubMenu):
-    def __init__(self, name, port_data, p_object: Union[PortObject, PortgrpObject], parent):
-        SubMenu.__init__(self, name, port_data, p_object, parent)
+    def __init__(self, name, p_object: Union[PortObject, PortgrpObject], parent):
+        SubMenu.__init__(self, name, p_object, parent)
         self.setIcon(QIcon.fromTheme('emblem-warning'))
 
         self.group_menus = list[GroupConnectMenu]()
         self.connection_list = list[ConnectionObject]()
 
     def add_group_menu(self, group: GroupObject):
-        group_menu = SubMenu(group, self._port_data, self._p_object, self,
-                             dangerous_mode=Dangerous.YES)
+        group_menu = GroupConnectMenu(group, self._p_object, self,
+                                      dangerous_mode=Dangerous.YES)
         self.group_menus.append(group_menu)
         self.addMenu(group_menu)
 
@@ -232,7 +205,6 @@ class DangerousMenu(SubMenu):
         
         if yesno:
             if isinstance(po, PortgrpObject) and portgrp_id:
-            # if self._portgrp_id and portgrp_id:
                 # in and out are portgroups
                 utils.connect_portgroups(po.group_id, po.portgrp_id,
                                          group_id, portgrp_id)
@@ -242,9 +214,8 @@ class DangerousMenu(SubMenu):
                                         group_id, port_id)
         else:
             if isinstance(po, PortgrpObject) and portgrp_id:
-            # if self._portgrp_id and portgrp_id:
                 utils.connect_portgroups(po.group_id, po.portgrp_id,
-                                        group_id, portgrp_id, disconnect=True)
+                                         group_id, portgrp_id, disconnect=True)
             else:
                 for connection in canvas.connection_list:
                     if connection.matches(po.group_id, po.get_port_ids(),
@@ -255,9 +226,9 @@ class DangerousMenu(SubMenu):
 
 
 class ConnectMenu(SubMenu):
-    def __init__(self, port_data, p_object: Union[PortObject, PortgrpObject], parent):
+    def __init__(self, p_object: Union[PortObject, PortgrpObject], parent):
         SubMenu.__init__(self, _translate('patchbay', 'Connect'),
-                         port_data, p_object, parent)
+                         p_object, parent)
         #canvas.qobject.port_added.connect(self.port_added_to_canvas)
         #canvas.qobject.port_removed.connect(self.port_removed_from_canvas)
 
@@ -280,7 +251,7 @@ class ConnectMenu(SubMenu):
                     'patchbay', 'CV | DANGEROUS !!!')
 
         self.dangerous_submenu = DangerousMenu(
-            dangerous_name, port_data, self._p_object, self)
+            dangerous_name, self._p_object, self)
 
         # add the needed groups (not the ports)
         for group in canvas.group_list:
@@ -325,7 +296,7 @@ class ConnectMenu(SubMenu):
                          and not po.is_alternate))):
             dangerous = Dangerous.NO
 
-        group_menu = GroupConnectMenu(group, self._port_data, self._p_object, self,
+        group_menu = GroupConnectMenu(group, self._p_object, self,
                                       dangerous_mode=dangerous)
         self.group_menus.append(group_menu)
         self.addMenu(group_menu)
@@ -369,9 +340,9 @@ class ConnectMenu(SubMenu):
 
 
 class DisconnectMenu(SubMenu):
-    def __init__(self, port_data, p_object: Union[PortObject, PortgrpObject], parent):
+    def __init__(self, p_object: Union[PortObject, PortgrpObject], parent):
         SubMenu.__init__(self, _translate('patchbay', "Disconnect"),
-                         port_data, p_object, parent)
+                         p_object, parent)
         self._elements = list[DataDisconnElement]()
 
         self._no_action_title = _translate('patchbay', 'No connections')
@@ -466,9 +437,9 @@ class DisconnectMenu(SubMenu):
 
 
 class ClipboardMenu(SubMenu):
-    def __init__(self, port_data, p_object: Union[PortObject, PortgrpObject], parent):
+    def __init__(self, p_object: Union[PortObject, PortgrpObject], parent):
         SubMenu.__init__(self, _translate('patchbay', 'Clipboard'),
-                         port_data, p_object, parent)
+                         p_object, parent)
 
         cut_action = self.addAction(
             _translate('patchbay', 'Cut connections'))
@@ -569,12 +540,12 @@ class ClipboardMenu(SubMenu):
                                             group_id, port_id)
                     break
 
-        # once past, de-activate cut to prevent recut of connections
+        # once paste, de-activate cut to prevent recut of connections
         # if they have been remade by user
         canvas.clipboard_cut = False
 
 
-class MainPortContextMenu(PortData, QMenu):
+class ConnectableContextMenu(QMenu):
     def __init__(self, group_id: int, port_id: int, portgrp_id=0):
         QMenu.__init__(self)
 
@@ -585,9 +556,6 @@ class MainPortContextMenu(PortData, QMenu):
             for portgrp in canvas.portgrp_list:
                 if (portgrp.group_id == group_id
                         and portgrp.portgrp_id == portgrp_id):
-                    port_type = portgrp.port_type
-                    port_mode = portgrp.port_mode
-                    is_alternate = False
                     self._p_object = portgrp
                     break
             else:
@@ -596,16 +564,10 @@ class MainPortContextMenu(PortData, QMenu):
             # menu is for a port
             for port in canvas.port_list:
                 if port.group_id == group_id and port.port_id == port_id:
-                    port_type = port.port_type
-                    port_mode = port.port_mode
-                    is_alternate = port.is_alternate
                     self._p_object = port
                     break
             else:
                 return
-
-        PortData.__init__(self, group_id, port_id, port_type,
-                          port_mode, portgrp_id, is_alternate)
 
         self.connection_list = list[ConnectionObject]()
 
@@ -625,21 +587,14 @@ class MainPortContextMenu(PortData, QMenu):
         elif po.port_type is PortType.MIDI_JACK:
             theme = theme.midi
 
-        poly_color = theme.background_color()
-        poly_pen = theme.fill_pen()
-        text_pen = QPen(theme.text_color())
-
-        port_data = PortData(group_id, port_id, port_type,
-                             port_mode, portgrp_id, is_alternate)
-
         dark = '-dark' if utils.is_dark_theme(self) else ''
 
-        self.connect_menu = ConnectMenu(port_data, self._p_object, self)
+        self.connect_menu = ConnectMenu(self._p_object, self)
         self.connect_menu.setIcon(
             QIcon(QPixmap(':scalable/breeze%s/lines-connector' % dark)))
         self.addMenu(self.connect_menu)
 
-        self.disconnect_menu = DisconnectMenu(port_data, self._p_object, self)
+        self.disconnect_menu = DisconnectMenu(self._p_object, self)
         self.disconnect_menu.setIcon(
             QIcon(QPixmap(':scalable/breeze%s/lines-disconnector' % dark)))
         self.addMenu(self.disconnect_menu)
@@ -650,7 +605,7 @@ class MainPortContextMenu(PortData, QMenu):
             QIcon(QPixmap(':scalable/breeze%s/lines-disconnector' % dark)))
         disconnect_all_action.triggered.connect(self.disconnect_all)
 
-        self.clipboard_menu = ClipboardMenu(port_data, self._p_object, self)
+        self.clipboard_menu = ClipboardMenu(self._p_object, self)
         self.clipboard_menu.setIcon(QIcon.fromTheme('edit-paste'))
         self.addMenu(self.clipboard_menu)
 

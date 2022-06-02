@@ -194,19 +194,6 @@ def get_port_connection_list(group_id: int, port_id: int) -> list:
 
     return conn_list
 
-def get_portgroup_position(group_id: int, port_id: int,
-                           portgrp_id: int) -> tuple:
-    if portgrp_id <= 0:
-        return (0, 1)
-
-    for portgrp in canvas.portgrp_list:
-        if (portgrp.group_id == group_id
-                and portgrp.portgrp_id == portgrp_id):
-            for i in range(len(portgrp.port_id_list)):
-                if port_id == portgrp.port_id_list[i]:
-                    return (i, len(portgrp.port_id_list))
-    return (0, 1)
-
 def get_portgroup_name_from_ports_names(ports_names: list[str]):
     if len(ports_names) < 2:
         return ''

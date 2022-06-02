@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt, QRectF, QPointF
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QGraphicsItem
 
-from .init_values import (CallbackAct, ConnectionObject, PortMode,
+from .init_values import (CallbackAct, ConnectableObject, ConnectionObject, PortMode,
                           PortType, canvas, options)
 from .line_move_widget import LineMoveWidget
 
@@ -21,9 +21,7 @@ class ConnectableWidget(QGraphicsItem):
     if TYPE_CHECKING:
         _hover_item: 'ConnectableWidget'
 
-    def __init__(self, group_id: int, port_ids: tuple[int],
-                 port_mode: PortMode, port_type: PortType,
-                 is_alternate: bool, parent: 'BoxWidget'):
+    def __init__(self, connectable: ConnectableObject, parent: 'BoxWidget'):
         super().__init__()
         self.setParentItem(parent)
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
@@ -32,11 +30,11 @@ class ConnectableWidget(QGraphicsItem):
         if options.auto_select_items:
             self.setAcceptHoverEvents(True)
 
-        self._group_id = group_id
-        self._port_ids = port_ids
-        self._port_mode = port_mode
-        self._port_type = port_type
-        self._is_alternate = is_alternate
+        self._group_id = connectable.group_id
+        self._port_ids = connectable.get_port_ids()
+        self._port_mode = connectable.port_mode
+        self._port_type = connectable.port_type
+        self._is_alternate = connectable.is_alternate
         
         # needed for line mov
         self._line_mov_list = list[LineMoveWidget]()

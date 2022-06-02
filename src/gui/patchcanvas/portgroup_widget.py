@@ -33,11 +33,12 @@ import patchcanvas.utils as utils
 from .connectable_widget import ConnectableWidget
 from .init_values import (
     CanvasItemType,
+    PortgrpObject,
     canvas,
     CallbackAct,
     PortMode,
     PortType)
-from .connect_menu import MainPortContextMenu
+from .connect_menu import ConnectableContextMenu
 
 if TYPE_CHECKING:
     from .box_widget import BoxWidget
@@ -50,15 +51,13 @@ _translate = QApplication.translate
 
 
 class PortgroupWidget(ConnectableWidget):
-    def __init__(self, group_id: int, portgrp_id: int, port_mode: PortMode,
-                 port_type: PortType, port_id_list: tuple[int],
-                 parent: 'BoxWidget'):
-        ConnectableWidget.__init__(self, group_id, port_id_list,
-                                   port_mode, port_type, False, parent)
+    def __init__(self, portgrp: PortgrpObject, parent: 'BoxWidget'):
+        ConnectableWidget.__init__(self, portgrp, parent)
         self._logger = logging.getLogger(__name__)
 
         # Save Variables, useful for later
-        self._portgrp_id = portgrp_id
+        self._portgrp = portgrp
+        self._portgrp_id = portgrp.portgrp_id
 
         # Base Variables
         self._portgrp_width  = 15
@@ -81,11 +80,10 @@ class PortgroupWidget(ConnectableWidget):
         self._trunck_sep = '⠿'
         
         self._ports_widgets = [p.widget for p in canvas.port_list
-                               if p.group_id == group_id
-                               and p.portgrp_id == portgrp_id]
+                               if p.group_id == portgrp.group_id
+                               and p.portgrp_id == portgrp.portgrp_id]
         for port_widget in self._ports_widgets:
             port_widget.set_portgroup_widget(self)
-        # self.changing_select_state = False
 
     def is_alternate(self) -> bool:
         return False
@@ -191,7 +189,7 @@ class PortgroupWidget(ConnectableWidget):
         canvas.scene.clearSelection()
         self.setSelected(True)
 
-        menu = MainPortContextMenu(self._group_id, 0, self._portgrp_id)
+        menu = ConnectableContextMenu(self._group_id, 0, self._portgrp_id)
 
         act_x_setasmono = menu.addAction(
             _translate('patchbay', "Split to Monos"))

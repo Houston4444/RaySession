@@ -29,6 +29,8 @@ from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 
 from .init_values import (
     CanvasItemType,
+    PortObject,
+    PortgrpObject,
     canvas,
     features,
     options,
@@ -314,16 +316,14 @@ class CanvasWidgetMoth(QGraphicsItem):
         if self.shadow:
             self.shadow.set_opacity(opacity)
 
-    def add_port_from_group(self, port_id, port_mode, port_type,
-                            port_name, is_alternate):
+    def add_port_from_group(self, port: PortObject):
         self.setVisible(True)
 
-        new_widget = PortWidget(self._group_id, port_id, port_name, port_mode,
-                                port_type, is_alternate, self)
+        new_widget = PortWidget(port, self)
         if self._wrapped:
             new_widget.setVisible(False)
 
-        self._port_list_ids.append(port_id)
+        self._port_list_ids.append(port.port_id)
 
         return new_widget
 
@@ -340,14 +340,11 @@ class CanvasWidgetMoth(QGraphicsItem):
             if len(self._port_list_ids) > 0:
                 self.update_positions()
 
-        #if self.isVisible():
         if options.auto_hide_groups and len(self._port_list_ids) == 0:
             self.setVisible(False)
 
-    def add_portgroup_from_group(self, portgrp_id, port_mode,
-                                 port_type, port_id_list):
-        new_widget = PortgroupWidget(self._group_id, portgrp_id, port_mode,
-                                     port_type, port_id_list, self)
+    def add_portgroup_from_group(self, portgroup: PortgrpObject):
+        new_widget = PortgroupWidget(portgroup, self)
 
         if self._wrapped:
             new_widget.setVisible(False)

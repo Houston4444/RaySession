@@ -789,9 +789,6 @@ def add_port(group_id: int, port_id: int, port_name: str,
             _LOGGER.critical(f"{_LOGGING_STR} - port already exists")
             return
     
-    box_widget = None
-    port_widget = None
-
     for group in canvas.group_list:
         if group.group_id == group_id:
             n = 0
@@ -801,12 +798,8 @@ def add_port(group_id: int, port_id: int, port_name: str,
                 n = 1
 
             box_widget = group.widgets[n]
-            port_widget = box_widget.add_port_from_group(
-                port_id, port_mode, port_type,
-                port_name, is_alternate)
             break
-    
-    if not (box_widget and port_widget):
+    else:
         _LOGGER.critical(f"{_LOGGING_STR} - Unable to find parent group")
         return
 
@@ -818,11 +811,11 @@ def add_port(group_id: int, port_id: int, port_name: str,
     port.port_type = port_type
     port.portgrp_id = 0
     port.is_alternate = is_alternate
-    port.widget = port_widget
+    port.widget = box_widget.add_port_from_group(port)
     canvas.port_list.append(port)
 
     canvas.last_z_value += 1
-    port_widget.setZValue(canvas.last_z_value)
+    port.widget.setZValue(canvas.last_z_value)
     
     if canvas.loading_items:
         return
@@ -878,19 +871,19 @@ def rename_port(group_id: int, port_id: int, new_port_name: str):
 
 @patchbay_api
 def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
-                  port_type: PortType, port_id_list: list):
+                  port_type: PortType, port_id_list: list[int]):
     for portgrp in canvas.portgrp_list:
         if portgrp.group_id == group_id and portgrp.portgrp_id == portgrp_id:
             _LOGGER.critical(f"{_LOGGING_STR} - portgroup already exists")
             return
     
-    portgrp_dict = PortgrpObject()
-    portgrp_dict.group_id = group_id
-    portgrp_dict.portgrp_id = portgrp_id
-    portgrp_dict.port_mode = port_mode
-    portgrp_dict.port_type = port_type
-    portgrp_dict.port_id_list = tuple(port_id_list)
-    portgrp_dict.widget = None
+    portgrp = PortgrpObject()
+    portgrp.group_id = group_id
+    portgrp.portgrp_id = portgrp_id
+    portgrp.port_mode = port_mode
+    portgrp.port_type = port_type
+    portgrp.port_id_list = tuple(port_id_list)
+    portgrp.widget = None
 
     i = 0
     # check that port ids are present and groupable in this group
@@ -924,14 +917,8 @@ def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
                 and port.port_id in port_id_list):
             port.set_portgroup_id(
                 portgrp_id, port_id_list.index(port.port_id), len(port_id_list))
-            # port.portgrp_id = portgrp_id
-            # if port.widget is not None:
-            #     port.widget.set_portgroup_id(
-            #         portgrp_id,
-            #         port_id_list.index(port.port_id),
-            #         len(port_id_list))
 
-    canvas.portgrp_list.append(portgrp_dict)
+    canvas.portgrp_list.append(portgrp)
     
     # add portgroup widget and refresh the view
     for group in canvas.group_list:
@@ -942,8 +929,7 @@ def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
 
                 if (not box.is_splitted()
                         or box.get_splitted_mode() == port_mode):
-                    portgrp_dict.widget = box.add_portgroup_from_group(
-                        portgrp_id, port_mode, port_type, port_id_list)
+                    portgrp.widget = box.add_portgroup_from_group(portgrp)
 
                     if not canvas.loading_items:
                         box.update_positions()

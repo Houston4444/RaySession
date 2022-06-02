@@ -36,6 +36,7 @@ from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 # Imports (Custom)
 from .init_values import (
     CanvasItemType,
+    PortObject,
     canvas,
     ConnectionObject,
     features,
@@ -46,7 +47,7 @@ from .init_values import (
 
 import patchcanvas.utils as utils
 from .connectable_widget import ConnectableWidget
-from .connect_menu import MainPortContextMenu
+from .connect_menu import ConnectableContextMenu
 from .line_widget import LineWidget
 
 if TYPE_CHECKING:
@@ -60,22 +61,20 @@ _translate = QApplication.translate
 # --------------------
 
 class PortWidget(ConnectableWidget):
-    def __init__(self, group_id: int, port_id: int, port_name: str,
-                 port_mode: PortMode, port_type: PortType,
-                 is_alternate: bool, parent: 'BoxWidget'):
-        ConnectableWidget.__init__(self, group_id, (port_id,), port_mode,
-                                   port_type, is_alternate, parent)
+    def __init__(self, port: PortObject, parent: 'BoxWidget'):
+        ConnectableWidget.__init__(self, port, parent)
 
         self._logger = logging.getLogger(__name__)
 
         # Save Variables, useful for later
-        self._port_id = port_id
-        self._port_name = port_name
-        self._portgrp_id = 0
-        self._pg_pos = 0
-        self._pg_len = 1
-        self._is_alternate = is_alternate
-        self._print_name = port_name
+        self._port = port
+        self._port_id = port.port_id
+        self._port_name = port.port_name
+        self._portgrp_id = port.portgrp_id
+        self._pg_pos = port.pg_pos
+        self._pg_len = port.pg_len
+        self._is_alternate = port.is_alternate
+        self._print_name = port.port_name
         self._print_name_right = ''
         self._name_truncked = False
         self._trunck_sep = '⠿'
@@ -250,7 +249,7 @@ class PortWidget(ConnectableWidget):
         canvas.scene.clearSelection()
         self.setSelected(True)
 
-        menu = MainPortContextMenu(self._group_id, self._port_id)
+        menu = ConnectableContextMenu(self._group_id, self._port_id)
 
         act_x_sep_1 = menu.addSeparator()
 
