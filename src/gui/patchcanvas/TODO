@@ -21,7 +21,8 @@ Commenter plus
 # button wrapper en graphicsitem -> trop de taf, fonctionne bien comme ça
 xdg pour le cache (var de classes ?)
 bug positionnement boîte midi
+style des CV ports dans connect menu
 
-changer _is_alternate en subtype
+# changer _is_alternate en subtype
 decouper patchbay_manager
 voire plantage du démon avec ray_control

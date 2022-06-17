@@ -85,9 +85,6 @@ class PortgroupWidget(ConnectableWidget):
         for port_widget in self._ports_widgets:
             port_widget.set_portgroup_widget(self)
 
-    def is_alternate(self) -> bool:
-        return False
-
     def get_port_width(self) -> float:
         return self._portgrp_width
 

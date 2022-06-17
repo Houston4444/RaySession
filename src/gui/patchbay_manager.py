@@ -12,7 +12,7 @@ from gui_tools import RS
 
 from patchcanvas import patchcanvas
 from patchcanvas import (PortMode, PortType, CallbackAct, IconType, BoxLayoutMode,
-                         BoxSplitMode, EyeCandy)
+                         BoxSplitMode, EyeCandy,PortSubType)
 from gui_server_thread import GuiServerThread
 from patchbay_tools import PORT_TYPE_AUDIO, PORT_TYPE_MIDI, PatchbayToolsWidget, CanvasMenu, CanvasPortInfoDialog
 
@@ -191,21 +191,22 @@ class Port:
         if not PatchbayManager.use_graceful_names:
             display_name = self.short_name()
         
-        is_alternate = False
+        port_subtype = PortSubType.REGULAR
+        
         if self.flags & PORT_IS_CONTROL_VOLTAGE:
-            is_alternate = True
+            port_subtype = PortSubType.CV
         if (self.type == PortType.MIDI_JACK
                 and self.full_name.startswith(('a2j:', 'Midi-Bridge:'))):
             for group in PatchbayManager.groups:
                 if group.group_id == self.group_id:
-                    is_alternate = True
+                    port_subtype = PortSubType.A2J
                     break
 
         self.in_canvas = True
 
         patchcanvas.add_port(
             self.group_id, self.port_id, display_name,
-            port_mode, self.type, is_alternate)
+            port_mode, self.type, port_subtype)
 
     def remove_from_canvas(self):
         if PatchbayManager.very_fast_operation:
@@ -310,11 +311,17 @@ class Portgroup:
         self.in_canvas = True
 
         port_type = self.ports[0].type
-        port_id_list = tuple([port.port_id for port in self.ports])
+        port_subtype = PortSubType.REGULAR
+        if (port_type is PortType.AUDIO_JACK
+                and self.ports[0].flags & PORT_IS_CONTROL_VOLTAGE):
+            port_subtype = PortSubType.CV
+        elif (port_type is PortType.MIDI_JACK
+                and self.ports[0].full_name.startswith('a2j:')):
+            port_subtype = PortSubType.A2J
 
         patchcanvas.add_portgroup(self.group_id, self.portgroup_id,
-                                  self.port_mode, port_type,
-                                  port_id_list)
+                                  self.port_mode, port_type, port_subtype,
+                                  [port.port_id for port in self.ports])
 
     def remove_from_canvas(self):
         if PatchbayManager.very_fast_operation:

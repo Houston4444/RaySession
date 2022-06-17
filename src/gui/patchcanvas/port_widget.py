@@ -37,6 +37,7 @@ from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 from .init_values import (
     CanvasItemType,
     PortObject,
+    PortSubType,
     canvas,
     ConnectionObject,
     features,
@@ -73,7 +74,7 @@ class PortWidget(ConnectableWidget):
         self._portgrp_id = port.portgrp_id
         self._pg_pos = port.pg_pos
         self._pg_len = port.pg_len
-        self._is_alternate = port.is_alternate
+        self._port_subtype = port.port_subtype
         self._print_name = port.port_name
         self._print_name_right = ''
         self._name_truncked = False
@@ -85,7 +86,7 @@ class PortWidget(ConnectableWidget):
 
         theme = canvas.theme.port
         if self._port_type == PortType.AUDIO_JACK:
-            if self._is_alternate:
+            if self._port_subtype is PortSubType.CV:
                 theme = theme.cv
             else:
                 theme = theme.audio
@@ -102,9 +103,6 @@ class PortWidget(ConnectableWidget):
 
     def get_port_id(self) -> int:
         return self._port_id
-
-    def is_alternate(self) -> bool:
-        return self._is_alternate
 
     def get_connection_distance(self) -> float:
         return self._port_width
@@ -254,7 +252,7 @@ class PortWidget(ConnectableWidget):
         act_x_sep_1 = menu.addSeparator()
 
         if (self._port_type == PortType.AUDIO_JACK
-                and not self._is_alternate
+                and not self._port_subtype is PortSubType.CV
                 and not self._portgrp_id):
             StereoMenu = QMenu(_translate('patchbay', "Set as Stereo with"), menu)
             menu.addMenu(StereoMenu)
@@ -265,7 +263,7 @@ class PortWidget(ConnectableWidget):
                 if (port.port_type == PortType.AUDIO_JACK
                         and port.group_id == self._group_id
                         and port.port_mode == self._port_mode
-                        and not port.is_alternate):
+                        and not port.port_subtype is PortSubType.CV):
                     port_cousin_list.append(port.port_id)
 
             selfport_index = port_cousin_list.index(self._port_id)
@@ -329,7 +327,7 @@ class PortWidget(ConnectableWidget):
         theme = canvas.theme.port
 
         if self._port_type == PortType.AUDIO_JACK:
-            if self._is_alternate:
+            if self._port_subtype is PortSubType.CV:
                 theme = theme.cv
             else:
                 theme = theme.audio
@@ -358,8 +356,7 @@ class PortWidget(ConnectableWidget):
         if poly_corner_xhinting == 0:
             poly_corner_xhinting = 0.5 * (1 - 7 / (float(canvas.theme.port_height)/2))
 
-        is_cv_port = bool(self._port_type == PortType.AUDIO_JACK
-                          and self._is_alternate)
+        is_cv_port = bool(self._port_subtype is PortSubType.CV)
 
         if self._port_mode is PortMode.INPUT:
             text_pos = QPointF(3, text_y_pos)
@@ -451,13 +448,10 @@ class PortWidget(ConnectableWidget):
             painter.setBrush(poly_color)
             
         painter.setPen(poly_pen)
-        
-        #try_rect = QRectF(4.0, 4.0, 20.0, 4.0)
-        #polygon = polygon.subtracted(QPolygonF(try_rect))
         painter.drawPolygon(polygon)
 
-        if self._is_alternate and not self._portgrp_id:
-            if is_cv_port:
+        if not self._portgrp_id:
+            if self._port_subtype is PortSubType.CV:
                 poly_pen.setWidthF(2.000001)
                 painter.setPen(poly_pen)
 
@@ -468,7 +462,8 @@ class PortWidget(ConnectableWidget):
                     painter.drawLine(
                         self._port_width + 5, y_line,
                         self._port_width + 12, y_line)
-            else:
+
+            elif self._port_subtype is PortSubType.A2J:
                 # draw the little circle for a2j (or MidiBridge) port
                 poly_pen.setWidthF(1.000001)
                 

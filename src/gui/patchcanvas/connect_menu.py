@@ -27,6 +27,7 @@ from .init_values import (
     GroupObject,
     IconType,
     PortObject,
+    PortSubType,
     PortgrpObject,
     canvas,
     ClipboardElement,
@@ -120,21 +121,21 @@ class GroupConnectMenu(SubMenu):
                                 break
                 else:
                     if (dangerous_mode is _Dangerous.YES
-                            and po.is_alternate == port.is_alternate):
+                            and po.port_subtype == port.port_subtype):
                         continue
 
                     if (dangerous_mode is _Dangerous.NO
-                            and po.is_alternate != port.is_alternate):
+                            and po.port_subtype != port.port_subtype):
                         continue
 
-                    self.add_element(port, port.port_name, '', port.is_alternate)
+                    self.add_element(port, port.port_name, '', port.port_subtype)
 
     def group_id(self) -> int:
         return self._group.group_id
 
     def add_element(self, p_object: Union[PortObject, PortgrpObject],
-                    port_name: str, port_name_end: str, is_alternate=False):
-        if self._p_object.port_type is PortType.AUDIO_JACK and is_alternate:
+                    port_name: str, port_name_end: str, port_subtype=PortSubType.REGULAR):
+        if self._p_object.port_subtype is PortSubType.CV:
             port_name = f"CV| {port_name}"
 
         check_frame = CheckFrame(p_object, port_name, port_name_end, self)
@@ -242,11 +243,11 @@ class ConnectMenu(SubMenu):
 
         if po.port_type is PortType.AUDIO_JACK:
             if (po.port_mode is PortMode.OUTPUT
-                    and po.is_alternate):
+                    and po.port_subtype is PortSubType.CV):
                 dangerous_name = _translate(
                     'patchbay', 'Audio | DANGEROUS !!!')
             elif (po.port_mode is PortMode.INPUT
-                    and not po.is_alternate):
+                    and po.port_subtype is PortSubType.REGULAR):
                 dangerous_name = _translate(
                     'patchbay', 'CV | DANGEROUS !!!')
 
@@ -265,11 +266,11 @@ class ConnectMenu(SubMenu):
 
                     if (po.port_type is PortType.AUDIO_JACK
                             and ((po.port_mode is PortMode.OUTPUT
-                                  and po.is_alternate
-                                  and not port.is_alternate)
+                                  and po.port_subtype is PortSubType.CV
+                                  and port.port_subtype is PortSubType.REGULAR)
                                  or (po.port_mode is PortMode.INPUT
-                                     and not po.is_alternate
-                                     and port.is_alternate))):
+                                     and not po.port_subtype is PortSubType.CV
+                                     and port.port_subtype is PortSubType.CV))):
                         if not grp_has_dangerous:
                             self.dangerous_submenu.add_group_menu(group)
                         grp_has_dangerous = True
@@ -291,9 +292,9 @@ class ConnectMenu(SubMenu):
         dangerous = _Dangerous.NO_CARE
         if (po.port_type == PortType.AUDIO_JACK
                 and ((po.port_mode is PortMode.OUTPUT
-                      and po.is_alternate)
+                      and po.port_subtype is PortSubType.CV)
                      or (po.port_mode is PortMode.INPUT
-                         and not po.is_alternate))):
+                         and not po.port_subtype is PortSubType.CV))):
             dangerous = _Dangerous.NO
 
         group_menu = GroupConnectMenu(group, self._p_object, self,

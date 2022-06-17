@@ -1,5 +1,6 @@
 
 from enum import IntEnum
+from typing import Iterator
 from PyQt5.QtCore import QRectF
 from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import QGraphicsItem
@@ -12,10 +13,29 @@ from .init_values import (
     BoxLayoutMode,
     PortMode,
     PortType,
+    PortSubType,
     IconType)
 import patchcanvas.utils as utils
 from .theme import Theme
 from .box_widget_moth import CanvasWidgetMoth, UnwrapButton, TitleLine
+
+
+def list_port_types_and_subs() -> Iterator[tuple[PortType, PortSubType]]:
+    ''' simple fast generator port PortType and PortSubType preventing
+        incoherent couples '''
+    for port_type in PortType:
+        if port_type is PortType.NULL:
+            continue
+        
+        for port_subtype in PortSubType:
+            if ((port_subtype is PortSubType.A2J
+                    and not port_type is PortType.MIDI_JACK)
+                or (port_subtype is PortSubType.CV
+                    and not port_type is PortType.AUDIO_JACK)):
+                # No such port should exist, it is just for win some time
+                continue
+            
+            yield (port_type, port_subtype)
 
 
 class TitleOn(IntEnum):
@@ -63,25 +83,21 @@ class BoxWidget(CanvasWidgetMoth):
     def _should_align_port_types(self) -> bool:
         ''' check if we can align port types
             eg, align first midi input to first midi output '''
-        port_types_aligner = []
-            
-        for port_type in PortType:
-            if port_type is PortType.NULL:
-                continue
-            
-            for alternate in (False, True):
-                n_ins = 0
-                n_outs = 0
+        port_types_aligner = list[tuple[int, int]]()
+        
+        for port_type, port_subtype in list_port_types_and_subs():
+            n_ins = 0
+            n_outs = 0
 
-                for port in self._port_list:
-                    if (port.port_type == port_type
-                            and port.is_alternate == alternate):
-                        if port.port_mode is PortMode.INPUT:
-                            n_ins += 1
-                        elif port.port_mode is PortMode.OUTPUT:
-                            n_outs += 1
+            for port in self._port_list:
+                if (port.port_type == port_type
+                        and port.port_subtype == port_subtype):
+                    if port.port_mode is PortMode.INPUT:
+                        n_ins += 1
+                    elif port.port_mode is PortMode.OUTPUT:
+                        n_outs += 1
 
-                port_types_aligner.append((n_ins, n_outs))
+            port_types_aligner.append((n_ins, n_outs))
 
         winner = PortMode.NULL
 
@@ -111,109 +127,112 @@ class BoxWidget(CanvasWidgetMoth):
         last_out_type_alter = (PortType.NULL, False)
         last_port_mode = PortMode.NULL
         
-        for port_type in PortType:
-            if PortType is PortType.NULL:
-                continue
-            
-            for alternate in (False, True):
-                for port in self._port_list:
-                    if (port.port_type != port_type
-                            or port.is_alternate != alternate):
-                        continue
+        for port_type, port_subtype in list_port_types_and_subs():                
+            for port in self._port_list:
+                if (port.port_type is not port_type
+                        or port.port_subtype is not port_subtype):
+                    continue
 
-                    last_of_portgrp = bool(port.pg_pos + 1 == port.pg_len)
-                    size = 0
-                    max_pwidth = options.max_port_width
+                last_of_portgrp = bool(port.pg_pos + 1 == port.pg_len)
+                size = 0
+                max_pwidth = options.max_port_width
 
-                    if port.portgrp_id:
-                        for portgrp in self._portgrp_list:
-                            if not portgrp.portgrp_id == port.portgrp_id:
-                                continue
-                            
-                            if port.port_id == portgrp.port_id_list[0]:
-                                portgrp_name = self._get_portgroup_name(port.portgrp_id)
+                if port.portgrp_id:
+                    for portgrp in self._portgrp_list:
+                        if not portgrp.portgrp_id == port.portgrp_id:
+                            continue
+                        
+                        if port.port_id == portgrp.port_id_list[0]:
+                            portgrp_name = self._get_portgroup_name(port.portgrp_id)
 
-                                portgrp.widget.set_print_name(
-                                    portgrp_name,
-                                    max_pwidth - canvas.theme.port_grouped_width - 5)
-                            
-                            port.widget.set_print_name(
-                                port.port_name.replace(
-                                    self._get_portgroup_name(port.portgrp_id), '', 1),
-                                int(max_pwidth/2))
-                            
-                            if (portgrp.widget.get_text_width() + 5
-                                    > max_pwidth - port.widget.get_text_width()):
-                                portgrp.widget.reduce_print_name(
-                                    max_pwidth - port.widget.get_text_width() - 5)
-                            
-                            # the port_grouped_width is also used to define
-                            # the portgroup minimum width
-                            size = (max(portgrp.widget.get_text_width(),
+                            portgrp.widget.set_print_name(
+                                portgrp_name,
+                                max_pwidth - canvas.theme.port_grouped_width - 5)
+                        
+                        port.widget.set_print_name(
+                            port.port_name.replace(
+                                self._get_portgroup_name(port.portgrp_id), '', 1),
+                            int(max_pwidth/2))
+                        
+                        if (portgrp.widget.get_text_width() + 5
+                                > max_pwidth - port.widget.get_text_width()):
+                            portgrp.widget.reduce_print_name(
+                                max_pwidth - port.widget.get_text_width() - 5)
+                        
+                        # the port_grouped_width is also used to define
+                        # the portgroup minimum width
+                        size = (max(portgrp.widget.get_text_width(),
+                                    canvas.theme.port_grouped_width)
+                                + max(port.widget.get_text_width() + 6,
                                         canvas.theme.port_grouped_width)
-                                    + max(port.widget.get_text_width() + 6,
-                                          canvas.theme.port_grouped_width)
-                                    + port_offset)
-                            break
-                    else:
-                        port.widget.set_print_name(port.port_name, max_pwidth)
-                        size = max(port.widget.get_text_width() + port_offset, 20)
-                    
-                    type_alter = (port.port_type, port.is_alternate)
-                    
-                    if port.port_mode is PortMode.INPUT:
-                        max_in_width = max(max_in_width, size)
-                        if type_alter != last_in_type_alter:
-                            if last_in_type_alter != (PortType.NULL, False):
-                                last_in_pos += port_type_spacing
-                            last_in_type_alter = type_alter
-
-                        last_in_pos += canvas.theme.port_height
-                        if last_of_portgrp:
-                            last_in_pos += port_spacing
-
-                    elif port.port_mode is PortMode.OUTPUT:
-                        max_out_width = max(max_out_width, size)
-                        
-                        if type_alter != last_out_type_alter:
-                            if last_out_type_alter != (PortType.NULL, False):
-                                last_out_pos += port_type_spacing
-                            last_out_type_alter = type_alter
-                        
-                        last_out_pos += canvas.theme.port_height
-                        if last_of_portgrp:
-                            last_out_pos += port_spacing
-                    
-                    final_last_in_pos = last_in_pos
-                    final_last_out_pos = last_out_pos
+                                + port_offset)
+                        break
+                else:
+                    port.widget.set_print_name(port.port_name, max_pwidth)
+                    size = max(port.widget.get_text_width() + port_offset, 20)
                 
-                if align_port_types:
-                    # align port types horizontally
-                    if last_in_pos > last_out_pos:
-                        last_out_type_alter = last_in_type_alter
-                    else:
-                        last_in_type_alter = last_out_type_alter
-                    last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
+                type_and_sub = (port.port_type, port.port_subtype)
+                
+                if port.port_mode is PortMode.INPUT:
+                    max_in_width = max(max_in_width, size)
+                    if type_and_sub != last_in_type_alter:
+                        if last_in_type_alter != (PortType.NULL, False):
+                            last_in_pos += port_type_spacing
+                        last_in_type_alter = type_and_sub
+
+                    last_in_pos += canvas.theme.port_height
+                    if last_of_portgrp:
+                        last_in_pos += port_spacing
+
+                elif port.port_mode is PortMode.OUTPUT:
+                    max_out_width = max(max_out_width, size)
+                    
+                    if type_and_sub != last_out_type_alter:
+                        if last_out_type_alter != (PortType.NULL, False):
+                            last_out_pos += port_type_spacing
+                        last_out_type_alter = type_and_sub
+                    
+                    last_out_pos += canvas.theme.port_height
+                    if last_of_portgrp:
+                        last_out_pos += port_spacing
+                
+                final_last_in_pos = last_in_pos
+                final_last_out_pos = last_out_pos
+            
+            if align_port_types:
+                # align port types horizontally
+                if last_in_pos > last_out_pos:
+                    last_out_type_alter = last_in_type_alter
+                else:
+                    last_in_type_alter = last_out_type_alter
+                last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
         
         # calculates height in case of one column only
         last_inout_pos = 0
-        last_type_alter = (PortType.NULL, False)
+        last_type_and_sub = (PortType.NULL, PortSubType.REGULAR)
         
         if self._current_port_mode is PortMode.BOTH:
             for port_type in PortType:
                 if port_type is PortType.NULL:
                     continue
 
-                for alternate in (False, True):
+                for port_subtype in PortSubType:
+                    if ((port_subtype is PortSubType.A2J
+                            and not port_type is PortType.MIDI_JACK)
+                        or (port_subtype is PortSubType.CV
+                            and not port_type is PortType.AUDIO_JACK)):
+                        # No such port should exist, it is just for win some time
+                        continue
+
                     for port in self._port_list:
                         if (port.port_type is not port_type
-                                or port.is_alternate != alternate):
+                                or port.port_subtype is not port_subtype):
                             continue
 
-                        if (port.port_type, port.is_alternate) != last_type_alter:
-                            if last_type_alter != (PortType.NULL, False):
+                        if (port.port_type, port.port_subtype) != last_type_and_sub:
+                            if last_type_and_sub != (PortType.NULL, PortSubType.REGULAR):
                                 last_inout_pos += port_type_spacing
-                            last_type_alter = (port.port_type, port.is_alternate)
+                            last_type_and_sub = (port.port_type, port.port_subtype)
 
                         if port.pg_pos:
                             continue
@@ -253,116 +272,112 @@ class BoxWidget(CanvasWidgetMoth):
         box_theme = self.get_theme()
         port_spacing = box_theme.port_spacing()
         port_type_spacing = box_theme.port_type_spacing()
-        last_in_type_alter = (PortType.NULL, False)
-        last_out_type_alter = (PortType.NULL, False)
-        last_type_alter = (PortType.NULL, False)
-        input_segments = []
-        output_segments = []
+        last_in_type_and_sub = (PortType.NULL, PortSubType.REGULAR)
+        last_out_type_and_sub = (PortType.NULL, PortSubType.REGULAR)
+        last_type_and_sub = (PortType.NULL, PortSubType.REGULAR)
+        input_segments = list[list[int]]()
+        output_segments = list[list[int]]()
         in_segment = [last_in_pos, last_in_pos]
         out_segment = [last_out_pos, last_out_pos]
         
-        for port_type in PortType:
-            if port_type is PortType.NULL:
-                continue
-            
-            for alternate in (False, True):
-                for port in self._port_list:
-                    if (port.port_type is not port_type
-                            or port.is_alternate != alternate):
-                        continue
-                    
-                    if one_column:
-                        last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
-                    
-                    first_of_portgrp = bool(port.pg_pos == 0)
-                    if port.portgrp_id and not first_of_portgrp:
-                        continue
-                    
-                    type_alter = (port.port_type, port.is_alternate)
-                    if one_column:
-                        if type_alter != last_type_alter:
-                            if last_type_alter != (PortType.NULL, False):
-                                last_in_pos += port_type_spacing
-                                last_out_pos += port_type_spacing
-                            last_type_alter = type_alter
-                    
-                    if port.port_mode is PortMode.INPUT:
-                        if not one_column and type_alter != last_in_type_alter:
-                            if last_in_type_alter != (PortType.NULL, False):
-                                last_in_pos += port_type_spacing
-                            last_in_type_alter = type_alter
-                        
-                        if last_in_pos >= in_segment[1] + port_spacing + port_type_spacing:
-                            if in_segment[0] != in_segment[1]:
-                                input_segments.append(in_segment)
-                            in_segment = [last_in_pos, last_in_pos]
-                        
-                        if port.portgrp_id:
-                            # we place the portgroup widget and all its ports now
-                            # because in one column mode, we can't be sure
-                            # that port consecutivity isn't break by a port with
-                            # another mode:
-                            # 
-                            # input L
-                            #     output L
-                            # input R
-                            #     output R
-                            for portgrp in self._portgrp_list:
-                                if portgrp.portgrp_id == port.portgrp_id:
-                                    if portgrp.widget is not None:
-                                        set_widget_pos(portgrp.widget, last_in_pos)
-                                
-                                    for port_id in portgrp.port_id_list:
-                                        for gp_port in self._port_list:
-                                            if gp_port.port_id == port_id:
-                                                set_widget_pos(gp_port.widget, last_in_pos)
-                                                last_in_pos += canvas.theme.port_height
-                                                break
-                                    break
-                        else:
-                            set_widget_pos(port.widget, last_in_pos)
-                            last_in_pos += canvas.theme.port_height
-                        in_segment[1] = last_in_pos
-                        last_in_pos += port_spacing
-
-                    elif port.port_mode is PortMode.OUTPUT:
-                        if not one_column and type_alter != last_out_type_alter:
-                            if last_out_type_alter != (PortType.NULL, False):
-                                last_out_pos += port_type_spacing
-                            last_out_type_alter = type_alter
-
-                        if last_out_pos >= out_segment[1] + port_spacing + port_type_spacing:
-                            if out_segment[0] != out_segment[1]:
-                                output_segments.append(out_segment)
-                            out_segment = [last_out_pos, last_out_pos]
-
-                        if port.portgrp_id:
-                            for portgrp in self._portgrp_list:
-                                if portgrp.portgrp_id == port.portgrp_id:
-                                    if portgrp.widget is not None:
-                                        set_widget_pos(portgrp.widget, last_out_pos)
-                                
-                                    for port_id in portgrp.port_id_list:
-                                        for gp_port in self._port_list:
-                                            if gp_port.port_id == port_id:
-                                                set_widget_pos(gp_port.widget, last_out_pos)
-                                                last_out_pos += canvas.theme.port_height
-                                                break
-                                    break
-                        else:
-                            set_widget_pos(port.widget, last_out_pos)
-                            last_out_pos += canvas.theme.port_height
-                        
-                        out_segment[1] = last_out_pos
-                        last_out_pos += port_spacing
+        for port_type, port_subtype in list_port_types_and_subs():                
+            for port in self._port_list:
+                if (port.port_type is not port_type
+                        or port.port_subtype is not port_subtype):
+                    continue
                 
-                if align_port_types:
-                    # align port types horizontally
-                    if last_in_pos > last_out_pos:
-                        last_out_type_alter = last_in_type_alter
-                    else:
-                        last_in_type_alter = last_out_type_alter
+                if one_column:
                     last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
+                
+                first_of_portgrp = bool(port.pg_pos == 0)
+                if port.portgrp_id and not first_of_portgrp:
+                    continue
+                
+                type_and_sub = (port.port_type, port.port_subtype)
+                if one_column:
+                    if type_and_sub != last_type_and_sub:
+                        if last_type_and_sub != (PortType.NULL, PortSubType.REGULAR):
+                            last_in_pos += port_type_spacing
+                            last_out_pos += port_type_spacing
+                        last_type_and_sub = type_and_sub
+                
+                if port.port_mode is PortMode.INPUT:
+                    if not one_column and type_and_sub != last_in_type_and_sub:
+                        if last_in_type_and_sub != (PortType.NULL, PortSubType.REGULAR):
+                            last_in_pos += port_type_spacing
+                        last_in_type_and_sub = type_and_sub
+                    
+                    if last_in_pos >= in_segment[1] + port_spacing + port_type_spacing:
+                        if in_segment[0] != in_segment[1]:
+                            input_segments.append(in_segment)
+                        in_segment = [last_in_pos, last_in_pos]
+                    
+                    if port.portgrp_id:
+                        # we place the portgroup widget and all its ports now
+                        # because in one column mode, we can't be sure
+                        # that port consecutivity isn't break by a port with
+                        # another mode:
+                        # 
+                        # input L
+                        #     output L
+                        # input R
+                        #     output R
+                        for portgrp in self._portgrp_list:
+                            if portgrp.portgrp_id == port.portgrp_id:
+                                if portgrp.widget is not None:
+                                    set_widget_pos(portgrp.widget, last_in_pos)
+                            
+                                for port_id in portgrp.port_id_list:
+                                    for gp_port in self._port_list:
+                                        if gp_port.port_id == port_id:
+                                            set_widget_pos(gp_port.widget, last_in_pos)
+                                            last_in_pos += canvas.theme.port_height
+                                            break
+                                break
+                    else:
+                        set_widget_pos(port.widget, last_in_pos)
+                        last_in_pos += canvas.theme.port_height
+                    in_segment[1] = last_in_pos
+                    last_in_pos += port_spacing
+
+                elif port.port_mode is PortMode.OUTPUT:
+                    if not one_column and type_and_sub != last_out_type_and_sub:
+                        if last_out_type_and_sub != (PortType.NULL, False):
+                            last_out_pos += port_type_spacing
+                        last_out_type_and_sub = type_and_sub
+
+                    if last_out_pos >= out_segment[1] + port_spacing + port_type_spacing:
+                        if out_segment[0] != out_segment[1]:
+                            output_segments.append(out_segment)
+                        out_segment = [last_out_pos, last_out_pos]
+
+                    if port.portgrp_id:
+                        for portgrp in self._portgrp_list:
+                            if portgrp.portgrp_id == port.portgrp_id:
+                                if portgrp.widget is not None:
+                                    set_widget_pos(portgrp.widget, last_out_pos)
+                            
+                                for port_id in portgrp.port_id_list:
+                                    for gp_port in self._port_list:
+                                        if gp_port.port_id == port_id:
+                                            set_widget_pos(gp_port.widget, last_out_pos)
+                                            last_out_pos += canvas.theme.port_height
+                                            break
+                                break
+                    else:
+                        set_widget_pos(port.widget, last_out_pos)
+                        last_out_pos += canvas.theme.port_height
+                    
+                    out_segment[1] = last_out_pos
+                    last_out_pos += port_spacing
+            
+            if align_port_types:
+                # align port types horizontally
+                if last_in_pos > last_out_pos:
+                    last_out_type_and_sub = last_in_type_and_sub
+                else:
+                    last_in_type_and_sub = last_out_type_and_sub
+                last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
         
         if in_segment[0] != in_segment[1]:
             input_segments.append(in_segment)

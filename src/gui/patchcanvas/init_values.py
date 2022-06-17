@@ -56,6 +56,16 @@ class PortType(IntFlag):
     PARAMETER = 0x08
 
 
+class PortSubType(IntFlag):
+    ''' a2j ports are MIDI ports, we only specify a decoration for them.
+        CV ports are audio ports, but we prevent to connect an output CV port
+        to a regular audio port to avoid material destruction, CV ports also
+        look different, simply because this is absolutely not the same use.'''
+    REGULAR = 0x00
+    CV = 0x01
+    A2J = 0x02
+
+
 # Callback Actions
 class CallbackAct(IntEnum):
     GROUP_INFO = 0          # group_id: int
@@ -242,8 +252,8 @@ class ConnectableObject:
     group_id: int
     port_mode: PortMode
     port_type: PortType
+    port_subtype: PortSubType
     portgrp_id: int
-    is_alternate: bool
     
     def get_port_ids(self) -> tuple[int]:
         return ()
@@ -281,8 +291,6 @@ class PortgrpObject(ConnectableObject):
     widget: object
     if TYPE_CHECKING:
         widget: PortgroupWidget
-        
-    is_alternate = False
 
     def copy_no_widget(self):
         portgrp_copy = PortgrpObject()

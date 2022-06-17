@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt, QRectF, QPointF
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QGraphicsItem
 
-from .init_values import (CallbackAct, ConnectableObject, ConnectionObject, PortMode,
+from .init_values import (CallbackAct, ConnectableObject, ConnectionObject, PortMode, PortSubType,
                           PortType, canvas, options)
 from .line_move_widget import LineMoveWidget
 
@@ -34,7 +34,7 @@ class ConnectableWidget(QGraphicsItem):
         self._port_ids = connectable.get_port_ids()
         self._port_mode = connectable.port_mode
         self._port_type = connectable.port_type
-        self._is_alternate = connectable.is_alternate
+        self._port_subtype = connectable.port_subtype
         
         # needed for line mov
         self._line_mov_list = list[LineMoveWidget]()
@@ -63,8 +63,8 @@ class ConnectableWidget(QGraphicsItem):
     def get_port_type(self) -> PortType:
         return self._port_type
 
-    def is_alternate(self) -> bool:
-        return self._is_alternate
+    def get_port_subtype(self) -> PortSubType:
+        return self._port_subtype
 
     def get_connection_distance(self) -> float:
         # overclassed
@@ -92,19 +92,19 @@ class ConnectableWidget(QGraphicsItem):
 
         if self._port_type == PortType.AUDIO_JACK:
             if other.get_port_mode() == self._port_mode:
-                return bool(self.is_alternate() == other.is_alternate())
+                return bool(self._port_subtype == other.get_port_subtype())
             # absolutely forbidden to connect an output CV port
             # to an input audio port.
             # It could destroy material.
             if self._port_mode is PortMode.OUTPUT:
-                if self.is_alternate():
-                    return other.is_alternate()
+                if self._port_subtype is PortSubType.CV:
+                    return other.get_port_subtype() is PortSubType.CV
                 return True
 
             if self._port_mode is PortMode.INPUT:
-                if self.is_alternate():
+                if self._port_subtype is PortSubType.CV:
                     return True
-                return not other.is_alternate()
+                return not (other._port_subtype is PortSubType.CV)
 
         return True
     
