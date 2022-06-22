@@ -457,7 +457,8 @@ def split_group(group_id: int, on_place=False):
 
     for portgrp in portgrps_data:
         add_portgroup(group_id, portgrp.portgrp_id, portgrp.port_mode,
-                      portgrp.port_type, portgrp.port_id_list)
+                      portgrp.port_type, portgrp.port_subtype,
+                      portgrp.port_id_list)
 
     for conn in conns_data:
         connect_ports(conn.connection_id, conn.group_out_id, conn.port_out_id,
@@ -537,7 +538,8 @@ def join_group(group_id: int):
 
     for portgrp in portgrps_data:
         add_portgroup(group_id, portgrp.portgrp_id, portgrp.port_mode,
-                      portgrp.port_type, portgrp.port_id_list)
+                      portgrp.port_type, portgrp.port_subtype,
+                      portgrp.port_id_list)
 
     for conn in conns_data:
         connect_ports(conn.connection_id, conn.group_out_id, conn.port_out_id,

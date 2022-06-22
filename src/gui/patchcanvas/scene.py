@@ -281,11 +281,10 @@ class PatchScene(PatchSceneMoth):
             new_direction = get_direction(repulser.rect, irect, directions)
             directions.append(new_direction)
 
-            # TODO use of protected attributes.
             # calculate the new position of the box repulsed by its repulser
             new_rect = repulse(new_direction, repulser.rect, item,
                                repulser.item.get_current_port_mode(),
-                               item._current_port_mode)
+                               item.get_current_port_mode())
             
             active_repulsers = list[BoxAndRect]()
             

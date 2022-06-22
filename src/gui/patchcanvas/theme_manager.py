@@ -4,12 +4,21 @@ import logging
 import os
 import shutil
 from pathlib import Path
+from typing import TypedDict
 from PyQt5.QtCore import QTimer
 
 from .theme import Theme
 from .init_values import canvas, CallbackAct
 
-_LOGGER = logging.Logger(__name__)
+_logger = logging.Logger(__name__)
+
+
+class ThemeDict(TypedDict):
+    ref_id: str
+    name: str
+    editable: bool
+    file_path: str
+
 
 class ThemeManager:
     def __init__(self, theme_paths: tuple[Path]) -> None:
@@ -47,10 +56,10 @@ class ThemeManager:
             # it is just a convenience to mute conf.read
             file_list = conf.read(self.current_theme_file)
         except configparser.DuplicateOptionError as e:
-            _LOGGER.error(str(e))
+            _logger.error(str(e))
             return False
         except:
-            _LOGGER.error(f"failed to open {self.current_theme_file}")
+            _logger.error(f"failed to open {self.current_theme_file}")
             return False
         
         theme_dict = self._convert_configparser_object_to_dict(conf)
@@ -85,8 +94,12 @@ class ThemeManager:
             if key == 'DEFAULT':
                 continue
 
+            assert isinstance(value, configparser.SectionProxy)
             new_dict = {}
+
             for skey, svalue in value.items():
+                assert isinstance(svalue, str)
+                
                 if svalue.startswith('(') and svalue.endswith(')'):
                     new_value = svalue[1:-1].split(', ')
                     new_value = tuple([type_convert(v) for v in new_value])
@@ -112,7 +125,7 @@ class ThemeManager:
                 self.current_theme_file = theme_file_path
                 break
         else:
-            _LOGGER.error(f"Unable to find theme {theme_name}")
+            _logger.error(f"Unable to find theme {theme_name}")
             return False
 
         theme_is_valid = self._update_theme()
@@ -122,10 +135,10 @@ class ThemeManager:
         self.activate_watcher(os.access(self.current_theme_file, os.R_OK))
         return True
     
-    def list_themes(self) -> list[dict]:
+    def list_themes(self) -> list[ThemeDict]:
         themes_set = set()
         conf = configparser.ConfigParser()
-        themes_dicts = []
+        themes_dicts = list[ThemeDict]()
         lang = os.getenv('LANG')
         lang_short = ''
         if len(lang) >= 2:
@@ -148,7 +161,7 @@ class ThemeManager:
                 try:
                     conf.read(str(full_path))
                 except configparser.DuplicateOptionError as e:
-                    _LOGGER.error(str(e))
+                    _logger.error(str(e))
                     continue
                 except:
                     # TODO

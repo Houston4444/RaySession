@@ -1,13 +1,14 @@
 #!/usr/bin/python3
 import logging
 import os
-import sys
 import time
 import pickle
 from typing import TYPE_CHECKING
 
-from PyQt5.QtGui import QColor, QPen, QFont, QBrush, QFontMetricsF, QImage
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import (QColor, QPen, QFont, QBrush, QFontMetricsF,
+                         QImage, QFontDatabase)
+
 
 _logger = logging.getLogger(__name__)
 
@@ -167,7 +168,7 @@ class StyleAttributer:
             if self._background2_color is None:
                 err = True
 
-        elif attribute == 'background_image':
+        elif attribute == 'background-image':
             image_path = os.path.join(
                 os.path.dirname(Theme.theme_file_path), 'images', value)
             if os.path.isfile(image_path):
@@ -186,6 +187,17 @@ class StyleAttributer:
         elif attribute == 'font-name':
             if isinstance(value, str):
                 self._font_name = value
+                
+                # add the font to database if it is an embedded font
+                for ext in ('ttf', 'otf'):
+                    embedded_str = os.path.join(
+                        os.path.dirname(Theme.theme_file_path),
+                        'fonts', f"{value}.{ext}")
+                    if os.path.isfile(embedded_str):
+                        print('akdk', embedded_str)
+                        QFontDatabase.addApplicationFont(embedded_str)
+                        break
+                
             else:
                 err = True
                 
@@ -314,7 +326,7 @@ class StyleAttributer:
     def text_color(self) -> QColor:
         return self.get_value_of('_text_color')
     
-    def font(self) -> QFont:
+    def font(self) -> QFont:        
         font_ = QFont(self.get_value_of('_font_name'))
         font_.setPixelSize(self.get_value_of('_font_size'))
         font_.setWeight(self.get_value_of('_font_width'))
@@ -519,7 +531,6 @@ class Theme(StyleAttributer):
 
         self.scene_background_color = QColor('black')
         self.scene_background_image = QImage()
-        self.box_shadow_color = QColor('gray')
         self.monitor_color = QColor(190, 158, 0)
         self.port_height = 16
         
@@ -642,7 +653,7 @@ class Theme(StyleAttributer):
                 continue
             
             if begin not in ['body'] + self.subs:
-                _logger.error(f"invalid ignored key: {key}")
+                _logger.error(f"invalid ignored block key: [{key}]")
                 continue
             
             # replace alias with alias value
@@ -676,22 +687,20 @@ class Theme(StyleAttributer):
                         if not isinstance(body_value, int):
                             continue
                         self.__setattr__(body_key.replace('-', '_'), body_value)
+
                     elif body_key == 'background':
                         self.scene_background_color = _to_qcolor(body_value)
                         if self.scene_background_color is None:
                             self.scene_background_color = QColor('black')
-                    elif body_key == 'background_image':
+
+                    elif body_key == 'background-image':
                         background_path = os.path.join(
                             os.path.dirname(theme_file_path), 'images', body_value)
                         if os.path.isfile(background_path):
-                            self.background_image = QImage(background_path)
-                            if self.background_image.isNull():
-                                self.background_image = None
+                            self.scene_background_image = QImage(background_path)
+                            if self.scene_background_image.isNull():
+                                self.scene_background_image = None
 
-                    elif body_key == 'box-shadow-color':
-                        self.box_shadow_color = _to_qcolor(body_value)
-                        if self.box_shadow_color is None:
-                            self.box_shadow_color = QColor('black')
                     elif body_key == 'monitor-color':
                         self.monitor_color = _to_qcolor(body_value)
                         if self.monitor_color is None:
