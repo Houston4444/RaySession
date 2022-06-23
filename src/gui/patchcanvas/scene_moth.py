@@ -661,6 +661,11 @@ class PatchSceneMoth(QGraphicsScene):
                         widget.top_icon.update_zoom(scale * factor)
 
     def mouseDoubleClickEvent(self, event):
+        print('doubleclicl', canvas.menu_shown)
+        if canvas.menu_shown:
+            event.reject()
+            return
+        
         if event.button() == Qt.LeftButton:
             # parse items under mouse to prevent CallbackAct.DOUBLE_CLICK
             # if mouse is on a box
@@ -677,10 +682,16 @@ class PatchSceneMoth(QGraphicsScene):
         QGraphicsScene.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
+        if canvas.menu_shown:
+            print('nonon')
+            return
+        
         ctrl_pressed = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
         self._mouse_down_init = bool(
             (event.button() == Qt.LeftButton and not ctrl_pressed)
             or (event.button() == Qt.RightButton and ctrl_pressed))
+        
+        print('karaspoulos', event.button())
         
         self._mouse_rubberband = False
 

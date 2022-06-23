@@ -201,6 +201,7 @@ class Canvas:
         self.is_line_mov = False
         self.semi_hide_opacity = 0.17
         self.loading_items = False
+        self.menu_shown = False
         
         # This is only to get object methods in IDE everywhere.
         if TYPE_CHECKING:

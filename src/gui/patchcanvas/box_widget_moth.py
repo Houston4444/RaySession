@@ -248,19 +248,19 @@ class CanvasWidgetMoth(QGraphicsItem):
         self._plugin_ui = False
         #self._plugin_inline = self.INLINE_DISPLAY_DISABLED
 
-    def set_as_plugin(self, plugin_id, hasUI, hasInlineDisplay):
-        if hasInlineDisplay and not options.inline_displays:
-            hasInlineDisplay = False
+    def set_as_plugin(self, plugin_id, has_ui, has_inline_display):
+        if has_inline_display and not options.inline_displays:
+            has_inline_display = False
 
-        if not hasInlineDisplay:
+        if not has_inline_display:
             del self._inline_image
             self._inline_data = None
             self._inline_image = None
             self._inline_scaling = 1.0
 
         self._plugin_id = plugin_id
-        self._plugin_ui = hasUI
-        self._plugin_inline = (self.INLINE_DISPLAY_ENABLED if hasInlineDisplay
+        self._plugin_ui = has_ui
+        self._plugin_inline = (self.INLINE_DISPLAY_ENABLED if has_inline_display
                                else self.INLINE_DISPLAY_DISABLED)
         self.update()
 
@@ -840,9 +840,15 @@ class CanvasWidgetMoth(QGraphicsItem):
                 self._plugin_id)
             return
 
+        print('dbbclicbox', self._group_name)
         QGraphicsItem.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
+        print('mspressbox', self._group_name, event.pos(), self.boundingRect())
+        if not self.boundingRect().contains(event.pos()):
+            print('gros malin, pas possible')
+            return
+        
         canvas.last_z_value += 1
         self.setZValue(canvas.last_z_value)
         

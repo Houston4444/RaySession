@@ -12,11 +12,7 @@ transport controls
 refaire theme gui hidden tous les thèmes
 ajustements anti-superposition (après join/split, emballer/déballer remonte toujours un peu)
 
-# utiliser un logger nottament pour les chargements de thème
-# utiliser Path pour le chargement du thème
 Commenter plus
-#enlever les qcritical -> logger
-# Bug: connection non sélectionnée après clic droit
 
 # button wrapper en graphicsitem -> trop de taf, fonctionne bien comme ça
 xdg pour le cache (var de classes ?)

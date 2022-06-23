@@ -247,7 +247,11 @@ class PortWidget(ConnectableWidget):
         canvas.scene.clearSelection()
         self.setSelected(True)
 
+        canvas.menu_shown = True
+        print('ayocontext')
+        startt = time.time()
         menu = ConnectableContextMenu(self._port)
+        print('menudone', time.time() - startt)
 
         act_x_sep_1 = menu.addSeparator()
 
@@ -299,7 +303,11 @@ class PortWidget(ConnectableWidget):
         if not (features.port_info and features.port_rename):
             act_x_sep_1.setVisible(False)
 
+        print('ekkf', time.time() - startt)
+
         act_selected = menu.exec_(event.screenPos())
+        print('menu clossed')
+        canvas.menu_shown = False
 
         if act_selected == act_x_info:
             canvas.callback(CallbackAct.PORT_INFO, self._group_id, self._port_id)
