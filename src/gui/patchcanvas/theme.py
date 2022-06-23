@@ -13,76 +13,83 @@ from PyQt5.QtGui import (QColor, QPen, QFont, QBrush, QFontMetricsF,
 _logger = logging.getLogger(__name__)
 
 
-def _to_qcolor(color) -> QColor:
-    ''' convert a color given with a string, a list or a tuple (of ints)
-    to a QColor.
+def _to_qcolor(color: str) -> QColor:
+    ''' convert a color given with a string to a QColor.
     returns None if color has a incorrect value.'''
-    if isinstance(color, str):
-        intensity_ratio = 1.0
-        opacity_ratio = 1.0
-        
-        if color.startswith('-'):
-            color = color.partition('-')[2].strip()
-            intensity_ratio = - 1.0
+    if not isinstance(color, str):
+        return None
 
-        if '*' in color:
-            words = color.split('*')
-            next_for_opac = False
+    intensity_ratio = 1.0
+    opacity_ratio = 1.0
+    
+    if color.startswith('-'):
+        color = color.partition('-')[2].strip()
+        intensity_ratio = - 1.0
+
+    if '*' in color:
+        words = color.split('*')
+        next_for_opac = False
+        
+        for i in range(len(words)):
+            if i == 0:
+                color = words[i].strip()
+                continue
             
-            for i in range(len(words)):
-                if i == 0:
-                    color = words[i].strip()
-                    continue
-                
-                if not words[i]:
-                    next_for_opac = True
-                    continue
-                
-                if next_for_opac:
-                    try:
-                        opacity_ratio *= float(words[i].strip())
-                    except:
-                        pass
-                
-                    next_for_opac = False
-                    continue
-                
+            if not words[i]:
+                next_for_opac = True
+                continue
+            
+            if next_for_opac:
                 try:
-                    intensity_ratio *= float(words[i].strip())
+                    opacity_ratio *= float(words[i].strip())
                 except:
                     pass
-        
-        qcolor = QColor(color)
-        if not qcolor.isValid():
-            return None
-
-        if intensity_ratio == 1.0 and opacity_ratio == 1.0:
-            return qcolor
-        
-        if intensity_ratio < 0.0:
-            qcolor = QColor(
-                255 - qcolor.red(), 255 - qcolor.green(),
-                255 - qcolor.blue(), qcolor.alpha())
-        
-        if opacity_ratio != 1.0:
-            qcolor.setAlphaF(opacity_ratio * qcolor.alphaF())
-        
-        return qcolor.lighter(int(100 * intensity_ratio))
-
-    if isinstance(color, (tuple, list)):
-        if not 3 <= len(color) <= 4:
-            return None
-
-        for col in color:
-            if not isinstance(col, int):
-                return None
             
-            if not 0 <= col <= 255:
-                return None
-        
-        return QColor(*color)
+                next_for_opac = False
+                continue
+            
+            try:
+                intensity_ratio *= float(words[i].strip())
+            except:
+                pass
     
-    return None
+    if color.startswith('rgb(') and color.endswith(')'):
+        try:
+            channels = [int(c.strip()) for c in
+                        color.partition('(')[2].rpartition(')')[0].split(',')]
+            assert len(channels) == 3
+            qcolor = QColor(*channels)
+        except:
+            return None
+    
+    elif color.startswith('rgba(') and color.endswith(')'):
+        try:
+            values = [c.strip() for c in
+                      color.partition('(')[2].rpartition(')')[0].split(',')]
+            assert len(values) == 4
+            qcolor = QColor(*[int(v) for v in values[:3]],
+                            int(float(values[3]) * 255))
+        except:
+            return None
+    
+    else:
+        qcolor = QColor(color)
+
+    if not qcolor.isValid():
+        return None
+
+    if intensity_ratio == 1.0 and opacity_ratio == 1.0:
+        return qcolor
+    
+    if intensity_ratio < 0.0:
+        qcolor = QColor(
+            255 - qcolor.red(), 255 - qcolor.green(),
+            255 - qcolor.blue(), qcolor.alpha())
+    
+    if opacity_ratio != 1.0:
+        qcolor.setAlphaF(opacity_ratio * qcolor.alphaF())
+    
+    return qcolor.lighter(int(100 * intensity_ratio))
 
 def rail_float(value, mini: float, maxi: float) -> float:
     return max(min(float(value), float(maxi)), float(mini))
@@ -187,14 +194,13 @@ class StyleAttributer:
         elif attribute == 'font-name':
             if isinstance(value, str):
                 self._font_name = value
-                
+
                 # add the font to database if it is an embedded font
                 for ext in ('ttf', 'otf'):
                     embedded_str = os.path.join(
                         os.path.dirname(Theme.theme_file_path),
                         'fonts', f"{value}.{ext}")
                     if os.path.isfile(embedded_str):
-                        print('akdk', embedded_str)
                         QFontDatabase.addApplicationFont(embedded_str)
                         break
                 
@@ -637,7 +643,7 @@ class Theme(StyleAttributer):
                         f"alias key must be a string. Ignore: {str(alias_key)}")
                     continue
                 
-                self.aliases[alias_key] = alias_value
+                self.aliases[alias_key] = str(alias_value)
             
             break
         
