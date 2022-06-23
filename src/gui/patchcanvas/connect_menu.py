@@ -141,14 +141,14 @@ class GroupConnectMenu(SubMenu):
                             and po.port_subtype != port.port_subtype):
                         continue
 
-                    self._add_element(port, port.port_name, '', port.port_subtype)
+                    self._add_element(port, port.port_name, '')
         
         self._elements_added = True
 
     def _add_element(self, p_object: Union[PortObject, PortgrpObject],
-                    port_name: str, port_name_end: str, port_subtype=PortSubType.REGULAR):
-        if self._p_object.port_subtype is PortSubType.CV:
-            port_name = f"CV| {port_name}"
+                    port_name: str, port_name_end: str):
+        if p_object.port_subtype is PortSubType.CV:
+            port_name = f"CV | {port_name}"
 
         check_frame = CheckFrame(p_object, port_name, port_name_end, self)
         action = QWidgetAction(self)
@@ -274,8 +274,6 @@ class ConnectMenu(SubMenu):
 
         self.dangerous_submenu = DangerousMenu(
             dangerous_name, self._p_object, self)
-
-        startt = time.time()
 
         # add the needed groups (not the ports)
         for group in canvas.group_list:

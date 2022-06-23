@@ -12,6 +12,7 @@ from .init_values import (
     GroupObject,
     IconType,
     PortObject,
+    PortSubType,
     PortgrpObject,
     canvas,
     PortType)
@@ -134,8 +135,9 @@ class CheckFrame(QFrame):
             theme = canvas.theme.portgroup
             
         if po.port_type is PortType.AUDIO_JACK:
-            theme = theme.audio
+            theme = theme.cv if po.port_subtype is PortSubType.CV else theme.audio
             line_theme = line_theme.audio
+            
         elif po.port_type is PortType.MIDI_JACK:
             theme = theme.midi
             line_theme = line_theme.midi
