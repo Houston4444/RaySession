@@ -17,10 +17,11 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 from enum import Enum
+import time
 from typing import Union
 from PyQt5.QtCore import pyqtSlot, QCoreApplication
 from PyQt5.QtWidgets import QWidgetAction, QMenu, QAction
-from PyQt5.QtGui import QIcon, QPixmap, QPen
+from PyQt5.QtGui import QIcon, QPixmap, QPen, QMouseEvent
 
 import patchcanvas.utils as utils
 from .init_values import (
@@ -90,6 +91,7 @@ class GroupConnectMenu(SubMenu):
         self._parent = parent
         self._group = group
         self._elements = list[_DataConnElement]()
+        self._dangerous_mode = dangerous_mode
 
         self._last_portgrp_id = 0
         
@@ -105,8 +107,19 @@ class GroupConnectMenu(SubMenu):
         self.setStyleSheet(
             f"QMenu{{background-color:{bg_color}; border: 1px solid {border_color}}}")
 
+        self._elements_added = False
+
+    def group_id(self) -> int:
+        return self._group.group_id
+
+    def add_all_elements(self):
+        if self._elements_added:
+            return
+
+        po = self._p_object
+        
         for port in canvas.port_list:
-            if (port.group_id == group.group_id
+            if (port.group_id == self._group.group_id
                     and port.port_type is po.port_type
                     and port.port_mode is not po.port_mode):
                 if isinstance(po, PortgrpObject) and port.portgrp_id:
@@ -117,23 +130,22 @@ class GroupConnectMenu(SubMenu):
                                 pg_name, pts_name = utils.get_portgroup_short_name_splitted(
                                     portgrp.group_id, portgrp.portgrp_id)
                                 
-                                self.add_element(portgrp, pg_name, pts_name)
+                                self._add_element(portgrp, pg_name, pts_name)
                                 break
                 else:
-                    if (dangerous_mode is _Dangerous.YES
+                    if (self._dangerous_mode is _Dangerous.YES
                             and po.port_subtype == port.port_subtype):
                         continue
 
-                    if (dangerous_mode is _Dangerous.NO
+                    if (self._dangerous_mode is _Dangerous.NO
                             and po.port_subtype != port.port_subtype):
                         continue
 
-                    self.add_element(port, port.port_name, '', port.port_subtype)
+                    self._add_element(port, port.port_name, '', port.port_subtype)
+        
+        self._elements_added = True
 
-    def group_id(self) -> int:
-        return self._group.group_id
-
-    def add_element(self, p_object: Union[PortObject, PortgrpObject],
+    def _add_element(self, p_object: Union[PortObject, PortgrpObject],
                     port_name: str, port_name_end: str, port_subtype=PortSubType.REGULAR):
         if self._p_object.port_subtype is PortSubType.CV:
             port_name = f"CV| {port_name}"
@@ -152,7 +164,7 @@ class GroupConnectMenu(SubMenu):
         element.check_frame = check_frame
         self._elements.append(element)
 
-    def remove_element(self, port_id: int, portgrp_id: int):
+    def _remove_element(self, port_id: int, portgrp_id: int):
         for element in self._elements:
             if (element.port_id == port_id
                     and element.portgrp_id == portgrp_id):
@@ -224,6 +236,15 @@ class DangerousMenu(SubMenu):
                         utils.canvas_callback(
                             CallbackAct.PORTS_DISCONNECT,
                             connection.connection_id)
+    
+    def mouseMoveEvent(self, event: QMouseEvent):
+        action = self.actionAt(event.pos())
+        if action:
+            menu = action.menu()
+            if isinstance(menu, GroupConnectMenu):
+                menu.add_all_elements()
+        
+        return super().mouseMoveEvent(event)
 
 
 class ConnectMenu(SubMenu):
@@ -254,6 +275,8 @@ class ConnectMenu(SubMenu):
         self.dangerous_submenu = DangerousMenu(
             dangerous_name, self._p_object, self)
 
+        startt = time.time()
+
         # add the needed groups (not the ports)
         for group in canvas.group_list:
             grp_has_dangerous = False
@@ -282,7 +305,7 @@ class ConnectMenu(SubMenu):
 
                     if grp_has_dangerous and grp_has_regular:
                         break
-
+                
         if has_dangerous_global:
             self.addSeparator()
             self.addMenu(self.dangerous_submenu)
@@ -333,6 +356,15 @@ class ConnectMenu(SubMenu):
         # prevent to close the menu accidentaly when the mouse 
         # leaves the menu area
         pass
+    
+    def mouseMoveEvent(self, event: QMouseEvent):
+        action = self.actionAt(event.pos())
+        if action:
+            menu = action.menu()
+            if isinstance(menu, GroupConnectMenu):
+                menu.add_all_elements()
+        
+        return super().mouseMoveEvent(event)
 
     # TODO was initially added the fact menu was updated
     # when port was added or removed

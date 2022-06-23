@@ -170,13 +170,13 @@ class CheckFrame(QFrame):
         self.setFont(theme.font())
         self.setStyleSheet(
             f"CheckFrame{{{theme_css(theme)}; spacing: 0px;"
-            f"{borders_text}; border-radius: 3px; {radius_text}; {margins_text}; padding-right: 0px}}"
+            f"{borders_text}; border-radius: 3px; {radius_text};"
+            f"{margins_text}; padding-right: 0px}}"
             f"CheckFrame:focus{{{theme_css(theme.selected)}}};")
         
         self._label_left.setFont(theme.font())
         self._label_left.setStyleSheet(
-            f"QLabel{{color: {text_color}}};QLabel:focus{{color: {h_text_color}}} "
-        )
+            f"QLabel{{color: {text_color}}};QLabel:focus{{color: {h_text_color}}} ")
         
         if self._label_right is not None:
             port_theme = canvas.theme.port
