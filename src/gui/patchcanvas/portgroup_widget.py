@@ -23,8 +23,8 @@ import logging
 from math import floor
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import QPointF, QRectF
-from PyQt5.QtGui import (QFontMetrics, QPainter,
+from PyQt5.QtCore import QPointF, QRectF, Qt
+from PyQt5.QtGui import (QFontMetrics, QPainter, QBrush,
                          QPolygonF, QLinearGradient, QPen)
 from PyQt5.QtWidgets import QApplication, QGraphicsItem
 
@@ -225,6 +225,7 @@ class PortgroupWidget(ConnectableWidget):
         if self.isSelected():
             theme = theme.selected
 
+        poly_image = theme.background_image()
         poly_pen = theme.fill_pen()
         color_main = theme.background_color()
         color_alter = theme.background2_color()
@@ -275,6 +276,11 @@ class PortgroupWidget(ConnectableWidget):
                            canvas.theme.port_height * len(self._port_ids) - line_hinting)
         polygon += QPointF(poly_locx[4],
                            canvas.theme.port_height * len(self._port_ids) - line_hinting)
+
+        if poly_image is not None:
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QBrush(poly_image))
+            painter.drawPolygon(polygon)
 
         if color_alter is not None:
             portgrp_gradient = QLinearGradient(0, 0, 0, self._portgrp_height * 2)

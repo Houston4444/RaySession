@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import Qt, QPointF, QRectF
 from PyQt5.QtGui import (
-    QCursor, QFontMetrics, QPainter, QPen, QPolygonF,
+    QBrush, QFontMetrics, QPainter, QPen, QPolygonF,
     QLinearGradient, QIcon)
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 
@@ -337,6 +337,7 @@ class PortWidget(ConnectableWidget):
         if self.isSelected():
             theme = theme.selected
         
+        poly_image = theme.background_image()
         poly_color = theme.background_color()
         poly_color_alter = theme.background2_color()
         poly_pen = theme.fill_pen()
@@ -436,6 +437,11 @@ class PortWidget(ConnectableWidget):
             polygon += QPointF(poly_locx[4], canvas.theme.port_height - lineHinting)
             polygon += QPointF(poly_locx[0], lineHinting)
 
+        if poly_image is not None:
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QBrush(poly_image))
+            painter.drawPolygon(polygon)
+
         if poly_color_alter is not None:
             port_gradient = QLinearGradient(0, 0, 0, self._port_height)
 
@@ -446,7 +452,7 @@ class PortWidget(ConnectableWidget):
             painter.setBrush(port_gradient)
         else:
             painter.setBrush(poly_color)
-            
+        
         painter.setPen(poly_pen)
         painter.drawPolygon(polygon)
 

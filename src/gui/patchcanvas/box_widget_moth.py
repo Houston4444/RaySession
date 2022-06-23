@@ -1015,7 +1015,15 @@ class CanvasWidgetMoth(QGraphicsItem):
             wtheme = wtheme.selected
             hltheme = hltheme.selected
 
-        # Draw rectangle
+        bg_image = theme.background_image()
+
+        # draw the background image if exists
+        if bg_image:
+            painter.setBrush(QBrush(bg_image))
+            painter.setPen(Qt.NoPen)
+            painter.drawPath(self._painter_path)
+        
+        # draw the main rectangle
         pen = theme.fill_pen()
         pen.setWidthF(pen.widthF() + 0.00001)
         
@@ -1023,30 +1031,25 @@ class CanvasWidgetMoth(QGraphicsItem):
         pen_width = pen.widthF()
         line_hinting = pen_width / 2.0
         
-        bg_image = theme.background_image()
+        color_main = theme.background_color()
+        color_alter = theme.background2_color()
 
-        if bg_image:
-            painter.setBrush(QBrush(bg_image))
+        if color_alter is not None:
+            max_size = max(self._height, self._width)
+            box_gradient = QLinearGradient(0, 0, max_size, max_size)
+            gradient_size = 20
+
+            box_gradient.setColorAt(0, color_main)
+            tot = int(max_size / gradient_size)
+            for i in range(tot):
+                if i % 2 == 0:
+                    box_gradient.setColorAt((i/tot) ** 0.7, color_main)
+                else:
+                    box_gradient.setColorAt((i/tot) ** 0.7, color_alter)
+
+            painter.setBrush(box_gradient)
         else:
-            color_main = theme.background_color()
-            color_alter = theme.background2_color()
-
-            if color_alter is not None:
-                max_size = max(self._height, self._width)
-                box_gradient = QLinearGradient(0, 0, max_size, max_size)
-                gradient_size = 20
-
-                box_gradient.setColorAt(0, color_main)
-                tot = int(max_size / gradient_size)
-                for i in range(tot):
-                    if i % 2 == 0:
-                        box_gradient.setColorAt((i/tot) ** 0.7, color_main)
-                    else:
-                        box_gradient.setColorAt((i/tot) ** 0.7, color_alter)
-
-                painter.setBrush(box_gradient)
-            else:
-                painter.setBrush(color_main)
+            painter.setBrush(color_main)
         
         painter.drawPath(self._painter_path)
         
