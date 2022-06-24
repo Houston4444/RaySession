@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import Qt, QPointF, QRectF
 from PyQt5.QtGui import (
     QBrush, QFontMetrics, QPainter, QPen, QPolygonF,
-    QLinearGradient, QIcon)
+    QLinearGradient, QIcon, QCursor)
 from PyQt5.QtWidgets import QGraphicsItem, QMenu, QApplication
 
 
@@ -248,10 +248,7 @@ class PortWidget(ConnectableWidget):
         self.setSelected(True)
 
         canvas.menu_shown = True
-        print('ayocontext')
-        startt = time.time()
         menu = ConnectableContextMenu(self._port)
-        print('menudone', time.time() - startt)
 
         act_x_sep_1 = menu.addSeparator()
 
@@ -303,17 +300,19 @@ class PortWidget(ConnectableWidget):
         if not (features.port_info and features.port_rename):
             act_x_sep_1.setVisible(False)
 
-        print('ekkf', time.time() - startt)
-
-        act_selected = menu.exec_(event.screenPos())
-        print('menu clossed')
-        canvas.menu_shown = False
+        self.parentItem().setFlag(QGraphicsItem.ItemIsMovable, False)
+        act_selected = menu.exec(event.screenPos())
 
         if act_selected == act_x_info:
             canvas.callback(CallbackAct.PORT_INFO, self._group_id, self._port_id)
 
         elif act_selected == act_x_rename:
             canvas.callback(CallbackAct.PORT_RENAME, self._group_id, self._port_id)
+            
+        if act_selected is None:
+            canvas.menu_click_pos = QCursor.pos()
+        else:
+            self.parentItem().setFlag(QGraphicsItem.ItemIsMovable, True)
 
     def boundingRect(self):
         if self._portgrp_id:

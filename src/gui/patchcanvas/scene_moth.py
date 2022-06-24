@@ -661,11 +661,6 @@ class PatchSceneMoth(QGraphicsScene):
                         widget.top_icon.update_zoom(scale * factor)
 
     def mouseDoubleClickEvent(self, event):
-        print('doubleclicl', canvas.menu_shown)
-        if canvas.menu_shown:
-            event.reject()
-            return
-        
         if event.button() == Qt.LeftButton:
             # parse items under mouse to prevent CallbackAct.DOUBLE_CLICK
             # if mouse is on a box
@@ -677,21 +672,17 @@ class PatchSceneMoth(QGraphicsScene):
                     break
             else:
                 canvas.callback(CallbackAct.DOUBLE_CLICK)
+                # event.accept()
+                QGraphicsScene.mouseDoubleClickEvent(self, event)
                 return
 
         QGraphicsScene.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
-        if canvas.menu_shown:
-            print('nonon')
-            return
-        
         ctrl_pressed = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
         self._mouse_down_init = bool(
             (event.button() == Qt.LeftButton and not ctrl_pressed)
             or (event.button() == Qt.RightButton and ctrl_pressed))
-        
-        print('karaspoulos', event.button())
         
         self._mouse_rubberband = False
 
@@ -708,6 +699,7 @@ class PatchSceneMoth(QGraphicsScene):
                         item.trigger_disconnect()
 
         QGraphicsScene.mousePressEvent(self, event)
+        canvas.menu_shown = False
 
         if event.buttons() == Qt.LeftButton:
             if (options.borders_navigation
@@ -825,7 +817,8 @@ class PatchSceneMoth(QGraphicsScene):
             self._trigger_rubberband_scale()
             return
 
-        if len(self.selectedItems()) == 0:
+        if not self.items(event.scenePos()):
+        # if len(self.selectedItems()) == 0:
             event.accept()
             x, y = event.screenPos().x(), event.screenPos().y()
             canvas.callback(CallbackAct.BG_RIGHT_CLICK, x, y)

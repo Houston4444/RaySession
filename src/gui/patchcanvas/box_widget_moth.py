@@ -17,6 +17,7 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
+import inspect
 from struct import pack
 from sip import voidptr
 import sys
@@ -78,6 +79,12 @@ class TitleLine:
 
     def get_font(self) -> QFont:
         return self.theme.font()
+
+
+class DisconnectElement:
+    group_id: int
+    connection_in_ids: list[int]
+    connection_out_ids: list[int]
 
 
 class CanvasWidgetMoth(QGraphicsItem):
@@ -201,13 +208,10 @@ class CanvasWidgetMoth(QGraphicsItem):
         self._title_under_icon = False
         self._painter_path = QPainterPath()
         
-        self._port_list = []
-        self._portgrp_list = []
-        
         self.update_positions()
 
         canvas.scene.addItem(self)
-        QTimer.singleShot(0, self.fixPos)
+        QTimer.singleShot(0, self.fix_pos)
 
     def _get_layout_mode_for_this(self):
         for group in canvas.group_list:
@@ -587,6 +591,7 @@ class CanvasWidgetMoth(QGraphicsItem):
             return
 
         event.accept()
+        canvas.menu_shown = True
         menu = QMenu()
 
         dark = '-dark' if utils.is_dark_theme(menu) else ''
@@ -597,7 +602,7 @@ class CanvasWidgetMoth(QGraphicsItem):
             QIcon(QPixmap(':scalable/breeze%s/lines-disconnector' % dark)))
 
         conn_list_ids = list[int]()
-        disconnect_list = list[dict]()
+        disconnect_list = list[DisconnectElement]()
 
         for connection in canvas.connection_list:
             if connection.concerns(self._group_id, self._port_list_ids):
@@ -615,24 +620,25 @@ class CanvasWidgetMoth(QGraphicsItem):
                         group_port_mode = PortMode.OUTPUT
 
                 for disconnect_element in disconnect_list:
-                    if disconnect_element['group_id'] == other_group_id:
+                    if disconnect_element.group_id == other_group_id:
                         if group_port_mode is PortMode.INPUT:
-                            disconnect_element['connection_in_ids'].append(
+                            disconnect_element.connection_in_ids.append(
                                 connection.connection_id)
                         else:
-                            disconnect_element['connection_out_ids'].append(
+                            disconnect_element.connection_out_ids.append(
                                 connection.connection_id)
                         break
                 else:
-                    disconnect_element = {'group_id': other_group_id,
-                                          'connection_in_ids': list[int](),
-                                          'connection_out_ids': list[int]()}
+                    disconnect_element = DisconnectElement()
+                    disconnect_element.group_id = other_group_id
+                    disconnect_element.connection_in_ids = list[int]()
+                    disconnect_element.connection_out_ids = list[int]()
 
                     if group_port_mode is PortMode.INPUT:
-                        disconnect_element['connection_in_ids'].append(
+                        disconnect_element.connection_in_ids.append(
                             connection.connection_id)
                     else:
-                        disconnect_element['connection_out_ids'].append(
+                        disconnect_element.connection_out_ids.append(
                             connection.connection_id)
 
                     disconnect_list.append(disconnect_element)
@@ -640,10 +646,10 @@ class CanvasWidgetMoth(QGraphicsItem):
         if disconnect_list:
             for disconnect_element in disconnect_list:
                 for group in canvas.group_list:
-                    if group.group_id == disconnect_element['group_id']:
+                    if group.group_id == disconnect_element.group_id:
                         if (group.split
-                                and disconnect_element['connection_in_ids']
-                                and disconnect_element['connection_out_ids']):
+                                and disconnect_element.connection_in_ids
+                                and disconnect_element.connection_out_ids):
                             ins_label = " (inputs)"
                             outs_label = " (outputs)"
 
@@ -656,7 +662,7 @@ class CanvasWidgetMoth(QGraphicsItem):
                             act_x_disc1.setIcon(utils.get_icon(
                                 group.icon_type, group.icon_name, PortMode.OUTPUT))
                             act_x_disc1.setData(
-                                disconnect_element['connection_out_ids'])
+                                disconnect_element.connection_out_ids)
                             act_x_disc1.triggered.connect(
                                 canvas.qobject.port_context_menu_disconnect)
 
@@ -665,14 +671,14 @@ class CanvasWidgetMoth(QGraphicsItem):
                             act_x_disc2.setIcon(utils.get_icon(
                                 group.icon_type, group.icon_name, PortMode.INPUT))
                             act_x_disc2.setData(
-                                disconnect_element['connection_in_ids'])
+                                disconnect_element.connection_in_ids)
                             act_x_disc2.triggered.connect(
                                 canvas.qobject.port_context_menu_disconnect)
                         else:
                             port_mode = PortMode.NULL
-                            if not disconnect_element['connection_in_ids']:
+                            if not disconnect_element.connection_in_ids:
                                 port_mode = PortMode.OUTPUT
-                            elif not disconnect_element['connection_out_ids']:
+                            elif not disconnect_element.connection_out_ids:
                                 port_mode = PortMode.INPUT
 
                             act_x_disc = discMenu.addAction(group.group_name)
@@ -680,8 +686,8 @@ class CanvasWidgetMoth(QGraphicsItem):
                                 group.icon_type, group.icon_name, port_mode)
                             act_x_disc.setIcon(icon)
                             act_x_disc.setData(
-                                disconnect_element['connection_out_ids']
-                                + disconnect_element['connection_in_ids'])
+                                disconnect_element.connection_out_ids
+                                + disconnect_element.connection_in_ids)
                             act_x_disc.triggered.connect(
                                 canvas.qobject.port_context_menu_disconnect)
                         break
@@ -725,8 +731,6 @@ class CanvasWidgetMoth(QGraphicsItem):
             _translate('patchbay', 'Change layout'))
         act_switch_layout.setIcon(QIcon.fromTheme('view-split-left-right'))
 
-        act_x_sep3 = menu.addSeparator()
-
         if not features.group_info:
             act_x_info.setVisible(False)
 
@@ -758,6 +762,7 @@ class CanvasWidgetMoth(QGraphicsItem):
             act_x_sep2.setVisible(False)
             act_x_split_join.setVisible(False)
 
+        self.setFlag(QGraphicsItem.ItemIsMovable, False)
         act_selected = menu.exec_(event.screenPos())
 
         if act_selected is None:
@@ -812,6 +817,11 @@ class CanvasWidgetMoth(QGraphicsItem):
         elif act_selected == act_x_wrap:
             canvas.callback(CallbackAct.GROUP_WRAP, self._group_id,
                             self._splitted_mode, not self._wrapped)
+        
+        if act_selected is None:
+            canvas.menu_click_pos = QCursor.pos()
+        else:
+            self.setFlag(QGraphicsItem.ItemIsMovable, True)
 
     def keyPressEvent(self, event):
         if self._plugin_id >= 0 and event.key() == Qt.Key_Delete:
@@ -840,21 +850,22 @@ class CanvasWidgetMoth(QGraphicsItem):
                 self._plugin_id)
             return
 
-        print('dbbclicbox', self._group_name)
         QGraphicsItem.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
-        print('mspressbox', self._group_name, event.pos(), self.boundingRect())
-        if not self.boundingRect().contains(event.pos()):
-            print('gros malin, pas possible')
-            return
-        
         canvas.last_z_value += 1
         self.setZValue(canvas.last_z_value)
         
-        # self.reset_lines_z_value()
         self._cursor_moving = False
-        if event.button() == Qt.RightButton:
+        if canvas.menu_shown and canvas.menu_click_pos == QCursor.pos():
+            # prevent box move if user just quit a context menu with click outside
+            # because it moves the box at the very strange position
+            # if the cursor didn't move between the click for menu quit 
+            # and the next one (this one)
+            # strange Qt Bug
+            self.setFlag(QGraphicsItem.ItemIsMovable, False)
+        
+        elif event.button() == Qt.RightButton:
             event.accept()
             canvas.scene.clearSelection()
             self.setSelected(True)
@@ -867,14 +878,8 @@ class CanvasWidgetMoth(QGraphicsItem):
                     event.ignore()
                     return
 
+                self.setFlag(QGraphicsItem.ItemIsMovable, True)
                 self._mouse_down = True
-            else:
-                # FIXME: Check if still valid:
-                # Fix a weird Qt behaviour with right-click mouseMove
-                self._mouse_down = False
-                event.ignore()
-                return
-
         else:
             self._mouse_down = False
 
@@ -882,7 +887,7 @@ class CanvasWidgetMoth(QGraphicsItem):
 
     def mouseMoveEvent(self, event):
         if canvas.scene.resizing_scene:
-            # QGraphicsScene.setSceneRect calls this method
+            # QGraphicsScene.setSceneRect calls this method indirectly
             # and resize_the_scene can be called from this method
             # So, here we avoid a RecursionError
             return
@@ -931,7 +936,7 @@ class CanvasWidgetMoth(QGraphicsItem):
         
         QGraphicsItem.mouseReleaseEvent(self, event)
     
-    def fixPos(self):
+    def fix_pos(self):
         self.setX(round(self.x()))
         self.setY(round(self.y()))
 
@@ -953,7 +958,7 @@ class CanvasWidgetMoth(QGraphicsItem):
 
     def fix_pos_after_move(self):
         for box in canvas.scene.get_selected_boxes():
-            box.fixPos()
+            box.fix_pos()
             box.send_move_callback()
 
     def set_in_cache(self, yesno: bool):

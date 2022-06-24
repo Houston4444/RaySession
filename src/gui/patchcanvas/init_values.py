@@ -20,7 +20,7 @@
 from typing import TYPE_CHECKING
 from enum import IntEnum, IntFlag
 
-from PyQt5.QtCore import QPointF, QRectF, QSettings
+from PyQt5.QtCore import QPointF, QRectF, QSettings, QPoint
 from PyQt5.QtWidgets import QGraphicsItem
 
 if TYPE_CHECKING:
@@ -202,6 +202,7 @@ class Canvas:
         self.semi_hide_opacity = 0.17
         self.loading_items = False
         self.menu_shown = False
+        self.menu_click_pos = QPoint(0, 0)
         
         # This is only to get object methods in IDE everywhere.
         if TYPE_CHECKING:

@@ -17,11 +17,12 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 from enum import Enum
+import inspect
 import time
 from typing import Union
 from PyQt5.QtCore import pyqtSlot, QCoreApplication
 from PyQt5.QtWidgets import QWidgetAction, QMenu, QAction
-from PyQt5.QtGui import QIcon, QPixmap, QPen, QMouseEvent
+from PyQt5.QtGui import QIcon, QPixmap, QPen, QMouseEvent, QCloseEvent, QCursor
 
 import patchcanvas.utils as utils
 from .init_values import (
@@ -245,14 +246,12 @@ class DangerousMenu(SubMenu):
                 menu.add_all_elements()
         
         return super().mouseMoveEvent(event)
-
+    
 
 class ConnectMenu(SubMenu):
     def __init__(self, p_object: Union[PortObject, PortgrpObject], parent):
         SubMenu.__init__(self, _translate('patchbay', 'Connect'),
                          p_object, parent)
-        #canvas.qobject.port_added.connect(self.port_added_to_canvas)
-        #canvas.qobject.port_removed.connect(self.port_removed_from_canvas)
 
         self.group_menus = list[GroupConnectMenu]()
         self.connection_list = list[ConnectionObject]()

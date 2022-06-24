@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import QPointF, QRectF, Qt
 from PyQt5.QtGui import (QFontMetrics, QPainter, QBrush,
-                         QPolygonF, QLinearGradient, QPen)
+                         QPolygonF, QLinearGradient, QPen, QCursor)
 from PyQt5.QtWidgets import QApplication, QGraphicsItem
 
 # Imports (Custom)
@@ -185,14 +185,22 @@ class PortgroupWidget(ConnectableWidget):
 
         canvas.scene.clearSelection()
         self.setSelected(True)
+        canvas.menu_shown = True
 
         menu = ConnectableContextMenu(self._portgrp)
         act_x_setasmono = menu.addAction(
             _translate('patchbay', "Split to Monos"))
+        
+        self.parentItem().setFlag(QGraphicsItem.ItemIsMovable, False)
         act_selected = menu.exec_(event.screenPos())
-
+        
         if act_selected == act_x_setasmono:
             self._split_to_monos()
+
+        if act_selected is None:
+            canvas.menu_click_pos = QCursor.pos()
+        else:
+            self.parentItem().setFlag(QGraphicsItem.ItemIsMovable, True)
 
         event.accept()
 
