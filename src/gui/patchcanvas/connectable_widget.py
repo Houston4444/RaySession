@@ -242,8 +242,6 @@ class ConnectableWidget(QGraphicsItem):
             event.ignore()
             return
         
-        print('mokmokoport', event.button())
-        
         if event.button() == Qt.LeftButton:
             self._hover_item = None
             self._mouse_down = True

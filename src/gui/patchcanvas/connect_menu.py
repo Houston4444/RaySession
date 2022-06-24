@@ -158,6 +158,11 @@ class GroupConnectMenu(SubMenu):
 
         self._last_portgrp_id = p_object.portgrp_id
 
+        check_frame.set_check_state(
+            utils.get_portgroup_connection_state(
+                self._p_object.group_id, self._p_object.get_port_ids(),
+                p_object.group_id, p_object.get_port_ids()))
+
         element = _DataConnElement()
         element.port_id = p_object.port_id if isinstance(p_object, PortObject) else -1
         element.portgrp_id = p_object.portgrp_id
@@ -196,7 +201,6 @@ class GroupConnectMenu(SubMenu):
 
     def _mouse_hover_menu(self, action: QWidgetAction):
         action.defaultWidget().setFocus()
-        pass
 
 
 class DangerousMenu(SubMenu):
@@ -667,9 +671,6 @@ class ConnectableContextMenu(QMenu):
     def connection_added_to_canvas(self, connection_id: int):
         for connection in canvas.connection_list:
             if connection.connection_id == connection_id:
-                # if connection.concerns(self._group_id, self._port_id_list):
-                #     return
-
                 self.add_connection(connection)
 
     def connection_removed_from_canvas(self, connection_id: int):
