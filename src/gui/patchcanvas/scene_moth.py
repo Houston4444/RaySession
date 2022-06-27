@@ -713,12 +713,12 @@ class PatchSceneMoth(QGraphicsScene):
 
     def mouseMoveEvent(self, event):
         if self._mouse_down_init:
-        # if self._mouse_down_init and event.buttons() & Qt.LeftButton:
             self._mouse_down_init = False
             topmost = self.itemAt(event.scenePos(), self._view.transform())
-            self._mouse_rubberband = not (
-                isinstance(topmost, (BoxWidget, ConnectableWidget,
-                                     IconPixmapWidget, IconSvgWidget)))
+            self._mouse_rubberband = (
+                not isinstance(topmost, (BoxWidget, ConnectableWidget,
+                                         IconPixmapWidget, IconSvgWidget))
+                and int(event.buttons()))
 
         if self._mouse_rubberband:
             event.accept()
