@@ -25,7 +25,7 @@ import time
 from tokenize import group
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import Qt, QPointF, QRectF
+from PyQt5.QtCore import Qt, QPointF, QPoint, QRectF
 from PyQt5.QtGui import (
     QBrush, QFontMetrics, QPainter, QPen, QPolygonF,
     QLinearGradient, QIcon, QCursor)
@@ -300,9 +300,35 @@ class PortWidget(ConnectableWidget):
         if not (features.port_info and features.port_rename):
             act_x_sep_1.setVisible(False)
 
+        # prevent a bug that moves the box on mouse click after click to 
+        # quit the menu if the two clic are at same point.
         self.parentItem().setFlag(QGraphicsItem.ItemIsMovable, False)
-        act_selected = menu.exec(event.screenPos())
 
+        # precise the menu start point to still view the port
+        # and be able to read its portgroup name.
+        print('bef menu height', menu.height(), menu.minimumHeight())
+        
+        # menu.show()
+        print('aft menu height', menu.height(), menu.minimumHeight())
+        
+        start_point = canvas.scene.screen_position(
+            self.scenePos() + QPointF(0.0, self._port_height))
+        
+        if (self._portgrp_id and self._port_mode is PortMode.INPUT
+                and self._pg_pos + 1 <= self._pg_len // 2):
+            start_point = canvas.scene.screen_position(
+                self.scenePos() + QPointF(
+                    0.0, self._port_height * (0.5 + self._pg_len / 2.0)))
+            
+        bottom_screen = QApplication.desktop().screenGeometry().bottom()
+        more = 12 if self._port_mode is PortMode.OUTPUT else 0
+
+        if start_point.y() + menu.height() > bottom_screen:
+            start_point = canvas.scene.screen_position(
+                self.scenePos() + QPointF(self._port_width + more, self._port_height))
+        
+        act_selected = menu.exec(start_point)
+        
         if act_selected == act_x_info:
             canvas.callback(CallbackAct.PORT_INFO, self._group_id, self._port_id)
 

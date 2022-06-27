@@ -192,7 +192,18 @@ class PortgroupWidget(ConnectableWidget):
             _translate('patchbay', "Split to Monos"))
         
         self.parentItem().setFlag(QGraphicsItem.ItemIsMovable, False)
-        act_selected = menu.exec_(event.screenPos())
+        menu.show()
+        
+        start_point = canvas.scene.screen_position(
+            self.scenePos() + QPointF(0.0, self.boundingRect().bottom()))
+        bottom_screen = QApplication.desktop().screenGeometry().bottom()
+        more = 12 if self._port_mode is PortMode.OUTPUT else 0
+
+        if start_point.y() + menu.height() > bottom_screen:
+            start_point = canvas.scene.screen_position(
+                self.scenePos() + QPointF(self._portgrp_width + more, self._portgrp_height))
+        
+        act_selected = menu.exec_(start_point)
         
         if act_selected == act_x_setasmono:
             self._split_to_monos()

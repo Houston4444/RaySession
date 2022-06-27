@@ -104,6 +104,8 @@ class PatchSceneMoth(QGraphicsScene):
             _logger.critical("Invalid view")
             return
 
+        # self._view.setStyleSheet("QMenu{background-color:#80000090}")
+
         self._cursor_cut = None
         self._cursor_zoom_area = None
 
@@ -133,6 +135,9 @@ class PatchSceneMoth(QGraphicsScene):
         QGraphicsScene.clear(self)
         self._rubberband = RubberbandRect(self)
         self.update_theme()
+
+    def screen_position(self, point: QPointF) -> QPoint:
+        return self._view.mapToGlobal(self._view.mapFromScene(point))
 
     def get_device_pixel_ratio_f(self):
         if QT_VERSION < 0x50600:
@@ -661,7 +666,7 @@ class PatchSceneMoth(QGraphicsScene):
                         widget.top_icon.update_zoom(scale * factor)
 
     def mouseDoubleClickEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton and not canvas.menu_shown:
             # parse items under mouse to prevent CallbackAct.DOUBLE_CLICK
             # if mouse is on a box
             items = self.items(
@@ -672,7 +677,6 @@ class PatchSceneMoth(QGraphicsScene):
                     break
             else:
                 canvas.callback(CallbackAct.DOUBLE_CLICK)
-                # event.accept()
                 QGraphicsScene.mouseDoubleClickEvent(self, event)
                 return
 
