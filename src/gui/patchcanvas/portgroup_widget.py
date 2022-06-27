@@ -38,7 +38,7 @@ from .init_values import (
     CallbackAct,
     PortMode,
     PortType)
-from .connect_menu import ConnectableContextMenu
+from .connect_menu import ConnectMenu, ConnectableContextMenu
 
 if TYPE_CHECKING:
     from .box_widget import BoxWidget
@@ -187,7 +187,14 @@ class PortgroupWidget(ConnectableWidget):
         self.setSelected(True)
         canvas.menu_shown = True
 
-        menu = ConnectableContextMenu(self._portgrp)
+        is_only_connect = bool(
+            QApplication.keyboardModifiers() & Qt.ControlModifier)
+
+        if is_only_connect:
+            menu = ConnectMenu(self._portgrp)
+        else:
+            menu = ConnectableContextMenu(self._portgrp)
+
         act_x_setasmono = menu.addAction(
             _translate('patchbay', "Split to Monos"))
         
@@ -202,6 +209,9 @@ class PortgroupWidget(ConnectableWidget):
         if start_point.y() + menu.height() > bottom_screen:
             start_point = canvas.scene.screen_position(
                 self.scenePos() + QPointF(self._portgrp_width + more, self._portgrp_height))
+        
+        if is_only_connect:
+            act_x_setasmono.setVisible(False)
         
         act_selected = menu.exec_(start_point)
         

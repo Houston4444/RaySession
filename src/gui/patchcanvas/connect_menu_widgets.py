@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Union
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import (QCheckBox, QFrame, QHBoxLayout, QLabel, 
                              QSpacerItem, QSizePolicy)
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QColor
 
 
 import patchcanvas.utils as utils
@@ -24,9 +24,9 @@ if TYPE_CHECKING:
 def theme_css(theme: StyleAttributer) -> str:
     pen = theme.fill_pen()
     
-    return (f"background-color: {theme.background_color().name()};"
-            f"color: {theme.text_color().name()};"
-            f"border: {pen.widthF()}px solid {pen.color().name()}")
+    return (f"background-color: {theme.background_color().name(QColor.HexArgb)};"
+            f"color: {theme.text_color().name(QColor.HexArgb)};"
+            f"border: {pen.widthF()}px solid {pen.color().name(QColor.HexArgb)}")
 
     
 class PortCheckBox(QCheckBox):
@@ -54,13 +54,13 @@ class PortCheckBox(QCheckBox):
             theme = theme.midi
             line_theme = line_theme.midi
 
-        bg = theme.background_color().name()
-        text_color = theme.text_color().name()
-        border_color = theme.fill_pen().color().name()
-        h_bg = theme.selected.background_color().name()
-        h_text_color = theme.selected.text_color().name()
-        ind_bg = canvas.theme.scene_background_color.name()
-        checked_bg = line_theme.selected.background_color().name()
+        bg = theme.background_color().name(QColor.HexArgb)
+        text_color = theme.text_color().name(QColor.HexArgb)
+        border_color = theme.fill_pen().color().name(QColor.HexArgb)
+        h_bg = theme.selected.background_color().name(QColor.HexArgb)
+        h_text_color = theme.selected.text_color().name(QColor.HexArgb)
+        ind_bg = canvas.theme.scene_background_color.name(QColor.HexArgb)
+        checked_bg = line_theme.selected.background_color().name(QColor.HexArgb)
         
         border_width = theme.fill_pen().widthF()
         
@@ -203,7 +203,6 @@ class CheckFrame(QFrame):
         self._check_box.nextCheckState()
         
     def keyPressEvent(self, event):
-        print('hfif')
         if event.key() in (Qt.Key_Space, Qt.Key_Return):
             self._check_box.nextCheckState()
             return
@@ -230,7 +229,6 @@ class GroupFrame(QFrame):
         self._layout.addWidget(self._label_icon)
         self._layout.addWidget(self._label_group_name)
         
-        print('ror', group.group_name)
         theme = canvas.theme.box
         self._label_group_name.setStyleSheet(f"GroupFrame{{{theme_css(theme)}}}")
         

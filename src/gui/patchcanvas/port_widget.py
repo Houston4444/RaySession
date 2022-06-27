@@ -48,7 +48,7 @@ from .init_values import (
 
 import patchcanvas.utils as utils
 from .connectable_widget import ConnectableWidget
-from .connect_menu import ConnectableContextMenu
+from .connect_menu import ConnectMenu, ConnectableContextMenu
 from .line_widget import LineWidget
 
 if TYPE_CHECKING:
@@ -248,11 +248,18 @@ class PortWidget(ConnectableWidget):
         self.setSelected(True)
 
         canvas.menu_shown = True
-        menu = ConnectableContextMenu(self._port)
+        is_only_connect = bool(
+            QApplication.keyboardModifiers() & Qt.ControlModifier)
+        
+        if is_only_connect:
+            menu = ConnectMenu(self._port)
+        else:
+            menu = ConnectableContextMenu(self._port)
 
         act_x_sep_1 = menu.addSeparator()
 
-        if (self._port_type == PortType.AUDIO_JACK
+        if (not is_only_connect
+                and self._port_type == PortType.AUDIO_JACK
                 and not self._port_subtype is PortSubType.CV
                 and not self._portgrp_id):
             StereoMenu = QMenu(_translate('patchbay', "Set as Stereo with"), menu)
@@ -300,16 +307,18 @@ class PortWidget(ConnectableWidget):
         if not (features.port_info and features.port_rename):
             act_x_sep_1.setVisible(False)
 
+        if is_only_connect:
+            act_x_info.setVisible(False)
+            act_x_rename.setVisible(False)
+            act_x_sep_1.setVisible(False)
+
         # prevent a bug that moves the box on mouse click after click to 
         # quit the menu if the two clic are at same point.
         self.parentItem().setFlag(QGraphicsItem.ItemIsMovable, False)
 
         # precise the menu start point to still view the port
-        # and be able to read its portgroup name.
-        print('bef menu height', menu.height(), menu.minimumHeight())
-        
-        # menu.show()
-        print('aft menu height', menu.height(), menu.minimumHeight())
+        # and be able to read its portgroup name.        
+        menu.show()
         
         start_point = canvas.scene.screen_position(
             self.scenePos() + QPointF(0.0, self._port_height))

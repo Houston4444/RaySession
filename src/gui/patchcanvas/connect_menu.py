@@ -22,7 +22,7 @@ import time
 from typing import Union
 from PyQt5.QtCore import pyqtSlot, QCoreApplication
 from PyQt5.QtWidgets import QWidgetAction, QMenu, QAction
-from PyQt5.QtGui import QIcon, QPixmap, QPen, QMouseEvent, QCloseEvent, QCursor
+from PyQt5.QtGui import QIcon, QPixmap, QMouseEvent, QColor
 
 import patchcanvas.utils as utils
 from .init_values import (
@@ -102,12 +102,12 @@ class GroupConnectMenu(SubMenu):
         elif group.icon_type == IconType.HARDWARE:
             theme = theme.hardware
 
-        bg_color = theme.background_color().name()
-        border_color = theme.fill_pen().color().name()
+        bg_color = theme.background_color().name(QColor.HexArgb)
+        border_color = theme.fill_pen().color().name(QColor.HexArgb)
         
         self.setStyleSheet(
-            f"QMenu{{background-color:{bg_color}; border: 1px solid {border_color}}}")
-
+            f"QMenu{{background-color:{bg_color}; border: 2px solid {border_color}; border-radius:4px}}")
+        self.setMinimumHeight(50)
         self._elements_added = False
 
     def group_id(self) -> int:
@@ -253,12 +253,14 @@ class DangerousMenu(SubMenu):
     
 
 class ConnectMenu(SubMenu):
-    def __init__(self, p_object: Union[PortObject, PortgrpObject], parent):
+    def __init__(self, p_object: Union[PortObject, PortgrpObject], parent=None):
         SubMenu.__init__(self, _translate('patchbay', 'Connect'),
                          p_object, parent)
 
         self.group_menus = list[GroupConnectMenu]()
         self.connection_list = list[ConnectionObject]()
+
+        self.hovered.connect(self._hovered)
 
         dangerous_name = ''
         has_dangerous_global = False
@@ -310,6 +312,8 @@ class ConnectMenu(SubMenu):
         if has_dangerous_global:
             self.addSeparator()
             self.addMenu(self.dangerous_submenu)
+            
+        self._elements_width = 100
 
     def add_group_menu(self, group: GroupObject):
         po = self._p_object
@@ -366,6 +370,13 @@ class ConnectMenu(SubMenu):
                 menu.add_all_elements()
         
         return super().mouseMoveEvent(event)
+
+    def _hovered(self, action: QAction):
+        menu = action.menu()
+        if isinstance(menu, GroupConnectMenu):
+            menu.setMinimumWidth(self._elements_width)
+            menu.add_all_elements()
+            self._elements_width = max(self._elements_width, menu.width())
 
     # TODO was initially added the fact menu was updated
     # when port was added or removed

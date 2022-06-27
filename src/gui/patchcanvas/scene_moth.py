@@ -816,13 +816,12 @@ class PatchSceneMoth(QGraphicsScene):
         QGraphicsScene.wheelEvent(self, event)
 
     def contextMenuEvent(self, event):
-        if QApplication.keyboardModifiers() & Qt.ControlModifier:
-            event.accept()
-            self._trigger_rubberband_scale()
-            return
-
         if not self.items(event.scenePos()):
-        # if len(self.selectedItems()) == 0:
+            if QApplication.keyboardModifiers() & Qt.ControlModifier:
+                event.accept()
+                self._trigger_rubberband_scale()
+                return
+
             event.accept()
             x, y = event.screenPos().x(), event.screenPos().y()
             canvas.callback(CallbackAct.BG_RIGHT_CLICK, x, y)
