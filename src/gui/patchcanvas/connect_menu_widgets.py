@@ -92,7 +92,11 @@ class PortCheckBox(QCheckBox):
             f"QCheckBox::indicator:checked{{"
                 f"background-color: {checked_bg}; border: 3px solid {ind_bg}}}"
             f"QCheckBox::indicator:indeterminate{{"
-                f"background-color: {checked_bg}; margin-left: 8px; border: 4px solid {ind_bg}}}")
+                f"background-color: qlineargradient("
+                    f"x1: 0, y1: 0, x2: 1, y2: 1, "
+                    f"stop: 0 {checked_bg}, stop: 0.55 {checked_bg}, "
+                    f"stop: 0.60 {ind_bg}, stop: 1 {ind_bg}); "
+                f"border: 3px solid {ind_bg}}}")
 
     def nextCheckState(self):
         po = self._p_object
@@ -215,6 +219,10 @@ class CheckFrame(QFrame):
         
 
 class GroupFrame(QFrame):
+    ''' this class is not used now. The idea was to have group menu actions
+        styled as their boxes are in the canvas, but it implies too much
+        changes. Default Qt theme works for QMenu works better for the moment. '''
+
     def __init__(self, group: GroupObject, parent: 'SubMenu'):
         super().__init__(parent)
         self._group = group
