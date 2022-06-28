@@ -684,6 +684,7 @@ class PatchSceneMoth(QGraphicsScene):
                         widget.top_icon.update_zoom(scale * factor)
 
     def mouseDoubleClickEvent(self, event):
+        print('scene doubleclic')
         if event.button() == Qt.LeftButton and not canvas.menu_shown:
             # parse items under mouse to prevent CallbackAct.DOUBLE_CLICK
             # if mouse is on a box
@@ -710,6 +711,7 @@ class PatchSceneMoth(QGraphicsScene):
         QGraphicsScene.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
+        print('scene press event')
         if self.flying_connectable:
             if event.button() == Qt.LeftButton:
                 self.flying_connectable.mouseReleaseEvent(event)
@@ -720,7 +722,7 @@ class PatchSceneMoth(QGraphicsScene):
             if event.button() == Qt.RightButton:
                 self.flying_connectable.mousePressEvent(event)
                 return
-        
+
         ctrl_pressed = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
         self._mouse_down_init = bool(
             (event.button() == Qt.LeftButton and not ctrl_pressed)
@@ -746,7 +748,7 @@ class PatchSceneMoth(QGraphicsScene):
         if event.buttons() == Qt.LeftButton:
             self._start_navigation_on_borders()
 
-    def mouseMoveEvent(self, event):        
+    def mouseMoveEvent(self, event):
         if self.flying_connectable is not None:
             self.flying_connectable.mouseMoveEvent(event)
             return
@@ -790,6 +792,8 @@ class PatchSceneMoth(QGraphicsScene):
         QGraphicsScene.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
+        print('scene release')
+
         if self.flying_connectable:
             QGraphicsScene.mouseReleaseEvent(self, event)
             return
@@ -880,6 +884,3 @@ class PatchSceneMoth(QGraphicsScene):
             return
 
         QGraphicsScene.contextMenuEvent(self, event)
-        
-    
-# ------------------------------------------------------------------------------------------------------------

@@ -1044,19 +1044,15 @@ class BoxWidget(CanvasWidgetMoth):
         self._port_list.clear()
         self._portgrp_list.clear()
         
-        for port in canvas.port_list:
-            if port.group_id == self._group_id and port.port_id in self._port_list_ids:
+        for port in canvas.list_ports(group_id=self._group_id):
+            if port.port_id in self._port_list_ids:
                 # used to know present port modes (INPUT or OUTPUT or both)
                 self._port_list.append(port)
                 self._current_port_mode |= port.port_mode
                 
-        for portgrp in canvas.portgrp_list:
-            if (portgrp.group_id == self._group_id
-                    and self._current_port_mode & portgrp.port_mode):
+        for portgrp in canvas.list_portgroups(group_id=self._group_id):
+            if self._current_port_mode & portgrp.port_mode:
                 self._portgrp_list.append(portgrp)
-
-        port_types = [PortType.AUDIO_JACK, PortType.MIDI_JACK,
-                      PortType.MIDI_ALSA, PortType.PARAMETER]
     
         align_port_types = self._should_align_port_types()
 
