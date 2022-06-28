@@ -273,6 +273,12 @@ class PatchSceneMoth(QGraphicsScene):
             
         self._view.ensureVisible(ensure_rect, 0.0, 0.0)
 
+    def _start_navigation_on_borders(self):
+        if (options.borders_navigation
+                and not self._borders_nav_timer.isActive()):
+            self._last_view_cpos = QPointF()
+            self._borders_nav_timer.start()
+
     def fix_temporary_scroll_bars(self):
         if self._view is None:
             return
@@ -659,8 +665,6 @@ class PatchSceneMoth(QGraphicsScene):
                 rect = self.sceneRect()
 
                 top_left_vw = self._view.mapFromScene(rect.topLeft())
-                # bottom_right_vw = self._view.mapFromScene(rect.bottomRight())
-
                 if (top_left_vw.x() > self._view.width() / 4
                         and top_left_vw.y() > self._view.height() / 4):
                     return
@@ -673,7 +677,7 @@ class PatchSceneMoth(QGraphicsScene):
             self.scale_changed.emit(transform.m11())
 
             # Update box icons especially when they are not scalable
-            # eg. coming from theme
+            # eg. coming from system theme
             for group in canvas.group_list:
                 for widget in group.widgets:
                     if widget and widget.top_icon:
@@ -690,13 +694,11 @@ class PatchSceneMoth(QGraphicsScene):
 
             for item in items:
                 if isinstance(item, ConnectableWidget):
+                    # start a flying connection with mouse button not pressed
+                    # here we just change the cursor and define the ConnectableWidget
                     self.flying_connectable = item
                     self.set_cursor(QCursor(Qt.CrossCursor))
-
-                    if (options.borders_navigation
-                            and not self._borders_nav_timer.isActive()):
-                        self._last_view_cpos = QPointF()
-                        self._borders_nav_timer.start()
+                    self._start_navigation_on_borders()
                     return
 
                 if not has_box:
@@ -742,10 +744,7 @@ class PatchSceneMoth(QGraphicsScene):
         canvas.menu_shown = False
 
         if event.buttons() == Qt.LeftButton:
-            if (options.borders_navigation
-                    and not self._borders_nav_timer.isActive()):
-                self._last_view_cpos = QPointF()
-                self._borders_nav_timer.start()
+            self._start_navigation_on_borders()
 
     def mouseMoveEvent(self, event):        
         if self.flying_connectable is not None:
@@ -855,8 +854,8 @@ class PatchSceneMoth(QGraphicsScene):
             return
 
         if QApplication.keyboardModifiers() & Qt.ControlModifier:
-            event.accept()
             self.zoom_wheel(event.delta())
+            event.accept()
             return
 
         QGraphicsScene.wheelEvent(self, event)
@@ -876,8 +875,8 @@ class PatchSceneMoth(QGraphicsScene):
                 return
 
             event.accept()
-            x, y = event.screenPos().x(), event.screenPos().y()
-            canvas.callback(CallbackAct.BG_RIGHT_CLICK, x, y)
+            sc_pos = event.screenPos()
+            canvas.callback(CallbackAct.BG_RIGHT_CLICK, sc_pos.x(), sc_pos.y())
             return
 
         QGraphicsScene.contextMenuEvent(self, event)
