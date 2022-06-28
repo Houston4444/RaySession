@@ -894,7 +894,7 @@ class CanvasWidgetMoth(QGraphicsItem):
 
         if self._mouse_down:
             if not self._cursor_moving:
-                self.setCursor(QCursor(Qt.SizeAllCursor))
+                canvas.scene.set_cursor(QCursor(Qt.SizeAllCursor))
                 self._cursor_moving = True
                 canvas.scene.fix_temporary_scroll_bars()
 
@@ -910,7 +910,7 @@ class CanvasWidgetMoth(QGraphicsItem):
 
     def mouseReleaseEvent(self, event):
         if self._cursor_moving:
-            self.unsetCursor()
+            canvas.scene.unset_cursor()
             self.repaint_lines(forced=True)
             canvas.scene.reset_scroll_bars()
             self.fix_pos_after_move()

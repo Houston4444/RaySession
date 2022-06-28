@@ -178,7 +178,7 @@ class CheckFrame(QFrame):
         
         self._label_left.setFont(theme.font())
         self._label_left.setStyleSheet(
-            f"QLabel{{color: {text_color}}};QLabel:focus{{color: {h_text_color}}} ")
+            f"QLabel{{color: {text_color}}} QLabel:focus{{color: {h_text_color}}} ")
         
         if self._label_right is not None:
             port_theme = canvas.theme.port
@@ -189,8 +189,8 @@ class CheckFrame(QFrame):
 
             self._label_right.setFont(port_theme.font())
             self._label_right.setStyleSheet(
-                f"QLabel{{margin-left: 3px; margin-right: 0px; padding: 0px; {theme_css(port_theme)}}};"
-                f"QLabel:selected{{{theme_css(port_theme.selected)}}}")
+                f"QLabel{{margin-left: 3px; margin-right: 0px; padding: 0px; {theme_css(port_theme)}}} "
+                f"QLabel:focus{{{theme_css(port_theme.selected)}}}")
 
     def set_check_state(self, check_state: int):
         self._check_box.setCheckState(check_state)
@@ -211,6 +211,7 @@ class CheckFrame(QFrame):
     def enterEvent(self, event):
         super().enterEvent(event)
         self.setFocus()
+        # self._label_right.setSelec
         
 
 class GroupFrame(QFrame):

@@ -47,7 +47,8 @@ class ConnectableWidget(QGraphicsItem):
         self._has_connections = False
         
         self._last_mouse_point = QPointF(0.0, 0.0)
-        
+
+        # needed for selecting portgroup and ports together        
         self.mouse_releasing = False
         self.changing_select_state = False
         
@@ -275,14 +276,15 @@ class ConnectableWidget(QGraphicsItem):
                         box_under.wrap_unwrap_at_point(event.scenePos())
 
         QGraphicsItem.mousePressEvent(self, event)
-        
-    def mouseMoveEvent(self, event):
-        if not event.buttons() & Qt.LeftButton:
+
+    def mouseMoveEvent(self, event):        
+        if (not event.buttons() & Qt.LeftButton 
+                and canvas.scene.flying_connectable is not self):
             QGraphicsItem.mouseMoveEvent(self, event)
             return
 
         if not self._cursor_moving:
-            self.setCursor(QCursor(Qt.CrossCursor))
+            canvas.scene.set_cursor(QCursor(Qt.CrossCursor))
             self._cursor_moving = True
 
         if not self._line_mov_list:
@@ -426,14 +428,12 @@ class ConnectableWidget(QGraphicsItem):
 
         for line_mov in self._line_mov_list:
             line_mov.update_line_pos(event.scenePos())
-        return event.accept()
 
         QGraphicsItem.mouseMoveEvent(self, event)
         
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
-            if self._mouse_down:
-
+            if self._mouse_down or canvas.scene.flying_connectable is self:
                 for line_mov in self._line_mov_list:
                     item = line_mov
                     canvas.scene.removeItem(item)
@@ -450,7 +450,7 @@ class ConnectableWidget(QGraphicsItem):
                     canvas.scene.clearSelection()
 
             if self._cursor_moving:
-                self.setCursor(QCursor(Qt.ArrowCursor))
+                canvas.scene.set_cursor(QCursor(Qt.ArrowCursor))
 
             self._hover_item = None
             self._mouse_down = False

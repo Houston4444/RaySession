@@ -344,7 +344,6 @@ class DraggableGraphicsView(QGraphicsView):
 
         self._panning = False
         self.setDragMode(QGraphicsView.NoDrag)
-        # self.setCursor(QCursor(Qt.ArrowCursor))
 
 
 class CanvasSplitterHandle(QSplitterHandle):
