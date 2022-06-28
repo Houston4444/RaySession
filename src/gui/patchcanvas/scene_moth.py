@@ -866,7 +866,10 @@ class PatchSceneMoth(QGraphicsScene):
             event.ignore()
             return
         
-        if not self.items(event.scenePos()):
+        for item in self.items(event.scenePos()):
+            if isinstance(item, (BoxWidget, ConnectableWidget)):
+                break
+        else:
             if QApplication.keyboardModifiers() & Qt.ControlModifier:
                 event.accept()
                 self._trigger_rubberband_scale()
