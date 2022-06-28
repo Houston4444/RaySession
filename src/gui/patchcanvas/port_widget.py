@@ -169,7 +169,7 @@ class PortWidget(ConnectableWidget):
         utils.canvas_callback(
             CallbackAct.PORTGROUP_ADD,
             self._group_id, self._port_mode, self._port_type,
-            tuple([p.port_id for p in canvas.port_list
+            tuple([p.port_id for p in canvas.list_ports(group_id=self._group_id)
                    if p.port_id in (self._port_id, port_id)]))
 
     def type(self) -> CanvasItemType:
@@ -262,14 +262,13 @@ class PortWidget(ConnectableWidget):
                 and self._port_type == PortType.AUDIO_JACK
                 and not self._port_subtype is PortSubType.CV
                 and not self._portgrp_id):
-            StereoMenu = QMenu(_translate('patchbay', "Set as Stereo with"), menu)
-            menu.addMenu(StereoMenu)
+            stereo_menu = QMenu(_translate('patchbay', "Set as Stereo with"), menu)
+            menu.addMenu(stereo_menu)
 
             # get list of available mono ports settables as stereo with port
             port_cousin_list = []
-            for port in canvas.port_list:
+            for port in canvas.list_ports(group_id=self._group_id):
                 if (port.port_type == PortType.AUDIO_JACK
-                        and port.group_id == self._group_id
                         and port.port_mode == self._port_mode
                         and not port.port_subtype is PortSubType.CV):
                     port_cousin_list.append(port.port_id)
@@ -282,16 +281,16 @@ class PortWidget(ConnectableWidget):
                 stereo_able_ids_list.append(port_cousin_list[selfport_index +1])
 
             at_least_one = False
-            for port in canvas.port_list:
+            for port in canvas.list_ports(self._group_id):
                 if port.port_id in stereo_able_ids_list and not port.portgrp_id:
-                    act_x_setasstereo = StereoMenu.addAction(port.port_name)
+                    act_x_setasstereo = stereo_menu.addAction(port.port_name)
                     act_x_setasstereo.setData([self, port.port_id])
                     act_x_setasstereo.triggered.connect(
                         canvas.qobject.set_as_stereo_with)
                     at_least_one = True
 
             if not at_least_one:
-                act_x_setasstereo = StereoMenu.addAction('no available mono port')
+                act_x_setasstereo = stereo_menu.addAction('no available mono port')
                 act_x_setasstereo.setEnabled(False)
 
         act_x_info = menu.addAction(_translate('patchbay', "Get &Info"))
@@ -445,18 +444,8 @@ class PortWidget(ConnectableWidget):
         polygon = QPolygonF()
 
         if self._portgrp_id:
-            first_of_portgrp = False
-            last_of_portgrp = False
-
-            # look in portgroup if port is the first,
-            # the last, or not.
-            for portgrp in canvas.portgrp_list:
-                if portgrp.portgrp_id == self._portgrp_id:
-                    if self._port_id == portgrp.port_id_list[0]:
-                        first_of_portgrp = True
-                    if self._port_id == portgrp.port_id_list[-1]:
-                        last_of_portgrp = True
-                    break
+            first_of_portgrp = bool(self._pg_pos == 0)
+            last_of_portgrp = bool(self._pg_pos + 1 == self._pg_len)
 
             if first_of_portgrp:
                 polygon += QPointF(poly_locx[0] , lineHinting)

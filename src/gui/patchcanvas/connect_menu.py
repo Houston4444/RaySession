@@ -119,15 +119,13 @@ class GroupConnectMenu(SubMenu):
 
         po = self._p_object
         
-        for port in canvas.port_list:
-            if (port.group_id == self._group.group_id
-                    and port.port_type is po.port_type
+        for port in canvas.list_ports(group_id=self._group.group_id):
+            if (port.port_type is po.port_type
                     and port.port_mode is not po.port_mode):
                 if isinstance(po, PortgrpObject) and port.portgrp_id:
                     if port.portgrp_id != self._last_portgrp_id:
-                        for portgrp in canvas.portgrp_list:
-                            if (portgrp.group_id == port.group_id
-                                    and portgrp.portgrp_id == port.portgrp_id):
+                        for portgrp in canvas.list_portgroups(group_id=port.group_id):
+                            if portgrp.portgrp_id == port.portgrp_id:
                                 pg_name, pts_name = utils.get_portgroup_short_name_splitted(
                                     portgrp.group_id, portgrp.portgrp_id)
                                 
@@ -285,9 +283,8 @@ class ConnectMenu(SubMenu):
             grp_has_dangerous = False
             grp_has_regular = False
 
-            for port in canvas.port_list:
-                if (port.group_id == group.group_id
-                        and port.port_type is po.port_type
+            for port in canvas.list_ports(group_id=group.group_id):
+                if (port.port_type is po.port_type
                         and port.port_mode is not po.port_mode):
 
                     if (po.port_type is PortType.AUDIO_JACK
@@ -642,7 +639,7 @@ class ConnectableContextMenu(QMenu):
 
         po = self._p_object
 
-        for port in canvas.port_list:
+        for port in canvas.list_ports():
             if ((po.port_mode is PortMode.OUTPUT
                         and port.group_id == connection.group_in_id
                         and port.port_id == connection.port_in_id)
@@ -689,7 +686,7 @@ class ConnectableContextMenu(QMenu):
         
         for connection in self.connection_list:
             if connection.connection_id == connection_id:
-                for port in canvas.port_list:
+                for port in canvas.list_ports():
                     if ((po.port_mode is PortMode.OUTPUT
                             and port.group_id == connection.group_in_id
                             and port.port_id == connection.port_in_id)

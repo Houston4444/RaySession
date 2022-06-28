@@ -79,9 +79,10 @@ class PortgroupWidget(ConnectableWidget):
         self._name_truncked = False
         self._trunck_sep = '⠿'
         
-        self._ports_widgets = [p.widget for p in canvas.port_list
-                               if p.group_id == portgrp.group_id
-                               and p.portgrp_id == portgrp.portgrp_id]
+        self._ports_widgets = [
+            p.widget for p in canvas.list_ports(group_id=portgrp.group_id)
+            if p.portgrp_id == portgrp.portgrp_id]
+
         for port_widget in self._ports_widgets:
             port_widget.set_portgroup_widget(self)
 

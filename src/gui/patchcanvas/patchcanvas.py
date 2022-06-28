@@ -20,6 +20,7 @@
 # global imports
 import logging
 from pathlib import Path
+from tokenize import group
 from typing import Callable
 from PyQt5.QtCore import (pyqtSlot, QObject, QPoint, QPointF, QRectF,
                           QSettings, QTimer, pyqtSignal)
@@ -168,7 +169,7 @@ def init(app_name: str, scene: PatchScene, callback: Callable,
 @patchbay_api
 def clear():
     group_list_ids = [g.group_id for g in canvas.group_list]
-    port_list_ids = [(p.group_id, p.port_id) for p in canvas.port_list]
+    port_list_ids = [(p.group_id, p.port_id) for p in canvas.list_ports()]
     connection_list_ids = [c.connection_id for c in canvas.connection_list]
 
     for idx in connection_list_ids:
@@ -184,8 +185,7 @@ def clear():
     canvas.last_connection_id = 0
 
     canvas.group_list.clear()
-    canvas.port_list.clear()
-    canvas.portgrp_list.clear()
+    canvas.clear_all()
     canvas.connection_list.clear()
     canvas.group_plugin_map = {}
 
@@ -412,10 +412,9 @@ def split_group(group_id: int, on_place=False):
 
     wrap = item.is_wrapped()
 
-    portgrps_data = [pg.copy_no_widget() for pg in canvas.portgrp_list
-                     if pg.group_id == group_id]
-    ports_data = [p.copy_no_widget() for p in canvas.port_list
-                  if p.group_id == group_id]
+    portgrps_data = [pg.copy_no_widget() for pg 
+                     in canvas.list_portgroups(group_id=group_id)]
+    ports_data = [p.copy_no_widget() for p in canvas.list_ports(group_id=group_id)]
     conns_data = [c.copy_no_widget() for c in canvas.connection_list
                   if group_id in (c.group_out_id, c.group_in_id)]
 
@@ -497,10 +496,10 @@ def join_group(group_id: int):
 
     wrap = item.is_wrapped() and s_item.is_wrapped()
 
-    portgrps_data = [pg.copy_no_widget() for pg in canvas.portgrp_list
-                     if pg.group_id == group_id]
-    ports_data = [p.copy_no_widget() for p in canvas.port_list
-                  if p.group_id == group_id]
+    portgrps_data = [pg.copy_no_widget() for pg in
+                     canvas.list_portgroups(group_id=group_id)]
+    ports_data = [p.copy_no_widget()
+                  for p in canvas.list_ports(group_id=group_id)]
     conns_data = [c.copy_no_widget() for c in canvas.connection_list
                   if group_id in (c.group_out_id, c.group_in_id)]
 
@@ -789,8 +788,8 @@ def set_group_as_plugin(group_id: int, plugin_id: int,
 def add_port(group_id: int, port_id: int, port_name: str,
              port_mode: PortMode, port_type: PortType,
              port_subtype: PortSubType.REGULAR):
-    for port in canvas.port_list:
-        if port.group_id == group_id and port.port_id == port_id:
+    for port in canvas.list_ports(group_id=group_id):
+        if port.port_id == port_id:
             _logger.critical(f"{_logging_str} - port already exists")
             return
 
@@ -817,7 +816,7 @@ def add_port(group_id: int, port_id: int, port_name: str,
     port.portgrp_id = 0
     port.port_subtype = port_subtype
     port.widget = box_widget.add_port_from_group(port)
-    canvas.port_list.append(port)
+    canvas.add_port(port)
 
     canvas.last_z_value += 1
     port.widget.setZValue(canvas.last_z_value)
@@ -831,8 +830,8 @@ def add_port(group_id: int, port_id: int, port_name: str,
 
 @patchbay_api
 def remove_port(group_id: int, port_id: int):
-    for port in canvas.port_list:
-        if port.group_id == group_id and port.port_id == port_id:
+    for port in canvas.list_ports(group_id=group_id):
+        if port.port_id == port_id:
             if port.portgrp_id:
                 _logger.critical(f"{_logging_str} - Port is in portgroup " 
                                  f"{port.portgrp_id}, remove it before !")
@@ -844,7 +843,7 @@ def remove_port(group_id: int, port_id: int):
                 canvas.scene.removeItem(item)
 
             del item
-            canvas.port_list.remove(port)
+            canvas.remove_port(port)
 
             canvas.qobject.port_removed.emit(group_id, port_id)
             if canvas.loading_items:
@@ -857,11 +856,10 @@ def remove_port(group_id: int, port_id: int):
 
 @patchbay_api
 def rename_port(group_id: int, port_id: int, new_port_name: str):
-    for port in canvas.port_list:
-        if port.group_id == group_id and port.port_id == port_id:
+    for port in canvas.list_ports(group_id=group_id):
+        if port.port_id == port_id:
             if new_port_name != port.port_name:
                 port.port_name = new_port_name
-                
                 port.widget.set_port_name(new_port_name)
 
             if canvas.loading_items:
@@ -879,8 +877,8 @@ def rename_port(group_id: int, port_id: int, new_port_name: str):
 def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
                   port_type: PortType, port_subtype: PortSubType,
                   port_id_list: list[int]):
-    for portgrp in canvas.portgrp_list:
-        if portgrp.group_id == group_id and portgrp.portgrp_id == portgrp_id:
+    for portgrp in canvas.list_portgroups(group_id=group_id):
+        if portgrp.portgrp_id == portgrp_id:
             _logger.critical(f"{_logging_str} - portgroup already exists")
             return
     
@@ -895,9 +893,8 @@ def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
 
     i = 0
     # check that port ids are present and groupable in this group
-    for port in canvas.port_list:
-        if (port.group_id == group_id
-                and port.port_type == port_type
+    for port in canvas.list_ports(group_id=group_id):
+        if (port.port_type == port_type
                 and port.port_mode == port_mode):
             if port.port_id == port_id_list[i]:
                 if port.portgrp_id:
@@ -920,13 +917,12 @@ def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
         return
 
     # modify ports impacted by portgroup
-    for port in canvas.port_list:
-        if (port.group_id == group_id
-                and port.port_id in port_id_list):
+    for port in canvas.list_ports(group_id=group_id):
+        if (port.port_id in port_id_list):
             port.set_portgroup_id(
                 portgrp_id, port_id_list.index(port.port_id), len(port_id_list))
 
-    canvas.portgrp_list.append(portgrp)
+    canvas.add_portgroup(portgrp)
     
     # add portgroup widget and refresh the view
     for group in canvas.group_list:
@@ -947,13 +943,11 @@ def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
 def remove_portgroup(group_id: int, portgrp_id: int):
     box_widget = None
 
-    for portgrp in canvas.portgrp_list:
-        if (portgrp.group_id == group_id
-                and portgrp.portgrp_id == portgrp_id):
+    for portgrp in canvas.list_portgroups(group_id=group_id):
+        if portgrp.portgrp_id == portgrp_id:
             # set portgrp_id to the concerned ports
-            for port in canvas.port_list:
-                if (port.group_id == group_id
-                        and port.portgrp_id == portgrp_id):
+            for port in canvas.list_ports(group_id=group_id):
+                if port.portgrp_id == portgrp_id:
                     port.set_portgroup_id(0, 0, 1)
 
             if portgrp.widget is not None:
@@ -967,7 +961,7 @@ def remove_portgroup(group_id: int, portgrp_id: int):
         _logger.critical(f"{_logging_str} - Unable to find portgrp to remove")
         return
 
-    canvas.portgrp_list.remove(portgrp)
+    canvas.remove_portgroup(portgrp)
 
     if canvas.loading_items:
         return
@@ -985,7 +979,7 @@ def connect_ports(connection_id: int, group_out_id: int, port_out_id: int,
     port_out_parent = None
     port_in_parent = None
 
-    for port in canvas.port_list:
+    for port in canvas.list_ports():
         if port.group_id == group_out_id and port.port_id == port_out_id:
             port_out = port.widget
             if port_out is not None:
@@ -1044,18 +1038,16 @@ def disconnect_ports(connection_id: int):
 
     canvas.qobject.connection_removed.emit(connection_id)
 
-    for port in canvas.port_list:
-        if (port.group_id == tmp_conn.group_out_id
-                and port.port_id == tmp_conn.port_out_id):
+    for port in canvas.list_ports(group_id=tmp_conn.group_out_id):
+        if port.port_id == tmp_conn.port_out_id:
             item1 = port.widget
             break
     else:
         _logger.critical(f"{_logging_str} - unable to find output port")
         return
 
-    for port in canvas.port_list:
-        if (port.group_id == tmp_conn.group_in_id 
-                and port.port_id == tmp_conn.port_in_id):
+    for port in canvas.list_ports(group_id=tmp_conn.group_in_id):
+        if port.port_id == tmp_conn.port_in_id:
             item2 = port.widget
             break
     else:

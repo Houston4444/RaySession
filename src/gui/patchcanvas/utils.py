@@ -21,6 +21,8 @@
 # Imports (Global)
 
 import logging
+import time
+from typing import Union
 
 from PyQt5.QtCore import QPointF, QFile, QRectF
 from PyQt5.QtGui import QIcon, QPalette
@@ -165,9 +167,8 @@ def get_new_group_pos(horizontal: bool):
 
 @easy_log
 def get_full_port_name(group_id: int, port_id: int) -> str:
-    for port in canvas.port_list:
-        if port.group_id == group_id and port.port_id == port_id:
-            group_id = port.group_id
+    for port in canvas.list_ports(group_id=group_id):
+        if port.port_id == port_id:
             for group in canvas.group_list:
                 if group.group_id == group_id:
                     return group.group_name + ":" + port.port_name
@@ -177,8 +178,8 @@ def get_full_port_name(group_id: int, port_id: int) -> str:
     return ""
 
 @easy_log
-def get_port_connection_list(group_id: int, port_id: int) -> list:
-    conn_list = []
+def get_port_connection_list(group_id: int, port_id: int) -> list[tuple[int, int, int]]:
+    conn_list = list[tuple[int, int, int]]()
 
     for connection in canvas.connection_list:
         if (connection.group_out_id == group_id
@@ -229,45 +230,41 @@ def get_portgroup_name_from_ports_names(ports_names: list[str]):
     
     return portgrp_name
 
-def get_portgroup_name(group_id: int, ports_ids_list: list) -> str:
+def get_portgroup_name(group_id: int, ports_ids_list: Union[list, int]) -> str:
     # accept portgrp_id instead of ports_ids_list as second argument
     if isinstance(ports_ids_list, int):
-        for portgrp in canvas.portgrp_list:
-            if (portgrp.group_id == group_id
-                    and portgrp.portgrp_id == ports_ids_list):
+        for portgrp in canvas.list_portgroups(group_id=group_id):
+            if portgrp.portgrp_id == ports_ids_list:
                 ports_ids_list = portgrp.port_id_list
                 break
     
-    ports_names = []
+    ports_names = list[str]()
 
-    for port in canvas.port_list:
-        if port.group_id == group_id and port.port_id in ports_ids_list:
+    for port in canvas.list_ports(group_id=group_id):
+        if port.port_id in ports_ids_list:
             ports_names.append(port.port_name)
 
     return get_portgroup_name_from_ports_names(ports_names)
 
 def get_port_print_name(group_id: int, port_id: int, portgrp_id: int) -> str:
-    for portgrp in canvas.portgrp_list:
-        if (portgrp.group_id == group_id
-                and portgrp.portgrp_id == portgrp_id):
+    for portgrp in canvas.list_portgroups(group_id=group_id):
+        if portgrp.portgrp_id == portgrp_id:
             portgrp_name = get_portgroup_name(
                 group_id, portgrp.port_id_list)
 
-            for port in canvas.port_list:
+            for port in canvas.list_ports(group_id=group_id):
                 if port.group_id == group_id and port.port_id == port_id:
                     return port.port_name.replace(portgrp_name, '', 1)
 
 def get_portgroup_port_list(group_id: int, portgrp_id: int) -> tuple[int]:
-    for portgrp in canvas.portgrp_list:
-        if (portgrp.group_id == group_id
-                and portgrp.portgrp_id == portgrp_id):
+    for portgrp in canvas.list_portgroups(group_id=group_id):
+        if portgrp.portgrp_id == portgrp_id:
             return portgrp.port_id_list
     return ()
 
 def get_portgroup_full_name(group_id: int, portgrp_id: int) -> str:
-    for portgrp in canvas.portgrp_list:
-        if (portgrp.group_id == group_id
-                and portgrp.portgrp_id == portgrp_id):
+    for portgrp in canvas.list_portgroups(group_id=group_id):
+        if portgrp.portgrp_id == portgrp_id:
             group_name = ""
             for group in canvas.group_list:
                 if group.group_id == group_id:
@@ -288,9 +285,8 @@ def get_portgroup_full_name(group_id: int, portgrp_id: int) -> str:
     return ""
 
 def get_portgroup_short_name_splitted(group_id: int, portgrp_id: int) -> tuple[str]:
-    for portgrp in canvas.portgrp_list:
-        if (portgrp.group_id == group_id
-                and portgrp.portgrp_id == portgrp_id):
+    for portgrp in canvas.list_portgroups(group_id=group_id):
+        if portgrp.portgrp_id == portgrp_id:
             portgrp_name = get_portgroup_name(
                 group_id, portgrp.port_id_list)
             
@@ -350,23 +346,18 @@ def get_icon(icon_type: int, icon_name: str, port_mode: int) -> QIcon:
 
 @easy_log
 def connect_ports(group_id_1: int, port_id_1: int,
-                  group_id_2: int, port_id_2:int):
-    one_is_out = True
-
-    for port in canvas.port_list:
-        if port.group_id == group_id_1 and port.port_id == port_id_1:
-            if port.port_mode is not PortMode.OUTPUT:
-                one_is_out = False
-            break
-        elif port.group_id == group_id_2 and port.port_id == port_id_2:
-            if port.port_mode is PortMode.OUTPUT:
-                one_is_out = False
-            break
-    else:
+                  group_id_2: int, port_id_2:int):    
+    port_1 = canvas.get_port(group_id_1, port_id_1)
+    port_2 = canvas.get_port(group_id_2, port_id_2)
+    if not(port_1 and port_2):
         _logger.critical(f"{_logging_str} - one port at least not found")
         return
-
-    if one_is_out:
+    
+    if port_1.port_mode is not port_2.port_mode.opposite():
+        _logger.critical(f"{_logging_str} - can't connect ports with same mode")
+        return
+    
+    if port_1.port_mode is PortMode.OUTPUT:
         canvas.callback(CallbackAct.PORTS_CONNECT,
                         group_id_1, port_id_1,
                         group_id_2, port_id_2)
@@ -375,8 +366,8 @@ def connect_ports(group_id_1: int, port_id_1: int,
                         group_id_2, port_id_2,
                         group_id_1, port_id_1)
 
-def get_portgroup_connection_state(group_id_1: int, port_id_list_1: list,
-                                   group_id_2: int, port_id_list_2: list) -> int:
+def get_portgroup_connection_state(group_id_1: int, port_id_list_1: list[int],
+                                   group_id_2: int, port_id_list_2: list[int]) -> int:
     # returns
     # 0 if no connection
     # 1 if connection is irregular
@@ -384,10 +375,10 @@ def get_portgroup_connection_state(group_id_1: int, port_id_list_1: list,
 
     group_out_id = 0
     group_in_id = 0
-    out_port_id_list = []
-    in_port_id_list = []
+    out_port_id_list = list[int]()
+    in_port_id_list = list[int]()
 
-    for port in canvas.port_list:
+    for port in canvas.list_ports():
         if (port.group_id == group_id_1
                 and port.port_id in port_id_list_1):
             if port.port_mode is PortMode.OUTPUT:
@@ -451,7 +442,7 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
     out_port_id_list = []
     in_port_id_list = []
 
-    for portgrp in canvas.portgrp_list:
+    for portgrp in canvas.list_portgroups():
         if (portgrp.group_id == group_id_1
                 and portgrp.portgrp_id == portgrp_id_1):
             if portgrp.port_mode is PortMode.OUTPUT:
@@ -474,7 +465,7 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
         _logger.warning(f"{_logging_str} - empty port id list")
         return
 
-    connected_indexes = []
+    connected_indexes = list[tuple[int, int]]()
 
     # disconnect irregular connections
     for connection in canvas.connection_list:

@@ -293,9 +293,8 @@ class ConnectableWidget(QGraphicsItem):
             self.setZValue(canvas.last_z_value)
             canvas.last_z_value += 1
 
-            for port in canvas.port_list:
-                if (port.group_id == self._group_id
-                        and port.port_id in self._port_ids):
+            for port in canvas.list_ports(group_id=self._group_id):
+                if port.port_id in self._port_ids:
                     port.widget.setZValue(canvas.last_z_value)
 
             for i in range(len(self._port_ids)):

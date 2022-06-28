@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QSplitter, QSplitterHandle, QSlider, QToolTip, QApplication, QProgressBar,
     QDialogButtonBox, QPushButton)
 from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
-                         QIcon, QCursor, QMouseEvent)
+                         QIcon, QCursor, QMouseEvent, QWheelEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPoint, QPointF, QRectF, QSizeF
 
 import time
@@ -387,7 +387,8 @@ class ZoomSlider(QSlider):
         QSlider.__init__(self, parent)
 
     @staticmethod
-    def map_float_to(x, min_a, max_a, min_b, max_b):
+    def map_float_to(x: float, min_a: int, max_a: int,
+                     min_b: int, max_b: int) -> float:
         if max_a == min_a:
             return min_b
         return min_b + ((x - min_a) / (max_a - min_a)) * (max_b - min_b)
@@ -399,13 +400,10 @@ class ZoomSlider(QSlider):
         string = "  Zoom: %i%%  " % int(self.zoom_percent())
         QToolTip.showText(self.mapToGlobal(QPoint(0, 12)), string)
 
-    def zoom_percent(self)->int:
-        percent = 100.0
+    def zoom_percent(self) -> int:
         if self.value() <= 500:
-            percent = self.map_float_to(self.value(), 0, 500, 20, 100)
-        else:
-            percent = self.map_float_to(self.value(), 500, 1000, 100, 300)
-        return percent
+            return self.map_float_to(self.value(), 0, 500, 20, 100)
+        return self.map_float_to(self.value(), 500, 1000, 100, 300)
 
     def set_percent(self, percent: float):
         if 99.99999 < percent < 100.00001:
@@ -423,7 +421,8 @@ class ZoomSlider(QSlider):
         self.setValue(500)
         self._show_tool_tip()
 
-    def wheelEvent(self, event):
+    def wheelEvent(self, event: QWheelEvent):
+        print('slider wheel')
         direction = 1 if event.angleDelta().y() > 0 else -1
 
         if QApplication.keyboardModifiers() & Qt.ControlModifier:

@@ -17,7 +17,7 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterator
 from enum import IntEnum, IntFlag
 
 from PyQt5.QtCore import QPointF, QRectF, QSettings, QPoint
@@ -46,6 +46,16 @@ class PortMode(IntFlag):
     INPUT = 0x01
     OUTPUT = 0x02
     BOTH = INPUT | OUTPUT
+    
+    def opposite(self):
+        if self is self.INPUT:
+            return self.INPUT
+        if self is self.OUTPUT:
+            return self.INPUT
+        if self is self.BOTH:
+            return self.NULL
+        if self is self.NULL:
+            return self.BOTH
 
 
 class PortType(IntFlag):
@@ -173,51 +183,7 @@ class CanvasFeaturesObject:
     handle_group_pos = False
 
 
-# Main Canvas object
-class Canvas:
-    def __init__(self):
-        self.qobject = None
-        self.settings = None
-        self.theme = None
-        
-        self.initiated = False
-        self.theme_paths = ()
-        self.theme_manager = None
 
-        self.group_list = list[GroupObject]()
-        self.port_list = list[PortObject]()
-        self.portgrp_list = list[PortgrpObject]()
-        self.connection_list = list[ConnectionObject]()
-        self.clipboard = list[ClipboardElement]()
-        self.clipboard_cut = True
-        self.group_plugin_map = {}
-
-        self.scene = None
-        self.last_z_value = 0
-        self.last_connection_id = 0
-        self.initial_pos = QPointF(0, 0)
-        self.size_rect = QRectF()
-
-        self.is_line_mov = False
-        self.semi_hide_opacity = 0.17
-        self.loading_items = False
-        self.menu_shown = False
-        self.menu_click_pos = QPoint(0, 0)
-        
-        # This is only to get object methods in IDE everywhere.
-        if TYPE_CHECKING:
-            self.qobject = CanvasObject()
-            self.theme = Theme()
-            self.theme_manager = ThemeManager()
-            self.scene = PatchScene()
-            self.settings = QSettings()
-            self.options = CanvasOptionsObject()
-            self.features = CanvasFeaturesObject()
-
-    def callback(self, action: CallbackAct, value1: int,
-                 value2: int, value_str: str):
-        print("Canvas::callback({}, {}, {}, {})".format(
-            action.name, value1, value2, value_str))
 
 # ------------------------
         
@@ -353,6 +319,208 @@ class ClipboardElement:
     port_id: int
     group_port_ids: list[int]
 
+
+# Main Canvas object
+class Canvas:
+    def __init__(self):
+        self.qobject = None
+        self.settings = None
+        self.theme = None
+
+        self.initiated = False
+        self.theme_paths = ()
+        self.theme_manager = None
+
+        self.group_list = list[GroupObject]()
+        self.port_list = list[PortObject]()
+        self.portgrp_list = list[PortgrpObject]()
+        self.connection_list = list[ConnectionObject]()
+
+        self._ports_dict = dict[int, dict[int, PortObject]]()
+        self._portgrps_dict = dict[int, dict[int, PortgrpObject]]()
+        self._conns_dict = dict[int, ConnectionObject]()
+        self._conns_outin_dict = dict[int, dict[int, dict[int, ConnectionObject]]]()
+        self._conns_inout_dict = dict[int, dict[int, dict[int, ConnectionObject]]]()
+
+        self.clipboard = list[ClipboardElement]()
+        self.clipboard_cut = True
+        self.group_plugin_map = {}
+
+        self.scene = None
+        self.last_z_value = 0
+        self.last_connection_id = 0
+        self.initial_pos = QPointF(0, 0)
+        self.size_rect = QRectF()
+
+        self.is_line_mov = False
+        self.semi_hide_opacity = 0.17
+        self.loading_items = False
+        self.menu_shown = False
+        self.menu_click_pos = QPoint(0, 0)
+        
+        # This is only to get object methods in IDE everywhere.
+        if TYPE_CHECKING:
+            self.qobject = CanvasObject()
+            self.theme = Theme()
+            self.theme_manager = ThemeManager()
+            self.scene = PatchScene()
+            self.settings = QSettings()
+            self.options = CanvasOptionsObject()
+            self.features = CanvasFeaturesObject()
+
+    def callback(self, action: CallbackAct, value1: int,
+                 value2: int, value_str: str):
+        print("Canvas::callback({}, {}, {}, {})".format(
+            action.name, value1, value2, value_str))
+    
+    def clear_all(self):
+        self.port_list.clear()
+        self._ports_dict.clear()
+        self.portgrp_list.clear()
+        self._ports_dict.clear()
+        self.connection_list.clear()
+        self._conns_dict.clear()
+        self._conns_outin_dict.clear()
+        self._conns_inout_dict.clear()
+
+    def add_port(self, port: PortObject):
+        self.port_list.append(port)
+
+        gp_dict = self._ports_dict.get(port.group_id)
+        if gp_dict is None:
+            self._ports_dict[port.group_id] = {port.port_id: port}
+        else:
+            self._ports_dict[port.group_id][port.port_id] = port
+    
+    def add_portgroup(self, portgrp: PortgrpObject):
+        self.portgrp_list.append(portgrp)
+
+        gp_dict = self._portgrps_dict.get(portgrp.group_id)
+        if gp_dict is None:
+            self._portgrps_dict[portgrp.group_id] = {portgrp.portgrp_id: portgrp}
+        else:
+            self._portgrps_dict[portgrp.group_id][portgrp.portgrp_id] = portgrp
+    
+    def add_connection(self, conn: ConnectionObject):
+        self.connection_list.append(conn)
+        self._conns_dict[conn.connection_id] = conn
+
+        gp_outin_out_dict = self._conns_outin_dict.get(conn.group_out_id)
+        gp_inout_in_dict = self._conns_inout_dict.get(conn.group_in_id)
+        
+        if gp_outin_out_dict is None:
+            self._conns_outin_dict[conn.group_out_id] = {
+                conn.group_in_id: {conn.connection_id: conn}}
+        else:
+            if conn.group_in_id in gp_outin_out_dict:
+                gp_outin_out_dict[conn.group_in_id][conn.connection_id] = conn
+            else:
+                gp_outin_out_dict[conn.group_in_id] = {conn.connection_id: conn}
+        
+        if gp_inout_in_dict is None:
+            self._conns_inout_dict[conn.group_in_id] = {
+                conn.group_out_id: {conn.connection_id: conn}}
+        else:
+            if conn.group_out_id in gp_inout_in_dict:
+                gp_inout_in_dict[conn.group_out_id][conn.connection_id] = conn
+            else:
+                gp_inout_in_dict[conn.group_out_id] = {conn.connection_id: conn}
+    
+    def remove_port(self, port: PortObject):
+        if port in self.port_list:
+            self.port_list.remove(port)
+        
+        gp_dict = self._ports_dict.get(port.group_id)
+        if gp_dict and port.port_id in gp_dict.keys():
+            gp_dict.pop(port.port_id)
+    
+    def remove_portgroup(self, portgrp: PortgrpObject):
+        if portgrp in self.portgrp_list:
+            self.portgrp_list.remove(portgrp)
+        
+        gp_dict = self._portgrps_dict.get(portgrp.group_id)
+        if gp_dict and portgrp.portgrp_id in gp_dict.keys():
+            gp_dict.pop(portgrp.portgrp_id)
+    
+    def remove_connection(self, conn: ConnectionObject):
+        if conn in self.connection_list:
+            self.connection_list.remove(conn)
+            
+        try:
+            self._conns_dict.pop(conn.connection_id)
+            self._conns_outin_dict[conn.group_out_id][conn.group_in_id].pop(
+                conn.connection_id)
+            self._conns_inout_dict[conn.group_in_id][conn.group_out_id].pop(
+                conn.connection_id)
+        except:
+            pass
+    
+    def get_port(self, group_id: int, port_id: int) -> PortObject:
+        if not group_id in self._ports_dict.keys():
+            return None
+        if not port_id in self._ports_dict[group_id].keys():
+            return None
+        
+        return self._ports_dict[group_id][port_id]
+
+    def get_connection(self, connection_id: int) -> ConnectionObject:
+        if connection_id in self._conns_dict.keys():
+            return self._conns_dict[connection_id]
+
+    def list_ports(self, group_id=None) -> Iterator[PortObject]:
+        if group_id is None:
+            for port in self.port_list:
+                yield port
+            return     
+        
+        if group_id in self._ports_dict.keys():
+            for port in self._ports_dict[group_id].values():
+                yield port
+            
+    def list_portgroups(self, group_id=None) -> Iterator[PortgrpObject]:
+        if group_id is None:
+            for portgrp in self.portgrp_list:
+                yield portgrp
+            return     
+        
+        if group_id in self._portgrps_dict.keys():
+            for portgrp in self._portgrps_dict[group_id].values():
+                yield portgrp
+                
+    def list_connections(self, group_in_id=None,
+                         group_out_id=None) -> Iterator[ConnectionObject]:
+        if group_in_id is None and group_out_id is None:
+            for conn in self._conns_dict.values():
+                yield conn
+            return
+        
+        if group_out_id is not None:
+            gp_out = self._conns_outin_dict.get(group_out_id)
+            if gp_out is None:
+                return
+            
+            if group_in_id is not None:
+                gp_in = gp_out.get(group_in_id)
+                if gp_in is None:
+                    return
+                
+                for conn in gp_in.values():
+                    yield conn
+                return
+            
+            for gp_in in gp_out.values():
+                for conn in gp_in.values():
+                    yield conn
+            return
+
+        gp_in = self._conns_inout_dict.get(group_in_id)
+        if gp_in is None:
+            return
+        
+        for gp_out in gp_in.values():
+            for conn in gp_out.values():
+                yield conn
+                
 
 # -----------------------------
 

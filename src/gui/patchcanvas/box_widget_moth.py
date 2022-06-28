@@ -408,28 +408,26 @@ class CanvasWidgetMoth(QGraphicsItem):
             self._unwrapping = False
         
         self.setX(self._x_before_wrap
-                  + (self._x_after_wrap - self._x_before_wrap) * self._wrapping_ratio)
+                  + (self._x_after_wrap - self._x_before_wrap)
+                    * self._wrapping_ratio)
 
         self.update_positions()
 
     def hide_ports_for_wrap(self, hide: bool):
-        for portgrp in canvas.portgrp_list:
-            if portgrp.group_id == self._group_id:
-                if (self._splitted
-                        and self._splitted_mode != portgrp.port_mode):
-                    continue
+        for portgrp in canvas.list_portgroups(group_id=self._group_id):
+            if self._splitted and self._splitted_mode != portgrp.port_mode:
+                continue
 
-                if portgrp.widget is not None:
-                    portgrp.widget.setVisible(not hide)
+            if portgrp.widget is not None:
+                portgrp.widget.setVisible(not hide)
 
-        for port in canvas.port_list:
-            if port.group_id == self._group_id:
-                if (self._splitted
-                        and self._splitted_mode != port.port_mode):
-                    continue
+        for port in canvas.list_ports(group_id=self._group_id):
+            if (self._splitted
+                    and self._splitted_mode != port.port_mode):
+                continue
 
-                if port.widget is not None:
-                    port.widget.setVisible(not hide)
+            if port.widget is not None:
+                port.widget.setVisible(not hide)
 
     def is_wrapped(self)->bool:
         return self._wrapped
@@ -495,22 +493,15 @@ class CanvasWidgetMoth(QGraphicsItem):
         if self._current_port_mode is not PortMode.BOTH:
             return
         
-        for connection in canvas.connection_list:
-            if (connection.group_in_id == connection.group_out_id == self._group_id
-                    and connection.widget is not None):
-                connection.widget.setZValue(
-                    self.zValue() - 1 if under else self.zValue() + 1)
+        for connection in canvas.list_connections(
+                group_in_id=self._group_id, group_out_id=self._group_id):
+            if connection.widget is not None:
                 
         # for connection in canvas.connection_list:
-            
-            
-        #     if (connection.port_out_id in self._port_list_ids
-        #             and connection.port_in_id in self._port_list_ids):
-        #         z_value = canvas.last_z_value
-        #     else:
-        #         z_value = canvas.last_z_value - 1
-
-        #     connection.widget.setZValue(z_value)
+        #     if (connection.group_in_id == connection.group_out_id == self._group_id
+        #             and connection.widget is not None):
+                connection.widget.setZValue(
+                    self.zValue() - 1 if under else self.zValue() + 1)
 
     def semi_hide(self, yesno: bool):
         self._is_semi_hidden = yesno
@@ -587,6 +578,7 @@ class CanvasWidgetMoth(QGraphicsItem):
         return super().itemChange(change, value)
 
     def contextMenuEvent(self, event):
+        print('dokezeok box', event.isAccepted())
         if canvas.is_line_mov:
             return
 
@@ -976,14 +968,12 @@ class CanvasWidgetMoth(QGraphicsItem):
             cache_mode = QGraphicsItem.DeviceCoordinateCache
         
         self.setCacheMode(cache_mode)
-        for port in canvas.port_list:
-            if (port.group_id == self._group_id
-                    and port.port_id in self._port_list_ids):
+        for port in canvas.list_ports(group_id=self._group_id):
+            if port.port_id in self._port_list_ids:
                 port.widget.setCacheMode(cache_mode)
         
-        for portgroup in canvas.portgrp_list:
-            if (portgroup.group_id == self._group_id
-                    and self._current_port_mode & portgroup.port_mode
+        for portgroup in canvas.list_portgroups(group_id=self._group_id):
+            if (self._current_port_mode & portgroup.port_mode
                     and portgroup.widget is not None):
                 portgroup.widget.setCacheMode(cache_mode)
 
