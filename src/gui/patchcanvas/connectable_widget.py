@@ -75,7 +75,7 @@ class ConnectableWidget(QGraphicsItem):
         " used to disconnect ports/portgroups from Ctrl+Middle Click "
         conn_ids_to_remove = list[int]()
         
-        for connection in canvas.connection_list:
+        for connection in canvas.list_connections():
             if connection.concerns(self._group_id, self._port_ids):
                 conn_ids_to_remove.append(connection.connection_id)
                 
@@ -158,7 +158,7 @@ class ConnectableWidget(QGraphicsItem):
             # Copy connections from this widget to the other one (hover)
             
             for i in range(len(self._port_ids)):
-                for connection in canvas.connection_list:
+                for connection in canvas.list_connections():
                     if connection.concerns(self._group_id, [self._port_ids[i]]):
                         canvas.callback(CallbackAct.PORTS_DISCONNECT,
                                         connection.connection_id)
@@ -188,7 +188,7 @@ class ConnectableWidget(QGraphicsItem):
             for j in range(len(hover_port_ids)):
                 hover_port_id = hover_port_ids[j]
 
-                for connection in canvas.connection_list:
+                for connection in canvas.list_connections():
                     if connection.matches(self._group_id, [port_id],
                                           hover_group_id, [hover_port_id]):
                         if i % len(hover_port_ids) == j % len(self._port_ids):
@@ -248,7 +248,7 @@ class ConnectableWidget(QGraphicsItem):
             self._mouse_down = True
             self._cursor_moving = False
 
-            for connection in canvas.connection_list:
+            for connection in canvas.list_connections():
                 if connection.concerns(self._group_id, self._port_ids):
                     self._has_connections = True
                     break
@@ -267,7 +267,7 @@ class ConnectableWidget(QGraphicsItem):
                         line_mov.update_line_pos(event.scenePos())
 
                     for connection in self._dotcon_list:
-                        if connection in canvas.connection_list:
+                        if connection in canvas.list_connections():
                             connection.widget.ready_to_disc = True
                             connection.widget.update_line_gradient()
                 else:
@@ -321,7 +321,7 @@ class ConnectableWidget(QGraphicsItem):
 
             if (self._has_connections
                     and len(item.get_port_ids()) == len(self._port_ids)):
-                for connection in canvas.connection_list:
+                for connection in canvas.list_connections():
                     if connection.concerns(item.get_group_id(), item.get_port_ids()):
                         break
                 else:
@@ -353,7 +353,7 @@ class ConnectableWidget(QGraphicsItem):
                 self.reset_line_mov_positions()
 
                 if item.get_port_mode() is self._port_mode:
-                    for connection in canvas.connection_list:
+                    for connection in canvas.list_connections():
                         if connection.concerns(
                                 self._group_id, self._port_ids):
                             connection.widget.ready_to_disc = True
@@ -393,7 +393,7 @@ class ConnectableWidget(QGraphicsItem):
                     symetric_con_list = []
                     for portself_id in self._port_ids:
                         for porthover_id in self._hover_item.get_port_ids():
-                            for connection in canvas.connection_list:
+                            for connection in canvas.list_connections():
                                 if connection.matches(
                                         self._group_id, [portself_id],
                                         self._hover_item.get_group_id(),

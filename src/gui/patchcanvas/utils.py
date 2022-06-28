@@ -180,19 +180,22 @@ def get_full_port_name(group_id: int, port_id: int) -> str:
 @easy_log
 def get_port_connection_list(group_id: int, port_id: int) -> list[tuple[int, int, int]]:
     conn_list = list[tuple[int, int, int]]()
-
-    for connection in canvas.connection_list:
-        if (connection.group_out_id == group_id
-                and connection.port_out_id == port_id):
-            conn_list.append((connection.connection_id,
-                              connection.group_in_id,
-                              connection.port_in_id))
-        elif (connection.group_in_id == group_id
-                and connection.port_in_id == port_id):
-            conn_list.append((connection.connection_id,
-                              connection.group_out_id,
-                              connection.port_out_id))
-
+    port = canvas.get_port(group_id, port_id)
+    if port is None:
+        return []
+    
+    if port.port_mode is PortMode.OUTPUT:
+        for connection in canvas.list_connections(group_out_id=group_id):
+            if connection.port_out_id == port_id:
+                conn_list.append((connection.connection_id,
+                                  connection.group_in_id,
+                                  connection.port_in_id))
+    elif port.port_mode is PortMode.INPUT:
+        for connection in canvas.list_connections(group_in_id=group_id):
+            if connection.port_in_id == port_id:
+                conn_list.append((connection.connection_id,
+                                  connection.group_out_id,
+                                  connection.port_out_id))
     return conn_list
 
 def get_portgroup_name_from_ports_names(ports_names: list[str]):
@@ -406,20 +409,18 @@ def get_portgroup_connection_state(group_id_1: int, port_id_list_1: list[int],
         for in_index in range(len(in_port_id_list)):
             if (out_index % len(in_port_id_list)
                     == in_index % len(out_port_id_list)):
-                for connection in canvas.connection_list:
-                    if (connection.group_out_id == group_out_id
-                            and connection.port_out_id == out_port_id_list[out_index]
-                            and connection.group_in_id == group_in_id
+                for connection in canvas.list_connections(
+                        group_out_id=group_out_id, group_in_id=group_in_id):
+                    if (connection.port_out_id == out_port_id_list[out_index]
                             and connection.port_in_id == in_port_id_list[in_index]):
                         has_connection = True
                         break
                 else:
                     miss_connection = True
             else:
-                for connection in canvas.connection_list:
-                    if (connection.group_out_id == group_out_id
-                            and connection.port_out_id == out_port_id_list[out_index]
-                            and connection.group_in_id == group_in_id
+                for connection in canvas.list_connections(
+                        group_out_id=group_out_id, group_in_id=group_in_id):
+                    if (connection.port_out_id == out_port_id_list[out_index]
                             and connection.port_in_id == in_port_id_list[in_index]):
                         # irregular connection exists
                         # we are sure connection is irregular
@@ -468,10 +469,9 @@ def connect_portgroups(group_id_1: int, portgrp_id_1: int,
     connected_indexes = list[tuple[int, int]]()
 
     # disconnect irregular connections
-    for connection in canvas.connection_list:
-        if (connection.group_out_id == group_out_id
-                and connection.port_out_id in out_port_id_list
-                and connection.group_in_id == group_in_id
+    for connection in canvas.list_connections(
+            group_out_id=group_out_id, group_in_id=group_in_id):
+        if (connection.port_out_id in out_port_id_list
                 and connection.port_in_id in in_port_id_list):
             out_index = out_port_id_list.index(connection.port_out_id)
             in_index = in_port_id_list.index(connection.port_in_id)

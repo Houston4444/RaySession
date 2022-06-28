@@ -496,10 +496,6 @@ class CanvasWidgetMoth(QGraphicsItem):
         for connection in canvas.list_connections(
                 group_in_id=self._group_id, group_out_id=self._group_id):
             if connection.widget is not None:
-                
-        # for connection in canvas.connection_list:
-        #     if (connection.group_in_id == connection.group_out_id == self._group_id
-        #             and connection.widget is not None):
                 connection.widget.setZValue(
                     self.zValue() - 1 if under else self.zValue() + 1)
 
@@ -596,7 +592,7 @@ class CanvasWidgetMoth(QGraphicsItem):
         conn_list_ids = list[int]()
         disconnect_list = list[DisconnectElement]()
 
-        for connection in canvas.connection_list:
+        for connection in canvas.list_connections():
             if connection.concerns(self._group_id, self._port_list_ids):
                 conn_list_ids.append(connection.connection_id)
                 other_group_id = connection.group_in_id
