@@ -239,6 +239,8 @@ class PatchSceneMoth(QGraphicsScene):
         # By chance, the lower possible speed is good
         # 1.0 pixel * (1s / 0.050s) = 20 pixels/second. 
         
+        apply = False
+        
         if (Direction.LEFT in self._allowed_nav_directions
                 and scene_cpos.x() < vs_rect.center().x()):
             offset = vs_rect.center().x() - max(scene_cpos.x(), vs_rect.left())
@@ -246,6 +248,8 @@ class PatchSceneMoth(QGraphicsScene):
             move_x = - speed_hor * ((ratio_x ** POWER) * interval_hor)
             left = vs_rect.left() + int(move_x)
             ensure_rect.moveLeft(max(left, self.sceneRect().left()))
+            if int(move_x):
+                apply = True
 
         elif (Direction.RIGHT in self._allowed_nav_directions
                 and scene_cpos.x() > vs_rect.center().x()):
@@ -254,6 +258,8 @@ class PatchSceneMoth(QGraphicsScene):
             move_x = speed_hor * ((ratio_x ** POWER) * interval_hor)
             right = vs_rect.right() + int(move_x)
             ensure_rect.moveRight(min(right, self.sceneRect().right()))
+            if int(move_x):
+                apply = True
             
         if (Direction.UP in self._allowed_nav_directions
                 and scene_cpos.y() < vs_rect.center().y()):
@@ -262,6 +268,8 @@ class PatchSceneMoth(QGraphicsScene):
             move_y = - speed_ver * ((ratio_y ** POWER) * interval_ver)
             top = vs_rect.top() + int(move_y)
             ensure_rect.moveTop(max(top, self.sceneRect().top()))
+            if int(move_y):
+                apply = True
         
         elif (Direction.DOWN in self._allowed_nav_directions
                 and scene_cpos.y() > vs_rect.center().y()):
@@ -270,8 +278,11 @@ class PatchSceneMoth(QGraphicsScene):
             move_y = speed_ver * ((ratio_y ** POWER) * interval_ver)
             bottom = vs_rect.bottom() + int(move_y)
             ensure_rect.moveBottom(min(bottom, self.sceneRect().bottom()))
-            
-        self._view.ensureVisible(ensure_rect, 0.0, 0.0)
+            if int(move_y):
+                apply = True
+        
+        if apply:
+            self._view.ensureVisible(ensure_rect, 0.0, 0.0)
 
     def _start_navigation_on_borders(self):
         if (options.borders_navigation
@@ -684,7 +695,6 @@ class PatchSceneMoth(QGraphicsScene):
                         widget.top_icon.update_zoom(scale * factor)
 
     def mouseDoubleClickEvent(self, event):
-        print('scene doubleclic')
         if event.button() == Qt.LeftButton and not canvas.menu_shown:
             # parse items under mouse to prevent CallbackAct.DOUBLE_CLICK
             # if mouse is on a box
@@ -711,7 +721,6 @@ class PatchSceneMoth(QGraphicsScene):
         QGraphicsScene.mouseDoubleClickEvent(self, event)
 
     def mousePressEvent(self, event):
-        print('scene press event')
         if self.flying_connectable:
             if event.button() == Qt.LeftButton:
                 self.flying_connectable.mouseReleaseEvent(event)

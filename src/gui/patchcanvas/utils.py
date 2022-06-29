@@ -33,6 +33,7 @@ from PyQt5.QtWidgets import QWidget
 
 from .init_values import (
     CanvasItemType,
+    PortgrpObject,
     canvas,
     IconType,
     PortMode,
@@ -182,20 +183,13 @@ def get_port_connection_list(group_id: int, port_id: int) -> list[tuple[int, int
     conn_list = list[tuple[int, int, int]]()
     port = canvas.get_port(group_id, port_id)
     if port is None:
-        return []
+        return conn_list
     
-    if port.port_mode is PortMode.OUTPUT:
-        for connection in canvas.list_connections(group_out_id=group_id):
-            if connection.port_out_id == port_id:
-                conn_list.append((connection.connection_id,
-                                  connection.group_in_id,
-                                  connection.port_in_id))
-    elif port.port_mode is PortMode.INPUT:
-        for connection in canvas.list_connections(group_in_id=group_id):
-            if connection.port_in_id == port_id:
-                conn_list.append((connection.connection_id,
-                                  connection.group_out_id,
-                                  connection.port_out_id))
+    for connection in canvas.list_connections(port):
+        if connection.port_out_id == port_id:
+            conn_list.append((connection.connection_id,
+                              connection.group_in_id,
+                              connection.port_in_id))
     return conn_list
 
 def get_portgroup_name_from_ports_names(ports_names: list[str]):
@@ -357,6 +351,7 @@ def connect_ports(group_id_1: int, port_id_1: int,
         return
     
     if port_1.port_mode is not port_2.port_mode.opposite():
+        print('whaiirt', port_1.port_name, port_1.port_mode, port_2.port_mode, port_2.port_mode.opposite())
         _logger.critical(f"{_logging_str} - can't connect ports with same mode")
         return
     
@@ -435,70 +430,114 @@ def get_portgroup_connection_state(group_id_1: int, port_id_list_1: list[int],
         return 0
 
 @easy_log
-def connect_portgroups(group_id_1: int, portgrp_id_1: int,
-                       group_id_2: int, portgrp_id_2: int,
+def connect_portgroups(portgrp_1: PortgrpObject, portgrp_2: PortgrpObject,
                        disconnect=False):
-    group_out_id = 0
-    group_in_id = 0
-    out_port_id_list = []
-    in_port_id_list = []
-
-    for portgrp in canvas.list_portgroups():
-        if (portgrp.group_id == group_id_1
-                and portgrp.portgrp_id == portgrp_id_1):
-            if portgrp.port_mode is PortMode.OUTPUT:
-                group_out_id = group_id_1
-                out_port_id_list = portgrp.port_id_list
-            else:
-                group_in_id = group_id_1
-                in_port_id_list = portgrp.port_id_list
-
-        elif (portgrp.group_id == group_id_2
-                and portgrp.portgrp_id == portgrp_id_2):
-            if portgrp.port_mode is PortMode.OUTPUT:
-                group_out_id = group_id_2
-                out_port_id_list = portgrp.port_id_list
-            else:
-                group_in_id = group_id_2
-                in_port_id_list = portgrp.port_id_list
-
-    if not (out_port_id_list and in_port_id_list):
-        _logger.warning(f"{_logging_str} - empty port id list")
+    if portgrp_1.port_mode is not portgrp_2.port_mode.opposite():
         return
-
+    
+    portgrp_out, portgrp_in = portgrp_1, portgrp_2
+    if portgrp_1.port_mode is PortMode.INPUT:
+        portgrp_out, portgrp_in = portgrp_2, portgrp_1
+    
+    print('pg_group', portgrp_out.group_id, portgrp_out.portgrp_id, portgrp_out.get_port_ids())
+    print('pg', portgrp_in.group_id, portgrp_in.portgrp_id, portgrp_in.get_port_ids())
     connected_indexes = list[tuple[int, int]]()
 
     # disconnect irregular connections
-    for connection in canvas.list_connections(
-            group_out_id=group_out_id, group_in_id=group_in_id):
-        if (connection.port_out_id in out_port_id_list
-                and connection.port_in_id in in_port_id_list):
-            out_index = out_port_id_list.index(connection.port_out_id)
-            in_index = in_port_id_list.index(connection.port_in_id)
-
-            if (out_index % len(in_port_id_list)
-                    == in_index % len(out_port_id_list)
-                    and not disconnect):
-                # remember this connection already exists
-                # and has not to be remade
-                connected_indexes.append((out_index, in_index))
-            else:
-                canvas.callback(CallbackAct.PORTS_DISCONNECT,
-                                connection.connection_id)
+    for connection in canvas.list_connections(portgrp_1, portgrp_2):
+        print('conecf', connection.port_out_id, connection.port_in_id)
+        out_index = portgrp_out.get_port_ids().index(connection.port_out_id)
+        in_index = portgrp_in.get_port_ids().index(connection.port_in_id)
+        
+        if (out_index % len(portgrp_in.get_port_ids())
+                == in_index % len(portgrp_out.get_port_ids())
+                and not disconnect):
+            # remember this connection already exists
+            # and has not to be remade
+            connected_indexes.append((out_index, in_index))
+        else:
+            canvas.callback(CallbackAct.PORTS_DISCONNECT,
+                            connection.connection_id)
 
     if disconnect:
         return
 
     # finally connect the ports
-    for out_index in range(len(out_port_id_list)):
-        for in_index in range(len(in_port_id_list)):
-            if (out_index % len(in_port_id_list)
-                        == in_index % len(out_port_id_list)
+    for out_index in range(len(portgrp_out.get_port_ids())):
+        for in_index in range(len(portgrp_in.get_port_ids())):
+            if (out_index % len(portgrp_in.get_port_ids())
+                        == in_index % len(portgrp_out.get_port_ids())
                     and (out_index, in_index) not in connected_indexes):
                 canvas.callback(
                     CallbackAct.PORTS_CONNECT,
-                    group_out_id, out_port_id_list[out_index],
-                    group_in_id, in_port_id_list[in_index])
+                    portgrp_out.group_id, portgrp_out.get_port_ids()[out_index],
+                    portgrp_in.group_id, portgrp_in.get_port_ids()[in_index])
+
+# @easy_log
+# def connect_portgroups(group_id_1: int, portgrp_id_1: int,
+#                        group_id_2: int, portgrp_id_2: int,
+#                        disconnect=False):
+#     group_out_id = 0
+#     group_in_id = 0
+#     out_port_id_list = []
+#     in_port_id_list = []
+
+#     for portgrp in canvas.list_portgroups():
+#         if (portgrp.group_id == group_id_1
+#                 and portgrp.portgrp_id == portgrp_id_1):
+#             if portgrp.port_mode is PortMode.OUTPUT:
+#                 group_out_id = group_id_1
+#                 out_port_id_list = portgrp.port_id_list
+#             else:
+#                 group_in_id = group_id_1
+#                 in_port_id_list = portgrp.port_id_list
+
+#         elif (portgrp.group_id == group_id_2
+#                 and portgrp.portgrp_id == portgrp_id_2):
+#             if portgrp.port_mode is PortMode.OUTPUT:
+#                 group_out_id = group_id_2
+#                 out_port_id_list = portgrp.port_id_list
+#             else:
+#                 group_in_id = group_id_2
+#                 in_port_id_list = portgrp.port_id_list
+
+#     if not (out_port_id_list and in_port_id_list):
+#         _logger.warning(f"{_logging_str} - empty port id list")
+#         return
+
+#     connected_indexes = list[tuple[int, int]]()
+
+#     # disconnect irregular connections
+#     for connection in canvas.list_connections(
+#             group_out_id=group_out_id, group_in_id=group_in_id):
+#         if (connection.port_out_id in out_port_id_list
+#                 and connection.port_in_id in in_port_id_list):
+#             out_index = out_port_id_list.index(connection.port_out_id)
+#             in_index = in_port_id_list.index(connection.port_in_id)
+
+#             if (out_index % len(in_port_id_list)
+#                     == in_index % len(out_port_id_list)
+#                     and not disconnect):
+#                 # remember this connection already exists
+#                 # and has not to be remade
+#                 connected_indexes.append((out_index, in_index))
+#             else:
+#                 canvas.callback(CallbackAct.PORTS_DISCONNECT,
+#                                 connection.connection_id)
+
+#     if disconnect:
+#         return
+
+#     # finally connect the ports
+#     for out_index in range(len(out_port_id_list)):
+#         for in_index in range(len(in_port_id_list)):
+#             if (out_index % len(in_port_id_list)
+#                         == in_index % len(out_port_id_list)
+#                     and (out_index, in_index) not in connected_indexes):
+#                 canvas.callback(
+#                     CallbackAct.PORTS_CONNECT,
+#                     group_out_id, out_port_id_list[out_index],
+#                     group_in_id, in_port_id_list[in_index])
 
 @easy_log
 def canvas_callback(action: CallbackAct, *args):

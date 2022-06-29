@@ -102,8 +102,7 @@ class PortCheckBox(QCheckBox):
         po = self._p_object
         port_id = po.port_id if isinstance(po, PortObject) else -1
         
-        self._parent.connection_asked_from_box(
-            port_id, po.portgrp_id, not self.isChecked())
+        self._parent.connection_asked_from_box(po, not self.isChecked())
 
 
 class CheckFrame(QFrame):

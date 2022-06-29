@@ -69,7 +69,7 @@ class SubMenu(QMenu):
         self._p_object = p_object
 
     def connection_asked_from_box(
-            self, port_id: int, portgrp_id: int, connect: bool):
+            self, p_object: Union[PortObject, PortgrpObject], connect: bool):
         pass
 
 
@@ -189,10 +189,9 @@ class GroupConnectMenu(SubMenu):
                 element.check_frame.set_check_state(check_state)
                 break
 
-    def connection_asked_from_box(self, port_id: int, portgrp_id: int,
+    def connection_asked_from_box(self, p_object: Union[PortObject, PortgrpObject],
                                   yesno: bool):
-        self._parent.connection_asked_from_box(self.group_id(), port_id,
-                                               portgrp_id, yesno)
+        self._parent.connection_asked_from_box(p_object, yesno)
 
     def keyPressEvent(self, event) -> None:
         return super().keyPressEvent(event)
@@ -215,27 +214,25 @@ class DangerousMenu(SubMenu):
         self.group_menus.append(group_menu)
         self.addMenu(group_menu)
 
-    def connection_asked_from_box(self, group_id: int, port_id: int,
-                                  portgrp_id: int, yesno: bool):
+    def connection_asked_from_box(self, p_object: Union[PortObject, PortgrpObject],
+                                  yesno: bool):
         po = self._p_object
         
         if yesno:
-            if isinstance(po, PortgrpObject) and portgrp_id:
+            if isinstance(po, PortgrpObject):
                 # in and out are portgroups
-                utils.connect_portgroups(po.group_id, po.portgrp_id,
-                                         group_id, portgrp_id)
+                utils.connect_portgroups(po, p_object)
             else:
                 for self_port_id in po.get_port_ids():
                     utils.connect_ports(po.group_id, self_port_id,
-                                        group_id, port_id)
+                                        p_object.group_id, p_object.port_id)
         else:
-            if isinstance(po, PortgrpObject) and portgrp_id:
-                utils.connect_portgroups(po.group_id, po.portgrp_id,
-                                         group_id, portgrp_id, disconnect=True)
+            if isinstance(po, PortgrpObject):
+                utils.connect_portgroups(po, p_object, disconnect=True)
             else:
-                for connection in canvas.list_connections():
-                    if connection.matches(po.group_id, po.get_port_ids(),
-                                          group_id, [port_id]):
+                # port = canvas.get_port(po.group_id, port_id)
+                # if port:
+                    for connection in canvas.list_connections(po, p_object):
                         utils.canvas_callback(
                             CallbackAct.PORTS_DISCONNECT,
                             connection.connection_id)
@@ -327,29 +324,26 @@ class ConnectMenu(SubMenu):
         self.group_menus.append(group_menu)
         self.addMenu(group_menu)
 
-    def connection_asked_from_box(self, group_id: int, port_id: int,
-                                  portgrp_id: int, yesno: bool):
+    def connection_asked_from_box(self, p_object: Union[PortObject, PortgrpObject], yesno: bool):
         po = self._p_object
         
         if yesno:
-            if isinstance(po, PortgrpObject) and portgrp_id:
+            if isinstance(po, PortgrpObject):
             # if self._portgrp_id and portgrp_id:
                 # in and out are portgroups
-                utils.connect_portgroups(po.group_id, po.portgrp_id,
-                                         group_id, portgrp_id)
+                utils.connect_portgroups(po, p_object)
             else:
                 for self_port_id in po.get_port_ids():
                     utils.connect_ports(po.group_id, self_port_id,
-                                        group_id, port_id)
+                                        p_object.group_id, p_object.port_id)
         else:
-            if isinstance(po, PortgrpObject) and portgrp_id:
+            if isinstance(po, PortgrpObject):
             # if self._portgrp_id and portgrp_id:
-                utils.connect_portgroups(po.group_id, po.portgrp_id,
-                                         group_id, portgrp_id, disconnect=True)
+                utils.connect_portgroups(po, p_object, disconnect=True)
             else:
-                for connection in canvas.list_connections():
-                    if connection.matches(po.group_id, po.get_port_ids(),
-                                          group_id, [port_id]):
+                # port = canvas.get_port(group_id, port_id)
+                # if port:
+                    for connection in canvas.list_connections(po, p_object):
                         utils.canvas_callback(
                             CallbackAct.PORTS_DISCONNECT,
                             connection.connection_id)
@@ -399,7 +393,8 @@ class DisconnectMenu(SubMenu):
 
         for element in self._elements:
             if element.action is action:
-                for connection in canvas.list_connections():
+                for connection in canvas.list_connections(
+                        self._p_object, group_id=element.group_id):
                     if connection.matches(
                             self._p_object.group_id, self._p_object.get_port_ids(),
                             element.group_id, element.port_id_list):
@@ -495,13 +490,9 @@ class ClipboardMenu(SubMenu):
 
         po = self._p_object
 
-        for self_port_id in po.get_port_ids():
-            con_list = utils.get_port_connection_list(
-                po.group_id, self_port_id)
-            if con_list:
-                break
-
-        if not con_list:
+        for connection in canvas.list_connections(po):
+            break
+        else:
             cut_action.setEnabled(False)
             copy_action.setEnabled(False)
 
@@ -515,9 +506,8 @@ class ClipboardMenu(SubMenu):
                 paste_action.triggered.connect(self.paste_connections)
                 break
 
-    def write_clipboard(self, cut: bool):
+    def write_clipboard(self):
         canvas.clipboard.clear()
-        canvas.clipboard_cut = cut
 
         po = self._p_object
 
@@ -525,12 +515,12 @@ class ClipboardMenu(SubMenu):
             group_port_ids = list[tuple[int]]()
 
             if po.port_mode is PortMode.OUTPUT:
-                for connection in canvas.list_connections(group_out_id=po.group_id):
+                for connection in canvas.list_connections(po):
                     if connection.port_out_id == self_port_id:
                         group_port_ids.append((connection.group_in_id,
                                                connection.port_in_id))
             elif po.port_mode is PortMode.INPUT:
-                for connection in canvas.list_connections(group_in_id=po.group_id):
+                for connection in canvas.list_connections(po):
                     if connection.port_in_id == self_port_id:
                         group_port_ids.append((connection.group_out_id,
                                                connection.port_out_id))
@@ -545,10 +535,12 @@ class ClipboardMenu(SubMenu):
             canvas.clipboard.append(element)
 
     def cut_connections(self):
-        self.write_clipboard(True)
+        canvas.clipboard_cut = True
+        self.write_clipboard()
 
     def copy_connections(self):
-        self.write_clipboard(False)
+        canvas.clipboard_cut = False
+        self.write_clipboard()
 
     def paste_connections(self):
         po = self._p_object
@@ -624,9 +616,8 @@ class ConnectableContextMenu(QMenu):
 
         self.addSeparator()
 
-        for connection in canvas.list_connections():
-            if connection.concerns(po.group_id, po.get_port_ids()):
-                self.add_connection(connection)
+        for connection in canvas.list_connections(po):
+            self.add_connection(connection)
 
     def disconnect_all(self):
         for connection in self.connection_list:

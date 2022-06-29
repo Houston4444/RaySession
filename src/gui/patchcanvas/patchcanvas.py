@@ -20,6 +20,7 @@
 # global imports
 import logging
 from pathlib import Path
+import time
 from tokenize import group
 from typing import Callable
 from PyQt5.QtCore import (pyqtSlot, QObject, QPoint, QPointF, QRectF,
@@ -414,8 +415,8 @@ def split_group(group_id: int, on_place=False):
     portgrps_data = [pg.copy_no_widget() for pg 
                      in canvas.list_portgroups(group_id=group_id)]
     ports_data = [p.copy_no_widget() for p in canvas.list_ports(group_id=group_id)]
-    conns_data = [c.copy_no_widget() for c in canvas.list_connections()
-                  if group_id in (c.group_out_id, c.group_in_id)]
+    conns_data = [c.copy_no_widget()
+                  for c in canvas.list_connections(group_id=group_id)]
 
     canvas.loading_items = True
 
@@ -499,8 +500,8 @@ def join_group(group_id: int):
                      canvas.list_portgroups(group_id=group_id)]
     ports_data = [p.copy_no_widget()
                   for p in canvas.list_ports(group_id=group_id)]
-    conns_data = [c.copy_no_widget() for c in canvas.list_connections()
-                  if group_id in (c.group_out_id, c.group_in_id)]
+    conns_data = [c.copy_no_widget() 
+                  for c in canvas.list_connections(group_id=group_id)]
 
     canvas.loading_items = True
 
@@ -787,10 +788,8 @@ def set_group_as_plugin(group_id: int, plugin_id: int,
 def add_port(group_id: int, port_id: int, port_name: str,
              port_mode: PortMode, port_type: PortType,
              port_subtype: PortSubType.REGULAR):
-    for port in canvas.list_ports(group_id=group_id):
-        if port.port_id == port_id:
-            _logger.critical(f"{_logging_str} - port already exists")
-            return
+    if canvas.get_port(group_id, port_id) is not None:
+        _logger.critical(f"{_logging_str} - port already exists")
 
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -829,48 +828,47 @@ def add_port(group_id: int, port_id: int, port_name: str,
 
 @patchbay_api
 def remove_port(group_id: int, port_id: int):
-    for port in canvas.list_ports(group_id=group_id):
-        if port.port_id == port_id:
-            if port.portgrp_id:
-                _logger.critical(f"{_logging_str} - Port is in portgroup " 
-                                 f"{port.portgrp_id}, remove it before !")
-                return
+    port = canvas.get_port(group_id, port_id)
+    if port is None:
+        _logger.critical(f"{_logging_str} - Unable to find port to remove")
+        return
 
-            item = port.widget
-            if item is not None:
-                item.parentItem().remove_port_from_group(port_id)
-                canvas.scene.removeItem(item)
+    if port.portgrp_id:
+        _logger.critical(f"{_logging_str} - Port is in portgroup " 
+                            f"{port.portgrp_id}, remove it before !")
+        return
 
-            del item
-            canvas.remove_port(port)
+    item = port.widget
+    if item is not None:
+        item.parentItem().remove_port_from_group(port_id)
+        canvas.scene.removeItem(item)
 
-            canvas.qobject.port_removed.emit(group_id, port_id)
-            if canvas.loading_items:
-                return
+    del item
+    canvas.remove_port(port)
 
-            QTimer.singleShot(0, canvas.scene.update)
-            return
+    canvas.qobject.port_removed.emit(group_id, port_id)
+    if canvas.loading_items:
+        return
 
-    _logger.critical(f"{_logging_str} - Unable to find port to remove")
+    QTimer.singleShot(0, canvas.scene.update)
 
 @patchbay_api
 def rename_port(group_id: int, port_id: int, new_port_name: str):
-    for port in canvas.list_ports(group_id=group_id):
-        if port.port_id == port_id:
-            if new_port_name != port.port_name:
-                port.port_name = new_port_name
-                port.widget.set_port_name(new_port_name)
+    port = canvas.get_port(group_id, port_id)
+    if port is None:
+        _logger.critical(f"{_logging_str} - Unable to find port to rename")
+        return
 
-            if canvas.loading_items:
-                return
+    if new_port_name != port.port_name:
+        port.port_name = new_port_name
+        port.widget.set_port_name(new_port_name)
 
-            port.widget.parentItem().update_positions()
+    if canvas.loading_items:
+        return
 
-            QTimer.singleShot(0, canvas.scene.update)
-            return
+    port.widget.parentItem().update_positions()
 
-    _logger.critical(f"{_logging_str} - Unable to find port to rename")
-
+    QTimer.singleShot(0, canvas.scene.update)
 
 @patchbay_api
 def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,

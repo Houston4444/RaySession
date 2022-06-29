@@ -1044,6 +1044,7 @@ class BoxWidget(CanvasWidgetMoth):
         self._port_list.clear()
         self._portgrp_list.clear()
         
+        print('lissfk', self._group_name)
         for port in canvas.list_ports(group_id=self._group_id):
             if port.port_id in self._port_list_ids:
                 # used to know present port modes (INPUT or OUTPUT or both)

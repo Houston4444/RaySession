@@ -574,7 +574,6 @@ class CanvasWidgetMoth(QGraphicsItem):
         return super().itemChange(change, value)
 
     def contextMenuEvent(self, event):
-        print('dokezeok box', event.isAccepted())
         if canvas.is_line_mov:
             return
 
@@ -592,7 +591,7 @@ class CanvasWidgetMoth(QGraphicsItem):
         conn_list_ids = list[int]()
         disconnect_list = list[DisconnectElement]()
 
-        for connection in canvas.list_connections():
+        for connection in canvas.list_connections(group_id=self._group_id):
             if connection.concerns(self._group_id, self._port_list_ids):
                 conn_list_ids.append(connection.connection_id)
                 other_group_id = connection.group_in_id

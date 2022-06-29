@@ -47,9 +47,9 @@ class PortMode(IntFlag):
     OUTPUT = 0x02
     BOTH = INPUT | OUTPUT
     
-    def opposite(self):
+    def opposite(self) -> 'PortMode':
         if self is self.INPUT:
-            return self.INPUT
+            return self.OUTPUT
         if self is self.OUTPUT:
             return self.INPUT
         if self is self.BOTH:
@@ -456,12 +456,10 @@ class Canvas:
             pass
     
     def get_port(self, group_id: int, port_id: int) -> PortObject:
-        if not group_id in self._ports_dict.keys():
+        gp = self._ports_dict.get(group_id)
+        if gp is None:
             return None
-        if not port_id in self._ports_dict[group_id].keys():
-            return None
-        
-        return self._ports_dict[group_id][port_id]
+        return gp.get(port_id)
 
     def get_connection(self, connection_id: int) -> ConnectionObject:
         if connection_id in self._conns_dict.keys():
@@ -469,9 +467,12 @@ class Canvas:
 
     def list_ports(self, group_id=None) -> Iterator[PortObject]:
         if group_id is None:
+            # print('regular port list')
             for port in self.port_list:
                 yield port
             return     
+        
+        print('special port list', group_id)
         
         if group_id in self._ports_dict.keys():
             for port in self._ports_dict[group_id].values():
@@ -487,13 +488,77 @@ class Canvas:
             for portgrp in self._portgrps_dict[group_id].values():
                 yield portgrp
                 
-    def list_connections(self, group_in_id=None,
-                         group_out_id=None) -> Iterator[ConnectionObject]:
-        if group_in_id is None and group_out_id is None:
+    def list_connections(
+            self, *connectables: ConnectableObject,
+            group_in_id=None, group_out_id=None,
+            group_id=None) -> Iterator[ConnectionObject]:
+        if (not connectables
+                and group_id is None
+                and group_in_id is None
+                and group_out_id is None):
+            # no filter, list all connections
             for conn in self._conns_dict.values():
                 yield conn
             return
         
+        if len(connectables) > 2:
+            return
+        
+        port_out_ids, port_in_ids = tuple[int](), tuple[int]()
+        
+        # check infos from connectables (port/portgroup)
+        if len(connectables) == 2:
+            if (connectables[0].port_mode
+                    is not connectables[1].port_mode.opposite()):
+                return
+            
+            if connectables[0].port_mode is PortMode.OUTPUT:
+                connectable_out, connectable_in = connectables
+            else:
+                connectable_in, connectable_out = connectables
+            
+            group_out_id = connectable_out.group_id
+            group_in_id = connectable_in.group_id
+            port_out_ids = connectable_out.get_port_ids()
+            port_in_ids = connectable_in.get_port_ids()
+
+        elif len(connectables) == 1:
+            if connectables[0].port_mode is PortMode.OUTPUT:
+                group_out_id = connectables[0].group_id
+                port_out_ids = connectables[0].get_port_ids()
+            else:
+                group_in_id = connectables[0].group_id
+                port_in_ids = connectables[0].get_port_ids()
+
+        # check if group_id should be group_out_id or group_in_id
+        if (group_id is not None
+                and (group_out_id is not None or group_in_id is not None)):
+            if group_out_id is None:
+                group_out_id = group_id
+            elif group_in_id is None:
+                group_in_id = group_id
+            group_id = None
+
+        # no precision for group_id
+        # we check first in the out dict, then in the in dict
+        if group_id is not None:
+            gp_out = self._conns_outin_dict.get(group_id)
+            if gp_out is not None:
+                for gp_out_in in gp_out.values():
+                    for conn in gp_out_in.values():
+                        yield conn
+        
+            gp_in = self._conns_inout_dict.get(group_id)
+            if gp_in is not None:
+                for gp_id, gp_in_out in gp_in.items():
+                    if gp_id == group_id:
+                        # connections here have already been yielded
+                        continue
+                    for conn in gp_in_out.values():
+                        yield conn
+            return
+        
+        # here we are sure we have group_out_id or group_in_id filter(s)
         if group_out_id is not None:
             gp_out = self._conns_outin_dict.get(group_out_id)
             if gp_out is None:
@@ -505,22 +570,26 @@ class Canvas:
                     return
                 
                 for conn in gp_in.values():
-                    yield conn
+                    if ((not port_out_ids or conn.port_out_id in port_out_ids)
+                            and (not port_in_ids or conn.port_in_id in port_in_ids)):
+                        yield conn
                 return
             
             for gp_in in gp_out.values():
                 for conn in gp_in.values():
-                    yield conn
+                    if not port_out_ids or conn.port_out_id in port_out_ids:
+                        yield conn
             return
 
+        # here we are sure we have no group_out_id filter
         gp_in = self._conns_inout_dict.get(group_in_id)
         if gp_in is None:
             return
         
         for gp_out in gp_in.values():
             for conn in gp_out.values():
-                yield conn
-                
+                if not port_in_ids or conn.port_in_id in port_in_ids:
+                    yield conn
 
 # -----------------------------
 
