@@ -1,5 +1,6 @@
 
 from enum import IntEnum
+import time
 from typing import Iterator
 from PyQt5.QtCore import QRectF
 from PyQt5.QtGui import QPainterPath
@@ -17,7 +18,7 @@ from .init_values import (
     IconType)
 import patchcanvas.utils as utils
 from .theme import Theme
-from .box_widget_moth import CanvasWidgetMoth, UnwrapButton, TitleLine
+from .box_widget_moth import BoxWidgetMoth, UnwrapButton, TitleLine
 
 
 def list_port_types_and_subs() -> Iterator[tuple[PortType, PortSubType]]:
@@ -67,10 +68,10 @@ class BoxArea:
         return self.area() < other.area()
 
 
-class BoxWidget(CanvasWidgetMoth):
+class BoxWidget(BoxWidgetMoth):
     def __init__(self, group_id: int, group_name: str,
                  icon_type: int, icon_name: str):
-        CanvasWidgetMoth.__init__(
+        BoxWidgetMoth.__init__(
             self, group_id, group_name, icon_type, icon_name)
         self._port_list = list[PortObject]()
         self._portgrp_list = list[PortgrpObject]()
@@ -123,8 +124,8 @@ class BoxWidget(CanvasWidgetMoth):
         port_spacing = box_theme.port_spacing()
         port_offset = box_theme.port_offset()
         port_type_spacing = box_theme.port_type_spacing()
-        last_in_type_alter = (PortType.NULL, False)
-        last_out_type_alter = (PortType.NULL, False)
+        last_in_type_alter = (PortType.NULL, PortSubType.REGULAR)
+        last_out_type_alter = (PortType.NULL, PortSubType.REGULAR)
         last_port_mode = PortMode.NULL
         
         for port_type, port_subtype in list_port_types_and_subs():                
@@ -138,35 +139,32 @@ class BoxWidget(CanvasWidgetMoth):
                 max_pwidth = options.max_port_width
 
                 if port.portgrp_id:
-                    for portgrp in self._portgrp_list:
-                        if not portgrp.portgrp_id == port.portgrp_id:
-                            continue
-                        
-                        if port.port_id == portgrp.port_id_list[0]:
-                            portgrp_name = self._get_portgroup_name(port.portgrp_id)
+                    portgrp = canvas.get_portgroup(self._group_id, port.portgrp_id)
+                    if port.pg_pos == 0:
+                        portgrp_name = self._get_portgroup_name(port.portgrp_id)
 
-                            portgrp.widget.set_print_name(
-                                portgrp_name,
-                                max_pwidth - canvas.theme.port_grouped_width - 5)
-                        
-                        port.widget.set_print_name(
-                            port.port_name.replace(
-                                self._get_portgroup_name(port.portgrp_id), '', 1),
-                            int(max_pwidth/2))
-                        
-                        if (portgrp.widget.get_text_width() + 5
-                                > max_pwidth - port.widget.get_text_width()):
-                            portgrp.widget.reduce_print_name(
-                                max_pwidth - port.widget.get_text_width() - 5)
-                        
-                        # the port_grouped_width is also used to define
-                        # the portgroup minimum width
-                        size = (max(portgrp.widget.get_text_width(),
+                        portgrp.widget.set_print_name(
+                            portgrp_name,
+                            max_pwidth - canvas.theme.port_grouped_width - 5)
+                    
+                    port.widget.set_print_name(
+                        port.port_name.replace(
+                            self._get_portgroup_name(port.portgrp_id), '', 1),
+                        int(max_pwidth/2))
+                    
+                    if (portgrp.widget.get_text_width() + 5
+                            > max_pwidth - port.widget.get_text_width()):
+                        portgrp.widget.reduce_print_name(
+                            max_pwidth - port.widget.get_text_width() - 5)
+                    
+                    # the port_grouped_width is also used to define
+                    # the portgroup minimum width
+                    size = (max(portgrp.widget.get_text_width(),
+                                canvas.theme.port_grouped_width)
+                            + max(port.widget.get_text_width() + 6,
                                     canvas.theme.port_grouped_width)
-                                + max(port.widget.get_text_width() + 6,
-                                        canvas.theme.port_grouped_width)
-                                + port_offset)
-                        break
+                            + port_offset)
+                        # break
                 else:
                     port.widget.set_print_name(port.port_name, max_pwidth)
                     size = max(port.widget.get_text_width() + port_offset, 20)
@@ -176,7 +174,7 @@ class BoxWidget(CanvasWidgetMoth):
                 if port.port_mode is PortMode.INPUT:
                     max_in_width = max(max_in_width, size)
                     if type_and_sub != last_in_type_alter:
-                        if last_in_type_alter != (PortType.NULL, False):
+                        if last_in_type_alter != (PortType.NULL, PortSubType.REGULAR):
                             last_in_pos += port_type_spacing
                         last_in_type_alter = type_and_sub
 
@@ -188,7 +186,7 @@ class BoxWidget(CanvasWidgetMoth):
                     max_out_width = max(max_out_width, size)
                     
                     if type_and_sub != last_out_type_alter:
-                        if last_out_type_alter != (PortType.NULL, False):
+                        if last_out_type_alter != (PortType.NULL, PortSubType.REGULAR):
                             last_out_pos += port_type_spacing
                         last_out_type_alter = type_and_sub
                     
@@ -212,35 +210,24 @@ class BoxWidget(CanvasWidgetMoth):
         last_type_and_sub = (PortType.NULL, PortSubType.REGULAR)
         
         if self._current_port_mode is PortMode.BOTH:
-            for port_type in PortType:
-                if port_type is PortType.NULL:
-                    continue
-
-                for port_subtype in PortSubType:
-                    if ((port_subtype is PortSubType.A2J
-                            and not port_type is PortType.MIDI_JACK)
-                        or (port_subtype is PortSubType.CV
-                            and not port_type is PortType.AUDIO_JACK)):
-                        # No such port should exist, it is just for win some time
+            for port_type, port_subtype in list_port_types_and_subs():
+                for port in self._port_list:
+                    if (port.port_type is not port_type
+                            or port.port_subtype is not port_subtype):
                         continue
 
-                    for port in self._port_list:
-                        if (port.port_type is not port_type
-                                or port.port_subtype is not port_subtype):
-                            continue
+                    if (port.port_type, port.port_subtype) != last_type_and_sub:
+                        if last_type_and_sub != (PortType.NULL, PortSubType.REGULAR):
+                            last_inout_pos += port_type_spacing
+                        last_type_and_sub = (port.port_type, port.port_subtype)
 
-                        if (port.port_type, port.port_subtype) != last_type_and_sub:
-                            if last_type_and_sub != (PortType.NULL, PortSubType.REGULAR):
-                                last_inout_pos += port_type_spacing
-                            last_type_and_sub = (port.port_type, port.port_subtype)
+                    if port.pg_pos:
+                        continue
 
-                        if port.pg_pos:
-                            continue
-
-                        last_inout_pos += port.pg_len * canvas.theme.port_height
-                        last_inout_pos += port_spacing
-                        
-                        last_port_mode = port.port_mode
+                    last_inout_pos += port.pg_len * canvas.theme.port_height
+                    last_inout_pos += port_spacing
+                    
+                    last_port_mode = port.port_mode
         
         return {'last_in_pos': final_last_in_pos,
                 'last_out_pos': final_last_out_pos,
@@ -264,9 +251,7 @@ class BoxWidget(CanvasWidgetMoth):
                 widget.setY(pos)
             
         ''' ports Y positioning, and get width informations '''
-        max_in_width = max_out_width = 0
         last_in_pos = last_out_pos = start_pos
-        final_last_in_pos = final_last_out_pos = last_in_pos
         wrapped_port_pos = start_pos
         
         box_theme = self.get_theme()
@@ -289,8 +274,7 @@ class BoxWidget(CanvasWidgetMoth):
                 if one_column:
                     last_in_pos = last_out_pos = max(last_in_pos, last_out_pos)
                 
-                first_of_portgrp = bool(port.pg_pos == 0)
-                if port.portgrp_id and not first_of_portgrp:
+                if port.portgrp_id and port.pg_pos > 0:
                     continue
                 
                 type_and_sub = (port.port_type, port.port_subtype)
@@ -322,18 +306,13 @@ class BoxWidget(CanvasWidgetMoth):
                         #     output L
                         # input R
                         #     output R
-                        for portgrp in self._portgrp_list:
-                            if portgrp.portgrp_id == port.portgrp_id:
-                                if portgrp.widget is not None:
-                                    set_widget_pos(portgrp.widget, last_in_pos)
-                            
-                                for port_id in portgrp.port_id_list:
-                                    for gp_port in self._port_list:
-                                        if gp_port.port_id == port_id:
-                                            set_widget_pos(gp_port.widget, last_in_pos)
-                                            last_in_pos += canvas.theme.port_height
-                                            break
-                                break
+                        portgrp = port.portgrp
+                        if portgrp.widget is not None:
+                            set_widget_pos(portgrp.widget, last_in_pos)
+                        
+                        for gp_port in portgrp.ports:
+                            set_widget_pos(gp_port.widget, last_in_pos)
+                            last_in_pos += canvas.theme.port_height
                     else:
                         set_widget_pos(port.widget, last_in_pos)
                         last_in_pos += canvas.theme.port_height
@@ -352,18 +331,13 @@ class BoxWidget(CanvasWidgetMoth):
                         out_segment = [last_out_pos, last_out_pos]
 
                     if port.portgrp_id:
-                        for portgrp in self._portgrp_list:
-                            if portgrp.portgrp_id == port.portgrp_id:
-                                if portgrp.widget is not None:
-                                    set_widget_pos(portgrp.widget, last_out_pos)
-                            
-                                for port_id in portgrp.port_id_list:
-                                    for gp_port in self._port_list:
-                                        if gp_port.port_id == port_id:
-                                            set_widget_pos(gp_port.widget, last_out_pos)
-                                            last_out_pos += canvas.theme.port_height
-                                            break
-                                break
+                        portgrp = port.portgrp
+                        if portgrp.widget is not None:
+                            set_widget_pos(portgrp.widget, last_out_pos)
+
+                        for gp_port in portgrp.ports:
+                            set_widget_pos(gp_port.widget, last_out_pos)
+                            last_out_pos += canvas.theme.port_height
                     else:
                         set_widget_pos(port.widget, last_out_pos)
                         last_out_pos += canvas.theme.port_height
@@ -769,8 +743,8 @@ class BoxWidget(CanvasWidgetMoth):
         port_offset = box_theme.port_offset()
         
         # Horizontal ports re-positioning
-        inX = port_offset
-        outX = self._width - max_out_width - 12
+        in_x = port_offset
+        out_x = self._width - max_out_width - 12
 
         # Horizontal ports not in portgroup re-positioning
         for port in self._port_list:
@@ -778,10 +752,10 @@ class BoxWidget(CanvasWidgetMoth):
                 continue
 
             if port.port_mode is PortMode.INPUT:
-                port.widget.setX(inX)
+                port.widget.setX(in_x)
                 port.widget.set_port_width(max_in_width - port_offset)
             elif port.port_mode is PortMode.OUTPUT:
-                port.widget.setX(outX)
+                port.widget.setX(out_x)
                 port.widget.set_port_width(max_out_width - port_offset)
 
         # Horizontal portgroups and ports in portgroup re-positioning
@@ -792,13 +766,12 @@ class BoxWidget(CanvasWidgetMoth):
                     portgrp.widget.setX(box_theme.port_offset() +1)
                 elif portgrp.port_mode is PortMode.OUTPUT:
                     portgrp.widget.set_portgrp_width(max_out_width - port_offset)
-                    portgrp.widget.setX(outX)
+                    portgrp.widget.setX(out_x)
 
             max_port_in_pg_width = canvas.theme.port_grouped_width
 
-            for port in self._port_list:
-                if (port.port_id in portgrp.port_id_list
-                        and port.widget is not None):
+            for port in portgrp.ports:
+                if port.widget is not None:
                     port_print_width = port.widget.get_text_width()
 
                     # change port in portgroup width only if
@@ -807,19 +780,18 @@ class BoxWidget(CanvasWidgetMoth):
                     max_port_in_pg_width = max(max_port_in_pg_width,
                                                port_print_width + 4)
 
-            out_in_portgrpX = (self._width - box_theme.port_offset() - 12
-                               - max_port_in_pg_width)
+            out_in_portgrp_x = (self._width - box_theme.port_offset() - 12
+                                - max_port_in_pg_width)
 
             portgrp.widget.set_ports_width(max_port_in_pg_width)
 
-            for port in self._port_list:
-                if (port.port_id in portgrp.port_id_list
-                        and port.widget is not None):
+            for port in portgrp.ports:
+                if port.widget is not None:
                     port.widget.set_port_width(max_port_in_pg_width)
                     if port.port_mode is PortMode.INPUT:
-                        port.widget.setX(inX)
+                        port.widget.setX(in_x)
                     elif port.port_mode is PortMode.OUTPUT:
-                        port.widget.setX(out_in_portgrpX)
+                        port.widget.setX(out_in_portgrp_x)
     
     def _set_title_positions(self):
         ''' set title lines, header lines and icon positions '''
@@ -1044,10 +1016,17 @@ class BoxWidget(CanvasWidgetMoth):
         self._port_list.clear()
         self._portgrp_list.clear()
         
-        for port in canvas.list_ports(group_id=self._group_id):
-            if port.port_id in self._port_list_ids:
-                # used to know present port modes (INPUT or OUTPUT or both)
+        if self._splitted:
+            for port in canvas.list_ports(group_id=self._group_id):
+                if port.port_mode is self._splitted_mode:
+                    self._port_list.append(port)
+            
+            if self._port_list:
+                self._current_port_mode = self._splitted_mode
+        else:
+            for port in canvas.list_ports(group_id=self._group_id):
                 self._port_list.append(port)
+                # used to know present port modes (INPUT or OUTPUT or both)
                 self._current_port_mode |= port.port_mode
                 
         for portgrp in canvas.list_portgroups(group_id=self._group_id):

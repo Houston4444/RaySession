@@ -674,47 +674,46 @@ class ConnectableContextMenu(QMenu):
     def connection_removed_from_canvas(self, connection_id: int):
         po = self._p_object
         
-        connection = canvas.get_connection(connection_id)
-        if connection is None:
-            return
-        
-        for port in canvas.list_ports():
-            if ((po.port_mode is PortMode.OUTPUT
-                    and port.group_id == connection.group_in_id
-                    and port.port_id == connection.port_in_id)
-                or (po.port_mode is PortMode.INPUT
-                    and port.group_id == connection.group_out_id
-                    and port.port_id == connection.port_out_id)):
-                group_id = port.group_id
-                port_id = port.port_id
-                portgrp_id = port.portgrp_id
+        for connection in self.connection_list:
+            if connection.connection_id == connection_id:
+                for port in canvas.list_ports():
+                    if ((po.port_mode is PortMode.OUTPUT
+                            and port.group_id == connection.group_in_id
+                            and port.port_id == connection.port_in_id)
+                        or (po.port_mode is PortMode.INPUT
+                            and port.group_id == connection.group_out_id
+                            and port.port_id == connection.port_out_id)):
+                        group_id = port.group_id
+                        port_id = port.port_id
+                        portgrp_id = port.portgrp_id
 
-                if isinstance(po, PortgrpObject) and portgrp_id:
-                    port_id = -1
-                    port_id_list = utils.get_portgroup_port_list(
-                        group_id, portgrp_id)
-                else:
-                    port_id_list = [port_id]
+                        if isinstance(po, PortgrpObject) and portgrp_id:
+                            port_id = -1
+                            port_id_list = utils.get_portgroup_port_list(
+                                group_id, portgrp_id)
+                        else:
+                            port_id_list = [port_id]
 
-                con_state = utils.get_portgroup_connection_state(
-                    po.group_id, po.get_port_ids(),
-                    group_id, port_id_list)
+                        con_state = utils.get_portgroup_connection_state(
+                            po.group_id, po.get_port_ids(),
+                            group_id, port_id_list)
 
-                for group_menu in self.connect_menu.group_menus:
-                    if group_menu.group_id() == group_id:
-                        group_menu.check_element(
-                            port_id, portgrp_id, con_state)
+                        for group_menu in self.connect_menu.group_menus:
+                            if group_menu.group_id() == group_id:
+                                group_menu.check_element(
+                                    port_id, portgrp_id, con_state)
+                                break
+
+                        for group_menu in self.connect_menu.dangerous_submenu.group_menus:
+                            if group_menu.group_id() == group_id:
+                                group_menu.check_element(
+                                    port_id, portgrp_id, con_state)
+                                break
+
+                        self.disconnect_menu.remove_element(
+                            group_id, port_id_list, portgrp_id)
                         break
 
-                for group_menu in self.connect_menu.dangerous_submenu.group_menus:
-                    if group_menu.group_id() == group_id:
-                        group_menu.check_element(
-                            port_id, portgrp_id, con_state)
-                        break
-
-                self.disconnect_menu.remove_element(
-                    group_id, port_id_list, portgrp_id)
+                self.connection_list.remove(connection)
                 break
-
-        self.connection_list.remove(connection)
                 

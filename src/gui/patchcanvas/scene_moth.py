@@ -327,7 +327,7 @@ class PatchSceneMoth(QGraphicsScene):
                         * (ratio ** 0.6)))
 
                 moving_box.widget.setPos(x, y)
-                moving_box.widget.repaint_lines()
+                moving_box.widget.repaint_lines(fast_move=True)
 
         for wrapping_box in self.wrapping_boxes:
             if wrapping_box.widget is not None:
@@ -352,7 +352,7 @@ class PatchSceneMoth(QGraphicsScene):
 
             canvas.qobject.move_boxes_finished.emit()
 
-        self.update()
+        # self.update()
 
     def add_box_to_animation(self, box_widget: BoxWidget, to_x: int, to_y: int,
                              force_anim=True):
@@ -423,6 +423,10 @@ class PatchSceneMoth(QGraphicsScene):
             QGraphicsScene.removeItem(self, child_item)
         QGraphicsScene.removeItem(self, item)
 
+    def update(self):
+        super().update()
+        print('scene update')
+
     def update_limits(self):
         w0 = canvas.size_rect.width()
         h0 = canvas.size_rect.height()
@@ -446,6 +450,10 @@ class PatchSceneMoth(QGraphicsScene):
         self._cursor_cut = QCursor(QPixmap(f":/cursors/cut-{cur_color}.png"), 1, 1)
         self._cursor_zoom_area = QCursor(
             QPixmap(f":/cursors/zoom-area-{cur_color}.png"), 8, 7)
+
+        for connection in canvas.list_connections():
+            if connection.widget is not None:
+                connection.widget.update_theme()
 
     def drawBackground(self, painter, rect):
         painter.save()
@@ -791,8 +799,6 @@ class PatchSceneMoth(QGraphicsScene):
         QGraphicsScene.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
-        print('scene release')
-
         if self.flying_connectable:
             QGraphicsScene.mouseReleaseEvent(self, event)
             return

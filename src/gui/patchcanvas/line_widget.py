@@ -17,6 +17,7 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
+from enum import Enum
 import time
 from typing import TYPE_CHECKING
 
@@ -34,6 +35,19 @@ if TYPE_CHECKING:
     from .port_widget import PortWidget
 
 
+class _ThemeState(Enum):
+    NORMAL = 0
+    SELECTED = 1
+    DISCONNECTING = 2
+
+
+class _ThemeAttributes:
+    base_pen: QPen
+    color_main: QColor
+    color_alter: QColor
+    base_width: float
+
+
 class LineWidget(QGraphicsPathItem):
     def __init__(self, connection_id: int,
                  item1: 'PortWidget', item2: 'PortWidget'):
@@ -49,6 +63,9 @@ class LineWidget(QGraphicsPathItem):
         self._connection_id = connection_id
 
         self._semi_hidden = False
+        
+        self._th_attribs = dict[_ThemeState, _ThemeAttributes]()
+        self.update_theme()
 
         self.setBrush(QColor(0, 0, 0, 0))
         self.setGraphicsEffect(None)
@@ -90,38 +107,50 @@ class LineWidget(QGraphicsPathItem):
 
         if not fast_move:
             # line gradient is not updated at mouse move event or when box 
-            # is moved by animation. It makes win few time and can avoid some
+            # is moved by animation. It makes win few time and so avoid some
             # graphic jerks.
             self.update_line_gradient()
 
     def type(self) -> CanvasItemType:
         return CanvasItemType.BEZIER_LINE
 
+    def update_theme(self):
+        port_type1 = self._item1.get_port_type()
+        
+        for theme_state in _ThemeState:
+            if theme_state is _ThemeState.DISCONNECTING:
+                theme = canvas.theme.line.disconnecting
+            else:
+                theme = canvas.theme.line
+                if port_type1 == PortType.AUDIO_JACK:
+                    theme = theme.audio
+                elif port_type1 == PortType.MIDI_JACK:
+                    theme = theme.midi
+
+                if theme_state is _ThemeState.SELECTED:
+                    theme = theme.selected
+
+            tha = _ThemeAttributes()
+            tha.base_pen = theme.fill_pen()
+            tha.color_main = theme.background_color()
+            tha.color_alter = theme.background2_color()
+            if tha.color_alter is None:
+                tha.color_alter = tha.color_main
+            tha.base_width = tha.base_pen.widthF() + 0.000001
+            self._th_attribs[theme_state] = tha            
+
     def update_line_gradient(self):
         pos_top = self.boundingRect().top()
         pos_bot = self.boundingRect().bottom()
 
-        port_type1 = self._item1.get_port_type()
-        port_gradient = QLinearGradient(0, pos_top, 0, pos_bot)
-
-        theme = canvas.theme.line
         if self.ready_to_disc:
-            theme = theme.disconnecting
+            tha = self._th_attribs[_ThemeState.DISCONNECTING]
+        elif self.isSelected():
+            tha = self._th_attribs[_ThemeState.SELECTED]
         else:
-            if port_type1 == PortType.AUDIO_JACK:
-                theme = theme.audio
-            elif port_type1 == PortType.MIDI_JACK:
-                theme = theme.midi
-
-            if self._item1.isSelected() or self._item2.isSelected():
-                theme = theme.selected
-
-        base_pen = theme.fill_pen()
-        color_main = theme.background_color()
-        color_alter = theme.background2_color()
-        if color_alter is None:
-            color_alter = color_main
-        base_width = base_pen.widthF() + 0.000001
+            tha = self._th_attribs[_ThemeState.NORMAL]
+        
+        port_gradient = QLinearGradient(0, pos_top, 0, pos_bot)
 
         if self.ready_to_disc:
             port_gradient.setColorAt(0.0, color_main)
@@ -130,25 +159,28 @@ class LineWidget(QGraphicsPathItem):
             if self._semi_hidden:
                 shd = canvas.semi_hide_opacity
                 bgcolor = canvas.theme.scene_background_color
-
+                
                 color_main = QColor(
-                    int(color_main.red() * shd + bgcolor.red() * (1.0 - shd) + 0.5),
-                    int(color_main.green() * shd + bgcolor.green() * (1.0 - shd)+ 0.5),
-                    int(color_main.blue() * shd + bgcolor.blue() * (1.0 - shd) + 0.5),
-                    color_main.alpha())
+                    int(tha.color_main.red() * shd + bgcolor.red() * (1.0 - shd) + 0.5),
+                    int(tha.color_main.green() * shd + bgcolor.green() * (1.0 - shd)+ 0.5),
+                    int(tha.color_main.blue() * shd + bgcolor.blue() * (1.0 - shd) + 0.5),
+                    tha.color_main.alpha())
                 
                 color_alter = QColor(
-                    int(color_alter.red() * shd + bgcolor.red() * (1.0 - shd) + 0.5),
-                    int(color_alter.green() * shd + bgcolor.green() * (1.0 - shd)+ 0.5),
-                    int(color_alter.blue() * shd + bgcolor.blue() * (1.0 - shd) + 0.5),
-                    color_alter.alpha())
+                    int(tha.color_alter.red() * shd + bgcolor.red() * (1.0 - shd) + 0.5),
+                    int(tha.color_alter.green() * shd + bgcolor.green() * (1.0 - shd)+ 0.5),
+                    int(tha.color_alter.blue() * shd + bgcolor.blue() * (1.0 - shd) + 0.5),
+                    tha.color_alter.alpha())
             
+            else:
+                color_main, color_alter = tha.color_main, tha.color_alter
+
             port_gradient.setColorAt(0.0, color_main)
             port_gradient.setColorAt(0.5, color_alter)
             port_gradient.setColorAt(1.0, color_main)
-
-        self.setPen(QPen(port_gradient, base_width, Qt.SolidLine, Qt.FlatCap))
-
+        
+        self.setPen(QPen(port_gradient, tha.base_width, Qt.SolidLine, Qt.FlatCap))
+        
     def paint(self, painter, option, widget):
         if canvas.loading_items:
             return

@@ -2256,8 +2256,10 @@ class PatchbayManager:
         
         # very fast operation means that nothing is done in the patchcanvas
         # everything stays here in this file.
+        print('fast tmp file running start')
         
         if self.group_positions:
+            print('on a des group positions')
             self.optimize_operation(True)
             self.set_very_fast_operation(True)
 
@@ -2284,10 +2286,14 @@ class PatchbayManager:
                     self.metadata_update(
                         m.get('uuid'), m.get('key'), m.get('value'))
 
+        print('tout est rentré')
+
         for group in self.groups:
             group.sort_ports_in_canvas()
 
         self.set_very_fast_operation(False)
+        
+        print('tout va rentrer dans le canvas')
         
         for group in self.groups:
             group.add_all_ports_to_canvas()
@@ -2295,7 +2301,9 @@ class PatchbayManager:
         for conn in self.connections:
             conn.add_to_canvas()
 
+        print('sfkddf')
         self.optimize_operation(False)
+        print('chammpîn')
         patchcanvas.redraw_all_groups()
 
         try:

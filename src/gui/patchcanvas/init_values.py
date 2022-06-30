@@ -17,7 +17,7 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Iterator, Union
 from enum import IntEnum, IntFlag
 
 from PyQt5.QtCore import QPointF, QRectF, QSettings, QPoint
@@ -231,8 +231,10 @@ class PortObject(ConnectableObject):
     port_id: int
     port_name: str
     widget: object
+    portgrp: object
     if TYPE_CHECKING:
         widget: PortWidget
+        portgrp: 'PortgrpObject'
 
     pg_pos = 0 # index in the portgroup (if any)
     pg_len = 1 # length of the portgroup (if any)
@@ -259,6 +261,9 @@ class PortgrpObject(ConnectableObject):
     widget: object
     if TYPE_CHECKING:
         widget: PortgroupWidget
+
+    def __init__(self):
+        self.ports = list[PortObject]()
 
     def copy_no_widget(self):
         portgrp_copy = PortgrpObject()
@@ -411,6 +416,11 @@ class Canvas:
             self._portgrps_dict[portgrp.group_id] = {portgrp.portgrp_id: portgrp}
         else:
             self._portgrps_dict[portgrp.group_id][portgrp.portgrp_id] = portgrp
+        
+        for port in self.list_ports(group_id=portgrp.group_id):
+            if port.port_id in portgrp.port_id_list:
+                portgrp.ports.append(port)
+                port.portgrp = portgrp
     
     def add_connection(self, conn: ConnectionObject):
         self.connection_list.append(conn)
@@ -461,6 +471,10 @@ class Canvas:
         gp_dict = self._portgrps_dict.get(portgrp.group_id)
         if gp_dict and portgrp.portgrp_id in gp_dict.keys():
             gp_dict.pop(portgrp.portgrp_id)
+            
+        for port in self.list_ports(group_id=portgrp.group_id):
+            if port.port_id in portgrp.port_id_list:
+                port.portgrp = None
     
     def remove_connection(self, conn: ConnectionObject):
         if conn in self.connection_list:
@@ -483,6 +497,12 @@ class Canvas:
         if gp is None:
             return None
         return gp.get(port_id)
+
+    def get_portgroup(self, group_id: int, portgrp_id: int) -> PortgrpObject:
+        gp = self._portgrps_dict.get(group_id)
+        if gp is None:
+            return None
+        return gp.get(portgrp_id)
 
     def get_connection(self, connection_id: int) -> ConnectionObject:
         if connection_id in self._conns_dict.keys():

@@ -276,7 +276,8 @@ class ConnectableWidget(QGraphicsItem):
 
         QGraphicsItem.mousePressEvent(self, event)
 
-    def mouseMoveEvent(self, event):        
+    def mouseMoveEvent(self, event):
+        starti = time.time()  
         if (not event.buttons() & Qt.LeftButton 
                 and canvas.scene.flying_connectable is not self):
             QGraphicsItem.mouseMoveEvent(self, event)
@@ -308,14 +309,15 @@ class ConnectableWidget(QGraphicsItem):
             self.parentItem().setZValue(canvas.last_z_value)
 
         item = canvas.scene.get_connectable_item_at(event.scenePos(), self)
+        
         if self._hover_item is not None and item is not self._hover_item:
             self._hover_item.setSelected(False)
 
         # if item has same port mode
         # verify we can use it for cut and paste connections
         if (item is not None
-                and item.get_port_type() == self._port_type
-                and item.get_port_mode() == self._port_mode):
+                and item.get_port_type() is self._port_type
+                and item.get_port_mode() is self._port_mode):
             item_valid = False
 
             if (self._has_connections
@@ -426,7 +428,7 @@ class ConnectableWidget(QGraphicsItem):
             line_mov.update_line_pos(event.scenePos())
 
         QGraphicsItem.mouseMoveEvent(self, event)
-        
+                
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             if self._mouse_down or canvas.scene.flying_connectable is self:

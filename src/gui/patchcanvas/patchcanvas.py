@@ -556,12 +556,26 @@ def redraw_all_groups():
     options.elastic = False
     options.prevent_overlap = False
     
+    print('start redraw', time.time())
+    times_dict = {}
+    last_time = time.time()
+    
     for box in canvas.list_boxes():
         box.update_positions(without_connections=True)
+        times_dict[(box._group_name, box._current_port_mode)] = time.time() - last_time
+        last_time = time.time()
     
+    # for key, value in times_dict.items():
+    #     print('rif',  value, key)
+    
+    print('aft updat box poses', time.time())
+    i=0
     for connection in canvas.list_connections():
         if connection.widget is not None:
-            connection.widget.update_line_pos()
+            i+=1
+            connection.widget.update_line_pos(fast_move=True)
+    
+    print('aft conn repose', time.time(), i)
     
     if canvas.scene is None:
         options.elastic = elastic
@@ -575,6 +589,8 @@ def redraw_all_groups():
         options.prevent_overlap = True
         for box in canvas.list_boxes():
             canvas.scene.deplace_boxes_from_repulsers([box])
+    
+    print('after prevover', time.time())
     
     if not elastic or prevent_overlap:
         QTimer.singleShot(0, canvas.scene.update)
@@ -1128,10 +1144,10 @@ def set_elastic(yesno: bool):
 @patchbay_api
 def set_prevent_overlap(yesno: bool):
     options.prevent_overlap = yesno
-    
+    print(time.time())
     if yesno:
         redraw_all_groups()
-
+    print(time.time())
 @patchbay_api
 def set_borders_navigation(yesno: bool):
     options.borders_navigation = yesno
@@ -1230,8 +1246,9 @@ def set_optional_gui_state(group_id: int, visible: bool):
     for widget in group.widgets:
         if widget is not None:
             widget.set_optional_gui_state(visible)
-        
-    canvas.scene.update()
+    
+    if not canvas.loading_items:
+        canvas.scene.update()
 
 @patchbay_api
 def save_cache():

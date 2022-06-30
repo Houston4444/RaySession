@@ -3,7 +3,7 @@ import logging
 import os
 import time
 import pickle
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import (QColor, QPen, QFont, QBrush, QFontMetricsF,
@@ -322,7 +322,7 @@ class StyleAttributer:
     def background_color(self) -> QColor:
         return self.get_value_of('_background_color')
     
-    def background2_color(self) -> QColor:
+    def background2_color(self) -> Union[QColor, None]:
         return self.get_value_of('_background2_color',
                                  needed_attribute='_background_color')
     
