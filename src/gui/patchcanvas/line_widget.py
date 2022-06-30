@@ -22,7 +22,8 @@ import time
 from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import Qt, QPointF
-from PyQt5.QtGui import QColor, QLinearGradient, QPainter, QPainterPath, QPen
+from PyQt5.QtGui import (QColor, QLinearGradient, QPainter,
+                         QPainterPath, QPen, QBrush)
 from PyQt5.QtWidgets import QGraphicsPathItem
 
 from .init_values import (
@@ -145,16 +146,44 @@ class LineWidget(QGraphicsPathItem):
 
         if self.ready_to_disc:
             tha = self._th_attribs[_ThemeState.DISCONNECTING]
-        elif self.isSelected():
+        elif self._item1.isSelected() or self._item2.isSelected():
             tha = self._th_attribs[_ThemeState.SELECTED]
         else:
             tha = self._th_attribs[_ThemeState.NORMAL]
         
-        port_gradient = QLinearGradient(0, pos_top, 0, pos_bot)
+        has_gradient = bool(tha.color_main != tha.color_alter)
+        
+        if has_gradient:
+            port_gradient = QLinearGradient(0, pos_top, 0, pos_bot)
 
-        if self.ready_to_disc:
-            port_gradient.setColorAt(0.0, color_main)
-            port_gradient.setColorAt(1.0, color_main)
+            if self.ready_to_disc:
+                port_gradient.setColorAt(0.0, tha.color_main)
+                port_gradient.setColorAt(1.0, tha.color_main)
+            else:
+                if self._semi_hidden:
+                    shd = canvas.semi_hide_opacity
+                    bgcolor = canvas.theme.scene_background_color
+                    
+                    color_main = QColor(
+                        int(tha.color_main.red() * shd + bgcolor.red() * (1.0 - shd) + 0.5),
+                        int(tha.color_main.green() * shd + bgcolor.green() * (1.0 - shd)+ 0.5),
+                        int(tha.color_main.blue() * shd + bgcolor.blue() * (1.0 - shd) + 0.5),
+                        tha.color_main.alpha())
+                    
+                    color_alter = QColor(
+                        int(tha.color_alter.red() * shd + bgcolor.red() * (1.0 - shd) + 0.5),
+                        int(tha.color_alter.green() * shd + bgcolor.green() * (1.0 - shd)+ 0.5),
+                        int(tha.color_alter.blue() * shd + bgcolor.blue() * (1.0 - shd) + 0.5),
+                        tha.color_alter.alpha())
+                
+                else:
+                    color_main, color_alter = tha.color_main, tha.color_alter
+
+                port_gradient.setColorAt(0.0, color_main)
+                port_gradient.setColorAt(0.5, color_alter)
+                port_gradient.setColorAt(1.0, color_main)
+            
+            self.setPen(QPen(port_gradient, tha.base_width, Qt.SolidLine, Qt.FlatCap))
         else:
             if self._semi_hidden:
                 shd = canvas.semi_hide_opacity
@@ -165,21 +194,10 @@ class LineWidget(QGraphicsPathItem):
                     int(tha.color_main.green() * shd + bgcolor.green() * (1.0 - shd)+ 0.5),
                     int(tha.color_main.blue() * shd + bgcolor.blue() * (1.0 - shd) + 0.5),
                     tha.color_main.alpha())
-                
-                color_alter = QColor(
-                    int(tha.color_alter.red() * shd + bgcolor.red() * (1.0 - shd) + 0.5),
-                    int(tha.color_alter.green() * shd + bgcolor.green() * (1.0 - shd)+ 0.5),
-                    int(tha.color_alter.blue() * shd + bgcolor.blue() * (1.0 - shd) + 0.5),
-                    tha.color_alter.alpha())
-            
             else:
-                color_main, color_alter = tha.color_main, tha.color_alter
-
-            port_gradient.setColorAt(0.0, color_main)
-            port_gradient.setColorAt(0.5, color_alter)
-            port_gradient.setColorAt(1.0, color_main)
+                color_main = tha.color_main
         
-        self.setPen(QPen(port_gradient, tha.base_width, Qt.SolidLine, Qt.FlatCap))
+            self.setPen(QPen(QBrush(color_main), tha.base_width, Qt.SolidLine, Qt.FlatCap))
         
     def paint(self, painter, option, widget):
         if canvas.loading_items:
