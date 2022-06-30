@@ -216,22 +216,20 @@ class PatchScene(PatchSceneMoth):
             repulsers.append(repulser)
             items_to_move = list[BoxAndRect]()
 
-            for group in canvas.group_list:
-                for widget in group.widgets:
-                    if (widget is None
-                            or widget in repulser_boxes
-                            or widget in [b.item for b in to_move_boxes]
-                            or widget in [b.widget for b in self.move_boxes]):
-                        continue
-                    
-                    irect = widget.boundingRect()
-                    irect.translate(widget.pos())
+            for widget in canvas.list_boxes():
+                if (widget in repulser_boxes
+                        or widget in [b.item for b in to_move_boxes]
+                        or widget in [b.widget for b in self.move_boxes]):
+                    continue
+                
+                irect = widget.sceneBoundingRect()
+                # irect.translate(widget.pos())
 
-                    if rect_has_to_move_from(
-                            repulser.rect, irect,
-                            repulser.item.get_current_port_mode(),
-                            widget.get_current_port_mode()):
-                        items_to_move.append(BoxAndRect(irect, widget))
+                if rect_has_to_move_from(
+                        repulser.rect, irect,
+                        repulser.item.get_current_port_mode(),
+                        widget.get_current_port_mode()):
+                    items_to_move.append(BoxAndRect(irect, widget))
 
             for moving_box in self.move_boxes:
                 if (moving_box.widget in repulser_boxes

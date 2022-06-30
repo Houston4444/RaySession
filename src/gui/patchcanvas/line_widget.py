@@ -17,6 +17,7 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
+import time
 from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import Qt, QPointF
@@ -63,7 +64,7 @@ class LineWidget(QGraphicsPathItem):
         self._semi_hidden = yesno
         self.update_line_gradient()
 
-    def update_line_pos(self):
+    def update_line_pos(self, fast_move=False):
         item1_con_pos = self._item1.connect_pos()
         item1_x = item1_con_pos.x()
         item1_y = item1_con_pos.y()
@@ -73,25 +74,25 @@ class LineWidget(QGraphicsPathItem):
         item2_y = item2_con_pos.y()
 
         x_diff = item2_x - item1_x
-
         mid_x = abs(x_diff) / 2
 
         diffxy = abs(item1_y - item2_y) - abs(x_diff)
         if diffxy > 0:
             mid_x += diffxy
 
-        mid_x = min(mid_x, max(200, (x_diff)/2))
+        mid_x = min(mid_x, max(200.0, x_diff / 2))
 
-        item1_new_x = item1_x + mid_x
-        item2_new_x = item2_x - mid_x
-
-        path = QPainterPath(QPointF(item1_x, item1_y))
-        
-        path.cubicTo(item1_new_x, item1_y, item2_new_x, item2_y,
+        path = QPainterPath(item1_con_pos)
+        path.cubicTo(item1_x + mid_x, item1_y,
+                     item2_x - mid_x, item2_y,
                      item2_x, item2_y)
         self.setPath(path)
 
-        self.update_line_gradient()
+        if not fast_move:
+            # line gradient is not updated at mouse move event or when box 
+            # is moved by animation. It makes win few time and can avoid some
+            # graphic jerks.
+            self.update_line_gradient()
 
     def type(self) -> CanvasItemType:
         return CanvasItemType.BEZIER_LINE
@@ -99,12 +100,6 @@ class LineWidget(QGraphicsPathItem):
     def update_line_gradient(self):
         pos_top = self.boundingRect().top()
         pos_bot = self.boundingRect().bottom()
-        if self._item2.scenePos().y() >= self._item1.scenePos().y():
-            pos1 = 0
-            pos2 = 1
-        else:
-            pos1 = 1
-            pos2 = 0
 
         port_type1 = self._item1.get_port_type()
         port_gradient = QLinearGradient(0, pos_top, 0, pos_bot)
@@ -129,8 +124,8 @@ class LineWidget(QGraphicsPathItem):
         base_width = base_pen.widthF() + 0.000001
 
         if self.ready_to_disc:
-            port_gradient.setColorAt(pos1, color_main)
-            port_gradient.setColorAt(pos2, color_main)
+            port_gradient.setColorAt(0.0, color_main)
+            port_gradient.setColorAt(1.0, color_main)
         else:
             if self._semi_hidden:
                 shd = canvas.semi_hide_opacity
@@ -148,9 +143,9 @@ class LineWidget(QGraphicsPathItem):
                     int(color_alter.blue() * shd + bgcolor.blue() * (1.0 - shd) + 0.5),
                     color_alter.alpha())
             
-            port_gradient.setColorAt(0, color_main)
+            port_gradient.setColorAt(0.0, color_main)
             port_gradient.setColorAt(0.5, color_alter)
-            port_gradient.setColorAt(1, color_main)
+            port_gradient.setColorAt(1.0, color_main)
 
         self.setPen(QPen(port_gradient, base_width, Qt.SolidLine, Qt.FlatCap))
 
@@ -170,7 +165,7 @@ class LineWidget(QGraphicsPathItem):
 
         painter.setPen(cosm_pen)
         painter.setBrush(Qt.NoBrush)
-        painter.setOpacity(0.2)
+        # painter.setOpacity(0.2)
         painter.drawPath(self.path())
 
         painter.restore()

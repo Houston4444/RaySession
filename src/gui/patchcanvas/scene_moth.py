@@ -24,6 +24,7 @@ from math import floor
 import math
 from shutil import move
 import time
+from typing import Iterator
 
 from PyQt5.QtCore import (QT_VERSION, pyqtSignal, pyqtSlot,
                           Qt, QPoint, QPointF, QRectF, QTimer, QMarginsF)
@@ -412,6 +413,11 @@ class PatchSceneMoth(QGraphicsScene):
     def get_selected_boxes(self) -> list[BoxWidget]:
         return [i for i in self.selectedItems() if isinstance(i, BoxWidget)]
 
+    def list_selected_boxes(self) -> Iterator[BoxWidget]:
+        for item in self.selectedItems():
+            if isinstance(item, BoxWidget):
+                yield item
+
     def removeItem(self, item: QGraphicsItem):
         for child_item in item.childItems():
             QGraphicsScene.removeItem(self, child_item)
@@ -456,28 +462,14 @@ class PatchSceneMoth(QGraphicsScene):
         painter.drawRect(rect)
         painter.restore()
 
-    def get_new_scene_rect(self):
-        first_pass = True
+    def get_new_scene_rect(self) -> QRectF:
+        full_rect = QRectF()
 
-        for group in canvas.group_list:
-            for widget in group.widgets:
-                if widget is None or not widget.isVisible():
-                    continue
+        for widget in canvas.list_boxes():
+            full_rect |= widget.sceneBoundingRect().marginsAdded(
+                QMarginsF(50.0, 20.0, 50.0, 20.0))
 
-                item_rect = widget.boundingRect().translated(widget.scenePos())
-                item_rect = item_rect.marginsAdded(QMarginsF(50.0, 20.0, 50.0, 20.0))
-
-                if first_pass:
-                    full_rect = item_rect
-                else:
-                    full_rect = full_rect.united(item_rect)
-
-                first_pass = False
-
-        if not first_pass:
-            return full_rect
-
-        return QRectF()
+        return full_rect
 
     def resize_the_scene(self):
         if not options.elastic:
@@ -526,10 +518,9 @@ class PatchSceneMoth(QGraphicsScene):
         transform.scale(ratio, ratio)
         self._view.setTransform(transform)
 
-        for group in canvas.group_list:
-            for widget in group.widgets:
-                if widget and widget.top_icon:
-                    widget.top_icon.update_zoom(ratio)
+        for box in canvas.list_boxes():
+            if box.top_icon:
+                box.top_icon.update_zoom(ratio)
 
     def zoom_fit(self):
         if self._view is None:
@@ -689,10 +680,9 @@ class PatchSceneMoth(QGraphicsScene):
 
             # Update box icons especially when they are not scalable
             # eg. coming from system theme
-            for group in canvas.group_list:
-                for widget in group.widgets:
-                    if widget and widget.top_icon:
-                        widget.top_icon.update_zoom(scale * factor)
+            for box in canvas.list_boxes():
+                if box.top_icon:
+                    box.top_icon.update_zoom(scale * factor)
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton and not canvas.menu_shown:

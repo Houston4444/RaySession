@@ -19,6 +19,7 @@
 
 import inspect
 from struct import pack
+import time
 from sip import voidptr
 import sys
 from enum import Enum
@@ -214,13 +215,11 @@ class CanvasWidgetMoth(QGraphicsItem):
         QTimer.singleShot(0, self.fix_pos)
 
     def _get_layout_mode_for_this(self):
-        for group in canvas.group_list:
-            if group.group_id == self._group_id:
-                if self._current_port_mode in group.layout_modes.keys():
-                    return group.layout_modes[self._current_port_mode]
-                else:
-                    return BoxLayoutMode.AUTO
-        return BoxLayoutMode.AUTO
+        group = canvas.get_group(self._group_id)
+        if self._current_port_mode in group.layout_modes.keys():
+            return group.layout_modes[self._current_port_mode]
+        else:
+            return BoxLayoutMode.AUTO
 
     def get_group_id(self):
         return self._group_id
@@ -482,10 +481,10 @@ class CanvasWidgetMoth(QGraphicsItem):
         # see canvasbox.py
         pass
 
-    def repaint_lines(self, forced=False):
+    def repaint_lines(self, forced=False, fast_move=False):
         if forced or self.pos() != self._last_pos:
             for line in self._connection_lines:                
-                line.update_line_pos()
+                line.update_line_pos(fast_move=fast_move)
 
         self._last_pos = self.pos()
 
@@ -632,52 +631,53 @@ class CanvasWidgetMoth(QGraphicsItem):
 
         if disconnect_list:
             for disconnect_element in disconnect_list:
-                for group in canvas.group_list:
-                    if group.group_id == disconnect_element.group_id:
-                        if (group.split
-                                and disconnect_element.connection_in_ids
-                                and disconnect_element.connection_out_ids):
-                            ins_label = " (inputs)"
-                            outs_label = " (outputs)"
+                group = canvas.get_group(disconnect_element.group_id)
+                if group is None:
+                    continue
 
-                            if group.icon_type == IconType.HARDWARE:
-                                ins_label = " (playbacks)"
-                                outs_label = " (captures)"
+                if (group.split
+                        and disconnect_element.connection_in_ids
+                        and disconnect_element.connection_out_ids):
+                    ins_label = " (inputs)"
+                    outs_label = " (outputs)"
 
-                            act_x_disc1 = discMenu.addAction(
-                                group.group_name + outs_label)
-                            act_x_disc1.setIcon(utils.get_icon(
-                                group.icon_type, group.icon_name, PortMode.OUTPUT))
-                            act_x_disc1.setData(
-                                disconnect_element.connection_out_ids)
-                            act_x_disc1.triggered.connect(
-                                canvas.qobject.port_context_menu_disconnect)
+                    if group.icon_type == IconType.HARDWARE:
+                        ins_label = " (playbacks)"
+                        outs_label = " (captures)"
 
-                            act_x_disc2 = discMenu.addAction(
-                                group.group_name + ins_label)
-                            act_x_disc2.setIcon(utils.get_icon(
-                                group.icon_type, group.icon_name, PortMode.INPUT))
-                            act_x_disc2.setData(
-                                disconnect_element.connection_in_ids)
-                            act_x_disc2.triggered.connect(
-                                canvas.qobject.port_context_menu_disconnect)
-                        else:
-                            port_mode = PortMode.NULL
-                            if not disconnect_element.connection_in_ids:
-                                port_mode = PortMode.OUTPUT
-                            elif not disconnect_element.connection_out_ids:
-                                port_mode = PortMode.INPUT
+                    act_x_disc1 = discMenu.addAction(
+                        group.group_name + outs_label)
+                    act_x_disc1.setIcon(utils.get_icon(
+                        group.icon_type, group.icon_name, PortMode.OUTPUT))
+                    act_x_disc1.setData(
+                        disconnect_element.connection_out_ids)
+                    act_x_disc1.triggered.connect(
+                        canvas.qobject.port_context_menu_disconnect)
 
-                            act_x_disc = discMenu.addAction(group.group_name)
-                            icon = utils.get_icon(
-                                group.icon_type, group.icon_name, port_mode)
-                            act_x_disc.setIcon(icon)
-                            act_x_disc.setData(
-                                disconnect_element.connection_out_ids
-                                + disconnect_element.connection_in_ids)
-                            act_x_disc.triggered.connect(
-                                canvas.qobject.port_context_menu_disconnect)
-                        break
+                    act_x_disc2 = discMenu.addAction(
+                        group.group_name + ins_label)
+                    act_x_disc2.setIcon(utils.get_icon(
+                        group.icon_type, group.icon_name, PortMode.INPUT))
+                    act_x_disc2.setData(
+                        disconnect_element.connection_in_ids)
+                    act_x_disc2.triggered.connect(
+                        canvas.qobject.port_context_menu_disconnect)
+                else:
+                    port_mode = PortMode.NULL
+                    if not disconnect_element.connection_in_ids:
+                        port_mode = PortMode.OUTPUT
+                    elif not disconnect_element.connection_out_ids:
+                        port_mode = PortMode.INPUT
+
+                    act_x_disc = discMenu.addAction(group.group_name)
+                    icon = utils.get_icon(
+                        group.icon_type, group.icon_name, port_mode)
+                    act_x_disc.setIcon(icon)
+                    act_x_disc.setData(
+                        disconnect_element.connection_out_ids
+                        + disconnect_element.connection_in_ids)
+                    act_x_disc.triggered.connect(
+                        canvas.qobject.port_context_menu_disconnect)
         else:
             act_x_disc = discMenu.addAction("No connections")
             act_x_disc.setEnabled(False)
@@ -887,8 +887,10 @@ class CanvasWidgetMoth(QGraphicsItem):
 
             QGraphicsItem.mouseMoveEvent(self, event)
 
+            rep_time = time.time()
             for item in canvas.scene.get_selected_boxes():
-                item.repaint_lines()
+                item.repaint_lines(fast_move=True)
+            # print('repline', time.time() - rep_time)
 
             canvas.scene.resize_the_scene()
             return
@@ -904,10 +906,9 @@ class CanvasWidgetMoth(QGraphicsItem):
 
             # get all selected boxes
             repulsers = []
-            for group in canvas.group_list:
-                for widget in group.widgets:
-                    if widget is not None and widget.isSelected():
-                        repulsers.append(widget)
+            for widget in canvas.list_boxes():
+                if widget.isSelected():
+                    repulsers.append(widget)
 
             canvas.scene.deplace_boxes_from_repulsers(repulsers)
             
@@ -931,17 +932,15 @@ class CanvasWidgetMoth(QGraphicsItem):
         utils.canvas_callback(CallbackAct.GROUP_MOVE, self._group_id,
                               self._splitted_mode, round(self.x()), round(self.y()))
 
-        for group in canvas.group_list:
-            if group.group_id == self._group_id:
-                pos = QPoint(round(self.x()), round(self.y()))
+        group = canvas.get_group(self._group_id)
+        pos = QPoint(round(self.x()), round(self.y()))
 
-                if self._splitted_mode is PortMode.NULL:
-                    group.null_pos = pos
-                elif self._splitted_mode is PortMode.INPUT:
-                    group.in_pos = pos
-                elif self._splitted_mode is PortMode.OUTPUT:
-                    group.out_pos = pos
-                break
+        if self._splitted_mode is PortMode.NULL:
+            group.null_pos = pos
+        elif self._splitted_mode is PortMode.INPUT:
+            group.in_pos = pos
+        elif self._splitted_mode is PortMode.OUTPUT:
+            group.out_pos = pos
 
     def fix_pos_after_move(self):
         for box in canvas.scene.get_selected_boxes():

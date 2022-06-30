@@ -196,7 +196,7 @@ class GroupObject:
     split: int
     icon_type: int
     icon_name: str
-    layout_modes: int
+    layout_modes: dict[PortMode, BoxLayoutMode]
     plugin_id: int
     plugin_ui: int # to verify
     plugin_inline: int # to verify
@@ -336,6 +336,8 @@ class Canvas:
         self.portgrp_list = list[PortgrpObject]()
         self.connection_list = list[ConnectionObject]()
 
+        self._groups_dict = dict[int, GroupObject]()
+        self._all_boxes = []
         self._ports_dict = dict[int, dict[int, PortObject]]()
         self._portgrps_dict = dict[int, dict[int, PortgrpObject]]()
         self._conns_dict = dict[int, ConnectionObject]()
@@ -367,6 +369,8 @@ class Canvas:
             self.settings = QSettings()
             self.options = CanvasOptionsObject()
             self.features = CanvasFeaturesObject()
+            
+            self._all_boxes = list[BoxWidget]()
 
     def callback(self, action: CallbackAct, value1: int,
                  value2: int, value_str: str):
@@ -382,6 +386,13 @@ class Canvas:
         self._conns_dict.clear()
         self._conns_outin_dict.clear()
         self._conns_inout_dict.clear()
+
+    def add_group(self, group: GroupObject):
+        self.group_list.append(group)
+        self._groups_dict[group.group_id] = group
+        for widget in group.widgets:
+            if widget is not None:
+                self._all_boxes.append(widget)
 
     def add_port(self, port: PortObject):
         self.port_list.append(port)
@@ -426,6 +437,15 @@ class Canvas:
             else:
                 gp_inout_in_dict[conn.group_out_id] = {conn.connection_id: conn}
     
+    def remove_group(self, group: GroupObject):
+        self.group_list.remove(group)
+        if group.group_id in self._groups_dict.keys():
+            self._groups_dict.pop(group.group_id)
+        
+        for widget in group.widgets:
+            if widget is not None and widget in self._all_boxes:
+                self._all_boxes.remove(widget)
+    
     def remove_port(self, port: PortObject):
         if port in self.port_list:
             self.port_list.remove(port)
@@ -455,6 +475,9 @@ class Canvas:
         except:
             pass
     
+    def get_group(self, group_id: int) -> GroupObject:
+        return self._groups_dict.get(group_id)
+    
     def get_port(self, group_id: int, port_id: int) -> PortObject:
         gp = self._ports_dict.get(group_id)
         if gp is None:
@@ -465,14 +488,15 @@ class Canvas:
         if connection_id in self._conns_dict.keys():
             return self._conns_dict[connection_id]
 
+    def list_boxes(self) -> list['BoxWidget']:
+        return self._all_boxes
+
     def list_ports(self, group_id=None) -> Iterator[PortObject]:
         if group_id is None:
             # print('regular port list')
             for port in self.port_list:
                 yield port
             return     
-        
-        print('special port list', group_id)
         
         if group_id in self._ports_dict.keys():
             for port in self._ports_dict[group_id].values():

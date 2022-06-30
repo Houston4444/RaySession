@@ -185,7 +185,6 @@ def clear():
     canvas.last_z_value = 0
     canvas.last_connection_id = 0
 
-    canvas.group_list.clear()
     canvas.clear_all()
     canvas.group_plugin_map = {}
 
@@ -230,11 +229,9 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
               icon_type=IconType.APPLICATION, icon_name='', layout_modes={},
               null_xy=(0, 0), in_xy=(0, 0), out_xy=(0, 0),
               split_animated=False):
-
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            _logger.error(f"{_logging_str} - group already exists.")
-            return
+    if canvas.get_group(group_id) is not None:
+        _logger.error(f"{_logging_str} - group already exists.")
+        return
 
     if split is BoxSplitMode.UNDEF and icon_type is IconType.HARDWARE:
         split = BoxSplitMode.YES
@@ -256,7 +253,6 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
     group.null_pos = QPoint(*null_xy)
     group.in_pos = QPoint(*in_xy)
     group.out_pos = QPoint(*out_xy)
-    # group_dict.widgets = [group_box, None]
     group.widgets = list[BoxWidget]()
     group.widgets.append(group_box)
     group.widgets.append(None)
@@ -304,8 +300,8 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
 
 
     canvas.last_z_value += 1
-    group_box.setZValue(canvas.last_z_value)    
-    canvas.group_list.append(group)
+    group_box.setZValue(canvas.last_z_value)
+    canvas.add_group(group)   
     
     if canvas.loading_items:
         return
@@ -324,91 +320,89 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
 
 @patchbay_api
 def remove_group(group_id: int, save_positions=True):
-    for group in canvas.group_list:
-        if group.group_id == group_id:            
-            item = group.widgets[0]
-            group_name = group.group_name
+    group = canvas.get_group(group_id)
+    if group is None:
+        _logger.error(f"{_logging_str} - unable to find group to remove")
+        return
+              
+    item = group.widgets[0]
+    group_name = group.group_name
 
-            if group.split:
-                s_item = group.widgets[1]
+    if group.split:
+        s_item = group.widgets[1]
 
-                if features.handle_group_pos and save_positions:
-                    canvas.settings.setValue(
-                        "CanvasPositions/%s_OUTPUT" % group_name, item.pos())
-                    canvas.settings.setValue(
-                        "CanvasPositions/%s_INPUT" % group_name, s_item.pos())
-                    canvas.settings.setValue(
-                        "CanvasPositions/%s_SPLIT" % group_name, BoxSplitMode.YES)
+        if features.handle_group_pos and save_positions:
+            canvas.settings.setValue(
+                "CanvasPositions/%s_OUTPUT" % group_name, item.pos())
+            canvas.settings.setValue(
+                "CanvasPositions/%s_INPUT" % group_name, s_item.pos())
+            canvas.settings.setValue(
+                "CanvasPositions/%s_SPLIT" % group_name, BoxSplitMode.YES)
 
-                s_item.remove_icon_from_scene()
-                canvas.scene.removeItem(s_item)
-                del s_item
+        s_item.remove_icon_from_scene()
+        canvas.scene.removeItem(s_item)
+        del s_item
 
-            else:
-                if features.handle_group_pos and save_positions:
-                    canvas.settings.setValue(
-                        "CanvasPositions/%s" % group_name, item.pos())
-                    canvas.settings.setValue(
-                        "CanvasPositions/%s_SPLIT" % group_name, BoxSplitMode.NO)
+    else:
+        if features.handle_group_pos and save_positions:
+            canvas.settings.setValue(
+                "CanvasPositions/%s" % group_name, item.pos())
+            canvas.settings.setValue(
+                "CanvasPositions/%s_SPLIT" % group_name, BoxSplitMode.NO)
 
-            item.remove_icon_from_scene()
-            canvas.scene.removeItem(item)
-            del item
+    item.remove_icon_from_scene()
+    canvas.scene.removeItem(item)
+    del item
 
-            canvas.group_list.remove(group)
-            canvas.group_plugin_map.pop(group.plugin_id, None)
+    canvas.remove_group(group)
+    canvas.group_plugin_map.pop(group.plugin_id, None)
 
-            if canvas.loading_items:
-                return
+    if canvas.loading_items:
+        return
 
-            QTimer.singleShot(0, canvas.scene.update)
-            QTimer.singleShot(0, canvas.scene.resize_the_scene)
-            return
-
-    _logger.error(f"{_logging_str} - unable to find group to remove")
+    QTimer.singleShot(0, canvas.scene.update)
+    QTimer.singleShot(0, canvas.scene.resize_the_scene)
 
 @patchbay_api
 def rename_group(group_id: int, new_group_name: str):
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            group.group_name = new_group_name
-            group.widgets[0].set_group_name(new_group_name)
+    group = canvas.get_group(group_id)
+    if group is None:
+        _logger.critical(f"{_logging_str} - unable to find group to rename")
+        return
 
-            if group.split and group.widgets[1]:
-                group.widgets[1].set_group_name(new_group_name)
+    group.group_name = new_group_name
+    group.widgets[0].set_group_name(new_group_name)
 
-            QTimer.singleShot(0, canvas.scene.update)
-            return
+    if group.split and group.widgets[1]:
+        group.widgets[1].set_group_name(new_group_name)
 
-    _logger.critical(f"{_logging_str} - unable to find group to rename")
+    QTimer.singleShot(0, canvas.scene.update)
 
 @patchbay_api
 def split_group(group_id: int, on_place=False):
     item = None
 
     # Step 1 - Store all Item data
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            if group.split:
-                _logger.error(
-                    f"{_logging_str} - group is already splitted")
-                return
-
-            item = group.widgets[0]
-            tmp_group = group.copy_no_widget()
-            
-            if on_place and item is not None:
-                pos = item.pos()
-                rect = item.boundingRect()
-                y = int(pos.y())
-                x = int(pos.x())
-                tmp_group.in_pos = QPoint(x - int(rect.width() / 2), y)
-                tmp_group.out_pos = QPoint(x + int(rect.width() / 2), y)
-            break
-
-    if not item:
+    group = canvas.get_group(group_id)
+    if group is None:
         _logger.error(f"{_logging_str} - unable to find group to split")
         return
+    
+    if group.split:
+        _logger.error(
+            f"{_logging_str} - group is already splitted")
+        return
+
+    item = group.widgets[0]
+    tmp_group = group.copy_no_widget()
+    
+    if on_place and item is not None:
+        pos = item.pos()
+        rect = item.boundingRect()
+        y = int(pos.y())
+        x = int(pos.x())
+        tmp_group.in_pos = QPoint(x - int(rect.width() / 2), y)
+        tmp_group.out_pos = QPoint(x + int(rect.width() / 2), y)
 
     wrap = item.is_wrapped()
 
@@ -464,13 +458,11 @@ def split_group(group_id: int, on_place=False):
                       conn.group_in_id, conn.port_in_id)
 
     canvas.loading_items = False
-
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            for box in group.widgets:
-                if box is not None:
-                    box.set_wrapped(wrap, animate=False)
-                    box.update_positions(even_animated=True)
+    
+    for box in canvas.get_group(group_id).widgets:
+        if box is not None:
+            box.set_wrapped(wrap, animate=False)
+            box.update_positions(even_animated=True)
 
     QTimer.singleShot(0, canvas.scene.update)
 
@@ -480,19 +472,17 @@ def join_group(group_id: int):
     s_item = None
 
     # Step 1 - Store all Item data
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            if not group.split:
-                _logger.error(f"{_logging_str} - group is not splitted")
-                return
-
-            item, s_item = group.widgets
-            tmp_group = group.copy_no_widget()
-            break
-
-    if not (item and s_item):
+    group = canvas.get_group(group_id)
+    if group is None:
         _logger.error(f"{_logging_str} - unable to find groups to join")
         return
+
+    if not group.split:
+        _logger.error(f"{_logging_str} - group is not splitted")
+        return
+
+    item, s_item = group.widgets
+    tmp_group = group.copy_no_widget()
 
     wrap = item.is_wrapped() and s_item.is_wrapped()
 
@@ -544,11 +534,9 @@ def join_group(group_id: int):
         connect_ports(conn.connection_id, conn.group_out_id, conn.port_out_id,
                       conn.group_in_id, conn.port_in_id)
 
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            for box in group.widgets:
-                if box is not None:
-                    box.set_wrapped(wrap, animate=False)
+    for box in canvas.get_group(group_id).widgets:
+        if box is not None:
+            box.set_wrapped(wrap, animate=False)
 
     canvas.loading_items = False
     redraw_group(group_id)
@@ -558,23 +546,18 @@ def join_group(group_id: int):
     QTimer.singleShot(0, canvas.scene.update)
 
 @patchbay_api
-def redraw_all_groups():
-    i = 0
-    
+def redraw_all_groups():    
     # We are redrawing all groups.
     # For optimization reason we prevent here to resize the scene
     # at each group draw, we'll do it once all is done,
     # same for prevent_overlap.
     elastic = options.elastic
-    options.elastic = False
     prevent_overlap = options.prevent_overlap
+    options.elastic = False
     options.prevent_overlap = False
-        
-    for group in canvas.group_list:
-        for box in group.widgets:
-            if box is not None:
-                i += 1
-                box.update_positions(without_connections=True)
+    
+    for box in canvas.list_boxes():
+        box.update_positions(without_connections=True)
     
     for connection in canvas.list_connections():
         if connection.widget is not None:
@@ -588,47 +571,42 @@ def redraw_all_groups():
     if elastic:
         canvas.scene.set_elastic(True)
     
-    box_count = 0
     if prevent_overlap:
         options.prevent_overlap = True
-        for group in canvas.group_list:
-            for box in group.widgets:
-                if box is not None:
-                    box_count += 1
-                    canvas.scene.deplace_boxes_from_repulsers([box])
+        for box in canvas.list_boxes():
+            canvas.scene.deplace_boxes_from_repulsers([box])
     
     if not elastic or prevent_overlap:
         QTimer.singleShot(0, canvas.scene.update)
 
 @patchbay_api
 def redraw_group(group_id: int):
-    for group in canvas.group_list:
-        if group.group_id == group_id:            
-            for box in group.widgets:
-                if box is not None:
-                    box.update_positions()
-            break
+    group = canvas.get_group(group_id)
+    if group is None:
+        return
+               
+    for box in group.widgets:
+        if box is not None:
+            box.update_positions()
 
     QTimer.singleShot(0, canvas.scene.update)
 
 @patchbay_api
 def animate_before_join(group_id: int):
     canvas.qobject.groups_to_join.append(group_id)
+    group = canvas.get_group(group_id)
+    if group is None:
+        return
 
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            for widget in group.widgets:
-                canvas.scene.add_box_to_animation(
-                    widget, group.null_pos.x(), group.null_pos.y())
-            break
+    for widget in group.widgets:
+        canvas.scene.add_box_to_animation(
+            widget, group.null_pos.x(), group.null_pos.y())
 
 @patchbay_api
 def move_group_boxes(group_id: int, null_xy: tuple,
                      in_xy: tuple, out_xy: tuple, animate=True):
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            break
-    else:
+    group = canvas.get_group(group_id)
+    if group is None:
         return
 
     group.null_pos = QPoint(*null_xy)
@@ -670,25 +648,30 @@ def move_group_boxes(group_id: int, null_xy: tuple,
 
 @patchbay_api
 def wrap_group_box(group_id: int, port_mode: int, yesno: bool, animate=True):
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            for box in group.widgets:
-                if (box is not None
-                        and box.get_splitted_mode() == port_mode):
-                    box.set_wrapped(yesno, animate=animate)
-            break
+    group = canvas.get_group(group_id)
+    if group is None:
+        return
+
+    for box in group.widgets:
+        if (box is not None
+                and box.get_splitted_mode() == port_mode):
+            box.set_wrapped(yesno, animate=animate)
 
 @patchbay_api
-def set_group_layout_mode(group_id: int, port_mode: PortMode, layout_mode: BoxLayoutMode):
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            group.layout_modes[port_mode] = layout_mode
+def set_group_layout_mode(group_id: int, port_mode: PortMode,
+                          layout_mode: BoxLayoutMode):
+    group = canvas.get_group(group_id)
+    if group is None:
+        return
+    
+    group.layout_modes[port_mode] = layout_mode
+    
+    if canvas.loading_items:
+        return
 
-            for box in group.widgets:
-                if box is not None:
-                    if not canvas.loading_items:
-                        box.update_positions()
-            break
+    for box in group.widgets:
+        if box is not None:
+            box.update_positions()
                         
 
 # ------------------------------------------------------------------------------------------------------------
@@ -696,12 +679,12 @@ def set_group_layout_mode(group_id: int, port_mode: PortMode, layout_mode: BoxLa
 @patchbay_api
 def get_group_pos(group_id, port_mode=PortMode.OUTPUT):
     # Not used now
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            return group.widgets[1 if (group.split and port_mode is PortMode.INPUT) else 0].pos()
-
-    _logger.error(f"{_logging_str} - unable to find group")
-    return QPointF(0, 0)
+    group = canvas.get_group(group_id)
+    if group is None:
+        _logger.error(f"{_logging_str} - unable to find group")
+        return QPointF(0, 0)
+    
+    return group.widgets[1 if (group.split and port_mode is PortMode.INPUT) else 0].pos()
 
 @patchbay_api
 def restore_group_positions(data_list):
@@ -733,55 +716,53 @@ def set_group_pos(group_id, group_pos_x, group_pos_y):
 @patchbay_api
 def set_group_pos_full(group_id, group_pos_x_o, group_pos_y_o,
                        group_pos_x_i, group_pos_y_i):
-    # Not used now
-    _logger.debug(f"set_group_pos_full({group_id}, {group_pos_x_o}, {group_pos_y_o}"
-                  f"{group_pos_x_i}, {group_pos_y_i})")
+    # Not used now    
+    group = canvas.get_group(group_id)
+    if group is None:
+        _logger.error(f"set_group_pos_full({group_id}, {group_pos_x_o}, {group_pos_y_o}"
+                      f"{group_pos_x_i}, {group_pos_y_i})"
+                      " - unable to find group to reposition")
+        return
 
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            group.widgets[0].setPos(group_pos_x_o, group_pos_y_o)
+    group.widgets[0].setPos(group_pos_x_o, group_pos_y_o)
 
-            if group.split and group.widgets[1]:
-                group.widgets[1].setPos(group_pos_x_i, group_pos_y_i)
+    if group.split and group.widgets[1]:
+        group.widgets[1].setPos(group_pos_x_i, group_pos_y_i)
 
-            QTimer.singleShot(0, canvas.scene.update)
-            return
-
-    _logger.error(f"set_group_pos_full({group_id}, {group_pos_x_o}, {group_pos_y_o}"
-                  f"{group_pos_x_i}, {group_pos_y_i})"
-                  " - unable to find group to reposition")
+    QTimer.singleShot(0, canvas.scene.update)
+    
 
 @patchbay_api
 def set_group_icon(group_id: int, icon_type: IconType, icon_name: str):
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            group.icon_type = icon_type
-            for widget in group.widgets:
-                if widget is not None:
-                    widget.set_icon(icon_type, icon_name)
+    group = canvas.get_group(group_id)
+    if group is None:
+        _logger.critical(f"{_logging_str} - unable to find group to change icon")
+        return
+    
+    group.icon_type = icon_type
+    for widget in group.widgets:
+        if widget is not None:
+            widget.set_icon(icon_type, icon_name)
 
-            QTimer.singleShot(0, canvas.scene.update)
-            return
-
-    _logger.critical(f"{_logging_str} - unable to find group to change icon")
+    QTimer.singleShot(0, canvas.scene.update)
 
 @patchbay_api
 def set_group_as_plugin(group_id: int, plugin_id: int,
                         has_ui: bool, has_inline_display: bool):
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            group.plugin_id = plugin_id
-            group.plugin_ui = has_ui
-            group.plugin_inline = has_inline_display
-            group.widgets[0].set_as_plugin(plugin_id, has_ui, has_inline_display)
+    group = canvas.get_group(group_id)
+    if group is None:
+        _logger.critical(f"{_logging_str} - unable to find group to set as plugin")
+        return
 
-            if group.split and group.widgets[1]:
-                group.widgets[1].set_as_plugin(plugin_id, has_ui, has_inline_display)
+    group.plugin_id = plugin_id
+    group.plugin_ui = has_ui
+    group.plugin_inline = has_inline_display
+    group.widgets[0].set_as_plugin(plugin_id, has_ui, has_inline_display)
 
-            canvas.group_plugin_map[plugin_id] = group
-            return
+    if group.split and group.widgets[1]:
+        group.widgets[1].set_as_plugin(plugin_id, has_ui, has_inline_display)
 
-    _logger.critical(f"{_logging_str} - unable to find group to set as plugin")
+    canvas.group_plugin_map[plugin_id] = group
 
 # ------------------------------------------------------------------------------------------------------------
 @patchbay_api
@@ -791,19 +772,18 @@ def add_port(group_id: int, port_id: int, port_name: str,
     if canvas.get_port(group_id, port_id) is not None:
         _logger.critical(f"{_logging_str} - port already exists")
 
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            n = 0
-            if (group.split
-                    and group.widgets[0].get_splitted_mode() != port_mode
-                    and group.widgets[1] is not None):
-                n = 1
-
-            box_widget = group.widgets[n]
-            break
-    else:
+    group = canvas.get_group(group_id)
+    if group is None:
         _logger.critical(f"{_logging_str} - Unable to find parent group")
         return
+
+    n = 0
+    if (group.split
+            and group.widgets[0].get_splitted_mode() != port_mode
+            and group.widgets[1] is not None):
+        n = 1
+
+    box_widget = group.widgets[n]
 
     port = PortObject()
     port.group_id = group_id
@@ -922,19 +902,20 @@ def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
     canvas.add_portgroup(portgrp)
     
     # add portgroup widget and refresh the view
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            for box in group.widgets:
-                if box is None:
-                    continue
+    group = canvas.get_group(group_id)
+    if group is None:
+        return
+    
+    for box in group.widgets:
+        if box is None:
+            continue
 
-                if (not box.is_splitted()
-                        or box.get_splitted_mode() == port_mode):
-                    portgrp.widget = box.add_portgroup_from_group(portgrp)
+        if (not box.is_splitted()
+                or box.get_splitted_mode() == port_mode):
+            portgrp.widget = box.add_portgroup_from_group(portgrp)
 
-                    if not canvas.loading_items:
-                        box.update_positions()
-            break
+            if not canvas.loading_items:
+                box.update_positions()
 
 @patchbay_api
 def remove_portgroup(group_id: int, portgrp_id: int):
@@ -1162,12 +1143,13 @@ def set_max_port_width(width: int):
 
 @patchbay_api
 def semi_hide_group(group_id: int, yesno: bool):
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            for widget in group.widgets:
-                if widget is not None:
-                    widget.semi_hide(yesno)
-            break
+    group = canvas.get_group(group_id)
+    if group is None:
+        return
+
+    for widget in group.widgets:
+        if widget is not None:
+            widget.semi_hide(yesno)
 
 @patchbay_api
 def semi_hide_connection(connection_id: int, yesno: bool):
@@ -1178,13 +1160,13 @@ def semi_hide_connection(connection_id: int, yesno: bool):
 @patchbay_api
 def set_group_in_front(group_id: int):
     canvas.last_z_value += 1
+    group = canvas.get_group(group_id)
+    if group is None:
+        return
     
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            for widget in group.widgets:
-                if widget is not None:
-                    widget.setZValue(canvas.last_z_value)
-            break
+    for widget in group.widgets:
+        if widget is not None:
+            widget.setZValue(canvas.last_z_value)
 
 @patchbay_api
 def set_connection_in_front(connection_id: int):
@@ -1196,31 +1178,32 @@ def set_connection_in_front(connection_id: int):
 
 @patchbay_api
 def select_filtered_group_box(group_id: int, n_select=1):
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            n_widget = 1
+    group = canvas.get_group(group_id)
+    if group is None:
+        return
+    
+    n_widget = 1
 
-            for widget in group.widgets:
-                if widget is not None and widget.isVisible():
-                    if n_select == n_widget:
-                        canvas.scene.clearSelection()
-                        widget.setSelected(True)
-                        canvas.scene.center_view_on(widget)
-                        break
+    for widget in group.widgets:
+        if widget is not None and widget.isVisible():
+            if n_select == n_widget:
+                canvas.scene.clearSelection()
+                widget.setSelected(True)
+                canvas.scene.center_view_on(widget)
+                break
 
-                    n_widget += 1
-            break
+            n_widget += 1
 
 @patchbay_api
 def get_number_of_boxes(group_id: int) -> int:
-    n = 0
+    group = canvas.get_group(group_id)
+    if group is None:
+        return 0
     
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            for widget in group.widgets:
-                if widget is not None and widget.isVisible():
-                    n += 1
-            break
+    n = 0
+    for widget in group.widgets:
+        if widget is not None and widget.isVisible():
+            n += 1
     
     return n
 
@@ -1228,10 +1211,8 @@ def get_number_of_boxes(group_id: int) -> int:
 def set_semi_hide_opacity(opacity: float):
     canvas.semi_hide_opacity = opacity
 
-    for group in canvas.group_list:
-        for widget in group.widgets:
-            if widget is not None:
-                widget.update_opacity()
+    for box in canvas.list_boxes():
+        box.update_opacity()
                 
     for conn in canvas.list_connections():
         if conn.widget is not None:
@@ -1239,15 +1220,16 @@ def set_semi_hide_opacity(opacity: float):
 
 @patchbay_api
 def set_optional_gui_state(group_id: int, visible: bool):
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            group.handle_client_gui = True
-            group.gui_visible = visible
+    group = canvas.get_group(group_id)
+    if group is None:
+        return
 
-            for widget in group.widgets:
-                if widget is not None:
-                    widget.set_optional_gui_state(visible)
-            break
+    group.handle_client_gui = True
+    group.gui_visible = visible
+
+    for widget in group.widgets:
+        if widget is not None:
+            widget.set_optional_gui_state(visible)
         
     canvas.scene.update()
 

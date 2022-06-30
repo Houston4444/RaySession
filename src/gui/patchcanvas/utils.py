@@ -78,18 +78,14 @@ def get_new_group_positions()->tuple:
         min_top = scene_rect.bottom()
         max_bottom = scene_rect.top()
 
-        for group in canvas.group_list:
-            for widget in group.widgets:
-                if widget is None:
-                    continue
+        for widget in canvas.list_boxes():
+            box_rect = widget.sceneBoundingRect()
+            min_top = min(min_top, box_rect.top())
+            max_bottom = max(max_bottom, box_rect.bottom())
 
-                box_rect = widget.sceneBoundingRect()
-                min_top = min(min_top, box_rect.top())
-                max_bottom = max(max_bottom, box_rect.bottom())
-
-                if box_rect.left() - needed_x <= x <= box_rect.right() + margin_x:
-                    y_list.append(
-                        (box_rect.top(), box_rect.bottom(), box_rect.left()))
+            if box_rect.left() - needed_x <= x <= box_rect.right() + margin_x:
+                y_list.append(
+                    (box_rect.top(), box_rect.bottom(), box_rect.left()))
 
         if not y_list:
             return (int(x), int(y))
@@ -168,15 +164,13 @@ def get_new_group_pos(horizontal: bool):
 
 @easy_log
 def get_full_port_name(group_id: int, port_id: int) -> str:
-    for port in canvas.list_ports(group_id=group_id):
-        if port.port_id == port_id:
-            for group in canvas.group_list:
-                if group.group_id == group_id:
-                    return group.group_name + ":" + port.port_name
-            break
+    group = canvas.get_group(group_id)
+    port = canvas.get_port(group_id, port_id)
+    if group is None or port is None:
+        _logger.critical(f"{_logging_str} - unable to find port")
+        return ""
     
-    _logger.critical(f"{_logging_str} - unable to find port")
-    return ""
+    return f"{group.group_name}:{port.port_name}"
 
 @easy_log
 def get_port_connection_list(group_id: int, port_id: int) -> list[tuple[int, int, int]]:
@@ -262,14 +256,11 @@ def get_portgroup_port_list(group_id: int, portgrp_id: int) -> tuple[int]:
 def get_portgroup_full_name(group_id: int, portgrp_id: int) -> str:
     for portgrp in canvas.list_portgroups(group_id=group_id):
         if portgrp.portgrp_id == portgrp_id:
-            group_name = ""
-            for group in canvas.group_list:
-                if group.group_id == group_id:
-                    group_name = group.group_name
-                    break
-            else:
+            group = canvas.get_group(group_id)
+            if group is None:
                 return ""
-
+            
+            group_name = group.group_name
             endofname = ''
             for port_id in portgrp.port_id_list:
                 endofname += "%s/" % get_port_print_name(
@@ -297,15 +288,15 @@ def get_group_icon(group_id: int, port_mode: int) -> QIcon:
     if port_mode is PortMode.INPUT:
         group_port_mode = PortMode.OUTPUT
 
-    for group in canvas.group_list:
-        if group.group_id == group_id:
-            if not group.split:
-                group_port_mode = PortMode.NULL
+    group = canvas.get_group(group_id)
+    if group is None:
+        return QIcon()
 
-            return get_icon(
-                group.icon_type, group.icon_name, group_port_mode)
+    if not group.split:
+        group_port_mode = PortMode.NULL
 
-    return QIcon()
+    return get_icon(
+        group.icon_type, group.icon_name, group_port_mode)
 
 def get_icon(icon_type: int, icon_name: str, port_mode: int) -> QIcon:
     if icon_type in (IconType.CLIENT, IconType.APPLICATION):

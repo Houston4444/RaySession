@@ -100,6 +100,8 @@ class PortWidget(ConnectableWidget):
         self._loop_select_done = False
 
         self._lines_widgets = list[LineWidget]()
+        self._connect_pos = QPointF(0.0, 0.0)
+        self._update_connect_pos()
 
     def get_port_id(self) -> int:
         return self._port_id
@@ -114,15 +116,18 @@ class PortWidget(ConnectableWidget):
         self._portgrp_id = portgrp_id
         self._pg_pos = index
         self._pg_len = portgrp_len
+        self._update_connect_pos()
 
     def set_portgroup_widget(self, widget: 'PortgroupWidget'):
         self._portgrp_widget = widget
 
     def set_port_name(self, port_name: str):
         self._port_name = port_name
+        self._update_connect_pos()
 
     def set_port_width(self, port_width):
         self._port_width = port_width
+        self._update_connect_pos()
 
     def set_print_name(self, print_name:str, width_limited: int):
         self._print_name = print_name
@@ -156,6 +161,7 @@ class PortWidget(ConnectableWidget):
                 self._print_name = left_text
                 self._print_name_right = right_text
                 self._name_truncked = True
+        self._update_connect_pos()
 
     def get_text_width(self):
         if self._name_truncked:
@@ -175,13 +181,12 @@ class PortWidget(ConnectableWidget):
     def type(self) -> CanvasItemType:
         return CanvasItemType.PORT
 
-    def connect_pos(self):
-        scene_pos = self.scenePos()
+    def _update_connect_pos(self):
         phi = 0.75 if self._pg_len > 2 else 0.62
         
-        cx = scene_pos.x()
+        x_delta = 0
         if self._port_mode is PortMode.OUTPUT:
-            cx += self._port_width + 12
+            x_delta = self._port_width + 12
         
         height = canvas.theme.port_height
         y_delta = canvas.theme.port_height / 2
@@ -191,16 +196,48 @@ class PortWidget(ConnectableWidget):
             last_old_y = height * (self._pg_len - phi)
             delta = (last_old_y - first_old_y) / (self._pg_len -1)
             y_delta = (first_old_y
-                      + (self._pg_pos * delta)
-                      - (height * self._pg_pos))
+                       + (self._pg_pos * delta)
+                       - (height * self._pg_pos))
             
         if not self.isVisible():
             # item is hidden port when its box is folded
             y_delta = height - y_delta
+
+        self._connect_pos = QPointF(x_delta, y_delta)
+
+    def connect_pos(self) -> QPointF:
+        return self.scenePos() + self._connect_pos
+        # # scene_pos = self.scenePos()
+        # phi = 0.75 if self._pg_len > 2 else 0.62
         
-        cy = scene_pos.y() + y_delta
+        # xoff = 0
+        # if self._port_mode is PortMode.OUTPUT:
+        #     xoff = self._port_width + 12
         
-        return QPointF(cx, cy)
+        # # cx = scene_pos.x()
+        # # if self._port_mode is PortMode.OUTPUT:
+        # #     cx += self._port_width + 12
+        
+        # height = canvas.theme.port_height
+        # y_delta = canvas.theme.port_height / 2
+        
+        # if self._pg_len >= 2:
+        #     first_old_y = height * phi
+        #     last_old_y = height * (self._pg_len - phi)
+        #     delta = (last_old_y - first_old_y) / (self._pg_len -1)
+        #     y_delta = (first_old_y
+        #                + (self._pg_pos * delta)
+        #                - (height * self._pg_pos))
+            
+        # if not self.isVisible():
+        #     # item is hidden port when its box is folded
+        #     y_delta = height - y_delta
+        
+        # # cy = scene_pos.y() + y_delta
+        
+        # return self.scenePos() + QPointF(xoff, y_delta)
+        # # return QPointF(self.scenePos().x() + xoff, cy)
+        # # return QPointF(cx, cy)
 
     def add_line_to_port(self, line: 'LineWidget'):
         self._lines_widgets.append(line)
@@ -208,6 +245,10 @@ class PortWidget(ConnectableWidget):
     def remove_line_from_port(self, line: 'LineWidget'):
         if line in self._lines_widgets:
             self._lines_widgets.remove(line)
+
+    def setVisible(self, visible: bool):
+        super().setVisible(visible)
+        self._update_connect_pos()
 
     def itemChange(self, change: int, value: bool):
         if change == QGraphicsItem.ItemSelectedHasChanged:
