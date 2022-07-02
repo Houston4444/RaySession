@@ -34,11 +34,6 @@ GROUP_WRAPPED_INPUT = 0x10
 GROUP_WRAPPED_OUTPUT = 0x20
 GROUP_HAS_BEEN_SPLITTED = 0x40
 
-# Portgroup Origin
-PORTGROUP_FROM_DETECTION = 0
-PORTGROUP_FROM_METADATA = 1
-PORTGROUP_FROM_USER = 2
-
 # Meta data (taken from pyjacklib)
 _JACK_METADATA_PREFIX = "http://jackaudio.org/metadata/"
 JACK_METADATA_CONNECTED = _JACK_METADATA_PREFIX + "connected"
@@ -877,6 +872,11 @@ class PatchbayManager:
         self.send_to_patchbay_daemon('/ray/patchbay/set_buffer_size',
                                      buffer_size)
 
+    def save_group_position(self, group_pos: ray.GroupPosition):
+        self.send_to_daemon(
+            '/ray/server/patchbay/save_group_position',
+            *group_pos.spread())
+
     def filter_groups(self, text: str, n_select=0)->int:
         ''' semi hides groups not matching with text
             and returns number of matching boxes '''
@@ -966,7 +966,6 @@ class PatchbayManager:
 
     def _order_queue_timeout(self):
         self.optimize_operation(True)
-        #self.very_fast_operation = True
         
         group_ids_to_update = set()
         group_ids_to_sort = set()

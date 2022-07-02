@@ -1,5 +1,5 @@
 from enum import IntFlag
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 import ray
 import patchcanvas
 from patchcanvas import (PortMode, PortType, IconType, BoxLayoutMode,
@@ -8,7 +8,7 @@ from patchcanvas import (PortMode, PortType, IconType, BoxLayoutMode,
 if TYPE_CHECKING:
     from patchbay_manager import PatchbayManager
 
-# Port Flags // defined by JACK
+# Port Flags as defined by JACK
 class JackPortFlag(IntFlag):
     IS_INPUT = 0x01
     IS_OUTPUT = 0x02
@@ -238,7 +238,6 @@ class Portgroup:
         self.above_metadatas = False
 
         self.in_canvas = False
-
 
         for port in self.ports:
             port.portgroup_id = portgroup_id
@@ -508,7 +507,7 @@ class Group:
         if portgroup_mem.group_name != self.name:
             return
 
-        remove_list = []
+        remove_list = list[Portgroup]()
 
         # first remove any existing portgroup with one of the porgroup_mem ports
         for portgroup in self.portgroups:
@@ -524,7 +523,7 @@ class Group:
             self.remove_portgroup(portgroup)
 
         # add a portgroup if all needed ports are present and consecutive
-        port_list = []
+        port_list = list[Port]()
 
         for port in self.ports:
             if (port.mode != portgroup_mem.port_mode
@@ -547,17 +546,15 @@ class Group:
                 break
 
     def save_current_position(self):
-        self.manager.send_to_daemon(
-            '/ray/server/patchbay/save_group_position',
-            *self.current_position.spread())
+        self.manager.save_group_position(self.current_position)
 
     def set_group_position(self, group_position: ray.GroupPosition):
+        if not self.in_canvas:
+            return
+
         ex_gpos_flags = self.current_position.flags
         self.current_position = group_position
         gpos = self.current_position
-
-        if not self.in_canvas:
-            return
 
         patchcanvas.move_group_boxes(
             self.group_id, gpos.null_xy, gpos.in_xy, gpos.out_xy)
@@ -567,9 +564,9 @@ class Group:
             patchcanvas.split_group(self.group_id)
 
         patchcanvas.wrap_group_box(self.group_id, PortMode.INPUT,
-                                 bool(gpos.flags & GROUP_WRAPPED_INPUT))
+                                   bool(gpos.flags & GROUP_WRAPPED_INPUT))
         patchcanvas.wrap_group_box(self.group_id, PortMode.OUTPUT,
-                                 bool(gpos.flags & GROUP_WRAPPED_OUTPUT))
+                                   bool(gpos.flags & GROUP_WRAPPED_OUTPUT))
 
         if (ex_gpos_flags & GROUP_SPLITTED
                 and not gpos.flags & GROUP_SPLITTED):
@@ -614,7 +611,7 @@ class Group:
             patchcanvas.set_group_icon(
                 self.group_id, IconType.CLIENT, icon_name)
 
-    def get_pretty_client(self):
+    def get_pretty_client(self) -> str:
         for client_name in ('firewire_pcm', 'a2j',
                             'Hydrogen', 'ardour', 'Ardour', 'Qtractor',
                             'SooperLooper', 'sooperlooper', 'Luppp',
@@ -824,7 +821,7 @@ class Group:
 
         port.display_name = display_name if display_name else s_display_name
 
-    def add_portgroup(self, portgroup):
+    def add_portgroup(self, portgroup: Portgroup):
         self.portgroups.append(portgroup)
 
     def change_port_types_view(self):
@@ -852,7 +849,7 @@ class Group:
         else:
             self.remove_from_canvas()
 
-    def stereo_detection(self, port: Port):
+    def stereo_detection(self, port: Port) -> Union[Port, None]:
         if port.type != PortType.AUDIO_JACK:
             return
 
@@ -881,7 +878,7 @@ class Group:
         else:
             return
 
-        may_match_list = []
+        may_match_set = set[str]()
 
         port_name = port.full_name.replace(self.name + ':', '', 1)
         other_port_name = other_port.full_name.replace(self.name + ':', '', 1)
@@ -889,7 +886,7 @@ class Group:
         if port.flags & JackPortFlag.IS_PHYSICAL:
             # force stereo detection for system ports
             # it forces it for firewire long and strange names
-            may_match_list.append(other_port_name)
+            may_match_set.add(other_port_name)
 
         elif port_name[-1].isdigit():
             # Port ends with digit
@@ -902,55 +899,55 @@ class Group:
 
             # if Port ends with Ldigits or Rdigits
             if base_port.endswith('R'):
-                may_match_list.append(base_port[:-1] + 'L' + in_num)
+                may_match_set.add(base_port[:-1] + 'L' + in_num)
             else:
-                may_match_list.append(base_port + str(int(in_num) -1))
+                may_match_set.add(base_port + str(int(in_num) -1))
 
                 if int(in_num) in (1, 2):
                     if base_port.endswith((' ', ('_'))):
-                        may_match_list.append(base_port[:-1])
+                        may_match_set.add(base_port[:-1])
                     else:
-                        may_match_list.append(base_port)
+                        may_match_set.add(base_port)
         else:
             # Port ends with non digit
             if port_name.endswith('R'):
-                may_match_list.append(port_name[:-1] + 'L')
+                may_match_set.add(port_name[:-1] + 'L')
                 if len(port_name) >= 2:
                     if port_name[-2] == ' ':
-                        may_match_list.append(port_name[:-2])
+                        may_match_set.add(port_name[:-2])
                     else:
-                        may_match_list.append(port_name[:-1])
+                        may_match_set.add(port_name[:-1])
 
             elif port_name.endswith('right'):
-                may_match_list.append(port_name[:-5] + 'left')
+                may_match_set.add(port_name[:-5] + 'left')
 
             elif port_name.endswith('Right'):
-                may_match_list.append(port_name[:-5] + 'Left')
+                may_match_set.add(port_name[:-5] + 'Left')
 
             elif port_name.endswith('(Right)'):
-                may_match_list.append(port_name[:-7] + '(Left)')
+                may_match_set.add(port_name[:-7] + '(Left)')
 
             elif port_name.endswith('.r'):
-                may_match_list.append(port_name[:-2] + '.l')
+                may_match_set.add(port_name[:-2] + '.l')
 
             elif port_name.endswith('_r'):
-                may_match_list.append(port_name[:-2] + '_l')
+                may_match_set.add(port_name[:-2] + '_l')
 
             elif port_name.endswith('_r\n'):
-                may_match_list.append(port_name[:-3] + '_l\n')
+                may_match_set.add(port_name[:-3] + '_l\n')
 
             for x in ('out', 'Out', 'output', 'Output', 'in', 'In',
                       'input', 'Input', 'audio input', 'audio output'):
                 if port_name.endswith('R ' + x):
-                    may_match_list.append('L ' + x)
+                    may_match_set.add('L ' + x)
 
                 elif port_name.endswith('right ' + x):
-                    may_match_list.append('left ' + x)
+                    may_match_set.add('left ' + x)
 
                 elif port_name.endswith('Right ' + x):
-                    may_match_list.append('Left ' + x)
+                    may_match_set.add('Left ' + x)
 
-        if other_port_name in may_match_list:
+        if other_port_name in may_match_set:
             return other_port
 
     def check_for_portgroup_on_last_port(self):
@@ -972,7 +969,7 @@ class Group:
                         != len(portgroup_mem.port_names)):
                     return
 
-                port_list = []
+                port_list = list[Port]()
 
                 for port in self.ports:
                     if (port.type == last_port.type
@@ -1014,7 +1011,7 @@ class Group:
         if last_digit not in ('1', '2'):
             return
 
-        for port in reversed(self.ports):
+        for port in reversed(self.ports[:-1]):
             if (port.type == last_port.type
                     and port.mode() == last_port.mode()
                     and port is not last_port):
@@ -1030,7 +1027,7 @@ class Group:
         already_optimized = self.manager.optimized_operation
         self.manager.optimize_operation(True)
 
-        conn_list = []
+        conn_list = list[Connection]()
 
         if not self.manager.very_fast_operation:
             for conn in self.manager.connections:
@@ -1051,7 +1048,7 @@ class Group:
         self.ports.sort()
 
         # search and remove existing portgroups with non consecutive ports
-        portgroups_to_remove = []
+        portgroups_to_remove = list[Portgroup]()
 
         for portgroup in self.portgroups:
             search_index = 0
@@ -1115,7 +1112,7 @@ class Group:
             if portgroup_mem.group_name != self.name:
                 continue
 
-            founded_ports = []
+            founded_ports = list[Port]()
 
             for port in self.ports:
                 if (not port.portgroup_id
@@ -1134,7 +1131,7 @@ class Group:
                     break
 
         # detect and add portgroups given from metadatas
-        portgroups_mdata = [] # list of dicts
+        portgroups_mdata = list[dict]() # list of dicts
 
         for port in self.ports:
             if port.mdata_portgroup:
@@ -1172,7 +1169,7 @@ class Group:
             if portgroup_mem.group_name != self.name:
                 continue
 
-            founded_ports = []
+            founded_ports = list[Port]()
 
             for port in self.ports:
                 if (not port.portgroup_id
