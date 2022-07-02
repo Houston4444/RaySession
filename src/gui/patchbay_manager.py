@@ -1,5 +1,6 @@
 
 import json
+from locale import strcoll
 import os
 import sys
 import time
@@ -1257,9 +1258,9 @@ class PatchbayManager:
     groups = list[Group]()
     connections = list[Connection]()
     group_positions = list[ray.GroupPosition]()
-    portgroups_memory = []
+    portgroups_memory = list[ray.PortGroupMemory]()
     _next_portgroup_id = 1
-    orders_queue = []
+    orders_queue = list[dict]()
 
     def __init__(self, session: 'Session'):
         self.session = session
@@ -2244,7 +2245,7 @@ class PatchbayManager:
 
         os.remove(temp_path)
 
-    def fast_temp_file_running(self, temp_path):
+    def fast_temp_file_running(self, temp_path: str):
         ''' receives a .json file path from patchbay daemon with all ports, connections
             and jack metadatas'''
         patchbay_data = self.get_json_contents_from_path(temp_path)
@@ -2271,23 +2272,31 @@ class PatchbayManager:
         for key in patchbay_data.keys():
             if key == 'ports':
                 for p in patchbay_data[key]:
+                    if TYPE_CHECKING and not isinstance(p, dict):
+                        continue
                     self.add_port(p.get('name'), p.get('type'),
                                   p.get('flags'), p.get('uuid'))
         
             elif key == 'connections':
                 for c in patchbay_data[key]:
+                    if TYPE_CHECKING and not isinstance(c, dict):
+                        continue
                     self.add_connection(c.get('port_out_name'),
                                         c.get('port_in_name'))
         
         for key in patchbay_data.keys():
             if key == 'clients':
                 for cnu in patchbay_data[key]:
+                    if TYPE_CHECKING and not isinstance(cnu, dict):
+                        continue
                     self.client_name_and_uuid(cnu.get('name'), cnu.get('uuid'))
                 break
 
         for key in patchbay_data.keys():
             if key == 'metadatas':
                 for m in patchbay_data[key]:
+                    if TYPE_CHECKING and not isinstance(m, dict):
+                        continue
                     self.metadata_update(
                         m.get('uuid'), m.get('key'), m.get('value'))
 
