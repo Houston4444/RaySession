@@ -1,6 +1,5 @@
 
 from enum import IntEnum
-import time
 from typing import Iterator
 from PyQt5.QtCore import QRectF
 from PyQt5.QtGui import QPainterPath
@@ -1028,7 +1027,7 @@ class BoxWidget(BoxWidgetMoth):
                 self._port_list.append(port)
                 # used to know present port modes (INPUT or OUTPUT or both)
                 self._current_port_mode |= port.port_mode
-                
+
         for portgrp in canvas.list_portgroups(group_id=self._group_id):
             if self._current_port_mode & portgrp.port_mode:
                 self._portgrp_list.append(portgrp)

@@ -2,6 +2,8 @@
 import json
 import os
 import sys
+import time
+from typing import TYPE_CHECKING
 from PyQt5.QtGui import QCursor, QGuiApplication
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import QTimer, QPoint
@@ -17,6 +19,9 @@ from gui_server_thread import GuiServerThread
 from patchbay_tools import PORT_TYPE_AUDIO, PORT_TYPE_MIDI, PatchbayToolsWidget, CanvasMenu, CanvasPortInfoDialog
 
 import canvas_options
+
+if TYPE_CHECKING:
+    from gui_session import Session
 
 
 # Port Flags
@@ -60,7 +65,7 @@ def enum_to_flag(enum: int) -> int:
 
 
 class Connection:
-    def __init__(self, connection_id: int, port_out, port_in):
+    def __init__(self, connection_id: int, port_out: 'Port', port_in: 'Port'):
         self.connection_id = connection_id
         self.port_out = port_out
         self.port_in = port_in
@@ -469,7 +474,7 @@ class Group:
         
         patchcanvas.set_group_in_front(self.group_id)
 
-    def get_number_of_boxes(self)->int:
+    def get_number_of_boxes(self) -> int:
         if not self.in_canvas:
             return 0
 
@@ -524,18 +529,18 @@ class Group:
 
         self.ports.append(port)
 
-    def remove_port(self, port):
+    def remove_port(self, port: Port):
         if port in self.ports:
             self.ports.remove(port)
 
-    def remove_portgroup(self, portgroup):
+    def remove_portgroup(self, portgroup: Portgroup):
         if portgroup in self.portgroups:
             portgroup.remove_from_canvas()
             for port in portgroup.ports:
                 port.portgroup_id = 0
             self.portgroups.remove(portgroup)
 
-    def portgroup_memory_added(self, portgroup_mem):
+    def portgroup_memory_added(self, portgroup_mem: ray.PortGroupMemory):
         if portgroup_mem.group_name != self.name:
             return
 
@@ -1256,7 +1261,7 @@ class PatchbayManager:
     _next_portgroup_id = 1
     orders_queue = []
 
-    def __init__(self, session):
+    def __init__(self, session: 'Session'):
         self.session = session
 
         self.tools_widget = PatchbayToolsWidget()
@@ -1773,7 +1778,7 @@ class PatchbayManager:
         full_port_name = name
         group_name, colon, port_name = full_port_name.partition(':')
 
-        a2j_group = False
+        is_a2j_group = False
         group_is_new = False
 
         if (full_port_name.startswith(('a2j:', 'Midi-Bridge:'))
@@ -1799,7 +1804,7 @@ class PatchbayManager:
                         break
 
             if port.flags & PORT_IS_PHYSICAL:
-                a2j_group = True
+                is_a2j_group = True
         
         for group in self.groups:
             if group.name == group_name:
@@ -1808,7 +1813,7 @@ class PatchbayManager:
             # port is an non existing group, create the group
             gpos = self.get_group_position(group_name)
             group = Group(self._next_group_id, group_name, gpos)
-            group.a2j_group = a2j_group
+            group.a2j_group = is_a2j_group
             
             for client in self.session.client_list:
                 if client.can_be_own_jack_client(group_name):
@@ -2256,7 +2261,7 @@ class PatchbayManager:
         
         # very fast operation means that nothing is done in the patchcanvas
         # everything stays here in this file.
-        print('fast tmp file running start')
+        print('fast tmp file running start', time.time())
         
         if self.group_positions:
             print('on a des group positions')
@@ -2286,22 +2291,26 @@ class PatchbayManager:
                     self.metadata_update(
                         m.get('uuid'), m.get('key'), m.get('value'))
 
-        print('tout est rentré')
+        print('tout est rentré', time.time())
 
         for group in self.groups:
             group.sort_ports_in_canvas()
 
+        print('les ports sont dans lorde', time.time())
+
         self.set_very_fast_operation(False)
         
-        print('tout va rentrer dans le canvas')
+        print('tout va rentrer dans le canvas', time.time())
         
         for group in self.groups:
             group.add_all_ports_to_canvas()
         
+        print('avant conns', time.time())
+        
         for conn in self.connections:
             conn.add_to_canvas()
 
-        print('sfkddf')
+        print('sfkddf', time.time())
         self.optimize_operation(False)
         print('chammpîn')
         patchcanvas.redraw_all_groups()

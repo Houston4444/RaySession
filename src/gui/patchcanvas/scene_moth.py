@@ -313,6 +313,8 @@ class PatchSceneMoth(QGraphicsScene):
         # Animation is nice but not the priority.
         # Do not ensure all steps are played
         # but just move the box where it has to go now
+        start_time = time.time()
+        times_dict = {}
         time_since_start = time.time() - self._move_timer_start_at
         ratio = min(1.0, time_since_start / self._MOVE_DURATION)
 
@@ -336,8 +338,10 @@ class PatchSceneMoth(QGraphicsScene):
                 else:
                     wrapping_box.widget.animate_wrapping(ratio)
 
+        times_dict['befresize'] = time.time() - start_time
+
         self.resize_the_scene()
-        
+        times_dict['aftresize'] = time.time() - start_time
         if time_since_start >= self._MOVE_DURATION:
             self._move_box_timer.stop()
             
@@ -351,9 +355,15 @@ class PatchSceneMoth(QGraphicsScene):
                     box.send_move_callback()
 
             canvas.qobject.move_boxes_finished.emit()
-
+        times_dict['befupdate'] = time.time() - start_time
         # self.update()
+        times_dict['finihsedd'] = time.time() - start_time
 
+        # print('nalo', time_since_start)
+        # for key, value in times_dict.items():
+        #     print('fi', value, key)
+        # print('fox', time.time() - start_time)
+        
     def add_box_to_animation(self, box_widget: BoxWidget, to_x: int, to_y: int,
                              force_anim=True):
         for moving_box in self.move_boxes:
@@ -409,7 +419,7 @@ class PatchSceneMoth(QGraphicsScene):
         for item in self.items(pos, Qt.ContainsItemShape, Qt.AscendingOrder):
             if isinstance(item, BoxWidget):
                 return item
-        
+    
     def get_selected_boxes(self) -> list[BoxWidget]:
         return [i for i in self.selectedItems() if isinstance(i, BoxWidget)]
 
@@ -422,10 +432,6 @@ class PatchSceneMoth(QGraphicsScene):
         for child_item in item.childItems():
             QGraphicsScene.removeItem(self, child_item)
         QGraphicsScene.removeItem(self, item)
-
-    def update(self):
-        super().update()
-        print('scene update')
 
     def update_limits(self):
         w0 = canvas.size_rect.width()
@@ -767,6 +773,7 @@ class PatchSceneMoth(QGraphicsScene):
                 not isinstance(topmost, (BoxWidget, ConnectableWidget,
                                          IconPixmapWidget, IconSvgWidget))
                 and int(event.buttons()))
+            print('ya une bo^ite', isinstance(topmost, BoxWidget), topmost)
 
         if self._mouse_rubberband:
             event.accept()

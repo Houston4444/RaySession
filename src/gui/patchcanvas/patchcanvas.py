@@ -21,7 +21,6 @@
 import logging
 from pathlib import Path
 import time
-from tokenize import group
 from typing import Callable
 from PyQt5.QtCore import (pyqtSlot, QObject, QPoint, QPointF, QRectF,
                           QSettings, QTimer, pyqtSignal)
@@ -218,7 +217,7 @@ def set_canvas_size(x: int, y: int, width: int, height: int):
 @patchbay_api
 def set_loading_items(yesno: bool):
     '''while canvas is loading items (groups or ports, connections...)
-    then, items will be added, but no redraw.
+    then, items will be added, but no redrawn.
     This is an optimization that prevents a lot of redraws.
     Think to set loading items at False and use redraw_all_groups
     or redraw_group once the long operation is finished'''
@@ -339,7 +338,10 @@ def remove_group(group_id: int, save_positions=True):
             canvas.settings.setValue(
                 "CanvasPositions/%s_SPLIT" % group_name, BoxSplitMode.YES)
 
+        if s_item in canvas.scene.move_boxes:
+            canvas.scene.move_boxes.remove(s_item)
         s_item.remove_icon_from_scene()
+        
         canvas.scene.removeItem(s_item)
         del s_item
 
@@ -349,6 +351,9 @@ def remove_group(group_id: int, save_positions=True):
                 "CanvasPositions/%s" % group_name, item.pos())
             canvas.settings.setValue(
                 "CanvasPositions/%s_SPLIT" % group_name, BoxSplitMode.NO)
+
+    if item in canvas.scene.move_boxes:
+        canvas.scene.move_boxes.remove(s_item)
 
     item.remove_icon_from_scene()
     canvas.scene.removeItem(item)
@@ -565,17 +570,9 @@ def redraw_all_groups():
         times_dict[(box._group_name, box._current_port_mode)] = time.time() - last_time
         last_time = time.time()
     
-    # for key, value in times_dict.items():
-    #     print('rif',  value, key)
-    
-    print('aft updat box poses', time.time())
-    i=0
     for connection in canvas.list_connections():
         if connection.widget is not None:
-            i+=1
-            connection.widget.update_line_pos(fast_move=True)
-    
-    print('aft conn repose', time.time(), i)
+            connection.widget.update_line_pos()
     
     if canvas.scene is None:
         options.elastic = elastic
@@ -590,8 +587,6 @@ def redraw_all_groups():
         for box in canvas.list_boxes():
             canvas.scene.deplace_boxes_from_repulsers([box])
     
-    print('after prevover', time.time())
-    
     if not elastic or prevent_overlap:
         QTimer.singleShot(0, canvas.scene.update)
 
@@ -600,7 +595,7 @@ def redraw_group(group_id: int):
     group = canvas.get_group(group_id)
     if group is None:
         return
-               
+
     for box in group.widgets:
         if box is not None:
             box.update_positions()
@@ -870,10 +865,9 @@ def rename_port(group_id: int, port_id: int, new_port_name: str):
 def add_portgroup(group_id: int, portgrp_id: int, port_mode: PortMode,
                   port_type: PortType, port_subtype: PortSubType,
                   port_id_list: list[int]):
-    for portgrp in canvas.list_portgroups(group_id=group_id):
-        if portgrp.portgrp_id == portgrp_id:
-            _logger.critical(f"{_logging_str} - portgroup already exists")
-            return
+    if canvas.get_portgroup(group_id, portgrp_id) is not None:
+        _logger.critical(f"{_logging_str} - portgroup already exists")
+        return
     
     portgrp = PortgrpObject()
     portgrp.group_id = group_id
@@ -967,25 +961,15 @@ def remove_portgroup(group_id: int, portgrp_id: int):
 
 @patchbay_api
 def connect_ports(connection_id: int, group_out_id: int, port_out_id: int,
-                  group_in_id: int, port_in_id: int):
-    port_out = None
-    port_in = None
-    port_out_parent = None
-    port_in_parent = None
-
-    for port in canvas.list_ports():
-        if port.group_id == group_out_id and port.port_id == port_out_id:
-            port_out = port.widget
-            if port_out is not None:
-                port_out_parent = port_out.parentItem()
-        elif port.group_id == group_in_id and port.port_id == port_in_id:
-            port_in = port.widget
-            if port_in is not None:
-                port_in_parent = port_in.parentItem()
-        
-    if not (port_out and port_in and port_out_parent and port_in_parent):
+                  group_in_id: int, port_in_id: int):    
+    out_port = canvas.get_port(group_out_id, port_out_id)
+    in_port = canvas.get_port(group_in_id, port_in_id)
+    
+    if out_port is None or in_port is None:
         _logger.critical(f"{_logging_str} - unable to find ports to connect")
         return
+    
+    out_port_wg, in_port_wg = out_port.widget, in_port.widget
 
     connection = ConnectionObject()
     connection.connection_id = connection_id
@@ -993,23 +977,15 @@ def connect_ports(connection_id: int, group_out_id: int, port_out_id: int,
     connection.port_in_id = port_in_id
     connection.group_out_id = group_out_id
     connection.port_out_id = port_out_id
-    connection.widget = LineWidget(connection_id, port_out, port_in)
+    connection.widget = LineWidget(connection_id, out_port_wg, in_port_wg)
 
     canvas.scene.addItem(connection.widget)
 
     canvas.add_connection(connection)
-    port_out_parent.add_line_to_box(connection.widget)
-    port_in_parent.add_line_to_box(connection.widget)
-    port_out.add_line_to_port(connection.widget)
-    port_in.add_line_to_port(connection.widget)
-
-    # canvas.last_z_value += 1
-    # port_out_parent.setZValue(canvas.last_z_value)
-    # port_in_parent.setZValue(canvas.last_z_value)
-
-    # canvas.last_z_value += 1
-    # connection.widget.setZValue(canvas.last_z_value)
-
+    out_port_wg.parentItem().add_line_to_box(connection.widget)
+    in_port_wg.parentItem().add_line_to_box(connection.widget)
+    out_port_wg.add_line_to_port(connection.widget)
+    in_port_wg.add_line_to_port(connection.widget)
 
     canvas.qobject.connection_added.emit(connection_id)
     
@@ -1030,20 +1006,20 @@ def disconnect_ports(connection_id: int):
     canvas.remove_connection(connection)
     canvas.qobject.connection_removed.emit(connection_id)
 
-    for port in canvas.list_ports(group_id=tmp_conn.group_out_id):
-        if port.port_id == tmp_conn.port_out_id:
-            item1 = port.widget
-            break
-    else:
+    out_port = canvas.get_port(tmp_conn.group_out_id, tmp_conn.port_out_id)
+    in_port = canvas.get_port(tmp_conn.group_in_id, tmp_conn.port_in_id)
+    if out_port is None:
         _logger.critical(f"{_logging_str} - unable to find output port")
         return
 
-    for port in canvas.list_ports(group_id=tmp_conn.group_in_id):
-        if port.port_id == tmp_conn.port_in_id:
-            item2 = port.widget
-            break
-    else:
+    if in_port is None:
         _logger.critical(f"{_logging_str} - unable to find input port")
+        return
+        
+    item1 = out_port.widget
+    item2 = in_port.widget
+    if item1 is None or item2 is None:
+        _logger.critical(f"{_logging_str} - port has no widget")
         return
 
     item1.parentItem().remove_line_from_box(connection)

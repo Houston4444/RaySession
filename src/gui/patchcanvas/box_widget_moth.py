@@ -911,7 +911,7 @@ class BoxWidgetMoth(QGraphicsItem):
                     repulsers.append(widget)
 
             canvas.scene.deplace_boxes_from_repulsers(repulsers)
-            
+
             QTimer.singleShot(0, canvas.scene.update)
 
         self._mouse_down = False

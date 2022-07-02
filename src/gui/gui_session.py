@@ -19,8 +19,8 @@ from patchbay_manager import PatchbayManager
 
 class Session:
     def __init__(self):
-        self.client_list = []
-        self.trashed_clients = []
+        self.client_list = list[Client]()
+        self.trashed_clients = list[TrashedClient]()
         self.favorite_list = []
         self.recent_sessions = []
         self.name = ''

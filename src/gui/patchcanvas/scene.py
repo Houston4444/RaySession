@@ -21,7 +21,7 @@ from math import floor
 import time
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import (QPoint, QPointF, QRectF)
+from PyQt5.QtCore import (QPoint, QPointF, QRectF, QMarginsF, Qt)
 from PyQt5.QtWidgets import QGraphicsView
 
 from .init_values import (
@@ -197,7 +197,6 @@ class PatchScene(PatchSceneMoth):
         to_move_boxes = list[ToMoveBox]()
         repulsers = list[BoxAndRect]()
         wanted_directions = [wanted_direction]
-
         for box in repulser_boxes:
             srect = box.boundingRect()
             
@@ -216,14 +215,19 @@ class PatchScene(PatchSceneMoth):
             repulsers.append(repulser)
             items_to_move = list[BoxAndRect]()
 
-            for widget in canvas.list_boxes():
+            search_rect = srect.marginsAdded(QMarginsF(4.0, 4.0, 4.0, 4.0))
+
+            for widget in self.items(search_rect, Qt.IntersectsItemShape, Qt.AscendingOrder):
+                # print(widget, widget.zValue())
+                if not isinstance(widget, BoxWidget):
+                    continue
+                
                 if (widget in repulser_boxes
                         or widget in [b.item for b in to_move_boxes]
                         or widget in [b.widget for b in self.move_boxes]):
                     continue
-                
+
                 irect = widget.sceneBoundingRect()
-                # irect.translate(widget.pos())
 
                 if rect_has_to_move_from(
                         repulser.rect, irect,
@@ -321,22 +325,24 @@ class PatchScene(PatchSceneMoth):
             # and add them to this to_move_boxes iteration
             adding_list = list[ToMoveBox]()
             
-            for group in canvas.group_list:
-                for widget in group.widgets:
-                    if (widget is None
-                            or widget in repulser_boxes
-                            or widget in [b.item for b in to_move_boxes]
-                            or widget in [b.widget for b in self.move_boxes]):
-                        continue
+            search_rect = new_rect.marginsAdded(QMarginsF(4.0, 4.0, 4.0, 4.0))
+            
+            for widget in self.items(search_rect):
+                if not isinstance(widget, BoxWidget):
+                    continue
+                if (widget in repulser_boxes
+                        or widget in [b.item for b in to_move_boxes]
+                        or widget in [b.widget for b in self.move_boxes]):
+                    continue
+                
+                mirect = widget.boundingRect().translated(widget.pos())
+                if rect_has_to_move_from(
+                        new_rect, mirect,
+                        to_move_box.item.get_current_port_mode(),
+                        widget.get_current_port_mode()):
                     
-                    mirect = widget.boundingRect().translated(widget.pos())
-                    if rect_has_to_move_from(
-                            new_rect, mirect,
-                            to_move_box.item.get_current_port_mode(),
-                            widget.get_current_port_mode()):
-                        
-                        adding_list.append(
-                            ToMoveBox(directions, mirect.right(), widget, repulser))                        
+                    adding_list.append(
+                        ToMoveBox(directions, mirect.right(), widget, repulser))                        
             
             for moving_box in self.move_boxes:
                 mitem = moving_box.widget
