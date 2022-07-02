@@ -17,7 +17,6 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-import inspect
 from struct import pack
 import time
 from sip import voidptr
@@ -216,6 +215,10 @@ class BoxWidgetMoth(QGraphicsItem):
 
     def _get_layout_mode_for_this(self):
         group = canvas.get_group(self._group_id)
+        if group is None:
+            # TODO log something
+            return BoxLayoutMode.AUTO
+        
         if self._current_port_mode in group.layout_modes.keys():
             return group.layout_modes[self._current_port_mode]
         else:
