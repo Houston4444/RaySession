@@ -207,7 +207,7 @@ class BoxWidgetMoth(QGraphicsItem):
         self._current_layout_mode = BoxLayoutMode.LARGE
         self._title_under_icon = False
         self._painter_path = QPainterPath()
-        
+                
         self.update_positions()
 
         canvas.scene.addItem(self)

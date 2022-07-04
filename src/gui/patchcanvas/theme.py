@@ -332,12 +332,13 @@ class StyleAttributer:
     def text_color(self) -> QColor:
         return self.get_value_of('_text_color')
     
-    def font(self) -> QFont:        
-        font_ = QFont(self.get_value_of('_font_name'))
-        font_.setPixelSize(self.get_value_of('_font_size'))
-        font_.setWeight(self.get_value_of('_font_width'))
-        return font_
-    
+    def font(self) -> QFont:
+        if self._font is None:
+            self._font = QFont(self.get_value_of('_font_name'))
+            self._font.setPixelSize(self.get_value_of('_font_size'))
+            self._font.setWeight(self.get_value_of('_font_width'))
+        return self._font
+        
     def _set_font_metrics_cache(self):        
         font_name = self.get_value_of('_font_name')
         font_size = str(self.get_value_of('_font_size'))

@@ -63,8 +63,7 @@ _translate = QApplication.translate
 
 class PortWidget(ConnectableWidget):
     def __init__(self, port: PortObject, parent: 'BoxWidget'):
-        ConnectableWidget.__init__(self, port, parent)
-
+        ConnectableWidget.__init__(self, port, parent)        
         self._logger = logging.getLogger(__name__)
 
         # Save Variables, useful for later

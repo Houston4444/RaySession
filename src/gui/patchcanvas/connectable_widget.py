@@ -22,11 +22,10 @@ class ConnectableWidget(QGraphicsItem):
         _hover_item: 'ConnectableWidget'
 
     def __init__(self, connectable: ConnectableObject, parent: 'BoxWidget'):
-        super().__init__()
-        self.setParentItem(parent)
-        self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
+        QGraphicsItem.__init__(self, parent)
         self.setFlags(QGraphicsItem.ItemIsSelectable)
-
+        self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
+        
         if options.auto_select_items:
             self.setAcceptHoverEvents(True)
 

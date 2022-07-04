@@ -3,7 +3,7 @@ import json
 import os
 import sys
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 from PyQt5.QtGui import QCursor, QGuiApplication
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import QTimer, QPoint
@@ -60,8 +60,13 @@ class PatchbayManager:
                        | enum_to_flag(PortType.MIDI_JACK))
     optimized_operation = False
     very_fast_operation = False
+
     groups = list[Group]()
     connections = list[Connection]()
+    _groups_by_name = dict[str, Group]()
+    _groups_by_id = dict[int, Group]()
+    _ports_by_name = dict[str, Port]()
+
     group_positions = list[ray.GroupPosition]()
     portgroups_memory = list[ray.PortGroupMemory]()
     _next_portgroup_id = 1
@@ -119,7 +124,8 @@ class PatchbayManager:
         self.options_dialog.max_port_width_changed.connect(
             patchcanvas.set_max_port_width)
 
-    def save_patchcanvas_cache(self):
+    @staticmethod
+    def save_patchcanvas_cache():
         patchcanvas.save_cache()
 
     @staticmethod
@@ -148,11 +154,27 @@ class PatchbayManager:
         if patchcanvas.canvas is not None:
             patchcanvas.set_loading_items(yesno)
 
-    def set_very_fast_operation(self, yesno: bool):
+    def _set_very_fast_operation(self, yesno: bool):
         self.very_fast_operation = yesno
 
+    def _add_group(self, group: Group):
+        self.groups.append(group)
+        self._groups_by_id[group.group_id] = group
+        self._groups_by_name[group.name] = group
+
+    def _remove_group(self, group: Group):
+        if group in self.groups:
+            self.groups.remove(group)
+            self._groups_by_id.pop(group.group_id)
+            self._groups_by_name.pop(group.name)
+
+    def _clear_groups(self):
+        self.groups.clear()
+        self._groups_by_id.clear()
+        self._groups_by_name.clear()
+
     def new_portgroup(self, group_id: int, port_mode: int,
-                      ports: tuple) -> Portgroup:
+                      ports: tuple[Port]) -> Portgroup:
         portgroup = Portgroup(self, group_id, self._next_portgroup_id,
                               port_mode, ports)
         self._next_portgroup_id += 1
@@ -170,15 +192,14 @@ class PatchbayManager:
 
         elif action == CallbackAct.GROUP_SPLIT:
             group_id = args[0]
-            for group in self.groups:
-                if group.group_id == group_id:
-                    on_place = not bool(
-                        group.current_position.flags & GROUP_HAS_BEEN_SPLITTED)
-                    patchcanvas.split_group(group_id, on_place=on_place)
-                    group.current_position.flags |= GROUP_SPLITTED
-                    group.current_position.flags |= GROUP_HAS_BEEN_SPLITTED
-                    group.save_current_position()
-                    break
+            group = self._groups_by_id.get(group_id)
+            if group is not None:
+                on_place = not bool(
+                    group.current_position.flags & GROUP_HAS_BEEN_SPLITTED)
+                patchcanvas.split_group(group_id, on_place=on_place)
+                group.current_position.flags |= GROUP_SPLITTED
+                group.current_position.flags |= GROUP_HAS_BEEN_SPLITTED
+                group.save_current_position()
 
         elif action == CallbackAct.GROUP_JOIN:
             group_id = args[0]
@@ -186,44 +207,36 @@ class PatchbayManager:
 
         elif action == CallbackAct.GROUP_JOINED:
             group_id = args[0]
-
-            for group in self.groups:
-                if group.group_id == group_id:
-                    group.current_position.flags &= ~GROUP_SPLITTED
-                    group.save_current_position()
-                    break
+            group = self._groups_by_id.get(group_id)
+            if group is not None:
+                group.current_position.flags &= ~GROUP_SPLITTED
+                group.save_current_position()
 
         elif action == CallbackAct.GROUP_MOVE:            
             group_id, port_mode, x, y = args
+            group = self._groups_by_id.get(group_id)
+            if group is not None:
+                gpos = group.current_position
+                if port_mode == PortMode.NULL:
+                    gpos.null_xy = (x, y)
+                elif port_mode == PortMode.INPUT:
+                    gpos.in_xy = (x, y)
+                elif port_mode == PortMode.OUTPUT:
+                    gpos.out_xy = (x, y)
 
-            for group in self.groups:
-                if group.group_id == group_id:
-                    gpos = group.current_position
-                    if port_mode == PortMode.NULL:
-                        gpos.null_xy = (x, y)
-                    elif port_mode == PortMode.INPUT:
-                        gpos.in_xy = (x, y)
-                    elif port_mode == PortMode.OUTPUT:
-                        gpos.out_xy = (x, y)
-
-                    group.save_current_position()
-                    break
+                group.save_current_position()
 
         elif action == CallbackAct.GROUP_WRAP:
             group_id, splitted_mode, yesno = args
-
-            for group in self.groups:
-                if group.group_id == group_id:
-                    group.wrap_box(splitted_mode, yesno)
-                    break
+            group = self._groups_by_id.get(group_id)
+            if group is not None:
+                group.wrap_box(splitted_mode, yesno)
 
         elif action == CallbackAct.GROUP_LAYOUT_CHANGE:
             group_id, port_mode, layout_mode = args
-
-            for group in self.groups:
-                if group.group_id == group_id:
-                    group.set_layout_mode(port_mode, layout_mode)
-                    break
+            group = self._groups_by_id.get(group_id)
+            if group is not None:
+                group.set_layout_mode(port_mode, layout_mode)
 
         elif action == CallbackAct.PORTGROUP_ADD:
             g_id, p_mode, p_type, port_ids = args
@@ -238,52 +251,50 @@ class PatchbayManager:
                 port_list.append(port)
 
             portgroup = self.new_portgroup(g_id, p_mode, port_list)
+            group = self._groups_by_id.get(g_id)
+            if group is not None:
+                group.add_portgroup(portgroup)
 
-            for group in self.groups:
-                if group.group_id == g_id:
-                    group.add_portgroup(portgroup)
+                new_portgroup_mem = ray.PortGroupMemory.new_from(
+                    group.name, portgroup.port_type(),
+                    portgroup.port_mode, int(above_metadatas),
+                    *[p.short_name() for p in port_list])
 
-                    new_portgroup_mem = ray.PortGroupMemory.new_from(
-                        group.name, portgroup.port_type(),
-                        portgroup.port_mode, int(above_metadatas),
-                        *[p.short_name() for p in port_list])
+                self.add_portgroup_memory(new_portgroup_mem)
 
-                    self.add_portgroup_memory(new_portgroup_mem)
-
-                    self.send_to_daemon(
-                        '/ray/server/patchbay/save_portgroup',
-                        *new_portgroup_mem.spread())
-                    break
+                self.send_to_daemon(
+                    '/ray/server/patchbay/save_portgroup',
+                    *new_portgroup_mem.spread())
 
             portgroup.add_to_canvas()
 
         elif action == CallbackAct.PORTGROUP_REMOVE:
             group_id, portgroup_id = args
 
-            for group in self.groups:
-                if group.group_id == group_id:
-                    for portgroup in group.portgroups:
-                        if portgroup.portgroup_id == portgroup_id:
-                            for port in portgroup.ports:
-                                # save a fake portgroup with one port only
-                                # it will be considered as a forced mono port
-                                # (no stereo detection)
-                                above_metadatas = bool(port.mdata_portgroup)
+            group = self._groups_by_id.get(group_id)
+            if group is None:
+                return
 
-                                new_portgroup_mem = ray.PortGroupMemory.new_from(
-                                    group.name, portgroup.port_type(),
-                                    portgroup.port_mode, int(above_metadatas),
-                                    port.short_name())
-                                self.add_portgroup_memory(new_portgroup_mem)
+            for portgroup in group.portgroups:
+                if portgroup.portgroup_id == portgroup_id:
+                    for port in portgroup.ports:
+                        # save a fake portgroup with one port only
+                        # it will be considered as a forced mono port
+                        # (no stereo detection)
+                        above_metadatas = bool(port.mdata_portgroup)
 
-                                self.send_to_daemon(
-                                    '/ray/server/patchbay/save_portgroup',
-                                    *new_portgroup_mem.spread())
+                        new_portgroup_mem = ray.PortGroupMemory.new_from(
+                            group.name, portgroup.port_type(),
+                            portgroup.port_mode, int(above_metadatas),
+                            port.short_name())
+                        self.add_portgroup_memory(new_portgroup_mem)
 
-                            portgroup.remove_from_canvas()
-                            group.portgroups.remove(portgroup)
+                        self.send_to_daemon(
+                            '/ray/server/patchbay/save_portgroup',
+                            *new_portgroup_mem.spread())
 
-                            break
+                    portgroup.remove_from_canvas()
+                    group.portgroups.remove(portgroup)
                     break
 
         elif action == CallbackAct.PORT_INFO:
@@ -333,15 +344,16 @@ class PatchbayManager:
         elif action == CallbackAct.CLIENT_SHOW_GUI:
             group_id, int_visible = args
 
-            for group in self.groups:
-                if group.group_id == group_id:
-                    for client in self.session.client_list:
-                        if client.can_be_own_jack_client(group.name):
-                            show = 'show' if int_visible else 'hide'
-                            self.send_to_daemon(
-                                '/ray/client/%s_optional_gui' % show,
-                                client.client_id)
-                            break
+            group = self._groups_by_id.get(group_id)
+            if group is None:
+                return
+
+            for client in self.session.client_list:
+                if client.can_be_own_jack_client(group.name):
+                    show = 'show' if int_visible else 'hide'
+                    self.send_to_daemon(
+                        '/ray/client/%s_optional_gui' % show,
+                        client.client_id)
                     break
         
         elif action == CallbackAct.THEME_CHANGED:
@@ -386,12 +398,12 @@ class PatchbayManager:
         patchcanvas.set_prevent_overlap(yesno)
 
     def toggle_graceful_names(self):
-        PatchbayManager.set_use_graceful_names(not self.use_graceful_names)
-        PatchbayManager.optimize_operation(True)
+        self.set_use_graceful_names(not self.use_graceful_names)
+        self.optimize_operation(True)
         for group in self.groups:
             group.update_ports_in_canvas()
             group.update_name_in_canvas()
-        PatchbayManager.optimize_operation(False)
+        self.optimize_operation(False)
         patchcanvas.redraw_all_groups()
 
     def toggle_full_screen(self):
@@ -402,10 +414,7 @@ class PatchbayManager:
         self.send_to_patchbay_daemon('/ray/patchbay/refresh')
 
     def get_port_from_name(self, port_name: str) -> Port:
-        for group in self.groups:
-            for port in group.ports:
-                if port.full_name == port_name:
-                    return port
+        return self._ports_by_name.get(port_name)
 
     def get_port_from_uuid(self, uuid:int) -> Port:
         for group in self.groups:
@@ -414,34 +423,33 @@ class PatchbayManager:
                     return port
 
     def get_port_from_id(self, group_id: int, port_id: int) -> Port:
-        for group in self.groups:
-            if group.group_id == group_id:
-                for port in group.ports:
-                    if port.port_id == port_id:
-                        return port
-                break
+        group = self._groups_by_id.get(group_id)
+        if group is not None:        
+            for port in group.ports:
+                if port.port_id == port_id:
+                    return port
 
     def get_group_position(self, group_name: str):
         for gpos in self.group_positions:
-            if (gpos.port_types_view == PatchbayManager.port_types_view
+            if (gpos.port_types_view == self.port_types_view
                     and gpos.group_name == group_name):
                 return gpos
 
         # prevent move to a new position in case of port_types_view change
         # if there is no remembered position for this group in new view
-        for group in self.groups:
-            if group.name == group_name:
-                # copy the group_position
-                gpos = ray.GroupPosition.new_from(
-                    *group.current_position.spread())
-                gpos.port_types_view = PatchbayManager.port_types_view
-                self.group_positions.append(gpos)
-                return gpos
+        group = self._groups_by_name.get(group_name)
+        if group is not None:
+            # copy the group_position
+            gpos = ray.GroupPosition.new_from(
+                *group.current_position.spread())
+            gpos.port_types_view = self.port_types_view
+            self.group_positions.append(gpos)
+            return gpos
 
         # group position doesn't already exists, create one
         gpos = ray.GroupPosition()
         gpos.fully_set = False
-        gpos.port_types_view = PatchbayManager.port_types_view
+        gpos.port_types_view = self.port_types_view
         gpos.group_name = group_name
         gpos.null_xy, gpos.in_xy, gpos.out_xy =  \
             patchcanvas.utils.get_new_group_positions()
@@ -500,7 +508,7 @@ class PatchbayManager:
         self.optimize_operation(False)
 
         self.connections.clear()
-        self.groups.clear()
+        self._clear_groups()
 
         patchcanvas.clear()
 
@@ -510,10 +518,10 @@ class PatchbayManager:
         self._next_connection_id = 0
 
     def change_port_types_view(self, port_types_view: int):
-        if port_types_view == PatchbayManager.port_types_view:
+        if port_types_view == self.port_types_view:
             return
 
-        PatchbayManager.port_types_view = port_types_view
+        self.port_types_view = port_types_view
 
         # Prevent visual update at each canvas item creation
         # because we may create a lot of ports here
@@ -530,8 +538,6 @@ class PatchbayManager:
             group.set_group_position(gpos)
 
         for connection in self.connections:
-            #if (not connection.in_canvas
-                    #and port_types_view & connection.port_type()):
             connection.add_to_canvas()
 
         self.optimize_operation(False)
@@ -539,7 +545,7 @@ class PatchbayManager:
         self.session.signaler.port_types_view_changed.emit(
             self.port_types_view)
 
-    def get_json_contents_from_path(self, file_path: str)->dict:
+    def get_json_contents_from_path(self, file_path: str) -> dict:
         if not os.path.exists(file_path):
             return {}
 
@@ -553,22 +559,22 @@ class PatchbayManager:
 
         try:
             new_dict = json.load(file)
+            assert isinstance(new_dict, dict)
         except ImportError:
             return {}
 
         file.close()
         return new_dict
 
-    def client_name_and_uuid(self, client_name: str, uuid: int):
-        for group in self.groups:
-            if group.name == client_name:
-                group.uuid = uuid
-                break
+    def set_group_uuid_from_name(self, client_name: str, uuid: int):
+        group = self._groups_by_name.get(client_name)
+        if group is not None:
+            group.uuid = uuid
 
     def add_port(self, name: str, port_type_int: int, flags: int, uuid: int) -> int:
         ''' adds port and returns the group_id '''
         port_type = PortType.NULL
-        
+
         if port_type_int == PORT_TYPE_AUDIO:
             port_type = PortType.AUDIO_JACK
         elif port_type_int == PORT_TYPE_MIDI:
@@ -608,10 +614,8 @@ class PatchbayManager:
             if port.flags & JackPortFlag.IS_PHYSICAL:
                 is_a2j_group = True
         
-        for group in self.groups:
-            if group.name == group_name:
-                break
-        else:
+        group = self._groups_by_name.get(group_name)
+        if group is None:
             # port is an non existing group, create the group
             gpos = self.get_group_position(group_name)
             group = Group(self, self._next_group_id, group_name, gpos)
@@ -633,7 +637,7 @@ class PatchbayManager:
                     break
 
             self._next_group_id += 1
-            self.groups.append(group)
+            self._add_group(group)
             group_is_new = True
 
         group.add_port(port)
@@ -650,7 +654,8 @@ class PatchbayManager:
         
         return group.group_id
 
-    def remove_port(self, name: str) -> int:
+    def remove_port(self, name: str) -> Union[int, None]:
+        ''' removes a port from name and return the group_id'''
         port = self.get_port_from_name(name)
         if port is None:
             return None
@@ -661,27 +666,29 @@ class PatchbayManager:
                 self.connections.remove(connection)
                 break
 
-        for group in self.groups:
-            if group.group_id == port.group_id:
-                # remove portgroup first if port is in a portgroup
-                if port.portgroup_id:
-                    for portgroup in group.portgroups:
-                        if portgroup.portgroup_id == port.portgroup_id:
-                            group.portgroups.remove(portgroup)
-                            portgroup.remove_from_canvas()
-                            break
+        group = self._groups_by_id.get(port.group_id)
+        if group is None:
+            return None
 
-                port.remove_from_canvas()
-                group.remove_port(port)
+        # remove portgroup first if port is in a portgroup
+        if port.portgroup_id:
+            for portgroup in group.portgroups:
+                if portgroup.portgroup_id == port.portgroup_id:
+                    group.portgroups.remove(portgroup)
+                    portgroup.remove_from_canvas()
+                    break
 
-                if not group.ports:
-                    group.remove_from_canvas()
-                    self.groups.remove(group)
-                    return None
-                
-                return group.group_id
+        port.remove_from_canvas()
+        group.remove_port(port)
 
-    def rename_port(self, name: str, new_name: str):
+        if not group.ports:
+            group.remove_from_canvas()
+            self._remove_group(group)
+            return None
+        
+        return group.group_id
+
+    def rename_port(self, name: str, new_name: str) -> Union[int, None]:
         port = self.get_port_from_name(name)
         if port is None:
             sys.stderr.write(
@@ -695,21 +702,17 @@ class PatchbayManager:
 
         # In case a port rename implies another group for the port
         if group_name != new_group_name:
-            for group in self.groups:
-                if group.name == group_name:
-                    group.remove_port(port)
-                    if not group.ports:
-                        self.groups.remove(group)
-                    break
+            group = self._groups_by_name.get(group_name)
+            if group is not None:
+                group.remove_port(port)
+                if not group.ports:
+                    self._remove_group(group)
 
             port.remove_from_canvas()
             port.full_name = new_name
 
-            for group in self.groups:
-                if group.name == new_group_name:
-                    group.add_port(port)
-                    break
-            else:
+            group = self._groups_by_name.get(new_group_name)
+            if group is None:
                 # copy the group_position to not move the group
                 # because group has been renamed
                 orig_gpos = self.get_group_position(group_name)
@@ -720,22 +723,24 @@ class PatchbayManager:
                 self._next_group_id += 1
                 group.add_port(port)
                 group.add_to_canvas()
+            else:
+                group.add_port(port)
 
             port.add_to_canvas()
             return group.group_id
 
-        for group in self.groups:
-            if group.group_id == port.group_id:
-                # because many ports may be renamed quicky
-                # It is prefferable to rename all theses ports together.
-                # It prevents too much widget update in canvas,
-                # renames now could also prevent to find stereo detected portgroups
-                # if one of the two ports has been renamed and not the other one.
-                port.full_name = new_name
-                group.graceful_port(port)
-                port.rename_in_canvas()
+        group = self._groups_by_id.get(port.group_id)
+        if group is not None:
+            # because many ports may be renamed quicky
+            # It is prefferable to rename all theses ports together.
+            # It prevents too much widget update in canvas,
+            # renames now could also prevent to find stereo detected portgroups
+            # if one of the two ports has been renamed and not the other one.
+            port.full_name = new_name
+            group.graceful_port(port)
+            port.rename_in_canvas()
 
-                return group.group_id
+            return group.group_id
 
     def optional_gui_state_changed(self, client_id: str, visible: bool):
         for client in self.session.client_list:
@@ -787,7 +792,7 @@ class PatchbayManager:
 
     def add_connection(self, port_out_name: str, port_in_name: str):
         port_out = self.get_port_from_name(port_out_name)
-        port_in = self.get_port_from_name(port_in_name)
+        port_in = self.get_port_from_name(port_in_name)  
 
         if port_out is None or port_in is None:
             return
@@ -828,19 +833,17 @@ class PatchbayManager:
             self.group_positions.append(gpos)
 
         if gpos.port_types_view == PatchbayManager.port_types_view:
-            for group in self.groups:
-                if group.name == gpos.group_name:
-                    group.set_group_position(gpos)
-                    break
+            group = self._groups_by_name.get(gpos.group_name)
+            if group is not None:
+                group.set_group_position(gpos)
 
     def update_portgroup(self, *args):
         portgroup_mem = ray.PortGroupMemory.new_from(*args)
         self.add_portgroup_memory(portgroup_mem)
 
-        for group in self.groups:
-            if group.name == portgroup_mem.group_name:
-                group.portgroup_memory_added(portgroup_mem)
-                break
+        group = self._groups_by_name.get(portgroup_mem.group_name)
+        if group is not None:
+            group.portgroup_memory_added(portgroup_mem)
 
     def disannounce(self):
         self.send_to_patchbay_daemon('/ray/patchbay/gui_disannounce')
@@ -885,7 +888,7 @@ class PatchbayManager:
         
         if text.startswith(('cl:', 'client:')):
             client_ids = text.rpartition(':')[2].split(' ')
-            jack_client_names = []
+            jack_client_names = list[str]()
             
             for client in self.session.client_list:
                 if (client.status != ray.ClientStatus.STOPPED
@@ -1068,11 +1071,11 @@ class PatchbayManager:
         # very fast operation means that nothing is done in the patchcanvas
         # everything stays here in this file.
         print('fast tmp file running start', time.time())
-        
+
         if self.group_positions:
             print('on a des group positions')
             self.optimize_operation(True)
-            self.set_very_fast_operation(True)
+            self._set_very_fast_operation(True)
 
         for key in patchbay_data.keys():
             if key == 'ports':
@@ -1088,13 +1091,13 @@ class PatchbayManager:
                         continue
                     self.add_connection(c.get('port_out_name'),
                                         c.get('port_in_name'))
-        
+
         for key in patchbay_data.keys():
             if key == 'clients':
                 for cnu in patchbay_data[key]:
                     if TYPE_CHECKING and not isinstance(cnu, dict):
                         continue
-                    self.client_name_and_uuid(cnu.get('name'), cnu.get('uuid'))
+                    self.set_group_uuid_from_name(cnu.get('name'), cnu.get('uuid'))
                 break
 
         for key in patchbay_data.keys():
@@ -1107,12 +1110,14 @@ class PatchbayManager:
 
         print('tout est rentré', time.time())
 
+        # print('ddk', patchcanvas.canvas.group_list)
+
         for group in self.groups:
             group.sort_ports_in_canvas()
 
         print('les ports sont dans lorde', time.time())
 
-        self.set_very_fast_operation(False)
+        self._set_very_fast_operation(False)
         
         print('tout va rentrer dans le canvas', time.time())
         

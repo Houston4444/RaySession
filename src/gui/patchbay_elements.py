@@ -163,10 +163,7 @@ class Port:
             port_subtype = PortSubType.CV
         if (self.type == PortType.MIDI_JACK
                 and self.full_name.startswith(('a2j:', 'Midi-Bridge:'))):
-            for group in self.manager.groups:
-                if group.group_id == self.group_id:
-                    port_subtype = PortSubType.A2J
-                    break
+            port_subtype = PortSubType.A2J
 
         self.in_canvas = True
 
@@ -470,9 +467,8 @@ class Group:
         self.ports.clear()
 
     def add_port(self, port: Port):
-        port_full_name = port.full_name
-
         port.group_id = self.group_id
+        port_full_name = port.full_name
 
         if (port_full_name.startswith('a2j:')
                 and not port.flags & JackPortFlag.IS_PHYSICAL):
@@ -491,10 +487,14 @@ class Group:
                 self.save_current_position()
 
         self.ports.append(port)
+        self.manager._ports_by_name[port.full_name] = port
 
     def remove_port(self, port: Port):
         if port in self.ports:
             self.ports.remove(port)
+        
+        if self.manager._ports_by_name.get(port.full_name):
+            self.manager._ports_by_name.pop(port.full_name)
 
     def remove_portgroup(self, portgroup: Portgroup):
         if portgroup in self.portgroups:

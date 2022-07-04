@@ -19,6 +19,7 @@
 
 import logging
 import os
+import time
 
 from PyQt5.QtCore import QRectF, QFile
 from PyQt5.QtGui import QPainter, QIcon
@@ -65,8 +66,7 @@ def get_app_icon(icon_name: str) -> QIcon:
 
 class IconPixmapWidget(QGraphicsPixmapItem):
     def __init__(self, icon_type, icon_name, parent):
-        QGraphicsPixmapItem.__init__(self)
-        self.setParentItem(parent)
+        QGraphicsPixmapItem.__init__(self, parent)
 
         self._size = QRectF(0.0, 0.0, 24.0, 24.0)
         self.icon = None
@@ -109,14 +109,12 @@ class IconPixmapWidget(QGraphicsPixmapItem):
 
 class IconSvgWidget(QGraphicsSvgItem):
     def __init__(self, icon_type, name, port_mode, parent):
-        QGraphicsSvgItem.__init__(self)
-        self.setParentItem(parent)
-
-        self.m_renderer = None
+        QGraphicsSvgItem.__init__(self, parent)
+        self._renderer = None
         self._size = QRectF(4, 4, 24, 24)
         self.set_icon(icon_type, name, port_mode)
 
-    def set_icon(self, icon_type: IconType, name, port_mode):
+    def set_icon(self, icon_type: IconType, name: str, port_mode: PortMode):
         name = name.lower()
         icon_path = ""
         theme = canvas.theme.icon
@@ -191,10 +189,10 @@ class IconSvgWidget(QGraphicsSvgItem):
                              " - unsupported icon requested")
             return
 
-        self.m_renderer = QSvgRenderer(icon_path, canvas.scene)
-        self.setSharedRenderer(self.m_renderer)
+        self._renderer = QSvgRenderer(icon_path, canvas.scene)
+        self.setSharedRenderer(self._renderer)
         self.update()
-
+        
     def update_zoom(self, scale: float):
         pass
 
@@ -211,14 +209,14 @@ class IconSvgWidget(QGraphicsSvgItem):
         return self._size
 
     def paint(self, painter, option, widget):
-        if not self.m_renderer:
+        if not self._renderer:
             QGraphicsSvgItem.paint(self, painter, option, widget)
             return
 
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, False)
         painter.setRenderHint(QPainter.TextAntialiasing, False)
-        self.m_renderer.render(painter, self._size)
+        self._renderer.render(painter, self._size)
         painter.restore()
 
 # ------------------------------------------------------------------------------------------------------------

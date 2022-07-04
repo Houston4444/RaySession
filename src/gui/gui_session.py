@@ -484,7 +484,7 @@ class SignaledSession(Session):
         self.patchbay_manager.patchbay_announce(*args)
 
     def _ray_gui_patchbay_client_name_and_uuid(self, path, args):
-        self.patchbay_manager.client_name_and_uuid(*args)
+        self.patchbay_manager.set_group_uuid_from_name(*args)
 
     def _ray_gui_patchbay_port_added(self, path, args):
         self.patchbay_manager.add_order_to_queue(

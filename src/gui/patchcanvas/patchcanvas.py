@@ -300,8 +300,8 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
 
     canvas.last_z_value += 1
     group_box.setZValue(canvas.last_z_value)
-    canvas.add_group(group)   
-    
+    canvas.add_group(group)
+
     if canvas.loading_items:
         return
 
