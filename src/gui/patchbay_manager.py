@@ -5,7 +5,7 @@ import sys
 import time
 from typing import TYPE_CHECKING, Union
 from PyQt5.QtGui import QCursor, QGuiApplication
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QWidget
 from PyQt5.QtCore import QTimer
 
 import ray
@@ -23,9 +23,6 @@ from canvas_options import CanvasOptionsDialog
 
 from patchbay_elements import Connection, Port, Portgroup, Group, JackPortFlag
 from patchbay_calbacker import Callbacker
-
-if TYPE_CHECKING:
-    from gui_session import Session
 
 
 # Group Position Flags
@@ -75,8 +72,7 @@ class PatchbayManager:
     _next_portgroup_id = 1
     orders_queue = list[dict]()
 
-    def __init__(self, session: 'Session'):
-        self.session = session
+    def __init__(self):
         self.callbacker = Callbacker(self)
 
         self._tools_widget = None
@@ -106,11 +102,8 @@ class PatchbayManager:
         self._orders_queue_timer.timeout.connect(
             self._order_queue_timeout)
 
-    def finish_init(self):
-        self.main_win = self.session.main_win
-        self.set_canvas_menu(CanvasMenu(self))
-        self.set_options_dialog(
-            CanvasOptionsDialog(self.main_win, RS.settings))
+    def set_main_win(self, main_win: QWidget):
+        self.main_win = main_win
 
     def set_tools_widget(self, tools_widget: PatchbayToolsWidget):
         self._tools_widget = tools_widget
@@ -230,8 +223,6 @@ class PatchbayManager:
 
     def toggle_full_screen(self):
         self.sg.full_screen_toggle_wanted.emit()
-        # if self.main_win is not None:
-        #     self.main_win.toggle_scene_full_screen()
 
     def refresh(self):
         self.clear_all()
@@ -253,6 +244,12 @@ class PatchbayManager:
                     return port
 
     def save_group_position(self, gpos: ray.GroupPosition):
+        pass
+
+    def get_corrected_a2j_group_name(self, group_name: str) -> str:
+        return group_name
+
+    def set_group_as_nsm_client(self, group: Group):
         pass
 
     def get_group_position(self, group_name: str) -> ray.GroupPosition:
@@ -428,13 +425,7 @@ class PatchbayManager:
                         group_name = group_name.partition(' (playback)')[0]
 
                 # fix a2j wrongly substitute '.' with space
-                for client in self.session.client_list:
-                    if (client.status != ray.ClientStatus.STOPPED
-                            and '.' in client.jack_client_name
-                            and (client.jack_client_name.replace('.', ' ', 1)
-                                 == group_name)):
-                        group_name = group_name.replace(' ', '.' , 1)
-                        break
+                group_name = self.get_corrected_a2j_group_name(group_name)
 
             if port.flags & JackPortFlag.IS_PHYSICAL:
                 is_a2j_group = True
@@ -445,21 +436,7 @@ class PatchbayManager:
             gpos = self.get_group_position(group_name)
             group = Group(self, self._next_group_id, group_name, gpos)
             group.a2j_group = is_a2j_group
-            
-            for client in self.session.client_list:
-                if client.can_be_own_jack_client(group_name):
-                    group.set_client_icon(client.icon)
-                    
-                    # in case of long jack naming (ClientName.ClientId)
-                    # do not display ClientName if we have the icon
-                    if (client.icon
-                            and client.jack_client_name.endswith('.' + client.client_id)
-                            and group.name.startswith(client.jack_client_name)):
-                        group.display_name = group.display_name.partition('.')[2]
-                    
-                    if client.has_gui:
-                        group.set_optional_gui_state(client.gui_state)
-                    break
+            self.set_group_as_nsm_client(group)
 
             self._next_group_id += 1
             self._add_group(group)
@@ -566,14 +543,6 @@ class PatchbayManager:
             port.rename_in_canvas()
 
             return group.group_id
-
-    def optional_gui_state_changed(self, client_id: str, visible: bool):
-        for client in self.session.client_list:
-            if client.client_id == client_id:
-                for group in self.groups:
-                    if client.can_be_own_jack_client(group.name):
-                        group.set_optional_gui_state(visible)
-                break
 
     def metadata_update(self, uuid: int, key: str, value: str) -> int:
         ''' remember metadata and returns the group_id'''
@@ -686,6 +655,7 @@ class PatchbayManager:
     def server_lose(self):
         if self._tools_widget is not None:
             self._tools_widget.set_jack_running(False)
+
         self.clear_all()
 
         if self.main_win is not None:
@@ -713,40 +683,14 @@ class PatchbayManager:
             and returns number of matching boxes '''
         opac_grp_ids = set()
         opac_conn_ids = set()
-        
-        if text.startswith(('cl:', 'client:')):
-            client_ids = text.rpartition(':')[2].split(' ')
-            jack_client_names = list[str]()
-            
-            for client in self.session.client_list:
-                if (client.status != ray.ClientStatus.STOPPED
-                        and client.client_id in client_ids):
-                    jack_client_names.append(client.jack_client_name)
-                    if not client.jack_client_name.endswith('.' + client.client_id):
-                        jack_client_names.append(client.jack_client_name + '.0')
-            
-            for group in self.groups:
-                opac = False
-                for jack_client_name in jack_client_names:
-                    if (group.name == jack_client_name
-                            or group.name.startswith(jack_client_name + '/')
-                            or (group.name.startswith(jack_client_name + ' (')
-                                    and ')' in group.name)):
-                        break
-                else:
-                    opac = True
-                    opac_grp_ids.add(group.group_id)
-                
-                group.semi_hide(opac)
 
-        else:
-            for group in self.groups:
-                opac = bool(text.lower() not in group.name.lower()
-                            and text.lower() not in group.display_name.lower())
-                if opac:
-                    opac_grp_ids.add(group.group_id)
+        for group in self.groups:
+            opac = bool(text.lower() not in group.name.lower()
+                        and text.lower() not in group.display_name.lower())
+            if opac:
+                opac_grp_ids.add(group.group_id)
 
-                group.semi_hide(opac)
+            group.semi_hide(opac)
         
         for conn in self.connections:
             opac_conn = bool(
