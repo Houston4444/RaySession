@@ -1,5 +1,6 @@
 
 from PyQt5.QtWidgets import QFrame
+from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtCore import pyqtSignal, Qt
 
 from gui_tools import RS
@@ -83,9 +84,9 @@ class CanvasFilterFrame(QFrame):
     def _up_down_pressed(self, key: int):
         if not self.ui.toolButtonUp.isEnabled():
             # could be toolButtonDown
-            # they both are enable/disable together
+            # they both are enabled/disabled together
             return
-        
+
         if key == Qt.Key_Up:
             self._up_pressed()
         elif key == Qt.Key_Down:
@@ -141,7 +142,12 @@ class CanvasFilterFrame(QFrame):
         RS.settings.setValue(
             'Canvas/semi_hide_opacity',
             float(self.ui.spinBoxOpacity.value() / 100))
-        
+    
+    def keyPressEvent(self, event: QKeyEvent):
+        super().keyPressEvent(event)
+        if event.key() == Qt.Key_Escape:
+            self.hide()
+            
     def set_patchbay_manager(self, patchbay_manager: PatchbayManager):
         self.patchbay_manager = patchbay_manager
         self.patchbay_manager.session.signaler.port_types_view_changed.connect(
