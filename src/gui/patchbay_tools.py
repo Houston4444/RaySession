@@ -2,13 +2,12 @@
 import os
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import pyqtSignal, QTimer, QLocale, QUrl, Qt
-from PyQt5.QtGui import QIcon, QDesktopServices
-from PyQt5.QtWidgets import QWidget, QComboBox, QMenu, QApplication, QDialog
+from PyQt5.QtCore import pyqtSignal, QTimer, QLocale, QUrl
+from PyQt5.QtGui import QIcon, QDesktopServices, QPalette
+from PyQt5.QtWidgets import QWidget, QMenu, QApplication, QDialog
 
 import patchcanvas
-
-from gui_tools import is_dark_theme, get_code_root
+from patchbay_elements import JackPortFlag, Port
 
 import ui.canvas_port_info
 import ui.patchbay_tools
@@ -25,15 +24,17 @@ PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1
 PORT_TYPE_MIDI = 2
 
-# Port Flags
-PORT_IS_INPUT = 0x01
-PORT_IS_OUTPUT = 0x02
-PORT_IS_PHYSICAL = 0x04
-PORT_CAN_MONITOR = 0x08
-PORT_IS_TERMINAL = 0x10
-PORT_IS_CONTROL_VOLTAGE = 0x100
-
 _translate = QApplication.translate
+
+def is_dark_theme(widget: QWidget) -> bool:
+    return bool(
+        widget.palette().brush(
+            QPalette.Active, QPalette.WindowText).color().lightness()
+        > 128)
+
+def get_code_root() -> str:
+    return os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.realpath(__file__))))
 
 class PatchbayToolsWidget(QWidget):
     buffer_size_change_order = pyqtSignal(int)
@@ -175,7 +176,7 @@ class CanvasMenu(QMenu):
         # fix wrong menu position with Wayland,
         # see https://community.kde.org/Guidelines_and_HOWTOs/Wayland_Porting_Notes
         self.winId()
-        main_win = self.patchbay_manager.session.main_win
+        main_win = self.patchbay_manager.main_win
         main_win.winId()
         parent_window_handle = main_win.windowHandle()
         if not parent_window_handle:
@@ -184,7 +185,7 @@ class CanvasMenu(QMenu):
                 parent_window_handle = native_parent_widget.windowHandle()
         self.windowHandle().setTransientParent(parent_window_handle)
 
-        self.patchbay_manager.session.signaler.port_types_view_changed.connect(
+        self.patchbay_manager.sg.port_types_view_changed.connect(
             self._port_types_view_changed)
 
         self.action_fullscreen = self.addAction(
@@ -317,7 +318,7 @@ class CanvasPortInfoDialog(QDialog):
         self.ui.toolButtonRefresh.clicked.connect(
             self.update_contents)
 
-    def set_port(self, port):
+    def set_port(self, port: Port):
         self._port = port
         self.update_contents()
 
@@ -329,15 +330,15 @@ class CanvasPortInfoDialog(QDialog):
         if self._port.type == PORT_TYPE_MIDI:
             port_type_str = _translate('patchbay', "MIDI")
 
-        flags_list = []
+        flags_list = list[str]()
 
         dict_flag_str = {
-            PORT_IS_INPUT: _translate('patchbay', 'Input'),
-            PORT_IS_OUTPUT: _translate('patchbay', 'Output'),
-            PORT_IS_PHYSICAL: _translate('patchbay', 'Physical'),
-            PORT_CAN_MONITOR: _translate('patchbay', 'Monitor'),
-            PORT_IS_TERMINAL: _translate('patchbay', 'Terminal'),
-            PORT_IS_CONTROL_VOLTAGE: _translate('patchbay', 'Control Voltage')}
+            JackPortFlag.IS_INPUT: _translate('patchbay', 'Input'),
+            JackPortFlag.IS_OUTPUT: _translate('patchbay', 'Output'),
+            JackPortFlag.IS_PHYSICAL: _translate('patchbay', 'Physical'),
+            JackPortFlag.CAN_MONITOR: _translate('patchbay', 'Monitor'),
+            JackPortFlag.IS_TERMINAL: _translate('patchbay', 'Terminal'),
+            JackPortFlag.IS_CONTROL_VOLTAGE: _translate('patchbay', 'Control Voltage')}
 
         for key in dict_flag_str.keys():
             if self._port.flags & key:

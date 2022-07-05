@@ -1,7 +1,7 @@
 
 from PyQt5.QtWidgets import QFrame
 from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtCore import Qt, QSettings
 
 from gui_tools import RS
 from patchcanvas import PortType
@@ -16,6 +16,7 @@ class CanvasFilterFrame(QFrame):
         self.ui = ui.filter_frame.Ui_Frame()
         self.ui.setupUi(self)
 
+        self._settings = None
         self.patchbay_manager = None
         
         self.ui.lineEditGroupFilter.textEdited.connect(self._text_changed)
@@ -34,8 +35,7 @@ class CanvasFilterFrame(QFrame):
         self._n_selected = 0
         self._n_boxes = 0
         
-        self.ui.spinBoxOpacity.setValue(
-            int(RS.settings.value('Canvas/semi_hide_opacity', type=float) * 100))
+        
     
     def _filter_groups(self):
         if self.patchbay_manager is None:
@@ -134,6 +134,7 @@ class CanvasFilterFrame(QFrame):
         self.ui.toolButtonDown.setEnabled(False)
         self.ui.toolButtonUp.setEnabled(False)
         self.ui.labelBoxes.setText('')
+        QFrame.showEvent(self, event)
         
     def hideEvent(self, event):
         self.ui.lineEditGroupFilter.setText('')
@@ -142,6 +143,7 @@ class CanvasFilterFrame(QFrame):
         RS.settings.setValue(
             'Canvas/semi_hide_opacity',
             float(self.ui.spinBoxOpacity.value() / 100))
+        QFrame.hideEvent(self, event)
     
     def keyPressEvent(self, event: QKeyEvent):
         super().keyPressEvent(event)
@@ -150,7 +152,7 @@ class CanvasFilterFrame(QFrame):
             
     def set_patchbay_manager(self, patchbay_manager: PatchbayManager):
         self.patchbay_manager = patchbay_manager
-        self.patchbay_manager.session.signaler.port_types_view_changed.connect(
+        self.patchbay_manager.sg.port_types_view_changed.connect(
             self._port_types_view_changed)
     
     def set_filter_text(self, text: str):
@@ -163,3 +165,7 @@ class CanvasFilterFrame(QFrame):
             self._n_selected = 0
 
         self._filter_groups()
+        
+    def set_opacity(self, opac: float):
+        self.ui.spinBoxOpacity.setValue(
+            int(RS.settings.value('Canvas/semi_hide_opacity', 0.24, type=float) * 100))

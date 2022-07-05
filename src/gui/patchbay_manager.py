@@ -7,11 +7,11 @@ from enum import IntEnum
 from typing import TYPE_CHECKING, Union
 from PyQt5.QtGui import QCursor, QGuiApplication
 from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtCore import QTimer, QPoint
+from PyQt5.QtCore import QTimer, QPoint, pyqtSignal, QObject
 
 import ray
 
-from gui_tools import RS
+from gui_tools import RS, RayIcon, is_dark_theme
 
 import patchcanvas
 from patchcanvas import PortMode, PortType, CallbackAct, EyeCandy, BoxLayoutMode
@@ -50,13 +50,23 @@ JACK_METADATA_SIGNAL_TYPE = _JACK_METADATA_PREFIX + "signal-type"
 
 _translate = QGuiApplication.translate
 
-def enum_to_flag(enum: int) -> int:
-    return 2 ** (enum - 1)
+def enum_to_flag(enum_int: int) -> int:
+    if enum_int <= 0:
+        return 0
+    return 2 ** (enum_int - 1)
+
+# we need a QObject for pyqtSignal 
+class SignalsObject(QObject):
+    port_types_view_changed = pyqtSignal(int)
+
+    def __init__(self):
+        QObject.__init__(self)
 
 
 class Callbacker:
     def __init__(self, manager: 'PatchbayManager'):
         self.mng = manager
+        self.patchcanvas = patchcanvas
     
     def receive(self, action: CallbackAct, args: tuple):
         ''' receives a callback from patchcanvas and execute
@@ -71,18 +81,18 @@ class Callbacker:
     def _group_rename(self, group_id: int):
         pass
     
-    def _group_split(self, group_id: int):
+    def _group_split(self, group_id: int):        
         group = self.mng._groups_by_id.get(group_id)
         if group is not None:
             on_place = not bool(
                 group.current_position.flags & GROUP_HAS_BEEN_SPLITTED)
-            patchcanvas.split_group(group_id, on_place=on_place)
+            self.patchcanvas.split_group(group_id, on_place=on_place)
             group.current_position.flags |= GROUP_SPLITTED
             group.current_position.flags |= GROUP_HAS_BEEN_SPLITTED
             group.save_current_position()
-    
+
     def _group_join(self, group_id: int):
-        patchcanvas.animate_before_join(group_id)
+        self.patchcanvas.animate_before_join(group_id)
     
     def _group_joined(self, group_id: int):
         group = self.mng._groups_by_id.get(group_id)
@@ -169,7 +179,7 @@ class Callbacker:
                 portgroup.remove_from_canvas()
                 group.portgroups.remove(portgroup)
                 break
-        
+
     def _port_info(self, group_id: int, port_id: int):
         port = self.mng.get_port_from_id(group_id, port_id)
         if port is None:
@@ -178,10 +188,10 @@ class Callbacker:
         dialog = CanvasPortInfoDialog(self.mng.session.main_win)
         dialog.set_port(port)
         dialog.show()
-        
+
     def _port_rename(self, group_id: int, port_id: int):
         pass
-    
+
     def _ports_connect(self, group_out_id: int, port_out_id: int,
                        group_in_id: int, port_in_id: int):
         port_out = self.mng.get_port_from_id(group_out_id, port_out_id)
@@ -193,7 +203,7 @@ class Callbacker:
         self.mng.send_to_patchbay_daemon(
             '/ray/patchbay/connect',
             port_out.full_name, port_in.full_name)
-        
+
     def _ports_disconnect(self, connection_id: int):
         for connection in self.mng.connections:
             if connection.connection_id == connection_id:
@@ -202,7 +212,7 @@ class Callbacker:
                     connection.port_out.full_name,
                     connection.port_in.full_name)
                 break
-            
+
     def _bg_right_click(self, x: int, y: int):
         self.mng.canvas_menu.exec(QPoint(x, y))
     
@@ -254,6 +264,8 @@ class PatchbayManager:
         self.tools_widget = PatchbayToolsWidget()
         self.tools_widget.buffer_size_change_order.connect(
             self.change_buffersize)
+        self.main_win = None
+        self.sg = SignalsObject()
 
         self._next_group_id = 0
         self._next_port_id = 0
@@ -280,9 +292,12 @@ class PatchbayManager:
             self._order_queue_timeout)
 
     def finish_init(self):
+        self.main_win = self.session.main_win
         self.canvas_menu = CanvasMenu(self)
         self.options_dialog = canvas_options.CanvasOptionsDialog(
-            self.session.main_win)
+            self.main_win, RS.settings)
+        self.options_dialog.set_user_theme_icon(
+            RayIcon('im-user', is_dark_theme(self.options_dialog)))
         self.options_dialog.gracious_names_checked.connect(
             self.set_graceful_names)
         self.options_dialog.a2j_grouped_checked.connect(
@@ -538,7 +553,7 @@ class PatchbayManager:
 
         self.optimize_operation(False)
         patchcanvas.redraw_all_groups()
-        self.session.signaler.port_types_view_changed.emit(
+        self.sg.port_types_view_changed.emit(
             self.port_types_view)
 
     def get_json_contents_from_path(self, file_path: str) -> dict:
