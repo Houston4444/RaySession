@@ -13,12 +13,13 @@ from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 from gui_tools import (
     RS, RayIcon, CommandLineArgs, _translate, server_status_string,
     is_dark_theme, get_code_root, get_app_icon)
+
 import add_application_dialog
 import open_session_dialog
 import child_dialogs
 import snapshots_dialog
 from gui_server_thread import GuiServerThread
-from patchcanvas import patchcanvas, EyeCandy
+from patchcanvas import patchcanvas
 from utility_scripts import UtilityScriptLauncher
 import ray
 import list_widget_clients
@@ -223,6 +224,8 @@ class MainWindow(QMainWindow):
             self._rename_session_conditionnaly)
         self.ui.frameCurrentSession.frame_resized.connect(
             self._session_frame_resized)
+        self.session.patchbay_manager.sg.full_screen_toggle_wanted.connect(
+            self.toggle_scene_full_screen)
 
         # set session menu
         self._session_menu = QMenu()

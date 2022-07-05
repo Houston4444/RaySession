@@ -14,7 +14,7 @@ from gui_server_thread import GuiServerThread
 from gui_tools import CommandLineArgs, RS, error_text
 from main_window import MainWindow
 from nsm_child import NsmChild, NsmChildOutside
-from patchbay_manager import PatchbayManager
+from patchbay_main_manager import PatchbayMainManager
 
 
 class Session:
@@ -31,7 +31,7 @@ class Session:
         self.is_renameable = True
 
         self.signaler = Signaler()
-        self.patchbay_manager = PatchbayManager(self)
+        self.patchbay_manager = PatchbayMainManager(self)
 
         server = GuiServerThread.instance()
         server.start()

@@ -6,7 +6,7 @@ import time
 from typing import TYPE_CHECKING, Union
 from PyQt5.QtGui import QCursor, QGuiApplication
 from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtCore import QTimer, pyqtSignal, QObject
+from PyQt5.QtCore import QTimer
 
 import ray
 
@@ -15,6 +15,7 @@ from gui_tools import RS, RayIcon, is_dark_theme
 import patchcanvas
 from patchcanvas import PortType, EyeCandy
 from gui_server_thread import GuiServerThread
+from patchbay_signals import SignalsObject
 from patchbay_tools import (PORT_TYPE_AUDIO, PORT_TYPE_MIDI,
                             PatchbayToolsWidget, CanvasMenu)
 
@@ -55,13 +56,6 @@ def enum_to_flag(enum_int: int) -> int:
         return 0
     return 2 ** (enum_int - 1)
 
-# we need a QObject for pyqtSignal 
-class SignalsObject(QObject):
-    port_types_view_changed = pyqtSignal(int)
-
-    def __init__(self):
-        QObject.__init__(self)
-
 
 class PatchbayManager:
     use_graceful_names = True
@@ -85,9 +79,8 @@ class PatchbayManager:
         self.session = session
         self.callbacker = Callbacker(self)
 
-        self.tools_widget = PatchbayToolsWidget()
-        self.tools_widget.buffer_size_change_order.connect(
-            self.change_buffersize)
+        self._tools_widget = None
+        self.set_tools_widget(PatchbayToolsWidget())
         self.main_win = None
         self.sg = SignalsObject()
 
@@ -119,6 +112,11 @@ class PatchbayManager:
         self.set_options_dialog(
             CanvasOptionsDialog(self.main_win, RS.settings))
 
+    def set_tools_widget(self, tools_widget: PatchbayToolsWidget):
+        self._tools_widget = tools_widget
+        self._tools_widget.buffer_size_change_order.connect(
+            self.change_buffersize)
+
     def set_canvas_menu(self, canvas_menu: CanvasMenu):
         self.canvas_menu = canvas_menu
 
@@ -146,24 +144,6 @@ class PatchbayManager:
     @staticmethod
     def save_patchcanvas_cache():
         patchcanvas.save_cache()
-
-    @staticmethod
-    def send_to_patchbay_daemon(*args):
-        server = GuiServerThread.instance()
-        if not server:
-            return
-
-        if server.patchbay_addr is None:
-            return
-
-        server.send(server.patchbay_addr, *args)
-
-    @staticmethod
-    def send_to_daemon(*args):
-        server = GuiServerThread.instance()
-        if not server:
-            return
-        server.to_daemon(*args)
 
     def set_use_graceful_names(self, yesno: bool):
         self.use_graceful_names = yesno
@@ -203,6 +183,9 @@ class PatchbayManager:
         return bool(self.port_types_view & enum_to_flag(port_type))
 
     def show_options_dialog(self):
+        if self.options_dialog is None:
+            return
+        
         self.options_dialog.move(QCursor.pos())
         self.options_dialog.show()
 
@@ -246,11 +229,12 @@ class PatchbayManager:
         patchcanvas.redraw_all_groups()
 
     def toggle_full_screen(self):
-        self.session.main_win.toggle_scene_full_screen()
+        self.sg.full_screen_toggle_wanted.emit()
+        # if self.main_win is not None:
+        #     self.main_win.toggle_scene_full_screen()
 
     def refresh(self):
         self.clear_all()
-        self.send_to_patchbay_daemon('/ray/patchbay/refresh')
 
     def get_port_from_name(self, port_name: str) -> Port:
         return self._ports_by_name.get(port_name)
@@ -268,7 +252,10 @@ class PatchbayManager:
                 if port.port_id == port_id:
                     return port
 
-    def get_group_position(self, group_name: str):
+    def save_group_position(self, gpos: ray.GroupPosition):
+        pass
+
+    def get_group_position(self, group_name: str) -> ray.GroupPosition:
         for gpos in self.group_positions:
             if (gpos.port_types_view == self.port_types_view
                     and gpos.group_name == group_name):
@@ -293,8 +280,7 @@ class PatchbayManager:
         gpos.null_xy, gpos.in_xy, gpos.out_xy =  \
             patchcanvas.utils.get_new_group_positions()
         self.group_positions.append(gpos)
-        self.send_to_daemon(
-            '/ray/server/patchbay/save_group_position', *gpos.spread())
+        self.save_group_position(gpos)
         return gpos
 
     def add_portgroup_memory(self, portgroup_mem):
@@ -589,7 +575,8 @@ class PatchbayManager:
                         group.set_optional_gui_state(visible)
                 break
 
-    def metadata_update(self, uuid: int, key: str, value: str):
+    def metadata_update(self, uuid: int, key: str, value: str) -> int:
+        ''' remember metadata and returns the group_id'''
         if key == JACK_METADATA_ORDER:
             port = self.get_port_from_uuid(uuid)
             if port is None:
@@ -627,7 +614,7 @@ class PatchbayManager:
             for group in self.groups:
                 if group.uuid == uuid:
                     group.set_client_icon(value, from_metadata=True)
-                    break
+                    return group.group_id
 
     def add_connection(self, port_out_name: str, port_in_name: str):
         port_out = self.get_port_from_name(port_out_name)
@@ -685,41 +672,43 @@ class PatchbayManager:
             group.portgroup_memory_added(portgroup_mem)
 
     def disannounce(self):
-        self.send_to_patchbay_daemon('/ray/patchbay/gui_disannounce')
         self.clear_all()
 
     def server_started(self):
-        self.tools_widget.set_jack_running(True)
+        if self._tools_widget is not None:
+            self._tools_widget.set_jack_running(True)
 
     def server_stopped(self):
-        self.tools_widget.set_jack_running(False)
+        if self._tools_widget is not None:
+            self._tools_widget.set_jack_running(False)
         self.clear_all()
 
     def server_lose(self):
-        self.tools_widget.set_jack_running(False)
+        if self._tools_widget is not None:
+            self._tools_widget.set_jack_running(False)
         self.clear_all()
 
-        ret = QMessageBox.critical(
-            self.session.main_win,
-            _translate('patchbay', "JACK server lose"),
-            _translate('patchbay', "JACK server seems to be totally busy... ;("))
+        if self.main_win is not None:
+            ret = QMessageBox.critical(
+                self.main_win,
+                _translate('patchbay', "JACK server lose"),
+                _translate('patchbay', "JACK server seems to be totally busy... ;("))
 
     def set_dsp_load(self, dsp_load: int):
-        self.tools_widget.set_dsp_load(dsp_load)
+        if self._tools_widget is not None:
+            self._tools_widget.set_dsp_load(dsp_load)
 
     def add_xrun(self):
-        self.tools_widget.add_xrun()
+        if self._tools_widget is not None:
+            self._tools_widget.add_xrun()
 
-    def change_buffersize(self, buffer_size):
-        self.send_to_patchbay_daemon('/ray/patchbay/set_buffer_size',
-                                     buffer_size)
+    def change_buffersize(self, buffer_size: int):
+        pass
 
-    def save_group_position(self, group_pos: ray.GroupPosition):
-        self.send_to_daemon(
-            '/ray/server/patchbay/save_group_position',
-            *group_pos.spread())
+    def redraw_all_groups(self):
+        patchcanvas.redraw_all_groups()
 
-    def filter_groups(self, text: str, n_select=0)->int:
+    def filter_groups(self, text: str, n_select=0) -> int:
         ''' semi hides groups not matching with text
             and returns number of matching boxes '''
         opac_grp_ids = set()
@@ -796,11 +785,13 @@ class PatchbayManager:
     def set_semi_hide_opacity(self, opacity: float):
         patchcanvas.set_semi_hide_opacity(opacity)
 
-    def buffer_size_changed(self, buffer_size):
-        self.tools_widget.set_buffer_size(buffer_size)
+    def buffer_size_changed(self, buffer_size: int):
+        if self._tools_widget is not None:
+            self._tools_widget.set_buffer_size(buffer_size)
 
     def sample_rate_changed(self, samplerate):
-        self.tools_widget.set_samplerate(samplerate)
+        if self._tools_widget is not None:
+            self._tools_widget.set_samplerate(samplerate)
 
     def add_order_to_queue(self, order: str, *args):
         self.orders_queue.append({'order': order, 'args': args})
@@ -812,7 +803,6 @@ class PatchbayManager:
         group_ids_to_update = set()
         group_ids_to_sort = set()
         some_groups_removed = False
-        some_ports_removed = False
         
         for order_dict in self.orders_queue:
             order = order_dict['order']
@@ -861,11 +851,6 @@ class PatchbayManager:
 
         if some_groups_removed:
             patchcanvas.canvas.scene.resize_the_scene()
-
-    def receive_big_packets(self, state: int):
-        self.optimize_operation(not bool(state))
-        if state:
-            patchcanvas.redraw_all_groups()
 
     def fast_temp_file_memory(self, temp_path):
         ''' receives a .json file path from daemon with groups positions
@@ -923,7 +908,7 @@ class PatchbayManager:
                         continue
                     self.add_port(p.get('name'), p.get('type'),
                                   p.get('flags'), p.get('uuid'))
-        
+
             elif key == 'connections':
                 for c in patchbay_data[key]:
                     if TYPE_CHECKING and not isinstance(c, dict):
@@ -981,8 +966,13 @@ class PatchbayManager:
 
     def patchbay_announce(self, jack_running: int, samplerate: int,
                           buffer_size: int):
-        self.tools_widget.set_samplerate(samplerate)
-        self.tools_widget.set_buffer_size(buffer_size)
-        self.tools_widget.set_jack_running(jack_running)
-        self.session.main_win.add_patchbay_tools(
-            self.tools_widget, self.canvas_menu)
+        if self._tools_widget is None:
+            return
+        
+        self._tools_widget.set_samplerate(samplerate)
+        self._tools_widget.set_buffer_size(buffer_size)
+        self._tools_widget.set_jack_running(jack_running)
+
+        if self.main_win is not None:
+            self.main_win.add_patchbay_tools(
+                self._tools_widget, self.canvas_menu)
