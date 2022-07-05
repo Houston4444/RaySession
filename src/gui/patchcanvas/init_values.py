@@ -102,7 +102,7 @@ class CallbackAct(IntEnum):
     PLUGIN_SHOW_UI = 19     # plugin_id: int
     INLINE_DISPLAY = 20     # plugin_id: int
     BG_RIGHT_CLICK = 21     # 
-    DOUBLE_CLICK = 22       # 
+    BG_DOUBLE_CLICK = 22       # 
     CLIENT_SHOW_GUI = 23    # group_id: int, visible: bool
     THEME_CHANGED = 24      # theme_name: str
 

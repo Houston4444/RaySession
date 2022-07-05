@@ -708,7 +708,7 @@ class PatchSceneMoth(QGraphicsScene):
                     has_box = isinstance(item, BoxWidget)
             
             if not has_box:
-                canvas.callback(CallbackAct.DOUBLE_CLICK)
+                canvas.callback(CallbackAct.BG_DOUBLE_CLICK)
 
         QGraphicsScene.mouseDoubleClickEvent(self, event)
 

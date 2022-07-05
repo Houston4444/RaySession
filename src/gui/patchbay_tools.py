@@ -1,5 +1,6 @@
 
 import os
+from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import pyqtSignal, QTimer, QLocale, QUrl, Qt
 from PyQt5.QtGui import QIcon, QDesktopServices
@@ -12,6 +13,9 @@ from gui_tools import is_dark_theme, get_code_root
 import ui.canvas_port_info
 import ui.patchbay_tools
 import ui.canvas_port_info
+
+if TYPE_CHECKING:
+    from patchbay_manager import PatchbayManager
 
 GROUP_CONTEXT_AUDIO = 0x01
 GROUP_CONTEXT_MIDI = 0x02
@@ -164,7 +168,7 @@ class PatchbayToolsWidget(QWidget):
 
 
 class CanvasMenu(QMenu):
-    def __init__(self, patchbay_manager):
+    def __init__(self, patchbay_manager: 'PatchbayManager'):
         QMenu.__init__(self, _translate('patchbay', 'Patchbay'))
         self.patchbay_manager = patchbay_manager
 

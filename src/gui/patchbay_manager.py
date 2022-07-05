@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import time
+from enum import IntEnum
 from typing import TYPE_CHECKING, Union
 from PyQt5.QtGui import QCursor, QGuiApplication
 from PyQt5.QtWidgets import QMessageBox
@@ -13,7 +14,7 @@ import ray
 from gui_tools import RS
 
 import patchcanvas
-from patchcanvas import PortMode, PortType, CallbackAct, EyeCandy
+from patchcanvas import PortMode, PortType, CallbackAct, EyeCandy, BoxLayoutMode
 from gui_server_thread import GuiServerThread
 from patchbay_tools import (PORT_TYPE_AUDIO, PORT_TYPE_MIDI, PatchbayToolsWidget,
                             CanvasMenu, CanvasPortInfoDialog)
@@ -53,6 +54,180 @@ def enum_to_flag(enum: int) -> int:
     return 2 ** (enum - 1)
 
 
+class Callbacker:
+    def __init__(self, manager: 'PatchbayManager'):
+        self.mng = manager
+    
+    def receive(self, action: CallbackAct, args: tuple):
+        ''' receives a callback from patchcanvas and execute
+            the function with action name in lowercase.'''
+        func_name = '_' + action.name.lower()
+        if func_name in self.__dir__():
+            self.__getattribute__(func_name)(*args)
+    
+    def _group_info(self, group_id: int):
+        pass
+    
+    def _group_rename(self, group_id: int):
+        pass
+    
+    def _group_split(self, group_id: int):
+        group = self.mng._groups_by_id.get(group_id)
+        if group is not None:
+            on_place = not bool(
+                group.current_position.flags & GROUP_HAS_BEEN_SPLITTED)
+            patchcanvas.split_group(group_id, on_place=on_place)
+            group.current_position.flags |= GROUP_SPLITTED
+            group.current_position.flags |= GROUP_HAS_BEEN_SPLITTED
+            group.save_current_position()
+    
+    def _group_join(self, group_id: int):
+        patchcanvas.animate_before_join(group_id)
+    
+    def _group_joined(self, group_id: int):
+        group = self.mng._groups_by_id.get(group_id)
+        if group is not None:
+            group.current_position.flags &= ~GROUP_SPLITTED
+            group.save_current_position()
+    
+    def _group_move(self, group_id: int, port_mode: PortMode, x: int, y: int):
+        group = self.mng._groups_by_id.get(group_id)
+        if group is not None:
+            gpos = group.current_position
+            if port_mode == PortMode.NULL:
+                gpos.null_xy = (x, y)
+            elif port_mode == PortMode.INPUT:
+                gpos.in_xy = (x, y)
+            elif port_mode == PortMode.OUTPUT:
+                gpos.out_xy = (x, y)
+
+            group.save_current_position()
+    
+    def _group_wrap(self, group_id: int, splitted_mode, yesno: bool):
+        group = self.mng._groups_by_id.get(group_id)
+        if group is not None:
+            group.wrap_box(splitted_mode, yesno)
+    
+    def _group_layout_change(self, group_id: int, port_mode: PortMode,
+                            layout_mode: BoxLayoutMode):
+        group = self.mng._groups_by_id.get(group_id)
+        if group is not None:
+            group.set_layout_mode(port_mode, layout_mode)
+    
+    def _portgroup_add(self, group_id: int, port_mode: PortMode,
+                       port_type: PortType, port_ids: tuple[int]):
+        port_list = list[Port]()
+        above_metadatas = False
+
+        for port_id in port_ids:
+            port = self.mng.get_port_from_id(group_id, port_id)
+            if port.mdata_portgroup:
+                above_metadatas = True
+            port_list.append(port)
+
+        portgroup = self.mng.new_portgroup(group_id, port_mode, port_list)
+        group = self.mng._groups_by_id.get(group_id)
+        if group is not None:
+            group.add_portgroup(portgroup)
+
+            new_portgroup_mem = ray.PortGroupMemory.new_from(
+                group.name, portgroup.port_type(),
+                portgroup.port_mode, int(above_metadatas),
+                *[p.short_name() for p in port_list])
+
+            self.mng.add_portgroup_memory(new_portgroup_mem)
+
+            self.mng.send_to_daemon(
+                '/ray/server/patchbay/save_portgroup',
+                *new_portgroup_mem.spread())
+
+        portgroup.add_to_canvas()
+    
+    def _portgroup_remove(self, group_id: int, portgroup_id: int):
+        group = self.mng._groups_by_id.get(group_id)
+        if group is None:
+            return
+
+        for portgroup in group.portgroups:
+            if portgroup.portgroup_id == portgroup_id:
+                for port in portgroup.ports:
+                    # save a fake portgroup with one port only
+                    # it will be considered as a forced mono port
+                    # (no stereo detection)
+                    above_metadatas = bool(port.mdata_portgroup)
+
+                    new_portgroup_mem = ray.PortGroupMemory.new_from(
+                        group.name, portgroup.port_type(),
+                        portgroup.port_mode, int(above_metadatas),
+                        port.short_name())
+                    self.mng.add_portgroup_memory(new_portgroup_mem)
+
+                    self.mng.send_to_daemon(
+                        '/ray/server/patchbay/save_portgroup',
+                        *new_portgroup_mem.spread())
+
+                portgroup.remove_from_canvas()
+                group.portgroups.remove(portgroup)
+                break
+        
+    def _port_info(self, group_id: int, port_id: int):
+        port = self.mng.get_port_from_id(group_id, port_id)
+        if port is None:
+            return
+
+        dialog = CanvasPortInfoDialog(self.mng.session.main_win)
+        dialog.set_port(port)
+        dialog.show()
+        
+    def _port_rename(self, group_id: int, port_id: int):
+        pass
+    
+    def _ports_connect(self, group_out_id: int, port_out_id: int,
+                       group_in_id: int, port_in_id: int):
+        port_out = self.mng.get_port_from_id(group_out_id, port_out_id)
+        port_in = self.mng.get_port_from_id(group_in_id, port_in_id)
+
+        if port_out is None or port_in is None:
+            return
+
+        self.mng.send_to_patchbay_daemon(
+            '/ray/patchbay/connect',
+            port_out.full_name, port_in.full_name)
+        
+    def _ports_disconnect(self, connection_id: int):
+        for connection in self.mng.connections:
+            if connection.connection_id == connection_id:
+                self.mng.send_to_patchbay_daemon(
+                    '/ray/patchbay/disconnect',
+                    connection.port_out.full_name,
+                    connection.port_in.full_name)
+                break
+            
+    def _bg_right_click(self, x: int, y: int):
+        self.mng.canvas_menu.exec(QPoint(x, y))
+    
+    def _bg_double_click(self):
+        self.mng.toggle_full_screen()
+    
+    def _client_show_gui(self, group_id: int, visible: int):
+        group = self.mng._groups_by_id.get(group_id)
+        if group is None:
+            return
+
+        for client in self.mng.session.client_list:
+            if client.can_be_own_jack_client(group.name):
+                show = 'show' if visible else 'hide'
+                self.mng.send_to_daemon(
+                    '/ray/client/%s_optional_gui' % show,
+                    client.client_id)
+                break
+            
+    def _theme_changed(self, theme_ref: str):
+        if self.mng.options_dialog is not None:
+            self.mng.options_dialog.set_theme(theme_ref)
+
+        self.mng.remove_and_add_all()
+    
 
 class PatchbayManager:
     use_graceful_names = True
@@ -74,6 +249,7 @@ class PatchbayManager:
 
     def __init__(self, session: 'Session'):
         self.session = session
+        self.callbacker = Callbacker(self)
 
         self.tools_widget = PatchbayToolsWidget()
         self.tools_widget.buffer_size_change_order.connect(
@@ -182,186 +358,6 @@ class PatchbayManager:
 
     def port_type_shown(self, port_type: int) -> bool:
         return bool(self.port_types_view & enum_to_flag(port_type))
-
-    def canvas_callbacks(self, action: CallbackAct, args: tuple):
-        if action == CallbackAct.GROUP_INFO:
-            pass
-
-        elif action == CallbackAct.GROUP_RENAME:
-            pass
-
-        elif action == CallbackAct.GROUP_SPLIT:
-            group_id = args[0]
-            group = self._groups_by_id.get(group_id)
-            if group is not None:
-                on_place = not bool(
-                    group.current_position.flags & GROUP_HAS_BEEN_SPLITTED)
-                patchcanvas.split_group(group_id, on_place=on_place)
-                group.current_position.flags |= GROUP_SPLITTED
-                group.current_position.flags |= GROUP_HAS_BEEN_SPLITTED
-                group.save_current_position()
-
-        elif action == CallbackAct.GROUP_JOIN:
-            group_id = args[0]
-            patchcanvas.animate_before_join(group_id)
-
-        elif action == CallbackAct.GROUP_JOINED:
-            group_id = args[0]
-            group = self._groups_by_id.get(group_id)
-            if group is not None:
-                group.current_position.flags &= ~GROUP_SPLITTED
-                group.save_current_position()
-
-        elif action == CallbackAct.GROUP_MOVE:            
-            group_id, port_mode, x, y = args
-            group = self._groups_by_id.get(group_id)
-            if group is not None:
-                gpos = group.current_position
-                if port_mode == PortMode.NULL:
-                    gpos.null_xy = (x, y)
-                elif port_mode == PortMode.INPUT:
-                    gpos.in_xy = (x, y)
-                elif port_mode == PortMode.OUTPUT:
-                    gpos.out_xy = (x, y)
-
-                group.save_current_position()
-
-        elif action == CallbackAct.GROUP_WRAP:
-            group_id, splitted_mode, yesno = args
-            group = self._groups_by_id.get(group_id)
-            if group is not None:
-                group.wrap_box(splitted_mode, yesno)
-
-        elif action == CallbackAct.GROUP_LAYOUT_CHANGE:
-            group_id, port_mode, layout_mode = args
-            group = self._groups_by_id.get(group_id)
-            if group is not None:
-                group.set_layout_mode(port_mode, layout_mode)
-
-        elif action == CallbackAct.PORTGROUP_ADD:
-            g_id, p_mode, p_type, port_ids = args
-
-            port_list = list[Port]()
-            above_metadatas = False
-
-            for port_id in port_ids:
-                port = self.get_port_from_id(g_id, port_id)
-                if port.mdata_portgroup:
-                    above_metadatas = True
-                port_list.append(port)
-
-            portgroup = self.new_portgroup(g_id, p_mode, port_list)
-            group = self._groups_by_id.get(g_id)
-            if group is not None:
-                group.add_portgroup(portgroup)
-
-                new_portgroup_mem = ray.PortGroupMemory.new_from(
-                    group.name, portgroup.port_type(),
-                    portgroup.port_mode, int(above_metadatas),
-                    *[p.short_name() for p in port_list])
-
-                self.add_portgroup_memory(new_portgroup_mem)
-
-                self.send_to_daemon(
-                    '/ray/server/patchbay/save_portgroup',
-                    *new_portgroup_mem.spread())
-
-            portgroup.add_to_canvas()
-
-        elif action == CallbackAct.PORTGROUP_REMOVE:
-            group_id, portgroup_id = args
-
-            group = self._groups_by_id.get(group_id)
-            if group is None:
-                return
-
-            for portgroup in group.portgroups:
-                if portgroup.portgroup_id == portgroup_id:
-                    for port in portgroup.ports:
-                        # save a fake portgroup with one port only
-                        # it will be considered as a forced mono port
-                        # (no stereo detection)
-                        above_metadatas = bool(port.mdata_portgroup)
-
-                        new_portgroup_mem = ray.PortGroupMemory.new_from(
-                            group.name, portgroup.port_type(),
-                            portgroup.port_mode, int(above_metadatas),
-                            port.short_name())
-                        self.add_portgroup_memory(new_portgroup_mem)
-
-                        self.send_to_daemon(
-                            '/ray/server/patchbay/save_portgroup',
-                            *new_portgroup_mem.spread())
-
-                    portgroup.remove_from_canvas()
-                    group.portgroups.remove(portgroup)
-                    break
-
-        elif action == CallbackAct.PORT_INFO:
-            group_id, port_id = args
-
-            port = self.get_port_from_id(group_id, port_id)
-            if port is None:
-                return
-
-            dialog = CanvasPortInfoDialog(self.session.main_win)
-            dialog.set_port(port)
-            dialog.show()
-
-        elif action == CallbackAct.PORT_RENAME:
-            pass
-
-        elif action == CallbackAct.PORTS_CONNECT:
-            g_out, p_out, g_in, p_in = args
-
-            port_out = self.get_port_from_id(g_out, p_out)
-            port_in = self.get_port_from_id(g_in, p_in)
-
-            if port_out is None or port_in is None:
-                return
-
-            self.send_to_patchbay_daemon(
-                '/ray/patchbay/connect',
-                port_out.full_name, port_in.full_name)
-
-        elif action == CallbackAct.PORTS_DISCONNECT:
-            connection_id = args[0]
-            for connection in self.connections:
-                if connection.connection_id == connection_id:
-                    self.send_to_patchbay_daemon(
-                        '/ray/patchbay/disconnect',
-                        connection.port_out.full_name,
-                        connection.port_in.full_name)
-                    break
-
-        elif action == CallbackAct.BG_RIGHT_CLICK:
-            x, y = args
-            self.canvas_menu.exec(QPoint(x, y))
-
-        elif action == CallbackAct.DOUBLE_CLICK:
-            self.toggle_full_screen()
-        
-        elif action == CallbackAct.CLIENT_SHOW_GUI:
-            group_id, int_visible = args
-
-            group = self._groups_by_id.get(group_id)
-            if group is None:
-                return
-
-            for client in self.session.client_list:
-                if client.can_be_own_jack_client(group.name):
-                    show = 'show' if int_visible else 'hide'
-                    self.send_to_daemon(
-                        '/ray/client/%s_optional_gui' % show,
-                        client.client_id)
-                    break
-        
-        elif action == CallbackAct.THEME_CHANGED:
-            theme_ref = args[0]
-            if self.options_dialog is not None:
-                self.options_dialog.set_theme(theme_ref)
-
-            self.remove_and_add_all()
 
     def show_options_dialog(self):
         self.options_dialog.move(QCursor.pos())
@@ -1131,7 +1127,6 @@ class PatchbayManager:
 
         print('sfkddf', time.time())
         self.optimize_operation(False)
-        print('chammpîn')
         patchcanvas.redraw_all_groups()
 
         try:

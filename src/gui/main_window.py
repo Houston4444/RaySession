@@ -277,7 +277,7 @@ class MainWindow(QMainWindow):
         sg.client_properties_state_changed.connect(
             self._client_properties_state_changed)
         sg.canvas_callback.connect(
-            self.session.patchbay_manager.canvas_callbacks)
+            self.session.patchbay_manager.callbacker.receive)
 
         # set spare icons if system icons not avalaible
         dark = is_dark_theme(self)

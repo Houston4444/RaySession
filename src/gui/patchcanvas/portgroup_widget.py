@@ -23,7 +23,7 @@ import logging
 from math import floor
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import QPointF, QRectF, Qt
+from PyQt5.QtCore import QPointF, QRectF, Qt, QTimer
 from PyQt5.QtGui import (QFontMetrics, QPainter, QBrush,
                          QPolygonF, QLinearGradient, QPen, QCursor)
 from PyQt5.QtWidgets import QApplication, QGraphicsItem
@@ -175,7 +175,7 @@ class PortgroupWidget(ConnectableWidget):
 
         return QGraphicsItem.itemChange(self, change, value)
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event):        
         if canvas.scene.get_zoom_scale() <= 0.4:
             # prefer move box if zoom is too low
             event.ignore()
@@ -200,8 +200,8 @@ class PortgroupWidget(ConnectableWidget):
             _translate('patchbay', "Split to Monos"))
         
         self.parentItem().setFlag(QGraphicsItem.ItemIsMovable, False)
-        menu.show()
         
+        menu.show()
         start_point = canvas.scene.screen_position(
             self.scenePos() + QPointF(0.0, self.boundingRect().bottom()))
         bottom_screen = QApplication.desktop().screenGeometry().bottom()
@@ -216,9 +216,9 @@ class PortgroupWidget(ConnectableWidget):
         
         act_selected = menu.exec_(start_point)
         
-        if act_selected == act_x_setasmono:
-            self._split_to_monos()
-
+        if act_selected is act_x_setasmono:
+            QTimer.singleShot(0, self._split_to_monos)
+        
         if act_selected is None:
             canvas.menu_click_pos = QCursor.pos()
         else:

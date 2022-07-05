@@ -770,7 +770,15 @@ class BoxWidgetMoth(QGraphicsItem):
 
         elif act_selected == act_x_split_join:
             if self._splitted:
-                canvas.callback(CallbackAct.GROUP_JOIN, self._group_id)
+                canvas.qobject.groups_to_join.append(self._group_id)
+                group = canvas.get_group(self._group_id)
+                if group is None:
+                    return
+
+                for widget in group.widgets:
+                    canvas.scene.add_box_to_animation(
+                        widget, group.null_pos.x(), group.null_pos.y())
+                # canvas.callback(CallbackAct.GROUP_JOIN, self._group_id)
             else:
                 canvas.callback(CallbackAct.GROUP_SPLIT, self._group_id)
 
