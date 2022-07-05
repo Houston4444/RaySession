@@ -18,7 +18,7 @@ from gui_server_thread import GuiServerThread
 from patchbay_tools import (PORT_TYPE_AUDIO, PORT_TYPE_MIDI,
                             PatchbayToolsWidget, CanvasMenu)
 
-import canvas_options
+from canvas_options import CanvasOptionsDialog
 
 from patchbay_elements import Connection, Port, Portgroup, Group, JackPortFlag
 from patchbay_calbacker import Callbacker
@@ -100,8 +100,6 @@ class PatchbayManager:
         self.group_a2j_hw = RS.settings.value(
             'Canvas/group_a2j_ports', True, type=bool)
 
-        self._wait_join_group_ids = []
-        self.join_animation_connected = False
         self.options_dialog = None
         
         # all patchbay events are delayed
@@ -117,9 +115,15 @@ class PatchbayManager:
 
     def finish_init(self):
         self.main_win = self.session.main_win
-        self.canvas_menu = CanvasMenu(self)
-        self.options_dialog = canvas_options.CanvasOptionsDialog(
-            self.main_win, RS.settings)
+        self.set_canvas_menu(CanvasMenu(self))
+        self.set_options_dialog(
+            CanvasOptionsDialog(self.main_win, RS.settings))
+
+    def set_canvas_menu(self, canvas_menu: CanvasMenu):
+        self.canvas_menu = canvas_menu
+
+    def set_options_dialog(self, options_dialog: CanvasOptionsDialog):
+        self.options_dialog = options_dialog
         self.options_dialog.set_user_theme_icon(
             RayIcon('im-user', is_dark_theme(self.options_dialog)))
         self.options_dialog.gracious_names_checked.connect(
