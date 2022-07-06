@@ -102,10 +102,7 @@ class Callbacker:
                 *[p.short_name() for p in port_list])
 
             self.mng.add_portgroup_memory(new_portgroup_mem)
-
-            self.mng.send_to_daemon(
-                '/ray/server/patchbay/save_portgroup',
-                *new_portgroup_mem.spread())
+            self.mng.save_portgroup_memory(new_portgroup_mem)
 
         portgroup.add_to_canvas()
     
@@ -127,10 +124,7 @@ class Callbacker:
                         portgroup.port_mode, int(above_metadatas),
                         port.short_name())
                     self.mng.add_portgroup_memory(new_portgroup_mem)
-
-                    self.mng.send_to_daemon(
-                        '/ray/server/patchbay/save_portgroup',
-                        *new_portgroup_mem.spread())
+                    self.mng.save_portgroup_memory(new_portgroup_mem)
 
                 portgroup.remove_from_canvas()
                 group.portgroups.remove(portgroup)
@@ -141,52 +135,29 @@ class Callbacker:
         if port is None:
             return
 
-        dialog = CanvasPortInfoDialog(self.mng.session.main_win)
+        dialog = CanvasPortInfoDialog(self.mng.main_win)
         dialog.set_port(port)
         dialog.show()
 
     def _port_rename(self, group_id: int, port_id: int):
         pass
-
+    
     def _ports_connect(self, group_out_id: int, port_out_id: int,
                        group_in_id: int, port_in_id: int):
-        port_out = self.mng.get_port_from_id(group_out_id, port_out_id)
-        port_in = self.mng.get_port_from_id(group_in_id, port_in_id)
-
-        if port_out is None or port_in is None:
-            return
-
-        self.mng.send_to_patchbay_daemon(
-            '/ray/patchbay/connect',
-            port_out.full_name, port_in.full_name)
+        pass
 
     def _ports_disconnect(self, connection_id: int):
-        for connection in self.mng.connections:
-            if connection.connection_id == connection_id:
-                self.mng.send_to_patchbay_daemon(
-                    '/ray/patchbay/disconnect',
-                    connection.port_out.full_name,
-                    connection.port_in.full_name)
-                break
+        pass
 
     def _bg_right_click(self, x: int, y: int):
-        self.mng.canvas_menu.exec(QPoint(x, y))
+        if self.mng.canvas_menu is not None:
+            self.mng.canvas_menu.exec(QPoint(x, y))
     
     def _bg_double_click(self):
-        self.mng.toggle_full_screen()
+        self.mng.sg.full_screen_toggle_wanted.emit()
     
     def _client_show_gui(self, group_id: int, visible: int):
-        group = self.mng._groups_by_id.get(group_id)
-        if group is None:
-            return
-
-        for client in self.mng.session.client_list:
-            if client.can_be_own_jack_client(group.name):
-                show = 'show' if visible else 'hide'
-                self.mng.send_to_daemon(
-                    '/ray/client/%s_optional_gui' % show,
-                    client.client_id)
-                break
+        print('moeoroffo')
             
     def _theme_changed(self, theme_ref: str):
         if self.mng.options_dialog is not None:

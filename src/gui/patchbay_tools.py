@@ -36,6 +36,7 @@ def get_code_root() -> str:
     return os.path.dirname(os.path.dirname(os.path.dirname(
         os.path.realpath(__file__))))
 
+
 class PatchbayToolsWidget(QWidget):
     buffer_size_change_order = pyqtSignal(int)
 
@@ -140,9 +141,9 @@ class PatchbayToolsWidget(QWidget):
             self.ui.comboBoxBuffer.currentData())
 
         # only in the case no set_buffer_size message come back
-        QTimer.singleShot(10000, self.re_enable_buffer_combobox)
+        QTimer.singleShot(10000, self._re_enable_buffer_combobox)
 
-    def re_enable_buffer_combobox(self):
+    def _re_enable_buffer_combobox(self):
         if self._waiting_buffer_change:
             self.set_buffer_size(self.current_buffer_size)
 
@@ -192,7 +193,7 @@ class CanvasMenu(QMenu):
             _translate('patchbay', "Toggle Full Screen"))
         self.action_fullscreen.setIcon(QIcon.fromTheme('view-fullscreen'))
         self.action_fullscreen.triggered.connect(
-            patchbay_manager.toggle_full_screen)
+            patchbay_manager.sg.full_screen_toggle_wanted.emit)
 
         port_types_view = patchbay_manager.port_types_view & (
             GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)

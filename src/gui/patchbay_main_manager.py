@@ -3,20 +3,63 @@ from typing import TYPE_CHECKING
 
 import ray
 from patchbay_manager import PatchbayManager
-from patchbay_elements import Group
+from patchbay_elements import Group, PortMode, PortType
 from gui_server_thread import GuiServerThread
 from gui_tools import RS
 from canvas_options import CanvasOptionsDialog
-from patchbay_tools import CanvasMenu
+from patchbay_tools import CanvasMenu, PatchbayToolsWidget
+from patchbay_calbacker import Callbacker
 
 if TYPE_CHECKING:
     from gui_session import Session
 
 
+class PatchbayMainCallbacker(Callbacker):
+    def __init__(self, manager: 'PatchbayMainManager'):
+        super().__init__(manager)
+        self.mng = manager
+        
+    def _ports_connect(self, group_out_id: int, port_out_id: int,
+                       group_in_id: int, port_in_id: int):
+        port_out = self.mng.get_port_from_id(group_out_id, port_out_id)
+        port_in = self.mng.get_port_from_id(group_in_id, port_in_id)
+
+        if port_out is None or port_in is None:
+            return
+
+        self.mng.send_to_patchbay_daemon(
+            '/ray/patchbay/connect',
+            port_out.full_name, port_in.full_name)
+
+    def _ports_disconnect(self, connection_id: int):
+        for connection in self.mng.connections:
+            if connection.connection_id == connection_id:
+                self.mng.send_to_patchbay_daemon(
+                    '/ray/patchbay/disconnect',
+                    connection.port_out.full_name,
+                    connection.port_in.full_name)
+                break
+
+    def _client_show_gui(self, group_id: int, visible: int):
+        group = self.mng._groups_by_id.get(group_id)
+        if group is None:
+            return
+
+        for client in self.mng.session.client_list:
+            if client.can_be_own_jack_client(group.name):
+                show = 'show' if visible else 'hide'
+                self.mng.send_to_daemon(
+                    '/ray/client/%s_optional_gui' % show,
+                    client.client_id)
+                break
+
+
 class PatchbayMainManager(PatchbayManager):
     def __init__(self, session: 'Session'):
         super().__init__()
+        self.callbacker = PatchbayMainCallbacker(self)
         self.session = session
+        self.set_tools_widget(PatchbayToolsWidget())
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
@@ -50,7 +93,13 @@ class PatchbayMainManager(PatchbayManager):
         super().save_group_position(gpos)
         self.send_to_daemon(
             '/ray/server/patchbay/save_group_position', *gpos.spread())
-        
+    
+    def save_portgroup_memory(self, portgrp_mem: ray.PortGroupMemory):
+        super().save_portgroup_memory(portgrp_mem)
+        self.send_to_daemon(
+            '/ray/server/patchbay/save_portgroup',
+            *portgrp_mem.spread())
+    
     def change_buffersize(self, buffer_size: int):
         super().change_buffersize(buffer_size)
         self.send_to_patchbay_daemon('/ray/patchbay/set_buffer_size',

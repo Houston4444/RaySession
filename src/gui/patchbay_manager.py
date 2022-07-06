@@ -14,7 +14,6 @@ from gui_tools import RS, RayIcon, is_dark_theme
 
 import patchcanvas
 from patchcanvas import PortType, EyeCandy
-from gui_server_thread import GuiServerThread
 from patchbay_signals import SignalsObject
 from patchbay_tools import (PORT_TYPE_AUDIO, PORT_TYPE_MIDI,
                             PatchbayToolsWidget, CanvasMenu)
@@ -76,7 +75,6 @@ class PatchbayManager:
         self.callbacker = Callbacker(self)
 
         self._tools_widget = None
-        self.set_tools_widget(PatchbayToolsWidget())
         self.main_win = None
         self.sg = SignalsObject()
 
@@ -221,9 +219,6 @@ class PatchbayManager:
         self.optimize_operation(False)
         patchcanvas.redraw_all_groups()
 
-    def toggle_full_screen(self):
-        self.sg.full_screen_toggle_wanted.emit()
-
     def refresh(self):
         self.clear_all()
 
@@ -245,6 +240,9 @@ class PatchbayManager:
 
     def save_group_position(self, gpos: ray.GroupPosition):
         pass
+
+    def save_portgroup_memory(self, portgrp_mem: ray.PortGroupMemory):
+        pass    
 
     def get_corrected_a2j_group_name(self, group_name: str) -> str:
         return group_name
