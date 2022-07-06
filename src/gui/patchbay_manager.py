@@ -3,8 +3,11 @@ from typing import TYPE_CHECKING
 
 
 import ray
-from patchbay.patchbay import (PatchbayManager, Group, CanvasOptionsDialog, CanvasMenu,
-                               PatchbayToolsWidget, Callbacker)
+from patchbay.patchbay_manager import PatchbayManager
+from patchbay.patchbay_elements import Group
+from patchbay.canvas_options import CanvasOptionsDialog
+from patchbay.patchbay_tools import PatchbayToolsWidget, CanvasMenu
+from patchbay.patchbay_calbacker import Callbacker
 
 from gui_server_thread import GuiServerThread
 from gui_tools import RS, is_dark_theme, RayIcon
