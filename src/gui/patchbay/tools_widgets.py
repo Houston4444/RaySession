@@ -7,7 +7,7 @@ from PyQt5.QtGui import QIcon, QDesktopServices, QPalette
 from PyQt5.QtWidgets import QWidget, QMenu, QApplication, QDialog
 
 from .patchcanvas import patchcanvas
-from .patchbay_elements import JackPortFlag, Port
+from .base_elements import JackPortFlag, Port
 
 from .ui.canvas_port_info import Ui_Dialog as PortInfoUiDialog
 from .ui.patchbay_tools import Ui_Form as PatchbayToolsUiForm

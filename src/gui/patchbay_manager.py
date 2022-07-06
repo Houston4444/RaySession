@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING
 
 
 from .patchbay.patchbay_manager import PatchbayManager
-from .patchbay.patchbay_elements import Group
-from .patchbay.canvas_options import CanvasOptionsDialog
-from .patchbay.patchbay_tools import PatchbayToolsWidget, CanvasMenu
-from .patchbay.patchbay_calbacker import Callbacker
+from .patchbay.base_elements import Group
+from .patchbay.options_dialog import CanvasOptionsDialog
+from .patchbay.tools_widgets import PatchbayToolsWidget, CanvasMenu
+from .patchbay.calbacker import Callbacker
 
 from . import ray
 from .gui_server_thread import GuiServerThread

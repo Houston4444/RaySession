@@ -8,7 +8,7 @@ from .patchbay_manager import PatchbayManager
 from .ui.filter_frame import Ui_Frame
 
 
-class CanvasFilterFrame(QFrame):
+class FilterFrame(QFrame):
     def __init__(self, parent):
         QFrame.__init__(self, parent)
         self.ui = Ui_Frame()

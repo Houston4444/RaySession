@@ -7,7 +7,7 @@ from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QMouseEvent, QKeyEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
-from .patchbay import canvas_filter_frame
+from .patchbay import filter_frame
 
 
 class RayHackButton(QToolButton):
@@ -429,6 +429,6 @@ class PreviewFrame(QFrame):
         QFrame.__init__(self, parent)
 
 
-class CanvasGroupFilterFrame(canvas_filter_frame.CanvasFilterFrame):
+class CanvasGroupFilterFrame(filter_frame.FilterFrame):
     def __init__(self, parent):
         super().__init__(parent)

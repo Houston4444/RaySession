@@ -10,13 +10,13 @@ from PyQt5.QtCore import QTimer, QSettings
 
 from .patchcanvas import patchcanvas, PortType, EyeCandy
 from .patchbay_signals import SignalsObject
-from .patchbay_tools import (PORT_TYPE_AUDIO, PORT_TYPE_MIDI,
+from .tools_widgets import (PORT_TYPE_AUDIO, PORT_TYPE_MIDI,
                             PatchbayToolsWidget, CanvasMenu)
-from .canvas_options import CanvasOptionsDialog
+from .options_dialog import CanvasOptionsDialog
 
-from .patchbay_elements import (Connection, Port, Portgroup, Group, JackPortFlag,
+from .base_elements import (Connection, Port, Portgroup, Group, JackPortFlag,
                                 GroupPosition, PortGroupMemory)
-from .patchbay_calbacker import Callbacker
+from .calbacker import Callbacker
 
 
 # Group Position Flags

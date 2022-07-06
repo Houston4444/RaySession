@@ -3,8 +3,8 @@ from PyQt5.QtCore import QPoint
 
 from . import patchcanvas
 from .patchcanvas import CallbackAct, PortMode, PortType, BoxLayoutMode
-from .patchbay_elements import Port, PortGroupMemory, GroupPosition
-from .patchbay_tools import CanvasPortInfoDialog
+from .base_elements import Port, PortGroupMemory, GroupPosition
+from .tools_widgets import CanvasPortInfoDialog
 
 if TYPE_CHECKING:
     from .patchbay_manager import PatchbayManager
