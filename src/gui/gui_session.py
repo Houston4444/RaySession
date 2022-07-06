@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QApplication
 
 import ray
 
-from patchcanvas import patchcanvas
+from patchbay import patchcanvas
 from daemon_manager import DaemonManager
 from gui_client import Client, TrashedClient
 from gui_signaler import Signaler

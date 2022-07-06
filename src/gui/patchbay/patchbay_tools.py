@@ -6,15 +6,14 @@ from PyQt5.QtCore import pyqtSignal, QTimer, QLocale, QUrl
 from PyQt5.QtGui import QIcon, QDesktopServices, QPalette
 from PyQt5.QtWidgets import QWidget, QMenu, QApplication, QDialog
 
-import patchcanvas
-from patchbay_elements import JackPortFlag, Port
+from .patchcanvas import patchcanvas
+from .patchbay_elements import JackPortFlag, Port
 
-import ui.canvas_port_info
-import ui.patchbay_tools
-import ui.canvas_port_info
+from .ui.canvas_port_info import Ui_Dialog as PortInfoUiDialog
+from .ui.patchbay_tools import Ui_Form as PatchbayToolsUiForm
 
 if TYPE_CHECKING:
-    from patchbay_manager import PatchbayManager
+    from .patchbay_manager import PatchbayManager
 
 GROUP_CONTEXT_AUDIO = 0x01
 GROUP_CONTEXT_MIDI = 0x02
@@ -42,7 +41,7 @@ class PatchbayToolsWidget(QWidget):
 
     def __init__(self):
         QWidget.__init__(self)
-        self.ui = ui.patchbay_tools.Ui_Form()
+        self.ui = PatchbayToolsUiForm()
         self.ui.setupUi(self)
 
         if is_dark_theme(self):
@@ -312,7 +311,7 @@ class CanvasMenu(QMenu):
 class CanvasPortInfoDialog(QDialog):
     def __init__(self, parent):
         QDialog.__init__(self, parent)
-        self.ui = ui.canvas_port_info.Ui_Dialog()
+        self.ui = PortInfoUiDialog()
         self.ui.setupUi(self)
 
         self._port = None

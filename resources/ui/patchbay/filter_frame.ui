@@ -80,7 +80,7 @@
     </spacer>
    </item>
    <item>
-    <widget class="OpenSessionFilterBar" name="lineEditGroupFilter">
+    <widget class="FilterBar" name="lineEditGroupFilter">
      <property name="placeholderText">
       <string>Find a box...</string>
      </property>
@@ -231,9 +231,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>OpenSessionFilterBar</class>
+   <class>FilterBar</class>
    <extends>QLineEdit</extends>
-   <header>surclassed_widgets</header>
+   <header>..surclassed_widgets</header>
   </customwidget>
  </customwidgets>
  <resources/>

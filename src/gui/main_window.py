@@ -19,13 +19,12 @@ import open_session_dialog
 import child_dialogs
 import snapshots_dialog
 from gui_server_thread import GuiServerThread
-from patchcanvas import patchcanvas
+from patchbay import patchcanvas
 from utility_scripts import UtilityScriptLauncher
 import ray
 import list_widget_clients
 
 import ui.raysession
-import ui.patchbay_tools
 
 if TYPE_CHECKING:
     from gui_session import SignaledSession

@@ -40,18 +40,25 @@ src/gui/resources_rc.py: resources/resources.qrc
 # -----------------------------------------------------------------------------------------------------------------------------------------
 # UI code
 
-UI: mkdir_ui raysession ray_proxy
+UI: mkdir_ui patchbay raysession ray_proxy
 
 mkdir_ui:
 	@if ! [ -e src/gui/ui ];then mkdir -p src/gui/ui; fi
+	@if ! [ -e src/gui/patchbay/ui ];then mkdir -p src/gui/patchbay/ui; fi
+
+patchbay: src/gui/patchbay/ui/canvas_options.py \
+		src/gui/patchbay/ui/canvas_port_info.py \
+		src/gui/patchbay/ui/filter_frame.py \
+		src/gui/patchbay/ui/patchbay_tools.py \
+
+src/gui/patchbay/ui/%.py: resources/ui/patchbay/%.ui
+	$(PYUIC) $< -o $@
 
 raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/abort_session.py \
 	    src/gui/ui/about_raysession.py \
 	    src/gui/ui/add_application.py \
 	    src/gui/ui/ardour_convert.py \
-	    src/gui/ui/canvas_options.py \
-	    src/gui/ui/canvas_port_info.py \
 	    src/gui/ui/client_properties.py \
 	    src/gui/ui/client_rename.py \
 	    src/gui/ui/client_slot.py \
@@ -59,7 +66,6 @@ raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/donations.py \
 	    src/gui/ui/daemon_url.py \
 	    src/gui/ui/error_dialog.py \
-	    src/gui/ui/filter_frame.py \
 	    src/gui/ui/hydro_rh_nsm.py \
 	    src/gui/ui/jack_config_info.py \
 	    src/gui/ui/list_snapshots.py \
@@ -69,7 +75,6 @@ raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/ray_hack_copy.py \
 	    src/gui/ui/nsm_open_info.py \
 	    src/gui/ui/open_session.py \
-	    src/gui/ui/patchbay_tools.py \
 	    src/gui/ui/preview_client_slot.py \
 	    src/gui/ui/quit_app.py \
 	    src/gui/ui/ray_hack_properties.py \

@@ -29,7 +29,7 @@ from PyQt5.QtGui import (QFontMetrics, QPainter, QBrush,
 from PyQt5.QtWidgets import QApplication, QGraphicsItem
 
 # Imports (Custom)
-import patchcanvas.utils as utils
+from .utils import canvas_callback
 from .connectable_widget import ConnectableWidget
 from .init_values import (
     CanvasItemType,
@@ -147,8 +147,8 @@ class PortgroupWidget(ConnectableWidget):
         return self._theme.get_text_width(self._print_name)
 
     def _split_to_monos(self):
-        utils.canvas_callback(CallbackAct.PORTGROUP_REMOVE,
-                              self._group_id, self._portgrp_id)
+        canvas_callback(CallbackAct.PORTGROUP_REMOVE,
+                        self._group_id, self._portgrp_id)
 
     def ensure_selection_with_ports(self):
         for port_widget in self._ports_widgets:

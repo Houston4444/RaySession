@@ -2,13 +2,13 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import QPoint
 
 import ray
-import patchcanvas
-from patchcanvas import CallbackAct, PortMode, PortType, BoxLayoutMode
-from patchbay_elements import Port
-from patchbay_tools import CanvasPortInfoDialog
+from . import patchcanvas
+from .patchcanvas import CallbackAct, PortMode, PortType, BoxLayoutMode
+from .patchbay_elements import Port
+from .patchbay_tools import CanvasPortInfoDialog
 
 if TYPE_CHECKING:
-    from patchbay_manager import PatchbayManager
+    from .patchbay_manager import PatchbayManager
 
 # Group Position Flags
 GROUP_CONTEXT_AUDIO = 0x01

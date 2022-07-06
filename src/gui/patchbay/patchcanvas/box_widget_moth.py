@@ -42,7 +42,7 @@ from .init_values import (
     IconType,
     Direction)
 
-import patchcanvas.utils as utils
+from .utils import canvas_callback, is_dark_theme, get_icon
 from .box_widget_shadow import BoxWidgetShadow
 from .icon_widget import IconSvgWidget, IconPixmapWidget
 from .port_widget import PortWidget
@@ -541,7 +541,7 @@ class BoxWidgetMoth(QGraphicsItem):
                 mode = PortMode.OUTPUT
 
             if wrap:
-                utils.canvas_callback(
+                canvas_callback(
                     CallbackAct.GROUP_WRAP, self._group_id,
                     self._splitted_mode, False)
                 return True
@@ -557,7 +557,7 @@ class BoxWidgetMoth(QGraphicsItem):
                 
             trirect.translate(self.scenePos())
             if trirect.contains(scene_pos):
-                utils.canvas_callback(
+                canvas_callback(
                     CallbackAct.GROUP_WRAP, self._group_id,
                     self._splitted_mode, True)
                 return True
@@ -583,7 +583,7 @@ class BoxWidgetMoth(QGraphicsItem):
         canvas.menu_shown = True
         menu = QMenu()
 
-        dark = '-dark' if utils.is_dark_theme(menu) else ''
+        dark = '-dark' if is_dark_theme(menu) else ''
 
         # Disconnect menu stuff
         discMenu = QMenu(_translate('patchbay', "Disconnect"), menu)
@@ -650,7 +650,7 @@ class BoxWidgetMoth(QGraphicsItem):
 
                     act_x_disc1 = discMenu.addAction(
                         group.group_name + outs_label)
-                    act_x_disc1.setIcon(utils.get_icon(
+                    act_x_disc1.setIcon(get_icon(
                         group.icon_type, group.icon_name, PortMode.OUTPUT))
                     act_x_disc1.setData(
                         disconnect_element.connection_out_ids)
@@ -659,7 +659,7 @@ class BoxWidgetMoth(QGraphicsItem):
 
                     act_x_disc2 = discMenu.addAction(
                         group.group_name + ins_label)
-                    act_x_disc2.setIcon(utils.get_icon(
+                    act_x_disc2.setIcon(get_icon(
                         group.icon_type, group.icon_name, PortMode.INPUT))
                     act_x_disc2.setData(
                         disconnect_element.connection_in_ids)
@@ -673,7 +673,7 @@ class BoxWidgetMoth(QGraphicsItem):
                         port_mode = PortMode.INPUT
 
                     act_x_disc = discMenu.addAction(group.group_name)
-                    icon = utils.get_icon(
+                    icon = get_icon(
                         group.icon_type, group.icon_name, port_mode)
                     act_x_disc.setIcon(icon)
                     act_x_disc.setData(
@@ -940,8 +940,8 @@ class BoxWidgetMoth(QGraphicsItem):
         self.setY(round(self.y()))
 
     def send_move_callback(self):
-        utils.canvas_callback(CallbackAct.GROUP_MOVE, self._group_id,
-                              self._splitted_mode, round(self.x()), round(self.y()))
+        canvas_callback(CallbackAct.GROUP_MOVE, self._group_id,
+                        self._splitted_mode, round(self.x()), round(self.y()))
 
         group = canvas.get_group(self._group_id)
         pos = QPoint(round(self.x()), round(self.y()))

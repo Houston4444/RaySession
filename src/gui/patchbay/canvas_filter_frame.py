@@ -3,17 +3,16 @@ from PyQt5.QtWidgets import QFrame
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtCore import Qt, QSettings
 
-from gui_tools import RS
-from patchcanvas import PortType
+from .patchcanvas import PortType
 
-from patchbay_manager import PatchbayManager
-import ui.filter_frame
+from .patchbay_manager import PatchbayManager
+from .ui.filter_frame import Ui_Frame
 
 
 class CanvasFilterFrame(QFrame):
     def __init__(self, parent):
         QFrame.__init__(self, parent)
-        self.ui = ui.filter_frame.Ui_Frame()
+        self.ui = Ui_Frame()
         self.ui.setupUi(self)
 
         self._settings = None
@@ -35,7 +34,10 @@ class CanvasFilterFrame(QFrame):
         self._n_selected = 0
         self._n_boxes = 0
         
-        
+    def set_settings(self, settings: QSettings):
+        self._settings = settings
+        self.ui.spinBoxOpacity.setValue(
+            int(settings.value('Canvas/semi_hide_opacity', 0.24, type=float) * 100))
     
     def _filter_groups(self):
         if self.patchbay_manager is None:
@@ -140,9 +142,10 @@ class CanvasFilterFrame(QFrame):
         self.ui.lineEditGroupFilter.setText('')
         self._n_selected = 0
         self._filter_groups()
-        RS.settings.setValue(
-            'Canvas/semi_hide_opacity',
-            float(self.ui.spinBoxOpacity.value() / 100))
+        if self._settings is not None:
+            self._settings.setValue(
+                'Canvas/semi_hide_opacity',
+                float(self.ui.spinBoxOpacity.value() / 100))
         QFrame.hideEvent(self, event)
     
     def keyPressEvent(self, event: QKeyEvent):
@@ -165,7 +168,3 @@ class CanvasFilterFrame(QFrame):
             self._n_selected = 0
 
         self._filter_groups()
-        
-    def set_opacity(self, opac: float):
-        self.ui.spinBoxOpacity.setValue(
-            int(RS.settings.value('Canvas/semi_hide_opacity', 0.24, type=float) * 100))

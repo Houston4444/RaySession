@@ -15,7 +15,8 @@ from .init_values import (
     PortType,
     PortSubType,
     IconType)
-import patchcanvas.utils as utils
+
+from .utils import get_portgroup_name_from_ports_names
 from .theme import Theme
 from .box_widget_moth import BoxWidgetMoth, UnwrapButton, TitleLine
 
@@ -76,7 +77,7 @@ class BoxWidget(BoxWidgetMoth):
         self._portgrp_list = list[PortgrpObject]()
 
     def _get_portgroup_name(self, portgrp_id: int):
-        return utils.get_portgroup_name_from_ports_names(
+        return get_portgroup_name_from_ports_names(
             [p.port_name for p in self._port_list
              if p.portgrp_id == portgrp_id])
 

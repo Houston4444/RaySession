@@ -10,16 +10,15 @@ from PyQt5.QtCore import QTimer, QSettings
 
 import ray
 
-import patchcanvas
-from patchcanvas import PortType, EyeCandy
-from patchbay_signals import SignalsObject
-from patchbay_tools import (PORT_TYPE_AUDIO, PORT_TYPE_MIDI,
+from .patchcanvas import patchcanvas
+from .patchcanvas import PortType, EyeCandy
+from .patchbay_signals import SignalsObject
+from .patchbay_tools import (PORT_TYPE_AUDIO, PORT_TYPE_MIDI,
                             PatchbayToolsWidget, CanvasMenu)
+from .canvas_options import CanvasOptionsDialog
 
-from canvas_options import CanvasOptionsDialog
-
-from patchbay_elements import Connection, Port, Portgroup, Group, JackPortFlag
-from patchbay_calbacker import Callbacker
+from .patchbay_elements import Connection, Port, Portgroup, Group, JackPortFlag
+from .patchbay_calbacker import Callbacker
 
 
 # Group Position Flags

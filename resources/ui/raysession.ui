@@ -833,7 +833,7 @@ QToolButton {border: none}</string>
          </widget>
         </item>
         <item>
-         <widget class="CanvasFilterFrame" name="framePatchbayFilters">
+         <widget class="CanvasGroupFilterFrame" name="framePatchbayFilters">
           <property name="styleSheet">
            <string notr="true">QFrame{border:none}</string>
           </property>
@@ -1530,9 +1530,9 @@ QToolButton {border: none}</string>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>CanvasFilterFrame</class>
+   <class>CanvasGroupFilterFrame</class>
    <extends>QFrame</extends>
-   <header>canvas_filter_frame</header>
+   <header>surclassed_widgets</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

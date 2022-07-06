@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (QCheckBox, QFrame, QHBoxLayout, QLabel,
 from PyQt5.QtGui import QPixmap, QColor
 
 
-import patchcanvas.utils as utils
+from .utils import get_group_icon
 from .theme import StyleAttributer
 from .init_values import (
     GroupObject,
@@ -226,7 +226,7 @@ class GroupFrame(QFrame):
         super().__init__(parent)
         self._group = group
         
-        icon = utils.get_group_icon(group.group_id, parent._port_mode)
+        icon = get_group_icon(group.group_id, parent._port_mode)
         self._label_icon = QLabel()
         self._label_icon.setPixmap(icon.pixmap(QSize(16, 16)))
         self._label_group_name = QLabel(group.group_name)

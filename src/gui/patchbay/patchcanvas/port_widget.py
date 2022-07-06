@@ -46,7 +46,7 @@ from .init_values import (
     PortMode,
     PortType)
 
-import patchcanvas.utils as utils
+from .utils import canvas_callback
 from .connectable_widget import ConnectableWidget
 from .connect_menu import ConnectMenu, ConnectableContextMenu
 from .line_widget import LineWidget
@@ -171,7 +171,7 @@ class PortWidget(ConnectableWidget):
         return self._theme.get_text_width(self._print_name)
 
     def set_as_stereo(self, port_id: int):
-        utils.canvas_callback(
+        canvas_callback(
             CallbackAct.PORTGROUP_ADD,
             self._group_id, self._port_mode, self._port_type,
             tuple([p.port_id for p in canvas.list_ports(group_id=self._group_id)

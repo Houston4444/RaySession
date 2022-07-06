@@ -1,12 +1,12 @@
 from enum import IntFlag
 from typing import TYPE_CHECKING, Union
+
 import ray
-import patchcanvas
-from patchcanvas import (PortMode, PortType, IconType, BoxLayoutMode,
-                         BoxSplitMode, PortSubType)
+from .patchcanvas import (patchcanvas, PortMode, PortType, IconType,
+                          BoxLayoutMode, BoxSplitMode, PortSubType)
 
 if TYPE_CHECKING:
-    from patchbay_manager import PatchbayManager
+    from .patchbay_manager import PatchbayManager
 
 # Port Flags as defined by JACK
 class JackPortFlag(IntFlag):

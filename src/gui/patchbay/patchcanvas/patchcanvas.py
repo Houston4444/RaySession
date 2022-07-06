@@ -49,7 +49,7 @@ from .init_values import (
     EyeCandy, # not used here, but can be taken from parent
 )
 
-import patchcanvas.utils as utils
+from .utils import canvas_callback, get_new_group_pos
 from .box_widget import BoxWidget
 from .port_widget import PortWidget
 from .line_widget import LineWidget
@@ -102,7 +102,7 @@ class CanvasObject(QObject):
             if type(connection_id) != int:
                 continue
 
-            utils.canvas_callback(CallbackAct.PORTS_DISCONNECT, connection_id)
+            canvas_callback(CallbackAct.PORTS_DISCONNECT, connection_id)
 
     @pyqtSlot()
     def set_as_stereo_with(self):
@@ -261,7 +261,7 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
 
         if features.handle_group_pos:
             new_pos = _get_stored_canvas_position(
-                group_name + "_OUTPUT", utils.get_new_group_pos(False))
+                group_name + "_OUTPUT", get_new_group_pos(False))
             canvas.scene.add_box_to_animation(group_box, new_pos.x(), new_pos.y())
         else:
             if split_animated:
@@ -276,7 +276,7 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
 
         if features.handle_group_pos:
             new_pos = _get_stored_canvas_position(
-                group_name + "_INPUT", utils.get_new_group_pos(True))
+                group_name + "_INPUT", get_new_group_pos(True))
             canvas.scene.add_box_to_animation(group_sbox, new_pos.x(), new_pos.y())
         else:
             if split_animated:
@@ -292,7 +292,7 @@ def add_group(group_id: int, group_name: str, split=BoxSplitMode.UNDEF,
 
         if features.handle_group_pos:
             group_box.setPos(_get_stored_canvas_position(
-                group_name, utils.get_new_group_pos(False)))
+                group_name, get_new_group_pos(False)))
         else:
             # Special ladish fake-split groups
             group_box.setPos(group.null_pos)
