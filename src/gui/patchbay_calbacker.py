@@ -157,8 +157,8 @@ class Callbacker:
         self.mng.sg.full_screen_toggle_wanted.emit()
     
     def _client_show_gui(self, group_id: int, visible: int):
-        print('moeoroffo')
-            
+        pass
+                    
     def _theme_changed(self, theme_ref: str):
         if self.mng.options_dialog is not None:
             self.mng.options_dialog.set_theme(theme_ref)

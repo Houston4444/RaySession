@@ -6,11 +6,9 @@ import time
 from typing import TYPE_CHECKING, Union
 from PyQt5.QtGui import QCursor, QGuiApplication
 from PyQt5.QtWidgets import QMessageBox, QWidget
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, QSettings
 
 import ray
-
-from gui_tools import RS, RayIcon, is_dark_theme
 
 import patchcanvas
 from patchcanvas import PortType, EyeCandy
@@ -68,27 +66,31 @@ class PatchbayManager:
 
     group_positions = list[ray.GroupPosition]()
     portgroups_memory = list[ray.PortGroupMemory]()
-    _next_portgroup_id = 1
     orders_queue = list[dict]()
 
-    def __init__(self):
+    def __init__(self, settings=None):
         self.callbacker = Callbacker(self)
+        
+        if settings is not None:
+            assert isinstance(settings, QSettings)
+        self._settings = settings
 
-        self._tools_widget = None
         self.main_win = None
+        self._tools_widget = None
+        self.options_dialog = None
+
         self.sg = SignalsObject()
 
         self._next_group_id = 0
         self._next_port_id = 0
         self._next_connection_id = 0
+        self._next_portgroup_id = 1
 
-        self.set_graceful_names(RS.settings.value(
+        self.set_graceful_names(settings.value(
             'Canvas/use_graceful_names', True, type=bool))
-        self.group_a2j_hw = RS.settings.value(
+        self.group_a2j_hw = settings.value(
             'Canvas/group_a2j_ports', True, type=bool)
 
-        self.options_dialog = None
-        
         # all patchbay events are delayed
         # to reduce the patchbay comsumption.
         # Redraws in canvas are made once 50ms have passed without any event.
@@ -113,8 +115,6 @@ class PatchbayManager:
 
     def set_options_dialog(self, options_dialog: CanvasOptionsDialog):
         self.options_dialog = options_dialog
-        self.options_dialog.set_user_theme_icon(
-            RayIcon('im-user', is_dark_theme(self.options_dialog)))
         self.options_dialog.gracious_names_checked.connect(
             self.set_graceful_names)
         self.options_dialog.a2j_grouped_checked.connect(

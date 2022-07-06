@@ -1,11 +1,12 @@
 
 from typing import TYPE_CHECKING
 
+
 import ray
 from patchbay_manager import PatchbayManager
-from patchbay_elements import Group, PortMode, PortType
+from patchbay_elements import Group
 from gui_server_thread import GuiServerThread
-from gui_tools import RS
+from gui_tools import RS, is_dark_theme, RayIcon
 from canvas_options import CanvasOptionsDialog
 from patchbay_tools import CanvasMenu, PatchbayToolsWidget
 from patchbay_calbacker import Callbacker
@@ -56,7 +57,7 @@ class PatchbayMainCallbacker(Callbacker):
 
 class PatchbayMainManager(PatchbayManager):
     def __init__(self, session: 'Session'):
-        super().__init__()
+        super().__init__(RS.settings)
         self.callbacker = PatchbayMainCallbacker(self)
         self.session = session
         self.set_tools_widget(PatchbayToolsWidget())
@@ -224,5 +225,8 @@ class PatchbayMainManager(PatchbayManager):
     def finish_init(self):
         self.set_main_win(self.session.main_win)
         self.set_canvas_menu(CanvasMenu(self))
-        self.set_options_dialog(
-            CanvasOptionsDialog(self.main_win, RS.settings))
+        
+        options_dialog = CanvasOptionsDialog(self.main_win, RS.settings)
+        options_dialog.set_user_theme_icon(
+            RayIcon('im-user', is_dark_theme(options_dialog)))
+        self.set_options_dialog(options_dialog)
