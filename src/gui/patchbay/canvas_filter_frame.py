@@ -4,7 +4,6 @@ from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtCore import Qt, QSettings
 
 from .patchcanvas import PortType
-
 from .patchbay_manager import PatchbayManager
 from .ui.filter_frame import Ui_Frame
 

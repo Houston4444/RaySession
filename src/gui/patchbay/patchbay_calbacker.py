@@ -1,10 +1,9 @@
 from typing import TYPE_CHECKING
 from PyQt5.QtCore import QPoint
 
-from . import ray
 from . import patchcanvas
 from .patchcanvas import CallbackAct, PortMode, PortType, BoxLayoutMode
-from .patchbay_elements import Port
+from .patchbay_elements import Port, PortGroupMemory, GroupPosition
 from .patchbay_tools import CanvasPortInfoDialog
 
 if TYPE_CHECKING:
@@ -96,7 +95,7 @@ class Callbacker:
         if group is not None:
             group.add_portgroup(portgroup)
 
-            new_portgroup_mem = ray.PortGroupMemory.new_from(
+            new_portgroup_mem = PortGroupMemory.new_from(
                 group.name, portgroup.port_type(),
                 portgroup.port_mode, int(above_metadatas),
                 *[p.short_name() for p in port_list])
@@ -119,7 +118,7 @@ class Callbacker:
                     # (no stereo detection)
                     above_metadatas = bool(port.mdata_portgroup)
 
-                    new_portgroup_mem = ray.PortGroupMemory.new_from(
+                    new_portgroup_mem = PortGroupMemory.new_from(
                         group.name, portgroup.port_type(),
                         portgroup.port_mode, int(above_metadatas),
                         port.short_name())

@@ -49,7 +49,6 @@ _translate = QApplication.translate
 
 # -------------------------
 
-
 class PortgroupWidget(ConnectableWidget):
     def __init__(self, portgrp: PortgrpObject, parent: 'BoxWidget'):
         ConnectableWidget.__init__(self, portgrp, parent)

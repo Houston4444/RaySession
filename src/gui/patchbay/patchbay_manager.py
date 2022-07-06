@@ -8,15 +8,14 @@ from PyQt5.QtGui import QCursor, QGuiApplication
 from PyQt5.QtWidgets import QMessageBox, QWidget
 from PyQt5.QtCore import QTimer, QSettings
 
-from . import ray
-from .patchcanvas import patchcanvas
-from .patchcanvas import PortType, EyeCandy
+from .patchcanvas import patchcanvas, PortType, EyeCandy
 from .patchbay_signals import SignalsObject
 from .patchbay_tools import (PORT_TYPE_AUDIO, PORT_TYPE_MIDI,
                             PatchbayToolsWidget, CanvasMenu)
 from .canvas_options import CanvasOptionsDialog
 
-from .patchbay_elements import Connection, Port, Portgroup, Group, JackPortFlag
+from .patchbay_elements import (Connection, Port, Portgroup, Group, JackPortFlag,
+                                GroupPosition, PortGroupMemory)
 from .patchbay_calbacker import Callbacker
 
 
@@ -62,8 +61,8 @@ class PatchbayManager:
     _groups_by_id = dict[int, Group]()
     _ports_by_name = dict[str, Port]()
 
-    group_positions = list[ray.GroupPosition]()
-    portgroups_memory = list[ray.PortGroupMemory]()
+    group_positions = list[GroupPosition]()
+    portgroups_memory = list[PortGroupMemory]()
     orders_queue = list[dict]()
 
     def __init__(self, settings=None):
@@ -236,10 +235,10 @@ class PatchbayManager:
                 if port.port_id == port_id:
                     return port
 
-    def save_group_position(self, gpos: ray.GroupPosition):
+    def save_group_position(self, gpos: GroupPosition):
         pass
 
-    def save_portgroup_memory(self, portgrp_mem: ray.PortGroupMemory):
+    def save_portgroup_memory(self, portgrp_mem: PortGroupMemory):
         pass    
 
     def get_corrected_a2j_group_name(self, group_name: str) -> str:
@@ -248,7 +247,7 @@ class PatchbayManager:
     def set_group_as_nsm_client(self, group: Group):
         pass
 
-    def get_group_position(self, group_name: str) -> ray.GroupPosition:
+    def get_group_position(self, group_name: str) -> GroupPosition:
         for gpos in self.group_positions:
             if (gpos.port_types_view == self.port_types_view
                     and gpos.group_name == group_name):
@@ -259,14 +258,14 @@ class PatchbayManager:
         group = self._groups_by_name.get(group_name)
         if group is not None:
             # copy the group_position
-            gpos = ray.GroupPosition.new_from(
+            gpos = GroupPosition.new_from(
                 *group.current_position.spread())
             gpos.port_types_view = self.port_types_view
             self.group_positions.append(gpos)
             return gpos
 
         # group position doesn't already exists, create one
-        gpos = ray.GroupPosition()
+        gpos = GroupPosition()
         gpos.fully_set = False
         gpos.port_types_view = self.port_types_view
         gpos.group_name = group_name
@@ -514,7 +513,7 @@ class PatchbayManager:
                 # copy the group_position to not move the group
                 # because group has been renamed
                 orig_gpos = self.get_group_position(group_name)
-                gpos = ray.GroupPosition.new_from(*orig_gpos.spread())
+                gpos = GroupPosition.new_from(*orig_gpos.spread())
                 gpos.group_name = new_group_name
 
                 group = Group(self, self._next_group_id, new_group_name, gpos)
@@ -614,7 +613,7 @@ class PatchbayManager:
 
     def update_group_position(self, *args):
         # remember group position and move boxes if needed
-        gpos = ray.GroupPosition.new_from(*args)
+        gpos = GroupPosition.new_from(*args)
 
         for group_position in self.group_positions:
             if (group_position.group_name == gpos.group_name
@@ -629,7 +628,7 @@ class PatchbayManager:
                 group.set_group_position(gpos)
 
     def update_portgroup(self, *args):
-        portgroup_mem = ray.PortGroupMemory.new_from(*args)
+        portgroup_mem = PortGroupMemory.new_from(*args)
         self.add_portgroup_memory(portgroup_mem)
 
         group = self._groups_by_name.get(portgroup_mem.group_name)
@@ -805,13 +804,13 @@ class PatchbayManager:
         for key in canvas_data.keys():
             if key == 'group_positions':
                 for gpos_dict in canvas_data[key]:
-                    gpos = ray.GroupPosition()
+                    gpos = GroupPosition()
                     gpos.write_from_dict(gpos_dict)
                     self.update_group_position(*gpos.spread())
 
             elif key == 'portgroups':
                 for pg_dict in canvas_data[key]:
-                    portgroup_mem = ray.PortGroupMemory()
+                    portgroup_mem = PortGroupMemory()
                     portgroup_mem.write_from_dict(pg_dict)
                     self.update_portgroup(*portgroup_mem.spread())
 

@@ -765,7 +765,7 @@ class GroupPosition:
             
             self.__setattr__(attr, value)
     
-    def is_same(self, other)->bool:
+    def is_same(self, other: 'GroupPosition') -> bool:
         if (self.port_types_view == other.port_types_view
                 and self.group_name == other.group_name):
             return True
@@ -777,7 +777,7 @@ class GroupPosition:
                null_x: int, null_y: int, in_x: int, in_y: int,
                out_x: int, out_y: int, flags: int, layout_mode: int):
         for string in (group_name, null_zone, in_zone, out_zone):
-            if type(string) != str:
+            if not isinstance(string, str):
                 return 
         
         for digit in (port_types_view, null_x, null_y, in_x, in_y,
@@ -806,14 +806,14 @@ class GroupPosition:
         self.flags = int(flags)
         self.layout_mode = int(layout_mode)
         
-    def spread(self)->tuple:
+    def spread(self) -> tuple:
         return (self.port_types_view, self.group_name,
                 self.null_zone, self.in_zone, self.out_zone,
                 self.null_xy[0], self.null_xy[1], self.in_xy[0], self.in_xy[1],
                 self.out_xy[0], self.out_xy[1], self.flags,
                 self.layout_mode)
     
-    def to_dict(self)->dict:
+    def to_dict(self) -> dict:
         new_dict = {}
         
         for attr in self.__dir__():
@@ -856,7 +856,7 @@ class PortGroupMemory:
     group_name = ''
     port_type = 0
     port_mode = 0
-    port_names = []
+    port_names = list[str]()
     above_metadatas = False
     
     @staticmethod
@@ -911,7 +911,7 @@ class PortGroupMemory:
         
         return new_dict
     
-    def has_a_common_port_with(self, other)->bool:
+    def has_a_common_port_with(self, other: 'PortGroupMemory') -> bool:
         if (self.port_type != other.port_type
                 or self.port_mode != other.port_mode
                 or self.group_name != other.group_name):
