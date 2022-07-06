@@ -3,10 +3,10 @@ import sys
 from typing import TYPE_CHECKING
 import liblo
 
-import ray
-from gui_tools import CommandLineArgs
+from .import ray
+from .gui_tools import CommandLineArgs
 if TYPE_CHECKING:
-    from gui_session import SignaledSession
+    from .gui_session import SignaledSession
 
 _instance = None
 

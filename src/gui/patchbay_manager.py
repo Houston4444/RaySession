@@ -2,18 +2,18 @@
 from typing import TYPE_CHECKING
 
 
-import ray
-from patchbay.patchbay_manager import PatchbayManager
-from patchbay.patchbay_elements import Group
-from patchbay.canvas_options import CanvasOptionsDialog
-from patchbay.patchbay_tools import PatchbayToolsWidget, CanvasMenu
-from patchbay.patchbay_calbacker import Callbacker
+from .patchbay.patchbay_manager import PatchbayManager
+from .patchbay.patchbay_elements import Group
+from .patchbay.canvas_options import CanvasOptionsDialog
+from .patchbay.patchbay_tools import PatchbayToolsWidget, CanvasMenu
+from .patchbay.patchbay_calbacker import Callbacker
 
-from gui_server_thread import GuiServerThread
-from gui_tools import RS, is_dark_theme, RayIcon
+from . import ray
+from .gui_server_thread import GuiServerThread
+from .gui_tools import RS, is_dark_theme, RayIcon
 
 if TYPE_CHECKING:
-    from gui_session import Session
+    from .gui_session import Session
 
 
 class PatchbayMainCallbacker(Callbacker):

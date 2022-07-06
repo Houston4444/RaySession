@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 from PyQt5.QtCore import QPoint
 
-import ray
+from . import ray
 from . import patchcanvas
 from .patchcanvas import CallbackAct, PortMode, PortType, BoxLayoutMode
 from .patchbay_elements import Port

@@ -3,9 +3,9 @@ import sys
 from typing import TYPE_CHECKING
 from PyQt5.QtCore import QObject, pyqtSignal
 
-import ray
-from gui_server_thread import GuiServerThread
-from client_properties_dialog import ClientPropertiesDialog
+from . import ray
+from .gui_server_thread import GuiServerThread
+from .client_properties_dialog import ClientPropertiesDialog
 
 if TYPE_CHECKING:
     from gui_session import SignaledSession

@@ -1,3 +1,5 @@
+
+import time
 from PyQt5.QtWidgets import (
     QLineEdit, QStackedWidget, QLabel, QToolButton, QFrame, QGraphicsView,
     QSplitter, QSplitterHandle, QApplication, QDialogButtonBox, QPushButton)
@@ -5,11 +7,8 @@ from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QMouseEvent, QKeyEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
-import time
-import ray
+from .patchbay import canvas_filter_frame
 
-# from .patchbay import CanvasFilterFrame
-from patchbay import canvas_filter_frame
 
 class RayHackButton(QToolButton):
     order_hack_visibility = pyqtSignal(bool)

@@ -5,7 +5,7 @@ from PyQt5.QtCore import QSettings, QSize, QFile
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QIcon, QPixmap, QPalette
 
-import ray
+from . import ray
 
 _translate = QApplication.translate
 

@@ -8,16 +8,13 @@ from PyQt5.QtWidgets import (QApplication, QTreeWidget, QTreeWidgetItem,
 from PyQt5.QtGui import QIcon, QCursor
 from PyQt5.QtCore import Qt, QTimer, QDateTime, QLocale, QPoint
 
-import child_dialogs
-import ray
 
-from gui_tools import CommandLineArgs, RayIcon, is_dark_theme, basename
-from child_dialogs import ChildDialog
-from client_properties_dialog import ClientPropertiesDialog
-from snapshots_dialog import (
+from . import ray, child_dialogs, ui
+from .gui_tools import CommandLineArgs, RayIcon, is_dark_theme, basename
+from .child_dialogs import ChildDialog
+from .client_properties_dialog import ClientPropertiesDialog
+from .snapshots_dialog import (
     Snapshot, SnapGroup, GROUP_MAIN)
-
-import ui.open_session
 
 _translate = QApplication.translate
 

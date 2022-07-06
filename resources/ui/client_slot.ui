@@ -594,12 +594,12 @@ QToolButton {border: none}</string>
   <customwidget>
    <class>StatusBar</class>
    <extends>QLineEdit</extends>
-   <header>surclassed_widgets</header>
+   <header>..surclassed_widgets</header>
   </customwidget>
   <customwidget>
    <class>RayHackButton</class>
    <extends>QToolButton</extends>
-   <header location="global">surclassed_widgets</header>
+   <header location="global">..surclassed_widgets</header>
   </customwidget>
  </customwidgets>
  <resources>

@@ -10,40 +10,13 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QIcon, QPixmap, QGuiApplication
 from PyQt5.QtCore import Qt, QTimer
 
-import client_properties_dialog
-import ray
-from gui_server_thread import GuiServerThread
-from gui_tools import (ErrDaemon, _translate, get_app_icon,
-                       CommandLineArgs, RS, is_dark_theme)
-
-import ui.new_session
-import ui.save_template_session
-import ui.nsm_open_info
-import ui.abort_session
-import ui.about_raysession
-import ui.donations
-import ui.jack_config_info
-import ui.new_executable
-import ui.error_dialog
-import ui.quit_app
-import ui.script_info
-import ui.script_user_action
-import ui.session_notes
-import ui.session_scripts_info
-import ui.stop_client
-import ui.stop_client_no_save
-import ui.abort_copy
-import ui.client_trash
-import ui.daemon_url
-import ui.snapshot_progress
-import ui.waiting_close_user
-import ui.client_rename
-import ui.startup_dialog
-import ui.systray_close
-import ui.systray_management
-
+from . import ray, client_properties_dialog, ui
+from .gui_server_thread import GuiServerThread
+from .gui_tools import (ErrDaemon, _translate, get_app_icon,
+                        CommandLineArgs, RS, is_dark_theme)
 if TYPE_CHECKING:
-    from main_window import MainWindow
+    from .main_window import MainWindow
+
 
 class ChildDialog(QDialog):
     def __init__(self, parent: 'MainWindow'):

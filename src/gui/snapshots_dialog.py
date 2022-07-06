@@ -1,12 +1,12 @@
+
 from PyQt5.QtCore import Qt, QDateTime, QDate
 from PyQt5.QtWidgets import QDialogButtonBox, QTreeWidgetItem
 
-from child_dialogs import ChildDialog
-from gui_tools import _translate, RS
+from . import ui
+from .child_dialogs import ChildDialog
+from .gui_tools import _translate, RS
 
-import ui.list_snapshots
-import ui.snapshot_name
-import ui.snapshots_info
+
 
 GROUP_ELEMENT = 0
 GROUP_DAY = 1

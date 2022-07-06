@@ -32,9 +32,9 @@ all: RES UI LOCALE
 # -----------------------------------------------------------------------------------------------------------------------------------------
 # Resources
 
-RES: src/gui/resources_rc.py
+RES: src/resources_rc.py
 
-src/gui/resources_rc.py: resources/resources.qrc
+src/resources_rc.py: resources/resources.qrc
 	$(PYRCC) $< -o $@
 
 # -----------------------------------------------------------------------------------------------------------------------------------------

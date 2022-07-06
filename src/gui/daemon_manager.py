@@ -8,12 +8,12 @@ from PyQt5.QtCore import QObject, QProcess, QTimer
 from PyQt5.QtWidgets import QApplication
 from liblo import Address
 
-import ray
-from gui_server_thread import GuiServerThread
-from gui_tools import CommandLineArgs, ErrDaemon, _translate
+from . import ray
+from .gui_server_thread import GuiServerThread
+from .gui_tools import CommandLineArgs, ErrDaemon, _translate
 
 if TYPE_CHECKING:
-    from gui_session import SignaledSession
+    from .gui_session import SignaledSession
 
 
 class DaemonManager(QObject):

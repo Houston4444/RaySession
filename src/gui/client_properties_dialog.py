@@ -5,16 +5,10 @@ import time
 from PyQt5.QtCore import QTimer, QFile
 from PyQt5.QtWidgets import QFileDialog, QFrame
 
-import ray
+from . import ray, ui
 
-from gui_tools import _translate, client_status_string, get_app_icon
-from child_dialogs import ChildDialog
-
-import ui.ray_hack_copy
-import ui.client_properties
-import ui.nsm_properties
-import ui.ray_hack_properties
-import ui.ray_net_properties
+from .gui_tools import _translate, client_status_string, get_app_icon
+from .child_dialogs import ChildDialog
 
 class RayHackCopyDialog(ChildDialog):
     def __init__(self, parent):

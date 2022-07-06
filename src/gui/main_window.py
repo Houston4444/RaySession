@@ -10,24 +10,26 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
 from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics, QKeySequence
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
-from gui_tools import (
+
+from . import(
+    ray,
+    ui,
+    add_application_dialog,
+    open_session_dialog,
+    child_dialogs,
+    snapshots_dialog,
+    list_widget_clients)
+from .gui_tools import (
     RS, RayIcon, CommandLineArgs, _translate, server_status_string,
     is_dark_theme, get_code_root, get_app_icon)
+from .gui_server_thread import GuiServerThread
+from .patchbay import patchcanvas
+from .utility_scripts import UtilityScriptLauncher
 
-import add_application_dialog
-import open_session_dialog
-import child_dialogs
-import snapshots_dialog
-from gui_server_thread import GuiServerThread
-from patchbay import patchcanvas
-from utility_scripts import UtilityScriptLauncher
-import ray
-import list_widget_clients
 
-import ui.raysession
 
 if TYPE_CHECKING:
-    from gui_session import SignaledSession
+    from .gui_session import SignaledSession
 
 UI_PATCHBAY_UNDEF = 0
 UI_PATCHBAY_HIDDEN = 1

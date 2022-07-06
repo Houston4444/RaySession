@@ -8,8 +8,7 @@ from PyQt5.QtGui import QCursor, QGuiApplication
 from PyQt5.QtWidgets import QMessageBox, QWidget
 from PyQt5.QtCore import QTimer, QSettings
 
-import ray
-
+from . import ray
 from .patchcanvas import patchcanvas
 from .patchcanvas import PortType, EyeCandy
 from .patchbay_signals import SignalsObject
