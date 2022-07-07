@@ -4,11 +4,11 @@ import time
 import os
 import sys
 
-from gui.patchbay.patchcanvas.init_values import BoxLayoutMode, PortMode
-
+from gui.patchbay.patchcanvas.init_values import PortType
 
 from .patchbay.patchbay_manager import PatchbayManager
-from .patchbay.base_elements import Group, GroupPos
+from .patchbay.base_elements import (Group, GroupPos, PortgroupMem,
+                                     PortMode, BoxLayoutMode)
 from .patchbay.options_dialog import CanvasOptionsDialog
 from .patchbay.tools_widgets import PatchbayToolsWidget, CanvasMenu
 from .patchbay.calbacker import Callbacker
@@ -55,6 +55,31 @@ def convert_group_pos_from_patchbay_to_ray(
     ray_gpos.fully_set = gpos.fully_set
 
     return ray_gpos
+
+def convert_portgrp_mem_from_ray_to_patchbay(
+        ray_pgmem: ray.PortGroupMemory) -> PortgroupMem:
+    pgmem = PortgroupMem()
+    pgmem.group_name = ray_pgmem.group_name
+    try:
+        pgmem.port_mode = PortMode(ray_pgmem.port_mode)
+    except ValueError:
+        pgmem.port_mode = PortMode.NULL
+
+    try:
+        pgmem.port_type = PortType(ray_pgmem.port_type)
+    except ValueError:
+        pgmem.port_type = PortType.NULL
+    
+    pgmem.above_metadatas = bool(ray_pgmem.above_metadatas) 
+    # TODO, see if copy is required, probably not
+    pgmem.port_names = ray_pgmem.port_names
+    return pgmem
+
+def convert_portgrp_mem_from_patchbay_to_ray(
+        pgmem: PortgroupMem) -> ray.PortGroupMemory:
+    return ray.PortGroupMemory.new_from(
+        pgmem.group_name, pgmem.port_type.value, pgmem.port_mode.value,
+        int(pgmem.above_metadatas), *pgmem.port_names)
 
 
 class RayPatchbayCallbacker(Callbacker):
@@ -134,23 +159,22 @@ class RayPatchbayManager(PatchbayManager):
     
     def save_group_position(self, gpos: GroupPos):
         super().save_group_position(gpos)
-        print('saveut', gpos.in_xy)
         ray_gpos = convert_group_pos_from_patchbay_to_ray(gpos)
-        print('aoksoa', ray_gpos.in_xy)
         self.send_to_daemon(
             '/ray/server/patchbay/save_group_position', *ray_gpos.spread())
-    
-    def save_portgroup_memory(self, portgrp_mem: ray.PortGroupMemory):
+
+    def save_portgroup_memory(self, portgrp_mem: PortgroupMem):
         super().save_portgroup_memory(portgrp_mem)
+        ray_pgmem = convert_portgrp_mem_from_patchbay_to_ray(portgrp_mem)
         self.send_to_daemon(
             '/ray/server/patchbay/save_portgroup',
-            *portgrp_mem.spread())
-    
+            *ray_pgmem.spread())
+
     def change_buffersize(self, buffer_size: int):
         super().change_buffersize(buffer_size)
         self.send_to_patchbay_daemon('/ray/patchbay/set_buffer_size',
                                      buffer_size)
-    
+
     def filter_groups(self, text: str, n_select=0) -> int:
         ''' semi hides groups not matching with text
             and returns number of matching boxes '''
@@ -232,7 +256,7 @@ class RayPatchbayManager(PatchbayManager):
                     and '.' in client.jack_client_name
                     and (client.jack_client_name.replace('.', ' ', 1)
                             == group_name)):
-                return group_name.replace(' ', '.' , 1)
+                return client.jack_client_name
         
         return group_name
     
@@ -274,12 +298,13 @@ class RayPatchbayManager(PatchbayManager):
                 group.set_group_position(gpos)
 
     def update_portgroup(self, *args):
-        portgroup_mem = ray.PortGroupMemory.new_from(*args)
-        self.add_portgroup_memory(portgroup_mem)
+        ray_pgmem = ray.PortGroupMemory.new_from(*args)
+        pg_mem = convert_portgrp_mem_from_ray_to_patchbay(ray_pgmem)
+        self.add_portgroup_memory(pg_mem)
 
-        group = self._groups_by_name.get(portgroup_mem.group_name)
+        group = self._groups_by_name.get(pg_mem.group_name)
         if group is not None:
-            group.portgroup_memory_added(portgroup_mem)
+            group.portgroup_memory_added(pg_mem)
     
     def optional_gui_state_changed(self, client_id: str, visible: bool):
         for client in self.session.client_list:

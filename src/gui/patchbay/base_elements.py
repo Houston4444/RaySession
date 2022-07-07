@@ -32,32 +32,23 @@ def enum_to_flag(enum: int) -> int:
 
 
 class GroupPos:
-    port_types_view: int
-    group_name: str
-    null_zone: str
-    in_zone: str
-    out_zone: str
+    port_types_view: int = 0
+    group_name: str = ""
+    null_zone: str = ""
+    in_zone: str = ""
+    out_zone: str = ""
     null_xy: tuple[int, int]
     in_xy: tuple[int, int]
     out_xy: tuple[int, int]
-    flags: int
-    layout_mode: int
+    flags: int = 0
     layout_modes: dict[PortMode, BoxLayoutMode]
-    fully_set: bool
+    fully_set: bool = False
     
     def __init__(self):
-        self.port_types_view = 0
-        self.group_name = ''
-        self.null_zone = ''
-        self.in_zone = ''
-        self.out_zone = ''
         self.null_xy = (0, 0)
         self.in_xy = (0, 0)
         self.out_xy = (0, 0)
-        self.flags = 0
-        self.layout_mode = 0
         self.layout_modes = dict[PortMode, BoxLayoutMode]()
-        self.fully_set = False
     
     def copy(self) -> 'GroupPos':
         group_pos = GroupPos()
@@ -76,68 +67,19 @@ class GroupPos:
         return BoxLayoutMode.AUTO
 
 
-class PortGroupMemory:
-    group_name = ''
-    port_type = 0
-    port_mode = 0
-    port_names = list[str]()
-    above_metadatas = False
+class PortgroupMem:
+    group_name: str = ""
+    port_type: PortType = PortType.NULL
+    port_mode: PortMode = PortMode.NULL
+    port_names: list[str]
+    above_metadatas: bool = False
     
-    @staticmethod
-    def get_attributes():
-        return ('group_name', 'port_type', 'port_mode',
-                'above_metadatas', 'port_names')
-    
-    @staticmethod
-    def new_from(*args):
-        portgrp_memory = PortGroupMemory()
-        portgrp_memory.update(*args)
-        return portgrp_memory
-    
-    def write_from_dict(self, input_dict: dict):
-        for attr in input_dict:
-            if not attr in self.get_attributes():
-                sys.stderr.write(
-                    'PortGroupMemory has no attribute %s\n' % attr)
-                continue
+    def __init__(self):
+        self.port_names = list[str]()
 
-            value = input_dict[attr]
-            attr_type = type(value)
-            if value == 'group_name' and attr_type != str:
-                continue
-            if value in ('port_type', 'port_mode') and attr_type != int:
-                continue
-            if value == 'above_metadatas' and attr_type != bool:
-                continue
-            if value == 'port_names' and attr_type not in (tuple, list):
-                continue
-
-            self.__setattr__(attr, value)
-    
-    def update(self, group_name: str, port_type: int, port_mode: int,
-               above_metadatas: int, *port_names):
-        self.group_name = group_name
-        self.port_type = port_type
-        self.port_mode = port_mode
-        self.above_metadatas = bool(above_metadatas)
-        self.port_names = port_names
-    
-    def spread(self)->tuple:
-        return (self.group_name, self.port_type, self.port_mode,
-                int(self.above_metadatas), *self.port_names)
-    
-    def to_dict(self)->dict:
-        new_dict = {}
-        
-        for attr in self.__dir__():
-            if attr in self.get_attributes():
-                new_dict[attr] = self.__getattribute__(attr)
-        
-        return new_dict
-    
-    def has_a_common_port_with(self, other: 'PortGroupMemory') -> bool:
-        if (self.port_type != other.port_type
-                or self.port_mode != other.port_mode
+    def has_a_common_port_with(self, other: 'PortgroupMem') -> bool:
+        if (self.port_type is not other.port_type
+                or self.port_mode is not other.port_mode
                 or self.group_name != other.group_name):
             return False
         
@@ -342,7 +284,7 @@ class Portgroup:
     # Portgroup is a stereo pair of ports
     # but could be a group of more ports
     def __init__(self, manager: 'PatchbayManager', group_id: int,
-                 portgroup_id: int, port_mode: int, ports: tuple[Port]):
+                 portgroup_id: int, port_mode: PortMode, ports: tuple[Port]):
         self.manager = manager
         self.group_id = group_id
         self.portgroup_id = portgroup_id
@@ -621,7 +563,7 @@ class Group:
                 port.portgroup_id = 0
             self.portgroups.remove(portgroup)
 
-    def portgroup_memory_added(self, portgroup_mem: PortGroupMemory):
+    def portgroup_memory_added(self, portgroup_mem: PortgroupMem):
         if portgroup_mem.group_name != self.name:
             return
 
@@ -691,9 +633,9 @@ class Group:
             patchcanvas.animate_before_join(self.group_id)
 
     def set_layout_mode(self, port_mode: PortMode, layout_mode: BoxLayoutMode):
-        self.current_position.set_layout_mode(port_mode.value, layout_mode.value)
+        self.current_position.set_layout_mode(port_mode, layout_mode)
         self.save_current_position()
-        
+
         if not self.in_canvas:
             return
         

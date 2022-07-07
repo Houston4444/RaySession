@@ -3,7 +3,7 @@ from PyQt5.QtCore import QPoint
 
 from . import patchcanvas
 from .patchcanvas import CallbackAct, PortMode, PortType, BoxLayoutMode
-from .base_elements import Port, PortGroupMemory, GroupPosFlag
+from .base_elements import Port, GroupPosFlag, PortgroupMem
 from .tools_widgets import CanvasPortInfoDialog
 
 if TYPE_CHECKING:
@@ -86,16 +86,20 @@ class Callbacker:
 
         portgroup = self.mng.new_portgroup(group_id, port_mode, port_list)
         group = self.mng._groups_by_id.get(group_id)
-        if group is not None:
-            group.add_portgroup(portgroup)
+        if group is None:
+            return
 
-            new_portgroup_mem = PortGroupMemory.new_from(
-                group.name, portgroup.port_type(),
-                portgroup.port_mode, int(above_metadatas),
-                *[p.short_name() for p in port_list])
+        group.add_portgroup(portgroup)
 
-            self.mng.add_portgroup_memory(new_portgroup_mem)
-            self.mng.save_portgroup_memory(new_portgroup_mem)
+        pg_mem = PortgroupMem()
+        pg_mem.group_name = group.name
+        pg_mem.port_type = portgroup.port_type()
+        pg_mem.port_mode = portgroup.port_mode
+        pg_mem.above_metadatas = above_metadatas
+        pg_mem.port_names = [p.short_name() for p in port_list]
+
+        self.mng.add_portgroup_memory(pg_mem)
+        self.mng.save_portgroup_memory(pg_mem)
 
         portgroup.add_to_canvas()
     
@@ -110,17 +114,16 @@ class Callbacker:
                     # save a fake portgroup with one port only
                     # it will be considered as a forced mono port
                     # (no stereo detection)
-                    above_metadatas = bool(port.mdata_portgroup)
+                    pg_mem = PortgroupMem()
+                    pg_mem.group_name = group.name
+                    pg_mem.port_type = port.type
+                    pg_mem.port_mode = portgroup.port_mode
+                    pg_mem.above_metadatas = bool(port.mdata_portgroup)
+                    pg_mem.port_names = [port.short_name()]
+                    self.mng.add_portgroup_memory(pg_mem)
+                    self.mng.save_portgroup_memory(pg_mem)
 
-                    new_portgroup_mem = PortGroupMemory.new_from(
-                        group.name, portgroup.port_type(),
-                        portgroup.port_mode, int(above_metadatas),
-                        port.short_name())
-                    self.mng.add_portgroup_memory(new_portgroup_mem)
-                    self.mng.save_portgroup_memory(new_portgroup_mem)
-
-                portgroup.remove_from_canvas()
-                group.portgroups.remove(portgroup)
+                group.remove_portgroup(portgroup)
                 break
 
     def _port_info(self, group_id: int, port_id: int):

@@ -15,8 +15,8 @@ from .tools_widgets import (PORT_TYPE_AUDIO, PORT_TYPE_MIDI,
                             PatchbayToolsWidget, CanvasMenu)
 from .options_dialog import CanvasOptionsDialog
 
-from .base_elements import (Connection, GroupPos, Port, Portgroup, Group, JackPortFlag,
-                            PortGroupMemory)
+from .base_elements import (Connection, GroupPos, Port, Portgroup, Group,
+                            JackPortFlag, PortgroupMem)
 from .calbacker import Callbacker
 
 
@@ -55,7 +55,7 @@ class PatchbayManager:
     _ports_by_name = dict[str, Port]()
 
     group_positions = list[GroupPos]()
-    portgroups_memory = list[PortGroupMemory]()
+    portgroups_memory = list[PortgroupMem]()
     orders_queue = list[dict]()
 
     def __init__(self, settings=None):
@@ -191,12 +191,17 @@ class PatchbayManager:
                     return port
 
     def save_group_position(self, gpos: GroupPos):
+        # reimplement this to save a group position elsewhere
         pass
 
-    def save_portgroup_memory(self, portgrp_mem: PortGroupMemory):
-        pass    
+    def save_portgroup_memory(self, portgrp_mem: PortgroupMem):
+        # reimplement this to save a portgroup memory elsewhere
+        pass
 
     def get_corrected_a2j_group_name(self, group_name: str) -> str:
+        # a2j replace points with spaces in the group name
+        # we do nothing here, but in some conditions we can 
+        # assume we know it.
         return group_name
 
     def set_group_as_nsm_client(self, group: Group):
@@ -227,8 +232,8 @@ class PatchbayManager:
         self.save_group_position(gpos)
         return gpos
 
-    def add_portgroup_memory(self, portgroup_mem: PortGroupMemory):
-        remove_list = list[PortGroupMemory]()
+    def add_portgroup_memory(self, portgroup_mem: PortgroupMem):
+        remove_list = list[PortgroupMem]()
 
         for pg_mem in self.portgroups_memory:
             if pg_mem.has_a_common_port_with(portgroup_mem):
@@ -238,6 +243,10 @@ class PatchbayManager:
             self.portgroups_memory.remove(pg_mem)
 
         self.portgroups_memory.append(portgroup_mem)
+        
+        group = self._groups_by_name.get(portgroup_mem.group_name)
+        if group is not None:
+            group.portgroup_memory_added(portgroup_mem)
 
     def remove_and_add_all(self):
         self.optimize_operation(True)
