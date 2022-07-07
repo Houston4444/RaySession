@@ -255,18 +255,18 @@ class RayPatchbayManager(PatchbayManager):
     #### added functions ####
     
     def update_group_position(self, *args):
-        # arguments are these ones delivered by ray.GroupPosition.spread()
-        # do not define them allows easier code modifications.
+        # arguments are these ones delivered from ray.GroupPosition.spread()
+        # Not define them allows easier code modifications.
         gpos = convert_group_pos_from_ray_to_patchbay(
             ray.GroupPosition.new_from(*args))
         
-        for gposition in self.gpositions:
+        for gposition in self.group_positions:
             if (gposition.group_name == gpos.group_name
                     and gposition.port_types_view == gpos.port_types_view):
                 gposition.eat(gpos)
                 break
         else:
-            self.gpositions.append(gpos)
+            self.group_positions.append(gpos)
         
         if gpos.port_types_view == self.port_types_view:
             group = self._groups_by_name.get(gpos.group_name)
@@ -350,7 +350,7 @@ class RayPatchbayManager(PatchbayManager):
         # everything stays here in this file.
         print('fast tmp file running start', time.time())
 
-        if self.gpositions:
+        if self.group_positions:
             print('on a des group positions')
             self.optimize_operation(True)
             self._set_very_fast_operation(True)

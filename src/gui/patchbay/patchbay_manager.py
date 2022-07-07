@@ -54,7 +54,7 @@ class PatchbayManager:
     _groups_by_id = dict[int, Group]()
     _ports_by_name = dict[str, Port]()
 
-    gpositions = list[GroupPos]()
+    group_positions = list[GroupPos]()
     portgroups_memory = list[PortGroupMemory]()
     orders_queue = list[dict]()
 
@@ -203,7 +203,7 @@ class PatchbayManager:
         pass
 
     def get_group_position(self, group_name: str) -> GroupPos:
-        for gpos in self.gpositions:
+        for gpos in self.group_positions:
             if (gpos.port_types_view == self.port_types_view
                     and gpos.group_name == group_name):
                 return gpos
@@ -223,7 +223,7 @@ class PatchbayManager:
         gpos.port_types_view = self.port_types_view
         gpos.group_name = group_name
         gpos.null_xy, gpos.in_xy, gpos.out_xy = get_new_group_positions()
-        self.gpositions.append(gpos)
+        self.group_positions.append(gpos)
         self.save_group_position(gpos)
         return gpos
 
