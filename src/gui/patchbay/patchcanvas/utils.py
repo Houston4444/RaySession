@@ -21,7 +21,6 @@
 # Imports (Global)
 
 import logging
-import time
 from typing import Union
 
 from PyQt5.QtCore import QPointF, QFile, QRectF
@@ -37,7 +36,6 @@ from .init_values import (
     canvas,
     IconType,
     PortMode,
-    ConnectionObject,
     CallbackAct)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -60,8 +58,8 @@ def easy_log(func):
         return func(*args, **kwargs)
     return wrapper
 
-def get_new_group_positions()->tuple:
-    def get_middle_empty_positions(scene_rect: QRectF)->tuple:
+def get_new_group_positions() -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
+    def get_middle_empty_positions(scene_rect: QRectF) -> tuple[int, int]:
         if scene_rect.isNull():
             return ((0, 200))
 
@@ -73,7 +71,7 @@ def get_new_group_positions()->tuple:
         x = scene_rect.center().x() - needed_y / 2
         y = scene_rect.top() + 20
 
-        y_list = []
+        y_list = list[tuple[float, float, float]]()
 
         min_top = scene_rect.bottom()
         max_bottom = scene_rect.top()

@@ -31,7 +31,7 @@ def enum_to_flag(enum: int) -> int:
 
 
 class GroupPosition:
-    port_types_view = GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI
+    port_types_view = PortType.AUDIO_JACK | PortType.MIDI_JACK
     group_name = ''
     null_zone = ''
     in_zone = ''
@@ -49,10 +49,6 @@ class GroupPosition:
                 'null_zone', 'in_zone', 'out_zone',
                 'null_xy', 'in_xy', 'out_xy', 'flags',
                 'layout_mode')
-    
-    @staticmethod
-    def sisi():
-        return 'issssiiiiiiii'
     
     @staticmethod
     def new_from(*args):
@@ -81,13 +77,6 @@ class GroupPosition:
                 value = tuple(value)
             
             self.__setattr__(attr, value)
-    
-    def is_same(self, other: 'GroupPosition') -> bool:
-        if (self.port_types_view == other.port_types_view
-                and self.group_name == other.group_name):
-            return True
-        
-        return False
     
     def update(self, port_types_view: int, group_name: str,
                null_zone: str, in_zone: str, out_zone: str,
@@ -129,21 +118,6 @@ class GroupPosition:
                 self.null_xy[0], self.null_xy[1], self.in_xy[0], self.in_xy[1],
                 self.out_xy[0], self.out_xy[1], self.flags,
                 self.layout_mode)
-    
-    def to_dict(self) -> dict:
-        new_dict = {}
-        
-        for attr in self.__dir__():
-            if attr in self.get_attributes():
-                new_dict[attr] = self.__getattribute__(attr)
-        
-        return new_dict
-    
-    def get_str_value(self, attr: str)->str:
-        if attr not in self.get_attributes():
-            return ''
-        
-        return str(self.__getattribute__(attr))
     
     def set_layout_mode(self, port_mode: int, layout_mode: int):
         if not (1 <= port_mode <= 3 or 0 <= layout_mode <= 2):
@@ -581,7 +555,7 @@ class Group:
         if self.manager.use_graceful_names:
             display_name = self.display_name
         
-        layout_modes_ = {}
+        layout_modes_ = dict[PortMode, int]()
         for port_mode in (PortMode.INPUT, PortMode.OUTPUT, PortMode.BOTH):
             layout_modes_[port_mode] = gpos.get_layout_mode(port_mode.value)
         

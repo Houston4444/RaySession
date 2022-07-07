@@ -16,8 +16,8 @@ if TYPE_CHECKING:
     from .gui_session import Session
 
 
-class PatchbayMainCallbacker(Callbacker):
-    def __init__(self, manager: 'PatchbayMainManager'):
+class RayPatchbayCallbacker(Callbacker):
+    def __init__(self, manager: 'RayPatchbayManager'):
         super().__init__(manager)
         self.mng = manager
         
@@ -56,10 +56,10 @@ class PatchbayMainCallbacker(Callbacker):
                 break
 
 
-class PatchbayMainManager(PatchbayManager):
+class RayPatchbayManager(PatchbayManager):
     def __init__(self, session: 'Session'):
         super().__init__(RS.settings)
-        self.callbacker = PatchbayMainCallbacker(self)
+        self.callbacker = RayPatchbayCallbacker(self)
         self.session = session
         self.set_tools_widget(PatchbayToolsWidget())
 
@@ -209,6 +209,30 @@ class PatchbayMainManager(PatchbayManager):
                 break
     
     #### added functions ####
+    
+    def update_group_position(self, *args):
+        # remember group position and move boxes if needed
+        gpos = ray.GroupPosition.new_from(*args)
+
+        for group_position in self.group_positions:
+            if (group_position.group_name == gpos.group_name
+                    and group_position.port_types_view == gpos.port_types_view):
+                group_position.update(*args)
+        else:
+            self.group_positions.append(gpos)
+
+        if gpos.port_types_view == self.port_types_view:
+            group = self._groups_by_name.get(gpos.group_name)
+            if group is not None:
+                group.set_group_position(gpos)
+
+    def update_portgroup(self, *args):
+        portgroup_mem = ray.PortGroupMemory.new_from(*args)
+        self.add_portgroup_memory(portgroup_mem)
+
+        group = self._groups_by_name.get(portgroup_mem.group_name)
+        if group is not None:
+            group.portgroup_memory_added(portgroup_mem)
     
     def optional_gui_state_changed(self, client_id: str, visible: bool):
         for client in self.session.client_list:

@@ -9,13 +9,14 @@ from PyQt5.QtWidgets import QMessageBox, QWidget
 from PyQt5.QtCore import QTimer, QSettings
 
 from .patchcanvas import patchcanvas, PortType, EyeCandy
+from .patchcanvas.utils import get_new_group_positions
 from .patchbay_signals import SignalsObject
 from .tools_widgets import (PORT_TYPE_AUDIO, PORT_TYPE_MIDI,
                             PatchbayToolsWidget, CanvasMenu)
 from .options_dialog import CanvasOptionsDialog
 
 from .base_elements import (Connection, Port, Portgroup, Group, JackPortFlag,
-                                GroupPosition, PortGroupMemory)
+                            GroupPosition, PortGroupMemory)
 from .calbacker import Callbacker
 
 
@@ -99,6 +100,8 @@ class PatchbayManager:
         self._orders_queue_timer.timeout.connect(
             self._order_queue_timeout)
 
+    # --- widgets related methods --- #
+
     def set_main_win(self, main_win: QWidget):
         self.main_win = main_win
 
@@ -128,6 +131,15 @@ class PatchbayManager:
             self.set_prevent_overlap)
         self.options_dialog.max_port_width_changed.connect(
             patchcanvas.set_max_port_width)
+
+    def show_options_dialog(self):
+        if self.options_dialog is None:
+            return
+        
+        self.options_dialog.move(QCursor.pos())
+        self.options_dialog.show()
+
+    # --- manager methods --- #
 
     @staticmethod
     def save_patchcanvas_cache():
@@ -169,55 +181,6 @@ class PatchbayManager:
 
     def port_type_shown(self, port_type: int) -> bool:
         return bool(self.port_types_view & enum_to_flag(port_type))
-
-    def show_options_dialog(self):
-        if self.options_dialog is None:
-            return
-        
-        self.options_dialog.move(QCursor.pos())
-        self.options_dialog.show()
-
-    def set_graceful_names(self, yesno: int):
-        if self.use_graceful_names != yesno:
-            self.toggle_graceful_names()
-
-    def set_a2j_grouped(self, yesno: int):
-        if self.group_a2j_hw != bool(yesno):
-            self.group_a2j_hw = bool(yesno)
-            self.refresh()
-
-    def set_group_shadows(self, yesno: int):
-        if yesno:
-            patchcanvas.options.eyecandy = EyeCandy.SMALL
-        else:
-            patchcanvas.options.eyecandy = EyeCandy.NONE
-        self.remove_and_add_all()
-
-    def change_theme(self, theme_name: str):
-        if not theme_name:
-            return
-        patchcanvas.change_theme(theme_name)
-
-    def set_elastic_canvas(self, yesno: int):
-        patchcanvas.set_elastic(yesno)
-
-    def set_borders_navigation(self, yesno: int):
-        patchcanvas.set_borders_navigation(yesno)
-
-    def set_prevent_overlap(self, yesno: int):
-        patchcanvas.set_prevent_overlap(yesno)
-
-    def toggle_graceful_names(self):
-        self.set_use_graceful_names(not self.use_graceful_names)
-        self.optimize_operation(True)
-        for group in self.groups:
-            group.update_ports_in_canvas()
-            group.update_name_in_canvas()
-        self.optimize_operation(False)
-        patchcanvas.redraw_all_groups()
-
-    def refresh(self):
-        self.clear_all()
 
     def get_port_from_name(self, port_name: str) -> Port:
         return self._ports_by_name.get(port_name)
@@ -269,14 +232,13 @@ class PatchbayManager:
         gpos.fully_set = False
         gpos.port_types_view = self.port_types_view
         gpos.group_name = group_name
-        gpos.null_xy, gpos.in_xy, gpos.out_xy =  \
-            patchcanvas.utils.get_new_group_positions()
+        gpos.null_xy, gpos.in_xy, gpos.out_xy = get_new_group_positions()
         self.group_positions.append(gpos)
         self.save_group_position(gpos)
         return gpos
 
-    def add_portgroup_memory(self, portgroup_mem):
-        remove_list = []
+    def add_portgroup_memory(self, portgroup_mem: PortGroupMemory):
+        remove_list = list[PortGroupMemory]()
 
         for pg_mem in self.portgroups_memory:
             if pg_mem.has_a_common_port_with(portgroup_mem):
@@ -361,6 +323,50 @@ class PatchbayManager:
         patchcanvas.redraw_all_groups()
         self.sg.port_types_view_changed.emit(
             self.port_types_view)
+
+    # --- options triggers ---
+
+    def set_graceful_names(self, yesno: int):
+        if self.use_graceful_names != yesno:
+            self.toggle_graceful_names()
+
+    def set_a2j_grouped(self, yesno: int):
+        if self.group_a2j_hw != bool(yesno):
+            self.group_a2j_hw = bool(yesno)
+            self.refresh()
+
+    def set_group_shadows(self, yesno: int):
+        if yesno:
+            patchcanvas.options.eyecandy = EyeCandy.SMALL
+        else:
+            patchcanvas.options.eyecandy = EyeCandy.NONE
+        self.remove_and_add_all()
+
+    def change_theme(self, theme_name: str):
+        if not theme_name:
+            return
+        patchcanvas.change_theme(theme_name)
+
+    def set_elastic_canvas(self, yesno: int):
+        patchcanvas.set_elastic(yesno)
+
+    def set_borders_navigation(self, yesno: int):
+        patchcanvas.set_borders_navigation(yesno)
+
+    def set_prevent_overlap(self, yesno: int):
+        patchcanvas.set_prevent_overlap(yesno)
+
+    def toggle_graceful_names(self):
+        self.set_use_graceful_names(not self.use_graceful_names)
+        self.optimize_operation(True)
+        for group in self.groups:
+            group.update_ports_in_canvas()
+            group.update_name_in_canvas()
+        self.optimize_operation(False)
+        patchcanvas.redraw_all_groups()
+
+    def refresh(self):
+        self.clear_all()
 
     def get_json_contents_from_path(self, file_path: str) -> dict:
         if not os.path.exists(file_path):
@@ -610,30 +616,6 @@ class PatchbayManager:
                 self.connections.remove(connection)
                 connection.remove_from_canvas()
                 break
-
-    def update_group_position(self, *args):
-        # remember group position and move boxes if needed
-        gpos = GroupPosition.new_from(*args)
-
-        for group_position in self.group_positions:
-            if (group_position.group_name == gpos.group_name
-                    and group_position.port_types_view == gpos.port_types_view):
-                group_position.update(*args)
-        else:
-            self.group_positions.append(gpos)
-
-        if gpos.port_types_view == PatchbayManager.port_types_view:
-            group = self._groups_by_name.get(gpos.group_name)
-            if group is not None:
-                group.set_group_position(gpos)
-
-    def update_portgroup(self, *args):
-        portgroup_mem = PortGroupMemory.new_from(*args)
-        self.add_portgroup_memory(portgroup_mem)
-
-        group = self._groups_by_name.get(portgroup_mem.group_name)
-        if group is not None:
-            group.portgroup_memory_added(portgroup_mem)
 
     def disannounce(self):
         self.clear_all()

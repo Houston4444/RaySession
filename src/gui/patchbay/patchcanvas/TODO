@@ -30,3 +30,9 @@ test check pour theme (si possible)
 revoir boîtes sélectionnées (tout thèmes)
 revoir ombres tout thèmes
 opacity dans filter frame (settings)
+wrap indésiré sur a2j
+ports mal placés après join
+PortgroupMem et GroupPosition: voir comment séparer tout ça.
+tester nouvelle app ensuite
+problèmes positions non rappellées en mode MIDI only
+

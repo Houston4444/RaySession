@@ -35,8 +35,7 @@ RAYNET_BIN = 'ray-network'
 
 GIT_IGNORED_EXTENSIONS = ".wav .flac .ogg .mp3 .mp4 .avi .mkv .peak .m4a .pdf"
 
-GROUP_CONTEXT_AUDIO = 0x01
-GROUP_CONTEXT_MIDI = 0x02
+
 
 class PrefixMode:
     CUSTOM = 0
@@ -714,7 +713,7 @@ class RayNet:
 
 
 class GroupPosition:
-    port_types_view = GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI
+    port_types_view = 3
     group_name = ''
     null_zone = ''
     in_zone = ''

@@ -7,7 +7,7 @@ from PyQt5.QtGui import QIcon, QDesktopServices, QPalette
 from PyQt5.QtWidgets import QWidget, QMenu, QApplication, QDialog
 
 from .patchcanvas import patchcanvas
-from .base_elements import JackPortFlag, Port
+from .base_elements import JackPortFlag, Port, PortType
 
 from .ui.canvas_port_info import Ui_Dialog as PortInfoUiDialog
 from .ui.patchbay_tools import Ui_Form as PatchbayToolsUiForm
@@ -15,8 +15,6 @@ from .ui.patchbay_tools import Ui_Form as PatchbayToolsUiForm
 if TYPE_CHECKING:
     from .patchbay_manager import PatchbayManager
 
-GROUP_CONTEXT_AUDIO = 0x01
-GROUP_CONTEXT_MIDI = 0x02
 
 # Port Type
 PORT_TYPE_NULL = 0
@@ -195,7 +193,7 @@ class CanvasMenu(QMenu):
             patchbay_manager.sg.full_screen_toggle_wanted.emit)
 
         port_types_view = patchbay_manager.port_types_view & (
-            GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
+            PortType.AUDIO_JACK | PortType.MIDI_JACK)
 
         self.action_find_box = self.addAction(
             _translate('patchbay', "Find a box...\tCtrl+F"))
@@ -209,22 +207,22 @@ class CanvasMenu(QMenu):
             _translate('patchbay', 'Audio + Midi'))
         self.action_audio_midi.setCheckable(True)
         self.action_audio_midi.setChecked(
-            bool(port_types_view == (GROUP_CONTEXT_AUDIO
-                                     | GROUP_CONTEXT_MIDI)))
+            bool(port_types_view == (PortType.AUDIO_JACK
+                                     | PortType.MIDI_JACK)))
         self.action_audio_midi.triggered.connect(
             self.port_types_view_audio_midi_choice)
 
         self.action_audio = self.port_types_menu.addAction(
             _translate('patchbay', 'Audio only'))
         self.action_audio.setCheckable(True)
-        self.action_audio.setChecked(port_types_view == GROUP_CONTEXT_AUDIO)
+        self.action_audio.setChecked(port_types_view == PortType.AUDIO_JACK)
         self.action_audio.triggered.connect(
             self.port_types_view_audio_choice)
 
         self.action_midi = self.port_types_menu.addAction(
             _translate('patchbay', 'MIDI only'))
         self.action_midi.setCheckable(True)
-        self.action_midi.setChecked(port_types_view == GROUP_CONTEXT_MIDI)
+        self.action_midi.setChecked(port_types_view == PortType.MIDI_JACK)
         self.action_midi.triggered.connect(
             self.port_types_view_midi_choice)
 
@@ -277,23 +275,23 @@ class CanvasMenu(QMenu):
 
     def _port_types_view_changed(self, port_types_view: int):
         self.action_audio_midi.setChecked(
-            port_types_view == GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
+            port_types_view == PortType.AUDIO_JACK | PortType.MIDI_JACK)
         self.action_audio.setChecked(
-            port_types_view == GROUP_CONTEXT_AUDIO)
+            port_types_view == PortType.AUDIO_JACK)
         self.action_midi.setChecked(
-            port_types_view == GROUP_CONTEXT_MIDI)
+            port_types_view == PortType.MIDI_JACK)
 
     def port_types_view_audio_midi_choice(self):
         self.patchbay_manager.change_port_types_view(
-            GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI)
+            PortType.AUDIO_JACK | PortType.MIDI_JACK)
 
     def port_types_view_audio_choice(self):
         self.patchbay_manager.change_port_types_view(
-            GROUP_CONTEXT_AUDIO)
+            PortType.AUDIO_JACK)
 
     def port_types_view_midi_choice(self):
         self.patchbay_manager.change_port_types_view(
-            GROUP_CONTEXT_MIDI)
+            PortType.MIDI_JACK)
 
     def internal_manual(self):
         short_locale = 'en'
