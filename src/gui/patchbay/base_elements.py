@@ -17,130 +17,63 @@ class JackPortFlag(IntFlag):
     IS_TERMINAL = 0x10
     IS_CONTROL_VOLTAGE = 0x100
 
-# Group Position Flags
-GROUP_CONTEXT_AUDIO = 0x01
-GROUP_CONTEXT_MIDI = 0x02
-GROUP_SPLITTED = 0x04
-GROUP_WRAPPED_INPUT = 0x10
-GROUP_WRAPPED_OUTPUT = 0x20
-GROUP_HAS_BEEN_SPLITTED = 0x40
+
+class GroupPosFlag(IntFlag):
+    # used in some config files,
+    # it explains why some numbers are missing.
+    SPLITTED = 0x04
+    WRAPPED_INPUT = 0x10
+    WRAPPED_OUTPUT = 0x20
+    HAS_BEEN_SPLITTED = 0x40
 
 
 def enum_to_flag(enum: int) -> int:
     return 2 ** (enum - 1)
 
 
-class GroupPosition:
-    port_types_view = PortType.AUDIO_JACK | PortType.MIDI_JACK
-    group_name = ''
-    null_zone = ''
-    in_zone = ''
-    out_zone = ''
-    null_xy = (0, 0)
-    in_xy = (0, 0)
-    out_xy = (0, 0)
-    flags = 0
-    layout_mode = 0
-    fully_set = True
+class GroupPos:
+    port_types_view: int
+    group_name: str
+    null_zone: str
+    in_zone: str
+    out_zone: str
+    null_xy: tuple[int, int]
+    in_xy: tuple[int, int]
+    out_xy: tuple[int, int]
+    flags: int
+    layout_mode: int
+    layout_modes: dict[PortMode, BoxLayoutMode]
+    fully_set: bool
     
-    @staticmethod
-    def get_attributes():
-        return ('port_types_view', 'group_name',
-                'null_zone', 'in_zone', 'out_zone',
-                'null_xy', 'in_xy', 'out_xy', 'flags',
-                'layout_mode')
+    def __init__(self):
+        self.port_types_view = 0
+        self.group_name = ''
+        self.null_zone = ''
+        self.in_zone = ''
+        self.out_zone = ''
+        self.null_xy = (0, 0)
+        self.in_xy = (0, 0)
+        self.out_xy = (0, 0)
+        self.flags = 0
+        self.layout_mode = 0
+        self.layout_modes = dict[PortMode, BoxLayoutMode]()
+        self.fully_set = False
     
-    @staticmethod
-    def new_from(*args):
-        group_position = GroupPosition()
-        group_position.update(*args)
-        return group_position
-    
-    def write_from_dict(self, input_dict: dict):
-        for attr in input_dict:
-            if not attr in self.get_attributes():
-                sys.stderr.write(
-                    'group position has no attribute %s\n' % attr)
-                continue
-            
-            value = input_dict[attr]
-            attr_type = type(value)
-            if attr in ('port_types_view', 'flags'):
-                if attr_type != int:
-                    continue
-            elif attr in ('group_name', 'null_zone', 'in_zone', 'out_zone'):
-                if attr_type != str:
-                    continue
-            elif attr in ('null_xy', 'in_xy', 'out_xy'):
-                if attr_type not in (list, tuple):
-                    continue
-                value = tuple(value)
-            
-            self.__setattr__(attr, value)
-    
-    def update(self, port_types_view: int, group_name: str,
-               null_zone: str, in_zone: str, out_zone: str,
-               null_x: int, null_y: int, in_x: int, in_y: int,
-               out_x: int, out_y: int, flags: int, layout_mode: int):
-        for string in (group_name, null_zone, in_zone, out_zone):
-            if not isinstance(string, str):
-                return 
-        
-        for digit in (port_types_view, null_x, null_y, in_x, in_y,
-                      out_x, out_y, flags, layout_mode):
-            if type(digit) == int:
-                continue
-            
-            if type(digit) != str:
-                return
-            
-            if (digit.isdigit()
-                    or (digit.startswith('-')
-                        and digit.replace('-', '', 1).isdigit())):
-                continue
-            else:
-                return
+    def copy(self) -> 'GroupPos':
+        group_pos = GroupPos()
+        group_pos.__dict__ = self.__dict__.copy()
+        return group_pos
 
-        self.port_types_view = port_types_view
-        self.group_name = group_name
-        self.null_zone = null_zone
-        self.in_zone = in_zone
-        self.out_zone = out_zone
-        self.null_xy = (int(null_x), int(null_y))
-        self.in_xy = (int(in_x), int(in_y))
-        self.out_xy = (int(out_x), int(out_y))
-        self.flags = int(flags)
-        self.layout_mode = int(layout_mode)
-        
-    def spread(self) -> tuple:
-        return (self.port_types_view, self.group_name,
-                self.null_zone, self.in_zone, self.out_zone,
-                self.null_xy[0], self.null_xy[1], self.in_xy[0], self.in_xy[1],
-                self.out_xy[0], self.out_xy[1], self.flags,
-                self.layout_mode)
-    
-    def set_layout_mode(self, port_mode: int, layout_mode: int):
-        if not (1 <= port_mode <= 3 or 0 <= layout_mode <= 2):
-            print('group position set_layout_mode wrong port_mode or layout_mode',
-                  port_mode, layout_mode)
-            return
-        
-        layout_mode_str = "%03d" % self.layout_mode
-        new_string = ''
-        for i in range(len(layout_mode_str)):
-            if i == 3 - port_mode:
-                new_string += str(layout_mode)
-            else:
-                new_string += layout_mode_str[i]
-        
-        self.layout_mode = int(new_string)
-        
-    def get_layout_mode(self, port_mode: int) -> int:
-        if not(1 <= port_mode <= 3):
-            return 0
-        
-        layout_mode_str = "%03d" % self.layout_mode
-        return int(layout_mode_str[3 - port_mode])
+    def eat(self, other: 'GroupPos'):
+        self.__dict__ = other.__dict__.copy()
+
+    def set_layout_mode(self, port_mode: PortMode, layout_mode: BoxLayoutMode):
+        self.layout_modes[port_mode] = layout_mode
+
+    def get_layout_mode(self, port_mode: PortMode) -> BoxLayoutMode:
+        if port_mode in self.layout_modes.keys():
+            return self.layout_modes[port_mode]
+        return BoxLayoutMode.AUTO
 
 
 class PortGroupMemory:
@@ -484,7 +417,7 @@ class Portgroup:
 
 class Group:
     def __init__(self, manager: 'PatchbayManager', group_id: int,
-                 name: str, group_position: GroupPosition):
+                 name: str, group_position: GroupPos):
         self.manager = manager
         self.group_id = group_id
         self.name = name
@@ -514,7 +447,7 @@ class Group:
         icon_type = IconType.APPLICATION
         icon_name = self.name.partition('.')[0].lower()
 
-        do_split = bool(self.current_position.flags & GROUP_SPLITTED)
+        do_split = bool(self.current_position.flags & GroupPosFlag.SPLITTED)
         split = BoxSplitMode.YES if do_split else BoxSplitMode.NO
 
         if self._is_hardware:
@@ -565,20 +498,20 @@ class Group:
             null_xy=gpos.null_xy, in_xy=gpos.in_xy, out_xy=gpos.out_xy)
 
         if do_split:
-            gpos.flags |= GROUP_HAS_BEEN_SPLITTED
+            gpos.flags |= GroupPosFlag.HAS_BEEN_SPLITTED
             patchcanvas.wrap_group_box(
                 self.group_id, PortMode.INPUT,
-                bool(gpos.flags & GROUP_WRAPPED_INPUT),
+                bool(gpos.flags & GroupPosFlag.WRAPPED_INPUT),
                 animate=False)
             patchcanvas.wrap_group_box(
                 self.group_id, PortMode.OUTPUT,
-                bool(gpos.flags & GROUP_WRAPPED_OUTPUT),
+                bool(gpos.flags & GroupPosFlag.WRAPPED_OUTPUT),
                 animate=False)
         else:
             patchcanvas.wrap_group_box(
                 self.group_id, PortMode.NULL,
-                bool(gpos.flags & GROUP_WRAPPED_INPUT
-                     and gpos.flags & GROUP_WRAPPED_OUTPUT),
+                bool(gpos.flags & GroupPosFlag.WRAPPED_INPUT
+                     and gpos.flags & GroupPosFlag.WRAPPED_OUTPUT),
                 animate=False)
             
         if self.has_gui:
@@ -667,7 +600,7 @@ class Group:
 
             if not self.current_position.fully_set:
                 if self._is_hardware:
-                    self.current_position.flags |= GROUP_SPLITTED
+                    self.current_position.flags |= GroupPosFlag.SPLITTED
                 self.current_position.fully_set = True
                 self.save_current_position()
 
@@ -733,7 +666,7 @@ class Group:
     def save_current_position(self):
         self.manager.save_group_position(self.current_position)
 
-    def set_group_position(self, group_position: GroupPosition):
+    def set_group_position(self, group_position: GroupPos):
         if not self.in_canvas:
             return
 
@@ -744,17 +677,17 @@ class Group:
         patchcanvas.move_group_boxes(
             self.group_id, gpos.null_xy, gpos.in_xy, gpos.out_xy)
 
-        if (gpos.flags & GROUP_SPLITTED
-                and not ex_gpos_flags & GROUP_SPLITTED):
+        if (gpos.flags & GroupPosFlag.SPLITTED
+                and not ex_gpos_flags & GroupPosFlag.SPLITTED):
             patchcanvas.split_group(self.group_id)
 
         patchcanvas.wrap_group_box(self.group_id, PortMode.INPUT,
-                                   bool(gpos.flags & GROUP_WRAPPED_INPUT))
+                                   bool(gpos.flags & GroupPosFlag.WRAPPED_INPUT))
         patchcanvas.wrap_group_box(self.group_id, PortMode.OUTPUT,
-                                   bool(gpos.flags & GROUP_WRAPPED_OUTPUT))
+                                   bool(gpos.flags & GroupPosFlag.WRAPPED_OUTPUT))
 
-        if (ex_gpos_flags & GROUP_SPLITTED
-                and not gpos.flags & GROUP_SPLITTED):
+        if (ex_gpos_flags & GroupPosFlag.SPLITTED
+                and not gpos.flags & GroupPosFlag.SPLITTED):
             patchcanvas.animate_before_join(self.group_id)
 
     def set_layout_mode(self, port_mode: PortMode, layout_mode: BoxLayoutMode):
@@ -767,11 +700,11 @@ class Group:
         patchcanvas.set_group_layout_mode(self.group_id, port_mode, layout_mode)
 
     def wrap_box(self, port_mode: int, yesno: bool):
-        wrap_flag = GROUP_WRAPPED_OUTPUT | GROUP_WRAPPED_INPUT
+        wrap_flag = GroupPosFlag.WRAPPED_OUTPUT | GroupPosFlag.WRAPPED_INPUT
         if port_mode == PortMode.INPUT:
-            wrap_flag = GROUP_WRAPPED_INPUT
+            wrap_flag = GroupPosFlag.WRAPPED_INPUT
         elif port_mode == PortMode.OUTPUT:
-            wrap_flag = GROUP_WRAPPED_OUTPUT
+            wrap_flag = GroupPosFlag.WRAPPED_OUTPUT
 
         if yesno:
             self.current_position.flags |= wrap_flag

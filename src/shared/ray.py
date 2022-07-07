@@ -775,16 +775,17 @@ class GroupPosition:
                null_zone: str, in_zone: str, out_zone: str,
                null_x: int, null_y: int, in_x: int, in_y: int,
                out_x: int, out_y: int, flags: int, layout_mode: int):
+        
         for string in (group_name, null_zone, in_zone, out_zone):
             if not isinstance(string, str):
                 return 
         
         for digit in (port_types_view, null_x, null_y, in_x, in_y,
                       out_x, out_y, flags, layout_mode):
-            if type(digit) == int:
+            if isinstance(digit, int):
                 continue
-            
-            if type(digit) != str:
+
+            if not isinstance(digit, str):
                 return
             
             if (digit.isdigit()

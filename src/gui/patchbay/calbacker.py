@@ -3,19 +3,11 @@ from PyQt5.QtCore import QPoint
 
 from . import patchcanvas
 from .patchcanvas import CallbackAct, PortMode, PortType, BoxLayoutMode
-from .base_elements import Port, PortGroupMemory, GroupPosition
+from .base_elements import Port, PortGroupMemory, GroupPosFlag
 from .tools_widgets import CanvasPortInfoDialog
 
 if TYPE_CHECKING:
     from .patchbay_manager import PatchbayManager
-
-# Group Position Flags
-GROUP_CONTEXT_AUDIO = 0x01
-GROUP_CONTEXT_MIDI = 0x02
-GROUP_SPLITTED = 0x04
-GROUP_WRAPPED_INPUT = 0x10
-GROUP_WRAPPED_OUTPUT = 0x20
-GROUP_HAS_BEEN_SPLITTED = 0x40
 
 
 class Callbacker:
@@ -30,6 +22,8 @@ class Callbacker:
         if func_name in self.__dir__():
             self.__getattribute__(func_name)(*args)
     
+    # ￬￬￬ functions connected to CallBackAct ￬￬￬
+    
     def _group_info(self, group_id: int):
         pass
     
@@ -40,10 +34,10 @@ class Callbacker:
         group = self.mng._groups_by_id.get(group_id)
         if group is not None:
             on_place = not bool(
-                group.current_position.flags & GROUP_HAS_BEEN_SPLITTED)
+                group.current_position.flags & GroupPosFlag.HAS_BEEN_SPLITTED)
             self.patchcanvas.split_group(group_id, on_place=on_place)
-            group.current_position.flags |= GROUP_SPLITTED
-            group.current_position.flags |= GROUP_HAS_BEEN_SPLITTED
+            group.current_position.flags |= GroupPosFlag.SPLITTED
+            group.current_position.flags |= GroupPosFlag.HAS_BEEN_SPLITTED
             group.save_current_position()
 
     def _group_join(self, group_id: int):
@@ -52,7 +46,7 @@ class Callbacker:
     def _group_joined(self, group_id: int):
         group = self.mng._groups_by_id.get(group_id)
         if group is not None:
-            group.current_position.flags &= ~GROUP_SPLITTED
+            group.current_position.flags &= ~GroupPosFlag.SPLITTED
             group.save_current_position()
     
     def _group_move(self, group_id: int, port_mode: PortMode, x: int, y: int):

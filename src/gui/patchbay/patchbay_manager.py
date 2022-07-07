@@ -15,18 +15,10 @@ from .tools_widgets import (PORT_TYPE_AUDIO, PORT_TYPE_MIDI,
                             PatchbayToolsWidget, CanvasMenu)
 from .options_dialog import CanvasOptionsDialog
 
-from .base_elements import (Connection, Port, Portgroup, Group, JackPortFlag,
-                            GroupPosition, PortGroupMemory)
+from .base_elements import (Connection, GroupPos, Port, Portgroup, Group, JackPortFlag,
+                            PortGroupMemory)
 from .calbacker import Callbacker
 
-
-# Group Position Flags
-GROUP_CONTEXT_AUDIO = 0x01
-GROUP_CONTEXT_MIDI = 0x02
-GROUP_SPLITTED = 0x04
-GROUP_WRAPPED_INPUT = 0x10
-GROUP_WRAPPED_OUTPUT = 0x20
-GROUP_HAS_BEEN_SPLITTED = 0x40
 
 # Meta data (taken from pyjacklib)
 _JACK_METADATA_PREFIX = "http://jackaudio.org/metadata/"
@@ -62,7 +54,7 @@ class PatchbayManager:
     _groups_by_id = dict[int, Group]()
     _ports_by_name = dict[str, Port]()
 
-    group_positions = list[GroupPosition]()
+    gpositions = list[GroupPos]()
     portgroups_memory = list[PortGroupMemory]()
     orders_queue = list[dict]()
 
@@ -198,7 +190,7 @@ class PatchbayManager:
                 if port.port_id == port_id:
                     return port
 
-    def save_group_position(self, gpos: GroupPosition):
+    def save_group_position(self, gpos: GroupPos):
         pass
 
     def save_portgroup_memory(self, portgrp_mem: PortGroupMemory):
@@ -210,8 +202,8 @@ class PatchbayManager:
     def set_group_as_nsm_client(self, group: Group):
         pass
 
-    def get_group_position(self, group_name: str) -> GroupPosition:
-        for gpos in self.group_positions:
+    def get_group_position(self, group_name: str) -> GroupPos:
+        for gpos in self.gpositions:
             if (gpos.port_types_view == self.port_types_view
                     and gpos.group_name == group_name):
                 return gpos
@@ -221,19 +213,17 @@ class PatchbayManager:
         group = self._groups_by_name.get(group_name)
         if group is not None:
             # copy the group_position
-            gpos = GroupPosition.new_from(
-                *group.current_position.spread())
+            gpos = group.current_position.copy()
             gpos.port_types_view = self.port_types_view
-            self.group_positions.append(gpos)
             return gpos
 
         # group position doesn't already exists, create one
-        gpos = GroupPosition()
+        gpos = GroupPos()
         gpos.fully_set = False
         gpos.port_types_view = self.port_types_view
         gpos.group_name = group_name
         gpos.null_xy, gpos.in_xy, gpos.out_xy = get_new_group_positions()
-        self.group_positions.append(gpos)
+        self.gpositions.append(gpos)
         self.save_group_position(gpos)
         return gpos
 
@@ -519,7 +509,7 @@ class PatchbayManager:
                 # copy the group_position to not move the group
                 # because group has been renamed
                 orig_gpos = self.get_group_position(group_name)
-                gpos = GroupPosition.new_from(*orig_gpos.spread())
+                gpos = orig_gpos.copy()
                 gpos.group_name = new_group_name
 
                 group = Group(self, self._next_group_id, new_group_name, gpos)
@@ -772,128 +762,3 @@ class PatchbayManager:
 
         if some_groups_removed:
             patchcanvas.canvas.scene.resize_the_scene()
-
-    def fast_temp_file_memory(self, temp_path):
-        ''' receives a .json file path from daemon with groups positions
-            and portgroups remembered from user. '''
-        canvas_data = self.get_json_contents_from_path(temp_path)
-        if not canvas_data:
-            sys.stderr.write(
-                "RaySession::Failed to load tmp file %s to get canvas positions\n"
-                % temp_path)
-            return
-
-        for key in canvas_data.keys():
-            if key == 'group_positions':
-                for gpos_dict in canvas_data[key]:
-                    gpos = GroupPosition()
-                    gpos.write_from_dict(gpos_dict)
-                    self.update_group_position(*gpos.spread())
-
-            elif key == 'portgroups':
-                for pg_dict in canvas_data[key]:
-                    portgroup_mem = PortGroupMemory()
-                    portgroup_mem.write_from_dict(pg_dict)
-                    self.update_portgroup(*portgroup_mem.spread())
-
-        os.remove(temp_path)
-
-    def fast_temp_file_running(self, temp_path: str):
-        ''' receives a .json file path from patchbay daemon with all ports, connections
-            and jack metadatas'''
-        patchbay_data = self.get_json_contents_from_path(temp_path)
-        if not patchbay_data:
-            sys.stderr.write(
-                "RaySession::Failed to load tmp file %s to get JACK ports\n"
-                % temp_path)
-            return
-
-        # optimize_operation allow to not redraw group at each port added.
-        # however, if there is no group position
-        # (i.e. if there is no config at all), it is prefferable to
-        # know where finish the group boxes before to add another one.
-        
-        # very fast operation means that nothing is done in the patchcanvas
-        # everything stays here in this file.
-        print('fast tmp file running start', time.time())
-
-        if self.group_positions:
-            print('on a des group positions')
-            self.optimize_operation(True)
-            self._set_very_fast_operation(True)
-
-        for key in patchbay_data.keys():
-            if key == 'ports':
-                for p in patchbay_data[key]:
-                    if TYPE_CHECKING and not isinstance(p, dict):
-                        continue
-                    self.add_port(p.get('name'), p.get('type'),
-                                  p.get('flags'), p.get('uuid'))
-
-            elif key == 'connections':
-                for c in patchbay_data[key]:
-                    if TYPE_CHECKING and not isinstance(c, dict):
-                        continue
-                    self.add_connection(c.get('port_out_name'),
-                                        c.get('port_in_name'))
-
-        for key in patchbay_data.keys():
-            if key == 'clients':
-                for cnu in patchbay_data[key]:
-                    if TYPE_CHECKING and not isinstance(cnu, dict):
-                        continue
-                    self.set_group_uuid_from_name(cnu.get('name'), cnu.get('uuid'))
-                break
-
-        for key in patchbay_data.keys():
-            if key == 'metadatas':
-                for m in patchbay_data[key]:
-                    if TYPE_CHECKING and not isinstance(m, dict):
-                        continue
-                    self.metadata_update(
-                        m.get('uuid'), m.get('key'), m.get('value'))
-
-        print('tout est rentré', time.time())
-
-        # print('ddk', patchcanvas.canvas.group_list)
-
-        for group in self.groups:
-            group.sort_ports_in_canvas()
-
-        print('les ports sont dans lorde', time.time())
-
-        self._set_very_fast_operation(False)
-        
-        print('tout va rentrer dans le canvas', time.time())
-        
-        for group in self.groups:
-            group.add_all_ports_to_canvas()
-        
-        print('avant conns', time.time())
-        
-        for conn in self.connections:
-            conn.add_to_canvas()
-
-        print('sfkddf', time.time())
-        self.optimize_operation(False)
-        patchcanvas.redraw_all_groups()
-
-        try:
-            os.remove(temp_path)
-        except:
-            # if this tmp file can not be removed
-            # this is really not strong.
-            pass
-
-    def patchbay_announce(self, jack_running: int, samplerate: int,
-                          buffer_size: int):
-        if self._tools_widget is None:
-            return
-        
-        self._tools_widget.set_samplerate(samplerate)
-        self._tools_widget.set_buffer_size(buffer_size)
-        self._tools_widget.set_jack_running(jack_running)
-
-        if self.main_win is not None:
-            self.main_win.add_patchbay_tools(
-                self._tools_widget, self.canvas_menu)

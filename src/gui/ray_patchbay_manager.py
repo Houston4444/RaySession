@@ -1,9 +1,14 @@
 
 from typing import TYPE_CHECKING
+import time
+import os
+import sys
+
+from gui.patchbay.patchcanvas.init_values import BoxLayoutMode, PortMode
 
 
 from .patchbay.patchbay_manager import PatchbayManager
-from .patchbay.base_elements import Group
+from .patchbay.base_elements import Group, GroupPos
 from .patchbay.options_dialog import CanvasOptionsDialog
 from .patchbay.tools_widgets import PatchbayToolsWidget, CanvasMenu
 from .patchbay.calbacker import Callbacker
@@ -14,6 +19,42 @@ from .gui_tools import RS, is_dark_theme, RayIcon
 
 if TYPE_CHECKING:
     from .gui_session import Session
+    from .main_window import MainWindow
+
+
+def convert_group_pos_from_ray_to_patchbay(
+        ray_gpos: ray.GroupPosition) -> GroupPos:
+    gpos = GroupPos()
+    gpos.port_types_view = ray_gpos.port_types_view
+    gpos.group_name = ray_gpos.group_name
+    gpos.null_zone = ray_gpos.null_zone
+    gpos.in_zone = ray_gpos.in_zone
+    gpos.out_zone = ray_gpos.out_zone
+    gpos.null_xy = ray_gpos.null_xy
+    gpos.in_xy = ray_gpos.in_xy
+    gpos.out_xy = ray_gpos.out_xy
+    gpos.flags = ray_gpos.flags
+    
+    for port_mode in PortMode:
+        layout_mode = ray_gpos.get_layout_mode(port_mode.value)
+        gpos.set_layout_mode(port_mode, BoxLayoutMode(layout_mode))
+    
+    gpos.fully_set = ray_gpos.fully_set
+    return gpos
+
+def convert_group_pos_from_patchbay_to_ray(
+        gpos: GroupPos) -> ray.GroupPosition:
+    ray_gpos = ray.GroupPosition.new_from(
+        int(gpos.port_types_view), gpos.group_name,
+        gpos.null_zone, gpos.in_zone, gpos.out_zone,
+        *gpos.null_xy, *gpos.in_xy, *gpos.out_xy,
+        int(gpos.flags), 0)
+    
+    for port_mode, box_layout_mode in gpos.layout_modes.items():
+        ray_gpos.set_layout_mode(port_mode.value, box_layout_mode.value)
+    ray_gpos.fully_set = gpos.fully_set
+
+    return ray_gpos
 
 
 class RayPatchbayCallbacker(Callbacker):
@@ -91,10 +132,13 @@ class RayPatchbayManager(PatchbayManager):
         self.send_to_patchbay_daemon('/ray/patchbay/gui_disannounce')
         super().disannounce()
     
-    def save_group_position(self, gpos: ray.GroupPosition):
+    def save_group_position(self, gpos: GroupPos):
         super().save_group_position(gpos)
+        print('saveut', gpos.in_xy)
+        ray_gpos = convert_group_pos_from_patchbay_to_ray(gpos)
+        print('aoksoa', ray_gpos.in_xy)
         self.send_to_daemon(
-            '/ray/server/patchbay/save_group_position', *gpos.spread())
+            '/ray/server/patchbay/save_group_position', *ray_gpos.spread())
     
     def save_portgroup_memory(self, portgrp_mem: ray.PortGroupMemory):
         super().save_portgroup_memory(portgrp_mem)
@@ -211,16 +255,19 @@ class RayPatchbayManager(PatchbayManager):
     #### added functions ####
     
     def update_group_position(self, *args):
-        # remember group position and move boxes if needed
-        gpos = ray.GroupPosition.new_from(*args)
-
-        for group_position in self.group_positions:
-            if (group_position.group_name == gpos.group_name
-                    and group_position.port_types_view == gpos.port_types_view):
-                group_position.update(*args)
+        # arguments are these ones delivered by ray.GroupPosition.spread()
+        # do not define them allows easier code modifications.
+        gpos = convert_group_pos_from_ray_to_patchbay(
+            ray.GroupPosition.new_from(*args))
+        
+        for gposition in self.gpositions:
+            if (gposition.group_name == gpos.group_name
+                    and gposition.port_types_view == gpos.port_types_view):
+                gposition.eat(gpos)
+                break
         else:
-            self.group_positions.append(gpos)
-
+            self.gpositions.append(gpos)
+        
         if gpos.port_types_view == self.port_types_view:
             group = self._groups_by_name.get(gpos.group_name)
             if group is not None:
@@ -255,3 +302,133 @@ class RayPatchbayManager(PatchbayManager):
         options_dialog.set_user_theme_icon(
             RayIcon('im-user', is_dark_theme(options_dialog)))
         self.set_options_dialog(options_dialog)
+        
+    def fast_temp_file_memory(self, temp_path):
+        ''' receives a .json file path from daemon with groups positions
+            and portgroups remembered from user. '''
+        canvas_data = self.get_json_contents_from_path(temp_path)
+        if not canvas_data:
+            sys.stderr.write(
+                "RaySession::Failed to load tmp file %s to get canvas positions\n"
+                % temp_path)
+            return
+
+        for key in canvas_data.keys():
+            if key == 'group_positions':
+                for gpos_dict in canvas_data[key]:
+                    gpos = ray.GroupPosition()
+                    gpos.write_from_dict(gpos_dict)
+                    self.update_group_position(*gpos.spread())
+
+            elif key == 'portgroups':
+                for pg_dict in canvas_data[key]:
+                    portgroup_mem = ray.PortGroupMemory()
+                    portgroup_mem.write_from_dict(pg_dict)
+                    self.update_portgroup(*portgroup_mem.spread())
+
+        try:
+            os.remove(temp_path)
+        except:
+            pass
+
+    def fast_temp_file_running(self, temp_path: str):
+        ''' receives a .json file path from patchbay daemon with all ports, connections
+            and jack metadatas'''
+        patchbay_data = self.get_json_contents_from_path(temp_path)
+        if not patchbay_data:
+            sys.stderr.write(
+                "RaySession::Failed to load tmp file %s to get JACK ports\n"
+                % temp_path)
+            return
+
+        # optimize_operation allow to not redraw group at each port added.
+        # however, if there is no group position
+        # (i.e. if there is no config at all), it is prefferable to
+        # know where finish the group boxes before to add another one.
+        
+        # very fast operation means that nothing is done in the patchcanvas
+        # everything stays here in this file.
+        print('fast tmp file running start', time.time())
+
+        if self.gpositions:
+            print('on a des group positions')
+            self.optimize_operation(True)
+            self._set_very_fast_operation(True)
+
+        for key in patchbay_data.keys():
+            if key == 'ports':
+                for p in patchbay_data[key]:
+                    if TYPE_CHECKING and not isinstance(p, dict):
+                        continue
+                    self.add_port(p.get('name'), p.get('type'),
+                                  p.get('flags'), p.get('uuid'))
+
+            elif key == 'connections':
+                for c in patchbay_data[key]:
+                    if TYPE_CHECKING and not isinstance(c, dict):
+                        continue
+                    self.add_connection(c.get('port_out_name'),
+                                        c.get('port_in_name'))
+
+        for key in patchbay_data.keys():
+            if key == 'clients':
+                for cnu in patchbay_data[key]:
+                    if TYPE_CHECKING and not isinstance(cnu, dict):
+                        continue
+                    self.set_group_uuid_from_name(cnu.get('name'), cnu.get('uuid'))
+                break
+
+        for key in patchbay_data.keys():
+            if key == 'metadatas':
+                for m in patchbay_data[key]:
+                    if TYPE_CHECKING and not isinstance(m, dict):
+                        continue
+                    self.metadata_update(
+                        m.get('uuid'), m.get('key'), m.get('value'))
+
+        print('tout est rentré', time.time())
+
+        # print('ddk', patchcanvas.canvas.group_list)
+
+        for group in self.groups:
+            group.sort_ports_in_canvas()
+
+        print('les ports sont dans lorde', time.time())
+
+        self._set_very_fast_operation(False)
+        
+        print('tout va rentrer dans le canvas', time.time())
+        
+        for group in self.groups:
+            group.add_all_ports_to_canvas()
+        
+        print('avant conns', time.time())
+        
+        for conn in self.connections:
+            conn.add_to_canvas()
+
+        print('sfkddf', time.time())
+        self.optimize_operation(False)
+        self.redraw_all_groups()
+
+        try:
+            os.remove(temp_path)
+        except:
+            # if this tmp file can not be removed
+            # this is really not strong.
+            pass
+
+    def patchbay_announce(self, jack_running: int, samplerate: int,
+                          buffer_size: int):
+        if self._tools_widget is None:
+            return
+        
+        self._tools_widget.set_samplerate(samplerate)
+        self._tools_widget.set_buffer_size(buffer_size)
+        self._tools_widget.set_jack_running(jack_running)
+
+        if self.main_win is not None:
+            if TYPE_CHECKING and not isinstance(self.main_win, MainWindow):
+                return
+            self.main_win.add_patchbay_tools(
+                self._tools_widget, self.canvas_menu)
