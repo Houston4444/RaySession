@@ -69,7 +69,12 @@ class PatchbayManager:
     use_graceful_names = True
     port_types_view = (enum_to_flag(PortType.AUDIO_JACK)
                        | enum_to_flag(PortType.MIDI_JACK))
+    
+    # when True, items can be added to patchcanvas but they won't be drawn
     optimized_operation = False
+    
+    # when True, items are not added/removed from patchcanvas
+    # useful to win time at startup or refresh
     very_fast_operation = False
 
     groups = list[Group]()
@@ -198,6 +203,12 @@ class PatchbayManager:
     def port_type_shown(self, port_type: int) -> bool:
         return bool(self.port_types_view & enum_to_flag(port_type))
 
+    def get_group_from_name(self, group_name: str) -> Union[Group, None]:
+        return self._groups_by_name.get(group_name)
+
+    def get_group_from_id(self, group_id: int) -> Union[Group, None]:
+        return self._groups_by_id.get(group_id)
+
     def get_port_from_name(self, port_name: str) -> Port:
         return self._ports_by_name.get(port_name)
 
@@ -208,7 +219,7 @@ class PatchbayManager:
                     return port
 
     def get_port_from_id(self, group_id: int, port_id: int) -> Port:
-        group = self._groups_by_id.get(group_id)
+        group = self.get_group_from_id(group_id)
         if group is not None:        
             for port in group.ports:
                 if port.port_id == port_id:
@@ -239,7 +250,7 @@ class PatchbayManager:
 
         # prevent move to a new position in case of port_types_view change
         # if there is no remembered position for this group in new view
-        group = self._groups_by_name.get(group_name)
+        group = self.get_group_from_name(group_name)
         if group is not None:
             # copy the group_position
             gpos = group.current_position.copy()
@@ -268,7 +279,7 @@ class PatchbayManager:
 
         self.portgroups_memory.append(portgroup_mem)
         
-        group = self._groups_by_name.get(portgroup_mem.group_name)
+        group = self.get_group_from_name(portgroup_mem.group_name)
         if group is not None:
             group.portgroup_memory_added(portgroup_mem)
 
@@ -393,7 +404,7 @@ class PatchbayManager:
 
     @later_by_batch()
     def set_group_uuid_from_name(self, client_name: str, uuid: int):
-        group = self._groups_by_name.get(client_name)
+        group = self.get_group_from_name(client_name)
         if group is not None:
             group.uuid = uuid
 
@@ -435,7 +446,7 @@ class PatchbayManager:
             if port.flags & JackPortFlag.IS_PHYSICAL:
                 is_a2j_group = True
         
-        group = self._groups_by_name.get(group_name)
+        group = self.get_group_from_name(group_name)
         if group is None:
             # port is an non existing group, create the group
             gpos = self.get_group_position(group_name)
@@ -474,7 +485,7 @@ class PatchbayManager:
                 self.connections.remove(connection)
                 break
 
-        group = self._groups_by_id.get(port.group_id)
+        group = self.get_group_from_id(port.group_id)
         if group is None:
             return None
 
@@ -511,7 +522,7 @@ class PatchbayManager:
 
         # In case a port rename implies another group for the port
         if group_name != new_group_name:
-            group = self._groups_by_name.get(group_name)
+            group = self.get_group_from_name(group_name)
             if group is not None:
                 group.remove_port(port)
                 if not group.ports:
@@ -520,7 +531,7 @@ class PatchbayManager:
             port.remove_from_canvas()
             port.full_name = new_name
 
-            group = self._groups_by_name.get(new_group_name)
+            group = self.get_group_from_name(new_group_name)
             if group is None:
                 # copy the group_position to not move the group
                 # because group has been renamed
@@ -538,7 +549,7 @@ class PatchbayManager:
             port.add_to_canvas()
             return group.group_id
 
-        group = self._groups_by_id.get(port.group_id)
+        group = self.get_group_from_id(port.group_id)
         if group is not None:
             # because many ports may be renamed quicky
             # It is prefferable to rename all theses ports together.

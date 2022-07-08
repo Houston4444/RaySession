@@ -110,7 +110,7 @@ class RayPatchbayCallbacker(Callbacker):
                 break
 
     def _client_show_gui(self, group_id: int, visible: int):
-        group = self.mng._groups_by_id.get(group_id)
+        group = self.mng.get_group_from_id(group_id)
         if group is None:
             return
 
@@ -315,7 +315,7 @@ class RayPatchbayManager(PatchbayManager):
             self.group_positions.append(gpos)
         
         if gpos.port_types_view == self.port_types_view:
-            group = self._groups_by_name.get(gpos.group_name)
+            group = self.get_group_from_name(gpos.group_name)
             if group is not None:
                 group.set_group_position(gpos)
 
@@ -324,7 +324,7 @@ class RayPatchbayManager(PatchbayManager):
         pg_mem = convert_portgrp_mem_from_ray_to_patchbay(ray_pgmem)
         self.add_portgroup_memory(pg_mem)
 
-        group = self._groups_by_name.get(pg_mem.group_name)
+        group = self.get_group_from_name(pg_mem.group_name)
         if group is not None:
             group.portgroup_memory_added(pg_mem)
     

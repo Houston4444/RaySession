@@ -31,7 +31,7 @@ class Callbacker:
         pass
     
     def _group_split(self, group_id: int):        
-        group = self.mng._groups_by_id.get(group_id)
+        group = self.mng.get_group_from_id(group_id)
         if group is not None:
             on_place = not bool(
                 group.current_position.flags & GroupPosFlag.HAS_BEEN_SPLITTED)
@@ -44,13 +44,13 @@ class Callbacker:
         self.patchcanvas.animate_before_join(group_id)
     
     def _group_joined(self, group_id: int):
-        group = self.mng._groups_by_id.get(group_id)
+        group = self.mng.get_group_from_id(group_id)
         if group is not None:
             group.current_position.flags &= ~GroupPosFlag.SPLITTED
             group.save_current_position()
     
     def _group_move(self, group_id: int, port_mode: PortMode, x: int, y: int):
-        group = self.mng._groups_by_id.get(group_id)
+        group = self.mng.get_group_from_id(group_id)
         if group is not None:
             gpos = group.current_position
             if port_mode == PortMode.NULL:
@@ -63,13 +63,13 @@ class Callbacker:
             group.save_current_position()
     
     def _group_wrap(self, group_id: int, splitted_mode, yesno: bool):
-        group = self.mng._groups_by_id.get(group_id)
+        group = self.mng.get_group_from_id(group_id)
         if group is not None:
             group.wrap_box(splitted_mode, yesno)
     
     def _group_layout_change(self, group_id: int, port_mode: PortMode,
                             layout_mode: BoxLayoutMode):
-        group = self.mng._groups_by_id.get(group_id)
+        group = self.mng.get_group_from_id(group_id)
         if group is not None:
             group.set_layout_mode(port_mode, layout_mode)
     
@@ -85,7 +85,7 @@ class Callbacker:
             port_list.append(port)
 
         portgroup = self.mng.new_portgroup(group_id, port_mode, port_list)
-        group = self.mng._groups_by_id.get(group_id)
+        group = self.mng.get_group_from_id(group_id)
         if group is None:
             return
 
@@ -104,7 +104,7 @@ class Callbacker:
         portgroup.add_to_canvas()
     
     def _portgroup_remove(self, group_id: int, portgroup_id: int):
-        group = self.mng._groups_by_id.get(group_id)
+        group = self.mng.get_group_from_id(group_id)
         if group is None:
             return
 
