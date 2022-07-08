@@ -345,18 +345,23 @@ class PatchbayManager:
                     and not port_types_view & connection.port_type()):
                 connection.remove_from_canvas()
 
+        groups_and_pos = dict[Group, GroupPos]()
+
         for group in self.groups:
             group.change_port_types_view()
-            gpos = self.get_group_position(group.name)
-            group.set_group_position(gpos)
+            groups_and_pos[group] = self.get_group_position(group.name)
 
         for connection in self.connections:
             connection.add_to_canvas()
 
         self.optimize_operation(False)
+        
         patchcanvas.redraw_all_groups()
-        self.sg.port_types_view_changed.emit(
-            self.port_types_view)
+        
+        for group, gpos in groups_and_pos.items():
+            group.set_group_position(gpos)
+        
+        self.sg.port_types_view_changed.emit(self.port_types_view)
 
     # --- options triggers ---
 

@@ -17,6 +17,7 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
+import logging
 from struct import pack
 import time
 from sip import voidptr
@@ -51,6 +52,7 @@ from .line_widget import LineWidget
 from .theme import BoxStyleAttributer
 
 _translate = QApplication.translate
+_logger = logging.getLogger(__name__)
 
 
 class UnwrapButton(Enum):
@@ -337,9 +339,8 @@ class BoxWidgetMoth(QGraphicsItem):
         if port_id in self._port_list_ids:
             self._port_list_ids.remove(port_id)
         else:
-            sys.stderr.write(
-                "PatchCanvas::CanvasBox.removePort(%i) - unable to find port to remove"
-                % port_id)
+            _logger.warning(
+                f"remove_port_from_group({port_id}) - unable to find port to remove")
             return
 
         if not canvas.loading_items:
@@ -944,6 +945,12 @@ class BoxWidgetMoth(QGraphicsItem):
                         self._splitted_mode, round(self.x()), round(self.y()))
 
         group = canvas.get_group(self._group_id)
+        if group is None:
+            _logger.warning(
+                "send_move_callback - "
+                f"Box has no group_id {self._group_id} in canvas")
+            return
+        
         pos = QPoint(round(self.x()), round(self.y()))
 
         if self._splitted_mode is PortMode.NULL:

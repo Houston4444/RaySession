@@ -1034,7 +1034,8 @@ class Group:
                 for port in self.ports:
                     if (port.type == last_port.type
                             and port.mode() == last_port.mode()):
-                        if (port.short_name()
+                        if (len(portgroup_mem.port_names) > len(port_list)
+                                and port.short_name()
                                 == portgroup_mem.port_names[len(port_list)]):
                             port_list.append(port)
 

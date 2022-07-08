@@ -17,11 +17,11 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
+from dataclasses import dataclass
 from math import floor
-import time
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import (QPoint, QPointF, QRectF, QMarginsF, Qt)
+from PyQt5.QtCore import (QRectF, QMarginsF, Qt)
 from PyQt5.QtWidgets import QGraphicsView
 
 from .init_values import (
@@ -34,26 +34,18 @@ from .scene_moth import PatchSceneMoth
 from .box_widget import BoxWidget
 
 
+@dataclass
 class BoxAndRect:
     rect: QRectF
     item: BoxWidget
     
-    def __init__(self, rect: QRectF, item: BoxWidget):
-        self.rect, self.item = rect, item
         
-
+@dataclass
 class ToMoveBox:
     directions: list[Direction]
     pos: float
     item: BoxWidget
     repulser: BoxAndRect
-
-    def __init__(self, directions: list[Direction], pos: float,
-                 item: BoxWidget, repulser: BoxAndRect):
-        self.directions = directions
-        self.pos = pos
-        self.item = item
-        self.repulser = repulser
         
     def __lt__(self, other: 'ToMoveBox'):
         if self.directions != other.directions:

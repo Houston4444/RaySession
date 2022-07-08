@@ -338,8 +338,11 @@ def remove_group(group_id: int, save_positions=True):
             canvas.settings.setValue(
                 "CanvasPositions/%s_SPLIT" % group_name, BoxSplitMode.YES)
 
-        if s_item in canvas.scene.move_boxes:
-            canvas.scene.move_boxes.remove(s_item)
+        for moving_box in canvas.scene.move_boxes:
+            if moving_box.widget is s_item:
+                canvas.scene.move_boxes.remove(moving_box)
+                break
+
         s_item.remove_icon_from_scene()
         
         canvas.scene.removeItem(s_item)
@@ -351,9 +354,11 @@ def remove_group(group_id: int, save_positions=True):
                 "CanvasPositions/%s" % group_name, item.pos())
             canvas.settings.setValue(
                 "CanvasPositions/%s_SPLIT" % group_name, BoxSplitMode.NO)
-
-    if item in canvas.scene.move_boxes:
-        canvas.scene.move_boxes.remove(s_item)
+    
+    for moving_box in canvas.scene.move_boxes:
+        if moving_box.widget is item:
+            canvas.scene.move_boxes.remove(moving_box)
+            break
 
     item.remove_icon_from_scene()
     canvas.scene.removeItem(item)

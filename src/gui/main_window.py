@@ -345,6 +345,12 @@ class MainWindow(QMainWindow):
         filter_bar_shortcut = QShortcut('Ctrl+F', self)
         filter_bar_shortcut.setContext(Qt.ApplicationShortcut)
         filter_bar_shortcut.activated.connect(self.toggle_patchbay_filters_bar)
+        refresh_shortcut = QShortcut('Ctrl+R', self)
+        refresh_shortcut.setContext(Qt.ApplicationShortcut)
+        refresh_shortcut.activated.connect(self.session.patchbay_manager.refresh)
+        refresh_shortcut_alt = QShortcut('F5', self)
+        refresh_shortcut_alt.setContext(Qt.ApplicationShortcut)
+        refresh_shortcut_alt.activated.connect(self.session.patchbay_manager.refresh)
 
         # prevent to hide the session frame with session/messages splitter
         self.ui.splitterSessionVsMessages.setCollapsible(0, False)

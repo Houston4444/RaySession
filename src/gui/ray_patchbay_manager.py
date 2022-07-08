@@ -173,6 +173,7 @@ class RayPatchbayManager(PatchbayManager):
     
     def refresh(self):
         super().refresh()
+        print('snened')
         self.send_to_patchbay_daemon('/ray/patchbay/refresh')
     
     def disannounce(self):
@@ -381,12 +382,16 @@ class RayPatchbayManager(PatchbayManager):
     def fast_temp_file_running(self, temp_path: str):
         ''' receives a .json file path from patchbay daemon with all ports, connections
             and jack metadatas'''
+            
+        print('gooo')
         patchbay_data = self._get_json_contents_from_path(temp_path)
         if not patchbay_data:
             sys.stderr.write(
                 "RaySession::Failed to load tmp file %s to get JACK ports\n"
                 % temp_path)
             return
+
+        self.clear_all()
 
         # optimize_operation allow to not redraw group at each port added.
         # however, if there is no group position
@@ -395,10 +400,7 @@ class RayPatchbayManager(PatchbayManager):
         
         # very fast operation means that nothing is done in the patchcanvas
         # everything stays here in this file.
-        print('fast tmp file running start', time.time())
-
         if self.group_positions:
-            print('on a des group positions')
             self.optimize_operation(True)
             self._set_very_fast_operation(True)
 
@@ -433,28 +435,17 @@ class RayPatchbayManager(PatchbayManager):
                     self.metadata_update(
                         m.get('uuid'), m.get('key'), m.get('value'))
 
-        print('tout est rentré', time.time())
-
-        # print('ddk', patchcanvas.canvas.group_list)
-
         for group in self.groups:
             group.sort_ports_in_canvas()
 
-        print('les ports sont dans lorde', time.time())
-
         self._set_very_fast_operation(False)
-        
-        print('tout va rentrer dans le canvas', time.time())
-        
+                
         for group in self.groups:
             group.add_all_ports_to_canvas()
-        
-        print('avant conns', time.time())
         
         for conn in self.connections:
             conn.add_to_canvas()
 
-        print('sfkddf', time.time())
         self.optimize_operation(False)
         self.redraw_all_groups()
 
@@ -464,6 +455,7 @@ class RayPatchbayManager(PatchbayManager):
             # if this tmp file can not be removed
             # this is really not strong.
             pass
+        print('finisso')
 
     def patchbay_announce(self, jack_running: int, samplerate: int,
                           buffer_size: int):
