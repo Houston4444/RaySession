@@ -339,15 +339,20 @@ class PatchSceneMoth(QGraphicsScene):
         self.resize_the_scene()
 
         if time_since_start >= self._MOVE_DURATION:
+            # Animation is finished
             self._move_box_timer.stop()
             
-            move_box_widgets = [b.widget for b in self.move_boxes]
+            # box update positions is forbidden while widget is in self.move_boxes
+            # So we copy the list before to clear it
+            # then we can ask update_positions on widgets
+            boxes = [mb.widget for mb in self.move_boxes]
             self.move_boxes.clear()
             self.wrapping_boxes.clear()
 
-            for box in move_box_widgets:
+            for box in boxes:
                 if box is not None:
-                    box.update_positions()
+                    if box.update_positions_pending:
+                        box.update_positions()
                     box.send_move_callback()
 
             canvas.qobject.move_boxes_finished.emit()
@@ -761,7 +766,6 @@ class PatchSceneMoth(QGraphicsScene):
                 not isinstance(topmost, (BoxWidget, ConnectableWidget,
                                          IconPixmapWidget, IconSvgWidget))
                 and int(event.buttons()))
-            print('ya une bo^ite', isinstance(topmost, BoxWidget), topmost)
 
         if self._mouse_rubberband:
             event.accept()

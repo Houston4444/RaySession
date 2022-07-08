@@ -18,8 +18,6 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 from dataclasses import dataclass
-from math import floor
-from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import (QRectF, QMarginsF, Qt)
 from PyQt5.QtWidgets import QGraphicsView
@@ -54,7 +52,7 @@ class ToMoveBox:
     
 
 class PatchScene(PatchSceneMoth):
-    " This class part of the scene is for repulsive boxes option "
+    " This class part of the scene is for repulsive boxes option"
     " because the algorythm is not simple and takes a lot of lines."
     " See scene_abstract.py for others scene methods."
     def __init__(self, parent, view: QGraphicsView):
@@ -189,9 +187,10 @@ class PatchScene(PatchSceneMoth):
         to_move_boxes = list[ToMoveBox]()
         repulsers = list[BoxAndRect]()
         wanted_directions = [wanted_direction]
+        
         for box in repulser_boxes:
             srect = box.boundingRect()
-            
+
             if new_scene_rect is not None:
                 srect = new_scene_rect
             else:
@@ -210,7 +209,6 @@ class PatchScene(PatchSceneMoth):
             search_rect = srect.marginsAdded(QMarginsF(4.0, 4.0, 4.0, 4.0))
 
             for widget in self.items(search_rect, Qt.IntersectsItemShape, Qt.AscendingOrder):
-                # print(widget, widget.zValue())
                 if not isinstance(widget, BoxWidget):
                     continue
                 

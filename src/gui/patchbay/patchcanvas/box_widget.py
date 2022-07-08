@@ -75,6 +75,8 @@ class BoxWidget(BoxWidgetMoth):
             self, group_id, group_name, icon_type, icon_name)
         self._port_list = list[PortObject]()
         self._portgrp_list = list[PortgrpObject]()
+        
+        self.update_positions_pending = False
 
     def _get_portgroup_name(self, portgrp_id: int):
         return get_portgroup_name_from_ports_names(
@@ -1006,6 +1008,7 @@ class BoxWidget(BoxWidgetMoth):
 
         if (not even_animated
                 and self in [b.widget for b in canvas.scene.move_boxes]):
+            self.update_positions_pending = True
             # do not change box disposition while box is moved by animation
             # update_positions will be called when animation is finished
             return
@@ -1163,5 +1166,6 @@ class BoxWidget(BoxWidgetMoth):
         if not (self._wrapping or self._unwrapping) and self.isVisible():
             canvas.scene.deplace_boxes_from_repulsers([self])
 
+        self.update_positions_pending = False
         self.update()
             
