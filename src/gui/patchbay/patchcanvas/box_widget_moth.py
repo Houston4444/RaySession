@@ -547,7 +547,7 @@ class BoxWidgetMoth(QGraphicsItem):
                     self._splitted_mode, False)
                 return True
             
-        elif self._unwrap_triangle_pos:
+        elif self._unwrap_triangle_pos is not UnwrapButton.NONE:
             # wrap the box if scene_pos is on the triangle zone
             trirect = QRectF(0, self._height - 16, 16, 16)
             
@@ -860,8 +860,8 @@ class BoxWidgetMoth(QGraphicsItem):
             # prevent box move if user just quit a context menu with click outside
             # because it moves the box at the very strange position
             # if the cursor didn't move between the click for menu quit 
-            # and the next one (this one)
-            # strange Qt Bug
+            # and the next one (this one).
+            # strange Qt Bug.
             self.setFlag(QGraphicsItem.ItemIsMovable, False)
         
         elif event.button() == Qt.RightButton:

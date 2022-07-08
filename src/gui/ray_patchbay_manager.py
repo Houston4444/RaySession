@@ -383,7 +383,6 @@ class RayPatchbayManager(PatchbayManager):
         ''' receives a .json file path from patchbay daemon with all ports, connections
             and jack metadatas'''
             
-        print('gooo')
         patchbay_data = self._get_json_contents_from_path(temp_path)
         if not patchbay_data:
             sys.stderr.write(
@@ -455,7 +454,6 @@ class RayPatchbayManager(PatchbayManager):
             # if this tmp file can not be removed
             # this is really not strong.
             pass
-        print('finisso')
 
     def patchbay_announce(self, jack_running: int, samplerate: int,
                           buffer_size: int):
