@@ -1,9 +1,7 @@
 
-import json
-import os
+from dataclasses import dataclass
 import sys
-import time
-from typing import TYPE_CHECKING, Union
+from typing import Callable, Union
 from PyQt5.QtGui import QCursor, QGuiApplication
 from PyQt5.QtWidgets import QMessageBox, QWidget
 from PyQt5.QtCore import QTimer, QSettings
@@ -14,7 +12,6 @@ from .patchbay_signals import SignalsObject
 from .tools_widgets import (PORT_TYPE_AUDIO, PORT_TYPE_MIDI,
                             PatchbayToolsWidget, CanvasMenu)
 from .options_dialog import CanvasOptionsDialog
-
 from .base_elements import (Connection, GroupPos, Port, Portgroup, Group,
                             JackPortFlag, PortgroupMem)
 from .calbacker import Callbacker
@@ -40,6 +37,33 @@ def enum_to_flag(enum_int: int) -> int:
         return 0
     return 2 ** (enum_int - 1)
 
+@dataclass
+class DelayedOrder:
+    func: Callable
+    args: tuple
+    kwargs: dict
+    draw_group: bool
+    sort_group: bool
+
+    
+def later_by_batch(draw_group=False, sort_group=False):
+    def decorator(func: Callable):
+        def wrapper(*args, **kwargs):
+            mng = args[0]
+            assert isinstance(mng, PatchbayManager)
+            if mng.very_fast_operation:
+                return func(*args, **kwargs)
+            
+            mng.delayed_orders.append(
+                DelayedOrder(func, args, kwargs,
+                             draw_group or sort_group,
+                             sort_group))
+            
+            mng._delayed_orders_timer.start()
+            return
+        return wrapper
+    return decorator
+
 
 class PatchbayManager:
     use_graceful_names = True
@@ -56,7 +80,7 @@ class PatchbayManager:
 
     group_positions = list[GroupPos]()
     portgroups_memory = list[PortgroupMem]()
-    orders_queue = list[dict]()
+    delayed_orders = list[DelayedOrder]()
 
     def __init__(self, settings=None):
         self.callbacker = Callbacker(self)
@@ -85,12 +109,12 @@ class PatchbayManager:
         # to reduce the patchbay comsumption.
         # Redraws in canvas are made once 50ms have passed without any event.
         # This prevent one group redraw per port added/removed
-        # when a lot of ports are added/removed/renamed simultaneously
-        self._orders_queue_timer = QTimer()
-        self._orders_queue_timer.setInterval(50)
-        self._orders_queue_timer.setSingleShot(True)
-        self._orders_queue_timer.timeout.connect(
-            self._order_queue_timeout)
+        # when a lot of ports are added/removed/renamed simultaneously.
+        self._delayed_orders_timer = QTimer()
+        self._delayed_orders_timer.setInterval(50)
+        self._delayed_orders_timer.setSingleShot(True)
+        self._delayed_orders_timer.timeout.connect(
+            self._delayed_orders_timeout)
 
     # --- widgets related methods --- #
 
@@ -367,32 +391,13 @@ class PatchbayManager:
     def refresh(self):
         self.clear_all()
 
-    def get_json_contents_from_path(self, file_path: str) -> dict:
-        if not os.path.exists(file_path):
-            return {}
-
-        if not os.access(file_path, os.R_OK):
-            return {}
-
-        try:
-            file = open(file_path, 'r')
-        except IOError:
-            return {}
-
-        try:
-            new_dict = json.load(file)
-            assert isinstance(new_dict, dict)
-        except ImportError:
-            return {}
-
-        file.close()
-        return new_dict
-
+    @later_by_batch()
     def set_group_uuid_from_name(self, client_name: str, uuid: int):
         group = self._groups_by_name.get(client_name)
         if group is not None:
             group.uuid = uuid
 
+    @later_by_batch(draw_group=True)
     def add_port(self, name: str, port_type_int: int, flags: int, uuid: int) -> int:
         ''' adds port and returns the group_id '''
         port_type = PortType.NULL
@@ -456,6 +461,7 @@ class PatchbayManager:
         
         return group.group_id
 
+    @later_by_batch(draw_group=True)
     def remove_port(self, name: str) -> Union[int, None]:
         ''' removes a port from name and return the group_id'''
         port = self.get_port_from_name(name)
@@ -490,6 +496,7 @@ class PatchbayManager:
         
         return group.group_id
 
+    @later_by_batch(draw_group=True)
     def rename_port(self, name: str, new_name: str) -> Union[int, None]:
         port = self.get_port_from_name(name)
         if port is None:
@@ -544,6 +551,7 @@ class PatchbayManager:
 
             return group.group_id
 
+    @later_by_batch(sort_group=True)
     def metadata_update(self, uuid: int, key: str, value: str) -> int:
         ''' remember metadata and returns the group_id'''
         if key == JACK_METADATA_ORDER:
@@ -585,6 +593,7 @@ class PatchbayManager:
                     group.set_client_icon(value, from_metadata=True)
                     return group.group_id
 
+    @later_by_batch()
     def add_connection(self, port_out_name: str, port_in_name: str):
         port_out = self.get_port_from_name(port_out_name)
         port_in = self.get_port_from_name(port_in_name)  
@@ -602,6 +611,7 @@ class PatchbayManager:
         self.connections.append(connection)
         connection.add_to_canvas()
 
+    @later_by_batch()
     def remove_connection(self, port_out_name: str, port_in_name: str):
         port_out = self.get_port_from_name(port_out_name)
         port_in = self.get_port_from_name(port_in_name)
@@ -713,58 +723,30 @@ class PatchbayManager:
         if self._tools_widget is not None:
             self._tools_widget.set_samplerate(samplerate)
 
-    def add_order_to_queue(self, order: str, *args):
-        self.orders_queue.append({'order': order, 'args': args})
-        self._orders_queue_timer.start()
-
-    def _order_queue_timeout(self):
+    def _delayed_orders_timeout(self):
         self.optimize_operation(True)
         
         group_ids_to_update = set()
         group_ids_to_sort = set()
         some_groups_removed = False
         
-        for order_dict in self.orders_queue:
-            order = order_dict['order']
-            args = order_dict['args']
-            
-            if order == 'add_port':
-                group_id = self.add_port(*args)
-                group_ids_to_update.add(group_id)
-                
-            elif order == 'remove_port':
-                group_id = self.remove_port(*args)
-                if group_id is None:
-                    some_groups_removed = True
+        for oq in self.delayed_orders:
+            group_id = oq.func(*oq.args, **oq.kwargs)
+            if oq.sort_group and group_id:
+                group_ids_to_sort.add(group_id)
+            if oq.draw_group:
+                if group_id:
+                    group_ids_to_update.add(group_id)
                 else:
-                    group_ids_to_update.add(group_id)
-                    
-            elif order == 'rename_port':
-                group_id = self.rename_port(*args)
-                group_ids_to_update.add(group_id)
-                
-            elif order == 'add_connection':
-                self.add_connection(*args)
-                
-            elif order == 'remove_connection':
-                self.remove_connection(*args)
-                
-            elif order == 'update_metadata':
-                group_id = self.metadata_update(*args)
-                if group_id is not None:
-                    group_ids_to_update.add(group_id)
-                    group_ids_to_sort.add(group_id)
-            else:
-                sys.stderr.write(
-                    '_order_queue_timeout wrong order: %s\n' % order)
+                    some_groups_removed = True
         
         for group in self.groups:
             if group.group_id in group_ids_to_sort:
                 group.sort_ports_in_canvas()
 
         self.optimize_operation(False)
-        self.orders_queue.clear()
-        
+        self.delayed_orders.clear()
+
         for group in self.groups:
             if group.group_id in group_ids_to_update:
                 group.redraw_in_canvas()

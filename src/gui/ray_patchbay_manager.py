@@ -1,4 +1,5 @@
 
+import json
 from typing import TYPE_CHECKING
 import time
 import os
@@ -146,6 +147,27 @@ class RayPatchbayManager(PatchbayManager):
         if not server:
             return
         server.to_daemon(*args)
+    
+    def _get_json_contents_from_path(self, file_path: str) -> dict:
+        if not os.path.exists(file_path):
+            return {}
+
+        if not os.access(file_path, os.R_OK):
+            return {}
+
+        try:
+            file = open(file_path, 'r')
+        except IOError:
+            return {}
+
+        try:
+            new_dict = json.load(file)
+            assert isinstance(new_dict, dict)
+        except ImportError:
+            return {}
+
+        file.close()
+        return new_dict
     
     #### reimplemented functions ###
     
@@ -331,7 +353,7 @@ class RayPatchbayManager(PatchbayManager):
     def fast_temp_file_memory(self, temp_path):
         ''' receives a .json file path from daemon with groups positions
             and portgroups remembered from user. '''
-        canvas_data = self.get_json_contents_from_path(temp_path)
+        canvas_data = self._get_json_contents_from_path(temp_path)
         if not canvas_data:
             sys.stderr.write(
                 "RaySession::Failed to load tmp file %s to get canvas positions\n"
@@ -359,7 +381,7 @@ class RayPatchbayManager(PatchbayManager):
     def fast_temp_file_running(self, temp_path: str):
         ''' receives a .json file path from patchbay daemon with all ports, connections
             and jack metadatas'''
-        patchbay_data = self.get_json_contents_from_path(temp_path)
+        patchbay_data = self._get_json_contents_from_path(temp_path)
         if not patchbay_data:
             sys.stderr.write(
                 "RaySession::Failed to load tmp file %s to get JACK ports\n"
