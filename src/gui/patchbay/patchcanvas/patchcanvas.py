@@ -146,7 +146,6 @@ def init(app_name: str, scene: PatchScene, callback: Callable,
     canvas.scene = scene
 
     canvas.last_z_value = 0
-    canvas.last_connection_id = 0
     canvas.initial_pos = QPointF(0, 0)
     canvas.size_rect = QRectF()
 
@@ -182,7 +181,6 @@ def clear():
         remove_group(idx)
 
     canvas.last_z_value = 0
-    canvas.last_connection_id = 0
 
     canvas.clear_all()
     canvas.group_plugin_map = {}

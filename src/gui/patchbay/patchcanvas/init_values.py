@@ -182,12 +182,7 @@ class CanvasFeaturesObject:
     port_rename = False
     handle_group_pos = False
 
-
-
-
 # ------------------------
-        
-        
 
 # object lists            
 class GroupObject:
@@ -355,7 +350,6 @@ class Canvas:
 
         self.scene = None
         self.last_z_value = 0
-        self.last_connection_id = 0
         self.initial_pos = QPointF(0, 0)
         self.size_rect = QRectF()
 
@@ -379,8 +373,8 @@ class Canvas:
 
     def callback(self, action: CallbackAct, value1: int,
                  value2: int, value_str: str):
-        print("Canvas::callback({}, {}, {}, {})".format(
-            action.name, value1, value2, value_str))
+        # has to be redefined in patchcanvas.init()
+        pass
     
     def clear_all(self):
         self.port_list.clear()
