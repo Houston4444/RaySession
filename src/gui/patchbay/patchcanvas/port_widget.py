@@ -429,8 +429,10 @@ class PortWidget(ConnectableWidget):
         poly_pen = QPen(poly_pen)
         poly_pen.setWidthF(poly_pen.widthF() + 0.00001)
 
-        lineHinting = poly_pen.widthF() / 2
-        text_y_pos = 12
+        line_hinting = poly_pen.widthF() / 2
+        p_height = canvas.theme.port_height
+        text_y_pos = ((p_height - 0.667 * self._port_font.pixelSize()) / 2
+                      + self._port_font.pixelSize() * 0.667)
 
         poly_locx = [0, 0, 0, 0, 0, 0]
         poly_corner_xhinting = ((float(canvas.theme.port_height)/2)
@@ -444,37 +446,37 @@ class PortWidget(ConnectableWidget):
             text_pos = QPointF(3, text_y_pos)
 
             if is_cv_port:
-                poly_locx[0] = lineHinting
-                poly_locx[1] = self._port_width + 5 - lineHinting
-                poly_locx[2] = self._port_width + 5 - lineHinting
-                poly_locx[3] = self._port_width + 5 - lineHinting
-                poly_locx[4] = lineHinting
+                poly_locx[0] = line_hinting
+                poly_locx[1] = self._port_width + 5 - line_hinting
+                poly_locx[2] = self._port_width + 5 - line_hinting
+                poly_locx[3] = self._port_width + 5 - line_hinting
+                poly_locx[4] = line_hinting
                 poly_locx[5] = self._port_width
             else:
-                poly_locx[0] = lineHinting
-                poly_locx[1] = self._port_width + 5 - lineHinting
+                poly_locx[0] = line_hinting
+                poly_locx[1] = self._port_width + 5 - line_hinting
                 poly_locx[2] = self._port_width + 12 - poly_corner_xhinting
-                poly_locx[3] = self._port_width + 5 - lineHinting
-                poly_locx[4] = lineHinting
+                poly_locx[3] = self._port_width + 5 - line_hinting
+                poly_locx[4] = line_hinting
                 poly_locx[5] = self._port_width
 
         elif self._port_mode is PortMode.OUTPUT:
             text_pos = QPointF(9, text_y_pos)
 
             if is_cv_port:
-                poly_locx[0] = self._port_width + 12 - lineHinting
-                poly_locx[1] = 5 + lineHinting
-                poly_locx[2] = 5 + lineHinting
-                poly_locx[3] = 5 + lineHinting
-                poly_locx[4] = self._port_width + 12 - lineHinting
-                poly_locx[5] = 12 - lineHinting
+                poly_locx[0] = self._port_width + 12 - line_hinting
+                poly_locx[1] = 5 + line_hinting
+                poly_locx[2] = 5 + line_hinting
+                poly_locx[3] = 5 + line_hinting
+                poly_locx[4] = self._port_width + 12 - line_hinting
+                poly_locx[5] = 12 - line_hinting
             else:
-                poly_locx[0] = self._port_width + 12 - lineHinting
-                poly_locx[1] = 7 + lineHinting
+                poly_locx[0] = self._port_width + 12 - line_hinting
+                poly_locx[1] = 7 + line_hinting
                 poly_locx[2] = 0 + poly_corner_xhinting
-                poly_locx[3] = 7 + lineHinting
-                poly_locx[4] = self._port_width + 12 - lineHinting
-                poly_locx[5] = 12 - lineHinting
+                poly_locx[3] = 7 + line_hinting
+                poly_locx[4] = self._port_width + 12 - line_hinting
+                poly_locx[5] = 12 - line_hinting
 
         else:
             self._logger.critical(f"paint() - "
@@ -488,25 +490,25 @@ class PortWidget(ConnectableWidget):
             last_of_portgrp = bool(self._pg_pos + 1 == self._pg_len)
 
             if first_of_portgrp:
-                polygon += QPointF(poly_locx[0] , lineHinting)
-                polygon += QPointF(poly_locx[5] , lineHinting)
+                polygon += QPointF(poly_locx[0] , line_hinting)
+                polygon += QPointF(poly_locx[5] , line_hinting)
             else:
                 polygon += QPointF(poly_locx[0] , 0)
                 polygon += QPointF(poly_locx[5] , 0)
 
             if last_of_portgrp:
-                polygon += QPointF(poly_locx[5], canvas.theme.port_height - lineHinting)
-                polygon += QPointF(poly_locx[0], canvas.theme.port_height - lineHinting)
+                polygon += QPointF(poly_locx[5], canvas.theme.port_height - line_hinting)
+                polygon += QPointF(poly_locx[0], canvas.theme.port_height - line_hinting)
             else:
                 polygon += QPointF(poly_locx[5], canvas.theme.port_height)
                 polygon += QPointF(poly_locx[0], canvas.theme.port_height)
         else:
-            polygon += QPointF(poly_locx[0], lineHinting)
-            polygon += QPointF(poly_locx[1], lineHinting)
+            polygon += QPointF(poly_locx[0], line_hinting)
+            polygon += QPointF(poly_locx[1], line_hinting)
             polygon += QPointF(poly_locx[2], float(canvas.theme.port_height)/2)
-            polygon += QPointF(poly_locx[3], canvas.theme.port_height - lineHinting)
-            polygon += QPointF(poly_locx[4], canvas.theme.port_height - lineHinting)
-            polygon += QPointF(poly_locx[0], lineHinting)
+            polygon += QPointF(poly_locx[3], canvas.theme.port_height - line_hinting)
+            polygon += QPointF(poly_locx[4], canvas.theme.port_height - line_hinting)
+            polygon += QPointF(poly_locx[0], line_hinting)
 
         if poly_image is not None:
             painter.setPen(Qt.NoPen)

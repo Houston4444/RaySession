@@ -19,6 +19,7 @@
 
 
 # Imports (Global)
+from cgitb import text
 import logging
 from math import floor
 from typing import TYPE_CHECKING
@@ -268,10 +269,13 @@ class PortgroupWidget(ConnectableWidget):
         if poly_corner_xhinting == 0:
             poly_corner_xhinting = 0.5 * (1 - 7 / (canvas.theme.port_height / 2))
 
+        text_main_height = self._portgrp_font.pixelSize() * 0.667
+        text_y_pos = ((canvas.theme.port_height * len(self._port_ids)
+                       - text_main_height) / 2
+                      + text_main_height)
+
         if self._port_mode is PortMode.INPUT:
-            text_pos = QPointF(
-                self._ports_width + 3,
-                12 + (canvas.theme.port_height * (len(self._port_ids) -1)/2))
+            text_pos = QPointF(self._ports_width + 3, text_y_pos)
 
             poly_locx[0] = self._ports_width - line_hinting
             poly_locx[1] = self._portgrp_width + 3 + line_hinting
@@ -280,8 +284,7 @@ class PortgroupWidget(ConnectableWidget):
             poly_locx[4] = self._ports_width - line_hinting
 
         elif self._port_mode is PortMode.OUTPUT:
-            text_pos = QPointF(
-                9, 12 + (canvas.theme.port_height * (len(self._port_ids) -1)/2))
+            text_pos = QPointF(9, text_y_pos)
 
             poly_locx[0] = self._portgrp_width + 12 \
                             - self._ports_width - line_hinting
