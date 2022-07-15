@@ -257,7 +257,8 @@ port
 
 In addition to all common block settings, a box block can also interpret the following settings:
 
-* *port_offset* : the horizontal offset of the ports from the border of the box
+* *port_in_offset* : the horizontal offset of the input ports from the border of the box
+* *port_out_offset* : the horizontal offset of the output ports from the border of the box
 * *port_spacing* : vertical spacing between ports (if they are not in the same portgroup)
 * *port_type_spacing* : vertical spacing between ports of different type, in addition to *port_spacing*
 

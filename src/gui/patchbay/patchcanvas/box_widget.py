@@ -124,7 +124,8 @@ class BoxWidget(BoxWidgetMoth):
         
         box_theme = self.get_theme()
         port_spacing = box_theme.port_spacing()
-        port_offset = box_theme.port_offset()
+        port_in_offset = box_theme.port_in_offset()
+        port_out_offset = box_theme.port_out_offset()
         port_type_spacing = box_theme.port_type_spacing()
         last_in_type_alter = (PortType.NULL, PortSubType.REGULAR)
         last_out_type_alter = (PortType.NULL, PortSubType.REGULAR)
@@ -139,6 +140,11 @@ class BoxWidget(BoxWidgetMoth):
                 last_of_portgrp = bool(port.pg_pos + 1 == port.pg_len)
                 size = 0
                 max_pwidth = options.max_port_width
+    
+                if port.port_mode is PortMode.INPUT:
+                    port_offset = port_in_offset
+                else:
+                    port_offset = port_out_offset
 
                 if port.portgrp_id:
                     portgrp = canvas.get_portgroup(self._group_id, port.portgrp_id)
@@ -166,7 +172,6 @@ class BoxWidget(BoxWidgetMoth):
                             + max(port.widget.get_text_width() + 6,
                                     canvas.theme.port_grouped_width)
                             + port_offset)
-                        # break
                 else:
                     port.widget.set_print_name(port.port_name, max_pwidth)
                     size = max(port.widget.get_text_width() + port_offset, 20)
@@ -742,10 +747,11 @@ class BoxWidget(BoxWidgetMoth):
     
     def _set_ports_x_positions(self, max_in_width: int, max_out_width: int):
         box_theme = self.get_theme()
-        port_offset = box_theme.port_offset()
+        port_in_offset = box_theme.port_in_offset()
+        port_out_offset = box_theme.port_out_offset()
         
         # Horizontal ports re-positioning
-        in_x = port_offset
+        in_x = port_in_offset
         out_x = self._width - max_out_width - 12
 
         # Horizontal ports not in portgroup re-positioning
@@ -755,19 +761,19 @@ class BoxWidget(BoxWidgetMoth):
 
             if port.port_mode is PortMode.INPUT:
                 port.widget.setX(in_x)
-                port.widget.set_port_width(max_in_width - port_offset)
+                port.widget.set_port_width(max_in_width - port_in_offset)
             elif port.port_mode is PortMode.OUTPUT:
                 port.widget.setX(out_x)
-                port.widget.set_port_width(max_out_width - port_offset)
+                port.widget.set_port_width(max_out_width - port_out_offset)
 
         # Horizontal portgroups and ports in portgroup re-positioning
         for portgrp in self._portgrp_list:
             if portgrp.widget is not None:
                 if portgrp.port_mode is PortMode.INPUT:
-                    portgrp.widget.set_portgrp_width(max_in_width - port_offset)
-                    portgrp.widget.setX(box_theme.port_offset() +1)
+                    portgrp.widget.set_portgrp_width(max_in_width - port_in_offset)
+                    portgrp.widget.setX(port_in_offset +1)
                 elif portgrp.port_mode is PortMode.OUTPUT:
-                    portgrp.widget.set_portgrp_width(max_out_width - port_offset)
+                    portgrp.widget.set_portgrp_width(max_out_width - port_out_offset)
                     portgrp.widget.setX(out_x)
 
             max_port_in_pg_width = canvas.theme.port_grouped_width
@@ -782,7 +788,7 @@ class BoxWidget(BoxWidgetMoth):
                     max_port_in_pg_width = max(max_port_in_pg_width,
                                                port_print_width + 4)
 
-            out_in_portgrp_x = (self._width - box_theme.port_offset() - 12
+            out_in_portgrp_x = (self._width - port_out_offset - 12
                                 - max_port_in_pg_width)
 
             portgrp.widget.set_ports_width(max_port_in_pg_width)
@@ -899,7 +905,8 @@ class BoxWidget(BoxWidgetMoth):
         painter_path = QPainterPath()
         theme = self.get_theme()
         border_radius = theme.border_radius()
-        port_offset = theme.port_offset()
+        port_in_offset = abs(theme.port_in_offset())
+        port_out_offset = abs(theme.port_out_offset())
         pen = theme.fill_pen()
         line_hinting = pen.widthF() / 2.0
         
@@ -917,27 +924,27 @@ class BoxWidget(BoxWidgetMoth):
             painter_path.addRoundedRect(rect, border_radius, border_radius)
         
         if not (self._wrapping or self._unwrapping or self._wrapped):
-            if port_offset != 0.0:
-                # substract rects in the box shape in case of port_offset (even negativ)
-                # logic would want to add rects if port_offset is negativ
-                # But that also means that we should change the boudingRect,
-                # So we won't.
-                port_offset = abs(port_offset)
+            # substract rects in the box shape in case of port_offset (even negativ)
+            # logic would want to add rects if port_offset is negativ
+            # But that also means that we should change the boudingRect,
+            # So we won't.
+            if port_in_offset != 0.0:
                 for in_segment in input_segments:
                     moins_path = QPainterPath()
                     moins_path.addRect(QRectF(
                         0.0 - epsy,
                         in_segment[0] - line_hinting - epsy,
-                        port_offset + line_hinting + epsd,
+                        port_in_offset + line_hinting + epsd,
                         in_segment[1] - in_segment[0] + line_hinting * 2 + epsd))
                     painter_path = painter_path.subtracted(moins_path)
-                    
+            
+            if port_out_offset != 0.0:
                 for out_segment in output_segments:
                     moins_path = QPainterPath()
                     moins_path.addRect(QRectF(
-                        self._width - line_hinting - port_offset - epsy,
+                        self._width - line_hinting - port_out_offset - epsy,
                         out_segment[0] - line_hinting - epsy,
-                        port_offset + line_hinting + epsd,
+                        port_out_offset + line_hinting + epsd,
                         out_segment[1] - out_segment[0] + line_hinting * 2 + epsd))
                     painter_path = painter_path.subtracted(moins_path)
 
