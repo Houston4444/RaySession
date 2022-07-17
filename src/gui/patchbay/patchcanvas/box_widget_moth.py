@@ -1118,35 +1118,35 @@ class BoxWidgetMoth(QGraphicsItem):
 
             painter.setPen(mon_theme.fill_pen())
 
-            band_mon_larger = 9
-            triangle_mon_size_top = 7
+            BAND_MON_LARGER = 9
+            TRIANGLE_MON_SIZE_TOP = 7
             triangle_mon_size_bottom = 0
             if (self._wrapping or self._unwrapping
                     or self._unwrap_triangle_pos is not UnwrapButton.NONE):
                 triangle_mon_size_bottom = 13
-            bml = band_mon_larger
-            tms_top = triangle_mon_size_top
+            bml = BAND_MON_LARGER
+            tms_top = TRIANGLE_MON_SIZE_TOP
             tms_bot = triangle_mon_size_bottom
 
-            mon_poly = QPolygonF()
-            
-            if self._current_port_mode is PortMode.OUTPUT:
-                mon_poly += QPointF(pen_width, pen_width)
-                mon_poly += QPointF(pen_width + bml + tms_top, pen_width)
-                mon_poly += QPointF(pen_width + bml, pen_width + tms_top)
-                mon_poly += QPointF(pen_width + bml, self._height - tms_bot - pen_width)
-                mon_poly += QPointF(pen_width + bml + tms_bot, self._height - pen_width)
-                mon_poly += QPointF(pen_width, self._height - pen_width)
-            else:
-                mon_poly += QPointF(self._width - pen_width, pen_width)
-                mon_poly += QPointF(self._width - pen_width - bml - tms_top, pen_width)
-                mon_poly += QPointF(self._width - pen_width - bml, pen_width + tms_top)
-                mon_poly += QPointF(self._width - pen_width - bml,
-                                    self._height - tms_bot - pen_width)
-                mon_poly += QPointF(self._width - pen_width - bml - tms_bot,
-                                    self._height - pen_width)
-                mon_poly += QPointF(self._width - pen_width, self._height - pen_width)
+            xside = pen_width
+            xband = pen_width + bml
+            xtop = pen_width + bml + tms_top
+            xbot = pen_width + bml + tms_bot
 
+            if self._current_port_mode is PortMode.INPUT:
+                xside = self._width - xside
+                xband = self._width - xband
+                xtop = self._width - xtop
+                xbot = self._width - xbot                
+
+            mon_poly = QPolygonF()
+            mon_poly += QPointF(xside, pen_width)
+            mon_poly += QPointF(xtop, pen_width)
+            mon_poly += QPointF(xband, pen_width + tms_top)
+            mon_poly += QPointF(xband, self._height - tms_bot - pen_width)
+            mon_poly += QPointF(xbot, self._height - pen_width)
+            mon_poly += QPointF(xside, self._height - pen_width)
+            
             painter.drawPolygon(mon_poly)
 
         # may draw horizontal lines around title (header lines)
