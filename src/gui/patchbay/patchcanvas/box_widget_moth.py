@@ -237,7 +237,7 @@ class BoxWidgetMoth(QGraphicsItem):
 
     def is_monitor(self):
         return (self._icon_type is IconType.INTERNAL
-                and self._icon_name == 'monitor_playback')
+                and self._icon_name in ('monitor_playback', 'monitor_capture'))
 
     def is_splitted(self):
         return self._splitted
@@ -1094,7 +1094,7 @@ class BoxWidgetMoth(QGraphicsItem):
                 painter.drawRoundedRect(header_rect, radius, radius)
 
         # draw Pipewire Monitor decorations
-        elif self.is_monitor():
+        elif self.is_monitor() and not self._current_port_mode is PortMode.BOTH:
             bor_gradient = QLinearGradient(0, 0, self._height, self._height)
             
             mon_theme = canvas.theme.monitor_decoration
@@ -1118,30 +1118,34 @@ class BoxWidgetMoth(QGraphicsItem):
 
             painter.setPen(mon_theme.fill_pen())
 
-            border_rect = QRectF(0, 0, 11, self._height)
-            border_rect.adjust(line_hinting * 2, line_hinting * 2,
-                               -2 * line_hinting, -2 * line_hinting)
-            top_pol = QPolygonF()
-            top_pol += QPointF(11 - 2 * line_hinting, line_hinting * 2)
-            top_pol += QPointF(11 - 2 * line_hinting + 13, line_hinting  * 2)
-            top_pol += QPointF(11 - 2 * line_hinting, 13 + line_hinting * 2)
-
             band_mon_larger = 9
             triangle_mon_size_top = 7
             triangle_mon_size_bottom = 0
-            if self._height >= 100 or self._wrapping or self._unwrapping:
+            if (self._wrapping or self._unwrapping
+                    or self._unwrap_triangle_pos is not UnwrapButton.NONE):
                 triangle_mon_size_bottom = 13
             bml = band_mon_larger
             tms_top = triangle_mon_size_top
             tms_bot = triangle_mon_size_bottom
 
             mon_poly = QPolygonF()
-            mon_poly += QPointF(pen_width, pen_width)
-            mon_poly += QPointF(pen_width + bml + tms_top, pen_width)
-            mon_poly += QPointF(pen_width + bml, pen_width + tms_top)
-            mon_poly += QPointF(pen_width + bml, self._height - tms_bot - pen_width)
-            mon_poly += QPointF(pen_width + bml + tms_bot, self._height - pen_width)
-            mon_poly += QPointF(pen_width, self._height - pen_width)
+            
+            if self._current_port_mode is PortMode.OUTPUT:
+                mon_poly += QPointF(pen_width, pen_width)
+                mon_poly += QPointF(pen_width + bml + tms_top, pen_width)
+                mon_poly += QPointF(pen_width + bml, pen_width + tms_top)
+                mon_poly += QPointF(pen_width + bml, self._height - tms_bot - pen_width)
+                mon_poly += QPointF(pen_width + bml + tms_bot, self._height - pen_width)
+                mon_poly += QPointF(pen_width, self._height - pen_width)
+            else:
+                mon_poly += QPointF(self._width - pen_width, pen_width)
+                mon_poly += QPointF(self._width - pen_width - bml - tms_top, pen_width)
+                mon_poly += QPointF(self._width - pen_width - bml, pen_width + tms_top)
+                mon_poly += QPointF(self._width - pen_width - bml,
+                                    self._height - tms_bot - pen_width)
+                mon_poly += QPointF(self._width - pen_width - bml - tms_bot,
+                                    self._height - pen_width)
+                mon_poly += QPointF(self._width - pen_width, self._height - pen_width)
 
             painter.drawPolygon(mon_poly)
 
