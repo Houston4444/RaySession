@@ -1042,6 +1042,8 @@ class BoxWidget(BoxWidgetMoth):
         if options.auto_hide_groups and not self._port_list:
             self.setVisible(False)
             return
+        
+        self.setVisible(True)
     
         align_port_types = self._should_align_port_types()
 

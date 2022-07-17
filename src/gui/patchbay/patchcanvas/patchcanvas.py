@@ -688,7 +688,7 @@ def set_group_layout_mode(group_id: int, port_mode: PortMode,
             box.update_positions()
                         
 
-# ------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------
 
 @patchbay_api
 def get_group_pos(group_id, port_mode=PortMode.OUTPUT):
@@ -807,7 +807,8 @@ def add_port(group_id: int, port_id: int, port_name: str,
     port.port_type = port_type
     port.portgrp_id = 0
     port.port_subtype = port_subtype
-    port.widget = box_widget.add_port_from_group(port)
+    port.widget = PortWidget(port, box_widget)
+    port.widget.setVisible(not box_widget.is_wrapped())
     canvas.add_port(port)
 
     canvas.last_z_value += 1

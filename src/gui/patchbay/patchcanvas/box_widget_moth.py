@@ -237,7 +237,7 @@ class BoxWidgetMoth(QGraphicsItem):
 
     def is_monitor(self):
         return (self._icon_type is IconType.INTERNAL
-                and self._icon_name == 'monitor_capture')
+                and self._icon_name == 'monitor_playback')
 
     def is_splitted(self):
         return self._splitted
@@ -422,7 +422,7 @@ class BoxWidgetMoth(QGraphicsItem):
             if port.widget is not None:
                 port.widget.setVisible(not hide)
 
-    def is_wrapped(self)->bool:
+    def is_wrapped(self) -> bool:
         return self._wrapped
 
     def set_wrapped(self, yesno: bool, animate=True):
@@ -1094,8 +1094,7 @@ class BoxWidgetMoth(QGraphicsItem):
                 painter.drawRoundedRect(header_rect, radius, radius)
 
         # draw Pipewire Monitor decorations
-        elif (self._icon_type is IconType.INTERNAL
-                and self._icon_name == 'monitor_playback'):
+        elif self.is_monitor():
             bor_gradient = QLinearGradient(0, 0, self._height, self._height)
             
             mon_theme = canvas.theme.monitor_decoration
