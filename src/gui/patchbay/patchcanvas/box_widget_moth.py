@@ -142,7 +142,6 @@ class BoxWidgetMoth(QGraphicsItem):
         self._inline_image = None
         self._inline_scaling = 1.0
 
-        self._port_list_ids = list[int]()
         self._connection_lines = list[LineWidget]()
 
         self._is_hardware = bool(icon_type == IconType.HARDWARE)
@@ -157,6 +156,9 @@ class BoxWidgetMoth(QGraphicsItem):
         self._unwrapping = False
         self._wrapping_ratio = 1.0
         self._unwrap_triangle_pos = UnwrapButton.NONE
+
+        self._port_list = list[PortObject]()
+        self._portgrp_list = list[PortgrpObject]()
 
         # Icon
         if icon_type in (IconType.HARDWARE, IconType.INTERNAL):
@@ -178,8 +180,7 @@ class BoxWidgetMoth(QGraphicsItem):
             shadow_theme = shadow_theme.hardware
         elif self._icon_type is IconType.CLIENT:
             shadow_theme = shadow_theme.client
-        elif (self._icon_type is IconType.INTERNAL
-                and self._icon_name == 'monitor_playback'):
+        elif self.is_monitor():
             shadow_theme = shadow_theme.monitor
         
         self.shadow = None
@@ -334,31 +335,6 @@ class BoxWidgetMoth(QGraphicsItem):
         self.setVisible(True)
 
         new_widget = PortWidget(port, self)
-        if self._wrapped:
-            new_widget.setVisible(False)
-
-        self._port_list_ids.append(port.port_id)
-
-        return new_widget
-
-    def remove_port_from_group(self, port_id):
-        if port_id in self._port_list_ids:
-            self._port_list_ids.remove(port_id)
-        else:
-            _logger.warning(
-                f"remove_port_from_group({port_id}) - unable to find port to remove")
-            return
-
-        if not canvas.loading_items:
-            if len(self._port_list_ids) > 0:
-                self.update_positions()
-
-        if options.auto_hide_groups and len(self._port_list_ids) == 0:
-            self.setVisible(False)
-
-    def add_portgroup_from_group(self, portgroup: PortgrpObject):
-        new_widget = PortgroupWidget(portgroup, self)
-
         if self._wrapped:
             new_widget.setVisible(False)
 
@@ -600,8 +576,8 @@ class BoxWidgetMoth(QGraphicsItem):
         conn_list_ids = list[int]()
         disconnect_list = list[DisconnectElement]()
 
-        for connection in canvas.list_connections(group_id=self._group_id):
-            if connection.concerns(self._group_id, self._port_list_ids):
+        for port in self._port_list:
+            for connection in canvas.list_connections(port):
                 conn_list_ids.append(connection.connection_id)
                 other_group_id = connection.group_in_id
                 group_port_mode = PortMode.INPUT
@@ -986,11 +962,11 @@ class BoxWidgetMoth(QGraphicsItem):
             cache_mode = QGraphicsItem.DeviceCoordinateCache
         
         self.setCacheMode(cache_mode)
-        for port in canvas.list_ports(group_id=self._group_id):
-            if port.port_id in self._port_list_ids:
+        for port in self._port_list:
+            if port.widget is not None:
                 port.widget.setCacheMode(cache_mode)
         
-        for portgroup in canvas.list_portgroups(group_id=self._group_id):
+        for portgroup in self._portgrp_list:
             if (self._current_port_mode & portgroup.port_mode
                     and portgroup.widget is not None):
                 portgroup.widget.setCacheMode(cache_mode)

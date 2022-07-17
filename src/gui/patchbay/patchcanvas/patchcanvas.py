@@ -833,8 +833,10 @@ def remove_port(group_id: int, port_id: int):
         return
 
     item = port.widget
+    box = None
+    
     if item is not None:
-        item.parentItem().remove_port_from_group(port_id)
+        box = item.parentItem()
         canvas.scene.removeItem(item)
 
     del item
@@ -843,6 +845,9 @@ def remove_port(group_id: int, port_id: int):
     canvas.qobject.port_removed.emit(group_id, port_id)
     if canvas.loading_items:
         return
+
+    if box is not None:
+        box.update_positions()
 
     QTimer.singleShot(0, canvas.scene.update)
 

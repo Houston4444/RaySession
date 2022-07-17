@@ -73,9 +73,6 @@ class BoxWidget(BoxWidgetMoth):
                  icon_type: int, icon_name: str):
         BoxWidgetMoth.__init__(
             self, group_id, group_name, icon_type, icon_name)
-        self._port_list = list[PortObject]()
-        self._portgrp_list = list[PortgrpObject]()
-        
         self.update_positions_pending = False
 
     def _get_portgroup_name(self, portgrp_id: int):
@@ -1041,6 +1038,10 @@ class BoxWidget(BoxWidgetMoth):
         for portgrp in canvas.list_portgroups(group_id=self._group_id):
             if self._current_port_mode & portgrp.port_mode:
                 self._portgrp_list.append(portgrp)
+                
+        if options.auto_hide_groups and not self._port_list:
+            self.setVisible(False)
+            return
     
         align_port_types = self._should_align_port_types()
 
