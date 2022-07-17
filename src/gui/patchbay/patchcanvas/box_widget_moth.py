@@ -340,6 +340,14 @@ class BoxWidgetMoth(QGraphicsItem):
 
         return new_widget
 
+    def add_portgroup_from_group(self, portgroup: PortgrpObject):
+        new_widget = PortgroupWidget(portgroup, self)
+
+        if self._wrapped:
+            new_widget.setVisible(False)
+
+        return new_widget
+
     def add_line_to_box(self, line: 'LineWidget'):
         self._connection_lines.append(line)
         self.reset_lines_z_value(self.isSelected())
