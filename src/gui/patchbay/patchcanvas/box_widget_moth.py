@@ -18,6 +18,7 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 import logging
+from math import ceil
 from struct import pack
 import time
 from sip import voidptr
@@ -175,9 +176,10 @@ class BoxWidgetMoth(QGraphicsItem):
         shadow_theme = canvas.theme.box_shadow
         if self._is_hardware:
             shadow_theme = shadow_theme.hardware
-        elif self._icon_type == IconType.CLIENT:
+        elif self._icon_type is IconType.CLIENT:
             shadow_theme = shadow_theme.client
-        elif self._group_name.endswith(' Monitor'):
+        elif (self._icon_type is IconType.INTERNAL
+                and self._icon_name == 'monitor_playback'):
             shadow_theme = shadow_theme.monitor
         
         self.shadow = None
@@ -231,6 +233,10 @@ class BoxWidgetMoth(QGraphicsItem):
 
     def get_group_name(self):
         return self._group_name
+
+    def is_monitor(self):
+        return (self._icon_type is IconType.INTERNAL
+                and self._icon_name == 'monitor_capture')
 
     def is_splitted(self):
         return self._splitted
@@ -1014,11 +1020,12 @@ class BoxWidgetMoth(QGraphicsItem):
             theme = theme.hardware
             wtheme = wtheme.hardware
             hltheme = hltheme.hardware
-        elif self._icon_type == IconType.CLIENT:
+        elif self._icon_type is IconType.CLIENT:
             theme = theme.client
             wtheme = wtheme.client
             hltheme = hltheme.client
-        elif self._group_name.endswith(' Monitor'):
+        elif (self._icon_type is IconType.INTERNAL
+                and self._icon_name == 'monitor_playback'):
             theme = theme.monitor
             wtheme = wtheme.monitor
             hltheme = hltheme.monitor
@@ -1103,7 +1110,8 @@ class BoxWidgetMoth(QGraphicsItem):
                 painter.drawRoundedRect(header_rect, radius, radius)
 
         # draw Pipewire Monitor decorations
-        elif self._group_name.endswith(' Monitor'):
+        elif (self._icon_type is IconType.INTERNAL
+                and self._icon_name == 'monitor_playback'):
             bor_gradient = QLinearGradient(0, 0, self._height, self._height)
             
             mon_theme = canvas.theme.monitor_decoration
@@ -1177,16 +1185,15 @@ class BoxWidgetMoth(QGraphicsItem):
             else:
                 painter.setPen(text_pen)
 
-            if (title_line == self._title_lines[-1]
+            if (self.is_monitor()
+                    and title_line == self._title_lines[-1]
                     and self._group_name.endswith(' Monitor')):
                 # Title line endswith " Monitor"
                 # Draw "Monitor" in yellow
                 # but keep the rest in white
                 pre_text = title_line.text.rpartition(' Monitor')[0]
                 painter.drawText(
-                    int(title_line.x + 0.5),
-                    int(title_line.y + 0.5),
-                    pre_text)
+                    ceil(title_line.x), ceil(title_line.y), pre_text)
 
                 x_pos = title_line.x
                 if pre_text:
@@ -1195,13 +1202,10 @@ class BoxWidgetMoth(QGraphicsItem):
                     x_pos += QFontMetrics(t_font).width(' ')
 
                 painter.setPen(QPen(canvas.theme.monitor_color, 0))
-                painter.drawText(int(x_pos + 0.5), int(title_line.y + 0.5),
-                                 'Monitor')
+                painter.drawText(ceil(x_pos), ceil(title_line.y), 'Monitor')
             else:
-                painter.drawText(
-                    int(title_line.x + 0.5),
-                    int(title_line.y + 0.5),
-                    title_line.text)
+                painter.drawText(ceil(title_line.x), ceil(title_line.y),
+                                 title_line.text)
 
         # draw (un)wrapper triangles
         painter.setPen(wtheme.fill_pen())
@@ -1414,7 +1418,9 @@ class BoxWidgetMoth(QGraphicsItem):
         swidth = self._inline_image.width() / scaling
         sheight = self._inline_image.height() / scaling
 
-        srcx = int(self._width_in + (self._width - self._width_in - self._width_out) / 2 - swidth / 2)
+        srcx = int(self._width_in
+                   + (self._width - self._width_in - self._width_out) / 2
+                   - swidth / 2)
         srcy = int(self._header_height + 1 + (inheight - sheight) / 2)
 
         painter.drawImage(QRectF(srcx, srcy, swidth, sheight), self._inline_image)
@@ -1428,9 +1434,7 @@ class BoxWidgetMoth(QGraphicsItem):
             theme = theme.hardware
         elif self._icon_type == IconType.CLIENT:
             theme = theme.client
-        elif self._group_name.endswith(' Monitor'):
+        elif self.is_monitor():
             theme = theme.monitor
         
         return theme
-
-# ------------------------------------------------------------------------------------------------------------

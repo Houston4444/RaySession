@@ -992,8 +992,7 @@ class BoxWidget(BoxWidgetMoth):
                     - 2 * line_hinting + epsd))
                 painter_path = painter_path.united(top_right_path)
             
-
-        if self._group_name.endswith(' Monitor') and border_radius:
+        if self.is_monitor() and border_radius:
             left_path = QPainterPath()
             left_path.addRect(QRectF(
                 0.0 + line_hinting - epsy,
