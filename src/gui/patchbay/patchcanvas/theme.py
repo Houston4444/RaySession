@@ -446,7 +446,7 @@ class StyleAttributer:
         self._titles_templates_cache[title][gui_key][icon_key] = templates
     
     def get_title_templates(
-            self, title: str, handle_gui: bool, with_icon: bool) -> list:
+            self, title: str, handle_gui: bool, with_icon: bool) -> list[dict[str, int]]:
         if self._titles_templates_cache is None:
             self._set_titles_templates_cache()
         

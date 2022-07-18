@@ -42,29 +42,6 @@ class TitleOn(IntEnum):
     SIDE_UNDER_ICON = 2
 
 
-class BoxArea:
-    width = 0
-    heigth = 0
-    header_width = 0
-    header_height = 0
-    column_mode = BoxLayoutMode.AUTO
-    ports_in_width = 0
-    ports_out_width = 0
-    ports_margin = 30
-    height_for_ports = 0
-    height_for_ports_one = 0
-    title_on_side = False
-    
-    def __init__(self):
-        pass
-    
-    def area(self) -> float:
-        return float(self.width * self.height)
-    
-    def __lt__(self, other):
-        return self.area() < other.area()
-
-
 class BoxWidget(BoxWidgetMoth):
     def __init__(self, group_id: int, group_name: str,
                  icon_type: int, icon_name: str):
@@ -642,8 +619,10 @@ class BoxWidget(BoxWidgetMoth):
                 self._group_name, self._can_handle_gui, self.has_top_icon,
                 all_title_templates[:lines_choice_max])
 
-        sizes_tuples = list[tuple[int, int, bool, TitleOn]]()
+        # Now compare multiple possible areas for the box,
+        # depending on BoxLayoutMode and number of lines for box title.
 
+        sizes_tuples = list[tuple[int, int, bool, TitleOn]]()
         layout_mode = self._get_layout_mode_for_this()
         
         if self._current_port_mode in (PortMode.INPUT, PortMode.OUTPUT):
@@ -1137,6 +1116,14 @@ class BoxWidget(BoxWidgetMoth):
             self._width = normal_width
             
             self._unwrap_triangle_pos = UnwrapButton.NONE
+
+            if self._has_side_title():
+                if self._height - self._header_height >= 15:
+                    if self._current_port_mode is PortMode.OUTPUT:
+                        self._unwrap_triangle_pos = UnwrapButton.LEFT
+                    else:
+                        self._unwrap_triangle_pos = UnwrapButton.RIGHT
+            
             if self._height - self._header_height >= 64:
                 y_side_space = last_in_pos - last_out_pos
                 
