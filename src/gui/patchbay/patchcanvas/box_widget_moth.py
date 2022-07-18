@@ -1118,20 +1118,21 @@ class BoxWidgetMoth(QGraphicsItem):
 
             painter.setPen(mon_theme.fill_pen())
 
-            BAND_MON_LARGER = 9
+            BAND_MON_WIDTH = 9
             TRIANGLE_MON_SIZE_TOP = 7
             triangle_mon_size_bottom = 0
             if (self._wrapping or self._unwrapping
                     or self._unwrap_triangle_pos is not UnwrapButton.NONE):
                 triangle_mon_size_bottom = 13
-            bml = BAND_MON_LARGER
+
+            bmw = BAND_MON_WIDTH
             tms_top = TRIANGLE_MON_SIZE_TOP
             tms_bot = triangle_mon_size_bottom
 
             xside = pen_width
-            xband = pen_width + bml
-            xtop = pen_width + bml + tms_top
-            xbot = pen_width + bml + tms_bot
+            xband = pen_width + bmw
+            xtop = pen_width + bmw + tms_top
+            xbot = pen_width + bmw + tms_bot
 
             if self._current_port_mode is PortMode.INPUT:
                 xside = self._width - xside

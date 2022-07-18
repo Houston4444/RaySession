@@ -6,8 +6,6 @@ from PyQt5.QtGui import QPainterPath
 from PyQt5.QtWidgets import QGraphicsItem
 
 from .init_values import (
-    PortObject,
-    PortgrpObject,
     canvas,
     options,
     BoxLayoutMode,
@@ -17,7 +15,6 @@ from .init_values import (
     IconType)
 
 from .utils import get_portgroup_name_from_ports_names
-from .theme import Theme
 from .box_widget_moth import BoxWidgetMoth, UnwrapButton, TitleLine
 
 
@@ -559,7 +556,14 @@ class BoxWidget(BoxWidgetMoth):
         self, height_for_ports: int, height_for_ports_one: int,
         ports_in_width: int, ports_out_width: int) -> dict:
         ''' choose in how many lines should be splitted the title
-        returns needed more_height '''
+        returns a dict with all required variables and values '''
+        
+        # width_for_ports_one is the width needed for ports
+        # if inputs and outputs layouted in one column.
+        ## INPUT_PORT_1
+        ## INPUT_PORT_2
+        ##    OUTPUT_PORT_1
+        ## ...
         width_for_ports = 30 + ports_in_width + ports_out_width
         width_for_ports_one = 30 + max(ports_in_width, ports_out_width)
 
@@ -571,16 +575,26 @@ class BoxWidget(BoxWidgetMoth):
         font_size = box_theme.font().pixelSize()
 
         # Check Text Name size
+        
+        # first look in cache if title sizes are stocked
         all_title_templates = box_theme.get_title_templates(
             self._group_name, self._can_handle_gui, self.has_top_icon)
         lines_choice_max = len(all_title_templates) - 1
         
         if not all_title_templates:
+            # this box title is not in cache, we need to estimate all its sizes
+            # depending number of splitted lines.
             title_template = {
                 "title_width": 0, "header_width": 0, "header_height": 0}
             all_title_templates = [title_template.copy() for i in range(8)]
 
             last_lines_count = 0
+            GUI_MARGIN = 2
+            title_line_y_start = 2 + font_size
+            
+            header_height = 2 + font_size + 2
+            if self.has_top_icon():
+                header_height = 4 + 24 + 4
 
             for i in range(1, 8):
                 max_title_size = 0
@@ -589,32 +603,28 @@ class BoxWidget(BoxWidgetMoth):
                     max_header_width = 200
                 
                 title_lines = self._split_title(i)
-                
-                title_line_y_start = 2 + font_size
-                gui_margin = 2
 
                 for j in range(len(title_lines)):
                     title_line = title_lines[j]
                     title_line.y = title_line_y_start + j * int(font_size * 1.4)
-                    max_title_size = max(max_title_size, title_line.size)
+                    max_title_size = int(max(max_title_size, title_line.size))
                     header_width = title_line.size + 12
 
                     if self.has_top_icon() and title_line.y <= 28 + font_size:
+                        # text line is at right of the icon
                         header_width += 28
 
                     max_header_width = max(max_header_width, header_width)
                 
-                header_height = 2 + font_size + 2
-                if self.has_top_icon():
-                    header_height = 4 + 24 + 4
-                
                 header_height = max(
                     header_height,
-                    2 + font_size + int(font_size * 1.4) * (len(title_lines) - 1) + 2 + 5)
+                    title_line_y_start
+                        + int(font_size * 1.4) * (len(title_lines) - 1)
+                        + 2 + 5)
                 
                 if self._can_handle_gui:
-                    max_header_width += 2 * gui_margin
-                    header_height += 2 * gui_margin
+                    max_header_width += 2 * GUI_MARGIN
+                    header_height += 2 * GUI_MARGIN
 
                 new_title_template = title_template.copy()
                 new_title_template['title_width'] = max_title_size
@@ -632,8 +642,8 @@ class BoxWidget(BoxWidgetMoth):
                 self._group_name, self._can_handle_gui, self.has_top_icon,
                 all_title_templates[:lines_choice_max])
 
-        sizes_tuples = []
-        
+        sizes_tuples = list[tuple[int, int, bool, TitleOn]]()
+
         layout_mode = self._get_layout_mode_for_this()
         
         if self._current_port_mode in (PortMode.INPUT, PortMode.OUTPUT):
@@ -649,14 +659,15 @@ class BoxWidget(BoxWidgetMoth):
                         * max(all_title_templates[i]['header_height'],
                             height_for_ports + ports_y_start_min),
                         i, False, TitleOn.SIDE))
-                        
-                # calculate area with title on side (title under the icon)
-                for i in range(1, lines_choice_max + 1):
-                    sizes_tuples.append(
-                        ((ports_width + all_title_templates[i]['title_width'] + 16)
-                        * max(all_title_templates[i]['header_height'] + 28,
-                            height_for_ports + ports_y_start_min),
-                        i, False, TitleOn.SIDE_UNDER_ICON))
+
+                if self.has_top_icon():
+                    # calculate area with title on side (title under the icon)
+                    for i in range(1, lines_choice_max + 1):
+                        sizes_tuples.append(
+                            ((ports_width + all_title_templates[i]['title_width'] + 16)
+                                * max(all_title_templates[i]['header_height'] + 28,
+                                      height_for_ports + ports_y_start_min),
+                            i, False, TitleOn.SIDE_UNDER_ICON))
             
             if layout_mode in (BoxLayoutMode.AUTO, BoxLayoutMode.HIGH):
                 # calculate area with title on top
@@ -709,20 +720,20 @@ class BoxWidget(BoxWidgetMoth):
         box_height = 0
         ports_y_start = header_height
 
-        self._title_under_icon = bool(title_on_side == TitleOn.SIDE_UNDER_ICON)
+        self._title_under_icon = bool(title_on_side is TitleOn.SIDE_UNDER_ICON)
 
         if title_on_side:
             box_width = ports_width + 12 + header_width
             ports_y_start = box_theme.port_spacing() + box_theme.port_type_spacing()
             box_height = max(height_for_ports + ports_y_start, header_height)
             
-            if title_on_side == TitleOn.SIDE_UNDER_ICON:
+            if self._title_under_icon:
                 header_width = max(38, max_title_size + 12)
                 if self._can_handle_gui:
                     header_width += 4
 
                 box_width = ports_width + header_width + 12
-                header_height += 15 if len(self._title_lines) == 1 else 30
+                header_height += 20 if len(self._title_lines) == 1 else 30
                 box_height = max(height_for_ports + ports_y_start, header_height)
 
             ports_y_start = max(ports_y_start, header_height - height_for_ports)
