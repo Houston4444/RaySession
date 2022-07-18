@@ -1095,7 +1095,11 @@ class BoxWidgetMoth(QGraphicsItem):
 
         # draw Pipewire Monitor (or PulseAudio bridges) decorations
         elif self.is_monitor() and not self._current_port_mode is PortMode.BOTH:
-            bor_gradient = QLinearGradient(0, 0, self._height, self._height)
+            if self._current_port_mode is PortMode.OUTPUT:
+                bor_gradient = QLinearGradient(0, 0, self._height, self._height)
+            else:
+                bor_gradient = QLinearGradient(
+                    self._width, 0, self._height, self._width - self._height)
             
             mon_theme = canvas.theme.monitor_decoration
             if self.isSelected():
