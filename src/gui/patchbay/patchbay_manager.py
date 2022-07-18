@@ -1,6 +1,7 @@
 
 from dataclasses import dataclass
 import sys
+import time
 from typing import Callable, Union
 from PyQt5.QtGui import QCursor, QGuiApplication
 from PyQt5.QtWidgets import QMessageBox, QWidget
@@ -44,9 +45,10 @@ class DelayedOrder:
     kwargs: dict
     draw_group: bool
     sort_group: bool
+    clear_conns: bool
 
     
-def later_by_batch(draw_group=False, sort_group=False):
+def later_by_batch(draw_group=False, sort_group=False, clear_conns=False):
     def decorator(func: Callable):
         def wrapper(*args, **kwargs):
             mng = args[0]
@@ -57,7 +59,8 @@ def later_by_batch(draw_group=False, sort_group=False):
             mng.delayed_orders.append(
                 DelayedOrder(func, args, kwargs,
                              draw_group or sort_group,
-                             sort_group))
+                             sort_group,
+                             clear_conns))
             
             mng._delayed_orders_timer.start()
             return
@@ -477,18 +480,12 @@ class PatchbayManager:
         
         return group.group_id
 
-    @later_by_batch(draw_group=True)
+    @later_by_batch(draw_group=True, clear_conns=True)
     def remove_port(self, name: str) -> Union[int, None]:
-        ''' removes a port from name and return the group_id'''
+        ''' removes a port from name and return its group_id '''
         port = self.get_port_from_name(name)
         if port is None:
             return None
-
-        for connection in self.connections:
-            if connection.port_out is port or connection.port_in is port:
-                connection.remove_from_canvas()
-                self.connections.remove(connection)
-                break
 
         group = self.get_group_from_id(port.group_id)
         if group is None:
@@ -745,6 +742,7 @@ class PatchbayManager:
         group_ids_to_update = set()
         group_ids_to_sort = set()
         some_groups_removed = False
+        clear_conns = False
         
         for oq in self.delayed_orders:
             group_id = oq.func(*oq.args, **oq.kwargs)
@@ -755,11 +753,34 @@ class PatchbayManager:
                     group_ids_to_update.add(group_id)
                 else:
                     some_groups_removed = True
+            if oq.clear_conns:
+                clear_conns = True
         
         for group in self.groups:
             if group.group_id in group_ids_to_sort:
                 group.sort_ports_in_canvas()
 
+        if clear_conns:
+            # sometimes connections are still in canvas without ports
+            # probably because the message for their destruction
+            # has not been received.
+            # here we can assume to clear all of them
+            conns_to_clean = list[Connection]()
+
+            for conn in self.connections:
+                for port in (conn.port_out, conn.port_in):
+                    fport = self.get_port_from_name(port.full_name)
+                    if fport is None:
+                        conn.remove_from_canvas()
+                        conns_to_clean.append(conn)
+                        break
+                    
+                    if not fport.in_canvas:
+                        conn.remove_from_canvas()
+                    
+            for conn in conns_to_clean:
+                self.connections.remove(conn)
+        
         self.optimize_operation(False)
         self.delayed_orders.clear()
 
