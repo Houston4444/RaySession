@@ -405,18 +405,15 @@ class Group:
                 and not self.client_icon):
             if "sink" in self.name.lower():
                 icon_type = IconType.INTERNAL
-                #icon_name = "audio-volume-medium.svg"
                 icon_name = 'monitor_playback'
             elif "source" in self.name.lower():
                 icon_type = IconType.INTERNAL
-                #icon_name = "audio-input-microphone.svg"
                 icon_name = 'monitor_capture'
 
         elif (self.name.endswith(" Monitor")
                 and not self.client_icon):
             # this group is (probably) a pipewire Monitor group
             icon_type = IconType.INTERNAL
-            #icon_name = "audio-volume-medium.svg"
             icon_name = 'monitor_playback'
 
         self.in_canvas = True
