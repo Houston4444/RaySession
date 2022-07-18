@@ -1093,7 +1093,7 @@ class BoxWidgetMoth(QGraphicsItem):
             else:
                 painter.drawRoundedRect(header_rect, radius, radius)
 
-        # draw Pipewire Monitor decorations
+        # draw Pipewire Monitor (or PulseAudio bridges) decorations
         elif self.is_monitor() and not self._current_port_mode is PortMode.BOTH:
             bor_gradient = QLinearGradient(0, 0, self._height, self._height)
             
@@ -1122,7 +1122,8 @@ class BoxWidgetMoth(QGraphicsItem):
             TRIANGLE_MON_SIZE_TOP = 7
             triangle_mon_size_bottom = 0
             if (self._wrapping or self._unwrapping
-                    or self._unwrap_triangle_pos is not UnwrapButton.NONE):
+                    or (not self._wrapped
+                        and self._unwrap_triangle_pos is not UnwrapButton.NONE)):
                 triangle_mon_size_bottom = 13
 
             bmw = BAND_MON_WIDTH
