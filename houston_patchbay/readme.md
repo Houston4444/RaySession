@@ -1,1 +1,0 @@
-Patchbay for JACK used by RaySession, usable by other softwares. 
