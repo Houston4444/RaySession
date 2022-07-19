@@ -1061,7 +1061,7 @@ QToolButton {border: none}</string>
   <action name="actionAboutRaySession">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/48x48/raysession.png</normaloff>:/48x48/raysession.png</iconset>
+     <normaloff>:/main_icon/48x48/raysession.png</normaloff>:/main_icon/48x48/raysession.png</iconset>
    </property>
    <property name="text">
     <string>&amp;About Ray Session</string>
@@ -1447,7 +1447,7 @@ QToolButton {border: none}</string>
   <action name="actionSystemTrayIconOptions">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/scalable/raysession.svg</normaloff>:/scalable/raysession.svg</iconset>
+     <normaloff>:/main_icon/scalable/raysession.svg</normaloff>:/main_icon/scalable/raysession.svg</iconset>
    </property>
    <property name="text">
     <string>System tray &amp;icon options</string>
