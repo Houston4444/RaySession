@@ -25,19 +25,22 @@ ifeq (, $(shell which $(PYTHON)))
  PYTHON := python
 endif
 
-# -----------------------------------------------------------------------------------------------------------------------------------------
+# ---------------------
 
 all: RES UI LOCALE
 
-# -----------------------------------------------------------------------------------------------------------------------------------------
+# ---------------------
 # Resources
 
-RES: src/resources_rc.py
+RES: src/resources_rc.py src/gui/patchbay/resources_rc.py
 
 src/resources_rc.py: resources/resources.qrc
 	$(PYRCC) $< -o $@
 
-# -----------------------------------------------------------------------------------------------------------------------------------------
+src/gui/patchbay/resources_rc.py: patchbay_resources/resources.qrc
+	$(PYRCC) $< -o $@
+
+# ---------------------
 # UI code
 
 UI: mkdir_ui patchbay raysession ray_proxy
@@ -110,7 +113,7 @@ src/clients/proxy/ui_%.py: resources/ui/%.ui
 PY_CACHE:
 	$(PYTHON) -m compileall src/
 	
-# -----------------------------------------------------------------------------------------------------------------------------------------
+# ------------------------
 # # Translations Files
 
 LOCALE: locale
@@ -120,19 +123,21 @@ locale: locale/raysession_en.qm locale/raysession_fr.qm \
 
 locale/%.qm: locale/%.ts
 	$(LRELEASE) $< -qm $@
-# -----------------------------------------------------------------------------------------------------------------------------------------
+
+# -------------------------
 
 clean:
 	rm -f *~ src/*~ src/*.pyc  src/clients/proxy/ui_*.py \
 	      src/gui/resources_rc.py locale/*.qm
 	rm -f -R src/gui/ui
 	rm -f -R src/__pycache__ src/*/__pycache__ src/*/*/__pycache__
-# -----------------------------------------------------------------------------------------------------------------------------------------
+
+# -------------------------
 
 debug:
 	$(MAKE) DEBUG=true
 
-# -----------------------------------------------------------------------------------------------------------------------------------------
+# -------------------------
 
 install:
 	# Create directories
@@ -185,7 +190,7 @@ install:
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
 
 	# Install icons, scalable
-	install -m 644 resources/scalable/raysession.svg \
+	install -m 644 resources/main_icon/scalable/raysession.svg \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 
 	# Install main code
@@ -220,7 +225,6 @@ install:
 	
 	# Install Translations
 	install -m 644 locale/*.qm $(DEST_RAY)/locale/
-	-----------------------------------------------------------------------------------------------------------------------------------------
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/raysession

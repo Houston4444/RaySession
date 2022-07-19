@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="16"
+   height="16"
+   version="1.1"
+   id="svg10"
+   sodipodi:docname="audio-headphones.svg"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)">
+  <metadata
+     id="metadata16">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs14" />
+  <sodipodi:namedview
+     pagecolor="#818181"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1392"
+     inkscape:window-height="871"
+     id="namedview12"
+     showgrid="false"
+     inkscape:zoom="41.7193"
+     inkscape:cx="8.4714036"
+     inkscape:cy="8.0466432"
+     inkscape:window-x="48"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg10" />
+  <path
+     style="fill:#dddddd;fill-opacity:1;stroke:none;stroke-width:0.40000001;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     inkscape:connector-curvature="0"
+     id="path2"
+     d="M 7.969,1 C 4.663,1 1.945,4.008 2,6.719 2.048,9.084 2.809,11.414 3,12 H 4.526 C 3.364,9.708 3.1883633,6.8919394 3.1883633,6.8919394 c 0,-2.373 2.3186064,-4.7444549 4.8046064,-4.7444549 2.4850003,0 4.8595463,2.2584549 4.8515463,4.7134549 C 12.820516,8.5349394 12.289,9.471 11.455,12 h 1.571 C 13.251,11.355 14,8.81 14,6.719 14,3.889 11.274,1 7.969,1 Z"
+     sodipodi:nodetypes="sccccscccss" />
+  <path
+     style="fill:#ffd700;stroke:#dddddd;stroke-width:0.746;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     inkscape:connector-curvature="0"
+     id="path4"
+     d="M 4.1646475,9.0794873 C 5.064258,8.8166264 6.0179591,9.3584804 6.302646,10.296049 l 0.6405455,2.112377 C 7.2278784,13.345995 6.7306253,14.312032 5.8310147,14.574893 4.9304552,14.838703 3.9767541,14.2959 3.6930162,13.358331 L 3.0524707,11.245955 C 2.7677838,10.309335 3.2640879,9.3423482 4.1646475,9.0794873 Z" />
+  <path
+     style="fill:#ffd700;stroke:#dddddd;stroke-width:0.746;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     inkscape:connector-curvature="0"
+     id="path6"
+     d="M 11.803232,9.107645 C 10.912419,8.8464152 9.9680451,9.3839096 9.6861424,10.312309 l -0.6342811,2.091718 c -0.2819027,0.92746 0.2104874,1.884989 1.1012997,2.14528 0.891752,0.26029 1.836126,-0.276265 2.117089,-1.204665 l 0.634281,-2.091718 C 13.186434,10.324525 12.694984,9.3679351 11.803232,9.107645 Z" />
+</svg>

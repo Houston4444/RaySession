@@ -9,15 +9,7 @@
        <file>main_icon/16x16/raysession.png</file>
        <file>main_icon/96x96/raysession.png</file>
        <file>main_icon/32x32/raysession.png</file>
-       <file>scalable/audio-headphones.svg</file>
-       <file>scalable/DIN-5.svg</file>
-       <file>scalable/audio-input-microphone.svg</file>
-       <file>scalable/pb_generic.svg</file>
-       <file>scalable/pb_hardware.svg</file>
-       <file>scalable/microphone.svg</file>
-       <file>scalable/audio-volume-medium.svg</file>
        <file>scalable/breeze/star-yellow.svg</file>
-       <file>scalable/breeze/zoom-centered.svg</file>
        <file>scalable/breeze/media-playback-stop-red.svg</file>
        <file>scalable/breeze/link.svg</file>
        <file>scalable/breeze/list-remove.svg</file>
@@ -46,12 +38,9 @@
        <file>scalable/breeze/document-open.svg</file>
        <file>scalable/breeze/document-save-as-template.svg</file>
        <file>scalable/breeze/xml-node-duplicate.svg</file>
-       <file>scalable/breeze/audio-jack-connector.svg</file>
        <file>scalable/breeze/visibility.svg</file>
-       <file>scalable/breeze/lines-disconnector.svg</file>
        <file>scalable/breeze/media-playback-stop.svg</file>
        <file>scalable/breeze/system-file-manager.svg</file>
-       <file>scalable/breeze/lines-connector.svg</file>
        <file>scalable/breeze/disabled/link.svg</file>
        <file>scalable/breeze/disabled/list-remove.svg</file>
        <file>scalable/breeze/disabled/media-playback-start.svg</file>
@@ -76,7 +65,6 @@
        <file>scalable/breeze/disabled/visibility.svg</file>
        <file>scalable/breeze/disabled/media-playback-stop.svg</file>
        <file>scalable/breeze/disabled/system-file-manager.svg</file>
-       <file>scalable/breeze-dark/zoom-centered.svg</file>
        <file>scalable/breeze-dark/link.svg</file>
        <file>scalable/breeze-dark/list-remove.svg</file>
        <file>scalable/breeze-dark/document-saved.svg</file>
@@ -105,11 +93,9 @@
        <file>scalable/breeze-dark/document-save-as-template.svg</file>
        <file>scalable/breeze-dark/xml-node-duplicate.svg</file>
        <file>scalable/breeze-dark/visibility.svg</file>
-       <file>scalable/breeze-dark/lines-disconnector.svg</file>
        <file>scalable/breeze-dark/media-playback-stop.svg</file>
        <file>scalable/breeze-dark/system-file-manager.svg</file>
        <file>scalable/breeze-dark/media-playback-stop_red.svg</file>
-       <file>scalable/breeze-dark/lines-connector.svg</file>
        <file>scalable/breeze-dark/disabled/link.svg</file>
        <file>scalable/breeze-dark/disabled/list-remove.svg</file>
        <file>scalable/breeze-dark/disabled/media-playback-start.svg</file>
@@ -134,7 +120,6 @@
        <file>scalable/breeze-dark/disabled/visibility.svg</file>
        <file>scalable/breeze-dark/disabled/media-playback-stop.svg</file>
        <file>scalable/breeze-dark/disabled/system-file-manager.svg</file>
-       <file>scalable/test_icon/dessin.svg</file>
        <file>app_icons/padthv1.svg</file>
        <file>app_icons/samplv1.svg</file>
        <file>app_icons/carla.svg</file>
@@ -173,36 +158,5 @@
        <file>app_icons/dark/network-wired.svg</file>
        <file>fonts/Ubuntu-R.ttf</file>
        <file>fonts/Ubuntu-C.ttf</file>
-       <file>canvas/dark/monitor_playback.svg</file>
-       <file>canvas/dark/audio-headphones.svg</file>
-       <file>canvas/dark/DIN-5.svg</file>
-       <file>canvas/dark/audio-input-microphone.svg</file>
-       <file>canvas/dark/monitor_capture.svg</file>
-       <file>canvas/dark/pb_hardware.svg</file>
-       <file>canvas/dark/microphone.svg</file>
-       <file>canvas/dark/audio-volume-medium.svg</file>
-       <file>canvas/light/audio-headphones.svg</file>
-       <file>canvas/light/DIN-5.svg</file>
-       <file>canvas/light/audio-input-microphone.svg</file>
-       <file>canvas/light/pb_hardware.svg</file>
-       <file>canvas/light/microphone.svg</file>
-       <file>canvas/light/audio-volume-medium.svg</file>
-       <file>cursors/zoom-out-black.png</file>
-       <file>cursors/zoom-out-white.png</file>
-       <file>cursors/zoom-area-white.png</file>
-       <file>cursors/zoom-generic-white.png</file>
-       <file>cursors/update-pixmaps.sh</file>
-       <file>cursors/cut-black.png</file>
-       <file>cursors/zoom-in-black.png</file>
-       <file>cursors/zoom-in-white.png</file>
-       <file>cursors/zoom-area-black.png</file>
-       <file>cursors/zoom-generic-black.png</file>
-       <file>cursors/cut-white.png</file>
-       <file>cursors/src/zoom-centered.svg</file>
-       <file>cursors/src/zoom-generic.svg</file>
-       <file>cursors/src/cut.svg</file>
-       <file>cursors/src/zoom-out.svg</file>
-       <file>cursors/src/zoom-in.svg</file>
-       <file>cursors/src/zoom-area.svg</file>
    </qresource>
 </RCC>

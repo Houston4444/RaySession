@@ -4,8 +4,7 @@ import os
 import sys
 
 if __name__ == '__main__':
-    resource_dirs = ('main_icon', 'scalable', 'app_icons',
-                     'fonts', 'canvas', 'cursors')
+    resource_dirs = ('main_icon', 'scalable', 'app_icons', 'fonts')
 
     contents = '<RCC version="1.0">\n'
     contents += '   <qresource prefix="/">\n'
