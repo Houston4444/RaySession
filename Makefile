@@ -37,7 +37,7 @@ RES: src/resources_rc.py src/gui/patchbay/resources_rc.py
 src/resources_rc.py: resources/resources.qrc
 	$(PYRCC) $< -o $@
 
-src/gui/patchbay/resources_rc.py: patchbay_resources/resources.qrc
+src/gui/patchbay/resources_rc.py: houston_patchbay/resources/resources.qrc
 	$(PYRCC) $< -o $@
 
 # ---------------------
@@ -54,7 +54,7 @@ patchbay: src/gui/patchbay/ui/canvas_options.py \
 		src/gui/patchbay/ui/filter_frame.py \
 		src/gui/patchbay/ui/patchbay_tools.py \
 
-src/gui/patchbay/ui/%.py: patchbay_resources/ui/%.ui
+src/gui/patchbay/ui/%.py: houston_patchbay/resources/ui/%.ui
 	$(PYUIC) $< -o $@
 
 raysession: src/gui/ui/abort_copy.py \
