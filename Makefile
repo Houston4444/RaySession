@@ -167,23 +167,21 @@ install:
 		$(DESTDIR)$(PREFIX)/share/applications/
 
 	# Install icons
-	install -m 644 resources/16x16/raysession.png   \
+	install -m 644 resources/main_icon/16x16/raysession.png   \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
-	install -m 644 resources/24x24/raysession.png   \
+	install -m 644 resources/main_icon/24x24/raysession.png   \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/24x24/apps/
-	install -m 644 resources/32x32/raysession.png   \
+	install -m 644 resources/main_icon/32x32/raysession.png   \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/32x32/apps/
-	install -m 644 resources/48x48/raysession.png   \
+	install -m 644 resources/main_icon/48x48/raysession.png   \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
-	install -m 644 resources/48x48/raysession.png   \
-		$(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
-	install -m 644 resources/64x64/raysession.png   \
+	install -m 644 resources/main_icon/64x64/raysession.png   \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/64x64/apps/
-	install -m 644 resources/96x96/raysession.png   \
+	install -m 644 resources/main_icon/96x96/raysession.png   \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/96x96/apps/
-	install -m 644 resources/128x128/raysession.png \
+	install -m 644 resources/main_icon/128x128/raysession.png \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
-	install -m 644 resources/256x256/raysession.png \
+	install -m 644 resources/main_icon/kw256x256/raysession.png \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
 
 	# Install icons, scalable

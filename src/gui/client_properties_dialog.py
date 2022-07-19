@@ -1,6 +1,5 @@
 import os
 import signal
-import time
 
 from PyQt5.QtCore import QTimer, QFile
 from PyQt5.QtWidgets import QFileDialog, QFrame
@@ -9,6 +8,7 @@ from . import ray, ui
 
 from .gui_tools import _translate, client_status_string, get_app_icon
 from .child_dialogs import ChildDialog
+
 
 class RayHackCopyDialog(ChildDialog):
     def __init__(self, parent):

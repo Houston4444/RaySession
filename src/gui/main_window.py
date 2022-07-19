@@ -396,7 +396,7 @@ class MainWindow(QMainWindow):
 
         self._systray = QSystemTrayIcon(self)
         self._systray.activated.connect(self._systray_activated)
-        self._systray.setIcon(QIcon(':48x48/raysession'))
+        self._systray.setIcon(QIcon(':main_icon/48x48/raysession'))
         self._systray.setToolTip(ray.APP_TITLE)
         self._systray_menu = QMenu()
         self._systray_menu_add = QMenu(self._systray_menu)

@@ -4,8 +4,8 @@ import os
 import sys
 
 if __name__ == '__main__':
-    resource_dirs = ('48x48', '128x128', '256x256',
-                     'scalable', 'app_icons', 'fonts', 'canvas', 'cursors')
+    resource_dirs = ('main_icon', 'scalable', 'app_icons',
+                     'fonts', 'canvas', 'cursors')
 
     contents = '<RCC version="1.0">\n'
     contents += '   <qresource prefix="/">\n'
@@ -16,7 +16,7 @@ if __name__ == '__main__':
         for root, dirs, files in os.walk(resource_dir):
             #exclude hidden files and dirs
             files = [f for f in files if not f.startswith('.')]
-            dirs[:] = [d for d in dirs  if not d.startswith('.')]
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
 
             for file in files:
                 contents += '       <file>%s/%s</file>\n' % (root, file)
