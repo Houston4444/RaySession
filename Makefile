@@ -43,7 +43,7 @@ src/gui/patchbay/resources_rc.py: patchbay_resources/resources.qrc
 # ---------------------
 # UI code
 
-UI: mkdir_ui patchbay raysession ray_proxy
+UI: mkdir_ui patchbay raysession ui_init ray_proxy
 
 mkdir_ui:
 	@if ! [ -e src/gui/ui ];then mkdir -p src/gui/ui; fi
@@ -54,7 +54,7 @@ patchbay: src/gui/patchbay/ui/canvas_options.py \
 		src/gui/patchbay/ui/filter_frame.py \
 		src/gui/patchbay/ui/patchbay_tools.py \
 
-src/gui/patchbay/ui/%.py: resources/ui/patchbay/%.ui
+src/gui/patchbay/ui/%.py: patchbay_resources/ui/%.ui
 	$(PYUIC) $< -o $@
 
 raysession: src/gui/ui/abort_copy.py \
@@ -103,7 +103,12 @@ raysession: src/gui/ui/abort_copy.py \
 
 src/gui/ui/%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
-	
+
+ui_init: src/gui/ui/__init__.py
+
+src/gui/ui/__init__.py: src/generate_init.py
+	$(PYTHON) src/generate_init.py
+
 ray_proxy: src/clients/proxy/ui_proxy_copy.py \
 	   src/clients/proxy/ui_proxy_gui.py
 	

@@ -7,9 +7,6 @@ def dirname(*args) -> str:
 def basename(*args) -> str:
     return os.path.basename(*args)
 
-def get_code_root() -> str:
-    return dirname(dirname(dirname(os.path.realpath(__file__))))
-
 def get_ui_dir() -> str:
     return dirname(os.path.realpath(__file__)) + '/gui/ui'
 
@@ -26,4 +23,7 @@ contents += '\n'.join(content_lines)
 contents = contents[:-1]
 contents += ')'
 
-print(contents)
+file_path = f"{dirname(os.path.realpath(__file__))}/gui/ui/__init__.py"
+file = open(file_path, 'w')
+file.write(contents)
+file.close()
