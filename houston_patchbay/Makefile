@@ -61,9 +61,12 @@ locale/%.qm: locale/%.ts
 # -------------------------
 
 clean:
-	rm -f *~ patchbay/resources_rc.py locale/*.qm
-	rm -f -R patchbay/ui
-	rm -f -R patchbay/__pycache__ patchbay/*/__pycache__ patchbay/*/*/__pycache__
+	rm -f *~ patchbay/resources_rc.py \
+			 locale/*.qm
+	rm -f -R patchbay/ui \
+			 patchbay/__pycache__ \
+			 patchbay/*/__pycache__ \
+			 patchbay/*/*/__pycache__
 
 # -------------------------
 
