@@ -25,12 +25,14 @@ ifeq (, $(shell which $(PYTHON)))
  PYTHON := python
 endif
 
+PATCHBAY_DIR=HoustonPatchbay
+
 # ---------------------
 
 all: PATCHBAY RES UI LOCALE
 
 PATCHBAY:
-	@(cd houston_patchbay && $(MAKE))
+	@(cd $(PATCHBAY_DIR) && $(MAKE))
 
 # ---------------------
 # Resources
@@ -123,7 +125,7 @@ locale/%.qm: locale/%.ts
 # -------------------------
 
 clean:
-	@(cd houston_patchbay && $(MAKE) $@)
+	@(cd $(PATCHBAY_DIR) && $(MAKE) $@)
 	rm -f *~ src/*~ src/*.pyc  src/clients/proxy/ui_*.py \
 	      src/gui/resources_rc.py  locale/*.qm
 	rm -f -R src/gui/ui
@@ -184,7 +186,7 @@ install:
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/96x96/apps/
 	install -m 644 resources/main_icon/128x128/raysession.png \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
-	install -m 644 resources/main_icon/kw256x256/raysession.png \
+	install -m 644 resources/main_icon/256x256/raysession.png \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
 
 	# Install icons, scalable
@@ -193,6 +195,8 @@ install:
 
 	# Install main code
 	cp -r src $(DEST_RAY)/
+	rm $(DEST_RAY)/src/gui/patchbay
+	cp -r $(PATCHBAY_DIR)/patchbay $(DEST_RAY)/src/gui/
 	
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_checker_daemon $(DESTDIR)$(PREFIX)/bin/
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_config_script  $(DESTDIR)$(PREFIX)/bin/
