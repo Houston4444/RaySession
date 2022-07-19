@@ -15,13 +15,10 @@ ray_control doc /ray/server/clear_client_templates_database
 
 
 Patchbay:
-Right click to wrap/unwrap box while connecting
-Fix other box moving too far after join
 Zones (far future) ?
 PW video ports ?
 Damn connections (with ray-jackpatch)
 icons in theme
-replace print() with sys.sterr.write()
 
 generic icon for client
 set client id in add application dialog
