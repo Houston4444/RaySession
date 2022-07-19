@@ -227,6 +227,8 @@ class MainWindow(QMainWindow):
             self._session_frame_resized)
         self.session.patchbay_manager.sg.full_screen_toggle_wanted.connect(
             self.toggle_scene_full_screen)
+        self.session.patchbay_manager.sg.filters_bar_toggle_wanted.connect(
+            self.toggle_patchbay_filters_bar)
 
         # set session menu
         self._session_menu = QMenu()

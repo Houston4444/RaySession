@@ -199,7 +199,7 @@ class CanvasMenu(QMenu):
             _translate('patchbay', "Find a box...\tCtrl+F"))
         self.action_find_box.setIcon(QIcon.fromTheme('edit-find'))
         self.action_find_box.triggered.connect(
-            main_win.toggle_patchbay_filters_bar)
+            patchbay_manager.sg.filters_bar_toggle_wanted.emit)
 
         self.port_types_menu = QMenu(_translate('patchbay', 'Type filter'), self)
         self.port_types_menu.setIcon(QIcon.fromTheme('view-filter'))
@@ -266,6 +266,7 @@ class CanvasMenu(QMenu):
             _translate('patchbay', "Patchbay manual"))
         self.action_manual.setIcon(QIcon.fromTheme('system-help'))
         self.action_manual.triggered.connect(self.internal_manual)
+        self.action_manual.setVisible(False)
 
         self.action_options = self.addAction(
             _translate('patchbay', "Canvas options"))
@@ -294,16 +295,7 @@ class CanvasMenu(QMenu):
             PortType.MIDI_JACK)
 
     def internal_manual(self):
-        short_locale = 'en'
-        manual_dir = "%s/manual" % get_code_root()
-        locale_str = QLocale.system().name()
-        if (len(locale_str) > 2 and '_' in locale_str
-                and os.path.isfile(
-                    "%s/%s/manual.html" % (manual_dir, locale_str[:2]))):
-            short_locale = locale_str[:2]
-
-        url = QUrl("file://%s/%s/manual.html#patchbay" % (manual_dir, short_locale))
-        QDesktopServices.openUrl(url)
+        pass
 
 
 class CanvasPortInfoDialog(QDialog):

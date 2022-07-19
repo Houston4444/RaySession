@@ -5,6 +5,9 @@ import time
 import os
 import sys
 
+from PyQt5.QtCore import QLocale, QUrl
+from PyQt5.QtGui import QDesktopServices
+
 from gui.patchbay.patchcanvas.init_values import PortType
 
 from .patchbay.patchbay_manager import PatchbayManager
@@ -16,7 +19,7 @@ from .patchbay.calbacker import Callbacker
 
 from . import ray
 from .gui_server_thread import GuiServerThread
-from .gui_tools import RS, is_dark_theme, RayIcon
+from .gui_tools import RS, get_code_root, is_dark_theme, RayIcon
 
 if TYPE_CHECKING:
     from .gui_session import Session
@@ -81,6 +84,25 @@ def convert_portgrp_mem_from_patchbay_to_ray(
     return ray.PortGroupMemory.new_from(
         pgmem.group_name, pgmem.port_type.value, pgmem.port_mode.value,
         int(pgmem.above_metadatas), *pgmem.port_names)
+
+
+class RayCanvasMenu(CanvasMenu):
+    def __init__(self, patchbay_manager: 'PatchbayManager'):
+        super().__init__(patchbay_manager)
+        self.action_manual.setVisible(True)
+    
+    def internal_manual(self):
+        short_locale = 'en'
+        manual_dir = "%s/manual" % get_code_root()
+        locale_str = QLocale.system().name()
+        if (len(locale_str) > 2 and '_' in locale_str
+                and os.path.isfile(
+                    "%s/%s/manual.html" % (manual_dir, locale_str[:2]))):
+            short_locale = locale_str[:2]
+
+        url = QUrl(f"file://{manual_dir}/{short_locale}/manual.html#patchbay")
+        # url = QUrl("file://%s/%s/manual.html#patchbay" % (manual_dir, short_locale))
+        QDesktopServices.openUrl(url)
 
 
 class RayPatchbayCallbacker(Callbacker):
@@ -344,7 +366,7 @@ class RayPatchbayManager(PatchbayManager):
             
     def finish_init(self):
         self.set_main_win(self.session.main_win)
-        self.set_canvas_menu(CanvasMenu(self))
+        self.set_canvas_menu(RayCanvasMenu(self))
         
         options_dialog = CanvasOptionsDialog(self.main_win, RS.settings)
         options_dialog.set_user_theme_icon(
