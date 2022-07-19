@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'resources/ui/patchbay/patchbay_tools.ui'
+# Form implementation generated from reading ui file 'houston_patchbay/resources/ui/patchbay_tools.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.2
 #

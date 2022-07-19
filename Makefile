@@ -138,7 +138,7 @@ houston_patchbay/locale/%.qm: houston_patchbay/locale/%.ts
 
 clean:
 	rm -f *~ src/*~ src/*.pyc  src/clients/proxy/ui_*.py \
-	      src/gui/resources_rc.py locale/*.qm
+	      src/gui/resources_rc.py locale/*.qm houston_patchbay/locale/*.qm
 	rm -f -R src/gui/ui
 	rm -f -R src/__pycache__ src/*/__pycache__ src/*/*/__pycache__ \
 		  src/*/*/*/__pycache__

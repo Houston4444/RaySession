@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'resources/ui/patchbay/filter_frame.ui'
+# Form implementation generated from reading ui file 'houston_patchbay/resources/ui/filter_frame.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.2
 #
