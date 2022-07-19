@@ -49,11 +49,16 @@ if __name__ == '__main__':
 
     ### Translation process
     locale = QLocale.system().name()
-    print('code root:', get_code_root())
+
     app_translator = QTranslator()
     if app_translator.load(QLocale(), ray.APP_TITLE.lower(),
                            '_', "%s/locale" % get_code_root()):
         app.installTranslator(app_translator)
+
+    patchbay_translator = QTranslator()
+    if patchbay_translator.load(QLocale(), 'patchbay',
+                                '_', "%s/locale" % get_code_root()):
+        app.installTranslator(patchbay_translator)
 
     sys_translator = QTranslator()
     path_sys_translations = QLibraryInfo.location(QLibraryInfo.TranslationsPath)

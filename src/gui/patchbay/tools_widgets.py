@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QWidget, QMenu, QApplication, QDialog
 from .patchcanvas import patchcanvas
 from .base_elements import JackPortFlag, Port, PortType
 
-from .ui.canvas_port_info import Ui_Dialog as PortInfoUiDialog
+from .ui.canvas_port_info import Ui_CanvasPortInfo as PortInfoUiDialog
 from .ui.patchbay_tools import Ui_Form as PatchbayToolsUiForm
 
 if TYPE_CHECKING:

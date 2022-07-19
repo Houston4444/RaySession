@@ -115,7 +115,8 @@ PY_CACHE:
 
 LOCALE: locale
 
-locale: locale/raysession_en.qm locale/raysession_fr.qm
+locale: locale/raysession_en.qm locale/raysession_fr.qm \
+		locale/patchbay_en.qm   locale/patchbay_fr.qm
 
 locale/%.qm: locale/%.ts
 	$(LRELEASE) $< -qm $@

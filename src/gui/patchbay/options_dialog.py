@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt, pyqtSignal, QProcess, QSettings
 
 
 from .patchcanvas import patchcanvas
-from .ui.canvas_options import Ui_Dialog
+from .ui.canvas_options import Ui_CanvasOptions
 
 _translate = QApplication.translate
 
@@ -15,7 +15,7 @@ class CanvasOptionsDialog(QDialog):
     
     def __init__(self, parent: QWidget, settings=None):
         QDialog.__init__(self, parent)
-        self.ui = Ui_Dialog()
+        self.ui = Ui_CanvasOptions()
         self.ui.setupUi(self)
         
         if settings is not None:
