@@ -27,35 +27,26 @@ endif
 
 # ---------------------
 
-all: RES UI LOCALE
+all: PATCHBAY RES UI LOCALE
+
+PATCHBAY:
+	@(cd houston_patchbay && $(MAKE))
 
 # ---------------------
 # Resources
 
-RES: src/resources_rc.py src/gui/patchbay/resources_rc.py
+RES: src/resources_rc.py
 
 src/resources_rc.py: resources/resources.qrc
-	$(PYRCC) $< -o $@
-
-src/gui/patchbay/resources_rc.py: houston_patchbay/resources/resources.qrc
 	$(PYRCC) $< -o $@
 
 # ---------------------
 # UI code
 
-UI: mkdir_ui patchbay raysession ui_init ray_proxy
+UI: mkdir_ui raysession ui_init ray_proxy
 
 mkdir_ui:
 	@if ! [ -e src/gui/ui ];then mkdir -p src/gui/ui; fi
-	@if ! [ -e src/gui/patchbay/ui ];then mkdir -p src/gui/patchbay/ui; fi
-
-patchbay: src/gui/patchbay/ui/canvas_options.py \
-		src/gui/patchbay/ui/canvas_port_info.py \
-		src/gui/patchbay/ui/filter_frame.py \
-		src/gui/patchbay/ui/patchbay_tools.py \
-
-src/gui/patchbay/ui/%.py: houston_patchbay/resources/ui/%.ui
-	$(PYUIC) $< -o $@
 
 raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/abort_session.py \
@@ -125,20 +116,16 @@ LOCALE: locale
 
 locale: locale/raysession_en.qm \
 		locale/raysession_fr.qm \
-		houston_patchbay/locale/patchbay_en.qm  \
-		houston_patchbay/locale/patchbay_fr.qm
 
 locale/%.qm: locale/%.ts
-	$(LRELEASE) $< -qm $@
-
-houston_patchbay/locale/%.qm: houston_patchbay/locale/%.ts
 	$(LRELEASE) $< -qm $@
 
 # -------------------------
 
 clean:
+	@(cd houston_patchbay && $(MAKE) $@)
 	rm -f *~ src/*~ src/*.pyc  src/clients/proxy/ui_*.py \
-	      src/gui/resources_rc.py locale/*.qm houston_patchbay/locale/*.qm
+	      src/gui/resources_rc.py  locale/*.qm
 	rm -f -R src/gui/ui
 	rm -f -R src/__pycache__ src/*/__pycache__ src/*/*/__pycache__ \
 		  src/*/*/*/__pycache__
