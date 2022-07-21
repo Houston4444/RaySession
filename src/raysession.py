@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     patchbay_translator = QTranslator()
     if patchbay_translator.load(QLocale(), 'patchbay',
-                                '_', "%s/houston_patchbay/locale" % get_code_root()):
+                                '_', "%s/HoustonPatchbay/locale" % get_code_root()):
         app.installTranslator(patchbay_translator)
 
     sys_translator = QTranslator()

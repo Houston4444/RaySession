@@ -2,7 +2,8 @@
 import time
 from PyQt5.QtWidgets import (
     QLineEdit, QStackedWidget, QLabel, QToolButton, QFrame, QGraphicsView,
-    QSplitter, QSplitterHandle, QApplication, QDialogButtonBox, QPushButton)
+    QSplitter, QSplitterHandle, QApplication, QDialogButtonBox, QPushButton,
+    QDialog)
 from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QMouseEvent, QKeyEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
@@ -72,17 +73,17 @@ class OpenSessionFilterBar(QLineEdit):
 
 
 class CustomLineEdit(QLineEdit):
-    def __init__(self, parent):
+    def __init__(self, parent: 'StackedSessionName'):
         QLineEdit.__init__(self)
-        self.parent = parent
+        self._parent = parent
 
     def mouseDoubleClickEvent(self, event):
-        self.parent.mouseDoubleClickEvent(event)
+        self._parent.mouseDoubleClickEvent(event)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent):
         if event.key() in (Qt.Key_Enter, Qt.Key_Return):
-            self.parent.name_changed.emit(self.text())
-            self.parent.setCurrentIndex(0)
+            self._parent.name_changed.emit(self.text())
+            self._parent.setCurrentIndex(0)
             return
 
         QLineEdit.keyPressEvent(self, event)
@@ -261,7 +262,7 @@ class StatusBarNegativ(StatusBar):
 
 
 class FakeToolButton(QToolButton):
-    def __init__(self, parent):
+    def __init__(self, parent: QDialog):
         QToolButton.__init__(self, parent)
         self.setStyleSheet("QToolButton{border:none}")
 
@@ -370,6 +371,10 @@ class CanvasSplitter(QSplitter):
     def __init__(self, parent):
         QSplitter.__init__(self, parent)
 
+    def handle(self, index: int) -> CanvasSplitterHandle:
+        # just for output type redefinition
+        return super().handle(index)
+
     def set_active(self, yesno: bool):
         handle = self.handle(1)
         if handle:
@@ -392,6 +397,7 @@ class StartupDialogButtonBox(QDialogButtonBox):
 
         QDialogButtonBox.keyPressEvent(self, event)
 
+
 class StartupDialogPushButtonNew(QPushButton):
     focus_on_list = pyqtSignal()
     focus_on_open = pyqtSignal()
@@ -399,7 +405,7 @@ class StartupDialogPushButtonNew(QPushButton):
     def __init__(self, parent):
         QPushButton.__init__(self, parent)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent):
         if event.key() in (Qt.Key_Down, Qt.Key_Up):
             self.focus_on_open.emit()
             return
@@ -423,6 +429,7 @@ class StartupDialogPushButtonOpen(StartupDialogPushButtonNew):
             return
 
         StartupDialogPushButtonNew.keyPressEvent(self, event)
+
 
 class PreviewFrame(QFrame):
     def __init__(self, parent):

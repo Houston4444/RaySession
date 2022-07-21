@@ -363,8 +363,7 @@ class MainWindow(QMainWindow):
         self._canvas_menu = None
         self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
         self.ui.graphicsView.setScene(self.scene)
-
-        self._setup_canvas()
+        # self._setup_canvas()
 
         self.set_nsm_locked(CommandLineArgs.under_nsm)
 

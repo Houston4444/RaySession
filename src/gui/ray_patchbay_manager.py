@@ -1,6 +1,7 @@
 
 import json
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional
 import time
 import os
 import sys
@@ -16,6 +17,7 @@ from .patchbay.base_elements import (Group, GroupPos, PortgroupMem,
 from .patchbay.options_dialog import CanvasOptionsDialog
 from .patchbay.tools_widgets import PatchbayToolsWidget, CanvasMenu
 from .patchbay.calbacker import Callbacker
+from .patchbay.patchcanvas import patchcanvas
 
 from . import ray
 from .gui_server_thread import GuiServerThread
@@ -145,7 +147,7 @@ class RayPatchbayCallbacker(Callbacker):
                 break
 
 
-class RayPatchbayManager(PatchbayManager):
+class RayPatchbayManager(PatchbayManager):    
     def __init__(self, session: 'Session'):
         super().__init__(RS.settings)
         self.callbacker = RayPatchbayCallbacker(self)
@@ -170,6 +172,9 @@ class RayPatchbayManager(PatchbayManager):
             return
         server.to_daemon(*args)
     
+    def canvas_callback(self, action: int, *args):
+        self.session.signaler.canvas_callback.emit(action, args)
+    
     def _get_json_contents_from_path(self, file_path: str) -> dict:
         if not os.path.exists(file_path):
             return {}
@@ -191,11 +196,50 @@ class RayPatchbayManager(PatchbayManager):
         file.close()
         return new_dict
     
+    def _setup_canvas(self):
+        options = patchcanvas.CanvasOptionsObject()
+        options.theme_name = RS.settings.value(
+            'Canvas/theme', 'Black Gold', type=str)
+        options.eyecandy = patchcanvas.EyeCandy.NONE
+        if RS.settings.value('Canvas/box_shadows', False, type=bool):
+            options.eyecandy = patchcanvas.EyeCandy.SMALL
+
+        options.auto_hide_groups = True
+        options.auto_select_items = False
+        options.inline_displays = False
+        options.elastic = RS.settings.value('Canvas/elastic', True, type=bool)
+        options.prevent_overlap = RS.settings.value(
+            'Canvas/prevent_overlap', True, type=bool)
+        options.max_port_width = RS.settings.value(
+            'Canvas/max_port_width', 160, type=int)
+
+        features = patchcanvas.CanvasFeaturesObject()
+        features.group_info = False
+        features.group_rename = False
+        features.port_info = True
+        features.port_rename = False
+        features.handle_group_pos = False
+
+        theme_paths = list[Path]()
+        theme_paths.append(
+            Path(RS.settings.fileName()).parent.joinpath('patchbay_themes'))
+        theme_paths.append(
+            Path(get_code_root()).joinpath('patchbay_themes'))
+
+        patchcanvas.set_options(options)
+        patchcanvas.set_features(features)
+        patchcanvas.init(
+            ray.APP_TITLE, self.main_win.scene,
+            self.canvas_callback,
+            tuple(theme_paths))
+        patchcanvas.set_semi_hide_opacity(
+            RS.settings.value(
+                'Canvas/semi_hide_opacity', 0.17, type=float))
+    
     #### reimplemented functions ###
     
     def refresh(self):
         super().refresh()
-        print('snened')
         self.send_to_patchbay_daemon('/ray/patchbay/refresh')
     
     def disannounce(self):
@@ -366,6 +410,7 @@ class RayPatchbayManager(PatchbayManager):
             
     def finish_init(self):
         self.set_main_win(self.session.main_win)
+        self._setup_canvas()
         self.set_canvas_menu(RayCanvasMenu(self))
         
         options_dialog = CanvasOptionsDialog(self.main_win, RS.settings)
