@@ -23,7 +23,7 @@ from .gui_tools import (
     RS, RayIcon, CommandLineArgs, _translate, server_status_string,
     is_dark_theme, get_code_root, get_app_icon)
 from .gui_server_thread import GuiServerThread
-from .patchbay import patchcanvas
+from .patchbay.patchcanvas import PatchScene
 from .utility_scripts import UtilityScriptLauncher
 
 
@@ -361,9 +361,8 @@ class MainWindow(QMainWindow):
 
         self._canvas_tools_action = None
         self._canvas_menu = None
-        self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
+        self.scene = PatchScene(self, self.ui.graphicsView)
         self.ui.graphicsView.setScene(self.scene)
-        # self._setup_canvas()
 
         self.set_nsm_locked(CommandLineArgs.under_nsm)
 
@@ -484,45 +483,6 @@ class MainWindow(QMainWindow):
             sizes = [30, 10]
 
         self.ui.splitterSessionVsMessages.setSizes(sizes)
-
-    def _setup_canvas(self):
-        options = patchcanvas.CanvasOptionsObject()
-        options.theme_name = RS.settings.value(
-            'Canvas/theme', 'Black Gold', type=str)
-        options.eyecandy = patchcanvas.EyeCandy.NONE
-        if RS.settings.value('Canvas/box_shadows', False, type=bool):
-            options.eyecandy = patchcanvas.EyeCandy.SMALL
-
-        options.auto_hide_groups = True
-        options.auto_select_items = False
-        options.inline_displays = False
-        options.elastic = RS.settings.value('Canvas/elastic', True, type=bool)
-        options.prevent_overlap = RS.settings.value(
-            'Canvas/prevent_overlap', True, type=bool)
-        options.max_port_width = RS.settings.value(
-            'Canvas/max_port_width', 160, type=int)
-
-        features = patchcanvas.CanvasFeaturesObject()
-        features.group_info = False
-        features.group_rename = False
-        features.port_info = True
-        features.port_rename = False
-        features.handle_group_pos = False
-
-        theme_paths = list[Path]()
-        theme_paths.append(
-            Path(RS.settings.fileName()).parent.joinpath('patchbay_themes'))
-        theme_paths.append(
-            Path(get_code_root()).joinpath('patchbay_themes'))
-
-        patchcanvas.set_options(options)
-        patchcanvas.set_features(features)
-        patchcanvas.init(
-            ray.APP_TITLE, self.scene,
-            self.canvas_callback, tuple(theme_paths))
-        patchcanvas.set_semi_hide_opacity(
-            RS.settings.value(
-                'Canvas/semi_hide_opacity', 0.17, type=float))
 
     def _open_file_manager(self):
         self.to_daemon('/ray/session/open_folder')
@@ -1223,9 +1183,6 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.setObjectName("listWidget")
         self.ui.listWidget.set_session(self.session)
         self.ui.verticalLayout.addWidget(self.ui.listWidget)
-
-    def canvas_callback(self, action: int, *args):
-        self.session.signaler.canvas_callback.emit(action, args)
 
     def set_nsm_locked(self, nsm_locked: bool):
         self.ui.actionNewSession.setEnabled(not nsm_locked)

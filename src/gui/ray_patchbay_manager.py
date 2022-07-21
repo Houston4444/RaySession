@@ -224,10 +224,14 @@ class RayPatchbayManager(PatchbayManager):
         theme_paths.append(
             Path(RS.settings.fileName()).parent.joinpath('patchbay_themes'))
         theme_paths.append(
-            Path(get_code_root()).joinpath('patchbay_themes'))
+            Path(get_code_root()).joinpath('HoustonPatchbay','themes'))
 
         patchcanvas.set_options(options)
         patchcanvas.set_features(features)
+
+        if TYPE_CHECKING:
+            assert isinstance(self.main_win, MainWindow)
+
         patchcanvas.init(
             ray.APP_TITLE, self.main_win.scene,
             self.canvas_callback,
