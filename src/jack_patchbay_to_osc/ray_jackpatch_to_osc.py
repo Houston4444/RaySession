@@ -399,14 +399,13 @@ class MainObject:
         return 0
 
     def jack_client_registration_callback(self, client_name: bytes,
-                                          register: int, arg=None)->int:
-        
+                                          register: int, arg=None) -> int:
         client_name = client_name.decode()
         self.client_names_queue.append(client_name)
         return 0
         
     def jack_port_registration_callback(self, port_id: int, register: bool,
-                                        arg=None)->int:
+                                        arg=None) -> int:
         if not self.jack_client:
             return 0
         
