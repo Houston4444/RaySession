@@ -1,14 +1,14 @@
 
 import time
 from PyQt5.QtWidgets import (
-    QLineEdit, QStackedWidget, QLabel, QToolButton, QFrame, QGraphicsView,
-    QSplitter, QSplitterHandle, QApplication, QDialogButtonBox, QPushButton,
+    QLineEdit, QStackedWidget, QLabel, QToolButton, QFrame,
+    QSplitter, QSplitterHandle, QDialogButtonBox, QPushButton,
     QDialog)
 from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
-                         QIcon, QMouseEvent, QKeyEvent)
+                         QIcon, QKeyEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
-from .patchbay import filter_frame
+from .patchbay import filter_frame, PatchGraphicsView
 
 
 class RayHackButton(QToolButton):
@@ -314,36 +314,36 @@ class FavoriteToolButton(QToolButton):
                 self._template_name, self._template_icon, self._factory)
 
 
-# taken from carla (falktx)
-class DraggableGraphicsView(QGraphicsView):
-    def __init__(self, parent):
-        QGraphicsView.__init__(self, parent)
+# # taken from carla (falktx)
+# class DraggableGraphicsView(QGraphicsView):
+#     def __init__(self, parent):
+#         QGraphicsView.__init__(self, parent)
 
-        self._panning = False
+#         self._panning = False
 
-        try:
-            self._middle_button = Qt.MiddleButton
-        except:
-            self._middle_button = Qt.MidButton
+#         try:
+#             self._middle_button = Qt.MiddleButton
+#         except:
+#             self._middle_button = Qt.MidButton
 
-    def mousePressEvent(self, event):
-        if (event.button() == self._middle_button
-                and not QApplication.keyboardModifiers() & Qt.ControlModifier):
-            self._panning = True
-            self.setDragMode(QGraphicsView.ScrollHandDrag)
-            event = QMouseEvent(event.type(), event.pos(), Qt.LeftButton,
-                                Qt.LeftButton, event.modifiers())
+#     def mousePressEvent(self, event):
+#         if (event.button() == self._middle_button
+#                 and not QApplication.keyboardModifiers() & Qt.ControlModifier):
+#             self._panning = True
+#             self.setDragMode(QGraphicsView.ScrollHandDrag)
+#             event = QMouseEvent(event.type(), event.pos(), Qt.LeftButton,
+#                                 Qt.LeftButton, event.modifiers())
 
-        QGraphicsView.mousePressEvent(self, event)
+#         QGraphicsView.mousePressEvent(self, event)
 
-    def mouseReleaseEvent(self, event):
-        QGraphicsView.mouseReleaseEvent(self, event)
+#     def mouseReleaseEvent(self, event):
+#         QGraphicsView.mouseReleaseEvent(self, event)
 
-        if not self._panning:
-            return
+#         if not self._panning:
+#             return
 
-        self._panning = False
-        self.setDragMode(QGraphicsView.NoDrag)
+#         self._panning = False
+#         self.setDragMode(QGraphicsView.NoDrag)
 
 
 class CanvasSplitterHandle(QSplitterHandle):

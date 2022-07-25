@@ -799,7 +799,7 @@ QToolButton {border: none}</string>
          <number>0</number>
         </property>
         <item>
-         <widget class="DraggableGraphicsView" name="graphicsView">
+         <widget class="PatchGraphicsView" name="graphicsView">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -1519,11 +1519,6 @@ QToolButton {border: none}</string>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>DraggableGraphicsView</class>
-   <extends>QGraphicsView</extends>
-   <header>..surclassed_widgets</header>
-  </customwidget>
-  <customwidget>
    <class>CanvasSplitter</class>
    <extends>QSplitter</extends>
    <header>..surclassed_widgets</header>
@@ -1534,6 +1529,11 @@ QToolButton {border: none}</string>
    <extends>QFrame</extends>
    <header>..surclassed_widgets</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PatchGraphicsView</class>
+   <extends>QGraphicsView</extends>
+   <header>..surclassed_widgets</header>
   </customwidget>
  </customwidgets>
  <resources>
