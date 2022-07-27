@@ -198,19 +198,20 @@ class RayPatchbayManager(PatchbayManager):
     
     def _setup_canvas(self):
         options = patchcanvas.CanvasOptionsObject()
+        options.auto_hide_groups = True
+        options.auto_select_items = False
+        options.inline_displays = False
         options.theme_name = RS.settings.value(
             'Canvas/theme', 'Black Gold', type=str)
         options.show_shadows = RS.settings.value(
             'Canvas/box_shadows', False, type=bool)
-
-        options.auto_hide_groups = True
-        options.auto_select_items = False
-        options.inline_displays = False
         options.elastic = RS.settings.value('Canvas/elastic', True, type=bool)
         options.prevent_overlap = RS.settings.value(
             'Canvas/prevent_overlap', True, type=bool)
         options.max_port_width = RS.settings.value(
             'Canvas/max_port_width', 160, type=int)
+        options.semi_hide_opacity = RS.settings.value(
+            'Canvas/semi_hide_opacity', 0.17, type=float)
 
         features = patchcanvas.CanvasFeaturesObject()
         features.group_info = False
@@ -235,9 +236,6 @@ class RayPatchbayManager(PatchbayManager):
             ray.APP_TITLE, self.main_win.scene,
             self.canvas_callback,
             tuple(theme_paths))
-        patchcanvas.set_semi_hide_opacity(
-            RS.settings.value(
-                'Canvas/semi_hide_opacity', 0.17, type=float))
     
     #### reimplemented functions ###
     
