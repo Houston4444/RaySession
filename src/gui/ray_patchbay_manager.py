@@ -200,9 +200,8 @@ class RayPatchbayManager(PatchbayManager):
         options = patchcanvas.CanvasOptionsObject()
         options.theme_name = RS.settings.value(
             'Canvas/theme', 'Black Gold', type=str)
-        options.eyecandy = patchcanvas.EyeCandy.NONE
-        if RS.settings.value('Canvas/box_shadows', False, type=bool):
-            options.eyecandy = patchcanvas.EyeCandy.SMALL
+        options.show_shadows = RS.settings.value(
+            'Canvas/box_shadows', False, type=bool)
 
         options.auto_hide_groups = True
         options.auto_select_items = False
