@@ -413,11 +413,8 @@ class RayPatchbayManager(PatchbayManager):
         self.set_main_win(self.session.main_win)
         self._setup_canvas()
         self.set_canvas_menu(RayCanvasMenu(self))
-        
-        options_dialog = CanvasOptionsDialog(self.main_win, RS.settings)
-        options_dialog.set_user_theme_icon(
-            RayIcon('im-user', is_dark_theme(options_dialog)))
-        self.set_options_dialog(options_dialog)
+        self.set_options_dialog(
+            CanvasOptionsDialog(self.main_win, RS.settings))
         
     def fast_temp_file_memory(self, temp_path):
         ''' receives a .json file path from daemon with groups positions
