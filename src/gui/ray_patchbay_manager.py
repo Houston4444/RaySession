@@ -1,23 +1,22 @@
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
-import time
+from typing import TYPE_CHECKING
 import os
 import sys
 
 from PyQt5.QtCore import QLocale, QUrl
 from PyQt5.QtGui import QDesktopServices
 
-from gui.patchbay.patchcanvas.init_values import PortType
-
-from .patchbay.patchbay_manager import PatchbayManager
 from .patchbay.base_elements import (Group, GroupPos, PortgroupMem,
-                                     PortMode, BoxLayoutMode)
-from .patchbay.options_dialog import CanvasOptionsDialog
-from .patchbay.tools_widgets import PatchbayToolsWidget, CanvasMenu
-from .patchbay.calbacker import Callbacker
-from .patchbay.patchcanvas import patchcanvas
+                                     PortMode, BoxLayoutMode, PortType)
+from .patchbay import (
+    PatchbayManager,
+    Callbacker,
+    PatchbayToolsWidget,
+    CanvasOptionsDialog,
+    CanvasMenu
+)
 
 from . import ray
 from .gui_server_thread import GuiServerThread
