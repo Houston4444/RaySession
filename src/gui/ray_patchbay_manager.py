@@ -150,7 +150,6 @@ class RayPatchbayCallbacker(Callbacker):
 class RayPatchbayManager(PatchbayManager):    
     def __init__(self, session: 'Session'):
         super().__init__(RS.settings)
-        self.callbacker = RayPatchbayCallbacker(self)
         self.session = session
         self.set_tools_widget(PatchbayToolsWidget())
 
@@ -171,9 +170,6 @@ class RayPatchbayManager(PatchbayManager):
         if not server:
             return
         server.to_daemon(*args)
-    
-    def canvas_callback(self, action: int, *args):
-        self.session.signaler.canvas_callback.emit(action, args)
     
     def _get_json_contents_from_path(self, file_path: str) -> dict:
         if not os.path.exists(file_path):
@@ -197,45 +193,17 @@ class RayPatchbayManager(PatchbayManager):
         return new_dict
     
     def _setup_canvas(self):
-        options = patchcanvas.CanvasOptionsObject()
-        options.auto_hide_groups = True
-        options.auto_select_items = False
-        options.inline_displays = False
-        options.theme_name = RS.settings.value(
-            'Canvas/theme', 'Black Gold', type=str)
-        options.show_shadows = RS.settings.value(
-            'Canvas/box_shadows', False, type=bool)
-        options.elastic = RS.settings.value('Canvas/elastic', True, type=bool)
-        options.prevent_overlap = RS.settings.value(
-            'Canvas/prevent_overlap', True, type=bool)
-        options.max_port_width = RS.settings.value(
-            'Canvas/max_port_width', 160, type=int)
-        options.semi_hide_opacity = RS.settings.value(
-            'Canvas/semi_hide_opacity', 0.17, type=float)
-
-        features = patchcanvas.CanvasFeaturesObject()
-        features.group_info = False
-        features.group_rename = False
-        features.port_info = True
-        features.port_rename = False
-        features.handle_group_pos = False
-
-        theme_paths = list[Path]()
-        theme_paths.append(
-            Path(RS.settings.fileName()).parent.joinpath('patchbay_themes'))
-        theme_paths.append(
-            Path(get_code_root()).joinpath('HoustonPatchbay','themes'))
-
-        patchcanvas.set_options(options)
-        patchcanvas.set_features(features)
+        theme_paths = (
+            Path(RS.settings.fileName()).parent.joinpath('patchbay_themes'),
+            Path(get_code_root()).joinpath('HoustonPatchbay','themes')
+        )
 
         if TYPE_CHECKING:
             assert isinstance(self.main_win, MainWindow)
 
-        patchcanvas.init(
-            ray.APP_TITLE, self.main_win.scene,
-            self.canvas_callback,
-            tuple(theme_paths))
+        self.app_init(self.main_win.ui.graphicsView,
+                      theme_paths,
+                      callbacker=RayPatchbayCallbacker(self))
     
     #### reimplemented functions ###
     

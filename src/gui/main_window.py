@@ -23,7 +23,6 @@ from .gui_tools import (
     RS, RayIcon, CommandLineArgs, _translate, server_status_string,
     is_dark_theme, get_code_root, get_app_icon)
 from .gui_server_thread import GuiServerThread
-from .patchbay.patchcanvas import PatchScene
 from .utility_scripts import UtilityScriptLauncher
 
 
@@ -361,8 +360,6 @@ class MainWindow(QMainWindow):
 
         self._canvas_tools_action = None
         self._canvas_menu = None
-        self.scene = PatchScene(self, self.ui.graphicsView)
-        self.ui.graphicsView.setScene(self.scene)
 
         self.set_nsm_locked(CommandLineArgs.under_nsm)
 
