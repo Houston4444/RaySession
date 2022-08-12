@@ -381,7 +381,7 @@ class RayPatchbayManager(PatchbayManager):
         self._setup_canvas()
         self.set_canvas_menu(RayCanvasMenu(self))
         self.set_options_dialog(
-            CanvasOptionsDialog(self.main_win, RS.settings))
+            CanvasOptionsDialog(self.main_win, self, RS.settings))
         
     def fast_temp_file_memory(self, temp_path):
         ''' receives a .json file path from daemon with groups positions
