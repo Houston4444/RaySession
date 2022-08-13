@@ -1170,6 +1170,9 @@ QToolButton {border: none}</string>
    </property>
   </action>
   <action name="actionAboutQt">
+   <property name="icon">
+    <iconset theme="qtlogo"/>
+   </property>
    <property name="text">
     <string>About &amp;Qt</string>
    </property>

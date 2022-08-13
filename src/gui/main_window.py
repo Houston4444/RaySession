@@ -1116,15 +1116,15 @@ class MainWindow(QMainWindow):
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
 
     def toggle_scene_full_screen(self):
-        visible_maximized = 0x1
-        visible_menubar = 0x2
+        VISIBLE_MAXIMIZED = 0x1
+        VISIBLE_MENUBAR = 0x2
 
         if self._fullscreen_patchbay:
             self.ui.toolBar.setVisible(True)
-            if self._were_visible_before_fullscreen & visible_menubar:
+            if self._were_visible_before_fullscreen & VISIBLE_MENUBAR:
                 self.ui.menuBar.setVisible(True)
 
-            if self._were_visible_before_fullscreen & visible_maximized:
+            if self._were_visible_before_fullscreen & VISIBLE_MAXIMIZED:
                 self.showNormal()
                 self.showMaximized()
             else:
@@ -1138,8 +1138,8 @@ class MainWindow(QMainWindow):
             self._fullscreen_patchbay = False
         else:
             self._were_visible_before_fullscreen = \
-                visible_maximized * int(self.isMaximized()) \
-                + visible_menubar * int(self.ui.menuBar.isVisible())
+                VISIBLE_MAXIMIZED * int(self.isMaximized()) \
+                + VISIBLE_MENUBAR * int(self.ui.menuBar.isVisible())
 
             self._geom_before_fullscreen = self.geometry()
 
