@@ -485,35 +485,21 @@ class SignaledSession(Session):
         self.patchbay_manager.set_group_uuid_from_name(*args)
 
     def _ray_gui_patchbay_port_added(self, path, args):
-        # self.patchbay_manager.add_order_to_queue(
-        #     'add_port', *args)
-        print('eoekppe add port' , *args)
         self.patchbay_manager.add_port(*args)
 
     def _ray_gui_patchbay_port_removed(self, path, args):
-        # self.patchbay_manager.add_order_to_queue(
-        #     'remove_port', *args)
-        print('eoekppeok rm port' , *args)
         self.patchbay_manager.remove_port(*args)
 
     def _ray_gui_patchbay_port_renamed(self, path, args):
-        # self.patchbay_manager.add_order_to_queue(
-        #     'rename_port', *args)
         self.patchbay_manager.rename_port(*args)
         
     def _ray_gui_patchbay_metadata_updated(self, path, args):
-        # self.patchbay_manager.add_order_to_queue(
-        #     'update_metadata', *args)
         self.patchbay_manager.metadata_update(*args)
 
     def _ray_gui_patchbay_connection_added(self, path, args):
-        # self.patchbay_manager.add_order_to_queue(
-        #     'add_connection', *args)
         self.patchbay_manager.add_connection(*args)
 
     def _ray_gui_patchbay_connection_removed(self, path, args):
-        # self.patchbay_manager.add_order_to_queue(
-        #     'remove_connection', *args)
         self.patchbay_manager.remove_connection(*args)
 
     def _ray_gui_patchbay_update_group_position(self, path, args):
