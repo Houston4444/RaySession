@@ -192,17 +192,15 @@ class RayPatchbayManager(PatchbayManager):
         return new_dict
     
     def _setup_canvas(self):
-        theme_paths = (
-            Path(RS.settings.fileName()).parent.joinpath('patchbay_themes'),
-            Path(get_code_root()).joinpath('HoustonPatchbay','themes')
-        )
+        source_theme_path=Path(get_code_root()).joinpath('HoustonPatchbay', 'themes')
 
         if TYPE_CHECKING:
             assert isinstance(self.main_win, MainWindow)
 
         self.app_init(self.main_win.ui.graphicsView,
-                      theme_paths,
-                      callbacker=RayPatchbayCallbacker(self))
+                      source_theme_path=source_theme_path,
+                      callbacker=RayPatchbayCallbacker(self),
+                      default_theme_name='Yellow Boards')
     
     #### reimplemented functions ###
     
