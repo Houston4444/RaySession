@@ -67,7 +67,7 @@ if __name__ == '__main__':
         app.installTranslator(sys_translator)
 
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
-    QFontDatabase.addApplicationFont(":fonts/Ubuntu-C.ttf")
+    QFontDatabase.addApplicationFont(":/fonts/Ubuntu-C.ttf")
 
     # get arguments
     parser = ArgParser()
