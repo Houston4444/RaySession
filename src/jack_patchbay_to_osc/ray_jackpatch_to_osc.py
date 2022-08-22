@@ -268,8 +268,8 @@ class MainObject:
             if self.jack_running:
                 if n % 4 == 0:
                     self.remember_dsp_load()
-                if n % 20 == 0:
-                    self.send_dsp_load()
+                    if n % 20 == 0:
+                        self.send_dsp_load()
                 
                 self.eat_client_names_queue()
                 self._send_transport_pos()
@@ -278,7 +278,11 @@ class MainObject:
                 if n % 10 == 0:
                     self.start_jack_client()
             n += 1
-    
+            
+            # for faster modulos
+            if n == 20:
+                n = 0
+                
     def exit(self):
         if self.jack_running:
             jacklib.deactivate(self.jack_client)

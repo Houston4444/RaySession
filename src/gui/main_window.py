@@ -4,10 +4,12 @@ import time
 import os
 import subprocess
 
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
-                             QMessageBox, QToolButton, QAbstractItemView,
-                             QBoxLayout, QSystemTrayIcon, QAction, QShortcut)
-from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics, QKeySequence
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QMenu, QDialog,
+    QMessageBox, QToolButton, QAbstractItemView,
+    QBoxLayout, QSystemTrayIcon, QWidget, QShortcut,
+    QSizePolicy)
+from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
 
@@ -359,6 +361,7 @@ class MainWindow(QMainWindow):
             self._splitter_session_vs_messages_moved)
 
         self._canvas_tools_action = None
+        self._transport_tool_action = None
         self._canvas_menu = None
 
         self.set_nsm_locked(CommandLineArgs.under_nsm)
@@ -773,6 +776,8 @@ class MainWindow(QMainWindow):
         self.save_window_settings(
             UI_PATCHBAY_HIDDEN if yesno else UI_PATCHBAY_SHOWN)
 
+        if self._transport_tool_action is not None:
+            self._transport_tool_action.setVisible(yesno)
         if self._canvas_tools_action is not None:
             self._canvas_tools_action.setVisible(yesno)
         if self._canvas_menu is not None:
@@ -1152,8 +1157,15 @@ class MainWindow(QMainWindow):
             self.showFullScreen()
 
     def add_patchbay_tools(self, transport_widget, tools_widget, canvas_menu):
-        self._transport_tool_action = self.ui.toolBar.addWidget(transport_widget)
-        self._canvas_tools_action = self.ui.toolBar.addWidget(tools_widget)
+        if self._transport_tool_action is None:
+            empty_widget = QWidget()
+            empty_widget.setSizePolicy(QSizePolicy.MinimumExpanding,
+                                    QSizePolicy.MinimumExpanding)
+            self.ui.toolBar.addWidget(empty_widget)
+            self._transport_tool_action = self.ui.toolBar.addWidget(transport_widget)
+        
+        if self._canvas_tools_action is None:
+            self._canvas_tools_action = self.ui.toolBar.addWidget(tools_widget)
         self._canvas_menu = self.ui.menuBar.addMenu(canvas_menu)
 
     def create_client_widget(self, client):
