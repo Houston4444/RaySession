@@ -957,7 +957,7 @@ QToolButton {border: none}</string>
    <addaction name="menuOptions"/>
    <addaction name="menuAbout"/>
   </widget>
-  <widget class="QToolBar" name="toolBar">
+  <widget class="RayToolBar" name="toolBar">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
      <horstretch>0</horstretch>
@@ -1171,7 +1171,8 @@ QToolButton {border: none}</string>
   </action>
   <action name="actionAboutQt">
    <property name="icon">
-    <iconset theme="qtlogo"/>
+    <iconset theme="qtlogo">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>About &amp;Qt</string>
@@ -1537,6 +1538,11 @@ QToolButton {border: none}</string>
    <class>PatchGraphicsView</class>
    <extends>QGraphicsView</extends>
    <header>..surclassed_widgets</header>
+  </customwidget>
+  <customwidget>
+   <class>RayToolBar</class>
+   <extends>QToolBar</extends>
+   <header>..tool_bar</header>
   </customwidget>
  </customwidgets>
  <resources>

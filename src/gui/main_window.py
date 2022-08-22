@@ -26,7 +26,7 @@ from .gui_tools import (
     is_dark_theme, get_code_root, get_app_icon)
 from .gui_server_thread import GuiServerThread
 from .utility_scripts import UtilityScriptLauncher
-
+from .tool_bar import SpacerWidget, ToolDisplayed
 
 
 if TYPE_CHECKING:
@@ -143,9 +143,6 @@ class MainWindow(QMainWindow):
         self.ui.actionToggleShowMessages.setChecked(
             bool(self.ui.splitterSessionVsMessages.sizes()[1] > 0))
 
-        #self._fullscreen_patchbay = False
-        #self.show()
-
         # set default action for tools buttons
         self.ui.closeButton.setDefaultAction(self.ui.actionCloseSession)
         self.ui.toolButtonSaveSession.setDefaultAction(
@@ -230,6 +227,8 @@ class MainWindow(QMainWindow):
             self.toggle_scene_full_screen)
         self.session.patchbay_manager.sg.filters_bar_toggle_wanted.connect(
             self.toggle_patchbay_filters_bar)
+        self.ui.toolBar.displayed_widgets_changed.connect(
+            self._tools_changed_in_tool_bar)
 
         # set session menu
         self._session_menu = QMenu()
@@ -257,11 +256,16 @@ class MainWindow(QMainWindow):
 
         self._control_tool_button = self.ui.toolBar.widgetForAction(
             self.ui.actionControlMenu)
+        
+        if TYPE_CHECKING:
+            assert isinstance(self._control_tool_button, QToolButton)
+        
         self._control_tool_button.setPopupMode(QToolButton.InstantPopup)
         self._control_tool_button.setMenu(self._control_menu)
 
         self.ui.toolButtonControl2.setPopupMode(QToolButton.InstantPopup)
         self.ui.toolButtonControl2.setMenu(self._control_menu)
+
 
         # set favorites menu
         self._favorites_menu = QMenu(_translate('menu', 'Favorites'))
@@ -385,7 +389,7 @@ class MainWindow(QMainWindow):
         self._splitter_pos_before_fullscreen = [100, 100]
         self._fullscreen_patchbay = False
         self.hidden_maximized = False
-
+        
         # systray icon and related
         self._wild_shutdown = RS.settings.value(
             'wild_shutdown', False, type=bool)
@@ -414,6 +418,11 @@ class MainWindow(QMainWindow):
     def _splitter_session_vs_messages_moved(self, pos: int, index: int):
         self.ui.actionToggleShowMessages.setChecked(
             bool(pos < self.ui.splitterSessionVsMessages.height() -10))
+
+    @pyqtSlot(int)
+    def _tools_changed_in_tool_bar(self, tools_displayed: int):
+        self._transport_tool_action.setVisible(
+            tools_displayed & ToolDisplayed.TRANSPORT)
 
     def _session_frame_resized(self):
         width = self.ui.frameCurrentSession.width()
@@ -1158,10 +1167,7 @@ class MainWindow(QMainWindow):
 
     def add_patchbay_tools(self, transport_widget, tools_widget, canvas_menu):
         if self._transport_tool_action is None:
-            empty_widget = QWidget()
-            empty_widget.setSizePolicy(QSizePolicy.MinimumExpanding,
-                                    QSizePolicy.MinimumExpanding)
-            self.ui.toolBar.addWidget(empty_widget)
+            self.ui.toolBar.addWidget(SpacerWidget())
             self._transport_tool_action = self.ui.toolBar.addWidget(transport_widget)
         
         if self._canvas_tools_action is None:

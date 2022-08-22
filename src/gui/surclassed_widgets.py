@@ -1,15 +1,17 @@
 
 import time
+from enum import IntFlag
 from PyQt5.QtWidgets import (
     QLineEdit, QStackedWidget, QLabel, QToolButton, QFrame,
     QSplitter, QSplitterHandle, QDialogButtonBox, QPushButton,
-    QDialog)
+    QDialog, QToolBar, QMenu, QApplication, QAction, QWidget, QSizePolicy)
 from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
-                         QIcon, QKeyEvent)
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+                         QIcon, QKeyEvent, QMouseEvent)
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPoint
 
 from .patchbay import filter_frame, PatchGraphicsView, TransportControlsFrame
 
+_translate = QApplication.translate
 
 class RayHackButton(QToolButton):
     order_hack_visibility = pyqtSignal(bool)
@@ -444,3 +446,5 @@ class CanvasGroupFilterFrame(filter_frame.FilterFrame):
 class RayTransportControlsFrame(TransportControlsFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
+
+                        
