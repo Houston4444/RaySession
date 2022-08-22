@@ -8,7 +8,7 @@ from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QKeyEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
-from .patchbay import filter_frame, PatchGraphicsView
+from .patchbay import filter_frame, PatchGraphicsView, TransportControlsFrame
 
 
 class RayHackButton(QToolButton):
@@ -438,4 +438,9 @@ class PreviewFrame(QFrame):
 
 class CanvasGroupFilterFrame(filter_frame.FilterFrame):
     def __init__(self, parent):
+        super().__init__(parent)
+
+
+class RayTransportControlsFrame(TransportControlsFrame):
+    def __init__(self, parent=None):
         super().__init__(parent)

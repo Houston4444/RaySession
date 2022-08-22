@@ -1151,7 +1151,8 @@ class MainWindow(QMainWindow):
             self._fullscreen_patchbay = True
             self.showFullScreen()
 
-    def add_patchbay_tools(self, tools_widget, canvas_menu):
+    def add_patchbay_tools(self, transport_widget, tools_widget, canvas_menu):
+        self._transport_tool_action = self.ui.toolBar.addWidget(transport_widget)
         self._canvas_tools_action = self.ui.toolBar.addWidget(tools_widget)
         self._canvas_menu = self.ui.menuBar.addMenu(canvas_menu)
 

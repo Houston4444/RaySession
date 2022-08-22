@@ -1,14 +1,13 @@
 
 import sys
 from PyQt5.QtWidgets import QApplication
-from . import ray
 
+from . import ray
+from .patchbay.base_elements import TransportPosition
 from .daemon_manager import DaemonManager
 from .gui_client import Client, TrashedClient
 from .gui_signaler import Signaler
 from .gui_server_thread import GuiServerThread
-
-
 from .gui_tools import CommandLineArgs, RS, error_text
 from .main_window import MainWindow
 from .nsm_child import NsmChild, NsmChildOutside
@@ -528,6 +527,10 @@ class SignaledSession(Session):
 
     def _ray_gui_patchbay_sample_rate(self, path, args):
         self.patchbay_manager.sample_rate_changed(*args)
+
+    def _ray_gui_patchbay_transport_position(self, path, args):
+        self.patchbay_manager.refresh_transport(TransportPosition(
+            args[0], bool(args[1]), bool(args[2]), *args[3:]))
 
     def _ray_gui_patchbay_big_packets(self, path, args):
         self.patchbay_manager.receive_big_packets(*args)

@@ -11,7 +11,7 @@ from liblo import Server, Address
 import jacklib
 
 if TYPE_CHECKING:
-    from ray_jackpatch_to_osc import MainObject, JackPort
+    from ray_jackpatch_to_osc import MainObject, JackPort, TransportPosition
 
 ### Code copied from shared/ray.py
 ### we don't import ray.py here, because this executable is Qt free
@@ -129,7 +129,13 @@ class OscJackPatch(Server):
                         self._ray_patchbay_refresh)
         self.add_method('/ray/patchbay/set_metadata', 'hss',
                         self._ray_patchbay_set_metadata)
-        
+        self.add_method('/ray/patchbay/transport_play', 'i',
+                        self._ray_patchbay_transport_play)
+        self.add_method('/ray/patchbay/transport_stop', '',
+                         self._ray_patchbay_transport_stop)
+        self.add_method('/ray/patchbay/transport_relocate', 'i',
+                        self._ray_patchbay_transport_relocate)
+
         self.main_object = main_object
         self.jack_client = main_object.jack_client
         self.port_list = main_object.port_list
@@ -140,7 +146,7 @@ class OscJackPatch(Server):
         self._tmp_gui_url = ''
         self._terminate = False
 
-    def set_tmp_gui_url(self, gui_url):
+    def set_tmp_gui_url(self, gui_url: str):
         self._tmp_gui_url = gui_url
 
     def set_jack_client(self, jack_client):
@@ -194,6 +200,15 @@ class OscJackPatch(Server):
     def _ray_patchbay_set_metadata(self, path, args):
         uuid, key, value = args
         self.main_object.set_metadata(uuid, key, value)
+
+    def _ray_patchbay_transport_play(self, path, args):
+        self.main_object.transport_play(bool(args[0]))
+    
+    def _ray_patchbay_transport_stop(self, path, args):
+        self.main_object.transport_stop()
+    
+    def _ray_patchbay_transport_relocate(self, path, args):
+        self.main_object.transport_relocate(args[0])
 
     def send_gui(self, *args):
         for gui_addr in self.gui_list:
@@ -300,6 +315,11 @@ class OscJackPatch(Server):
         self.send(gui_addr, '/ray/gui/patchbay/dsp_load',
                   self.main_object.last_sent_dsp_load)
 
+        tpos = self.main_object.last_transport_pos
+        self.send(gui_addr, '/ray/gui/patchbay/transport_position',
+                  tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
+                  tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
+
         if areOnSameMachine(gui_url, self.url):
             self.send_local_data([gui_addr])
         else:
@@ -354,6 +374,11 @@ class OscJackPatch(Server):
     def server_stopped(self):
         # here server is JACK (in future maybe pipewire)
         self.send_gui('/ray/gui/patchbay/server_stopped')
+    
+    def send_transport_position(self, tpos: 'TransportPosition'):
+        self.send_gui('/ray/gui/patchbay/transport_position',
+                      tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
+                      tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
     
     def send_dsp_load(self, dsp_load: int):
         self.send_gui('/ray/gui/patchbay/dsp_load', dsp_load)

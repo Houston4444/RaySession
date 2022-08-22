@@ -1,5 +1,6 @@
 #!/usr/bin/python3 -u
 
+from dataclasses import dataclass
 import os
 import signal
 import sys
@@ -51,6 +52,17 @@ class suppress_stdout_stderr(object):
         for fd in self.null_fds + self.save_fds:
             os.close(fd)
             
+
+@dataclass
+class TransportPosition:
+    frame: int
+    rolling: bool
+    valid_bbt: bool
+    bar: int
+    beat: int
+    tick: int
+    beats_per_minutes: float
+
 
 class JackPort:
     id = 0
@@ -108,6 +120,7 @@ class MainObject:
         self.last_sent_dsp_load = 0
         self.max_dsp_since_last_sent = 0.00
         self._waiting_jack_client_open = True
+        self.last_transport_pos = TransportPosition(0, False, False, 0, 0, 0, 0.0)
 
         self.osc_server = osc_server.OscJackPatch(self)
         self.osc_server.set_tmp_gui_url(gui_url)
@@ -219,6 +232,30 @@ class MainObject:
             self.last_sent_dsp_load = current_dsp
         self.max_dsp_since_last_sent = 0.00
     
+    def _send_transport_pos(self):
+        if not self.jack_running:
+            return
+        
+        pos = jacklib.jack_position_t()
+        pos.valid = 0
+
+        state = jacklib.transport_query(self.jack_client, jacklib.pointer(pos))
+
+        transport_position = TransportPosition(
+            int(pos.frame),
+            bool(state),
+            bool(pos.valid & jacklib.JackPositionBBT),
+            int(pos.bar),
+            int(pos.beat),
+            int(pos.tick),
+            float(pos.beats_per_minute))
+        
+        if transport_position == self.last_transport_pos:
+            return
+        
+        self.last_transport_pos = transport_position
+        self.osc_server.send_transport_position(transport_position)
+    
     def start_loop(self):
         n = 0
 
@@ -235,6 +272,7 @@ class MainObject:
                     self.send_dsp_load()
                 
                 self.eat_client_names_queue()
+                self._send_transport_pos()
 
             else:
                 if n % 10 == 0:
@@ -484,6 +522,19 @@ class MainObject:
 
     def set_metadata(self, uuid: int, key: str, value: str):
         jacklib.set_property(uuid, key, value, 'text/plain', jacklib.ENCODING)
+
+    def transport_play(self, play: bool):
+        if play:
+            jacklib.transport_start(self.jack_client)
+        else:
+            jacklib.transport_stop(self.jack_client)
+            
+    def transport_stop(self):
+        jacklib.transport_stop(self.jack_client)
+        jacklib.transport_locate(self.jack_client, 0)
+        
+    def transport_relocate(self, frame: int):
+        jacklib.transport_locate(self.jack_client, frame)
 
 
 def main_process():

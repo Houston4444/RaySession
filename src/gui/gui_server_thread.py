@@ -129,7 +129,8 @@ class GuiServerThread(liblo.ServerThread):
             ('/ray/gui/patchbay/server_lose', ''),
             ('/ray/gui/patchbay/fast_temp_file_memory', 's'),
             ('/ray/gui/patchbay/fast_temp_file_running', 's'),
-            ('/ray/gui/patchbay/client_name_and_uuid', 'sh')):
+            ('/ray/gui/patchbay/client_name_and_uuid', 'sh'),
+            ('/ray/gui/patchbay/transport_position', 'iiiiiif')):
                 self.add_method(path_types[0], path_types[1],
                                 self._generic_callback)
 
