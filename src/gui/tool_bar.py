@@ -1,17 +1,21 @@
 
 from enum import IntFlag
+from typing import TYPE_CHECKING
+from unittest.mock import patch
 from PyQt5.QtWidgets import (
     QWidget, QSizePolicy, QToolBar, QLabel, QMenu,
     QApplication, QAction)
-from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtGui import QMouseEvent, QIcon
 from PyQt5.QtCore import pyqtSignal, Qt, QPoint
 
+from .gui_tools import RS
+from .patchbay.transport_controls import TransportControlsFrame
+from .patchbay.base_elements import ToolDisplayed
+
+if TYPE_CHECKING:
+    from ray_patchbay_manager import RayPatchbayManager
+
 _translate = QApplication.translate
-
-
-class ToolDisplayed(IntFlag):
-    TRANSPORT = 0x01
-    ZOOM_SLIDER = 0x02
 
 
 class SpacerWidget(QWidget):
@@ -27,8 +31,37 @@ class RayToolBar(QToolBar):
     def __init__(self, parent):
         super().__init__(parent)
         
-        self._displayed_widgets = ToolDisplayed.ZOOM_SLIDER
+        default_displayed_widgets = (
+            ToolDisplayed.TRANSPORT_PLAY_STOP
+            | ToolDisplayed.ZOOM_SLIDER
+            | ToolDisplayed.BUFFER_SIZE
+            | ToolDisplayed.SAMPLERATE
+            | ToolDisplayed.XRUNS
+            | ToolDisplayed.DSP_LOAD)
         
+        int_displayed_wdgs = RS.settings.value(
+            'toolbar/displayed_widgets', int(default_displayed_widgets), type=int)
+        try:
+            self._displayed_widgets = ToolDisplayed(int_displayed_wdgs)
+        except:
+            self._displayed_widgets = default_displayed_widgets
+        
+        self._transport_widget = None
+        # self.displayed_widgets_changed.connect(self._change_visibility)
+        self._patchbay_mng : 'RayPatchbayManager' = None
+    
+    def add_transport_widget(self, transport_widget: TransportControlsFrame) -> QAction:
+        self._transport_widget = transport_widget
+        return self.addWidget(transport_widget)
+    
+    def set_patchbay_manager(self, patchbay_manager: 'RayPatchbayManager'):
+        self._patchbay_mng = patchbay_manager
+        patchbay_manager.change_tools_displayed(self._displayed_widgets)
+    
+    def _change_visibility(self):
+        if self._patchbay_mng is not None:
+            self._patchbay_mng.change_tools_displayed(self._displayed_widgets)
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         child_widget = self.childAt(event.pos())
         super().mousePressEvent(event)
@@ -40,10 +73,31 @@ class RayToolBar(QToolBar):
         menu.addSection(_translate('tool_bar', 'Displayed tools'))
         
         tool_actions = {
-            ToolDisplayed.TRANSPORT:
-                QAction(_translate('tool_bar', 'JACK Transport')),
+            ToolDisplayed.TRANSPORT_CLOCK:
+                QAction(QIcon.fromTheme('clock'),
+                        _translate('tool_bar', 'Transport clock')),
+            ToolDisplayed.TRANSPORT_PLAY_STOP:
+                QAction(QIcon.fromTheme('media-playback-pause'),
+                        _translate('tool_bar', 'Transport Play/Stop')),
             ToolDisplayed.ZOOM_SLIDER:
-                QAction(_translate('tool_bar', 'Zoom slider'))}
+                QAction(QIcon.fromTheme('zoom-select'),
+                        _translate('tool_bar', 'Zoom slider')),
+            ToolDisplayed.BUFFER_SIZE:
+                QAction(QIcon.fromTheme('settings-configure'),
+                        _translate('tool_bar', 'Buffer size')),
+            ToolDisplayed.SAMPLERATE:
+                QAction(QIcon.fromTheme('filename-sample-rate'),
+                        _translate('tool_bar', 'Sample rate')),
+            ToolDisplayed.LATENCY:
+                QAction(QIcon.fromTheme('chronometer-lap'),
+                        _translate('tool_bar', 'Latency')),
+            ToolDisplayed.XRUNS:
+                QAction(QIcon.fromTheme('data-error'),
+                        _translate('tool_bar', 'Xruns')),
+            ToolDisplayed.DSP_LOAD:
+                QAction(QIcon.fromTheme('histogram-symbolic'),
+                        _translate('tool_bar', 'DSP Load'))
+        }
         
         for key, act in tool_actions.items():
             act.setCheckable(True)
@@ -53,13 +107,15 @@ class RayToolBar(QToolBar):
         # execute the menu, exit if no action
         point = event.screenPos().toPoint()
         point.setY(self.mapToGlobal(QPoint(0, self.height())).y())
-        if menu.exec(point) is None:
+        selected_act = menu.exec(point)
+        if selected_act is None:
             return
 
         for key, act in tool_actions.items():
-            if act.isChecked():
-                self._displayed_widgets |= key
-            else:
-                self._displayed_widgets &= ~key
+            if act is selected_act:
+                if act.isChecked():
+                    self._displayed_widgets |= key
+                else:
+                    self._displayed_widgets &= ~key
 
-        self.displayed_widgets_changed.emit(int(self._displayed_widgets))
+        self._change_visibility()

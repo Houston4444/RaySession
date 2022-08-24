@@ -86,10 +86,12 @@ class MainWindow(QMainWindow):
         self._tool_bar_main_actions_width = 0
         for action in (self.ui.actionNewSession, self.ui.actionOpenSession,
                        self.ui.actionControlMenu):
-            button = self.ui.toolBar.widgetForAction(action)
+            button : QToolButton = self.ui.toolBar.widgetForAction(action)
             self._tool_bar_main_actions_width += button.iconSize().width()
             self._tool_bar_main_actions_width += QFontMetrics(button.font()).width(button.text())
             self._tool_bar_main_actions_width += 6
+
+        self.ui.toolBar.set_patchbay_manager(self.session.patchbay_manager)
 
         # manage geometry depending of use of embedded jack patchbay
         show_patchbay = RS.settings.value(
@@ -421,8 +423,9 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot(int)
     def _tools_changed_in_tool_bar(self, tools_displayed: int):
-        self._transport_tool_action.setVisible(
-            tools_displayed & ToolDisplayed.TRANSPORT)
+        'change a thing'
+        # self._transport_tool_action.setVisible(
+        #     tools_displayed & ToolDisplayed.TRANSPORT_CLOCK)
 
     def _session_frame_resized(self):
         width = self.ui.frameCurrentSession.width()
@@ -1168,7 +1171,7 @@ class MainWindow(QMainWindow):
     def add_patchbay_tools(self, transport_widget, tools_widget, canvas_menu):
         if self._transport_tool_action is None:
             self.ui.toolBar.addWidget(SpacerWidget())
-            self._transport_tool_action = self.ui.toolBar.addWidget(transport_widget)
+            self._transport_tool_action = self.ui.toolBar.add_transport_widget(transport_widget)
         
         if self._canvas_tools_action is None:
             self._canvas_tools_action = self.ui.toolBar.addWidget(tools_widget)

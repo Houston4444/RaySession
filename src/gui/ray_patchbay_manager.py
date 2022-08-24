@@ -11,7 +11,7 @@ from PyQt5.QtGui import QDesktopServices
 from gui.patchbay.transport_controls import TransportControlsFrame
 
 from .patchbay.base_elements import (Group, GroupPos, PortgroupMem,
-                                     PortMode, BoxLayoutMode, PortType)
+                                     PortMode, BoxLayoutMode, PortType, ToolDisplayed)
 from .patchbay import (
     PatchbayManager,
     Callbacker,
@@ -19,6 +19,7 @@ from .patchbay import (
     CanvasOptionsDialog,
     CanvasMenu
 )
+
 
 from . import ray
 from .gui_server_thread import GuiServerThread
@@ -342,6 +343,31 @@ class RayPatchbayManager(PatchbayManager):
     
     def transport_relocate(self, frame: int):
         self.send_to_patchbay_daemon('/ray/patchbay/transport_relocate', frame)
+
+    def change_tools_displayed(self, tools_displayed: ToolDisplayed):
+        ex_tool_displayed = self._tools_displayed
+        super().change_tools_displayed(tools_displayed)
+        ex_transport_disp = ex_tool_displayed & (ToolDisplayed.TRANSPORT_CLOCK
+                                                 | ToolDisplayed.TRANSPORT_PLAY_STOP)
+        transport_disp = tools_displayed & (ToolDisplayed.TRANSPORT_CLOCK
+                                           | ToolDisplayed.TRANSPORT_PLAY_STOP)
+
+        if transport_disp != ex_transport_disp:
+            if transport_disp & ToolDisplayed.TRANSPORT_CLOCK:
+                int_transp = 2
+            elif transport_disp & ToolDisplayed.TRANSPORT_PLAY_STOP:
+                int_transp = 1
+            else:
+                int_transp = 0
+
+            self.send_to_patchbay_daemon('/ray/patchbay/activate_transport',
+                                          int_transp)
+             
+        if (ex_tool_displayed & ToolDisplayed.DSP_LOAD
+                != tools_displayed & ToolDisplayed.DSP_LOAD):
+            self.send_to_patchbay_daemon(
+                '/ray/patchbay/activate_dsp_load',
+                int(bool(tools_displayed & ToolDisplayed.DSP_LOAD)))
 
         #### added functions ####
     

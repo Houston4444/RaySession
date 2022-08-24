@@ -1,6 +1,7 @@
 #!/usr/bin/python3 -u
 
 from dataclasses import dataclass
+from enum import IntEnum
 import os
 import signal
 import sys
@@ -64,6 +65,12 @@ class TransportPosition:
     beats_per_minutes: float
 
 
+class TransportWanted(IntEnum):
+    NO = 0         # do not send any transport info
+    STATE_ONLY = 1 # send info only when play/pause changed
+    FULL = 2       # send all Transport infos
+
+
 class JackPort:
     id = 0
     name = ''
@@ -114,6 +121,9 @@ class MainObject:
     jack_client = None
     samplerate = 48000
     buffer_size = 1024
+    
+    dsp_wanted = True
+    transport_wanted = TransportWanted.FULL
     
     def __init__(self, daemon_port: str, gui_url: str):
         self._daemon_port = daemon_port
@@ -232,6 +242,12 @@ class MainObject:
             self.last_sent_dsp_load = current_dsp
         self.max_dsp_since_last_sent = 0.00
     
+    def set_transport_wanted(self, transport_wanted: int):
+        try:
+            self.transport_wanted = TransportWanted(transport_wanted)
+        except:
+            self.transport_wanted = TransportWanted.FULL
+
     def _send_transport_pos(self):
         if not self.jack_running:
             return
@@ -240,6 +256,10 @@ class MainObject:
         pos.valid = 0
 
         state = jacklib.transport_query(self.jack_client, jacklib.pointer(pos))
+        
+        if (self.transport_wanted is TransportWanted.STATE_ONLY
+                and bool(state) == self.last_transport_pos.rolling):
+            return
 
         transport_position = TransportPosition(
             int(pos.frame),
@@ -268,11 +288,12 @@ class MainObject:
             if self.jack_running:
                 if n % 4 == 0:
                     self.remember_dsp_load()
-                    if n % 20 == 0:
+                    if self.dsp_wanted and n % 20 == 0:
                         self.send_dsp_load()
                 
                 self.eat_client_names_queue()
-                self._send_transport_pos()
+                if self.transport_wanted is not TransportWanted.NO:
+                    self._send_transport_pos()
 
             else:
                 if n % 10 == 0:
@@ -347,6 +368,8 @@ class MainObject:
             self.jack_client, self.jack_buffer_size_callback, None)
         jacklib.set_sample_rate_callback(
             self.jack_client, self.jack_sample_rate_callback, None)
+        jacklib.set_latency_callback(
+            self.jack_client, self.jack_latency_callback, None)
         jacklib.set_property_change_callback(
             self.jack_client, self.jack_properties_change_callback, None)
         jacklib.on_shutdown(
@@ -430,15 +453,18 @@ class MainObject:
         self.osc_server.send_one_xrun()
         return 0
 
-    def jack_sample_rate_callback(self, samplerate, arg=None)->int:
+    def jack_sample_rate_callback(self, samplerate, arg=None) -> int:
         self.samplerate = samplerate
         self.osc_server.send_samplerate()
         return 0
 
-    def jack_buffer_size_callback(self, buffer_size, arg=None)->int:
+    def jack_buffer_size_callback(self, buffer_size, arg=None) -> int:
         self.buffer_size = buffer_size
         self.osc_server.send_buffersize()
         return 0
+
+    def jack_latency_callback(self, latency, arg=None) -> int:
+        print('zlefkklatency', latency, type(latency))
 
     def jack_client_registration_callback(self, client_name: bytes,
                                           register: int, arg=None) -> int:

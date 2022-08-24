@@ -135,6 +135,10 @@ class OscJackPatch(Server):
                          self._ray_patchbay_transport_stop)
         self.add_method('/ray/patchbay/transport_relocate', 'i',
                         self._ray_patchbay_transport_relocate)
+        self.add_method('/ray/patchbay/activate_dsp_load', 'i',
+                        self._ray_patchbay_activate_dsp_load)
+        self.add_method('/ray/patchbay/activate_transport', 'i',
+                        self._ray_patchbay_activate_transport)
 
         self.main_object = main_object
         self.jack_client = main_object.jack_client
@@ -209,6 +213,12 @@ class OscJackPatch(Server):
     
     def _ray_patchbay_transport_relocate(self, path, args):
         self.main_object.transport_relocate(args[0])
+
+    def _ray_patchbay_activate_dsp_load(self, path, args):
+        self.main_object.dsp_wanted = bool(args[0])
+        
+    def _ray_patchbay_activate_transport(self, path, args):
+        self.main_object.set_transport_wanted(args[0])
 
     def send_gui(self, *args):
         for gui_addr in self.gui_list:
