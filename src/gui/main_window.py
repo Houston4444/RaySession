@@ -12,6 +12,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
+from .patchbay.surclassed_widgets import ZoomSlider
+
 
 from . import(
     ray,
@@ -1168,11 +1170,7 @@ class MainWindow(QMainWindow):
             self._fullscreen_patchbay = True
             self.showFullScreen()
 
-    def add_patchbay_tools(self, transport_widget, tools_widget, canvas_menu):
-        if self._transport_tool_action is None:
-            self.ui.toolBar.addWidget(SpacerWidget())
-            self._transport_tool_action = self.ui.toolBar.add_transport_widget(transport_widget)
-        
+    def add_patchbay_tools(self, tools_widget, canvas_menu):
         if self._canvas_tools_action is None:
             self._canvas_tools_action = self.ui.toolBar.addWidget(tools_widget)
         self._canvas_menu = self.ui.menuBar.addMenu(canvas_menu)

@@ -8,9 +8,10 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QMouseEvent, QIcon
 from PyQt5.QtCore import pyqtSignal, Qt, QPoint
 
+
 from .gui_tools import RS
-from .patchbay.transport_controls import TransportControlsFrame
 from .patchbay.base_elements import ToolDisplayed
+from .patchbay.tools_widgets import PatchbayToolsWidget
 
 if TYPE_CHECKING:
     from ray_patchbay_manager import RayPatchbayManager
@@ -32,8 +33,8 @@ class RayToolBar(QToolBar):
         super().__init__(parent)
         
         default_displayed_widgets = (
-            ToolDisplayed.TRANSPORT_PLAY_STOP
-            | ToolDisplayed.ZOOM_SLIDER
+            ToolDisplayed.ZOOM_SLIDER
+            | ToolDisplayed.TRANSPORT_PLAY_STOP
             | ToolDisplayed.BUFFER_SIZE
             | ToolDisplayed.SAMPLERATE
             | ToolDisplayed.XRUNS
@@ -50,10 +51,6 @@ class RayToolBar(QToolBar):
         # self.displayed_widgets_changed.connect(self._change_visibility)
         self._patchbay_mng : 'RayPatchbayManager' = None
     
-    def add_transport_widget(self, transport_widget: TransportControlsFrame) -> QAction:
-        self._transport_widget = transport_widget
-        return self.addWidget(transport_widget)
-    
     def set_patchbay_manager(self, patchbay_manager: 'RayPatchbayManager'):
         self._patchbay_mng = patchbay_manager
         patchbay_manager.change_tools_displayed(self._displayed_widgets)
@@ -65,23 +62,24 @@ class RayToolBar(QToolBar):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         child_widget = self.childAt(event.pos())
         super().mousePressEvent(event)
+
         if (event.button() != Qt.RightButton
-                or not isinstance(child_widget, (QLabel, SpacerWidget))):
+                or not isinstance(child_widget, (QLabel, PatchbayToolsWidget))):
             return
 
         menu = QMenu()
         menu.addSection(_translate('tool_bar', 'Displayed tools'))
         
         tool_actions = {
+            ToolDisplayed.ZOOM_SLIDER:
+                QAction(QIcon.fromTheme('zoom-select'),
+                        _translate('tool_bar', 'Zoom slider')),
             ToolDisplayed.TRANSPORT_CLOCK:
                 QAction(QIcon.fromTheme('clock'),
                         _translate('tool_bar', 'Transport clock')),
             ToolDisplayed.TRANSPORT_PLAY_STOP:
                 QAction(QIcon.fromTheme('media-playback-pause'),
                         _translate('tool_bar', 'Transport Play/Stop')),
-            ToolDisplayed.ZOOM_SLIDER:
-                QAction(QIcon.fromTheme('zoom-select'),
-                        _translate('tool_bar', 'Zoom slider')),
             ToolDisplayed.BUFFER_SIZE:
                 QAction(QIcon.fromTheme('settings-configure'),
                         _translate('tool_bar', 'Buffer size')),

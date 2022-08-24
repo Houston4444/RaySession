@@ -8,8 +8,6 @@ import sys
 from PyQt5.QtCore import QLocale, QUrl
 from PyQt5.QtGui import QDesktopServices
 
-from gui.patchbay.transport_controls import TransportControlsFrame
-
 from .patchbay.base_elements import (Group, GroupPos, PortgroupMem,
                                      PortMode, BoxLayoutMode, PortType, ToolDisplayed)
 from .patchbay import (
@@ -153,7 +151,6 @@ class RayPatchbayManager(PatchbayManager):
     def __init__(self, session: 'Session'):
         super().__init__(RS.settings)
         self.session = session
-        self.set_transport_widget(TransportControlsFrame())
         self.set_tools_widget(PatchbayToolsWidget())
 
     @staticmethod
@@ -525,7 +522,7 @@ class RayPatchbayManager(PatchbayManager):
 
     def patchbay_announce(self, jack_running: int, samplerate: int,
                           buffer_size: int):
-        if self._tools_widget is None or self._transport_widget is None:
+        if self._tools_widget is None:
             return
         
         self._tools_widget.set_samplerate(samplerate)
@@ -536,4 +533,4 @@ class RayPatchbayManager(PatchbayManager):
             if TYPE_CHECKING and not isinstance(self.main_win, MainWindow):
                 return
             self.main_win.add_patchbay_tools(
-                self._transport_widget, self._tools_widget, self.canvas_menu)
+                self._tools_widget, self.canvas_menu)

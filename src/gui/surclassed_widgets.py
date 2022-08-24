@@ -9,7 +9,7 @@ from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QKeyEvent, QMouseEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPoint
 
-from .patchbay import filter_frame, PatchGraphicsView, TransportControlsFrame
+from .patchbay import filter_frame, PatchGraphicsView
 
 _translate = QApplication.translate
 
@@ -442,9 +442,5 @@ class CanvasGroupFilterFrame(filter_frame.FilterFrame):
     def __init__(self, parent):
         super().__init__(parent)
 
-
-class RayTransportControlsFrame(TransportControlsFrame):
-    def __init__(self, parent=None):
-        super().__init__(parent)
 
                         
