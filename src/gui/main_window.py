@@ -1,4 +1,5 @@
 from pathlib import Path
+from signal import default_int_handler
 from typing import TYPE_CHECKING
 import time
 import os
@@ -12,7 +13,10 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
+from gui.patchbay.base_elements import ToolDisplayed
+
 from .patchbay.surclassed_widgets import ZoomSlider
+from .patchbay.tools_widgets import PatchbayToolsWidget
 
 
 from . import(
@@ -366,7 +370,6 @@ class MainWindow(QMainWindow):
             self._splitter_session_vs_messages_moved)
 
         self._canvas_tools_action = None
-        self._transport_tool_action = None
         self._canvas_menu = None
 
         self.set_nsm_locked(CommandLineArgs.under_nsm)
@@ -781,8 +784,6 @@ class MainWindow(QMainWindow):
         self.save_window_settings(
             UI_PATCHBAY_HIDDEN if yesno else UI_PATCHBAY_SHOWN)
 
-        if self._transport_tool_action is not None:
-            self._transport_tool_action.setVisible(yesno)
         if self._canvas_tools_action is not None:
             self._canvas_tools_action.setVisible(yesno)
         if self._canvas_menu is not None:
@@ -1161,9 +1162,20 @@ class MainWindow(QMainWindow):
             self._fullscreen_patchbay = True
             self.showFullScreen()
 
-    def add_patchbay_tools(self, tools_widget, canvas_menu):
+    def add_patchbay_tools(self, tools_widget: PatchbayToolsWidget, canvas_menu):
         if self._canvas_tools_action is None:
             self._canvas_tools_action = self.ui.toolBar.addWidget(tools_widget)
+            default_disp_wdg = (
+                ToolDisplayed.ZOOM_SLIDER
+                | ToolDisplayed.TRANSPORT_PLAY_STOP
+                | ToolDisplayed.BUFFER_SIZE
+                | ToolDisplayed.SAMPLERATE
+                | ToolDisplayed.XRUNS
+                | ToolDisplayed.DSP_LOAD)
+            
+            self.ui.toolBar.set_default_displayed_widgets(
+                default_disp_wdg.filtered_by_string(
+                    RS.settings.value('tool_bar/jack_elements', '', type=str)))
         self._canvas_menu = self.ui.menuBar.addMenu(canvas_menu)
 
     def create_client_widget(self, client):
@@ -1573,10 +1585,13 @@ class MainWindow(QMainWindow):
         RS.settings.setValue(
             'MainWindow/ShowMenuBar',
             self.ui.menuBar.isVisible())
-        RS.settings.setValue("MainWindow/show_patchbay",
+        RS.settings.setValue('MainWindow/show_patchbay',
                              self.ui.actionShowJackPatchbay.isChecked())
-        RS.settings.setValue("MainWindow/splitter_messages",
+        RS.settings.setValue('MainWindow/splitter_messages',
                              self.ui.splitterSessionVsMessages.sizes())
+        RS.settings.setValue(
+            'tool_bar/jack_elements',
+            self.ui.toolBar.get_displayed_widgets().to_save_string())
         RS.settings.sync()
 
     # Reimplemented Qt Functions
