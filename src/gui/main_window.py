@@ -1,29 +1,35 @@
+from pathlib import Path
+from signal import default_int_handler
+from typing import TYPE_CHECKING
 import time
 import os
 import subprocess
 
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, QDialog,
-                             QMessageBox, QToolButton, QAbstractItemView,
-                             QBoxLayout, QSystemTrayIcon, QAction, QShortcut)
-from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics, QKeySequence
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QMenu, QDialog,
+    QMessageBox, QToolButton, QAbstractItemView,
+    QBoxLayout, QSystemTrayIcon, QWidget, QShortcut)
+from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
-from gui_tools import (
-    RS, RayIcon, CommandLineArgs, _translate, server_status_string,
-    is_dark_theme, get_code_root, get_app_icon)
+import ray
+import ui
 import add_application_dialog
 import open_session_dialog
 import child_dialogs
 import snapshots_dialog
-from gui_server_thread import GuiServerThread
-from patchcanvas import patchcanvas
-import patchbay_manager
-from utility_scripts import UtilityScriptLauncher
-import ray
 import list_widget_clients
 
-import ui.raysession
-import ui.patchbay_tools
+from gui_tools import (
+    RS, RayIcon, CommandLineArgs, _translate, server_status_string,
+    is_dark_theme, get_code_root, get_app_icon)
+from gui_server_thread import GuiServerThread
+from utility_scripts import UtilityScriptLauncher
+from patchbay.base_elements import ToolDisplayed
+from patchbay.tools_widgets import PatchbayToolsWidget
+
+if TYPE_CHECKING:
+    from .gui_session import SignaledSession
 
 UI_PATCHBAY_UNDEF = 0
 UI_PATCHBAY_HIDDEN = 1
@@ -31,7 +37,7 @@ UI_PATCHBAY_SHOWN = 2
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, session):
+    def __init__(self, session: 'SignaledSession'):
         QMainWindow.__init__(self)
         self.ui = ui.raysession.Ui_MainWindow()
         self.ui.setupUi(self)
@@ -79,10 +85,12 @@ class MainWindow(QMainWindow):
         self._tool_bar_main_actions_width = 0
         for action in (self.ui.actionNewSession, self.ui.actionOpenSession,
                        self.ui.actionControlMenu):
-            button = self.ui.toolBar.widgetForAction(action)
+            button : QToolButton = self.ui.toolBar.widgetForAction(action)
             self._tool_bar_main_actions_width += button.iconSize().width()
             self._tool_bar_main_actions_width += QFontMetrics(button.font()).width(button.text())
             self._tool_bar_main_actions_width += 6
+
+        self.ui.toolBar.set_patchbay_manager(self.session.patchbay_manager)
 
         # manage geometry depending of use of embedded jack patchbay
         show_patchbay = RS.settings.value(
@@ -135,6 +143,8 @@ class MainWindow(QMainWindow):
 
         self.ui.actionToggleShowMessages.setChecked(
             bool(self.ui.splitterSessionVsMessages.sizes()[1] > 0))
+
+        self._force_tool_bar_icon_only = False
 
         # set default action for tools buttons
         self.ui.closeButton.setDefaultAction(self.ui.actionCloseSession)
@@ -216,6 +226,10 @@ class MainWindow(QMainWindow):
             self._rename_session_conditionnaly)
         self.ui.frameCurrentSession.frame_resized.connect(
             self._session_frame_resized)
+        self.session.patchbay_manager.sg.full_screen_toggle_wanted.connect(
+            self.toggle_scene_full_screen)
+        self.session.patchbay_manager.sg.filters_bar_toggle_wanted.connect(
+            self.toggle_patchbay_filters_bar)
 
         # set session menu
         self._session_menu = QMenu()
@@ -243,11 +257,16 @@ class MainWindow(QMainWindow):
 
         self._control_tool_button = self.ui.toolBar.widgetForAction(
             self.ui.actionControlMenu)
+        
+        if TYPE_CHECKING:
+            assert isinstance(self._control_tool_button, QToolButton)
+        
         self._control_tool_button.setPopupMode(QToolButton.InstantPopup)
         self._control_tool_button.setMenu(self._control_menu)
 
         self.ui.toolButtonControl2.setPopupMode(QToolButton.InstantPopup)
         self.ui.toolButtonControl2.setMenu(self._control_menu)
+
 
         # set favorites menu
         self._favorites_menu = QMenu(_translate('menu', 'Favorites'))
@@ -270,7 +289,7 @@ class MainWindow(QMainWindow):
         sg.client_properties_state_changed.connect(
             self._client_properties_state_changed)
         sg.canvas_callback.connect(
-            self.session.patchbay_manager.canvas_callbacks)
+            self.session.patchbay_manager.callbacker.receive)
 
         # set spare icons if system icons not avalaible
         dark = is_dark_theme(self)
@@ -334,6 +353,12 @@ class MainWindow(QMainWindow):
         filter_bar_shortcut = QShortcut('Ctrl+F', self)
         filter_bar_shortcut.setContext(Qt.ApplicationShortcut)
         filter_bar_shortcut.activated.connect(self.toggle_patchbay_filters_bar)
+        refresh_shortcut = QShortcut('Ctrl+R', self)
+        refresh_shortcut.setContext(Qt.ApplicationShortcut)
+        refresh_shortcut.activated.connect(self.session.patchbay_manager.refresh)
+        refresh_shortcut_alt = QShortcut('F5', self)
+        refresh_shortcut_alt.setContext(Qt.ApplicationShortcut)
+        refresh_shortcut_alt.activated.connect(self.session.patchbay_manager.refresh)
 
         # prevent to hide the session frame with session/messages splitter
         self.ui.splitterSessionVsMessages.setCollapsible(0, False)
@@ -342,10 +367,6 @@ class MainWindow(QMainWindow):
 
         self._canvas_tools_action = None
         self._canvas_menu = None
-        self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
-        self.ui.graphicsView.setScene(self.scene)
-
-        self._setup_canvas()
 
         self.set_nsm_locked(CommandLineArgs.under_nsm)
 
@@ -368,7 +389,7 @@ class MainWindow(QMainWindow):
         self._splitter_pos_before_fullscreen = [100, 100]
         self._fullscreen_patchbay = False
         self.hidden_maximized = False
-
+        
         # systray icon and related
         self._wild_shutdown = RS.settings.value(
             'wild_shutdown', False, type=bool)
@@ -379,7 +400,7 @@ class MainWindow(QMainWindow):
 
         self._systray = QSystemTrayIcon(self)
         self._systray.activated.connect(self._systray_activated)
-        self._systray.setIcon(QIcon(':48x48/raysession'))
+        self._systray.setIcon(QIcon(':main_icon/48x48/raysession'))
         self._systray.setToolTip(ray.APP_TITLE)
         self._systray_menu = QMenu()
         self._systray_menu_add = QMenu(self._systray_menu)
@@ -422,8 +443,6 @@ class MainWindow(QMainWindow):
             # and snapshots buttons
             self.ui.widgetPreRewindSpacer.setVisible(True)
         else:
-            #self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-
             self.ui.layoutSessionDown.setDirection(QBoxLayout.LeftToRight)
             self.ui.layoutSessionDown.removeWidget(
                 self.ui.stackedWidgetSessionName)
@@ -435,24 +454,24 @@ class MainWindow(QMainWindow):
                 0, self.ui.fullButtonFolder)
             self.ui.widgetPreRewindSpacer.setVisible(False)
 
-        app = self.ui.toolButtonAddApplication
-        exe = self.ui.toolButtonAddExecutable
+        add_app = self.ui.toolButtonAddApplication
+        add_exe = self.ui.toolButtonAddExecutable
 
         if width >= 419:
-            app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            exe.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            add_app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            add_exe.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         elif width >= 350:
-            app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            add_app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            add_exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
         elif width > 283:
-            app.setToolButtonStyle(Qt.ToolButtonIconOnly)
-            exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            add_app.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            add_exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
         elif width > 260:
-            app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            exe.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            add_app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            add_exe.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         else:
-            app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            add_app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            add_exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
 
     @classmethod
     def to_daemon(cls, *args):
@@ -466,40 +485,6 @@ class MainWindow(QMainWindow):
             sizes = [30, 10]
 
         self.ui.splitterSessionVsMessages.setSizes(sizes)
-
-    def _setup_canvas(self):
-        options = patchcanvas.options_t()
-        options.theme_name = RS.settings.value(
-            'Canvas/theme', 'Black Gold', type=str)
-        options.antialiasing = patchcanvas.ANTIALIASING_SMALL
-        options.eyecandy = patchcanvas.EYECANDY_NONE
-        if RS.settings.value('Canvas/box_shadows', False, type=bool):
-            options.eyecandy = patchcanvas.EYECANDY_SMALL
-
-        options.auto_hide_groups = True
-        options.auto_select_items = False
-        options.inline_displays = False
-        options.use_bezier_lines = True
-        options.elastic = RS.settings.value('Canvas/elastic', True, type=bool)
-        options.prevent_overlap = RS.settings.value(
-            'Canvas/prevent_overlap', True, type=bool)
-        options.max_port_width = RS.settings.value(
-            'Canvas/max_port_width', 160, type=int)
-
-        features = patchcanvas.features_t()
-        features.group_info = False
-        features.group_rename = False
-        features.port_info = True
-        features.port_rename = False
-        features.handle_group_pos = False
-
-        patchcanvas.setOptions(options)
-        patchcanvas.setFeatures(features)
-        patchcanvas.init(
-            ray.APP_TITLE, self.scene,
-            self.canvas_callback, False)
-        patchcanvas.set_semi_hide_opacity(RS.settings.value(
-            'Canvas/semi_hide_opacity', 0.17, type=float))
 
     def _open_file_manager(self):
         self.to_daemon('/ray/session/open_folder')
@@ -1136,15 +1121,15 @@ class MainWindow(QMainWindow):
     ###FUNCTIONS RELATED TO SIGNALS FROM OSC SERVER#######
 
     def toggle_scene_full_screen(self):
-        visible_maximized = 0x1
-        visible_menubar = 0x2
+        VISIBLE_MAXIMIZED = 0x1
+        VISIBLE_MENUBAR = 0x2
 
         if self._fullscreen_patchbay:
             self.ui.toolBar.setVisible(True)
-            if self._were_visible_before_fullscreen & visible_menubar:
+            if self._were_visible_before_fullscreen & VISIBLE_MENUBAR:
                 self.ui.menuBar.setVisible(True)
 
-            if self._were_visible_before_fullscreen & visible_maximized:
+            if self._were_visible_before_fullscreen & VISIBLE_MAXIMIZED:
                 self.showNormal()
                 self.showMaximized()
             else:
@@ -1158,8 +1143,8 @@ class MainWindow(QMainWindow):
             self._fullscreen_patchbay = False
         else:
             self._were_visible_before_fullscreen = \
-                visible_maximized * int(self.isMaximized()) \
-                + visible_menubar * int(self.ui.menuBar.isVisible())
+                VISIBLE_MAXIMIZED * int(self.isMaximized()) \
+                + VISIBLE_MENUBAR * int(self.ui.menuBar.isVisible())
 
             self._geom_before_fullscreen = self.geometry()
 
@@ -1171,8 +1156,20 @@ class MainWindow(QMainWindow):
             self._fullscreen_patchbay = True
             self.showFullScreen()
 
-    def add_patchbay_tools(self, tools_widget, canvas_menu):
-        self._canvas_tools_action = self.ui.toolBar.addWidget(tools_widget)
+    def add_patchbay_tools(self, tools_widget: PatchbayToolsWidget, canvas_menu):
+        if self._canvas_tools_action is None:
+            self._canvas_tools_action = self.ui.toolBar.addWidget(tools_widget)
+            default_disp_wdg = (
+                ToolDisplayed.ZOOM_SLIDER
+                | ToolDisplayed.TRANSPORT_PLAY_STOP
+                | ToolDisplayed.BUFFER_SIZE
+                | ToolDisplayed.SAMPLERATE
+                | ToolDisplayed.XRUNS
+                | ToolDisplayed.DSP_LOAD)
+            
+            self.ui.toolBar.set_default_displayed_widgets(
+                default_disp_wdg.filtered_by_string(
+                    RS.settings.value('tool_bar/jack_elements', '', type=str)))
         self._canvas_menu = self.ui.menuBar.addMenu(canvas_menu)
 
     def create_client_widget(self, client):
@@ -1200,11 +1197,6 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.setObjectName("listWidget")
         self.ui.listWidget.set_session(self.session)
         self.ui.verticalLayout.addWidget(self.ui.listWidget)
-
-    def canvas_callback(self, action: int, value1: int,
-                        value2: int, value_str: str):
-        self.session.signaler.canvas_callback.emit(
-            action, value1, value2, value_str)
 
     def set_nsm_locked(self, nsm_locked: bool):
         self.ui.actionNewSession.setEnabled(not nsm_locked)
@@ -1587,16 +1579,23 @@ class MainWindow(QMainWindow):
         RS.settings.setValue(
             'MainWindow/ShowMenuBar',
             self.ui.menuBar.isVisible())
-        RS.settings.setValue("MainWindow/show_patchbay",
+        RS.settings.setValue('MainWindow/show_patchbay',
                              self.ui.actionShowJackPatchbay.isChecked())
-        RS.settings.setValue("MainWindow/splitter_messages",
+        RS.settings.setValue('MainWindow/splitter_messages',
                              self.ui.splitterSessionVsMessages.sizes())
+        RS.settings.setValue(
+            'tool_bar/jack_elements',
+            self.ui.toolBar.get_displayed_widgets().to_save_string())
+        RS.settings.setValue(
+            'tool_bar/icons_only',
+            self.ui.toolBar.force_main_actions_icons_only)
         RS.settings.sync()
 
     # Reimplemented Qt Functions
 
     def closeEvent(self, event):
         self.save_window_settings()
+        self.session.patchbay_manager.save_patchcanvas_cache()
         self.hidden_maximized = self.isMaximized()
 
         if self._systray.isVisible() and self.session.is_running():
@@ -1648,12 +1647,18 @@ class MainWindow(QMainWindow):
 
         QMainWindow.resizeEvent(self, event)
 
+        if self.ui.toolBar.force_main_actions_icons_only:
+            return
+
         new_button = self.ui.toolBar.widgetForAction(self.ui.actionNewSession)
         open_button = self.ui.toolBar.widgetForAction(self.ui.actionOpenSession)
+        if TYPE_CHECKING:
+            assert isinstance(new_button, QToolButton)
+            assert isinstance(open_button, QToolButton)
 
         if self.width() > 410:
-            for button in (new_button, open_button):
-                button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            new_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            open_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         elif self.width() > 310:
             new_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
             open_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This is a little script for refresh raysession.pro and update .ts files.
-# TRANSLATOR: You don't need to run it !
+# TRANSLATOR: if you want to translate the program, you don't need to run it !
 
 contents=""
 
@@ -16,7 +16,7 @@ for file in *.ui;do
 done
 
 
-for dir in daemon gui gui/patchcanvas shared;do
+for dir in daemon gui shared;do
     cd "$code_root/src/$dir"
     
     for file in *.py;do

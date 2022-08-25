@@ -1,15 +1,18 @@
-from PyQt5.QtWidgets import (
-    QLineEdit, QStackedWidget, QLabel, QToolButton, QFrame, QGraphicsView,
-    QSplitter, QSplitterHandle, QSlider, QToolTip, QApplication, QProgressBar,
-    QDialogButtonBox, QPushButton)
-from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
-                         QIcon, QCursor, QMouseEvent)
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPoint, QPointF, QRectF, QSizeF
 
 import time
-import ray
+from enum import IntFlag
+from PyQt5.QtWidgets import (
+    QLineEdit, QStackedWidget, QLabel, QToolButton, QFrame,
+    QSplitter, QSplitterHandle, QDialogButtonBox, QPushButton,
+    QDialog, QToolBar, QMenu, QApplication, QAction, QWidget, QSizePolicy)
+from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
+                         QIcon, QKeyEvent, QMouseEvent)
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPoint
 
-from gui_tools import is_dark_theme
+from patchbay import filter_frame, PatchGraphicsView
+
+_translate = QApplication.translate
+
 
 class RayHackButton(QToolButton):
     order_hack_visibility = pyqtSignal(bool)
@@ -65,7 +68,7 @@ class OpenSessionFilterBar(QLineEdit):
     def __init__(self, parent):
         QLineEdit.__init__(self)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent):
         if event.key() in (Qt.Key_Up, Qt.Key_Down):
             self.up_down_pressed.emit(event.key())
             self.key_event.emit(event)
@@ -73,17 +76,17 @@ class OpenSessionFilterBar(QLineEdit):
 
 
 class CustomLineEdit(QLineEdit):
-    def __init__(self, parent):
+    def __init__(self, parent: 'StackedSessionName'):
         QLineEdit.__init__(self)
-        self.parent = parent
+        self._parent = parent
 
     def mouseDoubleClickEvent(self, event):
-        self.parent.mouseDoubleClickEvent(event)
+        self._parent.mouseDoubleClickEvent(event)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent):
         if event.key() in (Qt.Key_Enter, Qt.Key_Return):
-            self.parent.name_changed.emit(self.text())
-            self.parent.setCurrentIndex(0)
+            self._parent.name_changed.emit(self.text())
+            self._parent.setCurrentIndex(0)
             return
 
         QLineEdit.keyPressEvent(self, event)
@@ -262,7 +265,7 @@ class StatusBarNegativ(StatusBar):
 
 
 class FakeToolButton(QToolButton):
-    def __init__(self, parent):
+    def __init__(self, parent: QDialog):
         QToolButton.__init__(self, parent)
         self.setStyleSheet("QToolButton{border:none}")
 
@@ -314,37 +317,36 @@ class FavoriteToolButton(QToolButton):
                 self._template_name, self._template_icon, self._factory)
 
 
-# taken from carla (falktx)
-class DraggableGraphicsView(QGraphicsView):
-    def __init__(self, parent):
-        QGraphicsView.__init__(self, parent)
+# # taken from carla (falktx)
+# class DraggableGraphicsView(QGraphicsView):
+#     def __init__(self, parent):
+#         QGraphicsView.__init__(self, parent)
 
-        self._panning = False
+#         self._panning = False
 
-        try:
-            self._middle_button = Qt.MiddleButton
-        except:
-            self._middle_button = Qt.MidButton
+#         try:
+#             self._middle_button = Qt.MiddleButton
+#         except:
+#             self._middle_button = Qt.MidButton
 
-    def mousePressEvent(self, event):
-        if (event.button() == self._middle_button
-                and not QApplication.keyboardModifiers() & Qt.ControlModifier):
-            self._panning = True
-            self.setDragMode(QGraphicsView.ScrollHandDrag)
-            event = QMouseEvent(event.type(), event.pos(), Qt.LeftButton,
-                                Qt.LeftButton, event.modifiers())
+#     def mousePressEvent(self, event):
+#         if (event.button() == self._middle_button
+#                 and not QApplication.keyboardModifiers() & Qt.ControlModifier):
+#             self._panning = True
+#             self.setDragMode(QGraphicsView.ScrollHandDrag)
+#             event = QMouseEvent(event.type(), event.pos(), Qt.LeftButton,
+#                                 Qt.LeftButton, event.modifiers())
 
-        QGraphicsView.mousePressEvent(self, event)
+#         QGraphicsView.mousePressEvent(self, event)
 
-    def mouseReleaseEvent(self, event):
-        QGraphicsView.mouseReleaseEvent(self, event)
+#     def mouseReleaseEvent(self, event):
+#         QGraphicsView.mouseReleaseEvent(self, event)
 
-        if not self._panning:
-            return
+#         if not self._panning:
+#             return
 
-        self._panning = False
-        self.setDragMode(QGraphicsView.NoDrag)
-        self.setCursor(QCursor(Qt.ArrowCursor))
+#         self._panning = False
+#         self.setDragMode(QGraphicsView.NoDrag)
 
 
 class CanvasSplitterHandle(QSplitterHandle):
@@ -372,6 +374,10 @@ class CanvasSplitter(QSplitter):
     def __init__(self, parent):
         QSplitter.__init__(self, parent)
 
+    def handle(self, index: int) -> CanvasSplitterHandle:
+        # just for output type redefinition
+        return super().handle(index)
+
     def set_active(self, yesno: bool):
         handle = self.handle(1)
         if handle:
@@ -379,80 +385,6 @@ class CanvasSplitter(QSplitter):
 
     def createHandle(self):
         return CanvasSplitterHandle(self)
-
-
-class ZoomSlider(QSlider):
-    zoom_fit_asked = pyqtSignal()
-
-    def __init__(self, parent):
-        QSlider.__init__(self, parent)
-
-    @staticmethod
-    def map_float_to(x, min_a, max_a, min_b, max_b):
-        if max_a == min_a:
-            return min_b
-        return min_b + ((x - min_a) / (max_a - min_a)) * (max_b - min_b)
-
-    def _show_tool_tip(self):
-        win = QApplication.activeWindow()
-        if win and win.isFullScreen():
-            return
-        string = "  Zoom: %i%%  " % int(self.zoom_percent())
-        QToolTip.showText(self.mapToGlobal(QPoint(0, 12)), string)
-
-    def zoom_percent(self)->int:
-        percent = 100.0
-        if self.value() <= 500:
-            percent = self.map_float_to(self.value(), 0, 500, 20, 100)
-        else:
-            percent = self.map_float_to(self.value(), 500, 1000, 100, 300)
-        return percent
-
-    def set_percent(self, percent: float):
-        if 99.99999 < percent < 100.00001:
-            self.setValue(500)
-        elif percent < 100:
-            self.setValue(int(self.map_float_to(percent, 20, 100, 0, 500)))
-        else:
-            self.setValue(int(self.map_float_to(percent, 100, 300, 500, 1000)))
-        self._show_tool_tip()
-
-    def mouseDoubleClickEvent(self, event):
-        self.zoom_fit_asked.emit()
-
-    def contextMenuEvent(self, event):
-        self.setValue(500)
-        self._show_tool_tip()
-
-    def wheelEvent(self, event):
-        direction = 1 if event.angleDelta().y() > 0 else -1
-
-        if QApplication.keyboardModifiers() & Qt.ControlModifier:
-            self.set_percent(self.zoom_percent() + direction)
-        else:
-            self.set_percent(self.zoom_percent() + direction * 5)
-            #QSlider.wheelEvent(self, event)
-        self._show_tool_tip()
-
-    def mouseMoveEvent(self, event):
-        QSlider.mouseMoveEvent(self, event)
-        self._show_tool_tip()
-
-
-class ProgressBarDsp(QProgressBar):
-    def __init__(self, parent):
-        QProgressBar.__init__(self)
-
-    def setValue(self, value):
-        color_border = "rgba(%i%%, %i%%, 0, 55%%)" % (value, 100 - value)
-        color_center = "rgba(%i%%, %i%%, 0, 45%%)" % (value, 100 - value)
-        self.setStyleSheet(
-            "QProgressBar:chunk{background-color: "
-            + "qlineargradient(x1:0, y1:0, x2:0, y1:1, "
-            + "stop:0 " + color_border + ','
-            + "stop:0.5 " + color_center + ','
-            + "stop:1 " + color_border + ',' + ')}')
-        QProgressBar.setValue(self, value)
 
 
 class StartupDialogButtonBox(QDialogButtonBox):
@@ -468,6 +400,7 @@ class StartupDialogButtonBox(QDialogButtonBox):
 
         QDialogButtonBox.keyPressEvent(self, event)
 
+
 class StartupDialogPushButtonNew(QPushButton):
     focus_on_list = pyqtSignal()
     focus_on_open = pyqtSignal()
@@ -475,7 +408,7 @@ class StartupDialogPushButtonNew(QPushButton):
     def __init__(self, parent):
         QPushButton.__init__(self, parent)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent):
         if event.key() in (Qt.Key_Down, Qt.Key_Up):
             self.focus_on_open.emit()
             return
@@ -500,6 +433,15 @@ class StartupDialogPushButtonOpen(StartupDialogPushButtonNew):
 
         StartupDialogPushButtonNew.keyPressEvent(self, event)
 
+
 class PreviewFrame(QFrame):
     def __init__(self, parent):
         QFrame.__init__(self, parent)
+
+
+class CanvasGroupFilterFrame(filter_frame.FilterFrame):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+
+                        

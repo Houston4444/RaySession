@@ -3,6 +3,7 @@
 #libs
 import signal
 import sys
+import time
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon, QFontDatabase
@@ -13,7 +14,6 @@ from gui_tools import ArgParser, CommandLineArgs, init_gui_tools, get_code_root
 from gui_server_thread import GuiServerThread
 from gui_session import SignaledSession
 import ray
-import resources_rc
 
 
 def signal_handler(sig, frame):
@@ -39,7 +39,8 @@ if __name__ == '__main__':
     app.setApplicationName(ray.APP_TITLE)
     app.setApplicationVersion(ray.VERSION)
     app.setOrganizationName(ray.APP_TITLE)
-    app.setWindowIcon(QIcon(':/scalable/%s.svg' % ray.APP_TITLE.lower()))
+    app.setWindowIcon(QIcon(
+        f':main_icon/scalable/{ray.APP_TITLE.lower()}.svg'))
     app.setQuitOnLastWindowClosed(False)
     app.setDesktopFileName(ray.APP_TITLE.lower())
 
@@ -55,13 +56,18 @@ if __name__ == '__main__':
                            '_', "%s/locale" % get_code_root()):
         app.installTranslator(app_translator)
 
+    patchbay_translator = QTranslator()
+    if patchbay_translator.load(QLocale(), 'patchbay',
+                                '_', "%s/HoustonPatchbay/locale" % get_code_root()):
+        app.installTranslator(patchbay_translator)
+
     sys_translator = QTranslator()
     path_sys_translations = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
     if sys_translator.load(QLocale(), 'qt', '_', path_sys_translations):
         app.installTranslator(sys_translator)
 
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
-    QFontDatabase.addApplicationFont(":fonts/Ubuntu-C.ttf")
+    QFontDatabase.addApplicationFont(":/fonts/Ubuntu-C.ttf")
 
     # get arguments
     parser = ArgParser()
@@ -69,7 +75,7 @@ if __name__ == '__main__':
     init_gui_tools()
 
     # Add raysession/src/bin to $PATH
-    # to can use raysession after make, whitout install
+    # to can use raysession after make, without install
     ray.add_self_bin_to_path()
 
     #connect signals
@@ -88,7 +94,7 @@ if __name__ == '__main__':
     app.exec()
 
     # TODO find something better, sometimes program never ends without.
-    #time.sleep(0.002)
+    time.sleep(0.002)
 
     server.stop()
     session.quit()

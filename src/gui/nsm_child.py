@@ -1,11 +1,18 @@
 
+
+from typing import TYPE_CHECKING
+
 import ray
 import nsm_client
 from gui_tools import CommandLineArgs, _translate
 from gui_server_thread import GuiServerThread
 
+if TYPE_CHECKING:
+    from gui_session import SignaledSession
+
+
 class NsmChild:
-    def __init__(self, session):
+    def __init__(self, session: 'SignaledSession'):
         self.session = session
         self.nsm_signaler = nsm_client.NSMSignaler()
         self.nsm_signaler.server_sends_open.connect(self._open)

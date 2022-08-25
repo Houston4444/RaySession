@@ -1,15 +1,16 @@
+
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QBoxLayout
 from PyQt5.QtGui import QIcon, QPixmap, QFont, QFontDatabase, QFontMetrics
 from PyQt5.QtCore import pyqtSlot, QSize
 
 import ray
+import child_dialogs
+import snapshots_dialog
+import ui
+
 from gui_server_thread import GuiServerThread
 from gui_tools import (client_status_string, _translate, is_dark_theme,
                        RayIcon, split_in_two, get_app_icon)
-import child_dialogs
-import snapshots_dialog
-
-import ui.client_slot
 
 
 class ClientSlot(QFrame):
@@ -17,7 +18,6 @@ class ClientSlot(QFrame):
         QFrame.__init__(self)
         self.ui = ui.client_slot.Ui_ClientSlotWidget()
         self.ui.setupUi(self)
-
         self.client = client
         self.main_win = self.client.session.main_win
 
@@ -65,9 +65,9 @@ class ClientSlot(QFrame):
             self.main_win.has_git)
 
         self.ui.iconButton.setMenu(self._menu)
-
+        
         dark = is_dark_theme(self)
-
+        
         self._save_icon = RayIcon('document-save', dark)
         self._saved_icon = RayIcon('document-saved', dark)
         self._unsaved_icon = RayIcon('document-unsaved', dark)
@@ -110,7 +110,7 @@ class ClientSlot(QFrame):
         if state:
             self.client.show_properties_dialog(second_tab=True)
         else:
-            self.client.properties_dialog.hide()
+            self.client.close_properties_dialog()
 
     def _start_client(self):
         self.to_daemon('/ray/client/resume', self.get_client_id())
@@ -294,8 +294,10 @@ class ClientSlot(QFrame):
                     ray.ClientStatus.STOPPED,
                     ray.ClientStatus.PRECOPY)))
 
-        self.ui.toolButtonGUI.setVisible(
-            bool(':optional-gui:' in self.client.capabilities))
+        if not self.ui.toolButtonGUI.isVisible():
+            self.ui.toolButtonGUI.setVisible(
+                bool(':optional-gui:' in self.client.capabilities))
+            self.set_gui_state(self.client.gui_state)
 
         if self.client.executable_path in ('ray-proxy', 'nsm-proxy'):
             if is_dark_theme(self):
@@ -460,7 +462,6 @@ class ClientItem(QListWidgetItem):
 
         self.sort_number = 0
         self.widget = ClientSlot(parent, self, client_data)
-
         parent.setItemWidget(self, self.widget)
         self.setSizeHint(QSize(100, 45))
 
@@ -496,6 +497,7 @@ class ListWidgetClients(QListWidget):
         item = ClientItem(self, client_data)
         item.sort_number = self._last_n
         self._last_n += 1
+
         return item.widget
 
     def remove_client_widget(self, client_id):

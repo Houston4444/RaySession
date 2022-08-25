@@ -799,7 +799,7 @@ QToolButton {border: none}</string>
          <number>0</number>
         </property>
         <item>
-         <widget class="DraggableGraphicsView" name="graphicsView">
+         <widget class="PatchGraphicsView" name="graphicsView">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -833,7 +833,7 @@ QToolButton {border: none}</string>
          </widget>
         </item>
         <item>
-         <widget class="CanvasFilterFrame" name="framePatchbayFilters">
+         <widget class="CanvasGroupFilterFrame" name="framePatchbayFilters">
           <property name="styleSheet">
            <string notr="true">QFrame{border:none}</string>
           </property>
@@ -957,7 +957,7 @@ QToolButton {border: none}</string>
    <addaction name="menuOptions"/>
    <addaction name="menuAbout"/>
   </widget>
-  <widget class="QToolBar" name="toolBar">
+  <widget class="RayToolBar" name="toolBar">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
      <horstretch>0</horstretch>
@@ -1061,7 +1061,7 @@ QToolButton {border: none}</string>
   <action name="actionAboutRaySession">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/48x48/raysession.png</normaloff>:/48x48/raysession.png</iconset>
+     <normaloff>:/main_icon/48x48/raysession.png</normaloff>:/main_icon/48x48/raysession.png</iconset>
    </property>
    <property name="text">
     <string>&amp;About Ray Session</string>
@@ -1170,6 +1170,10 @@ QToolButton {border: none}</string>
    </property>
   </action>
   <action name="actionAboutQt">
+   <property name="icon">
+    <iconset theme="qtlogo">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
    <property name="text">
     <string>About &amp;Qt</string>
    </property>
@@ -1447,7 +1451,7 @@ QToolButton {border: none}</string>
   <action name="actionSystemTrayIconOptions">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/scalable/raysession.svg</normaloff>:/scalable/raysession.svg</iconset>
+     <normaloff>:/main_icon/scalable/raysession.svg</normaloff>:/main_icon/scalable/raysession.svg</iconset>
    </property>
    <property name="text">
     <string>System tray &amp;icon options</string>
@@ -1519,21 +1523,26 @@ QToolButton {border: none}</string>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>DraggableGraphicsView</class>
-   <extends>QGraphicsView</extends>
-   <header>surclassed_widgets</header>
-  </customwidget>
-  <customwidget>
    <class>CanvasSplitter</class>
    <extends>QSplitter</extends>
    <header>surclassed_widgets</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>CanvasFilterFrame</class>
+   <class>CanvasGroupFilterFrame</class>
    <extends>QFrame</extends>
-   <header>canvas_filter_frame</header>
+   <header>surclassed_widgets</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PatchGraphicsView</class>
+   <extends>QGraphicsView</extends>
+   <header>surclassed_widgets</header>
+  </customwidget>
+  <customwidget>
+   <class>RayToolBar</class>
+   <extends>QToolBar</extends>
+   <header>gui_tool_bar</header>
   </customwidget>
  </customwidgets>
  <resources>

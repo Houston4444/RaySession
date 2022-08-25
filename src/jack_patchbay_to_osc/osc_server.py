@@ -1,16 +1,17 @@
 
-import sys
 import time
-#import pickle
 import tempfile
 import socket
 import json
 import subprocess
+from typing import TYPE_CHECKING
 
-from liblo import Server, Address, make_method
+from liblo import Server, Address
 
 import jacklib
 
+if TYPE_CHECKING:
+    from ray_jackpatch_to_osc import MainObject, JackPort, TransportPosition
 
 ### Code copied from shared/ray.py
 ### we don't import ray.py here, because this executable is Qt free
@@ -51,7 +52,7 @@ class Machine192:
 
         return cls.ip
 
-def areOnSameMachine(url1, url2):
+def areOnSameMachine(url1: str, url2: str):
     if url1 == url2:
         return True
 
@@ -110,7 +111,7 @@ class OscJackPatch(Server):
     slow_wait_time = 0.020
     slow_wait_num = 50
     
-    def __init__(self, main_object):
+    def __init__(self, main_object: 'MainObject'):
         Server.__init__(self)
         self.add_method('/ray/patchbay/add_gui', 's',
                         self._ray_patchbay_add_gui)
@@ -128,18 +129,28 @@ class OscJackPatch(Server):
                         self._ray_patchbay_refresh)
         self.add_method('/ray/patchbay/set_metadata', 'hss',
                         self._ray_patchbay_set_metadata)
-        
+        self.add_method('/ray/patchbay/transport_play', 'i',
+                        self._ray_patchbay_transport_play)
+        self.add_method('/ray/patchbay/transport_stop', '',
+                         self._ray_patchbay_transport_stop)
+        self.add_method('/ray/patchbay/transport_relocate', 'i',
+                        self._ray_patchbay_transport_relocate)
+        self.add_method('/ray/patchbay/activate_dsp_load', 'i',
+                        self._ray_patchbay_activate_dsp_load)
+        self.add_method('/ray/patchbay/activate_transport', 'i',
+                        self._ray_patchbay_activate_transport)
+
         self.main_object = main_object
         self.jack_client = main_object.jack_client
         self.port_list = main_object.port_list
         self.connection_list = main_object.connection_list
         self.metadata_list = main_object.metadata_list
         self.client_list = main_object.client_list
-        self.gui_list = []
+        self.gui_list = list[Address]()
         self._tmp_gui_url = ''
         self._terminate = False
 
-    def set_tmp_gui_url(self, gui_url):
+    def set_tmp_gui_url(self, gui_url: str):
         self._tmp_gui_url = gui_url
 
     def set_jack_client(self, jack_client):
@@ -175,12 +186,12 @@ class OscJackPatch(Server):
 
     def _ray_patchbay_connect(self, path, args):
         port_out_name, port_in_name = args
-        #connect here
+        # connect here
         jacklib.connect(self.jack_client, port_out_name, port_in_name)
     
     def _ray_patchbay_disconnect(self, path, args):
         port_out_name, port_in_name = args
-        #disconnect here
+        # disconnect here
         jacklib.disconnect(self.jack_client, port_out_name, port_in_name)
 
     def _ray_patchbay_set_buffersize(self, path, args):
@@ -193,6 +204,21 @@ class OscJackPatch(Server):
     def _ray_patchbay_set_metadata(self, path, args):
         uuid, key, value = args
         self.main_object.set_metadata(uuid, key, value)
+
+    def _ray_patchbay_transport_play(self, path, args):
+        self.main_object.transport_play(bool(args[0]))
+    
+    def _ray_patchbay_transport_stop(self, path, args):
+        self.main_object.transport_stop()
+    
+    def _ray_patchbay_transport_relocate(self, path, args):
+        self.main_object.transport_relocate(args[0])
+
+    def _ray_patchbay_activate_dsp_load(self, path, args):
+        self.main_object.dsp_wanted = bool(args[0])
+        
+    def _ray_patchbay_activate_transport(self, path, args):
+        self.main_object.set_transport_wanted(args[0])
 
     def send_gui(self, *args):
         for gui_addr in self.gui_list:
@@ -210,8 +236,8 @@ class OscJackPatch(Server):
         # so here, it is faster, and prevent OSC saturation.
         # json format (and not binary with pickle) is choosen
         # this way, code language of the GUI is not a blocker
-        patchbay_data = {'ports': [], 'connections': [],
-                         'metadatas': [], 'clients': []}
+        patchbay_data = {'ports': list[dict](), 'connections': list[dict](),
+                         'metadatas': list[dict](), 'clients': list[dict]()}
         for port in self.port_list:
             port_dict = {'name': port.name, 'type': port.type,
                          'flags': port.flags, 'uuid': port.uuid}
@@ -236,7 +262,7 @@ class OscJackPatch(Server):
             file.close()
 
             self.send(src_addr, '/ray/gui/patchbay/fast_temp_file_running',
-                    file.name)
+                      file.name)
 
     def send_distant_data(self, src_addr_list):
         # we need to slow the long process of messages sends
@@ -299,6 +325,11 @@ class OscJackPatch(Server):
         self.send(gui_addr, '/ray/gui/patchbay/dsp_load',
                   self.main_object.last_sent_dsp_load)
 
+        tpos = self.main_object.last_transport_pos
+        self.send(gui_addr, '/ray/gui/patchbay/transport_position',
+                  tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
+                  tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
+
         if areOnSameMachine(gui_url, self.url):
             self.send_local_data([gui_addr])
         else:
@@ -329,11 +360,11 @@ class OscJackPatch(Server):
         self.send_gui('/ray/gui/patchbay/client_name_and_uuid',
                       client_name, uuid)
 
-    def port_added(self, port):
+    def port_added(self, port: 'JackPort'):
         self.send_gui('/ray/gui/patchbay/port_added',
                       port.name, port.type, port.flags, port.uuid) 
 
-    def port_renamed(self, port, ex_name):
+    def port_renamed(self, port: 'JackPort', ex_name: str):
         self.send_gui('/ray/gui/patchbay/port_renamed', ex_name, port.name)
     
     def port_removed(self, port):
@@ -342,24 +373,22 @@ class OscJackPatch(Server):
     def metadata_updated(self, uuid: int, key: str, value: str):
         self.send_gui('/ray/gui/patchbay/metadata_updated', uuid, key, value)
     
-    def port_order_changed(self, port):
-        if port.order is None:
-            return
-
-        self.send_gui('/ray/gui/patchbay/port_order_changed',
-                      port.name, port.order)
-    
-    def connection_added(self, connection):
+    def connection_added(self, connection: tuple[str]):
         self.send_gui('/ray/gui/patchbay/connection_added',
-                     connection[0], connection[1])    
+                     connection[0], connection[1])
 
-    def connection_removed(self, connection):
+    def connection_removed(self, connection: tuple[str]):
         self.send_gui('/ray/gui/patchbay/connection_removed',
                      connection[0], connection[1])
     
     def server_stopped(self):
         # here server is JACK (in future maybe pipewire)
         self.send_gui('/ray/gui/patchbay/server_stopped')
+    
+    def send_transport_position(self, tpos: 'TransportPosition'):
+        self.send_gui('/ray/gui/patchbay/transport_position',
+                      tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
+                      tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
     
     def send_dsp_load(self, dsp_load: int):
         self.send_gui('/ray/gui/patchbay/dsp_load', dsp_load)

@@ -163,6 +163,7 @@ class CanvasSaver(ServerSender):
         gp = ray.GroupPosition.new_from(*args)
         for group_positions in (self.group_positions_session,
                                 self.group_positions_config):
+            
             for gpos in group_positions:
                 if gpos.is_same(gp):
                     gpos.update(*args)

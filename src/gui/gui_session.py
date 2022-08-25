@@ -1,11 +1,9 @@
 
 import sys
-
 from PyQt5.QtWidgets import QApplication
 
 import ray
-
-from patchcanvas import patchcanvas
+from patchbay.base_elements import TransportPosition
 from daemon_manager import DaemonManager
 from gui_client import Client, TrashedClient
 from gui_signaler import Signaler
@@ -13,13 +11,13 @@ from gui_server_thread import GuiServerThread
 from gui_tools import CommandLineArgs, RS, error_text
 from main_window import MainWindow
 from nsm_child import NsmChild, NsmChildOutside
-from patchbay_manager import PatchbayManager
+from ray_patchbay_manager import RayPatchbayManager
 
 
 class Session:
     def __init__(self):
-        self.client_list = []
-        self.trashed_clients = []
+        self.client_list = list[Client]()
+        self.trashed_clients = list[TrashedClient]()
         self.favorite_list = []
         self.recent_sessions = []
         self.name = ''
@@ -30,7 +28,7 @@ class Session:
         self.is_renameable = True
 
         self.signaler = Signaler()
-        self.patchbay_manager = PatchbayManager(self)
+        self.patchbay_manager = RayPatchbayManager(self)
 
         server = GuiServerThread.instance()
         server.start()
@@ -58,7 +56,6 @@ class Session:
         self.daemon_manager.finish_init()
         self.patchbay_manager.finish_init()
         server.finish_init(self)
-
         self.main_win.show()
 
         # display donations dialog under conditions
@@ -148,6 +145,7 @@ class SignaledSession(Session):
 
     def _osc_receive(self, path, args):
         func_path = path
+        #print(time.time(), path)
         func_name = func_path.replace('/', '_')
 
         if func_name in self.__dir__():
@@ -233,7 +231,7 @@ class SignaledSession(Session):
         self.notes = args[0]
         if self.main_win.notes_dialog is not None:
             self.main_win.notes_dialog.notes_updated()
-
+        
     def _ray_gui_session_notes_shown(self, path, args):
         self.main_win.edit_notes()
 
@@ -300,7 +298,7 @@ class SignaledSession(Session):
 
             if status == ray.ClientStatus.REMOVED:
                 self.main_win.remove_client(client_id)
-                client.properties_dialog.close()
+                client.close_properties_dialog()
                 self.client_list.remove(client)
                 del client
 
@@ -319,12 +317,14 @@ class SignaledSession(Session):
         if client:
             client.set_dirty_state(bool(int_dirty))
 
-    def _ray_gui_client_has_optional_gui(self, path, args):
-        client_id = args[0]
-        client = self.get_client(client_id)
+    #def _ray_gui_client_has_optional_gui(self, path, args):
+        #print('trad', 'client_id', 'has optional gui')
+        
+        #client_id = args[0]
+        #client = self.get_client(client_id)
 
-        if client:
-            client.set_gui_enabled()
+        #if client:
+            #client.set_gui_enabled()
 
     def _ray_gui_client_gui_visible(self, path, args):
         client_id, int_state = args
@@ -481,7 +481,7 @@ class SignaledSession(Session):
         self.patchbay_manager.patchbay_announce(*args)
 
     def _ray_gui_patchbay_client_name_and_uuid(self, path, args):
-        self.patchbay_manager.client_name_and_uuid(*args)
+        self.patchbay_manager.set_group_uuid_from_name(*args)
 
     def _ray_gui_patchbay_port_added(self, path, args):
         self.patchbay_manager.add_port(*args)
@@ -491,7 +491,7 @@ class SignaledSession(Session):
 
     def _ray_gui_patchbay_port_renamed(self, path, args):
         self.patchbay_manager.rename_port(*args)
-
+        
     def _ray_gui_patchbay_metadata_updated(self, path, args):
         self.patchbay_manager.metadata_update(*args)
 
@@ -527,6 +527,10 @@ class SignaledSession(Session):
 
     def _ray_gui_patchbay_sample_rate(self, path, args):
         self.patchbay_manager.sample_rate_changed(*args)
+
+    def _ray_gui_patchbay_transport_position(self, path, args):
+        self.patchbay_manager.refresh_transport(TransportPosition(
+            args[0], bool(args[1]), bool(args[2]), *args[3:]))
 
     def _ray_gui_patchbay_big_packets(self, path, args):
         self.patchbay_manager.receive_big_packets(*args)

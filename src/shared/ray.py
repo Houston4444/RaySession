@@ -35,8 +35,7 @@ RAYNET_BIN = 'ray-network'
 
 GIT_IGNORED_EXTENSIONS = ".wav .flac .ogg .mp3 .mp4 .avi .mkv .peak .m4a .pdf"
 
-GROUP_CONTEXT_AUDIO = 0x01
-GROUP_CONTEXT_MIDI = 0x02
+
 
 class PrefixMode:
     CUSTOM = 0
@@ -269,7 +268,7 @@ def is_git_taggable(string)->bool:
 
     return True
 
-def is_valid_full_path(path: str)->bool:
+def is_valid_full_path(path: str) -> bool:
     if not path.startswith('/'):
         return False
 
@@ -281,7 +280,7 @@ def is_valid_full_path(path: str)->bool:
         return False
     return True
 
-def is_osc_port_free(port:int):
+def is_osc_port_free(port: int) -> bool:
     try:
         testport = Server(port)
     except BaseException:
@@ -312,14 +311,14 @@ def get_free_osc_port(default=16187):
     del testport
     return daemon_port
 
-def is_valid_osc_url(url:str):
+def is_valid_osc_url(url: str) -> bool:
     try:
         address = liblo.Address(url)
         return True
     except BaseException:
         return False
 
-def get_liblo_address(url):
+def get_liblo_address(url: str):
     valid_url = False
     try:
         address = liblo.Address(url)
@@ -714,7 +713,7 @@ class RayNet:
 
 
 class GroupPosition:
-    port_types_view = GROUP_CONTEXT_AUDIO | GROUP_CONTEXT_MIDI
+    port_types_view = 3
     group_name = ''
     null_zone = ''
     in_zone = ''
@@ -723,17 +722,19 @@ class GroupPosition:
     in_xy = (0, 0)
     out_xy = (0, 0)
     flags = 0
+    layout_mode = 0
     fully_set = True
     
     @staticmethod
     def get_attributes():
         return ('port_types_view', 'group_name',
                 'null_zone', 'in_zone', 'out_zone',
-                'null_xy', 'in_xy', 'out_xy', 'flags')
+                'null_xy', 'in_xy', 'out_xy', 'flags',
+                'layout_mode')
     
     @staticmethod
     def sisi():
-        return 'issssiiiiiii'
+        return 'issssiiiiiiii'
     
     @staticmethod
     def new_from(*args):
@@ -763,7 +764,7 @@ class GroupPosition:
             
             self.__setattr__(attr, value)
     
-    def is_same(self, other)->bool:
+    def is_same(self, other: 'GroupPosition') -> bool:
         if (self.port_types_view == other.port_types_view
                 and self.group_name == other.group_name):
             return True
@@ -773,17 +774,18 @@ class GroupPosition:
     def update(self, port_types_view: int, group_name: str,
                null_zone: str, in_zone: str, out_zone: str,
                null_x: int, null_y: int, in_x: int, in_y: int,
-               out_x: int, out_y: int, flags: int):
+               out_x: int, out_y: int, flags: int, layout_mode: int):
+        
         for string in (group_name, null_zone, in_zone, out_zone):
-            if type(string) != str:
+            if not isinstance(string, str):
                 return 
         
         for digit in (port_types_view, null_x, null_y, in_x, in_y,
-                      out_x, out_y, flags):
-            if type(digit) == int:
+                      out_x, out_y, flags, layout_mode):
+            if isinstance(digit, int):
                 continue
-            
-            if type(digit) != str:
+
+            if not isinstance(digit, str):
                 return
             
             if (digit.isdigit()
@@ -802,14 +804,16 @@ class GroupPosition:
         self.in_xy = (int(in_x), int(in_y))
         self.out_xy = (int(out_x), int(out_y))
         self.flags = int(flags)
+        self.layout_mode = int(layout_mode)
         
-    def spread(self)->tuple:
+    def spread(self) -> tuple:
         return (self.port_types_view, self.group_name,
                 self.null_zone, self.in_zone, self.out_zone,
                 self.null_xy[0], self.null_xy[1], self.in_xy[0], self.in_xy[1],
-                self.out_xy[0], self.out_xy[1], self.flags)
+                self.out_xy[0], self.out_xy[1], self.flags,
+                self.layout_mode)
     
-    def to_dict(self)->dict:
+    def to_dict(self) -> dict:
         new_dict = {}
         
         for attr in self.__dir__():
@@ -824,11 +828,35 @@ class GroupPosition:
         
         return str(self.__getattribute__(attr))
     
+    def set_layout_mode(self, port_mode: int, layout_mode: int):
+        if not (1 <= port_mode <= 3 or 0 <= layout_mode <= 2):
+            print('group position set_layout_mode wrong port_mode or layout_mode',
+                  port_mode, layout_mode)
+            return
+        
+        layout_mode_str = "%03d" % self.layout_mode
+        new_string = ''
+        for i in range(len(layout_mode_str)):
+            if i == 3 - port_mode:
+                new_string += str(layout_mode)
+            else:
+                new_string += layout_mode_str[i]
+        
+        self.layout_mode = int(new_string)
+        
+    def get_layout_mode(self, port_mode: int) -> int:
+        if not(1 <= port_mode <= 3):
+            return 0
+        
+        layout_mode_str = "%03d" % self.layout_mode
+        return int(layout_mode_str[3 - port_mode])
+
+
 class PortGroupMemory:
     group_name = ''
     port_type = 0
     port_mode = 0
-    port_names = []
+    port_names = list[str]()
     above_metadatas = False
     
     @staticmethod
@@ -883,7 +911,7 @@ class PortGroupMemory:
         
         return new_dict
     
-    def has_a_common_port_with(self, other)->bool:
+    def has_a_common_port_with(self, other: 'PortGroupMemory') -> bool:
         if (self.port_type != other.port_type
                 or self.port_mode != other.port_mode
                 or self.group_name != other.group_name):

@@ -2,18 +2,24 @@ import argparse
 import os
 import sys
 from PyQt5.QtCore import QSettings, QSize, QFile
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QIcon, QPixmap, QPalette
 
 import ray
 
 _translate = QApplication.translate
 
+_RAY_ICONS_CACHE_LIGHT = {}
+_RAY_ICONS_CACHE_DARK = {}
+_APP_ICONS_CACHE_LIGHT = {}
+_APP_ICONS_CACHE_DARK = {}
 
 class RS:
     settings = QSettings()
 
     # HD for Hideable dialog
+    # we can add elements here but never change 
+    # the existing ones, because they are used in user config files
     HD_Donations = 0x001
     HD_OpenNsmSession = 0x002
     HD_SnapshotsInfo = 0x004
@@ -61,7 +67,7 @@ class ErrDaemon:
     WRONG_VERSION = -6
 
 
-class RayIcon(QIcon):
+class RayAbstractIcon(QIcon):
     def __init__(self, icon_name: str, dark=False):
         QIcon.__init__(self)
         breeze = 'breeze-dark' if dark else 'breeze'
@@ -70,6 +76,20 @@ class RayIcon(QIcon):
             QPixmap(
                 ':scalable/%s/disabled/%s' %
                 (breeze, icon_name)), QIcon.Disabled, QIcon.Off)
+
+def RayIcon(icon_name: str, dark=False) -> RayAbstractIcon:
+    if dark and icon_name in _RAY_ICONS_CACHE_DARK.keys():
+        return _RAY_ICONS_CACHE_DARK[icon_name]
+    if not dark and icon_name in _RAY_ICONS_CACHE_LIGHT.keys():
+        return _RAY_ICONS_CACHE_LIGHT[icon_name]
+    
+    icon = RayAbstractIcon(icon_name, dark)
+    if dark:
+        _RAY_ICONS_CACHE_DARK[icon_name] = icon
+    else:
+        _RAY_ICONS_CACHE_LIGHT[icon_name] = icon
+    
+    return icon
 
 
 class CommandLineArgs(argparse.Namespace):
@@ -188,12 +208,12 @@ def init_gui_tools():
                            ray.DEFAULT_SESSION_ROOT,
                            type=str))
 
-def is_dark_theme(widget)->bool:
+def is_dark_theme(widget: QWidget) -> bool:
     return bool(
         widget.palette().brush(QPalette.Active, QPalette.WindowText).color().lightness()
         > 128)
 
-def split_in_two(string: str)->tuple:
+def split_in_two(string: str) -> tuple[str, str]:
         middle = int(len(string)/2)
         sep_indexes = []
         last_was_digit = False
@@ -229,16 +249,16 @@ def split_in_two(string: str)->tuple:
             return (string[:best_index], string[best_index+1:])
         return (string[:best_index], string[best_index:])
 
-def dirname(*args)->str:
+def dirname(*args) -> str:
     return os.path.dirname(*args)
 
-def basename(*args)->str:
+def basename(*args) -> str:
     return os.path.basename(*args)
 
-def get_code_root()->str:
+def get_code_root() -> str:
     return dirname(dirname(dirname(os.path.realpath(__file__))))
 
-def server_status_string(server_status: int)->str:
+def server_status_string(server_status: int) -> str:
     server_status_strings = {
         ray.ServerStatus.OFF     : _translate('server status', "off"),
         ray.ServerStatus.NEW     : _translate('server status', "new"),
@@ -263,7 +283,7 @@ def server_status_string(server_status: int)->str:
 
     return server_status_strings[server_status]
 
-def client_status_string(client_status: int)->str:
+def client_status_string(client_status: int) -> str:
     client_status_strings = {
         ray.ClientStatus.STOPPED: _translate('client status', "stopped"),
         ray.ClientStatus.LAUNCH : _translate('client status', "launch"),
@@ -291,16 +311,21 @@ def error_text(error:int)->str:
     if error == ray.Err.SESSION_IN_SESSION_DIR:
         text = _translate(
             'guimsg', 
-            """Can't create session in a dir containing a session"
+            """Can't create session in a dir containing a session
 for better organization.""")
     
     return text
 
-def get_app_icon(icon_name, widget):
+def get_app_icon(icon_name: str, widget: QWidget) -> QIcon:
     dark = bool(
         widget.palette().brush(
             2, QPalette.WindowText).color().lightness() > 128)
-
+    
+    if dark and icon_name in _APP_ICONS_CACHE_DARK.keys():
+        return _APP_ICONS_CACHE_DARK[icon_name]
+    if not dark and icon_name in _APP_ICONS_CACHE_LIGHT.keys():
+        return _APP_ICONS_CACHE_LIGHT[icon_name]
+    
     icon = QIcon.fromTheme(icon_name)
 
     if icon.isNull():
@@ -326,5 +351,10 @@ def get_app_icon(icon_name, widget):
                     icon = QIcon()
                     icon.addFile(filename)
                     break
+
+    if dark:
+        _APP_ICONS_CACHE_DARK[icon_name] = icon
+    else:
+        _APP_ICONS_CACHE_LIGHT[icon_name] = icon
 
     return icon

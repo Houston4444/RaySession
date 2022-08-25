@@ -1,15 +1,20 @@
 import time
 import sys
+from typing import TYPE_CHECKING
 from PyQt5.QtCore import QObject, pyqtSignal
 
 import ray
 from gui_server_thread import GuiServerThread
 from client_properties_dialog import ClientPropertiesDialog
 
+if TYPE_CHECKING:
+    from gui_session import SignaledSession
+
 class Client(QObject, ray.ClientData):
     status_changed = pyqtSignal(int)
 
-    def __init__(self, session, client_id: str, protocol: int):
+    def __init__(self, session: 'SignaledSession',
+                 client_id: str, protocol: int):
         QObject.__init__(self)
         ray.ClientData.gui_init(self, client_id, protocol)
 
@@ -28,9 +33,8 @@ class Client(QObject, ray.ClientData):
         self.no_save_level = 0
         self.last_save = time.time()
         self.check_last_save = True
-
         self.widget = self.main_win.create_client_widget(self)
-        self.properties_dialog = ClientPropertiesDialog.create(self.main_win, self)
+        self._properties_dialog = None
 
     def set_status(self, status: int):
         self._previous_status = self.status
@@ -44,7 +48,9 @@ class Client(QObject, ray.ClientData):
             self.last_save = time.time()
 
         self.widget.update_status(status)
-        self.properties_dialog.update_status(status)
+        
+        if self._properties_dialog is not None:
+            self._properties_dialog.update_status(status)
 
     def set_gui_enabled(self):
         self.has_gui = True
@@ -72,6 +78,9 @@ class Client(QObject, ray.ClientData):
 
     def update_properties(self, *args):
         self.update(*args)
+        if ':optional-gui:' in self.capabilities:
+            self.has_gui = True
+        
         self.widget.update_client_data()
 
     def update_ray_hack(self, *args):
@@ -118,14 +127,23 @@ class Client(QObject, ray.ClientData):
                         *self.ray_net.spread())
 
     def show_properties_dialog(self, second_tab=False):
-        self.properties_dialog.update_contents()
+        if self._properties_dialog is None:
+            self._properties_dialog = ClientPropertiesDialog.create(
+                self.main_win, self)
+        self._properties_dialog.update_contents()
         if second_tab:
             if self.protocol == ray.Protocol.RAY_HACK:
-                self.properties_dialog.enable_test_zone(True)
-            self.properties_dialog.set_on_second_tab()
-        self.properties_dialog.show()
+                self._properties_dialog.enable_test_zone(True)
+            self._properties_dialog.set_on_second_tab()
+        self._properties_dialog.show()
         if ray.get_window_manager() != ray.WindowManager.WAYLAND:
-            self.properties_dialog.activateWindow()
+            self._properties_dialog.activateWindow()
+
+    def close_properties_dialog(self):
+        if self._properties_dialog is None:
+            return
+        
+        self._properties_dialog.close()
 
     def re_create_widget(self):
         del self.widget

@@ -3,22 +3,20 @@ from PyQt5.QtWidgets import (QDialogButtonBox, QListWidgetItem, QFrame,
                              QMenu, QAction, QShortcut)
 from PyQt5.QtGui import QIcon
 
-import client_properties_dialog
 import ray
+import ui
+import client_properties_dialog
 
 from gui_tools import RS, _translate, is_dark_theme, get_app_icon
 from child_dialogs import ChildDialog
 
-import ui.add_application
-import ui.template_slot
-import ui.remove_template
 
 TEMPLATE_NAME_DATA = Qt.UserRole
 DISPLAY_NAME_DATA = Qt.UserRole +1
 
 class TemplateSlot(QFrame):
     def __init__(self, list_widget, session,
-                 name, factory, client_data):
+                 name: str, factory: bool, client_data: ray.ClientData):
         QFrame.__init__(self)
         self.ui = ui.template_slot.Ui_Frame()
         self.ui.setupUi(self)
@@ -290,7 +288,6 @@ class AddApplicationDialog(ChildDialog):
         self.to_daemon('/ray/server/clear_client_templates_database')
         self.to_daemon('/ray/server/list_user_client_templates')
         self.to_daemon('/ray/server/list_factory_client_templates')
-        
 
     def _add_user_templates(self, template_list):
         for template_name in template_list:

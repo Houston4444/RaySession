@@ -1,4 +1,4 @@
-
+import enum
 from PyQt5.QtCore import QObject, pyqtSignal
 from liblo import Address
 
@@ -46,8 +46,7 @@ class Signaler(QObject):
     favorite_added = pyqtSignal(str, str, bool)
     favorite_removed = pyqtSignal(str, bool)
 
-    canvas_callback = pyqtSignal(int, int, int, str)
-    port_types_view_changed = pyqtSignal(int)
+    canvas_callback = pyqtSignal(enum.IntEnum, tuple)
 
     def __init__(self):
         QObject.__init__(self)

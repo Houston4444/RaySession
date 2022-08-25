@@ -46,14 +46,14 @@ class Client(ServerSender, ray.ClientData):
     _reply_errcode = 0
     _reply_message = None
 
-    #can be directly changed by OSC thread
+    # can be directly changed by OSC thread
     gui_visible = False
     gui_has_been_visible = False
     show_gui_ordered = False
     dirty = 0
     progress = 0
 
-    #have to be modified by main thread for security
+    # have to be modified by main thread for security
     addr = None
     pid = 0
     pending_command = ray.Command.NONE
@@ -91,9 +91,6 @@ class Client(ServerSender, ray.ClientData):
         self.session = parent_session
         self.is_dummy = self.session.is_dummy
 
-        # process_env = QProcessEnvironment.systemEnvironment()
-        # process_env.insert('NSM_URL', self.get_server_url())
-
         self.custom_data = {}
         self.custom_tmp_data = {}
 
@@ -104,10 +101,9 @@ class Client(ServerSender, ray.ClientData):
         self._process.finished.connect(self._process_finished)
         self._process.readyReadStandardError.connect(self._standard_error)
         self._process.readyReadStandardOutput.connect(self._standard_output)
-        # self._process.setProcessEnvironment(process_env)
 
-        #if client is'n't stopped 2secs after stop,
-        #another stop becames a kill!
+        # if client is'n't stopped 2secs after stop,
+        # another stop becames a kill!
         self._stopped_since_long_ = False
         self._stopped_timer = QTimer()
         self._stopped_timer.setSingleShot(True)
@@ -135,7 +131,7 @@ class Client(ServerSender, ray.ClientData):
         self.ray_hack_waiting_win = False
 
     @staticmethod
-    def short_client_id(wanted:str)->str:
+    def short_client_id(wanted:str) -> str:
         if '_' in wanted:
             begin, udsc, end = wanted.rpartition('_')
 

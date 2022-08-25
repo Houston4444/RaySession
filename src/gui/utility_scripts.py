@@ -1,22 +1,17 @@
 
 import os
 import shutil
-import sys
 
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QMessageBox,
-                             QPushButton, QDialogButtonBox)
+                             QDialogButtonBox)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QProcess, QProcessEnvironment, Qt
 
 import ray
+import ui
 from gui_tools import CommandLineArgs, RS
 from open_session_dialog import OpenSessionDialog
 from child_dialogs import ChildDialog
-
-import ui.ardour_convert
-import ui.hydro_rh_nsm
-import ui.ray_to_nsm
-
 
 _translate = QApplication.translate
 
@@ -60,8 +55,8 @@ class HydrogenRhNsmDialog(ChildDialog):
             for check_box in self._check_boxes:
                 check_box.setChecked(True)
 
-    def get_check_arguments(self)->list:
-        args = []
+    def get_check_arguments(self) -> list[str]:
+        args = list[str]()
         if self.ui.checkBoxCurrentSession.isChecked():
             return args
 

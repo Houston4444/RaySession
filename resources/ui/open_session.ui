@@ -464,10 +464,10 @@ QToolButton {border: none}</string>
            <attribute name="headerVisible">
             <bool>true</bool>
            </attribute>
-           <attribute name="headerDefaultSectionSize">
+           <attribute name="headerMinimumSectionSize">
             <number>20</number>
            </attribute>
-           <attribute name="headerMinimumSectionSize">
+           <attribute name="headerDefaultSectionSize">
             <number>20</number>
            </attribute>
            <attribute name="headerStretchLastSection">

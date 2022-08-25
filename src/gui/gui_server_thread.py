@@ -1,9 +1,12 @@
 import os
 import sys
+from typing import TYPE_CHECKING
 import liblo
 
 import ray
 from gui_tools import CommandLineArgs
+if TYPE_CHECKING:
+    from gui_session import SignaledSession
 
 _instance = None
 
@@ -55,7 +58,7 @@ class GuiServerThread(liblo.ServerThread):
 
         liblo.ServerThread.stop(self)
 
-    def finish_init(self, session):
+    def finish_init(self, session: 'SignaledSession'):
         self.session = session
         self.signaler = self.session.signaler
         self.daemon_manager = self.session.daemon_manager
@@ -126,7 +129,8 @@ class GuiServerThread(liblo.ServerThread):
             ('/ray/gui/patchbay/server_lose', ''),
             ('/ray/gui/patchbay/fast_temp_file_memory', 's'),
             ('/ray/gui/patchbay/fast_temp_file_running', 's'),
-            ('/ray/gui/patchbay/client_name_and_uuid', 'sh')):
+            ('/ray/gui/patchbay/client_name_and_uuid', 'sh'),
+            ('/ray/gui/patchbay/transport_position', 'iiiiiif')):
                 self.add_method(path_types[0], path_types[1],
                                 self._generic_callback)
 
@@ -145,7 +149,7 @@ class GuiServerThread(liblo.ServerThread):
         self.signaler.osc_receive.emit(path, args)
 
     @ray_method('/reply', None)
-    def _reply(self, path, args, types, src_addr):
+    def _reply(self, path, args: list, types: str, src_addr):
         if not (types and ray.types_are_all_strings(types)):
             return False
 
@@ -182,6 +186,12 @@ class GuiServerThread(liblo.ServerThread):
             return
 
         version, server_status, options, session_root, is_net_free = args
+
+        if (self.session is not None
+                and self.session.main_win is not None
+                and self.session.main_win.waiting_for_patchbay):
+            self.send(src_addr, '/ray/server/ask_for_patchbay')
+            self.session.main_win.waiting_for_patchbay = False
 
         self.signaler.daemon_announce.emit(
             src_addr, version, server_status,
@@ -281,7 +291,7 @@ class GuiServerThread(liblo.ServerThread):
         self.patchbay_addr = src_addr
 
     @ray_method('/ray/gui/patchbay/update_portgroup', None)
-    def _patchbay_update_portgroup(self, path, args, types, src_addr):
+    def _patchbay_update_portgroup(self, path, args, types: str, src_addr):
         if not types.startswith('siiis'):
             return False
 

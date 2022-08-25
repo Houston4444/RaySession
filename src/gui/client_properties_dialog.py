@@ -5,15 +5,11 @@ from PyQt5.QtCore import QTimer, QFile
 from PyQt5.QtWidgets import QFileDialog, QFrame
 
 import ray
+import ui
 
 from gui_tools import _translate, client_status_string, get_app_icon
 from child_dialogs import ChildDialog
 
-import ui.ray_hack_copy
-import ui.client_properties
-import ui.nsm_properties
-import ui.ray_hack_properties
-import ui.ray_net_properties
 
 class RayHackCopyDialog(ChildDialog):
     def __init__(self, parent):
@@ -136,7 +132,6 @@ class ClientPropertiesDialog(ChildDialog):
 class NsmClientPropertiesDialog(ClientPropertiesDialog):
     def __init__(self, parent, client):
         ClientPropertiesDialog.__init__(self, parent, client)
-
         self.nsmui_frame = QFrame()
         self.nsmui = ui.nsm_properties.Ui_Frame()
         self.nsmui.setupUi(self.nsmui_frame)

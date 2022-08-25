@@ -25,11 +25,16 @@ ifeq (, $(shell which $(PYTHON)))
  PYTHON := python
 endif
 
-# -----------------------------------------------------------------------------------------------------------------------------------------
+PATCHBAY_DIR=HoustonPatchbay
 
-all: RES UI LOCALE
+# ---------------------
 
-# -----------------------------------------------------------------------------------------------------------------------------------------
+all: PATCHBAY RES UI LOCALE
+
+PATCHBAY:
+	@(cd $(PATCHBAY_DIR) && $(MAKE))
+
+# ---------------------
 # Resources
 
 RES: src/gui/resources_rc.py
@@ -37,10 +42,10 @@ RES: src/gui/resources_rc.py
 src/gui/resources_rc.py: resources/resources.qrc
 	$(PYRCC) $< -o $@
 
-# -----------------------------------------------------------------------------------------------------------------------------------------
+# ---------------------
 # UI code
 
-UI: mkdir_ui raysession ray_proxy
+UI: mkdir_ui raysession ui_init ray_proxy
 
 mkdir_ui:
 	@if ! [ -e src/gui/ui ];then mkdir -p src/gui/ui; fi
@@ -50,8 +55,6 @@ raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/about_raysession.py \
 	    src/gui/ui/add_application.py \
 	    src/gui/ui/ardour_convert.py \
-	    src/gui/ui/canvas_options.py \
-	    src/gui/ui/canvas_port_info.py \
 	    src/gui/ui/client_properties.py \
 	    src/gui/ui/client_rename.py \
 	    src/gui/ui/client_slot.py \
@@ -59,7 +62,6 @@ raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/donations.py \
 	    src/gui/ui/daemon_url.py \
 	    src/gui/ui/error_dialog.py \
-	    src/gui/ui/filter_frame.py \
 	    src/gui/ui/hydro_rh_nsm.py \
 	    src/gui/ui/jack_config_info.py \
 	    src/gui/ui/list_snapshots.py \
@@ -69,7 +71,6 @@ raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/ray_hack_copy.py \
 	    src/gui/ui/nsm_open_info.py \
 	    src/gui/ui/open_session.py \
-	    src/gui/ui/patchbay_tools.py \
 	    src/gui/ui/preview_client_slot.py \
 	    src/gui/ui/quit_app.py \
 	    src/gui/ui/ray_hack_properties.py \
@@ -95,7 +96,12 @@ raysession: src/gui/ui/abort_copy.py \
 
 src/gui/ui/%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
-	
+
+ui_init: src/gui/ui/__init__.py
+
+src/gui/ui/__init__.py: src/generate_init.py
+	$(PYTHON) src/generate_init.py
+
 ray_proxy: src/clients/proxy/ui_proxy_copy.py \
 	   src/clients/proxy/ui_proxy_gui.py
 	
@@ -105,28 +111,33 @@ src/clients/proxy/ui_%.py: resources/ui/%.ui
 PY_CACHE:
 	$(PYTHON) -m compileall src/
 	
-# -----------------------------------------------------------------------------------------------------------------------------------------
+# ------------------------
 # # Translations Files
 
 LOCALE: locale
 
-locale: locale/raysession_en.qm locale/raysession_fr.qm
+locale: locale/raysession_en.qm \
+		locale/raysession_fr.qm \
 
 locale/%.qm: locale/%.ts
 	$(LRELEASE) $< -qm $@
-# -----------------------------------------------------------------------------------------------------------------------------------------
+
+# -------------------------
 
 clean:
+	@(cd $(PATCHBAY_DIR) && $(MAKE) $@)
 	rm -f *~ src/*~ src/*.pyc  src/clients/proxy/ui_*.py \
-	      src/gui/resources_rc.py locale/*.qm
+	      src/gui/resources_rc.py  locale/*.qm
 	rm -f -R src/gui/ui
-	rm -f -R src/__pycache__ src/*/__pycache__ src/*/*/__pycache__
-# -----------------------------------------------------------------------------------------------------------------------------------------
+	rm -f -R src/__pycache__ src/*/__pycache__ src/*/*/__pycache__ \
+		  src/*/*/*/__pycache__
+
+# -------------------------
 
 debug:
 	$(MAKE) DEBUG=true
 
-# -----------------------------------------------------------------------------------------------------------------------------------------
+# -------------------------
 
 install:
 	# Create directories
@@ -154,37 +165,38 @@ install:
 	cp -r session_templates $(DEST_RAY)/
 	cp -r session_scripts   $(DEST_RAY)/
 	cp -r data              $(DEST_RAY)/
+	cp -r patchbay_themes   $(DEST_RAY)/
 	
 	# Copy Desktop Files
 	install -m 644 data/share/applications/*.desktop \
 		$(DESTDIR)$(PREFIX)/share/applications/
 
 	# Install icons
-	install -m 644 resources/16x16/raysession.png   \
+	install -m 644 resources/main_icon/16x16/raysession.png   \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
-	install -m 644 resources/24x24/raysession.png   \
+	install -m 644 resources/main_icon/24x24/raysession.png   \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/24x24/apps/
-	install -m 644 resources/32x32/raysession.png   \
+	install -m 644 resources/main_icon/32x32/raysession.png   \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/32x32/apps/
-	install -m 644 resources/48x48/raysession.png   \
+	install -m 644 resources/main_icon/48x48/raysession.png   \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
-	install -m 644 resources/48x48/raysession.png   \
-		$(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
-	install -m 644 resources/64x64/raysession.png   \
+	install -m 644 resources/main_icon/64x64/raysession.png   \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/64x64/apps/
-	install -m 644 resources/96x96/raysession.png   \
+	install -m 644 resources/main_icon/96x96/raysession.png   \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/96x96/apps/
-	install -m 644 resources/128x128/raysession.png \
+	install -m 644 resources/main_icon/128x128/raysession.png \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
-	install -m 644 resources/256x256/raysession.png \
+	install -m 644 resources/main_icon/256x256/raysession.png \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
 
 	# Install icons, scalable
-	install -m 644 resources/scalable/raysession.svg \
+	install -m 644 resources/main_icon/scalable/raysession.svg \
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 
 	# Install main code
 	cp -r src $(DEST_RAY)/
+	rm $(DEST_RAY)/src/gui/patchbay
+	cp -r $(PATCHBAY_DIR)/patchbay $(DEST_RAY)/src/gui/
 	
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_checker_daemon $(DESTDIR)$(PREFIX)/bin/
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_config_script  $(DESTDIR)$(PREFIX)/bin/
@@ -215,7 +227,6 @@ install:
 	
 	# Install Translations
 	install -m 644 locale/*.qm $(DEST_RAY)/locale/
-	-----------------------------------------------------------------------------------------------------------------------------------------
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/raysession
