@@ -150,6 +150,8 @@ class MainWindow(QMainWindow):
         self.ui.actionToggleShowMessages.setChecked(
             bool(self.ui.splitterSessionVsMessages.sizes()[1] > 0))
 
+        self._force_tool_bar_icon_only = False
+
         # set default action for tools buttons
         self.ui.closeButton.setDefaultAction(self.ui.actionCloseSession)
         self.ui.toolButtonSaveSession.setDefaultAction(
@@ -447,8 +449,6 @@ class MainWindow(QMainWindow):
             # and snapshots buttons
             self.ui.widgetPreRewindSpacer.setVisible(True)
         else:
-            #self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-
             self.ui.layoutSessionDown.setDirection(QBoxLayout.LeftToRight)
             self.ui.layoutSessionDown.removeWidget(
                 self.ui.stackedWidgetSessionName)
@@ -460,24 +460,24 @@ class MainWindow(QMainWindow):
                 0, self.ui.fullButtonFolder)
             self.ui.widgetPreRewindSpacer.setVisible(False)
 
-        app = self.ui.toolButtonAddApplication
-        exe = self.ui.toolButtonAddExecutable
+        add_app = self.ui.toolButtonAddApplication
+        add_exe = self.ui.toolButtonAddExecutable
 
         if width >= 419:
-            app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            exe.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            add_app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            add_exe.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         elif width >= 350:
-            app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            add_app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            add_exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
         elif width > 283:
-            app.setToolButtonStyle(Qt.ToolButtonIconOnly)
-            exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            add_app.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            add_exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
         elif width > 260:
-            app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            exe.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            add_app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            add_exe.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         else:
-            app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            add_app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            add_exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
 
     @classmethod
     def to_daemon(cls, *args):
@@ -1592,6 +1592,9 @@ class MainWindow(QMainWindow):
         RS.settings.setValue(
             'tool_bar/jack_elements',
             self.ui.toolBar.get_displayed_widgets().to_save_string())
+        RS.settings.setValue(
+            'tool_bar/icons_only',
+            self.ui.toolBar.force_main_actions_icons_only)
         RS.settings.sync()
 
     # Reimplemented Qt Functions
@@ -1650,12 +1653,18 @@ class MainWindow(QMainWindow):
 
         QMainWindow.resizeEvent(self, event)
 
+        if self.ui.toolBar.force_main_actions_icons_only:
+            return
+
         new_button = self.ui.toolBar.widgetForAction(self.ui.actionNewSession)
         open_button = self.ui.toolBar.widgetForAction(self.ui.actionOpenSession)
+        if TYPE_CHECKING:
+            assert isinstance(new_button, QToolButton)
+            assert isinstance(open_button, QToolButton)
 
         if self.width() > 410:
-            for button in (new_button, open_button):
-                button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            new_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            open_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         elif self.width() > 310:
             new_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
             open_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
