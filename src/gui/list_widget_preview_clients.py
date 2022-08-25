@@ -2,9 +2,10 @@ from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QBoxLay
 from PyQt5.QtGui import QIcon, QPixmap, QFont, QFontDatabase, QFontMetrics
 from PyQt5.QtCore import pyqtSlot, QSize, pyqtSignal
 
-from . import ray, ui
-from .gui_server_thread import GuiServerThread
-from .gui_tools import _translate, split_in_two, get_app_icon
+import ray
+import ui
+from gui_server_thread import GuiServerThread
+from gui_tools import _translate, split_in_two, get_app_icon
 
 
 class ClientSlot(QFrame):

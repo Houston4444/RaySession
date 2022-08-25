@@ -402,7 +402,7 @@
   <customwidget>
    <class>FakeToolButton</class>
    <extends>QToolButton</extends>
-   <header>..surclassed_widgets</header>
+   <header>surclassed_widgets</header>
   </customwidget>
  </customwidgets>
  <resources/>

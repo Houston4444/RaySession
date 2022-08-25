@@ -3,11 +3,15 @@ from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QBoxLay
 from PyQt5.QtGui import QIcon, QPixmap, QFont, QFontDatabase, QFontMetrics
 from PyQt5.QtCore import pyqtSlot, QSize
 
-from . import ray, child_dialogs, snapshots_dialog
-from .gui_server_thread import GuiServerThread
-from .gui_tools import (client_status_string, _translate, is_dark_theme,
+import ray
+import child_dialogs
+import snapshots_dialog
+import ui
+
+from gui_server_thread import GuiServerThread
+from gui_tools import (client_status_string, _translate, is_dark_theme,
                        RayIcon, split_in_two, get_app_icon)
-from . import ui
+
 
 class ClientSlot(QFrame):
     def __init__(self, list_widget, list_widget_item, client):

@@ -10,12 +10,14 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QIcon, QPixmap, QGuiApplication
 from PyQt5.QtCore import Qt, QTimer
 
-from . import ray, client_properties_dialog, ui
-from .gui_server_thread import GuiServerThread
-from .gui_tools import (ErrDaemon, _translate, get_app_icon,
-                        CommandLineArgs, RS, is_dark_theme)
+import ray
+import client_properties_dialog
+import ui
+from gui_server_thread import GuiServerThread
+from gui_tools import (ErrDaemon, _translate, get_app_icon,
+                       CommandLineArgs, RS, is_dark_theme)
 if TYPE_CHECKING:
-    from .main_window import MainWindow
+    from main_window import MainWindow
 
 
 class ChildDialog(QDialog):

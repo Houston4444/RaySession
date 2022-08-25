@@ -4,10 +4,11 @@ import signal
 from PyQt5.QtCore import QTimer, QFile
 from PyQt5.QtWidgets import QFileDialog, QFrame
 
-from . import ray, ui
+import ray
+import ui
 
-from .gui_tools import _translate, client_status_string, get_app_icon
-from .child_dialogs import ChildDialog
+from gui_tools import _translate, client_status_string, get_app_icon
+from child_dialogs import ChildDialog
 
 
 class RayHackCopyDialog(ChildDialog):

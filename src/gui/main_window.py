@@ -8,31 +8,25 @@ import subprocess
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QMenu, QDialog,
     QMessageBox, QToolButton, QAbstractItemView,
-    QBoxLayout, QSystemTrayIcon, QWidget, QShortcut,
-    QSizePolicy)
+    QBoxLayout, QSystemTrayIcon, QWidget, QShortcut)
 from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
-from gui.patchbay.base_elements import ToolDisplayed
+import ray
+import ui
+import add_application_dialog
+import open_session_dialog
+import child_dialogs
+import snapshots_dialog
+import list_widget_clients
 
-from .patchbay.surclassed_widgets import ZoomSlider
-from .patchbay.tools_widgets import PatchbayToolsWidget
-
-
-from . import(
-    ray,
-    ui,
-    add_application_dialog,
-    open_session_dialog,
-    child_dialogs,
-    snapshots_dialog,
-    list_widget_clients)
-from .gui_tools import (
+from gui_tools import (
     RS, RayIcon, CommandLineArgs, _translate, server_status_string,
     is_dark_theme, get_code_root, get_app_icon)
-from .gui_server_thread import GuiServerThread
-from .utility_scripts import UtilityScriptLauncher
-
+from gui_server_thread import GuiServerThread
+from utility_scripts import UtilityScriptLauncher
+from patchbay.base_elements import ToolDisplayed
+from patchbay.tools_widgets import PatchbayToolsWidget
 
 if TYPE_CHECKING:
     from .gui_session import SignaledSession

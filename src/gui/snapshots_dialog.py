@@ -2,10 +2,9 @@
 from PyQt5.QtCore import Qt, QDateTime, QDate
 from PyQt5.QtWidgets import QDialogButtonBox, QTreeWidgetItem
 
-from . import ui
-from .child_dialogs import ChildDialog
-from .gui_tools import _translate, RS
-
+import ui
+from child_dialogs import ChildDialog
+from gui_tools import _translate, RS
 
 
 GROUP_ELEMENT = 0

@@ -3,10 +3,12 @@ from PyQt5.QtWidgets import (QDialogButtonBox, QListWidgetItem, QFrame,
                              QMenu, QAction, QShortcut)
 from PyQt5.QtGui import QIcon
 
-from . import ray, ui, client_properties_dialog
+import ray
+import ui
+import client_properties_dialog
 
-from .gui_tools import RS, _translate, is_dark_theme, get_app_icon
-from .child_dialogs import ChildDialog
+from gui_tools import RS, _translate, is_dark_theme, get_app_icon
+from child_dialogs import ChildDialog
 
 
 TEMPLATE_NAME_DATA = Qt.UserRole

@@ -2,16 +2,16 @@
 import sys
 from PyQt5.QtWidgets import QApplication
 
-from . import ray
-from .patchbay.base_elements import TransportPosition
-from .daemon_manager import DaemonManager
-from .gui_client import Client, TrashedClient
-from .gui_signaler import Signaler
-from .gui_server_thread import GuiServerThread
-from .gui_tools import CommandLineArgs, RS, error_text
-from .main_window import MainWindow
-from .nsm_child import NsmChild, NsmChildOutside
-from .ray_patchbay_manager import RayPatchbayManager
+import ray
+from patchbay.base_elements import TransportPosition
+from daemon_manager import DaemonManager
+from gui_client import Client, TrashedClient
+from gui_signaler import Signaler
+from gui_server_thread import GuiServerThread
+from gui_tools import CommandLineArgs, RS, error_text
+from main_window import MainWindow
+from nsm_child import NsmChild, NsmChildOutside
+from ray_patchbay_manager import RayPatchbayManager
 
 
 class Session:

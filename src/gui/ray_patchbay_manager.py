@@ -8,9 +8,14 @@ import sys
 from PyQt5.QtCore import QLocale, QUrl
 from PyQt5.QtGui import QDesktopServices
 
-from .patchbay.base_elements import (Group, GroupPos, PortgroupMem,
-                                     PortMode, BoxLayoutMode, PortType, ToolDisplayed)
-from .patchbay import (
+
+import ray
+from gui_server_thread import GuiServerThread
+from gui_tools import RS, get_code_root, is_dark_theme, RayIcon
+
+from patchbay.base_elements import (Group, GroupPos, PortgroupMem,
+                                    PortMode, BoxLayoutMode, PortType, ToolDisplayed)
+from patchbay import (
     PatchbayManager,
     Callbacker,
     PatchbayToolsWidget,
@@ -18,14 +23,9 @@ from .patchbay import (
     CanvasMenu
 )
 
-
-from . import ray
-from .gui_server_thread import GuiServerThread
-from .gui_tools import RS, get_code_root, is_dark_theme, RayIcon
-
 if TYPE_CHECKING:
-    from .gui_session import Session
-    from .main_window import MainWindow
+    from gui_session import Session
+    from main_window import MainWindow
 
 
 def convert_group_pos_from_ray_to_patchbay(

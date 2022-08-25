@@ -2,10 +2,10 @@ from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QMouseEvent, QIcon
 from PyQt5.QtWidgets import QLabel, QApplication, QAction, QToolBar, QToolButton
 
-from .gui_tools import RS
-from .patchbay.tools_widgets import PatchbayToolsWidget
-from .patchbay.tool_bar import PatchbayToolBar
-from .patchbay.patchbay_manager import PatchbayManager
+from gui_tools import RS
+from patchbay.tools_widgets import PatchbayToolsWidget
+from patchbay.tool_bar import PatchbayToolBar
+from patchbay.patchbay_manager import PatchbayManager
 
 _translate = QApplication.translate
 

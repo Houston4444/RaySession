@@ -9,9 +9,10 @@ from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QKeyEvent, QMouseEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPoint
 
-from .patchbay import filter_frame, PatchGraphicsView
+from patchbay import filter_frame, PatchGraphicsView
 
 _translate = QApplication.translate
+
 
 class RayHackButton(QToolButton):
     order_hack_visibility = pyqtSignal(bool)

@@ -10,10 +10,10 @@ from PyQt5.QtGui import QIcon, QFontDatabase
 from PyQt5.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo
 
 #local imports
-from gui.gui_tools import ArgParser, CommandLineArgs, init_gui_tools, get_code_root
-from gui.gui_server_thread import GuiServerThread
-from gui.gui_session import SignaledSession
-import gui.ray as ray
+from gui_tools import ArgParser, CommandLineArgs, init_gui_tools, get_code_root
+from gui_server_thread import GuiServerThread
+from gui_session import SignaledSession
+import ray
 
 
 def signal_handler(sig, frame):

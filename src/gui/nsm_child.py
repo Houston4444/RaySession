@@ -2,12 +2,13 @@
 
 from typing import TYPE_CHECKING
 
-from . import ray, nsm_client
-from .gui_tools import CommandLineArgs, _translate
-from .gui_server_thread import GuiServerThread
+import ray
+import nsm_client
+from gui_tools import CommandLineArgs, _translate
+from gui_server_thread import GuiServerThread
 
 if TYPE_CHECKING:
-    from .gui_session import SignaledSession
+    from gui_session import SignaledSession
 
 
 class NsmChild:

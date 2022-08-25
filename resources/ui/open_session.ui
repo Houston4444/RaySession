@@ -464,10 +464,10 @@ QToolButton {border: none}</string>
            <attribute name="headerVisible">
             <bool>true</bool>
            </attribute>
-           <attribute name="headerDefaultSectionSize">
+           <attribute name="headerMinimumSectionSize">
             <number>20</number>
            </attribute>
-           <attribute name="headerMinimumSectionSize">
+           <attribute name="headerDefaultSectionSize">
             <number>20</number>
            </attribute>
            <attribute name="headerStretchLastSection">
@@ -537,23 +537,23 @@ QToolButton {border: none}</string>
   <customwidget>
    <class>OpenSessionFilterBar</class>
    <extends>QLineEdit</extends>
-   <header>..surclassed_widgets</header>
+   <header>surclassed_widgets</header>
   </customwidget>
   <customwidget>
    <class>PreviewFrame</class>
    <extends>QFrame</extends>
-   <header>..surclassed_widgets</header>
+   <header>surclassed_widgets</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>ListWidgetPreviewClients</class>
    <extends>QListWidget</extends>
-   <header>..list_widget_preview_clients</header>
+   <header>list_widget_preview_clients</header>
   </customwidget>
   <customwidget>
    <class>StackedSessionName</class>
    <extends>QStackedWidget</extends>
-   <header>..surclassed_widgets</header>
+   <header>surclassed_widgets</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
