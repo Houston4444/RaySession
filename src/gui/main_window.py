@@ -28,7 +28,6 @@ from .gui_tools import (
     is_dark_theme, get_code_root, get_app_icon)
 from .gui_server_thread import GuiServerThread
 from .utility_scripts import UtilityScriptLauncher
-from .tool_bar import SpacerWidget, ToolDisplayed
 
 
 if TYPE_CHECKING:
@@ -231,8 +230,6 @@ class MainWindow(QMainWindow):
             self.toggle_scene_full_screen)
         self.session.patchbay_manager.sg.filters_bar_toggle_wanted.connect(
             self.toggle_patchbay_filters_bar)
-        self.ui.toolBar.displayed_widgets_changed.connect(
-            self._tools_changed_in_tool_bar)
 
         # set session menu
         self._session_menu = QMenu()
@@ -422,12 +419,6 @@ class MainWindow(QMainWindow):
     def _splitter_session_vs_messages_moved(self, pos: int, index: int):
         self.ui.actionToggleShowMessages.setChecked(
             bool(pos < self.ui.splitterSessionVsMessages.height() -10))
-
-    @pyqtSlot(int)
-    def _tools_changed_in_tool_bar(self, tools_displayed: int):
-        'change a thing'
-        # self._transport_tool_action.setVisible(
-        #     tools_displayed & ToolDisplayed.TRANSPORT_CLOCK)
 
     def _session_frame_resized(self):
         width = self.ui.frameCurrentSession.width()

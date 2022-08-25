@@ -1542,7 +1542,7 @@ QToolButton {border: none}</string>
   <customwidget>
    <class>RayToolBar</class>
    <extends>QToolBar</extends>
-   <header>..tool_bar</header>
+   <header>..gui_tool_bar</header>
   </customwidget>
  </customwidgets>
  <resources>
