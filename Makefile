@@ -152,6 +152,7 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
+	install -d $(DESTDIR)$(PREFIX)/share/HoustonPatchbay/
 	install -d $(DEST_RAY)/
 	install -d $(DEST_RAY)/locale/
 	install -d $(DESTDIR)/etc/xdg/
@@ -165,6 +166,7 @@ install:
 	cp -r session_templates $(DEST_RAY)/
 	cp -r session_scripts   $(DEST_RAY)/
 	cp -r data              $(DEST_RAY)/
+	cp -r HoustonPatchbay/themes $(DESTDIR)$(PREFIX)/share/HoustonPatchbay/
 	
 	# Copy Desktop Files
 	install -m 644 data/share/applications/*.desktop \
