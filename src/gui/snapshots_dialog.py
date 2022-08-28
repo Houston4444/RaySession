@@ -2,10 +2,12 @@
 from PyQt5.QtCore import Qt, QDateTime, QDate
 from PyQt5.QtWidgets import QDialogButtonBox, QTreeWidgetItem
 
-import ui
 from child_dialogs import ChildDialog
 from gui_tools import _translate, RS
 
+import ui.snapshot_name
+import ui.list_snapshots
+import ui.snapshots_info
 
 GROUP_ELEMENT = 0
 GROUP_DAY = 1
@@ -445,6 +447,7 @@ class SnapshotsInfoDialog(ChildDialog):
 
     def has_to_be_hidden_next_time(self):
         return self.ui.checkBox.isChecked()
+
 
 class SessionSnapshotsDialog(SnapshotsDialog):
     def __init__(self, parent):

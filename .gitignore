@@ -5,6 +5,7 @@
 
 #UI builds
 /src/gui/ui/*.py
+!/src/gui/ui/__init__.py
 /src/gui/patchbay/ui/*.py
 /src/clients/proxy/ui_*.py
 

@@ -12,12 +12,38 @@ from PyQt5.QtCore import Qt, QTimer
 
 import ray
 import client_properties_dialog
-import ui
+# import ui
 from gui_server_thread import GuiServerThread
 from gui_tools import (ErrDaemon, _translate, get_app_icon,
                        CommandLineArgs, RS, is_dark_theme)
 if TYPE_CHECKING:
     from main_window import MainWindow
+
+import ui.new_session
+import ui.save_template_session
+import ui.client_trash
+import ui.abort_session
+import ui.abort_copy
+import ui.session_notes
+import ui.nsm_open_info
+import ui.quit_app
+import ui.about_raysession
+import ui.new_executable
+import ui.stop_client
+import ui.stop_client_no_save
+import ui.client_rename
+import ui.snapshot_progress
+import ui.script_info
+import ui.script_user_action
+import ui.session_scripts_info
+import ui.jack_config_info
+import ui.daemon_url
+import ui.waiting_close_user
+import ui.donations
+import ui.systray_close
+import ui.systray_management
+import ui.startup_dialog
+import ui.error_dialog
 
 
 class ChildDialog(QDialog):
@@ -647,6 +673,7 @@ class SessionNotesDialog(ChildDialog):
         if not self.server_off:
             self.to_daemon('/ray/session/hide_notes')
         ChildDialog.closeEvent(self, event)
+
 
 class OpenNsmSessionInfoDialog(ChildDialog):
     def __init__(self, parent):

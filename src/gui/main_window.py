@@ -13,7 +13,6 @@ from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
 import ray
-import ui
 import add_application_dialog
 import open_session_dialog
 import child_dialogs
@@ -30,6 +29,8 @@ from patchbay.tools_widgets import PatchbayToolsWidget
 
 if TYPE_CHECKING:
     from .gui_session import SignaledSession
+
+import ui.raysession
 
 UI_PATCHBAY_UNDEF = 0
 UI_PATCHBAY_HIDDEN = 1

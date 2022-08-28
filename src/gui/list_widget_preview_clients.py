@@ -3,9 +3,10 @@ from PyQt5.QtGui import QIcon, QPixmap, QFont, QFontDatabase, QFontMetrics
 from PyQt5.QtCore import pyqtSlot, QSize, pyqtSignal
 
 import ray
-import ui
 from gui_server_thread import GuiServerThread
 from gui_tools import _translate, split_in_two, get_app_icon
+
+import ui.preview_client_slot
 
 
 class ClientSlot(QFrame):

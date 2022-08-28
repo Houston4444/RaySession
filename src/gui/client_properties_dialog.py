@@ -5,10 +5,15 @@ from PyQt5.QtCore import QTimer, QFile
 from PyQt5.QtWidgets import QFileDialog, QFrame
 
 import ray
-import ui
 
 from gui_tools import _translate, client_status_string, get_app_icon
 from child_dialogs import ChildDialog
+
+import ui.ray_hack_copy
+import ui.client_properties
+import ui.nsm_properties
+import ui.ray_hack_properties
+import ui.ray_net_properties
 
 
 class RayHackCopyDialog(ChildDialog):
@@ -461,6 +466,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         ClientPropertiesDialog.showEvent(self, event)
         self.signaler.client_properties_state_changed.emit(
             self.client.client_id, True)
+
 
 class RayNetClientPropertiesDialog(ClientPropertiesDialog):
     def __init__(self, parent, client):
