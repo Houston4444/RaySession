@@ -10,6 +10,7 @@ from PyQt5.QtGui import QDesktopServices
 
 
 import ray
+import xdg
 from gui_server_thread import GuiServerThread
 from gui_tools import RS, get_code_root, is_dark_theme, RayIcon
 
@@ -193,13 +194,27 @@ class RayPatchbayManager(PatchbayManager):
         return new_dict
     
     def _setup_canvas(self):
-        source_theme_path=Path(get_code_root()).joinpath('HoustonPatchbay', 'themes')
+        SUBMODULE = 'HoustonPatchbay'
+        source_theme_path = Path(get_code_root()) / SUBMODULE / 'themes'
+        theme_paths = list[Path]()
+        
+        app_title = ray.APP_TITLE.lower()
+        
+        theme_paths.append(xdg.xdg_data_home() / app_title / SUBMODULE / 'themes')
+
+        if source_theme_path.exists():
+            theme_paths.append(source_theme_path)
+
+        for p in xdg.xdg_data_dirs():
+            path = p / app_title / SUBMODULE / 'themes'
+            if path not in theme_paths:
+                theme_paths.append(path)
 
         if TYPE_CHECKING:
             assert isinstance(self.main_win, MainWindow)
 
         self.app_init(self.main_win.ui.graphicsView,
-                      source_theme_path=source_theme_path,
+                      theme_paths,
                       callbacker=RayPatchbayCallbacker(self),
                       default_theme_name='Yellow Boards')
     
