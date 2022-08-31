@@ -368,8 +368,6 @@ class MainObject:
             self.jack_client, self.jack_buffer_size_callback, None)
         jacklib.set_sample_rate_callback(
             self.jack_client, self.jack_sample_rate_callback, None)
-        jacklib.set_latency_callback(
-            self.jack_client, self.jack_latency_callback, None)
         jacklib.set_property_change_callback(
             self.jack_client, self.jack_properties_change_callback, None)
         jacklib.on_shutdown(
@@ -462,9 +460,6 @@ class MainObject:
         self.buffer_size = buffer_size
         self.osc_server.send_buffersize()
         return 0
-
-    def jack_latency_callback(self, latency, arg=None) -> int:
-        print('zlefkklatency', latency, type(latency))
 
     def jack_client_registration_callback(self, client_name: bytes,
                                           register: int, arg=None) -> int:
