@@ -15,7 +15,8 @@ from gui_server_thread import GuiServerThread
 from gui_tools import RS, get_code_root, is_dark_theme, RayIcon
 
 from patchbay.base_elements import (Group, GroupPos, PortgroupMem,
-                                    PortMode, BoxLayoutMode, PortType, ToolDisplayed)
+                                    PortMode, BoxLayoutMode, PortType, ToolDisplayed,
+                                    PortTypesViewFlag)
 from patchbay import (
     PatchbayManager,
     Callbacker,
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
 def convert_group_pos_from_ray_to_patchbay(
         ray_gpos: ray.GroupPosition) -> GroupPos:
     gpos = GroupPos()
-    gpos.port_types_view = ray_gpos.port_types_view
+    gpos.port_types_view = PortTypesViewFlag(ray_gpos.port_types_view)
     gpos.group_name = ray_gpos.group_name
     gpos.null_zone = ray_gpos.null_zone
     gpos.in_zone = ray_gpos.in_zone
