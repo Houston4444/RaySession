@@ -321,7 +321,6 @@ class NewSessionDialog(ChildDialog):
             self._text_was_empty = True
 
     def _set_completer_for_empty_text(self):
-        #print('set currow', self._completer.setCurrentIndex(0))
         del self._completer
         self._completer = QCompleter([f + '/' for f in self.sub_folders])
         self._completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
