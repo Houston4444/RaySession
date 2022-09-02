@@ -34,6 +34,6 @@ Features
 ![Screenshot](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/screenshots/Screenshot_20211203_162333.png)
 
 
-You can see documentation on NSM protocol at: https://linuxaudio.github.io/new-session-manager/api/index.html
+You can see documentation on NSM protocol at: https://new-session-manager.jackaudio.org/api/index.html
 
 RaySession is being developed by Mathieu Picot (houston4444), using Python3 and Qt5.
