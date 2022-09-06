@@ -36,7 +36,7 @@ look into ~/.config/ardourX/templates and add an RS template per ardour template
 
 Maybe at bottom left, add a field for application to launch with specific client_id. If any, it will launch the app with long jack naming (__Application.client_id__ instead of __Application__). Useful if user uses many instances of the same software.
 
-# Connections
+## Connections
 
 ray-jackpatch could be rewritten from scratch, it uses Qt and it is clearly not needed.
 
