@@ -3,6 +3,10 @@
 !/.github
 !/.git
 
+#Package builds
+/package_utils/*
+!/package_utils/bundle-source.sh
+
 #UI builds
 /src/gui/ui/*.py
 !/src/gui/ui/__init__.py
