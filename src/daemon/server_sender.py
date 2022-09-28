@@ -1,13 +1,15 @@
 
+from re import A
 from PyQt5.QtCore import QObject
+from typing import TYPE_CHECKING
 
 import ray
-
 from osc_server_thread import OscServerThread
+from daemon_tools import AppTemplate
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from osc_server_thread import OscServerThread
+
 
 class ServerSender(QObject):
     def __init__(self):
@@ -120,7 +122,7 @@ class ServerSender(QObject):
 
         return bool(server.options & option)
 
-    def get_client_templates_database(self, base:str) -> list:
+    def get_client_templates_database(self, base: str) -> list[AppTemplate]:
         server = OscServerThread.get_instance()
         if server:
             return server.client_templates_database[base]

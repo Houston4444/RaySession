@@ -1,10 +1,17 @@
 import argparse
 import os
 import sys
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from PyQt5.QtCore import (QCoreApplication, QStandardPaths, QSettings,
                           QDateTime, QLocale)
 
 import ray
+import liblo
+
+if TYPE_CHECKING:
+    from client import Client
+
 
 settings = QSettings()
 
@@ -70,7 +77,7 @@ def init_daemon_tools():
     RS.set_settings(l_settings)
 
     RS.set_non_active_clients(
-        ray.get_list_in_settings(l_settings, 'daemon/non_active_list'))
+        ray.get_list_in_settings(l_settings, 'daemon/non_active_list'))    
     RS.set_favorites(ray.get_list_in_settings(l_settings, 'daemon/favorites'))
     TemplateRoots.init_config()
 
@@ -87,10 +94,18 @@ def get_git_default_un_and_ignored(executable:str)->tuple:
     return (ignored, unignored)
 
 
+@dataclass
+class AppTemplate:
+    template_name: str
+    template_client: 'Client'
+    display_name: str
+    templates_root: str
+
+
 class RS:
     settings = QSettings()
     non_active_clients = []
-    favorites = []
+    favorites = list[ray.Favorite]()
 
     @classmethod
     def set_settings(cls, settings):
@@ -103,7 +118,7 @@ class RS:
         cls.non_active_clients = nalist
 
     @classmethod
-    def set_favorites(cls, favorites):
+    def set_favorites(cls, favorites: list[ray.Favorite]):
         cls.favorites = favorites
 
 
@@ -197,16 +212,19 @@ class Terminal:
 
 class CommandLineArgs(argparse.Namespace):
     session_root = ''
+    hidden = False
     osc_port = 0
     findfreeport = True
-    gui_url = None
-    gui_port = 0
+    control_url: liblo.Address = None
+    gui_url: liblo.Address = None
+    gui_port: liblo.Address = 0
     gui_pid = 0
     config_dir = ''
     debug = False
     debug_only = False
     no_client_messages = False
     session = ''
+    no_options = False
 
     @classmethod
     def eat_attributes(cls, parsed_args):

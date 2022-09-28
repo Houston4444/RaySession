@@ -1,13 +1,17 @@
 
 import os
 import socket
+from typing import TYPE_CHECKING, Callable, Optional
 from PyQt5.QtCore import QProcess, QObject, QDateTime
-from PyQt5.QtXml import QDomDocument
+from PyQt5.QtXml import QDomDocument, QDomElement
 
 import ray
 from daemon_tools import Terminal
 
-def git_stringer(string:str)->str:
+if TYPE_CHECKING:
+    from session import Session
+
+def git_stringer(string:str) -> str:
     for char in (' ', '*', '?', '[', ']', '(', ')'):
         string = string.replace(char, "\\" + char)
 
@@ -24,7 +28,7 @@ def full_ref_for_gui(ref, name, rw_ref, rw_name='', ss_name=''):
 
 
 class Snapshoter(QObject):
-    def __init__(self, session):
+    def __init__(self, session: 'Session'):
         QObject.__init__(self)
         self.session = session
         self._git_exec = 'git'
@@ -83,10 +87,10 @@ class Snapshoter(QObject):
         standard_output = self._git_process.readAllStandardOutput().data()
         Terminal.snapshoter_message(standard_output, self._git_command)
 
-    def _run_git_process(self, *all_args):
+    def _run_git_process(self, *all_args) -> int:
         return self._run_git_process_at(self.session.path, *all_args)
 
-    def _run_git_process_at(self, spath, *all_args):
+    def _run_git_process_at(self, spath, *all_args) -> int:
         self._git_command = ''
         for arg in all_args:
             self._git_command += ' %s' % arg
@@ -109,10 +113,10 @@ class Snapshoter(QObject):
 
         return not bool(err)
 
-    def _get_git_command_list(self, *args):
+    def _get_git_command_list(self, *args) -> list[str]:
         return self._get_git_command_list_at(self.session.path, *args)
 
-    def _get_git_command_list_at(self, spath, *args):
+    def _get_git_command_list_at(self, spath: str, *args) -> list[str]:
         first_args = ['--work-tree', spath, '--git-dir',
                       "%s/%s" % (spath, self._gitdir)]
 
@@ -122,7 +126,7 @@ class Snapshoter(QObject):
         return "%s/%s/%s" % (
                         self.session.path, self._gitdir, self._history_path)
 
-    def _get_history_xml_document_element(self):
+    def _get_history_xml_document_element(self) -> Optional[QDomElement]:
         if not self._is_init():
             return None
 
@@ -154,7 +158,7 @@ class Snapshoter(QObject):
 
         return tagdate
 
-    def _write_history_file(self, date_str, snapshot_name='', rewind_snapshot=''):
+    def _write_history_file(self, date_str, snapshot_name='', rewind_snapshot='') -> int:
         if not self.session.path:
             return ray.Err.NO_SESSION_OPEN
 
@@ -207,11 +211,11 @@ class Snapshoter(QObject):
 
         return ray.Err.OK
 
-    def _get_exclude_file_full_path(self)->str:
+    def _get_exclude_file_full_path(self) -> str:
         return "%s/%s/%s" % (
                         self.session.path, self._gitdir, self._exclude_path)
 
-    def _write_exclude_file(self)->int:
+    def _write_exclude_file(self) -> int:
         file_path = self._get_exclude_file_full_path()
 
         try:
@@ -323,14 +327,14 @@ class Snapshoter(QObject):
 
         return ray.Err.OK
 
-    def _is_init(self)->bool:
+    def _is_init(self) -> bool:
         if not self.session.path:
             return False
 
         return os.path.isfile("%s/%s/%s" % (
                 self.session.path, self._gitdir, self._exclude_path))
 
-    def _can_save(self):
+    def _can_save(self) -> bool:
         if not self.session.path:
             return False
 
@@ -377,8 +381,6 @@ class Snapshoter(QObject):
             if not self._run_git_process('commit', '-m', 'ray'):
                 return
 
-
-
         if (self._n_file_changed
                 or self._next_snapshot_name or self._rw_snapshot):
             ref = self._get_tag_date()
@@ -403,15 +405,15 @@ class Snapshoter(QObject):
         if self._next_function:
             self._next_function()
 
-    def list(self, client_id=""):
+    def list(self, client_id="") -> list[str]:
         SNS_xml = self._get_history_xml_document_element()
         if not SNS_xml:
             return []
 
         nodes = SNS_xml.childNodes()
 
-        all_tags = []
-        all_snaps = []
+        all_tags = list[str]()
+        all_snaps = list[tuple[str, str]]()
         prv_session_name = self.session.name
 
         for i in range(nodes.count()):
@@ -470,7 +472,7 @@ class Snapshoter(QObject):
         all_tags.reverse()
         return all_tags
 
-    def has_changes(self):
+    def has_changes(self) -> bool:
         if not self.session.path:
             return False
 
@@ -522,7 +524,7 @@ class Snapshoter(QObject):
 
         # self.adder_process.finished is connected to self._save_step_1
 
-    def load(self, spath, snapshot, error_function):
+    def load(self, spath: str, snapshot: str, error_function: Callable):
         self._error_function = error_function
 
         snapshot_ref = snapshot.partition('\n')[0].partition(':')[0]
@@ -534,7 +536,8 @@ class Snapshoter(QObject):
             return False
         return True
 
-    def load_client_exclusive(self, client_id, snapshot, error_function):
+    def load_client_exclusive(self, client_id: str, snapshot: str,
+                              error_function: Callable):
         self._error_function = error_function
 
         SNS_xml = self._get_history_xml_document_element()
@@ -545,7 +548,7 @@ class Snapshoter(QObject):
 
         nodes = SNS_xml.childNodes()
 
-        client_path_list = []
+        client_path_list = list[str]()
 
         for i in range(nodes.count()):
             node = nodes.at(i)

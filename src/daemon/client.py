@@ -54,7 +54,7 @@ class Client(ServerSender, ray.ClientData):
     progress = 0
 
     # have to be modified by main thread for security
-    addr = None
+    addr: Address = None
     pid = 0
     pending_command = ray.Command.NONE
     active = False

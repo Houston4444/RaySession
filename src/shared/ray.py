@@ -185,7 +185,7 @@ class Systray:
 
 
 class Favorite():
-    def __init__(self, name, icon, factory):
+    def __init__(self, name: str, icon: str, factory: bool):
         self.name = name
         self.icon = icon
         self.factory = factory

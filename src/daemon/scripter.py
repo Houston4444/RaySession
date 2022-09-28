@@ -1,9 +1,14 @@
 import os
+from typing import TYPE_CHECKING
 from PyQt5.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 
 import ray
 from daemon_tools import Terminal, dirname, highlight_text
 from server_sender import ServerSender
+
+if TYPE_CHECKING:
+    from session import OperatingSession
+    from client import Client
 
 _translate = QCoreApplication.translate
 
@@ -81,7 +86,7 @@ class Scripter(ServerSender):
 
 
 class StepScripter(Scripter):
-    def __init__(self, session):
+    def __init__(self, session: 'OperatingSession'):
         Scripter.__init__(self)
         self.session = session
         self.is_dummy = self.session.is_dummy
@@ -166,7 +171,7 @@ class StepScripter(Scripter):
 
 
 class ClientScripter(Scripter):
-    def __init__(self, client):
+    def __init__(self, client: 'Client'):
         Scripter.__init__(self)
         self._client = client
         self._pending_command = ray.Command.NONE

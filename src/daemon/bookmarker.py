@@ -3,13 +3,15 @@
 import os
 import pathlib
 import sys
-
+from typing import Optional
 from PyQt5.QtCore import QSettings, QDataStream, QIODevice, QUrl, QByteArray
 from PyQt5.QtXml  import QDomDocument
+
 import ray
 from daemon_tools import get_app_config_path, dirname
 
-QFileDialogMagic = 190
+QFILEDIALOG_MAGIC = 190
+
 
 class PickerType:
     def __init__(self, config_path):
@@ -203,7 +205,7 @@ class PickerTypeQt4(PickerType):
 
         magic = stream.readUInt32()
         version = stream.readUInt32()
-        if not (magic == QFileDialogMagic and version == 3):
+        if not (magic == QFILEDIALOG_MAGIC and version == 3):
             return
 
         split_states = stream.readBytes()
@@ -221,15 +223,10 @@ class PickerTypeQt4(PickerType):
             bookmarks.append(qUrl)
 
         history_len = stream.readUInt32()
-        history = []
-        for h in range(history_len):
-            his = stream.readQString()
-            history.append(his)
-
+        history = [stream.readQString() for h in history_len]
         current_dir = stream.readQString()
         header_data = stream.readBytes()
         view_mode = stream.readUInt32()
-
 
         #now rewrite bytes
 
@@ -239,7 +236,7 @@ class PickerTypeQt4(PickerType):
         new_stream.writeUInt32(magic)
         new_stream.writeUInt32(3)
         new_stream.writeBytes(split_states)
-        new_stream.writeUInt32(bookmarks_len+1)
+        new_stream.writeUInt32(bookmarks_len + 1)
         for bm in bookmarks:
             new_stream << bm
 
@@ -276,7 +273,7 @@ class PickerTypeQt4(PickerType):
 
         magic = stream.readUInt32()
         version = stream.readUInt32()
-        if not (magic == QFileDialogMagic and version == 3):
+        if not (magic == QFILEDIALOG_MAGIC and version == 3):
             self.written = False
             return
 
@@ -477,7 +474,7 @@ class BookMarker:
         self._qt4 = PickerTypeQt4("%s/.config/Trolltech.conf" % home)
         self._qt5 = PickerTypeQt5("%s/.config/QtProject.conf" % home)
 
-    def _get_xml(self):
+    def _get_xml(self) -> Optional[QDomDocument]:
         xml = QDomDocument()
         file_exists = False
 
@@ -488,7 +485,7 @@ class BookMarker:
                 file_exists = True
             except:
                 try:
-                    os.path.remove(self._bookmarks_memory)
+                    os.remove(self._bookmarks_memory)
                 except:
                     return None
 
@@ -498,7 +495,7 @@ class BookMarker:
 
         return xml
 
-    def _write_xml_file(self, xml):
+    def _write_xml_file(self, xml: QDomDocument):
         try:
             file = open(self._bookmarks_memory, 'w')
             file.write(xml.toString())

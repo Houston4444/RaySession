@@ -1,7 +1,12 @@
 import os
+from typing import TYPE_CHECKING
 from PyQt5.QtXml import QDomDocument, QDomElement
 
 import ray
+
+if TYPE_CHECKING:
+    from session import Session
+    from osc_server_thread import OscServerThread
 
 instance = None
 
@@ -14,10 +19,11 @@ class Daemon:
     user = ""
     not_default = False
 
+
 class MultiDaemonFile:
     file_path = '/tmp/RaySession/multi-daemon.xml'
 
-    def __init__(self, session, server):
+    def __init__(self, session: 'Session', server: 'OscServerThread'):
         self.session = session
         self.server = server
 
@@ -77,7 +83,7 @@ class MultiDaemonFile:
         except:
             return
 
-    def _set_attributes(self, element):
+    def _set_attributes(self, element: QDomElement):
         element.setAttribute('net_daemon_id', self.server.net_daemon_id)
         element.setAttribute('root', self.session.root)
         element.setAttribute('session_path', self.session.path)
