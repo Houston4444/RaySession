@@ -4,6 +4,7 @@ import sys
 from PyQt5.QtCore import QSettings, QSize, QFile
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QIcon, QPixmap, QPalette
+from liblo import Address
 
 import ray
 
@@ -93,8 +94,10 @@ def RayIcon(icon_name: str, dark=False) -> RayAbstractIcon:
 
 
 class CommandLineArgs(argparse.Namespace):
-    daemon_url = None
+    daemon_url: Address = None
+    daemon_port: Address = None
     out_daemon = False
+    session_root: str = ''
     config_dir = ''
     debug = False
     debug_only = False

@@ -1,6 +1,7 @@
 
 
 import argparse
+from typing import Optional
 import liblo
 import os
 import shlex
@@ -318,7 +319,7 @@ def is_valid_osc_url(url: str) -> bool:
     except BaseException:
         return False
 
-def get_liblo_address(url: str):
+def get_liblo_address(url: str) -> Optional[liblo.Address]:
     valid_url = False
     try:
         address = liblo.Address(url)
@@ -336,7 +337,7 @@ def get_liblo_address(url: str):
             msg = "%r is an unknown osc url" % url
             raise argparse.ArgumentTypeError(msg)
 
-def get_liblo_address_from_port(port:int):
+def get_liblo_address_from_port(port:int) -> Optional[liblo.Address]:
     try:
         port = int(port)
     except:
@@ -546,8 +547,8 @@ class ClientData:
     template_origin = ''
     jack_client_name = ''
     jack_naming = 0
-    ray_hack = None
-    ray_net = None
+    ray_hack: 'RayHack' = None
+    ray_net: 'RayNet' = None
 
     @staticmethod
     def sisi():
@@ -560,7 +561,7 @@ class ClientData:
         return client_data
 
     @staticmethod
-    def spread_client(client)->tuple:
+    def spread_client(client) -> tuple:
         return (client.client_id, client.protocol,
                 client.executable_path, client.arguments, client.pre_env,
                 client.name, client.prefix_mode, client.custom_prefix,

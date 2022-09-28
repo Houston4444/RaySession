@@ -4,7 +4,7 @@ import os
 import sys
 from PyQt5.QtCore import QObject, pyqtSignal
 from liblo import ServerThread, make_method
-
+from typing import Optional
 
 
 class NSMSignaler(QObject):
@@ -29,7 +29,7 @@ class NSMThread(ServerThread):
         instance = self
 
     @staticmethod
-    def instance():
+    def instance() -> Optional['NSMThread']:
         return instance
 
     @make_method('/reply', None)

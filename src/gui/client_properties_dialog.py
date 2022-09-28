@@ -1,5 +1,6 @@
 import os
 import signal
+from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import QTimer, QFile
 from PyQt5.QtWidgets import QFileDialog, QFrame
@@ -8,6 +9,9 @@ import ray
 
 from gui_tools import _translate, client_status_string, get_app_icon
 from child_dialogs import ChildDialog
+
+if TYPE_CHECKING:
+    from gui_client import Client
 
 import ui.ray_hack_copy
 import ui.client_properties
@@ -37,7 +41,7 @@ class RayHackCopyDialog(ChildDialog):
 
 
 class ClientPropertiesDialog(ChildDialog):
-    def __init__(self, parent, client):
+    def __init__(self, parent, client: 'Client'):
         ChildDialog.__init__(self, parent)
         self.ui = ui.client_properties.Ui_Dialog()
         self.ui.setupUi(self)
@@ -92,7 +96,7 @@ class ClientPropertiesDialog(ChildDialog):
         QTimer.singleShot(150, self.accept)
 
     @staticmethod
-    def create(window, client):
+    def create(window, client: 'Client'):
         if client.protocol == ray.Protocol.NSM:
             return NsmClientPropertiesDialog(window, client)
         if client.protocol == ray.Protocol.RAY_HACK:

@@ -15,6 +15,8 @@ def ray_method(path, types):
         @liblo.make_method(path, types)
         def wrapper(*args, **kwargs):
             t_thread, t_path, t_args, t_types, src_addr, rest = args
+            if TYPE_CHECKING:
+                assert isinstance(t_thread, GuiServerThread)
 
             if CommandLineArgs.debug:
                 sys.stderr.write(

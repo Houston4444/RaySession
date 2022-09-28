@@ -1,6 +1,7 @@
 
 import os
 import shutil
+from typing import TYPE_CHECKING
 
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QMessageBox,
                              QDialogButtonBox)
@@ -11,6 +12,10 @@ import ray
 from gui_tools import CommandLineArgs, RS
 from open_session_dialog import OpenSessionDialog
 from child_dialogs import ChildDialog
+
+if TYPE_CHECKING:
+    from gui_session import Session
+    from main_window import MainWindow
 
 import ui.ardour_convert
 import ui.hydro_rh_nsm
@@ -109,7 +114,7 @@ class RayToNsmDialog(ChildDialog):
 
 
 class UtilityScriptLauncher:
-    def __init__(self, main_win, session):
+    def __init__(self, main_win: 'MainWindow', session: 'Session'):
         self.daemon_manager = session.daemon_manager
         self.main_win = main_win
         self._process = QProcess()

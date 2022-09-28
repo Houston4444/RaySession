@@ -1,6 +1,7 @@
 
+from typing import TYPE_CHECKING
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QBoxLayout
-from PyQt5.QtGui import QIcon, QPixmap, QFont, QFontDatabase, QFontMetrics
+from PyQt5.QtGui import QIcon, QPixmap, QFontMetrics, QContextMenuEvent
 from PyQt5.QtCore import pyqtSlot, QSize
 
 import ray
@@ -11,11 +12,16 @@ from gui_server_thread import GuiServerThread
 from gui_tools import (client_status_string, _translate, is_dark_theme,
                        RayIcon, split_in_two, get_app_icon)
 
+if TYPE_CHECKING:
+    from gui_client import Client
+    from gui_session import Session
+
 import ui.client_slot
 
 
 class ClientSlot(QFrame):
-    def __init__(self, list_widget, list_widget_item, client):
+    def __init__(self, list_widget: 'ListWidgetClients',
+                 list_widget_item: 'ClientItem', client: 'Client'):
         QFrame.__init__(self)
         self.ui = ui.client_slot.Ui_ClientSlotWidget()
         self.ui.setupUi(self)
@@ -206,8 +212,7 @@ class ClientSlot(QFrame):
     def get_client_id(self):
         return self.client.client_id
 
-    def update_disposition(self):
-        default_font_size = 13
+    def update_layout(self):
         font = self.ui.ClientName.font()
         main_size = QFontMetrics(font).width(self.client.prettier_name())
 
@@ -265,7 +270,7 @@ class ClientSlot(QFrame):
 
     def update_client_data(self):
         # set main label and main disposition
-        self.update_disposition()
+        self.update_layout()
 
         # set tool tip
         tool_tip = "<html><head/><body>"
@@ -452,13 +457,13 @@ class ClientSlot(QFrame):
     def patchbay_is_shown(self, yesno: bool):
         self.ui.actionFindBoxesInPatchbay.setVisible(yesno)
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event: QContextMenuEvent):
         act_selected = self._menu.exec(self.mapToGlobal(event.pos()))
         event.accept()
 
 
 class ClientItem(QListWidgetItem):
-    def __init__(self, parent, client_data):
+    def __init__(self, parent: 'ListWidgetClients', client_data):
         QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
 
         self.sort_number = 0
@@ -466,10 +471,10 @@ class ClientItem(QListWidgetItem):
         parent.setItemWidget(self, self.widget)
         self.setSizeHint(QSize(100, 45))
 
-    def __lt__(self, other):
+    def __lt__(self, other: 'ClientItem'):
         return self.sort_number < other.sort_number
 
-    def __gt__(self, other):
+    def __gt__(self, other: 'ClientItem'):
         return self.sort_number > other.sort_number
 
     def get_client_id(self):
@@ -503,7 +508,7 @@ class ListWidgetClients(QListWidget):
 
     def remove_client_widget(self, client_id):
         for i in range(self.count()):
-            item = self.item(i)
+            item: ClientItem = self.item(i)
             if item.get_client_id() == client_id:
                 widget = item.widget
                 self.takeItem(i)
@@ -512,18 +517,18 @@ class ListWidgetClients(QListWidget):
 
     def client_properties_state_changed(self, client_id: str, visible: bool):
         for i in range(self.count()):
-            item = self.item(i)
+            item: ClientItem = self.item(i)
             if item.get_client_id() == client_id:
                 widget = item.widget
                 widget.set_hack_button_state(visible)
                 break
 
-    def set_session(self, session):
+    def set_session(self, session: 'Session'):
         self.session = session
 
     def patchbay_is_shown(self, yesno: bool):
         for i in range(self.count()):
-            item = self.item(i)
+            item: ClientItem = self.item(i)
             widget = item.widget
             widget.patchbay_is_shown(yesno)
 
@@ -533,8 +538,7 @@ class ListWidgetClients(QListWidget):
         client_ids_list = []
 
         for i in range(self.count()):
-            item = self.item(i)
-            #widget = self.itemWidget(item)
+            item: ClientItem = self.item(i)
             client_id = item.get_client_id()
             client_ids_list.append(client_id)
 
@@ -548,7 +552,7 @@ class ListWidgetClients(QListWidget):
 
         QListWidget.mousePressEvent(self, event)
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event: QContextMenuEvent):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
 
@@ -582,8 +586,7 @@ class ListWidgetClients(QListWidget):
     def resizeEvent(self, event):
         QListWidget.resizeEvent(self, event)
         for i in range(self.count()):
-            item = self.item(i)
-            widget = self.itemWidget(item)
+            item: ClientItem = self.item(i)
+            widget: ClientSlot = self.itemWidget(item)
             if widget is not None:
-                widget.update_disposition()
-
+                widget.update_layout()

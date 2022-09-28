@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QMenu, QDialog,
     QMessageBox, QToolButton, QAbstractItemView,
     QBoxLayout, QSystemTrayIcon, QWidget, QShortcut)
-from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics
+from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics, QCloseEvent
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
 import ray
@@ -22,6 +22,7 @@ import list_widget_clients
 from gui_tools import (
     RS, RayIcon, CommandLineArgs, _translate, server_status_string,
     is_dark_theme, get_code_root, get_app_icon)
+from gui_client import TrashedClient
 from gui_server_thread import GuiServerThread
 from utility_scripts import UtilityScriptLauncher
 from patchbay.base_elements import ToolDisplayed
@@ -1422,7 +1423,7 @@ class MainWindow(QMainWindow):
         dialog = child_dialogs.OpenNsmSessionInfoDialog(self)
         dialog.exec()
 
-    def trash_add(self, trashed_client):
+    def trash_add(self, trashed_client: TrashedClient):
         act_x_trashed = self._trash_menu.addAction(
             get_app_icon(trashed_client.icon, self),
             trashed_client.prettier_name())
@@ -1527,14 +1528,14 @@ class MainWindow(QMainWindow):
         self._script_info_dialog.show()
 
     def hide_script_info_dialog(self):
-        if self._script_info_dialog:
+        if self._script_info_dialog is not None:
             self._script_info_dialog.close()
 
         del self._script_info_dialog
         self._script_info_dialog = None
 
     def show_script_user_action_dialog(self, text: str):
-        if self._script_action_dialog:
+        if self._script_action_dialog is not None:
             self._script_action_dialog.close()
             del self._script_action_dialog
             self.to_daemon(
@@ -1594,7 +1595,7 @@ class MainWindow(QMainWindow):
 
     # Reimplemented Qt Functions
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent):        
         self.save_window_settings()
         self.session.patchbay_manager.save_patchcanvas_cache()
         self.hidden_maximized = self.isMaximized()

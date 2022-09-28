@@ -18,8 +18,8 @@ class Session:
     def __init__(self):
         self.client_list = list[Client]()
         self.trashed_clients = list[TrashedClient]()
-        self.favorite_list = []
-        self.recent_sessions = []
+        self.favorite_list = list[ray.Favorite]()
+        self.recent_sessions = list[str]()
         self.name = ''
         self.path = ''
         self.notes = ''
@@ -58,7 +58,7 @@ class Session:
         server.finish_init(self)
         self.main_win.show()
 
-        # display donations dialog under conditions
+        # display donations dialog under breizh conditions
         if not RS.is_hidden(RS.HD_Donations):
             coreff_counter = RS.settings.value('coreff_counter', 0, type=int)
             coreff_counter += 1
@@ -127,23 +127,20 @@ class Session:
         for client in self.client_list:
             client.widget.set_daemon_options(options)
 
+
 class SignaledSession(Session):
     def __init__(self):
         Session.__init__(self)
         self.signaler.osc_receive.connect(self._osc_receive)
         self.daemon_manager.start()
-
-        self.canvas_groups = []
-        self.canvas_ports = []
-        self.next_canvas_port_id = -1
         
         self.preview_notes = ''
-        self.preview_client_list = []
+        self.preview_client_list = list[ray.ClientData]()
         self.preview_started_clients = set()
-        self.preview_snapshots = []
+        self.preview_snapshots = list[str]()
         self.preview_size = -1
 
-    def _osc_receive(self, path, args):
+    def _osc_receive(self, path: str, args: tuple):
         func_path = path
         func_name = func_path.replace('/', '_')
 
@@ -154,7 +151,7 @@ class SignaledSession(Session):
     def _reply(self, path, args):
         if len(args) == 2:
             if args[0] == '/ray/session/add_executable':
-                client_id = args[1]
+                client_id: str = args[1]
 
                 for client in self.client_list:
                     if (client.client_id == client_id
@@ -205,7 +202,7 @@ class SignaledSession(Session):
         self.set_daemon_options(options)
 
     def _ray_gui_server_recent_sessions(self, path, args):
-        self.recent_sessions = args
+        self.recent_sessions: list[str] = args
         self.main_win.update_recent_sessions_menu()
 
     def _ray_gui_session_name(self, path, args):
@@ -238,7 +235,7 @@ class SignaledSession(Session):
         self.main_win.edit_notes(close=True)
 
     def _ray_gui_session_sort_clients(self, path, args):
-        new_client_list = []
+        new_client_list = list[Client]()
         for client_id in args:
             client = self.get_client(client_id)
 
@@ -270,13 +267,13 @@ class SignaledSession(Session):
         if client:
             client.update_properties(*args)
 
-    def _ray_gui_client_ray_hack_update(self, path, args):
+    def _ray_gui_client_ray_hack_update(self, path, args: list):
         client_id = args.pop(0)
         client = self.get_client(client_id)
         if client and client.protocol == ray.Protocol.RAY_HACK:
             client.update_ray_hack(*args)
 
-    def _ray_gui_client_ray_net_update(self, path, args):
+    def _ray_gui_client_ray_net_update(self, path, args: list):
         client_id = args.pop(0)
         client = self.get_client(client_id)
         if client and client.protocol == ray.Protocol.RAY_NET:
@@ -345,14 +342,14 @@ class SignaledSession(Session):
         trashed_client.set_menu_action(trash_action)
         self.trashed_clients.append(trashed_client)
 
-    def _ray_gui_trash_ray_hack_update(self, path, args):
+    def _ray_gui_trash_ray_hack_update(self, path, args: list):
         client_id = args.pop(0)
         for trashed_client in self.trashed_clients:
             if trashed_client.client_id == client_id:
                 trashed_client.ray_hack = ray.RayHack.new_from(*args)
                 break
 
-    def _ray_gui_trash_ray_net_update(self, path, args):
+    def _ray_gui_trash_ray_net_update(self, path, args: list):
         client_id = args.pop(0)
         for trashed_client in self.trashed_clients:
             if trashed_client.client_id == client_id:
