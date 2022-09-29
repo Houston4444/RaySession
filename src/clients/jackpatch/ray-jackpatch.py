@@ -4,7 +4,6 @@ from enum import IntEnum
 import os
 import signal
 import sys
-import time
 import liblo
 
 from PyQt5.QtCore import (QCoreApplication, QObject, QTimer,
@@ -12,6 +11,7 @@ from PyQt5.QtCore import (QCoreApplication, QObject, QTimer,
 from PyQt5.QtXml import QDomDocument
 
 import jacklib
+from jacklib.helpers import c_char_p_p_to_list
 import nsm_client
 
 
@@ -137,7 +137,7 @@ def jack_shutdown_callback(arg=None) -> int:
 def jack_port_registration_callback(port_id, register: bool, arg=None) -> int:
     port_ptr = jacklib.port_by_id(jack_client, port_id)
     port_flags = jacklib.port_flags(port_ptr)
-    port_name = b2str(jacklib.port_name(port_ptr))
+    port_name = jacklib.port_name(port_ptr)
 
     if port_flags & jacklib.JackPortIsInput:
         port_mode = PortMode.INPUT
@@ -146,7 +146,7 @@ def jack_port_registration_callback(port_id, register: bool, arg=None) -> int:
     else:
         port_mode = PortMode.NULL
 
-    port_type_str = b2str(jacklib.port_type(port_ptr))
+    port_type_str = jacklib.port_type(port_ptr)
     if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
         port_type = PortType.AUDIO
     elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
@@ -174,7 +174,7 @@ def jack_port_rename_callback(port_id, old_name, new_name, arg=None) -> int:
 
     port_type = PortType.NULL
 
-    port_type_str = b2str(jacklib.port_type(port_ptr))
+    port_type_str = jacklib.port_type(port_ptr)
     if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
         port_type = PortType.AUDIO
     elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
@@ -188,8 +188,8 @@ def jack_port_connect_callback(port_id_a, port_id_b, connect: bool, arg=None) ->
     port_ptr_a = jacklib.port_by_id(jack_client, port_id_a)
     port_ptr_b = jacklib.port_by_id(jack_client, port_id_b)
 
-    port_str_a = b2str(jacklib.port_name(port_ptr_a))
-    port_str_b = b2str(jacklib.port_name(port_ptr_b))
+    port_str_a = jacklib.port_name(port_ptr_a)
+    port_str_b = jacklib.port_name(port_ptr_b)
 
     if connect:
         signaler.connection_added.emit(port_str_a, port_str_b)
@@ -275,25 +275,7 @@ def may_make_one_connection():
 
         for port_mode in PortMode:
             for port in jack_ports[port_mode]:
-                port.is_new = False    
-
-def c_char_p_p_to_list(c_char_p_p) -> list[str]:
-    i = 0
-    ret_list = list[str]()
-
-    if not c_char_p_p:
-        return ret_list
-
-    while True:
-        new_char_p = c_char_p_p[i]
-        if new_char_p:
-            ret_list.append(b2str(new_char_p))
-            i += 1
-        else:
-            break
-
-    jacklib.free(c_char_p_p)
-    return ret_list
+                port.is_new = False
 
 @pyqtSlot(str, str, str)
 def open_file(project_path: str, session_name, full_client_id):
@@ -405,7 +387,7 @@ def fill_ports_and_connections():
         else:
             jack_port.mode = PortMode.NULL
 
-        port_type_str = b2str(jacklib.port_type(port_ptr))
+        port_type_str = jacklib.port_type(port_ptr)
         if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
             jack_port.type = PortType.AUDIO
         elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
@@ -418,8 +400,8 @@ def fill_ports_and_connections():
         jack_ports[jack_port.mode].append(jack_port)
 
         if jack_port.mode is PortMode.OUTPUT:
-            port_connection_names = c_char_p_p_to_list(
-                jacklib.port_get_all_connections(jack_client, port_ptr))
+            port_connection_names = jacklib.port_get_all_connections(
+                jack_client, port_ptr)
 
             for port_con_name in port_connection_names:
                 connection_list.append((port_name, port_con_name))
