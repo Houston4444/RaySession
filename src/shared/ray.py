@@ -1,7 +1,7 @@
 
 
 import argparse
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 import liblo
 import os
 import shlex
@@ -245,7 +245,7 @@ def get_list_in_settings(settings, path):
 
     return settings_list
 
-def is_git_taggable(string)->bool:
+def is_git_taggable(string: str) -> bool:
     ''' know if a string can be a git tag, not used currently '''
     if not string:
         return False
@@ -561,7 +561,7 @@ class ClientData:
         return client_data
 
     @staticmethod
-    def spread_client(client) -> tuple:
+    def spread_client(client: 'ClientData') -> tuple:
         return (client.client_id, client.protocol,
                 client.executable_path, client.arguments, client.pre_env,
                 client.name, client.prefix_mode, client.custom_prefix,

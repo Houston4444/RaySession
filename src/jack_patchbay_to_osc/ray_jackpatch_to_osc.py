@@ -12,7 +12,7 @@ import threading
 import time
 
 import jacklib
-from jacklib.helpers import c_char_p_p_to_list, voidptr2str
+from jacklib.helpers import c_char_p_p_to_list
 
 PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1
