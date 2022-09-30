@@ -1,18 +1,18 @@
 #!/usr/bin/python3 -u
 
+from ctypes import c_char_p
 from enum import IntEnum
+from queue import Queue
 import os
 import signal
 import sys
+import time
 import liblo
-
-from PyQt5.QtCore import (QCoreApplication, QObject, QTimer,
-                          pyqtSignal, pyqtSlot)
-from PyQt5.QtXml import QDomDocument
+import xml.etree.ElementTree as ET
 
 import jacklib
 from jacklib.helpers import c_char_p_p_to_list
-import nsm_client
+from nsm_client_noqt import NsmThread, NsmCallback
 
 
 class PortMode(IntEnum):
@@ -30,6 +30,14 @@ class PortType(IntEnum):
     MIDI = 2
 
 
+class Event(IntEnum):
+    PORT_ADDED = 1
+    PORT_REMOVED = 2
+    PORT_RENAMED = 3
+    CONNECTION_ADDED = 4
+    CONNECTION_REMOVED = 5
+
+
 class JackPort:
     # is_new is used to prevent reconnections
     # when a disconnection has not been saved and one new port append.
@@ -40,75 +48,69 @@ class JackPort:
     is_new = False
 
 
-class ConnectTimer(QObject):
-    def __init__(self):
-        self.timer = QTimer()
-        self.timer.setInterval(200)
-        self.timer.setSingleShot(True)
-        self.timer.timeout.connect(connect_timer_finished)
-
-    def start(self):
-        self.timer.start()
-
-
-class DirtyChecker(QObject):
-    timer = QTimer()
-
-    def __init__(self):
-        self.timer.setInterval(500)
-        self.timer.setSingleShot(True)
-        self.timer.timeout.connect(timer_dirty_finish)
-
-    def start(self):
-        self.timer.start()
-
-
-class Signaler(nsm_client.NSMSignaler):
-    port_added = pyqtSignal(str, int, int)
-    port_removed = pyqtSignal(str, int, int)
-    port_renamed = pyqtSignal(str, str, int, int)
-    connection_added = pyqtSignal(str, str)
-    connection_removed = pyqtSignal(str, str)
-    
-    def connect_signals(self):
-        self.port_added.connect(port_added)
-        self.port_removed.connect(port_removed)
-        self.port_renamed.connect(port_renamed)
-        self.connection_added.connect(connection_added)
-        self.connection_removed.connect(connection_removed)
-        self.server_sends_open.connect(open_file)
-        self.server_sends_save.connect(save_file)
-
-
 class MainObject:
     file_path = ''
     is_dirty = False
     pending_connection = False
+    terminate = False
     
+    event_queue = Queue()
+    _dirty_check_asked_at = 0.0
+    _connect_asked_at = 0.0
+    
+    def check_dirty_later(self):
+        self._dirty_check_asked_at = time.time()
+        
+    def check_connect_later(self):
+        self._connect_asked_at = time.time()
+        
+    def each_loop(self):
+        while self.event_queue.qsize():
+            event, args = self.event_queue.get()
+            if event is Event.PORT_ADDED:
+                port_added(*args)
+            elif event is Event.PORT_REMOVED:
+                port_removed(*args)
+            elif event is Event.PORT_RENAMED:
+                port_renamed(*args)
+            elif event is Event.CONNECTION_ADDED:
+                connection_added(*args)
+            elif event is Event.CONNECTION_REMOVED:
+                connection_removed(*args)
+            
+        if (self._connect_asked_at
+                and time.time() - self._connect_asked_at > 0.200):
+            may_make_one_connection()
+            self._connect_asked_at = 0
+            
+        if (self._dirty_check_asked_at
+                and time.time() - self._dirty_check_asked_at > 0.300):
+            timer_dirty_finish()
+            self._dirty_check_asked_at = 0
+
 
 def b2str(src_bytes: bytes) -> str:
     return str(src_bytes, encoding="utf-8")
 
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
-        app.quit()
+        main_object.terminate = True
 
 def set_dirty_clean():
     main_object.is_dirty = False
-    nsm_server.sendDirtyState(False)
+    nsm_server.send_dirty_state(False)
 
-@pyqtSlot()
 def timer_dirty_finish():
     if main_object.is_dirty:
         return
 
     if main_object.pending_connection:
-        dirty_checker.start()
+        main_object.check_dirty_later()
         return
 
     if is_dirty_now():
         main_object.is_dirty = True
-        nsm_server.sendDirtyState(True)
+        nsm_server.send_dirty_state(True)
 
 def is_dirty_now() -> bool:
     for conn in connection_list:
@@ -128,10 +130,10 @@ def is_dirty_now() -> bool:
 
     return False
 
-# ---- JACK callbacks -----
+# ---- JACK callbacks executed in JACK thread -----
 
 def jack_shutdown_callback(arg=None) -> int:
-    app.quit()
+    main_object.terminate = True
     return 0
 
 def jack_port_registration_callback(port_id, register: bool, arg=None) -> int:
@@ -155,33 +157,38 @@ def jack_port_registration_callback(port_id, register: bool, arg=None) -> int:
         port_type = PortType.NULL
 
     if register:
-        signaler.port_added.emit(port_name, port_mode, port_type)
+        main_object.event_queue.put(
+            (Event.PORT_ADDED, (port_name, port_mode, port_type)))
     else:
-        signaler.port_removed.emit(port_name, port_mode, port_type)
+        main_object.event_queue.put(
+            (Event.PORT_REMOVED, (port_name, port_mode, port_type)))
 
     return 0
 
-def jack_port_rename_callback(port_id, old_name, new_name, arg=None) -> int:
+def jack_port_rename_callback(
+        port_id, old_name: c_char_p, new_name: c_char_p, arg=None) -> int:
     port_ptr = jacklib.port_by_id(jack_client, port_id)
     port_flags = jacklib.port_flags(port_ptr)
-
-    port_mode = PortMode.NULL
 
     if port_flags & jacklib.JackPortIsInput:
         port_mode = PortMode.INPUT
     elif port_flags & jacklib.JackPortIsOutput:
         port_mode = PortMode.OUTPUT
-
-    port_type = PortType.NULL
+    else:
+        port_mode = PortMode.NULL
 
     port_type_str = jacklib.port_type(port_ptr)
     if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
         port_type = PortType.AUDIO
     elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
         port_type = PortType.MIDI
+    else:
+        port_type = PortType.NULL
 
-    signaler.port_renamed.emit(
-        b2str(old_name), b2str(new_name), port_mode, port_type)
+    main_object.event_queue.put(
+        (Event.PORT_RENAMED,
+         (b2str(old_name), b2str(new_name), port_mode, port_type))
+    )
     return 0
 
 def jack_port_connect_callback(port_id_a, port_id_b, connect: bool, arg=None) -> int:
@@ -191,16 +198,15 @@ def jack_port_connect_callback(port_id_a, port_id_b, connect: bool, arg=None) ->
     port_str_a = jacklib.port_name(port_ptr_a)
     port_str_b = jacklib.port_name(port_ptr_b)
 
-    if connect:
-        signaler.connection_added.emit(port_str_a, port_str_b)
-    else:
-        signaler.connection_removed.emit(port_str_a, port_str_b)
+    main_object.event_queue.put(
+        (Event.CONNECTION_ADDED if connect else Event.CONNECTION_REMOVED,
+         (port_str_a, port_str_b))
+    )
 
     return 0
 
-# ----------------------
+# --- end of JACK callbacks ----
 
-@pyqtSlot(str, int, int)
 def port_added(port_name: str, port_mode: int, port_type: int):
     port = JackPort()
     port.name = port_name
@@ -209,26 +215,22 @@ def port_added(port_name: str, port_mode: int, port_type: int):
     port.is_new = True
 
     jack_ports[port_mode].append(port)
+    main_object.check_connect_later()
 
-    connect_timer.start()
-
-@pyqtSlot(str, int, int)
 def port_removed(port_name, port_mode, port_type):
     for port in jack_ports[port_mode]:
         if port.name == port_name and port.type == port_type:
             jack_ports[port_mode].remove(port)
             break
 
-@pyqtSlot(str, str, int, int)
 def port_renamed(old_name, new_name, port_mode, port_type):
     for port in jack_ports[port_mode]:
         if port.name == old_name and port.type == port_type:
             port.name = new_name
             port.is_new = True
-            connect_timer.start()
+            main_object.check_connect_later()
             break
     
-@pyqtSlot(str, str)
 def connection_added(port_str_a: str, port_str_b: str):
     connection_list.append((port_str_a, port_str_b))
 
@@ -236,18 +238,13 @@ def connection_added(port_str_a: str, port_str_b: str):
         may_make_one_connection()
 
     if (port_str_a, port_str_b) not in saved_connections:
-        dirty_checker.start()
+        main_object.check_dirty_later()
 
-@pyqtSlot(str, str)
 def connection_removed(port_str_a, port_str_b):
     if (port_str_a, port_str_b) in connection_list:
         connection_list.remove((port_str_a, port_str_b))
 
-    dirty_checker.start()
-
-@pyqtSlot()
-def connect_timer_finished():
-    may_make_one_connection()
+    main_object.check_dirty_later()
 
 def may_make_one_connection():
     output_ports = [p.name for p in jack_ports[PortMode.OUTPUT]]
@@ -277,7 +274,6 @@ def may_make_one_connection():
             for port in jack_ports[port_mode]:
                 port.is_new = False
 
-@pyqtSlot(str, str, str)
 def open_file(project_path: str, session_name, full_client_id):
     saved_connections.clear()
 
@@ -286,44 +282,32 @@ def open_file(project_path: str, session_name, full_client_id):
 
     if os.path.isfile(file_path):
         try:
-            file = open(file_path, 'r')
+            tree = ET.parse(file_path)
         except:
             sys.stderr.write('unable to read file %s\n' % file_path)
-            app.quit()
+            main_object.terminate = True
             return
-
-        xml = QDomDocument()
-        xml.setContent(file.read())
-
-        content = xml.documentElement()
-
-        if content.tagName() != "RAY-JACKPATCH":
-            file.close()
-            nsm_server.openReply()
+        
+        root = tree.getroot()
+        if root.tag != 'RAY-JACKPATCH':
+            nsm_server.open_reply()
             return
-
-        cte = content.toElement()
-        node = cte.firstChild()
-
-        while not node.isNull():
-            el = node.toElement()
-            if el.tagName() != "connection":
-                continue
-
-            port_from = el.attribute('from')
-            port_to = el.attribute('to')
-
-            saved_connections.append((port_from, port_to))
-
-            node = node.nextSibling()
-
+            
+        for child in root:
+            if child.tag == 'connection':
+                port_from: str = child.attrib.get('from')
+                port_to: str = child.attrib.get('to')
+                if not port_from and port_to:
+                    #TODO print something
+                    continue
+                saved_connections.append((port_from, port_to))
+        
         may_make_one_connection()
 
-    nsm_server.openReply()
+    nsm_server.open_reply()
     set_dirty_clean()
-    dirty_checker.start()
+    main_object.check_dirty_later()
 
-@pyqtSlot()
 def save_file():
     if not main_object.file_path:
         return
@@ -331,7 +315,9 @@ def save_file():
     for connection in connection_list:
         if not connection in saved_connections:
             saved_connections.append(connection)
-    
+
+    # delete from saved connected all connections when there ports are present
+    # and not currently connected    
     del_list = list[tuple[str, str]]()
     
     for sv_con in saved_connections:
@@ -343,29 +329,25 @@ def save_file():
     for del_con in del_list:
         saved_connections.remove(del_con)
     
+    # write the XML file
+    root = ET.Element('RAY-JACKPATCH')
+    for sv_con in saved_connections:
+        conn_el = ET.SubElement(root, 'connection')
+        conn_el.attrib['from'], conn_el.attrib['to'] = sv_con
+    
+    if sys.version_info >= (3, 9):
+        # we can indent the xml tree since python3.9
+        ET.indent(root, space='  ', level=0)
+    
+    tree = ET.ElementTree(root)
     try:
-        file = open(main_object.file_path, 'w')
+        tree.write(main_object.file_path)
     except:
         sys.stderr.write('unable to write file %s\n' % main_object.file_path)
-        app.quit()
+        main_object.terminate = True
         return
 
-    xml = QDomDocument()
-    p = xml.createElement('RAY-JACKPATCH')
-
-    for con in saved_connections:
-        ct = xml.createElement('connection')
-        ct.setAttribute('from', con[0])
-        ct.setAttribute('to', con[1])
-        p.appendChild(ct)
-
-    xml.appendChild(p)
-
-    file.write(xml.toString())
-    file.close()
-
-    nsm_server.saveReply()
-
+    nsm_server.save_reply()
     set_dirty_clean()
 
 def fill_ports_and_connections():
@@ -444,12 +426,9 @@ if __name__ == '__main__':
     jacklib.on_shutdown(jack_client, jack_shutdown_callback, None)
     jacklib.activate(jack_client)
 
-    signaler = Signaler()
-    signaler.connect_signals()
-
-    nsm_server = nsm_client.NSMThread('ray-jackpatch', signaler,
-                                      daemon_address, False)
-    nsm_server.start()
+    nsm_server = NsmThread(daemon_address)
+    nsm_server.set_callback(NsmCallback.OPEN, open_file)
+    nsm_server.set_callback(NsmCallback.SAVE, save_file)
     nsm_server.announce('JACK Connections', ':dirty:switch:', 'ray-jackpatch')
 
     #connect program interruption signals
@@ -457,18 +436,13 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, signal_handler)
 
     fill_ports_and_connections()
-
-    app = QCoreApplication(sys.argv)
-
-    #needed for signals SIGINT, SIGTERM
-    timer = QTimer()
-    timer.start(200)
-    timer.timeout.connect(lambda: None)
-
-    connect_timer = ConnectTimer()
-    dirty_checker = DirtyChecker()
-
-    app.exec()
+    
+    while True:
+        if main_object.terminate:
+            break
+        
+        nsm_server.recv(50)
+        main_object.each_loop()
 
     jacklib.deactivate(jack_client)
     jacklib.client_close(jack_client)
