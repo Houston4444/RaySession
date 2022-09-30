@@ -3,7 +3,7 @@
 from enum import IntEnum
 import os
 from liblo import Server, make_method, Address
-from typing import Callable, Optional
+from typing import Callable
 
 
 class NsmCallback(IntEnum):
@@ -56,11 +56,11 @@ class NsmThread(Server):
     
     @make_method('/nsm/client/monitor/client_state', 'si')
     def nsm_client_brother_client_state(self, path, args):
-        pass
+        self._exec_callback(NsmCallback.MONITOR_CLIENT_STATE, *args)
     
     @make_method('/nsm/client/monitor/client_event', 'ss')
     def nsm_client_monitor_event(self, path, args):
-        pass
+        self._exec_callback(NsmCallback.MONITOR_CLIENT_EVENT, *args)
 
     def set_callback(self, on_event: NsmCallback, func: Callable):
         self._callbacks[on_event] = func

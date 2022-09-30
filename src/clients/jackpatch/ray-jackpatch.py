@@ -217,13 +217,14 @@ def port_added(port_name: str, port_mode: int, port_type: int):
     jack_ports[port_mode].append(port)
     main_object.check_connect_later()
 
-def port_removed(port_name, port_mode, port_type):
+def port_removed(port_name: str, port_mode: PortMode, port_type: PortType):
     for port in jack_ports[port_mode]:
         if port.name == port_name and port.type == port_type:
             jack_ports[port_mode].remove(port)
             break
 
-def port_renamed(old_name, new_name, port_mode, port_type):
+def port_renamed(old_name: str, new_name: str,
+                 port_mode: PortMode, port_type: PortType):
     for port in jack_ports[port_mode]:
         if port.name == old_name and port.type == port_type:
             port.name = new_name
@@ -252,6 +253,7 @@ def may_make_one_connection():
     new_output_ports = [p.name for p in jack_ports[PortMode.OUTPUT] if p.is_new]
     new_input_ports = [p.name for p in jack_ports[PortMode.INPUT] if p.is_new]
 
+
     one_connected = False
 
     for sv_con in saved_connections:
@@ -260,11 +262,10 @@ def may_make_one_connection():
                 and sv_con[1] in input_ports
                 and (sv_con[0] in new_output_ports
                      or sv_con[1] in new_input_ports)):
-
             if one_connected:
                 main_object.pending_connection = True
                 break
-            
+
             jacklib.connect(jack_client, *sv_con)
             one_connected = True
     else:
@@ -274,7 +275,9 @@ def may_make_one_connection():
             for port in jack_ports[port_mode]:
                 port.is_new = False
 
-def open_file(project_path: str, session_name, full_client_id):
+# ---- NSM callbacks ----
+
+def open_file(project_path: str, session_name: str, full_client_id: str):
     saved_connections.clear()
 
     file_path = project_path + '.xml'
@@ -288,11 +291,17 @@ def open_file(project_path: str, session_name, full_client_id):
             main_object.terminate = True
             return
         
+        # read the DOM
+        
         root = tree.getroot()
         if root.tag != 'RAY-JACKPATCH':
             nsm_server.open_reply()
             return
-            
+        
+        graph_ports = dict[PortMode, list[str]]()
+        for port_mode in PortMode:
+            graph_ports[port_mode] = list[str]()
+        
         for child in root:
             if child.tag == 'connection':
                 port_from: str = child.attrib.get('from')
@@ -302,6 +311,32 @@ def open_file(project_path: str, session_name, full_client_id):
                     continue
                 saved_connections.append((port_from, port_to))
         
+            elif child.tag == 'graph':
+                for gp in child:
+                    if gp.tag != 'group':
+                        continue
+                    gp_name = gp.attrib['name']
+                    for pt in gp:
+                        if pt.tag == 'out_port':
+                            graph_ports[PortMode.OUTPUT].append(
+                                ':'.join((gp_name, pt.attrib['name'])))
+                        elif pt.tag == 'in_port':
+                            graph_ports[PortMode.INPUT].append(
+                                ':'.join((gp_name, pt.attrib['name'])))
+
+        # re-declare all ports as new in case we are switching session
+        for port_mode in PortMode:
+            for port in jack_ports[port_mode]:
+                port.is_new = True
+
+        # disconnect connections not existing at last save
+        # if their both ports were present in the graph.
+        for conn in connection_list:
+            if (conn not in saved_connections
+                    and conn[0] in graph_ports[PortMode.OUTPUT]
+                    and conn[1] in graph_ports[PortMode.INPUT]):
+                jacklib.disconnect(jack_client, *conn)
+
         may_make_one_connection()
 
     nsm_server.open_reply()
@@ -319,7 +354,7 @@ def save_file():
     # delete from saved connected all connections when there ports are present
     # and not currently connected    
     del_list = list[tuple[str, str]]()
-    
+
     for sv_con in saved_connections:
         if (not sv_con in connection_list
                 and sv_con[0] in [p.name for p in jack_ports[PortMode.OUTPUT]]
@@ -328,17 +363,35 @@ def save_file():
             
     for del_con in del_list:
         saved_connections.remove(del_con)
-    
+
     # write the XML file
     root = ET.Element('RAY-JACKPATCH')
     for sv_con in saved_connections:
         conn_el = ET.SubElement(root, 'connection')
         conn_el.attrib['from'], conn_el.attrib['to'] = sv_con
     
+    graph = ET.SubElement(root, 'graph')
+    group_names = dict[str, ET.Element]()
+
+    for port_mode in PortMode:
+        if port_mode is PortMode.NULL:
+            continue
+        
+        el_name = 'in_port' if port_mode is PortMode.INPUT else 'out_port'
+        
+        for out_port in jack_ports[port_mode]:
+            gp_name, colon, port_name = out_port.name.partition(':')
+            if group_names.get(gp_name) is None:
+                group_names[gp_name] = ET.SubElement(graph, 'group')
+                group_names[gp_name].attrib['name'] = gp_name
+
+            out_port_el = ET.SubElement(group_names[gp_name], el_name)
+            out_port_el.attrib['name'] = port_name
+    
     if sys.version_info >= (3, 9):
         # we can indent the xml tree since python3.9
         ET.indent(root, space='  ', level=0)
-    
+
     tree = ET.ElementTree(root)
     try:
         tree.write(main_object.file_path)
@@ -349,6 +402,12 @@ def save_file():
 
     nsm_server.save_reply()
     set_dirty_clean()
+
+def monitor_client_state(client_id: str, is_started: int):
+    print('bullo', client_id, bool(is_started))
+    
+
+# --- end of NSM callbacks --- 
 
 def fill_ports_and_connections():
     ''' get all current JACK ports and connections at startup '''
@@ -429,7 +488,8 @@ if __name__ == '__main__':
     nsm_server = NsmThread(daemon_address)
     nsm_server.set_callback(NsmCallback.OPEN, open_file)
     nsm_server.set_callback(NsmCallback.SAVE, save_file)
-    nsm_server.announce('JACK Connections', ':dirty:switch:', 'ray-jackpatch')
+    nsm_server.set_callback(NsmCallback.MONITOR_CLIENT_STATE, monitor_client_state)
+    nsm_server.announce('JACK Connections', ':dirty:switch:monitor:', 'ray-jackpatch')
 
     #connect program interruption signals
     signal.signal(signal.SIGINT, signal_handler)
