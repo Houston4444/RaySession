@@ -53,6 +53,8 @@ class MainObject:
     is_dirty = False
     pending_connection = False
     terminate = False
+    open_done_once = False
+    allow_disconnections = False
     
     event_queue = Queue()
     _dirty_check_asked_at = 0.0
@@ -88,8 +90,8 @@ class MainObject:
             timer_dirty_finish()
             self._dirty_check_asked_at = 0
 
-
 def b2str(src_bytes: bytes) -> str:
+    ''' decodes bytes to string '''
     return str(src_bytes, encoding="utf-8")
 
 def signal_handler(sig, frame):
@@ -245,14 +247,25 @@ def connection_removed(port_str_a, port_str_b):
     if (port_str_a, port_str_b) in connection_list:
         connection_list.remove((port_str_a, port_str_b))
 
+    if to_disc_connections:
+        may_make_one_connection()
+
     main_object.check_dirty_later()
 
 def may_make_one_connection():
+    if main_object.allow_disconnections:
+        if to_disc_connections:
+            for to_disc_con in to_disc_connections:
+                if to_disc_con in connection_list:
+                    jacklib.disconnect(jack_client, *to_disc_con)
+                    return
+            else:
+                to_disc_connections.clear()
+
     output_ports = [p.name for p in jack_ports[PortMode.OUTPUT]]
     input_ports = [p.name for p in jack_ports[PortMode.INPUT]]
     new_output_ports = [p.name for p in jack_ports[PortMode.OUTPUT] if p.is_new]
     new_input_ports = [p.name for p in jack_ports[PortMode.INPUT] if p.is_new]
-
 
     one_connected = False
 
@@ -329,18 +342,23 @@ def open_file(project_path: str, session_name: str, full_client_id: str):
             for port in jack_ports[port_mode]:
                 port.is_new = True
 
+        to_disc_connections.clear()
         # disconnect connections not existing at last save
         # if their both ports were present in the graph.
         for conn in connection_list:
             if (conn not in saved_connections
                     and conn[0] in graph_ports[PortMode.OUTPUT]
                     and conn[1] in graph_ports[PortMode.INPUT]):
-                jacklib.disconnect(jack_client, *conn)
+                to_disc_connections.append(conn)
+
+        if main_object.open_done_once:
+            main_object.allow_disconnections = True
 
         may_make_one_connection()
 
     nsm_server.open_reply()
     set_dirty_clean()
+    main_object.open_done_once = True
     main_object.check_dirty_later()
 
 def save_file():
@@ -405,7 +423,9 @@ def save_file():
 
 def monitor_client_state(client_id: str, is_started: int):
     print('bullo', client_id, bool(is_started))
-    
+
+def session_is_loaded():
+    main_object.allow_disconnections = True
 
 # --- end of NSM callbacks --- 
 
@@ -472,6 +492,7 @@ if __name__ == '__main__':
     main_object = MainObject()
     connection_list = list[tuple[str, str]]()
     saved_connections = list[tuple[str, str]]()
+    to_disc_connections = list[tuple[str, str]]()
     jack_ports = dict[PortMode, list[JackPort]]()
     for port_mode in PortMode:
         jack_ports[port_mode] = list[JackPort]()
@@ -489,6 +510,7 @@ if __name__ == '__main__':
     nsm_server.set_callback(NsmCallback.OPEN, open_file)
     nsm_server.set_callback(NsmCallback.SAVE, save_file)
     nsm_server.set_callback(NsmCallback.MONITOR_CLIENT_STATE, monitor_client_state)
+    nsm_server.set_callback(NsmCallback.SESSION_IS_LOADED, session_is_loaded)
     nsm_server.announce('JACK Connections', ':dirty:switch:monitor:', 'ray-jackpatch')
 
     #connect program interruption signals
