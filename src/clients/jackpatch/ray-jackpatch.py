@@ -1,117 +1,62 @@
 #!/usr/bin/python3 -u
 
-from ctypes import c_char_p
-from enum import IntEnum
-from queue import Queue
+# ray-jackpatch is an executable launchable in NSM (or Ray) session.
+# It restores JACK connections.
+# To avoid many problems, the connection processus is slow.
+# Connections are made one by one, waiting to receive from jack
+# the callback that a connection has been made to make the 
+# following one.
+# It also disconnects connections undesired in the session.
+# To determinate that a connection is undesired, all the present ports
+# are saved in the save file. If a connection is not saved in the file,
+# and its ports were present at save time, this connection will be disconnected
+# at session open.
+# This disconnect behavior is (probably) not suitable if we start the 
+# ray-jackpatch client once the session is already loaded.
+# The only way we've got to know that the entire session is opening, 
+# is to check if session_is_loaded message is received.
+
+
 import os
 import signal
 import sys
-import time
 import liblo
 import xml.etree.ElementTree as ET
 
 import jacklib
 from jacklib.helpers import c_char_p_p_to_list
 from nsm_client_noqt import NsmThread, NsmCallback
+from bases import EventHandler, PortMode, PortType, Event, JackPort, Timer
+import jack_callbacks
 
 
-class PortMode(IntEnum):
-    NULL = 0
-    OUTPUT = 1
-    INPUT = 2
-
-
-# It is here if we want to improve the saved file
-# with the type of the port.
-# At this stage, we only care about the port name.
-class PortType(IntEnum):
-    NULL = 0
-    AUDIO = 1
-    MIDI = 2
-
-
-class Event(IntEnum):
-    PORT_ADDED = 1
-    PORT_REMOVED = 2
-    PORT_RENAMED = 3
-    CONNECTION_ADDED = 4
-    CONNECTION_REMOVED = 5
-
-
-class JackPort:
-    # is_new is used to prevent reconnections
-    # when a disconnection has not been saved and one new port append.
-    id = 0
-    name = ''
-    mode = PortMode.NULL
-    type = PortType.NULL
-    is_new = False
-
-
-class MainObject:
+class Glob:
     file_path = ''
     is_dirty = False
     pending_connection = False
-    terminate = False
     open_done_once = False
     allow_disconnections = False
-    
-    event_queue = Queue()
-    _dirty_check_asked_at = 0.0
-    _connect_asked_at = 0.0
-    
-    def check_dirty_later(self):
-        self._dirty_check_asked_at = time.time()
-        
-    def check_connect_later(self):
-        self._connect_asked_at = time.time()
-        
-    def each_loop(self):
-        while self.event_queue.qsize():
-            event, args = self.event_queue.get()
-            if event is Event.PORT_ADDED:
-                port_added(*args)
-            elif event is Event.PORT_REMOVED:
-                port_removed(*args)
-            elif event is Event.PORT_RENAMED:
-                port_renamed(*args)
-            elif event is Event.CONNECTION_ADDED:
-                connection_added(*args)
-            elif event is Event.CONNECTION_REMOVED:
-                connection_removed(*args)
-            
-        if (self._connect_asked_at
-                and time.time() - self._connect_asked_at > 0.200):
-            may_make_one_connection()
-            self._connect_asked_at = 0
-            
-        if (self._dirty_check_asked_at
-                and time.time() - self._dirty_check_asked_at > 0.300):
-            timer_dirty_finish()
-            self._dirty_check_asked_at = 0
+    terminate = False
 
-def b2str(src_bytes: bytes) -> str:
-    ''' decodes bytes to string '''
-    return str(src_bytes, encoding="utf-8")
 
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
-        main_object.terminate = True
+        Glob.terminate = True
 
 def set_dirty_clean():
-    main_object.is_dirty = False
+    Glob.is_dirty = False
     nsm_server.send_dirty_state(False)
 
 def timer_dirty_finish():
-    if main_object.is_dirty:
+    if Glob.is_dirty:
         return
 
-    if main_object.pending_connection:
-        main_object.check_dirty_later()
+    if Glob.pending_connection:
+        timer_dirty_check.start()
         return
 
     if is_dirty_now():
-        main_object.is_dirty = True
+        Glob.is_dirty = True
         nsm_server.send_dirty_state(True)
 
 def is_dirty_now() -> bool:
@@ -132,83 +77,6 @@ def is_dirty_now() -> bool:
 
     return False
 
-# ---- JACK callbacks executed in JACK thread -----
-
-def jack_shutdown_callback(arg=None) -> int:
-    main_object.terminate = True
-    return 0
-
-def jack_port_registration_callback(port_id, register: bool, arg=None) -> int:
-    port_ptr = jacklib.port_by_id(jack_client, port_id)
-    port_flags = jacklib.port_flags(port_ptr)
-    port_name = jacklib.port_name(port_ptr)
-
-    if port_flags & jacklib.JackPortIsInput:
-        port_mode = PortMode.INPUT
-    elif port_flags & jacklib.JackPortIsOutput:
-        port_mode = PortMode.OUTPUT
-    else:
-        port_mode = PortMode.NULL
-
-    port_type_str = jacklib.port_type(port_ptr)
-    if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
-        port_type = PortType.AUDIO
-    elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
-        port_type = PortType.MIDI
-    else:
-        port_type = PortType.NULL
-
-    if register:
-        main_object.event_queue.put(
-            (Event.PORT_ADDED, (port_name, port_mode, port_type)))
-    else:
-        main_object.event_queue.put(
-            (Event.PORT_REMOVED, (port_name, port_mode, port_type)))
-
-    return 0
-
-def jack_port_rename_callback(
-        port_id, old_name: c_char_p, new_name: c_char_p, arg=None) -> int:
-    port_ptr = jacklib.port_by_id(jack_client, port_id)
-    port_flags = jacklib.port_flags(port_ptr)
-
-    if port_flags & jacklib.JackPortIsInput:
-        port_mode = PortMode.INPUT
-    elif port_flags & jacklib.JackPortIsOutput:
-        port_mode = PortMode.OUTPUT
-    else:
-        port_mode = PortMode.NULL
-
-    port_type_str = jacklib.port_type(port_ptr)
-    if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
-        port_type = PortType.AUDIO
-    elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
-        port_type = PortType.MIDI
-    else:
-        port_type = PortType.NULL
-
-    main_object.event_queue.put(
-        (Event.PORT_RENAMED,
-         (b2str(old_name), b2str(new_name), port_mode, port_type))
-    )
-    return 0
-
-def jack_port_connect_callback(port_id_a, port_id_b, connect: bool, arg=None) -> int:
-    port_ptr_a = jacklib.port_by_id(jack_client, port_id_a)
-    port_ptr_b = jacklib.port_by_id(jack_client, port_id_b)
-
-    port_str_a = jacklib.port_name(port_ptr_a)
-    port_str_b = jacklib.port_name(port_ptr_b)
-
-    main_object.event_queue.put(
-        (Event.CONNECTION_ADDED if connect else Event.CONNECTION_REMOVED,
-         (port_str_a, port_str_b))
-    )
-
-    return 0
-
-# --- end of JACK callbacks ----
-
 def port_added(port_name: str, port_mode: int, port_type: int):
     port = JackPort()
     port.name = port_name
@@ -217,7 +85,7 @@ def port_added(port_name: str, port_mode: int, port_type: int):
     port.is_new = True
 
     jack_ports[port_mode].append(port)
-    main_object.check_connect_later()
+    timer_connect_check.start()
 
 def port_removed(port_name: str, port_mode: PortMode, port_type: PortType):
     for port in jack_ports[port_mode]:
@@ -231,18 +99,18 @@ def port_renamed(old_name: str, new_name: str,
         if port.name == old_name and port.type == port_type:
             port.name = new_name
             port.is_new = True
-            main_object.check_connect_later()
+            timer_connect_check.start()
             break
     
 def connection_added(port_str_a: str, port_str_b: str):
     connection_list.append((port_str_a, port_str_b))
 
-    if main_object.pending_connection:
+    if Glob.pending_connection:
         may_make_one_connection()
 
     if (port_str_a, port_str_b) not in saved_connections:
-        main_object.check_dirty_later()
-
+        timer_dirty_check.start()
+        
 def connection_removed(port_str_a, port_str_b):
     if (port_str_a, port_str_b) in connection_list:
         connection_list.remove((port_str_a, port_str_b))
@@ -250,10 +118,10 @@ def connection_removed(port_str_a, port_str_b):
     if to_disc_connections:
         may_make_one_connection()
 
-    main_object.check_dirty_later()
+    timer_dirty_check.start()
 
 def may_make_one_connection():
-    if main_object.allow_disconnections:
+    if Glob.allow_disconnections:
         if to_disc_connections:
             for to_disc_con in to_disc_connections:
                 if to_disc_con in connection_list:
@@ -276,13 +144,13 @@ def may_make_one_connection():
                 and (sv_con[0] in new_output_ports
                      or sv_con[1] in new_input_ports)):
             if one_connected:
-                main_object.pending_connection = True
+                Glob.pending_connection = True
                 break
 
             jacklib.connect(jack_client, *sv_con)
             one_connected = True
     else:
-        main_object.pending_connection = False
+        Glob.pending_connection = False
 
         for port_mode in PortMode:
             for port in jack_ports[port_mode]:
@@ -294,14 +162,14 @@ def open_file(project_path: str, session_name: str, full_client_id: str):
     saved_connections.clear()
 
     file_path = project_path + '.xml'
-    main_object.file_path = file_path
+    Glob.file_path = file_path
 
     if os.path.isfile(file_path):
         try:
             tree = ET.parse(file_path)
         except:
             sys.stderr.write('unable to read file %s\n' % file_path)
-            main_object.terminate = True
+            Glob.terminate = True
             return
         
         # read the DOM
@@ -351,18 +219,18 @@ def open_file(project_path: str, session_name: str, full_client_id: str):
                     and conn[1] in graph_ports[PortMode.INPUT]):
                 to_disc_connections.append(conn)
 
-        if main_object.open_done_once:
-            main_object.allow_disconnections = True
+        if Glob.open_done_once:
+            Glob.allow_disconnections = True
 
         may_make_one_connection()
 
-    nsm_server.open_reply()
     set_dirty_clean()
-    main_object.open_done_once = True
-    main_object.check_dirty_later()
+    Glob.open_done_once = True
+    timer_dirty_check.start()
+    nsm_server.open_reply()
 
 def save_file():
-    if not main_object.file_path:
+    if not Glob.file_path:
         return
 
     for connection in connection_list:
@@ -412,20 +280,21 @@ def save_file():
 
     tree = ET.ElementTree(root)
     try:
-        tree.write(main_object.file_path)
+        tree.write(Glob.file_path)
     except:
-        sys.stderr.write('unable to write file %s\n' % main_object.file_path)
-        main_object.terminate = True
+        sys.stderr.write('unable to write file %s\n' % Glob.file_path)
+        Glob.terminate = True
         return
 
     nsm_server.save_reply()
     set_dirty_clean()
 
 def monitor_client_state(client_id: str, is_started: int):
-    print('bullo', client_id, bool(is_started))
+    ...
 
 def session_is_loaded():
-    main_object.allow_disconnections = True
+    Glob.allow_disconnections = True
+    may_make_one_connection()
 
 # --- end of NSM callbacks --- 
 
@@ -440,6 +309,7 @@ def fill_ports_and_connections():
 
         port_ptr = jacklib.port_by_name(jack_client, port_name)
         port_flags = jacklib.port_flags(port_ptr)
+        print('ekzl', type(port_ptr), type(port_flags))
 
         if port_flags & jacklib.JackPortIsInput:
             jack_port.mode = PortMode.INPUT
@@ -489,7 +359,9 @@ if __name__ == '__main__':
         sys.stderr.write('Unable to make a jack client !\n')
         sys.exit(2)
     
-    main_object = MainObject()
+    timer_dirty_check = Timer(0.300)
+    timer_connect_check = Timer(0.200)
+    
     connection_list = list[tuple[str, str]]()
     saved_connections = list[tuple[str, str]]()
     to_disc_connections = list[tuple[str, str]]()
@@ -497,13 +369,7 @@ if __name__ == '__main__':
     for port_mode in PortMode:
         jack_ports[port_mode] = list[JackPort]()
 
-    jacklib.set_port_registration_callback(
-        jack_client, jack_port_registration_callback, None)
-    jacklib.set_port_connect_callback(
-        jack_client, jack_port_connect_callback, None)
-    jacklib.set_port_rename_callback(
-        jack_client, jack_port_rename_callback, None)
-    jacklib.on_shutdown(jack_client, jack_shutdown_callback, None)
+    jack_callbacks.set_callbacks(jack_client)
     jacklib.activate(jack_client)
 
     nsm_server = NsmThread(daemon_address)
@@ -519,12 +385,34 @@ if __name__ == '__main__':
 
     fill_ports_and_connections()
     
+    jack_stopped = False
+    
     while True:
-        if main_object.terminate:
+        if Glob.terminate:
             break
         
         nsm_server.recv(50)
-        main_object.each_loop()
+        for event, args in EventHandler.new_events():
+            if event is Event.PORT_ADDED:
+                port_added(*args)
+            elif event is Event.PORT_REMOVED:
+                port_removed(*args)
+            elif event is Event.PORT_RENAMED:
+                port_renamed(*args)
+            elif event is Event.CONNECTION_ADDED:
+                connection_added(*args)
+            elif event is Event.CONNECTION_REMOVED:
+                connection_removed(*args)
+            elif event is Event.JACK_STOPPED:
+                jack_stopped = True
+                break
+        
+        if timer_dirty_check.elapsed():
+            timer_dirty_finish()
+        
+        if timer_connect_check.elapsed():
+            may_make_one_connection()
 
-    jacklib.deactivate(jack_client)
-    jacklib.client_close(jack_client)
+    if not jack_stopped:
+        jacklib.deactivate(jack_client)
+        jacklib.client_close(jack_client)
