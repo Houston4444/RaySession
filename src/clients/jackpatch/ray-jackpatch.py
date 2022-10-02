@@ -309,7 +309,6 @@ def fill_ports_and_connections():
 
         port_ptr = jacklib.port_by_name(jack_client, port_name)
         port_flags = jacklib.port_flags(port_ptr)
-        print('ekzl', type(port_ptr), type(port_flags))
 
         if port_flags & jacklib.JackPortIsInput:
             jack_port.mode = PortMode.INPUT
