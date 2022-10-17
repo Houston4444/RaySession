@@ -25,7 +25,7 @@ import xml.etree.ElementTree as ET
 
 import jacklib
 from jacklib.helpers import c_char_p_p_to_list
-from nsm_client_noqt import NsmThread, NsmCallback
+from nsm_client_noqt import NsmThread, NsmCallback, Err
 from bases import EventHandler, PortMode, PortType, Event, JackPort, Timer
 import jack_callbacks
 
@@ -158,7 +158,8 @@ def may_make_one_connection():
 
 # ---- NSM callbacks ----
 
-def open_file(project_path: str, session_name: str, full_client_id: str):
+def open_file(project_path: str, session_name: str,
+              full_client_id: str) -> tuple[Err, str]:
     saved_connections.clear()
 
     file_path = project_path + '.xml'
@@ -169,15 +170,13 @@ def open_file(project_path: str, session_name: str, full_client_id: str):
             tree = ET.parse(file_path)
         except:
             sys.stderr.write('unable to read file %s\n' % file_path)
-            Glob.terminate = True
-            return
+            # Glob.terminate = True
+            return (Err.BAD_PROJECT, f'{file_path} is not a correct .xml file')
         
         # read the DOM
-        
         root = tree.getroot()
         if root.tag != 'RAY-JACKPATCH':
-            nsm_server.open_reply()
-            return
+            return (Err.BAD_PROJECT, f'{file_path} is not a RAY-JACKPATCH .xml file')
         
         graph_ports = dict[PortMode, list[str]]()
         for port_mode in PortMode:
@@ -224,10 +223,10 @@ def open_file(project_path: str, session_name: str, full_client_id: str):
 
         may_make_one_connection()
 
-    set_dirty_clean()
+    Glob.is_dirty = False
     Glob.open_done_once = True
     timer_dirty_check.start()
-    nsm_server.open_reply()
+    return (Err.OK, '')
 
 def save_file():
     if not Glob.file_path:
@@ -302,6 +301,8 @@ def fill_ports_and_connections():
     ''' get all current JACK ports and connections at startup '''
     port_name_list = c_char_p_p_to_list(
         jacklib.get_ports(jack_client, "", "", 0))
+    
+    troiri = jacklib.get_ports(jack_client, '', '', 0)
 
     for port_name in port_name_list:
         jack_port = JackPort()
@@ -330,10 +331,8 @@ def fill_ports_and_connections():
         jack_ports[jack_port.mode].append(jack_port)
 
         if jack_port.mode is PortMode.OUTPUT:
-            port_connection_names = jacklib.port_get_all_connections(
-                jack_client, port_ptr)
-
-            for port_con_name in port_connection_names:
+            for port_con_name in jacklib.port_get_all_connections(
+                    jack_client, port_ptr):
                 connection_list.append((port_name, port_con_name))
 
 
@@ -377,7 +376,7 @@ if __name__ == '__main__':
     nsm_server.set_callback(NsmCallback.MONITOR_CLIENT_STATE, monitor_client_state)
     nsm_server.set_callback(NsmCallback.SESSION_IS_LOADED, session_is_loaded)
     nsm_server.announce('JACK Connections', ':dirty:switch:monitor:', 'ray-jackpatch')
-
+    
     #connect program interruption signals
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
@@ -389,9 +388,10 @@ if __name__ == '__main__':
     while True:
         if Glob.terminate:
             break
-        
+
         nsm_server.recv(50)
         for event, args in EventHandler.new_events():
+            print(event, args)
             if event is Event.PORT_ADDED:
                 port_added(*args)
             elif event is Event.PORT_REMOVED:
@@ -412,6 +412,7 @@ if __name__ == '__main__':
         if timer_connect_check.elapsed():
             may_make_one_connection()
 
+    print('sllllloooooop')
     if not jack_stopped:
         jacklib.deactivate(jack_client)
         jacklib.client_close(jack_client)

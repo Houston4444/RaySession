@@ -9,10 +9,9 @@ _jack_client: 'pointer[jacklib.jack_port_t]'
 
 def _shutdown(arg=None) -> int:
     EventHandler.add_event(Event.JACK_STOPPED)
-    
     return 0
 
-def _port_registration(port_id, register: bool, arg=None) -> int:
+def _port_registration(port_id: int, register: bool, arg=None) -> int:
     port_ptr = jacklib.port_by_id(_jack_client, port_id)
     port_flags = jacklib.port_flags(port_ptr)
     port_name = jacklib.port_name(port_ptr)
@@ -79,7 +78,7 @@ def _port_connect(port_id_a, port_id_b, connect: bool, arg=None) -> int:
 
 # --- end of JACK callbacks ----
 
-def set_callbacks(jclient):
+def set_callbacks(jclient: 'pointer[jacklib.jack_client_t]'):
     global _jack_client
     _jack_client = jclient
 

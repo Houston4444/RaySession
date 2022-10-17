@@ -3,7 +3,23 @@
 from enum import IntEnum
 import os
 from liblo import Server, make_method, Address
-from typing import Callable
+from typing import Callable, Optional
+
+
+class Err(IntEnum):
+    OK =  0
+    GENERAL_ERROR = -1
+    INCOMPATIBLE_API = -2
+    BLACKLISTED = -3
+    LAUNCH_FAILED = -4
+    NO_SUCH_FILE = -5
+    NO_SESSION_OPEN = -6
+    UNSAVED_CHANGES = -7
+    NOT_NOW = -8
+    BAD_PROJECT = -9
+    CREATE_FAILED = -10
+    SESSION_LOCKED = -11
+    OPERATION_PENDING = -12
 
 
 class NsmCallback(IntEnum):
@@ -25,7 +41,7 @@ class NsmThread(Server):
         self._callbacks = dict[NsmCallback, Callable]()
 
     @make_method('/reply', None)
-    def serverReply(self, path, args):
+    def _reply(self, path, args):
         if args:
             reply_path = args[0]
         else:
@@ -35,39 +51,47 @@ class NsmThread(Server):
             self._server_capabilities = args[3]
 
     @make_method('/nsm/client/open', 'sss')
-    def nsmClientOpen(self, path, args):
-        self._exec_callback(NsmCallback.OPEN, *args)
+    def _nsm_client_open(self, path, args):
+        ret = self._exec_callback(NsmCallback.OPEN, *args)
+        if ret is None:
+            return
+        
+        err, err_text = ret
+        if err is Err.OK:
+            self.send_to_daemon('/reply', path, 'Ready')
+        else:
+            self.send_to_daemon('/error', path, err, err_text)
 
     @make_method('/nsm/client/save', '')
-    def nsmClientSave(self, path, args):
-        self._exec_callback(NsmCallback.SAVE)
+    def _nsm_client_save(self, path, args):
+        err, err_text = self._exec_callback(NsmCallback.SAVE)
 
     @make_method('/nsm/client/session_is_loaded', '')
-    def nsmClientSessionIsLoaded(self, path, args):
+    def _nsm_client_session_is_loaded(self, path, args):
         self._exec_callback(NsmCallback.SESSION_IS_LOADED)
 
     @make_method('/nsm/client/show_optional_gui', '')
-    def nsmClientShow_optional_gui(self, path, args):
+    def _nsm_client_show_optional_gui(self, path, args):
         self._exec_callback(NsmCallback.SHOW_OPTIONAL_GUI)
 
     @make_method('/nsm/client/hide_optional_gui', '')
-    def nsmClientHide_optional_gui(self, path, args):
+    def _nsm_client_hide_optional_gui(self, path, args):
         self._exec_callback(NsmCallback.HIDE_OPTIONAL_GUI)
     
     @make_method('/nsm/client/monitor/client_state', 'si')
-    def nsm_client_brother_client_state(self, path, args):
+    def _nsm_client_monitor_client_state(self, path, args):
         self._exec_callback(NsmCallback.MONITOR_CLIENT_STATE, *args)
     
     @make_method('/nsm/client/monitor/client_event', 'ss')
-    def nsm_client_monitor_event(self, path, args):
+    def nsm_client_monitor_client_event(self, path, args):
         self._exec_callback(NsmCallback.MONITOR_CLIENT_EVENT, *args)
 
     def set_callback(self, on_event: NsmCallback, func: Callable):
         self._callbacks[on_event] = func
 
-    def _exec_callback(self, event: NsmCallback, *args):
+    def _exec_callback(self, event: NsmCallback, *args) -> Optional[tuple[Err, str]]:
         if event in self._callbacks.keys():
-            self._callbacks[event](*args)
+            return self._callbacks[event](*args)
 
     def get_server_capabilities(self):
         return self._server_capabilities
@@ -76,8 +100,7 @@ class NsmThread(Server):
         self.send(self._daemon_address, *args)
 
     def announce(self, client_name: str, capabilities: str, executable_path: str):
-        major = 1
-        minor = 0
+        MAJOR, MINOR = 1, 0
         pid = os.getpid()
 
         self.send_to_daemon(
@@ -85,8 +108,8 @@ class NsmThread(Server):
             client_name,
             capabilities,
             executable_path,
-            major,
-            minor,
+            MAJOR,
+            MINOR,
             pid)
 
     def open_reply(self):
