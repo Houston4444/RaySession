@@ -827,9 +827,10 @@ class Client(ServerSender, ray.ClientData):
         return jack_client_name
 
     def read_xml_properties(self, ctx: QDomElement):
-        #ctx is an xml sibling for client
+        # ctx is an xml sibling for client
         self.executable_path = ctx.attribute('executable')
         self.arguments = ctx.attribute('arguments')
+        self.pre_env = ctx.attribute('pre_env')
         self.name = ctx.attribute('name')
         self.desktop_file = ctx.attribute('desktop_file')
         self.label = ctx.attribute('label')
@@ -958,6 +959,9 @@ class Client(ServerSender, ray.ClientData):
             ctx.setAttribute('executable', self.executable_path)
             if self.arguments:
                 ctx.setAttribute('arguments', self.arguments)
+
+        if self.pre_env:
+            ctx.setAttribute('pre_env', self.pre_env)
 
         ctx.setAttribute('name', self.name)
         if self.desktop_file:

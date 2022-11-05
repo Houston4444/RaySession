@@ -433,8 +433,8 @@ class RayPatchbayManager(PatchbayManager):
             CanvasOptionsDialog(self.main_win, self, RS.settings))
         
     def fast_temp_file_memory(self, temp_path):
-        ''' receives a .json file path from daemon with groups positions
-            and portgroups remembered from user. '''
+        '''receives a .json file path from daemon with groups positions
+           and portgroups remembered from user.'''
         canvas_data = self._get_json_contents_from_path(temp_path)
         if not canvas_data:
             sys.stderr.write(

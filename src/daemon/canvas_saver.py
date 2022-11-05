@@ -47,7 +47,7 @@ class CanvasSaver(ServerSender):
             try:
                 json_contents = json.load(f)
             except json.JSONDecodeError:
-                Terminal.message("Failed to load patchcanvas config file %s" % f)
+                Terminal.message(f"Failed to load patchcanvas config file {f}")
 
             # Old group_position port_types_view norm was
             # full_view = AUDIO | MIDI (1|2 = 3)
@@ -73,7 +73,9 @@ class CanvasSaver(ServerSender):
                 gpos.write_from_dict(gpos_dict)
                 if needs_port_types_view_convert and gpos.port_types_view == 3:
                     gpos.port_types_view = 15
-                self.group_positions_config.append(gpos)
+                
+                if not [g for g in self.group_positions_config if g.is_same(gpos)]:
+                    self.group_positions_config.append(gpos)
 
             for pg_dict in pg_list:
                 portgroup = ray.PortGroupMemory()
@@ -192,7 +194,6 @@ class CanvasSaver(ServerSender):
         gp = ray.GroupPosition.new_from(*args)
         for group_positions in (self.group_positions_session,
                                 self.group_positions_config):
-            
             for gpos in group_positions:
                 if gpos.is_same(gp):
                     gpos.update(*args)
@@ -230,7 +231,9 @@ class CanvasSaver(ServerSender):
                 gpos.write_from_dict(gpos_dict)
                 if needs_port_types_view_convert and gpos.port_types_view == 3:
                     gpos.port_types_view = 15
-                self.group_positions_session.append(gpos)
+                
+                if not [g for g in self.group_positions_session if g.is_same(gpos)]:
+                    self.group_positions_session.append(gpos)
 
     def save_json_session_canvas(self, session_path: str):
         session_json_path = "%s/.%s" % (session_path, JSON_PATH)

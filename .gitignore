@@ -28,6 +28,7 @@
 /houston_patchbay/patchbay/*/__pycache__/
 /houston_patchbay/patchbay/*/*/__pycache__/
 /houston_patchbay/patchbay/*/*/*/__pycache__/
+/pyjacklib/jacklib/__pycache__/
 /src/__pycache__/
 /src/*/__pycache__/
 /src/*/*/__pycache__/

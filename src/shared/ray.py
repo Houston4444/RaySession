@@ -9,8 +9,7 @@ import socket
 import subprocess
 import sys
 from liblo import Server, Address
-from PyQt5.QtCore import QT_VERSION_STR, QFile
-from PyQt5.QtGui import QIcon, QPalette
+from PyQt5.QtCore import QT_VERSION_STR, QSettings
 
 # get qt version in list of ints
 QT_VERSION = []
@@ -232,7 +231,7 @@ def add_self_bin_to_path():
     if not os.environ['PATH'].startswith("%s:" % bin_path):
         os.environ['PATH'] = "%s:%s" % (bin_path, os.environ['PATH'])
 
-def get_list_in_settings(settings, path):
+def get_list_in_settings(settings: QSettings, path: str) -> list:
     # getting a QSettings value of list type seems to not works the same way
     # on all machines
     try:
@@ -243,7 +242,9 @@ def get_list_in_settings(settings, path):
         except BaseException:
             settings_list = []
 
-    return settings_list
+    if isinstance(settings_list, list):
+        return settings_list
+    return []
 
 def is_git_taggable(string: str) -> bool:
     ''' know if a string can be a git tag, not used currently '''
