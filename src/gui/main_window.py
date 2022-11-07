@@ -1098,7 +1098,11 @@ class MainWindow(QMainWindow):
         if is_shown:
             self._systray.show()
 
-    def _systray_activated(self):
+    def _systray_activated(self, reason: QSystemTrayIcon.ActivationReason):
+        if reason not in (QSystemTrayIcon.Trigger,
+                          QSystemTrayIcon.DoubleClick):
+            return
+
         wayland = bool(ray.get_window_manager() == ray.WindowManager.WAYLAND)
 
         if self.isMinimized():
