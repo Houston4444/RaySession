@@ -1,16 +1,32 @@
 from ctypes import c_char_p, pointer
+from typing import Callable
 
 import jacklib
-from bases import EventHandler, Event, PortMode, PortType, b2str
+from bases import EventHandler, Event, PortMode, PortType, b2str, Glob
 
 _jack_client: 'pointer[jacklib.jack_port_t]'
 
-# ---- JACK callbacks executed in JACK thread -----
+def jack_cb(func: Callable):
+    def wrapper(*args, **kwargs):
+        Glob.jack_thread_running = True
+        ret: int = func(*args, **kwargs)
+        Glob.jack_thread_running = False
+        return ret
+    return wrapper
+    
 
+# ---- JACK callbacks executed in JACK thread -----
+@jack_cb
 def _shutdown(arg=None) -> int:
     EventHandler.add_event(Event.JACK_STOPPED)
     return 0
 
+@jack_cb
+def _client_registration(client_name: bytes, register: int, arg=None) -> int:
+    print('TOzdD', b2str(client_name), bool(register))
+    return 0
+
+@jack_cb
 def _port_registration(port_id: int, register: bool, arg=None) -> int:
     port_ptr = jacklib.port_by_id(_jack_client, port_id)
     port_flags = jacklib.port_flags(port_ptr)
@@ -37,6 +53,7 @@ def _port_registration(port_id: int, register: bool, arg=None) -> int:
 
     return 0
 
+@jack_cb
 def _port_rename(
         port_id, old_name: c_char_p, new_name: c_char_p, arg=None) -> int:
     port_ptr = jacklib.port_by_id(_jack_client, port_id)
@@ -59,10 +76,11 @@ def _port_rename(
 
     EventHandler.add_event(
         Event.PORT_RENAMED,
-        (b2str(old_name), b2str(new_name), port_mode, port_type))
+        b2str(old_name), b2str(new_name), port_mode, port_type)
 
     return 0
 
+@jack_cb
 def _port_connect(port_id_a, port_id_b, connect: bool, arg=None) -> int:
     port_ptr_a = jacklib.port_by_id(_jack_client, port_id_a)
     port_ptr_b = jacklib.port_by_id(_jack_client, port_id_b)
@@ -82,6 +100,8 @@ def set_callbacks(jclient: 'pointer[jacklib.jack_client_t]'):
     global _jack_client
     _jack_client = jclient
 
+    jacklib.set_client_registration_callback(
+        _jack_client, _client_registration, None)
     jacklib.set_port_registration_callback(
         _jack_client, _port_registration, None)
     jacklib.set_port_connect_callback(

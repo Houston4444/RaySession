@@ -20,23 +20,16 @@
 import os
 import signal
 import sys
+import time
 import liblo
 import xml.etree.ElementTree as ET
 
 import jacklib
 from jacklib.helpers import c_char_p_p_to_list
 from nsm_client_noqt import NsmThread, NsmCallback, Err
-from bases import EventHandler, PortMode, PortType, Event, JackPort, Timer
+from bases import (EventHandler, PortMode, PortType,
+                   Event, JackPort, Timer, Glob)
 import jack_callbacks
-
-
-class Glob:
-    file_path = ''
-    is_dirty = False
-    pending_connection = False
-    open_done_once = False
-    allow_disconnections = False
-    terminate = False
 
 
 def signal_handler(sig, frame):
@@ -85,6 +78,7 @@ def port_added(port_name: str, port_mode: int, port_type: int):
     port.is_new = True
 
     jack_ports[port_mode].append(port)
+    present_client_names.add(port_name.partition(':')[0])
     timer_connect_check.start()
 
 def port_removed(port_name: str, port_mode: PortMode, port_type: PortType):
@@ -285,11 +279,28 @@ def save_file():
         Glob.terminate = True
         return
 
-    nsm_server.save_reply()
-    set_dirty_clean()
+    # TODO !!!
+    # set_dirty_clean()
+    return (Err.OK, 'Done')
 
-def monitor_client_state(client_id: str, is_started: int):
-    ...
+def monitor_client_state(client_id: str, jack_name: str, is_started: int):
+    print('moniitor', client_id, bool(is_started))
+    brothers_dict[client_id] = jack_name
+    
+    if not is_started and client_id in Glob.stopping_brothers:
+        Glob.stopping_brothers.remove(client_id)
+
+def monitor_client_event(client_id: str, event: str):
+    print('zmoerff', client_id, event)
+    if event == 'stop_request':
+        if (client_id in brothers_dict
+                and brothers_dict[client_id]
+                    in [c.partition('/')[0] for c in present_client_names]):        
+            Glob.stopping_brothers.add(client_id)
+    elif event in ('stopped_by_server', 'stopped_by_itself'):
+        print('remmov', client_id, event)
+        if client_id in Glob.stopping_brothers:
+            Glob.stopping_brothers.remove(client_id)
 
 def session_is_loaded():
     Glob.allow_disconnections = True
@@ -301,12 +312,12 @@ def fill_ports_and_connections():
     ''' get all current JACK ports and connections at startup '''
     port_name_list = c_char_p_p_to_list(
         jacklib.get_ports(jack_client, "", "", 0))
-    
-    troiri = jacklib.get_ports(jack_client, '', '', 0)
 
     for port_name in port_name_list:
         jack_port = JackPort()
         jack_port.name = port_name
+        
+        present_client_names.add(port_name.partition(':')[0])
 
         port_ptr = jacklib.port_by_name(jack_client, port_name)
         port_flags = jacklib.port_flags(port_ptr)
@@ -335,7 +346,8 @@ def fill_ports_and_connections():
                     jack_client, port_ptr):
                 connection_list.append((port_name, port_con_name))
 
-
+    print('presclients', present_client_names)
+    
 if __name__ == '__main__':
     nsm_url = os.getenv('NSM_URL')
     if not nsm_url:
@@ -350,7 +362,7 @@ if __name__ == '__main__':
 
     jack_client = jacklib.client_open(
         "ray-patcher",
-        jacklib.JackNoStartServer | jacklib.JackSessionID,
+        jacklib.JackNoStartServer,
         None)
 
     if not jack_client:
@@ -359,6 +371,9 @@ if __name__ == '__main__':
     
     timer_dirty_check = Timer(0.300)
     timer_connect_check = Timer(0.200)
+    
+    present_client_names = set[str]()
+    brothers_dict = dict[str, str]()
     
     connection_list = list[tuple[str, str]]()
     saved_connections = list[tuple[str, str]]()
@@ -374,8 +389,9 @@ if __name__ == '__main__':
     nsm_server.set_callback(NsmCallback.OPEN, open_file)
     nsm_server.set_callback(NsmCallback.SAVE, save_file)
     nsm_server.set_callback(NsmCallback.MONITOR_CLIENT_STATE, monitor_client_state)
+    nsm_server.set_callback(NsmCallback.MONITOR_CLIENT_EVENT, monitor_client_event)
     nsm_server.set_callback(NsmCallback.SESSION_IS_LOADED, session_is_loaded)
-    nsm_server.announce('JACK Connections', ':dirty:switch:monitor:', 'ray-jackpatch')
+    nsm_server.announce('JACK Connections', ':dirty:switch:', 'ray-jackpatch')
     
     #connect program interruption signals
     signal.signal(signal.SIGINT, signal_handler)
@@ -387,11 +403,11 @@ if __name__ == '__main__':
     
     while True:
         if Glob.terminate:
+        # if Glob.terminate and not Glob.stopping_brothers:
             break
 
         nsm_server.recv(50)
         for event, args in EventHandler.new_events():
-            print(event, args)
             if event is Event.PORT_ADDED:
                 port_added(*args)
             elif event is Event.PORT_REMOVED:
@@ -412,7 +428,15 @@ if __name__ == '__main__':
         if timer_connect_check.elapsed():
             may_make_one_connection()
 
-    print('sllllloooooop')
+    # time.sleep(0.020)
+
+    # while Glob.jack_thread_running:
+    #     print('OO waiting jack')
+    #     time.sleep(0.010)
+
+    print('sllllloooooop', Glob.stopping_brothers)
     if not jack_stopped:
         jacklib.deactivate(jack_client)
+        print('titititili')
         jacklib.client_close(jack_client)
+        # jacklib.free(jack_client)

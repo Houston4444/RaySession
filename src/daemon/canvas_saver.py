@@ -82,8 +82,8 @@ class CanvasSaver(ServerSender):
                 portgroup.write_from_dict(pg_dict)
                 self.portgroups.append(portgroup)
 
-    def get_all_group_positions(self)->list:
-        group_positions_config_exclu = []
+    def get_all_group_positions(self) -> list[ray.GroupPosition]:
+        group_positions_config_exclu = list[ray.GroupPosition]()
 
         for gpos_cf in self.group_positions_config:
             for gpos_ss in self.group_positions_session:

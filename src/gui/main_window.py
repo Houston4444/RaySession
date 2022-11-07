@@ -1100,6 +1100,7 @@ class MainWindow(QMainWindow):
             self._systray.show()
 
     def _systray_activated(self):
+        print('shilili')
         wayland = bool(ray.get_window_manager() == ray.WindowManager.WAYLAND)
 
         if self.isMinimized():

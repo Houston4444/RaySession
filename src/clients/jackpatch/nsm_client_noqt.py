@@ -64,7 +64,15 @@ class NsmThread(Server):
 
     @make_method('/nsm/client/save', '')
     def _nsm_client_save(self, path, args):
-        err, err_text = self._exec_callback(NsmCallback.SAVE)
+        ret = self._exec_callback(NsmCallback.SAVE)
+        if ret is None:
+            return
+        
+        err, err_text = ret
+        if err is Err.OK:
+            self.send_to_daemon('/reply', path, 'Saved')
+        else:
+            self.send_to_daemon('/error', path, err_text)
 
     @make_method('/nsm/client/session_is_loaded', '')
     def _nsm_client_session_is_loaded(self, path, args):
@@ -78,7 +86,7 @@ class NsmThread(Server):
     def _nsm_client_hide_optional_gui(self, path, args):
         self._exec_callback(NsmCallback.HIDE_OPTIONAL_GUI)
     
-    @make_method('/nsm/client/monitor/client_state', 'si')
+    @make_method('/nsm/client/monitor/client_state', 'ssi')
     def _nsm_client_monitor_client_state(self, path, args):
         self._exec_callback(NsmCallback.MONITOR_CLIENT_STATE, *args)
     
@@ -111,12 +119,6 @@ class NsmThread(Server):
             MAJOR,
             MINOR,
             pid)
-
-    def open_reply(self):
-        self.send_to_daemon('/reply', '/nsm/client/open', 'Ready')
-
-    def save_reply(self):
-        self.send_to_daemon('/reply', '/nsm/client/save', 'Saved')
 
     def send_dirty_state(self, dirty: bool):
         if dirty:

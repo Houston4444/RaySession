@@ -187,14 +187,14 @@ class Client(ServerSender, ray.ClientData):
                                   % self.gui_msg_style())
             
             self.session.send_monitor_event(
-                'client_stopped_by_server', self.client_id)
+                'stopped_by_server', self.client_id)
         else:
             self.send_gui_message(_translate('GUIMSG',
                                            "  %s: terminated itself.")
                                     % self.gui_msg_style())
             
             self.session.send_monitor_event(
-                'client_stopped_by_itself', self.client_id)
+                'stopped_by_itself', self.client_id)
 
         self._send_reply_to_caller(OSC_SRC_STOP, 'client stopped')
 

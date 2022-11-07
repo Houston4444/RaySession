@@ -21,12 +21,14 @@ class PortType(IntEnum):
 
 
 class Event(IntEnum):
-    PORT_ADDED = 1
-    PORT_REMOVED = 2
-    PORT_RENAMED = 3
-    CONNECTION_ADDED = 4
-    CONNECTION_REMOVED = 5
-    JACK_STOPPED = 6
+    CLIENT_ADDED = 1
+    CLIENT_REMOVED = 2
+    PORT_ADDED = 3
+    PORT_REMOVED = 4
+    PORT_RENAMED = 5
+    CONNECTION_ADDED = 6
+    CONNECTION_REMOVED = 7
+    JACK_STOPPED = 8
 
 
 class JackPort:
@@ -70,6 +72,17 @@ class EventHandler:
     def new_events(cls) -> Iterator[tuple[Event, tuple]]:
         while cls._event_queue.qsize():
             yield cls._event_queue.get()
+
+
+class Glob:
+    file_path = ''
+    is_dirty = False
+    pending_connection = False
+    open_done_once = False
+    allow_disconnections = False
+    terminate = False
+    jack_thread_running = False
+    stopping_brothers = set[str]()
 
 
 def b2str(src_bytes: bytes) -> str:

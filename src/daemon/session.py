@@ -8,6 +8,7 @@ import string
 import subprocess
 import sys
 import time
+from typing import Optional
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QTimer, QProcess
 from PyQt5.QtXml  import QDomDocument, QDomElement
@@ -606,6 +607,7 @@ class Session(ServerSender):
                 monitor_addr,
                 prefix + 'client_state',
                 client.client_id,
+                client.get_jack_client_name(),
                 int(client.is_running()))
 
         for client in self.trashed_clients:
@@ -613,6 +615,7 @@ class Session(ServerSender):
                 monitor_addr,
                 prefix + 'client_state',
                 client.client_id,
+                client.get_jack_client_name(),
                 0)
 
     def send_monitor_event(self, event:str, client_id = ''):
@@ -977,6 +980,7 @@ class OperatingSession(Session):
         self.timer_quit = QTimer()
         self.timer_quit.setInterval(100)
         self.timer_quit.timeout.connect(self._timer_quit_timeout)
+        self._client_quitting: Optional[Client] = None
         self.clients_to_quit = list[Client]()
 
         self.timer_waituser_progress = QTimer()
@@ -1181,11 +1185,16 @@ class OperatingSession(Session):
             self.timer_launch.stop()
 
     def _timer_quit_timeout(self):
+        # if (self._client_quitting is not None
+        #         and self._client_quitting.is_running()):
+        #     return
+        
         if self.clients_to_quit:
-            client = self.clients_to_quit.pop(0)
-            client.stop()
+            self._client_quitting = self.clients_to_quit.pop(0)
+            self._client_quitting.stop()
 
         if not self.clients_to_quit:
+            self._client_quitting = None
             self.timer_quit.stop()
 
     def _timer_wait_user_progress_timeOut(self):
@@ -1548,8 +1557,11 @@ class OperatingSession(Session):
             self.next_function()
             return
 
-        keep_client_list = list[Client]() # clients we will keep alive
-        byebye_client_list = list[Client]() # stopped clients we will remove immediately
+        # clients we will keep alive
+        keep_client_list = list[Client]()
+
+        # stopped clients we will remove immediately
+        byebye_client_list = list[Client]()
 
         if not clear_all_clients:
             for future_client in self.future_clients:
@@ -1583,7 +1595,7 @@ class OperatingSession(Session):
             if client in self.clients:
                 self._remove_client(client)
             else:
-                raise NameError('no client %s to remove' % client.client_id)
+                raise NameError(f'no client {client.client_id} to remove')
 
         if self.expected_clients:
             if len(self.expected_clients) == 1:
