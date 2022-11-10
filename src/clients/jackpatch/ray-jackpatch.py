@@ -42,7 +42,7 @@ def set_dirty_clean():
     Glob.is_dirty = False
     nsm_server.send_dirty_state(False)
 
-def timer_dirty_finish():
+def timer_dirty_finished():
     if Glob.is_dirty:
         return
 
@@ -53,6 +53,9 @@ def timer_dirty_finish():
     if is_dirty_now():
         Glob.is_dirty = True
         nsm_server.send_dirty_state(True)
+    elif not Glob.dirty_state_sent:
+        nsm_server.send_dirty_state(False)
+        Glob.dirty_state_sent = True
 
 def is_dirty_now() -> bool:
     for conn in connection_list:
@@ -66,7 +69,7 @@ def is_dirty_now() -> bool:
 
         if (sv_con[0] in [p.name for p in jack_ports[PortMode.OUTPUT]]
                 and sv_con[1] in [p.name for p in jack_ports[PortMode.INPUT]]):
-            # There is at least a saved connection not present
+            # There is at least one saved connection not present
             # despite the fact its two ports are present.
             return True
 
@@ -275,7 +278,7 @@ def save_file():
                 conn_el.attrib['nsm_client_from'] = key
             if jack_con_to_name == value:
                 conn_el.attrib['nsm_client_to'] = key
-    
+
     graph = ET.SubElement(root, 'graph')
     group_names = dict[str, ET.Element]()
 
@@ -480,7 +483,7 @@ if __name__ == '__main__':
                 break
         
         if timer_dirty_check.elapsed():
-            timer_dirty_finish()
+            timer_dirty_finished()
         
         if timer_connect_check.elapsed():
             may_make_one_connection()

@@ -77,6 +77,7 @@ class EventHandler:
 class Glob:
     file_path = ''
     is_dirty = False
+    dirty_state_sent = False
     pending_connection = False
     open_done_once = False
     allow_disconnections = False
