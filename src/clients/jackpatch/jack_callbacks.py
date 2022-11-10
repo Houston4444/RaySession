@@ -5,28 +5,16 @@ import jacklib
 from bases import EventHandler, Event, PortMode, PortType, b2str, Glob
 
 _jack_client: 'pointer[jacklib.jack_port_t]'
-
-def jack_cb(func: Callable):
-    def wrapper(*args, **kwargs):
-        Glob.jack_thread_running = True
-        ret: int = func(*args, **kwargs)
-        Glob.jack_thread_running = False
-        return ret
-    return wrapper
     
 
 # ---- JACK callbacks executed in JACK thread -----
-@jack_cb
 def _shutdown(arg=None) -> int:
     EventHandler.add_event(Event.JACK_STOPPED)
     return 0
 
-@jack_cb
 def _client_registration(client_name: bytes, register: int, arg=None) -> int:
-    print('TOzdD', b2str(client_name), bool(register))
     return 0
 
-@jack_cb
 def _port_registration(port_id: int, register: bool, arg=None) -> int:
     port_ptr = jacklib.port_by_id(_jack_client, port_id)
     port_flags = jacklib.port_flags(port_ptr)
@@ -53,7 +41,6 @@ def _port_registration(port_id: int, register: bool, arg=None) -> int:
 
     return 0
 
-@jack_cb
 def _port_rename(
         port_id, old_name: c_char_p, new_name: c_char_p, arg=None) -> int:
     port_ptr = jacklib.port_by_id(_jack_client, port_id)
@@ -80,7 +67,6 @@ def _port_rename(
 
     return 0
 
-@jack_cb
 def _port_connect(port_id_a, port_id_b, connect: bool, arg=None) -> int:
     port_ptr_a = jacklib.port_by_id(_jack_client, port_id_a)
     port_ptr_b = jacklib.port_by_id(_jack_client, port_id_b)

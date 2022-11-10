@@ -598,6 +598,8 @@ class Session(ServerSender):
         if not monitor_is_client:
             prefix = '/ray/monitor/'
 
+        n_clients = 0
+
         for client in self.clients:
             if (client.addr is not None
                     and ray.are_same_osc_port(client.addr.url, monitor_addr.url)):
@@ -609,6 +611,7 @@ class Session(ServerSender):
                 client.client_id,
                 client.get_jack_client_name(),
                 int(client.is_running()))
+            n_clients += 1
 
         for client in self.trashed_clients:
             self.send(
@@ -616,7 +619,10 @@ class Session(ServerSender):
                 prefix + 'client_state',
                 client.client_id,
                 client.get_jack_client_name(),
-                0)
+                0)            
+            n_clients += 1
+
+        self.send(monitor_addr, prefix + 'client_state', '', '', n_clients)
 
     def send_monitor_event(self, event:str, client_id = ''):
         ''' send an event message to clients capable of ":monitor:" '''

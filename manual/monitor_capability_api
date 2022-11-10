@@ -5,9 +5,15 @@ To become a monitor client, the client MUST check if the NSM server has the ':mo
 
 Just before receiving the first /nsm/client/open message, the monitor client will receive for each client in the session the following status message:
 
-/nsm/client/monitor/client_state s:client_id i:is_started
+/nsm/client/monitor/client_state s:client_id s:jack_client_name i:is_started
 
 'is_started' is 1 if the client is started or 0 if the client is stopped.
+
+when all client are listed, server sends
+/nsm/client/monitor/client_state s:empty_str s:empty_str i:number_of_clients
+where empty_str is '', number_of_clients is the number_of_clients monitored, 
+it does not count this monitor client.
+
 
 A monitor client can query the state of the other clients at any time by sending this message to the server
 

@@ -20,17 +20,19 @@
 import os
 import signal
 import sys
-import time
 import liblo
+import logging
 import xml.etree.ElementTree as ET
 
 import jacklib
 from jacklib.helpers import c_char_p_p_to_list
 from nsm_client_noqt import NsmThread, NsmCallback, Err
 from bases import (EventHandler, PortMode, PortType,
-                   Event, JackPort, Timer, Glob)
+                   Event, JackPort, Timer, Glob, debug_conn_str)
 import jack_callbacks
 
+_logger = logging.getLogger(__name__)
+_logger.setLevel(logging.DEBUG)
 
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -180,9 +182,27 @@ def open_file(project_path: str, session_name: str,
             if child.tag == 'connection':
                 port_from: str = child.attrib.get('from')
                 port_to: str = child.attrib.get('to')
+                nsm_client_from: str = child.attrib.get('nsm_client_from')
+                nsm_client_to: str = child.attrib.get('nsm_client_to')
+
                 if not port_from and port_to:
-                    #TODO print something
+                    _logger.warning(
+                        f"{debug_conn_str((port_from, port_to))} is incomplete.")
                     continue
+
+                # ignore connection if NSM client has been definitely removed
+                if Glob.monitor_states_done:
+                    if nsm_client_from and not nsm_client_from in brothers_dict.keys():
+                        _logger.info(
+                            f"{debug_conn_str((port_from, port_to))} is removed "
+                            f"because NSM client {nsm_client_from} has been removed")
+                        continue
+                    if nsm_client_to and not nsm_client_to in brothers_dict.keys():
+                        _logger.info(
+                            f"{debug_conn_str((port_from, port_to))} is removed "
+                            f"because NSM client {nsm_client_to} has been removed")
+                        continue
+                    
                 saved_connections.append((port_from, port_to))
         
             elif child.tag == 'graph':
@@ -248,6 +268,13 @@ def save_file():
     for sv_con in saved_connections:
         conn_el = ET.SubElement(root, 'connection')
         conn_el.attrib['from'], conn_el.attrib['to'] = sv_con
+        jack_con_from_name = sv_con[0].partition(':')[0].partition('/')[0]
+        jack_con_to_name = sv_con[1].partition(':')[0].partition('/')[0]
+        for key, value in brothers_dict.items():
+            if jack_con_from_name == value:
+                conn_el.attrib['nsm_client_from'] = key
+            if jack_con_to_name == value:
+                conn_el.attrib['nsm_client_to'] = key
     
     graph = ET.SubElement(root, 'graph')
     group_names = dict[str, ET.Element]()
@@ -255,14 +282,20 @@ def save_file():
     for port_mode in PortMode:
         if port_mode is PortMode.NULL:
             continue
-        
+
         el_name = 'in_port' if port_mode is PortMode.INPUT else 'out_port'
-        
-        for out_port in jack_ports[port_mode]:
-            gp_name, colon, port_name = out_port.name.partition(':')
+
+        for jack_port in jack_ports[port_mode]:
+            gp_name, colon, port_name = jack_port.name.partition(':')
             if group_names.get(gp_name) is None:
                 group_names[gp_name] = ET.SubElement(graph, 'group')
                 group_names[gp_name].attrib['name'] = gp_name
+
+                gp_base_name = gp_name.partition('/')[0]
+                for key, value in brothers_dict.items():
+                    if value == gp_base_name:
+                        group_names[gp_name].attrib['nsm_client'] = key
+                        break
 
             out_port_el = ET.SubElement(group_names[gp_name], el_name)
             out_port_el.attrib['name'] = port_name
@@ -279,28 +312,53 @@ def save_file():
         Glob.terminate = True
         return
 
-    # TODO !!!
-    # set_dirty_clean()
+    set_dirty_clean()
     return (Err.OK, 'Done')
 
 def monitor_client_state(client_id: str, jack_name: str, is_started: int):
-    print('moniitor', client_id, bool(is_started))
-    brothers_dict[client_id] = jack_name
-    
-    if not is_started and client_id in Glob.stopping_brothers:
-        Glob.stopping_brothers.remove(client_id)
+    if client_id:
+        brothers_dict[client_id] = jack_name
+        
+        if not is_started and client_id in Glob.stopping_brothers:
+            Glob.stopping_brothers.remove(client_id)
+    else:
+        n_clients = is_started
+        if len(brothers_dict) != n_clients:
+            _logger.warning('list of monitored clients is incomplete !')
+            return
+        
+        Glob.monitor_states_done = True
 
 def monitor_client_event(client_id: str, event: str):
-    print('zmoerff', client_id, event)
+    # TODO remove stopping_brothers key and all
+    # it was a test to see if session quit fails less
+    # if ray-jackpatch is the last client to stop. 
     if event == 'stop_request':
         if (client_id in brothers_dict
                 and brothers_dict[client_id]
                     in [c.partition('/')[0] for c in present_client_names]):        
             Glob.stopping_brothers.add(client_id)
+
     elif event in ('stopped_by_server', 'stopped_by_itself'):
-        print('remmov', client_id, event)
         if client_id in Glob.stopping_brothers:
             Glob.stopping_brothers.remove(client_id)
+
+    elif event == 'removed':
+        if client_id in brothers_dict:
+            jack_client_name = brothers_dict.pop(client_id)
+        
+        # remove all saved connections from and to its client
+        conns_to_unsave = list[tuple[str, str]]()
+            
+        for conn in saved_connections:
+            out_port, in_port = conn
+            if jack_client_name in [p.partition(':')[0].partition('/')[0]
+                                    for p in (out_port, in_port)]:
+                conns_to_unsave.append(conn)
+        
+        for conn in conns_to_unsave:
+            saved_connections.remove(conn)
+    
 
 def session_is_loaded():
     Glob.allow_disconnections = True
@@ -309,7 +367,7 @@ def session_is_loaded():
 # --- end of NSM callbacks --- 
 
 def fill_ports_and_connections():
-    ''' get all current JACK ports and connections at startup '''
+    '''get all current JACK ports and connections at startup'''
     port_name_list = c_char_p_p_to_list(
         jacklib.get_ports(jack_client, "", "", 0))
 
@@ -346,7 +404,6 @@ def fill_ports_and_connections():
                     jack_client, port_ptr):
                 connection_list.append((port_name, port_con_name))
 
-    print('presclients', present_client_names)
     
 if __name__ == '__main__':
     nsm_url = os.getenv('NSM_URL')
@@ -391,7 +448,7 @@ if __name__ == '__main__':
     nsm_server.set_callback(NsmCallback.MONITOR_CLIENT_STATE, monitor_client_state)
     nsm_server.set_callback(NsmCallback.MONITOR_CLIENT_EVENT, monitor_client_event)
     nsm_server.set_callback(NsmCallback.SESSION_IS_LOADED, session_is_loaded)
-    nsm_server.announce('JACK Connections', ':dirty:switch:', 'ray-jackpatch')
+    nsm_server.announce('JACK Connections', ':dirty:switch:monitor:', 'ray-jackpatch')
     
     #connect program interruption signals
     signal.signal(signal.SIGINT, signal_handler)
@@ -428,15 +485,6 @@ if __name__ == '__main__':
         if timer_connect_check.elapsed():
             may_make_one_connection()
 
-    # time.sleep(0.020)
-
-    # while Glob.jack_thread_running:
-    #     print('OO waiting jack')
-    #     time.sleep(0.010)
-
-    print('sllllloooooop', Glob.stopping_brothers)
     if not jack_stopped:
         jacklib.deactivate(jack_client)
-        print('titititili')
         jacklib.client_close(jack_client)
-        # jacklib.free(jack_client)

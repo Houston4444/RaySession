@@ -81,10 +81,13 @@ class Glob:
     open_done_once = False
     allow_disconnections = False
     terminate = False
-    jack_thread_running = False
     stopping_brothers = set[str]()
+    monitor_states_done = False
 
 
 def b2str(src_bytes: bytes) -> str:
     ''' decodes bytes to string '''
     return str(src_bytes, encoding="utf-8")
+
+def debug_conn_str(conn: tuple[str, str]):
+    return f"connection from '{conn[0]}' to '{conn[1]}'"
