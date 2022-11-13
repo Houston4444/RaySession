@@ -1070,7 +1070,7 @@ class OscServerThread(ClientCommunicating):
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False
 
-    @ray_method('/ray/session/add_client_template', 'is')
+    @ray_method('/ray/session/add_client_template', 'isss')
     def rayServerAddClientTemplate(self, path, args, types, src_addr):
         pass
 

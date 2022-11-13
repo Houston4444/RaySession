@@ -753,10 +753,13 @@ class MainWindow(QMainWindow):
 
         if dialog.result():
             template_name, factory = dialog.get_selected_template()
+            unique_id = dialog.get_selected_unique_id()
             self.to_daemon(
                 '/ray/session/add_client_template',
                 int(factory),
-                template_name)
+                template_name,
+                'start',
+                unique_id)
 
     def _add_executable(self):
         if self.session.server_status in (
@@ -1100,7 +1103,6 @@ class MainWindow(QMainWindow):
             self._systray.show()
 
     def _systray_activated(self):
-        print('shilili')
         wayland = bool(ray.get_window_manager() == ray.WindowManager.WAYLAND)
 
         if self.isMinimized():

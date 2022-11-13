@@ -1028,7 +1028,7 @@ class SignaledSession(OperatingSession):
                     if not client_id.replace('_', '').isalnum():
                         self.send(src_addr, '/error', path,
                                   ray.Err.CREATE_FAILED,
-                                  "client_id %s is not alphanumeric")
+                                  f"client_id {client_id} is not alphanumeric")
                         return
 
                     # Check if client_id already exists
@@ -1051,10 +1051,12 @@ class SignaledSession(OperatingSession):
             if prefix_mode == ray.PrefixMode.CUSTOM and not custom_prefix:
                 prefix_mode = ray.PrefixMode.SESSION_NAME
 
+            client_id: str
+
             if client_id:
                 if not client_id.replace('_', '').isalnum():
                     self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
-                      _translate("error", "client_id %s is not alphanumeric")
+                      _translate("error", f"client_id {client_id} is not alphanumeric")
                         % client_id)
                     return
 
@@ -1104,10 +1106,27 @@ class SignaledSession(OperatingSession):
             return
 
         factory = bool(args[0])
-        template_name = args[1]
+        template_name: str = args[1]
         auto_start = bool(len(args) <= 2 or args[2] != 'not_start')
+        unique_id: str = args[3] if len(args) > 3 else ''
 
-        self.add_client_template(src_addr, path, template_name, factory, auto_start)
+        if unique_id:
+            if not unique_id.replace('_', '').isalnum():
+                self.send(src_addr, '/error', path,
+                            ray.Err.CREATE_FAILED,
+                            f"client_id {unique_id} is not alphanumeric")
+                return
+
+            # Check if client_id already exists
+            for client in self.clients + self.trashed_clients:
+                if client.client_id == unique_id:
+                    self.send(src_addr, '/error', path,
+                        ray.Err.CREATE_FAILED,
+                        f"client_id {unique_id} is already used")
+                    return
+
+        self.add_client_template(
+            src_addr, path, template_name, factory, auto_start, unique_id)
 
     def _ray_session_add_factory_client_template(self, path, args, src_addr):
         self._ray_session_add_client_template(path, [1] + args, src_addr)

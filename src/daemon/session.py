@@ -294,14 +294,14 @@ class Session(ServerSender):
 
         return [TemplateRoots.user_clients]
 
-    def _generate_client_id_as_nsm(self)->str:
+    def _generate_client_id_as_nsm(self) -> str:
         client_id = 'n'
         for i in range(4):
             client_id += random.choice(string.ascii_uppercase)
 
         return client_id
 
-    def _save_session_file(self)->int:
+    def _save_session_file(self) -> int:
         session_file = self.path + '/raysession.xml'
         if self.is_nsm_locked() and os.getenv('NSM_URL'):
             session_file = self.path + '/raysubsession.xml'
@@ -380,10 +380,10 @@ class Session(ServerSender):
 
         file.close()
 
-    def generate_abstract_client_id(self, wanted_id:str)->str:
-        ''' generates a client_id from wanted_id
-            not regarding the existing ids in the session
-            or session directory. Useful for templates '''
+    def generate_abstract_client_id(self, wanted_id:str) -> str:
+        '''generates a client_id from wanted_id
+           not regarding the existing ids in the session
+           or session directory. Useful for templates'''
         for to_rm in ('ray-', 'non-', 'carla-'):
             if wanted_id.startswith(to_rm):
                 wanted_id = wanted_id.replace(to_rm, '', 1)
@@ -426,7 +426,7 @@ class Session(ServerSender):
             
         return wanted_id
 
-    def generate_client_id(self, wanted_id="", abstract=False)->str:
+    def generate_client_id(self, wanted_id="", abstract=False) -> str:
         self._update_forbidden_ids_set()
         wanted_id = basename(wanted_id)
 
@@ -2515,7 +2515,8 @@ for better organization.""")
         QCoreApplication.quit()
 
     def add_client_template(self, src_addr, src_path,
-                            template_name, factory=False, auto_start=True):
+                            template_name, factory=False, auto_start=True,
+                            unique_id=''):
         search_paths = self._get_search_template_dirs(factory)
         base = 'factory' if factory else 'user'
         templates_database = self.get_client_templates_database(base)
@@ -2527,13 +2528,13 @@ for better organization.""")
 
         for t in templates_database:
             if t.template_name == template_name:
-                full_name_files = []
-                template_path = "%s/%s" % (t.templates_root, template_name)
+                full_name_files = list[str]()
+                template_path = os.path.join(t.templates_root, template_name)
 
                 if t.templates_root and os.path.isdir(template_path):
                     for file in os.listdir(template_path):
                         full_name_files.append(
-                            "%s/%s" % (template_path, file))
+                            os.path.join(template_path, file))
 
                 template_client = t.template_client
                 client = Client(self)
@@ -2545,7 +2546,14 @@ for better organization.""")
                     client.template_origin = t.display_name
                 client.eat_attributes(template_client)
                 client.auto_start = auto_start
-                client.client_id = self.generate_client_id(template_client.client_id)
+
+                if unique_id:
+                    client.client_id = unique_id
+                    client.label = unique_id.replace('_', ' ')
+                    client.jack_naming = ray.JackNaming.LONG
+                else:
+                    client.client_id = self.generate_client_id(
+                        template_client.client_id)
                 
                 if not self._add_client(client):
                     self.answer(src_addr, src_path,

@@ -211,6 +211,7 @@ class AddApplicationDialog(ChildDialog):
         self.ui.widgetNonSaveable.setVisible(False)
         self.ui.toolButtonAdvanced.clicked.connect(
             self._tool_button_advanced_clicked)
+        self.ui.lineEditUniqueId.textEdited.connect(self._unique_id_edited)
 
         if is_dark_theme(self):
             self.ui.toolButtonUser.setIcon(
@@ -530,6 +531,9 @@ class AddApplicationDialog(ChildDialog):
         properties_dialog.set_for_template(item.data(TEMPLATE_NAME_DATA))
         properties_dialog.show()
 
+    def _unique_id_edited(self, text: str):
+        self.ui.lineEditUniqueId.setText(text.replace(' ', '_'))
+
     def _prevent_ok(self):
         self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
             bool(self._server_will_accept and self.has_selection))
@@ -549,10 +553,13 @@ class AddApplicationDialog(ChildDialog):
             and not self.server_copying)
         self._prevent_ok()
 
-    def get_selected_template(self)->tuple:
+    def get_selected_template(self) -> tuple:
         item: TemplateItem = self.ui.templateList.currentItem()
         if item:
             return (item.data(TEMPLATE_NAME_DATA), item.is_factory)
+
+    def get_selected_unique_id(self) -> str:
+        return self.ui.lineEditUniqueId.text()
 
     def remove_template(self, template_name, factory):
         dialog = RemoveTemplateDialog(self, template_name)

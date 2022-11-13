@@ -431,14 +431,14 @@ def are_on_same_machine(url1, url2):
 
     return False
 
-def get_net_url(port)->str:
+def get_net_url(port) -> str:
     ip = Machine192.get()
     if not ip:
         return ''
 
     return "osc.udp://%s:%i/" % (ip, port)
 
-def shell_line_to_args(string:str)->list:
+def shell_line_to_args(string:str) -> list:
     try:
         args = shlex.split(string)
     except BaseException:
@@ -446,19 +446,19 @@ def shell_line_to_args(string:str)->list:
 
     return args
 
-def types_are_all_strings(types:str)->bool:
+def types_are_all_strings(types:str) -> bool:
     for char in types:
         if char != 's':
             return False
     return True
 
-def are_they_all_strings(args:list)->bool:
+def are_they_all_strings(args:list) -> bool:
     for arg in args:
         if not isinstance(arg, str):
             return False
     return True
 
-def get_window_manager():
+def get_window_manager() -> WindowManager:
     if os.getenv('WAYLAND_DISPLAY'):
         return WindowManager.WAYLAND
 
@@ -467,7 +467,7 @@ def get_window_manager():
 
     return WindowManager.NONE
 
-def get_full_path(root, session_name):
+def get_full_path(root, session_name: str) -> str:
     spath = "%s%s%s" % (root, os.sep, session_name)
 
     if session_name.startswith(os.sep):
@@ -478,14 +478,14 @@ def get_full_path(root, session_name):
 
     return spath
 
-def protocol_to_str(protocol: int)->str:
+def protocol_to_str(protocol: int) -> str:
     if protocol == Protocol.RAY_HACK:
         return "Ray-Hack"
     if protocol == Protocol.RAY_NET:
         return "Ray-Net"
     return "NSM"
 
-def protocol_from_str(protocol_str: str)->int:
+def protocol_from_str(protocol_str: str) -> int:
     if protocol_str.lower() in ('ray_hack', 'ray-hack'):
         return Protocol.RAY_HACK
     elif protocol_str.lower() in ('ray_net', 'ray-net'):
@@ -498,7 +498,7 @@ class Machine192:
     read_done = False
     
     @staticmethod
-    def read()->str:
+    def read() -> str:
         try:
             ips = subprocess.check_output(
                 ['ip', 'route', 'get', '1']).decode()

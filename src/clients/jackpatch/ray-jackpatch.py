@@ -349,6 +349,8 @@ def monitor_client_event(client_id: str, event: str):
     elif event == 'removed':
         if client_id in brothers_dict:
             jack_client_name = brothers_dict.pop(client_id)
+        else:
+            return
         
         # remove all saved connections from and to its client
         conns_to_unsave = list[tuple[str, str]]()
@@ -361,7 +363,6 @@ def monitor_client_event(client_id: str, event: str):
         
         for conn in conns_to_unsave:
             saved_connections.remove(conn)
-    
 
 def session_is_loaded():
     Glob.allow_disconnections = True
