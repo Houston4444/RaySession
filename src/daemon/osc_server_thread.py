@@ -1236,6 +1236,10 @@ class OscServerThread(ClientCommunicating):
             self._unknown_message(path, types, src_addr)
             return False
 
+    @ray_method('/ray/client/change_id', 'ss')
+    def rayClientChangeId(self, path, args, types, src_addr):
+        pass
+
     @ray_method('/ray/client/set_description', 'ss')
     def rayClientSetDescription(self, path, args, types, src_addr):
         pass

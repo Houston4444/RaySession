@@ -1,5 +1,6 @@
 import os
 import signal
+from tkinter import dialog
 from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import QTimer, QFile
@@ -9,6 +10,7 @@ import ray
 
 from gui_tools import _translate, client_status_string, get_app_icon
 from child_dialogs import ChildDialog
+from client_prop_adv_dialog import AdvancedPropertiesDialog
 
 if TYPE_CHECKING:
     from gui_client import Client
@@ -55,6 +57,8 @@ class ClientPropertiesDialog(ChildDialog):
         self._acceptable_arguments = True
         self._current_status = ray.ClientStatus.STOPPED
 
+        self.ui.pushButtonAdvancedProperties.clicked.connect(
+            self._show_advanced_properties)
         self.ui.lineEditIcon.textEdited.connect(self._change_icon_with_text)
         self.ui.pushButtonSaveChanges.clicked.connect(self._save_changes)
 
@@ -94,6 +98,11 @@ class ClientPropertiesDialog(ChildDialog):
 
         # better for user to wait a little before close the window
         QTimer.singleShot(150, self.accept)
+
+    def _show_advanced_properties(self):
+        dialog = AdvancedPropertiesDialog(self, self.client)
+        dialog.exec()
+        self.ui.pushButtonSaveChanges.setFocus()
 
     @staticmethod
     def create(window, client: 'Client'):

@@ -14,13 +14,17 @@ when all client are listed, server sends
 where empty_str is '', number_of_clients is the number_of_clients monitored, 
 it does not count this monitor client.
 
+If a monitor client is capable of ':switch:', the same client_state list will be received at session
+change.
+
+No 'client_state' message will be received if its started state change.
 
 A monitor client can query the state of the other clients at any time by sending this message to the server
 
 /nsm/server/monitor_reset
 
 
-At each event, this monitor client will receive :
+At each client event, this monitor client will receive :
 
 /nsm/client/monitor/client_event s:client_id s:event
 
@@ -32,6 +36,8 @@ ready
 saved
 stopped_by_server
 stopped_by_itself
+switched_to:new_client_id
+id_changed_to:new_client_id
 removed
 open_error
 save_error
@@ -40,6 +46,8 @@ save_request
 stop_request
 
 the 'joined' event happens when a client is started from the outside, for example when it is started from the shell with the command `NSM_URL=server_url executable`.
+
+the 'switched_to:new_client_id' event happens when client switches. "new_client_id" is replaced with the new client id of course. The client is still running but its client_id and others properties have been changed. 
 
 in RaySession, the 'removed' event happens when a client is definitely removed from the trash.
 

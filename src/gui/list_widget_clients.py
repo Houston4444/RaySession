@@ -173,6 +173,11 @@ class ClientSlot(QFrame):
             self.client.label = dialog.get_new_label()
             self.client.send_properties_to_daemon()
 
+            if dialog.is_identifiant_renamed():
+                self.to_daemon(
+                    '/ray/client/change_id',
+                    self.client.client_id, self.client.label.replace(' ', '_'))
+
     def _set_very_short(self, yesno: bool):
         self._very_short = yesno
 

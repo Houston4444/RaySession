@@ -2,7 +2,7 @@
 from queue import Queue
 import time
 from enum import IntEnum
-from typing import Iterator
+from typing import Iterator, Optional
 
 
 class PortMode(IntEnum):
@@ -29,6 +29,11 @@ class Event(IntEnum):
     CONNECTION_ADDED = 6
     CONNECTION_REMOVED = 7
     JACK_STOPPED = 8
+
+class MonitorStates(IntEnum):
+    NEVER_DONE = 0
+    UPDATING = 1
+    DONE = 2
 
 
 class JackPort:
@@ -83,7 +88,8 @@ class Glob:
     allow_disconnections = False
     terminate = False
     stopping_brothers = set[str]()
-    monitor_states_done = False
+    monitor_states_done = MonitorStates.NEVER_DONE
+    client_changing_id: Optional[tuple[str, str]] = None
 
 
 def b2str(src_bytes: bytes) -> str:
@@ -92,3 +98,4 @@ def b2str(src_bytes: bytes) -> str:
 
 def debug_conn_str(conn: tuple[str, str]):
     return f"connection from '{conn[0]}' to '{conn[1]}'"
+

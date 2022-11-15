@@ -191,6 +191,9 @@ class Client(QObject, ray.ClientData):
         
         if jack_client_name == self.jack_client_name:
             return True
+        
+        if jack_client_name == self.jack_client_name + '-midi':
+            return True
 
         if jack_client_name.startswith(self.jack_client_name + '/'):
             return True

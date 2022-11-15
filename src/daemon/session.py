@@ -480,8 +480,9 @@ class Session(ServerSender):
         
         return True
 
-    def _re_order_clients(self, client_ids_list, src_addr=None, src_path=''):
-        client_newlist = []
+    def _re_order_clients(self, client_ids_list: list[str],
+                          src_addr=None, src_path=''):
+        client_newlist = list[Client]()
 
         for client_id in client_ids_list:
             for client in self.clients:
@@ -504,7 +505,7 @@ class Session(ServerSender):
             self.answer(src_addr, src_path, "clients reordered")
 
         self.send_gui('/ray/gui/session/sort_clients',
-                     *[c.client_id for c in self.clients])
+                      *[c.client_id for c in self.clients])
 
     def _is_path_in_a_session_dir(self, spath):
         if self.is_nsm_locked() and os.getenv('NSM_URL'):
@@ -592,8 +593,8 @@ class Session(ServerSender):
         else:
             return False
         
-    def send_initial_monitor(self, monitor_addr, monitor_is_client=True):
-        ''' send clients states to a new monitor '''
+    def send_initial_monitor(self, monitor_addr: Address, monitor_is_client=True):
+        '''send clients states to a new monitor'''
         prefix = '/nsm/client/monitor/'
         if not monitor_is_client:
             prefix = '/ray/monitor/'
@@ -601,7 +602,8 @@ class Session(ServerSender):
         n_clients = 0
 
         for client in self.clients:
-            if (client.addr is not None
+            if (monitor_is_client
+                    and client.addr is not None
                     and ray.are_same_osc_port(client.addr.url, monitor_addr.url)):
                 continue
 
@@ -624,8 +626,8 @@ class Session(ServerSender):
 
         self.send(monitor_addr, prefix + 'client_state', '', '', n_clients)
 
-    def send_monitor_event(self, event:str, client_id = ''):
-        ''' send an event message to clients capable of ":monitor:" '''
+    def send_monitor_event(self, event: str, client_id=''):
+        '''send an event message to clients capable of ":monitor:"'''
         for client in self.clients:
             if (client.client_id != client_id
                     and client.is_capable_of(':monitor:')):
@@ -2339,7 +2341,7 @@ for better organization.""")
                     if (client.switch_state == ray.SwitchState.NEEDED
                             and client.client_id == future_client.client_id
                             and client.can_switch_with(future_client)):
-                        #we found the good existing client
+                        # we found the good existing client
                         break
                 else:
                     for client in self.clients:
@@ -2352,6 +2354,8 @@ for better organization.""")
 
             if client:
                 client.switch_state = ray.SwitchState.DONE
+                self.send_monitor_event(
+                    f"switched_to:{future_client.client_id}", client.client_id)
                 client.client_id = future_client.client_id
                 client.eat_attributes(future_client)
                 has_switch = True
@@ -2374,6 +2378,22 @@ for better organization.""")
 
         self._re_order_clients(new_client_id_list)
         self.send_gui('/ray/gui/session/sort_clients', *new_client_id_list)
+        
+        # send initial monitor infos for all monitors
+        # Note that a monitor client starting here with the session
+        # will not receive theses messages, because it is not known as capable
+        # of ':monitor:' yet.
+        # However, a monitor client capable of :switch: will get theses messages.
+        # An outside monitor (saved in server.monitor_list) will get theses messages
+        # in all cases. 
+        server = self.get_server()
+        if server is not None:
+            for monitor_addr in server.monitor_list:
+                self.send_initial_monitor(monitor_addr, False)
+                
+            for client in self.clients:
+                if client.is_running() and client.is_capable_of(':monitor:'):
+                    self.send_initial_monitor(client.addr, True)
 
         self._no_future()
 
@@ -2381,7 +2401,6 @@ for better organization.""")
             self.set_server_status(ray.ServerStatus.SWITCH)
         else:
             self.set_server_status(ray.ServerStatus.LAUNCH)
-
 
         #* this part is a little tricky... the clients need some time to
         #* send their 'announce' messages before we can send them 'open'

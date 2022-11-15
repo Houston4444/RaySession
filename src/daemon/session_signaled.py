@@ -1,9 +1,7 @@
 
 import json
 import os
-import shutil
 import subprocess
-import sys
 import time
 from typing import TYPE_CHECKING
 from liblo import Address
@@ -19,6 +17,7 @@ from daemon_tools import (Terminal, RS, dirname,
                           is_pid_child_of, highlight_text)
 from session import OperatingSession
 import xdg
+from patch_rewriter import rewrite_jack_patch_files
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
@@ -1712,6 +1711,57 @@ class SignaledSession(OperatingSession):
 
         self.send(src_addr, '/reply', path, 'prefix changed')
 
+    @client_action
+    def _ray_client_change_id(self, path, args, src_addr, client: Client):
+        if client.is_running():
+            self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
+                      "impossible to change id while client is running")
+            return
+
+        new_client_id = args[0]
+        if new_client_id in [c.client_id for c in
+                             self.clients + self.trashed_clients]:
+            self.send(src_addr, '/error', path, ray.Err.BLACKLISTED,
+                      f"client id '{new_client_id}' already exists in the session")
+            return
+        
+        ex_client_id = client.client_id
+        ex_jack_name = client.get_jack_client_name()
+        client.set_status(ray.ClientStatus.REMOVED)
+
+        prefix = client.get_prefix_string()
+        links_dir = client.get_links_dir()
+        
+        client._rename_files(
+            self.path,
+            self.name, self.name,
+            prefix, prefix,
+            ex_client_id, new_client_id,
+            links_dir, links_dir)
+
+        client.client_id = new_client_id
+        new_jack_name = client.get_jack_client_name()
+
+        if new_jack_name != ex_jack_name:
+            rewrite_jack_patch_files(
+                self, ex_client_id, new_client_id,
+                ex_jack_name, new_jack_name)
+            self.canvas_saver.client_jack_name_changed(
+                ex_jack_name, new_jack_name)
+
+        client.sent_to_gui = False
+        client.send_gui_client_properties()
+        self.send_gui('/ray/gui/session/sort_clients',
+                      *[c.client_id for c in self.clients])
+
+        # we need to save session file here
+        # else, if session is aborted
+        # client won't find its files at next restart
+        self._save_session_file()
+
+        self.send_monitor_event('id_changed_to:' + new_client_id, ex_client_id)
+        self.send(src_addr, '/reply', path, 'client id changed')
+    
     def _ray_trashed_client_restore(self, path, args, src_addr):
         if not self.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,

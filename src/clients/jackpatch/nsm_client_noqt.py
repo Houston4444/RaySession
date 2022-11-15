@@ -32,7 +32,7 @@ class NsmCallback(IntEnum):
     MONITOR_CLIENT_EVENT = 7
 
 
-class NsmThread(Server):
+class NsmServer(Server):
     def __init__(self, daemon_address: Address):
         Server.__init__(self)
         self._daemon_address = daemon_address
@@ -58,9 +58,9 @@ class NsmThread(Server):
         
         err, err_text = ret
         if err is Err.OK:
-            self.send_to_daemon('/reply', path, 'Ready')
+            self._send_to_daemon('/reply', path, 'Ready')
         else:
-            self.send_to_daemon('/error', path, err, err_text)
+            self._send_to_daemon('/error', path, err, err_text)
 
     @make_method('/nsm/client/save', '')
     def _nsm_client_save(self, path, args):
@@ -70,9 +70,9 @@ class NsmThread(Server):
         
         err, err_text = ret
         if err is Err.OK:
-            self.send_to_daemon('/reply', path, 'Saved')
+            self._send_to_daemon('/reply', path, 'Saved')
         else:
-            self.send_to_daemon('/error', path, err_text)
+            self._send_to_daemon('/error', path, err_text)
 
     @make_method('/nsm/client/session_is_loaded', '')
     def _nsm_client_session_is_loaded(self, path, args):
@@ -104,14 +104,14 @@ class NsmThread(Server):
     def get_server_capabilities(self):
         return self._server_capabilities
 
-    def send_to_daemon(self, *args):
+    def _send_to_daemon(self, *args):
         self.send(self._daemon_address, *args)
 
     def announce(self, client_name: str, capabilities: str, executable_path: str):
         MAJOR, MINOR = 1, 0
         pid = os.getpid()
 
-        self.send_to_daemon(
+        self._send_to_daemon(
             '/nsm/server/announce',
             client_name,
             capabilities,
@@ -122,12 +122,16 @@ class NsmThread(Server):
 
     def send_dirty_state(self, dirty: bool):
         if dirty:
-            self.send_to_daemon('/nsm/client/is_dirty')
+            self._send_to_daemon('/nsm/client/is_dirty')
         else:
-            self.send_to_daemon('/nsm/client/is_clean')
+            self._send_to_daemon('/nsm/client/is_clean')
 
     def send_gui_state(self, state: bool):
         if state:
-            self.send_to_daemon('/nsm/client/gui_is_shown')
+            self._send_to_daemon('/nsm/client/gui_is_shown')
         else:
-            self.send_to_daemon('/nsm/client/gui_is_hidden')
+            self._send_to_daemon('/nsm/client/gui_is_hidden')
+            
+    def send_monitor_reset(self):
+        if ':monitor:' in self._server_capabilities:
+            self._send_to_daemon('/nsm/server/monitor_reset')

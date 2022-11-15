@@ -26,13 +26,24 @@ import xml.etree.ElementTree as ET
 
 import jacklib
 from jacklib.helpers import c_char_p_p_to_list
-from nsm_client_noqt import NsmThread, NsmCallback, Err
-from bases import (EventHandler, PortMode, PortType,
+from nsm_client_noqt import NsmServer, NsmCallback, Err
+from bases import (EventHandler, MonitorStates, PortMode, PortType,
                    Event, JackPort, Timer, Glob, debug_conn_str)
+from jack_renaming_tools import (
+    port_belongs_to_client, port_name_client_replaced)
 import jack_callbacks
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.DEBUG)
+
+present_client_names = set[str]()
+brothers_dict = dict[str, str]()
+connection_list = list[tuple[str, str]]()
+saved_connections = list[tuple[str, str]]()
+to_disc_connections = list[tuple[str, str]]()
+jack_ports = dict[PortMode, list[JackPort]]()
+for port_mode in PortMode:
+    jack_ports[port_mode] = list[JackPort]()
 
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -194,7 +205,7 @@ def open_file(project_path: str, session_name: str,
                     continue
 
                 # ignore connection if NSM client has been definitely removed
-                if Glob.monitor_states_done:
+                if Glob.monitor_states_done is MonitorStates.DONE:
                     if nsm_client_from and not nsm_client_from in brothers_dict.keys():
                         _logger.info(
                             f"{debug_conn_str((port_from, port_to))} is removed "
@@ -319,18 +330,50 @@ def save_file():
     return (Err.OK, 'Done')
 
 def monitor_client_state(client_id: str, jack_name: str, is_started: int):
+    if Glob.monitor_states_done is not MonitorStates.UPDATING:
+        brothers_dict.clear()
+
+    Glob.monitor_states_done = MonitorStates.UPDATING
+    
     if client_id:
         brothers_dict[client_id] = jack_name
         
-        if not is_started and client_id in Glob.stopping_brothers:
-            Glob.stopping_brothers.remove(client_id)
+        if (Glob.client_changing_id is not None
+                and Glob.client_changing_id[1] == client_id):
+            # we are here only in the case a client id was just changed
+            # we modify the saved connections in consequence.
+            # Note that this client can't be started.
+            ex_jack_name = Glob.client_changing_id[0]
+            print('un ID à changéé!!!', Glob.client_changing_id)
+            rm_conns = list[tuple[str, str]]()
+            new_conns = list[tuple[str, str]]()
+
+            for conn in saved_connections:
+                out_port, in_port = conn
+                if (port_belongs_to_client(out_port, ex_jack_name)
+                        or port_belongs_to_client(in_port, ex_jack_name)):
+                    rm_conns.append(conn)
+                    new_conns.append(
+                        (port_name_client_replaced(
+                            out_port, ex_jack_name, jack_name),
+                         port_name_client_replaced(
+                             in_port, ex_jack_name, jack_name)))
+
+            for conn in rm_conns:
+                saved_connections.remove(conn)
+            saved_connections.extend(new_conns)
+            Glob.client_changing_id = None
+        
     else:
         n_clients = is_started
         if len(brothers_dict) != n_clients:
             _logger.warning('list of monitored clients is incomplete !')
+            ## following line would be the most obvious thing to do,
+            ## but in case of problem, we could have an infinite messages loop 
+            # nsm_server.send_monitor_reset()
             return
-        
-        Glob.monitor_states_done = True
+
+        Glob.monitor_states_done = MonitorStates.DONE
 
 def monitor_client_event(client_id: str, event: str):
     # TODO remove stopping_brothers key and all
@@ -357,12 +400,20 @@ def monitor_client_event(client_id: str, event: str):
             
         for conn in saved_connections:
             out_port, in_port = conn
-            if jack_client_name in [p.partition(':')[0].partition('/')[0]
-                                    for p in (out_port, in_port)]:
+            if (port_belongs_to_client(out_port, jack_client_name)
+                    or port_belongs_to_client(in_port, jack_client_name)):
+            # if jack_client_name in [p.partition(':')[0].partition('/')[0]
+            #                         for p in (out_port, in_port)]:
                 conns_to_unsave.append(conn)
         
         for conn in conns_to_unsave:
             saved_connections.remove(conn)
+
+    elif event.startswith('id_changed_to:'):
+        if client_id in brothers_dict.keys():
+            Glob.client_changing_id = (
+                brothers_dict[client_id], event.partition(':')[2])
+        nsm_server.send_monitor_reset()
 
 def session_is_loaded():
     Glob.allow_disconnections = True
@@ -433,20 +484,12 @@ if __name__ == '__main__':
     timer_dirty_check = Timer(0.300)
     timer_connect_check = Timer(0.200)
     
-    present_client_names = set[str]()
-    brothers_dict = dict[str, str]()
     
-    connection_list = list[tuple[str, str]]()
-    saved_connections = list[tuple[str, str]]()
-    to_disc_connections = list[tuple[str, str]]()
-    jack_ports = dict[PortMode, list[JackPort]]()
-    for port_mode in PortMode:
-        jack_ports[port_mode] = list[JackPort]()
 
     jack_callbacks.set_callbacks(jack_client)
     jacklib.activate(jack_client)
 
-    nsm_server = NsmThread(daemon_address)
+    nsm_server = NsmServer(daemon_address)
     nsm_server.set_callback(NsmCallback.OPEN, open_file)
     nsm_server.set_callback(NsmCallback.SAVE, save_file)
     nsm_server.set_callback(NsmCallback.MONITOR_CLIENT_STATE, monitor_client_state)
