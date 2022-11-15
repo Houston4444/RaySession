@@ -4,6 +4,7 @@ from tkinter import dialog
 from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import QTimer, QFile
+from PyQt5.QtGui import QShowEvent
 from PyQt5.QtWidgets import QFileDialog, QFrame
 
 import ray
@@ -63,6 +64,8 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.pushButtonSaveChanges.clicked.connect(self._save_changes)
 
         self.ui.tabWidget.setCurrentIndex(0)
+        
+        self._advanced_dialog = AdvancedPropertiesDialog(self.parentWidget(), client)
 
     def _change_icon_with_text(self, text: str):
         icon = get_app_icon(text, self)
@@ -100,12 +103,10 @@ class ClientPropertiesDialog(ChildDialog):
         QTimer.singleShot(150, self.accept)
 
     def _show_advanced_properties(self):
-        dialog = AdvancedPropertiesDialog(self, self.client)
-        dialog.exec()
-        self.ui.pushButtonSaveChanges.setFocus()
+        self._advanced_dialog.show()
 
     @staticmethod
-    def create(window, client: 'Client'):
+    def create(window, client: 'Client') -> 'ClientPropertiesDialog':
         if client.protocol == ray.Protocol.NSM:
             return NsmClientPropertiesDialog(window, client)
         if client.protocol == ray.Protocol.RAY_HACK:
@@ -146,6 +147,9 @@ class ClientPropertiesDialog(ChildDialog):
 
         self._change_icon_with_text(self.client.icon)
 
+    def showEvent(self, a0: QShowEvent) -> None:
+        self.ui.pushButtonSaveChanges.setFocus()
+        super().showEvent(a0)
 
 class NsmClientPropertiesDialog(ClientPropertiesDialog):
     def __init__(self, parent, client):

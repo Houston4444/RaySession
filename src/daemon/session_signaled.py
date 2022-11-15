@@ -1712,6 +1712,77 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path, 'prefix changed')
 
     @client_action
+    def _ray_client_change_advanced_properties(self, path, args, src_addr, client: Client):
+        if client.is_running():
+            self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
+                      "impossible to change id while client is running")
+            return
+
+        new_client_id: str
+        prefix_mode: int
+        custom_prefix: str
+        jack_naming: int
+
+        new_client_id, prefix_mode, custom_prefix, jack_naming = args
+
+        if new_client_id != client.client_id:
+            if new_client_id in [c.client_id for c in
+                                self.clients + self.trashed_clients]:
+                self.send(src_addr, '/error', path, ray.Err.BLACKLISTED,
+                        f"client id '{new_client_id}' already exists in the session")
+                return
+
+        if prefix_mode == ray.PrefixMode.CUSTOM and not custom_prefix:
+            self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                      "Custom prefix missing is missing !")
+            return
+
+        tmp_client = Client(self)
+        tmp_client.eat_attributes(client)
+        tmp_client.client_id = new_client_id
+        tmp_client.prefix_mode = prefix_mode
+        tmp_client.custom_prefix = custom_prefix
+        tmp_client.jack_naming = jack_naming
+        
+        client.set_status(ray.ClientStatus.REMOVED)
+        
+        client._rename_files(
+            self.path,
+            self.name, self.name,
+            client.get_prefix_string(), tmp_client.get_prefix_string(),
+            client.client_id, tmp_client.client_id,
+            client.get_links_dir(), tmp_client.get_links_dir())
+
+        ex_jack_name = client.get_jack_client_name()
+        ex_client_id = client.client_id
+        new_jack_name = client.get_jack_client_name()
+
+        client.client_id = new_client_id
+        client.prefix_mode = prefix_mode
+        client.custom_prefix = custom_prefix
+        client.jack_naming = jack_naming
+
+        if new_jack_name != ex_jack_name:
+            rewrite_jack_patch_files(
+                self, ex_client_id, new_client_id,
+                ex_jack_name, new_jack_name)
+            self.canvas_saver.client_jack_name_changed(
+                ex_jack_name, new_jack_name)
+
+        client.sent_to_gui = False
+        client.send_gui_client_properties()
+        self.send_gui('/ray/gui/session/sort_clients',
+                      *[c.client_id for c in self.clients])
+
+        # we need to save session file here
+        # else, if session is aborted
+        # client won't find its files at next restart
+        self._save_session_file()
+
+        self.send_monitor_event('id_changed_to:' + new_client_id, ex_client_id)
+        self.send(src_addr, '/reply', path, 'client id changed')
+
+    @client_action
     def _ray_client_change_id(self, path, args, src_addr, client: Client):
         if client.is_running():
             self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
