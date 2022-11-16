@@ -1233,6 +1233,14 @@ class MainWindow(QMainWindow):
             frame_style_sheet += "background-color: rgba(127, 127, 127, 35)}"
 
         self.ui.frameCurrentSession.setStyleSheet(frame_style_sheet)
+        self.ui.listWidget.currentItemChanged.connect(self._list_widget_item_changed)
+
+    def _list_widget_item_changed(self, current: list_widget_clients.ClientItem,
+                                  previous):
+        if current is None:
+            return
+        self.session.patchbay_manager.select_client_box(
+            current.widget.client.jack_client_name)
 
     def set_daemon_options(self, options):
         self.ui.actionBookmarkSessionFolder.setChecked(

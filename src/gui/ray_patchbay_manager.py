@@ -8,12 +8,12 @@ import sys
 from PyQt5.QtCore import QLocale, QUrl
 from PyQt5.QtGui import QDesktopServices
 
-
 import ray
 import xdg
 from gui_server_thread import GuiServerThread
 from gui_tools import RS, get_code_root, is_dark_theme, RayIcon
 
+from jack_renaming_tools import group_belongs_to_client
 from patchbay.base_elements import (Group, GroupPos, PortgroupMem,
                                     PortMode, BoxLayoutMode, PortType, ToolDisplayed,
                                     PortTypesViewFlag)
@@ -22,7 +22,8 @@ from patchbay import (
     Callbacker,
     PatchbayToolsWidget,
     CanvasOptionsDialog,
-    CanvasMenu
+    CanvasMenu,
+    patchcanvas
 )
 
 if TYPE_CHECKING:
@@ -154,6 +155,9 @@ class RayPatchbayManager(PatchbayManager):
         super().__init__(RS.settings)
         self.session = session
         self.set_tools_widget(PatchbayToolsWidget())
+        
+        self._last_selected_client_name = ''
+        self._last_selected_box_n = 1
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
@@ -347,7 +351,7 @@ class RayPatchbayManager(PatchbayManager):
                 if client.has_gui:
                     group.set_optional_gui_state(client.gui_state)
                 break
-    
+
     def transport_play_pause(self, play: bool):
         self.send_to_patchbay_daemon('/ray/patchbay/transport_play', int(play))
     
@@ -384,6 +388,50 @@ class RayPatchbayManager(PatchbayManager):
 
         #### added functions ####
     
+    def select_client_box(self, jack_client_name: str, previous=False):
+        if not jack_client_name:
+            self._last_selected_client_name = ''
+            self._last_selected_box_n = 0
+            patchcanvas.canvas.scene.clearSelection()
+            return
+        
+        box_n = 0
+        if jack_client_name == self._last_selected_client_name:            
+            n_max = 0
+            for group in self.groups:
+                if group_belongs_to_client(group.name, jack_client_name):
+                    n_max += group.get_number_of_boxes()
+            
+            if previous:
+                if self._last_selected_box_n == 0:
+                    self._last_selected_box_n = n_max -1
+                else:
+                    self._last_selected_box_n -= 1
+            else:
+                self._last_selected_box_n += 1
+
+            box_n = self._last_selected_box_n % n_max
+            
+        n = 0
+        box_found = False
+        for group in self.groups:
+            if group_belongs_to_client(group.name, jack_client_name):
+                if group.get_number_of_boxes() + n <= box_n:
+                    n += group.get_number_of_boxes()
+                    continue
+                
+                group.select_filtered_box(1 + box_n -n)
+                box_found = True
+                break
+        
+        if box_found:
+            self._last_selected_client_name = jack_client_name
+            self._last_selected_box_n = box_n
+        else:
+            patchcanvas.canvas.scene.clearSelection()
+            self._last_selected_client_name = ''
+            self._last_selected_box_n = 0
+
     def update_group_position(self, *args):
         # arguments are these ones delivered from ray.GroupPosition.spread()
         # Not define them allows easier code modifications.

@@ -1,8 +1,10 @@
 
 from typing import TYPE_CHECKING
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QBoxLayout
-from PyQt5.QtGui import QIcon, QPixmap, QFontMetrics, QContextMenuEvent
-from PyQt5.QtCore import pyqtSlot, QSize
+from PyQt5.QtWidgets import (QListWidget, QListWidgetItem,
+                             QFrame, QMenu, QBoxLayout)
+from PyQt5.QtGui import (QIcon, QPixmap, QFontMetrics, QContextMenuEvent,
+                         QMouseEvent, QKeyEvent)
+from PyQt5.QtCore import pyqtSlot, QSize, Qt, pyqtSignal
 
 import ray
 import child_dialogs
@@ -20,6 +22,8 @@ import ui.client_slot
 
 
 class ClientSlot(QFrame):
+    clicked = pyqtSignal(str)
+    
     def __init__(self, list_widget: 'ListWidgetClients',
                  list_widget_item: 'ClientItem', client: 'Client'):
         QFrame.__init__(self)
@@ -465,6 +469,15 @@ class ClientSlot(QFrame):
     def contextMenuEvent(self, event: QContextMenuEvent):
         act_selected = self._menu.exec(self.mapToGlobal(event.pos()))
         event.accept()
+        
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if (event.button() == Qt.LeftButton
+                and self.client.status != ray.ClientStatus.STOPPED
+                and self.client.jack_client_name
+                and self._list_widget_item.isSelected()):
+            self.client.session.patchbay_manager.select_client_box(
+                self.client.jack_client_name)
+        super().mousePressEvent(event)
 
 
 class ClientItem(QListWidgetItem):
@@ -537,6 +550,9 @@ class ListWidgetClients(QListWidget):
             widget = item.widget
             widget.patchbay_is_shown(yesno)
 
+    def currentItem(self) -> ClientItem:
+        return super().currentItem()
+
     def dropEvent(self, event):
         QListWidget.dropEvent(self, event)
 
@@ -595,3 +611,17 @@ class ListWidgetClients(QListWidget):
             widget: ClientSlot = self.itemWidget(item)
             if widget is not None:
                 widget.update_layout()
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        super().keyPressEvent(event)
+        
+        # parse patchbay boxes of the selected client 
+        if event.key() in (Qt.Key_Left, Qt.Key_Right):
+            client = self.currentItem().widget.client
+            if (client.status != ray.ClientStatus.STOPPED
+                    and client.jack_client_name
+                    and self.currentItem().isSelected()
+                    and self.session is not None):
+                self.session.patchbay_manager.select_client_box(
+                    client.jack_client_name,
+                    previous=bool(event.key() == Qt.Key_Left))
