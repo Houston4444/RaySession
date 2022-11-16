@@ -343,11 +343,11 @@ class MainWindow(QMainWindow):
         self.ui.actionSessionNotes.setIcon(RayIcon('notes', dark))
         self.ui.toolButtonNotes.setIcon(RayIcon('notes', dark))
         self.ui.actionDesktopsMemory.setIcon(RayIcon('view-list-icons', dark))
-
         self.ui.toolButtonSessionMenu.setIcon(RayIcon('application-menu', dark))
-
         self.ui.listWidget.set_session(self.session)
-        
+        self.ui.listWidget.currentItemChanged.connect(
+            self._list_widget_item_changed)
+
         # concerns patchbay filters bar (activable with Ctrl+F)
         self.ui.framePatchbayFilters.set_patchbay_manager(
             self.session.patchbay_manager)
@@ -1202,6 +1202,8 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.setObjectName("listWidget")
         self.ui.listWidget.set_session(self.session)
         self.ui.verticalLayout.addWidget(self.ui.listWidget)
+        self.ui.listWidget.currentItemChanged.connect(
+            self._list_widget_item_changed)
 
     def set_nsm_locked(self, nsm_locked: bool):
         self.ui.actionNewSession.setEnabled(not nsm_locked)
@@ -1233,12 +1235,12 @@ class MainWindow(QMainWindow):
             frame_style_sheet += "background-color: rgba(127, 127, 127, 35)}"
 
         self.ui.frameCurrentSession.setStyleSheet(frame_style_sheet)
-        self.ui.listWidget.currentItemChanged.connect(self._list_widget_item_changed)
 
     def _list_widget_item_changed(self, current: list_widget_clients.ClientItem,
                                   previous):
         if current is None:
             return
+
         self.session.patchbay_manager.select_client_box(
             current.widget.client.jack_client_name)
 

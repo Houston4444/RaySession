@@ -148,6 +148,20 @@ class RayPatchbayCallbacker(Callbacker):
                     '/ray/client/%s_optional_gui' % show,
                     client.client_id)
                 break
+            
+    def _group_selected(self, group_id: int, splitted_mode: PortMode):
+        # select client widget matching with the selected box
+        for group in self.mng.groups:
+            if group.group_id == group_id:
+                for client in self.mng.session.client_list:
+                    if group_belongs_to_client(
+                            group.name, client.jack_client_name):
+                        item = client.widget._list_widget_item
+                        item.setSelected(True)
+                        client.widget._list_widget.scrollToItem(item)
+                        break
+                break
+                
 
 
 class RayPatchbayManager(PatchbayManager):    
@@ -389,6 +403,7 @@ class RayPatchbayManager(PatchbayManager):
         #### added functions ####
     
     def select_client_box(self, jack_client_name: str, previous=False):
+        print('azerlf', jack_client_name, self._last_selected_client_name, self._last_selected_box_n)
         if not jack_client_name:
             self._last_selected_client_name = ''
             self._last_selected_box_n = 0
@@ -425,6 +440,7 @@ class RayPatchbayManager(PatchbayManager):
                 break
         
         if box_found:
+            print('box found')
             self._last_selected_client_name = jack_client_name
             self._last_selected_box_n = box_n
         else:
