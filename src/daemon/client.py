@@ -413,9 +413,11 @@ class Client(ServerSender, ray.ClientData):
                         break
 
     def _rename_files(
-            self, spath, old_session_name, new_session_name,
-            old_prefix, new_prefix, old_client_id, new_client_id,
-            old_client_links_dir, new_client_links_dir):
+            self, spath: str,
+            old_session_name: str, new_session_name: str,
+            old_prefix: str, new_prefix: str,
+            old_client_id: str, new_client_id: str,
+            old_client_links_dir: str, new_client_links_dir: str):
         # rename client script dir
         scripts_dir = "%s/%s.%s" % (spath, ray.SCRIPTS_DIR, old_client_id)
         if os.access(scripts_dir, os.W_OK) and old_client_id != new_client_id:
@@ -2088,7 +2090,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.custom_prefix = custom_prefix
         self.send_gui_client_properties()
 
-    def adjust_files_after_copy(self, new_session_full_name,
+    def adjust_files_after_copy(self, new_session_full_name: str,
                                 template_save=ray.Template.NONE):
         spath = self.session.path
         old_session_name = self.session.name
@@ -2143,17 +2145,12 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             old_client_id = xclient_idx
             old_client_links_dir = x_client_links_dirx
 
-        old_prefix = old_session_name
-        new_prefix = new_session_name
-
-        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
-            old_prefix = new_prefix = self.name
-        elif self.prefix_mode == ray.PrefixMode.CUSTOM:
-            old_prefix = new_prefix = self.custom_prefix
+        prefix = self.get_prefix_string()
 
         self._rename_files(
-            spath, old_session_name, new_session_name,
-            old_prefix, new_prefix,
+            spath,
+            old_session_name, new_session_name,
+            prefix, prefix,
             old_client_id, new_client_id,
             old_client_links_dir, new_client_links_dir)
 

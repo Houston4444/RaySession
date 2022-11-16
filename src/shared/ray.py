@@ -630,10 +630,10 @@ class ClientData:
     def update_secure(self, *args):
         self.update(*args, secure=True)
 
-    def spread(self)->tuple:
+    def spread(self) -> tuple:
         return ClientData.spread_client(self)
     
-    def prettier_name(self)->str:
+    def prettier_name(self) -> str:
         if self.label:
             return self.label
         if (self.protocol != Protocol.RAY_HACK
