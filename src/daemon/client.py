@@ -1,3 +1,4 @@
+import logging
 import os
 import shlex
 import shutil
@@ -24,6 +25,8 @@ from scripter import ClientScripter
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from session_signaled import SignaledSession
+
+_logger = logging.getLogger(__name__)
 
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
@@ -426,7 +429,7 @@ class Client(ServerSender, ray.ClientData):
 
         project_path = "%s/%s.%s" % (spath, old_prefix, old_client_id)
 
-        files_to_rename = []
+        files_to_rename = list[tuple[str, str]]()
         do_rename = True
 
         if self.is_ray_hack():
@@ -437,20 +440,20 @@ class Client(ServerSender, ray.ClientData):
                     os.environ['RAY_SESSION_NAME'] = old_session_name
                     os.environ['RAY_CLIENT_ID'] = old_client_id
                     pre_config_file = os.path.expandvars(
-                                                    self.ray_hack.config_file)
+                        self.ray_hack.config_file)
 
                     os.environ['RAY_SESSION_NAME'] = new_session_name
                     os.environ['RAY_CLIENT_ID'] = new_client_id
                     post_config_file = os.path.expandvars(
-                                                    self.ray_hack.config_file)
+                        self.ray_hack.config_file)
 
                     os.unsetenv('RAY_SESSION_NAME')
                     os.unsetenv('RAY_CLIENT_ID')
 
-                    full_pre_config_file = "%s/%s" % (project_path,
-                                                 pre_config_file)
-                    full_post_config_file = "%s/%s" % (project_path,
-                                                 post_config_file)
+                    full_pre_config_file = "%s/%s" % (
+                        project_path, pre_config_file)
+                    full_post_config_file = "%s/%s" % (
+                        project_path, post_config_file)
 
                     if os.path.exists(full_pre_config_file):
                         files_to_rename.append((full_pre_config_file,
@@ -473,7 +476,6 @@ class Client(ServerSender, ray.ClientData):
                     if os.path.exists(next_path):
                         do_rename = False
                         break
-
                     files_to_rename.append(("%s/%s" % (spath, file_path),
                                             next_path))
 
@@ -685,6 +687,7 @@ class Client(ServerSender, ray.ClientData):
                 False
 
         for now_path, next_path in files_to_rename:
+            _logger.warning(f'renaming file "{now_path}" to "{next_path}"')
             os.rename(now_path, next_path)
 
     def _save_as_template_substep1(self, template_name):
@@ -2092,7 +2095,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
     def adjust_files_after_copy(self, new_session_full_name: str,
                                 template_save=ray.Template.NONE):
-        spath = self.session.path
+        spath = Path(self.session.path)
         old_session_name = self.session.name
         new_session_name = basename(new_session_full_name)
         new_client_id = self.client_id
@@ -2100,57 +2103,63 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         new_client_links_dir = self.get_links_dir()
         old_client_links_dir = new_client_links_dir
 
-        xsessionx = "XXX_SESSION_NAME_XXX"
-        xclient_idx = "XXX_CLIENT_ID_XXX"
-        x_client_links_dirx = "XXX_CLIENT_LINKS_DIR_XXX" # used for Carla links dir
+        X_SESSION_X = "XXX_SESSION_NAME_XXX"
+        X_CLIENT_ID_X = "XXX_CLIENT_ID_XXX"
+        X_CLIENT_LINKS_DIR_X = "XXX_CLIENT_LINKS_DIR_XXX" # used for Carla links dir
 
         if template_save == ray.Template.NONE:
             if self.prefix_mode != ray.PrefixMode.SESSION_NAME:
                 return
 
-            spath = self.session.get_full_path(new_session_full_name)
+            spath = Path(self.session.get_full_path(new_session_full_name))
 
         elif template_save == ray.Template.RENAME:
-            spath = self.session.path
+            # spath = self.session.path
+            pass
 
         elif template_save == ray.Template.SESSION_SAVE:
-            spath = ray.get_full_path(TemplateRoots.user_sessions,
-                                      new_session_full_name)
-            new_session_name = xsessionx
+            spath = Path(new_session_full_name)
+            if not spath.is_absolute():
+                spath = Path(TemplateRoots.user_sessions) / new_session_full_name
+            new_session_name = X_SESSION_X
 
         elif template_save == ray.Template.SESSION_SAVE_NET:
-            spath = "%s/%s/%s" % (self.session.root,
-                                  TemplateRoots.net_session_name,
-                                  new_session_full_name)
-            new_session_name = xsessionx
+            spath = (Path(self.session.root)
+                     / TemplateRoots.net_session_name
+                     / new_session_full_name)
+            new_session_name = X_SESSION_X
 
         elif template_save == ray.Template.SESSION_LOAD:
-            spath = self.session.get_full_path(new_session_full_name)
-            old_session_name = xsessionx
+            spath = Path(self.session.get_full_path(new_session_full_name))
+            old_session_name = X_SESSION_X
 
         elif template_save == ray.Template.SESSION_LOAD_NET:
-            spath = self.session.get_full_path(new_session_full_name)
-            old_session_name = xsessionx
+            spath = Path(self.session.get_full_path(new_session_full_name))
+            old_session_name = X_SESSION_X
 
         elif template_save == ray.Template.CLIENT_SAVE:
-            spath = "%s/%s" % (TemplateRoots.user_clients,
-                               new_session_full_name)
-            new_session_name = xsessionx
-            new_client_id = xclient_idx
-            new_client_links_dir = x_client_links_dirx
+            spath = Path(TemplateRoots.user_clients) / new_session_full_name
+            new_session_name = X_SESSION_X
+            new_client_id = X_CLIENT_ID_X
+            new_client_links_dir = X_CLIENT_LINKS_DIR_X
 
         elif template_save == ray.Template.CLIENT_LOAD:
-            spath = self.session.path
-            old_session_name = xsessionx
-            old_client_id = xclient_idx
-            old_client_links_dir = x_client_links_dirx
+            spath = Path(self.session.path)
+            old_session_name = X_SESSION_X
+            old_client_id = X_CLIENT_ID_X
+            old_client_links_dir = X_CLIENT_LINKS_DIR_X
 
-        prefix = self.get_prefix_string()
+        old_prefix = old_session_name
+        new_prefix = new_session_name
+        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+            old_prefix = new_prefix = self.name
+        elif self.prefix_mode == ray.PrefixMode.CUSTOM:
+            old_prefix = new_prefix = self.custom_prefix
 
         self._rename_files(
-            spath,
+            str(spath),
             old_session_name, new_session_name,
-            prefix, prefix,
+            old_prefix, new_prefix,
             old_client_id, new_client_id,
             old_client_links_dir, new_client_links_dir)
 
