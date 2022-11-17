@@ -1,6 +1,7 @@
 
 import json
 import os
+from pathlib import Path
 import subprocess
 import time
 from typing import TYPE_CHECKING
@@ -1747,7 +1748,7 @@ class SignaledSession(OperatingSession):
         client.set_status(ray.ClientStatus.REMOVED)
         
         client._rename_files(
-            self.path,
+            Path(self.path),
             self.name, self.name,
             client.get_prefix_string(), tmp_client.get_prefix_string(),
             client.client_id, tmp_client.client_id,
@@ -1802,9 +1803,9 @@ class SignaledSession(OperatingSession):
 
         prefix = client.get_prefix_string()
         links_dir = client.get_links_dir()
-        
+
         client._rename_files(
-            self.path,
+            Path(self.path),
             self.name, self.name,
             prefix, prefix,
             ex_client_id, new_client_id,
