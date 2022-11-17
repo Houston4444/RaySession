@@ -1,7 +1,7 @@
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 import os
 import sys
 
@@ -547,34 +547,31 @@ class RayPatchbayManager(PatchbayManager):
 
         for key in patchbay_data.keys():
             if key == 'ports':
+                p: dict[str, Any]
                 for p in patchbay_data[key]:
-                    if TYPE_CHECKING and not isinstance(p, dict):
-                        continue
                     self.add_port(p.get('name'), p.get('type'),
                                   p.get('flags'), p.get('uuid'))
 
             elif key == 'connections':
+                c: dict[str, Any]
                 for c in patchbay_data[key]:
-                    if TYPE_CHECKING and not isinstance(c, dict):
-                        continue
                     self.add_connection(c.get('port_out_name'),
                                         c.get('port_in_name'))
 
         for key in patchbay_data.keys():
             if key == 'clients':
+                cnu: dict[str, Any]
                 for cnu in patchbay_data[key]:
-                    if TYPE_CHECKING and not isinstance(cnu, dict):
-                        continue
                     self.set_group_uuid_from_name(cnu.get('name'), cnu.get('uuid'))
                 break
 
         for key in patchbay_data.keys():
             if key == 'metadatas':
+                m: dict[str, Any]
                 for m in patchbay_data[key]:
-                    if TYPE_CHECKING and not isinstance(m, dict):
-                        continue
                     self.metadata_update(
                         m.get('uuid'), m.get('key'), m.get('value'))
+                break
 
         for group in self.groups:
             group.sort_ports_in_canvas()
