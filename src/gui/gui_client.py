@@ -1,7 +1,8 @@
 import time
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtWidgets import QAction
 
 import ray
 from gui_server_thread import GuiServerThread
@@ -9,6 +10,7 @@ from client_properties_dialog import ClientPropertiesDialog
 
 if TYPE_CHECKING:
     from gui_session import SignaledSession
+
 
 class Client(QObject, ray.ClientData):
     status_changed = pyqtSignal(int)
@@ -111,8 +113,8 @@ class Client(QObject, ray.ClientData):
             return
 
         server.to_daemon('/ray/client/update_ray_hack_properties',
-                        self.client_id,
-                        *self.ray_hack.spread())
+                         self.client_id,
+                         *self.ray_hack.spread())
 
     def send_ray_net(self):
         if self.protocol != ray.Protocol.RAY_NET:
@@ -123,8 +125,8 @@ class Client(QObject, ray.ClientData):
             return
 
         server.to_daemon('/ray/client/update_ray_net_properties',
-                        self.client_id,
-                        *self.ray_net.spread())
+                         self.client_id,
+                         *self.ray_net.spread())
 
     def show_properties_dialog(self, second_tab=False):
         if self._properties_dialog is None:
@@ -168,7 +170,7 @@ class Client(QObject, ray.ClientData):
         return "%s/%s.%s" % (self.session.path, prefix, self.client_id)
 
     # method not used yet
-    def get_icon_search_path(self)->list:
+    def get_icon_search_path(self) -> list[str]:
         if not self.session.daemon_manager.is_local:
             return []
 
@@ -184,38 +186,11 @@ class Client(QObject, ray.ClientData):
             search_list.append("%s/%s/%s" % (project_path,
                                              main_icon_path, path))
         return search_list
-    
-    def can_be_own_jack_client(self, jack_client_name:str)->bool:
-        if self.status in (ray.ClientStatus.STOPPED, ray.ClientStatus.PRECOPY):
-            return False
-        
-        if jack_client_name == self.jack_client_name:
-            return True
-        
-        if jack_client_name == self.jack_client_name + '-midi':
-            return True
-
-        if jack_client_name.startswith(self.jack_client_name + '/'):
-            return True
-
-        if (jack_client_name.startswith(self.jack_client_name + ' (')
-                and ')' in jack_client_name):
-            return True
-
-        # Carla often puts a .0 at end of client name if it doesn't find
-        # any '.' in jack_client_name
-        jack_client_name = jack_client_name.partition('/')[0]
-
-        if (not self.jack_client_name.endswith('.' + self.client_id)
-                and jack_client_name == self.jack_client_name + '.0'):
-            return True
-
-        return False
 
 
 class TrashedClient(ray.ClientData):
     def __init__(self):
-        self.menu_action = None
+        self.menu_action: Optional[QAction] = None
 
-    def set_menu_action(self, menu_action):
+    def set_menu_action(self, menu_action: QAction):
         self.menu_action = menu_action

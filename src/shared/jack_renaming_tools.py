@@ -15,6 +15,14 @@ def group_belongs_to_client(group_name: str, jack_client_name: str):
     if group_name == jack_client_name + '-midi':
         # Hydrogen specific
         return True
+    
+    if (jack_client_name.startswith('Carla')
+            and '.' not in jack_client_name
+            and (group_name == jack_client_name + '.0'
+                 or group_name.startswith(jack_client_name + '.0/'))):
+        # Carla bug workaround without long jack name
+        # RS uses long jack naming by default with carla templates
+        return True
 
     return False
 

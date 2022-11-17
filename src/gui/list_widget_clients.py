@@ -32,8 +32,8 @@ class ClientSlot(QFrame):
         self.client = client
         self.main_win = self.client.session.main_win
 
-        self._list_widget = list_widget
-        self._list_widget_item = list_widget_item
+        self.list_widget = list_widget
+        self.list_widget_item = list_widget_item
         self._gui_state = False
         self._stop_is_kill = False
         self._very_short = False
@@ -167,7 +167,7 @@ class ClientSlot(QFrame):
     def _find_patchbay_boxes(self):
         self.main_win.set_patchbay_filter_text(
             'client:' + self.get_client_id())
-        self._list_widget_item.setSelected(True)
+        self.list_widget_item.setSelected(True)
 
     def _rename_dialog(self):
         dialog = child_dialogs.ClientRenameDialog(self.main_win,
@@ -205,12 +205,12 @@ class ClientSlot(QFrame):
         if yesno:
             self.ui.mainLayout.setDirection(QBoxLayout.TopToBottom)
             self.ui.spacerLeftOfDown.setVisible(True)
-            self._list_widget_item.setSizeHint(
+            self.list_widget_item.setSizeHint(
                 QSize(100, 80 if very_fat else 70))
         else:
             self.ui.spacerLeftOfDown.setVisible(False)
             self.ui.mainLayout.setDirection(QBoxLayout.LeftToRight)
-            self._list_widget_item.setSizeHint(QSize(100, 45))
+            self.list_widget_item.setSizeHint(QSize(100, 45))
 
     def _gray_icon(self, gray: bool):
         if gray:
@@ -225,11 +225,11 @@ class ClientSlot(QFrame):
         font = self.ui.ClientName.font()
         main_size = QFontMetrics(font).width(self.client.prettier_name())
 
-        layout_width = self._list_widget.width()
+        layout_width = self.list_widget.width()
 
         self._set_very_short(layout_width < 233)
 
-        scroll_bar = self._list_widget.verticalScrollBar()
+        scroll_bar = self.list_widget.verticalScrollBar()
         if scroll_bar.isVisible():
             layout_width -= scroll_bar.width()
 
@@ -474,7 +474,7 @@ class ClientSlot(QFrame):
         if (event.button() == Qt.LeftButton
                 and self.client.status != ray.ClientStatus.STOPPED
                 and self.client.jack_client_name
-                and self._list_widget_item.isSelected()):
+                and self.list_widget_item.isSelected()):
             self.client.session.patchbay_manager.select_client_box(
                 self.client.jack_client_name)
         super().mousePressEvent(event)

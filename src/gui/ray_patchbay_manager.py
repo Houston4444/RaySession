@@ -142,26 +142,25 @@ class RayPatchbayCallbacker(Callbacker):
             return
 
         for client in self.mng.session.client_list:
-            if client.can_be_own_jack_client(group.name):
+            if group_belongs_to_client(group.name, client.jack_client_name):
                 show = 'show' if visible else 'hide'
                 self.mng.send_to_daemon(
-                    '/ray/client/%s_optional_gui' % show,
+                    f'/ray/client/{show}_optional_gui',
                     client.client_id)
                 break
             
     def _group_selected(self, group_id: int, splitted_mode: PortMode):
         # select client widget matching with the selected box
-        for group in self.mng.groups:
-            if group.group_id == group_id:
-                for client in self.mng.session.client_list:
-                    if group_belongs_to_client(
-                            group.name, client.jack_client_name):
-                        item = client.widget._list_widget_item
-                        item.setSelected(True)
-                        client.widget._list_widget.scrollToItem(item)
-                        break
-                break
-                
+        group = self.mng.get_group_from_id(group_id)
+        if group is None:
+            return
+        
+        for client in self.mng.session.client_list:
+            if group_belongs_to_client(group.name, client.jack_client_name):
+                item = client.widget.list_widget_item
+                item.setSelected(True)
+                client.widget.list_widget.scrollToItem(item)
+                break                
 
 
 class RayPatchbayManager(PatchbayManager):    
@@ -352,7 +351,7 @@ class RayPatchbayManager(PatchbayManager):
     
     def set_group_as_nsm_client(self, group: Group):
         for client in self.session.client_list:
-            if client.can_be_own_jack_client(group.name):
+            if group_belongs_to_client(group.name, client.jack_client_name):
                 group.set_client_icon(client.icon)
                 
                 # in case of long jack naming (ClientName.ClientId)
@@ -403,7 +402,6 @@ class RayPatchbayManager(PatchbayManager):
         #### added functions ####
     
     def select_client_box(self, jack_client_name: str, previous=False):
-        print('azerlf', jack_client_name, self._last_selected_client_name, self._last_selected_box_n)
         if not jack_client_name:
             self._last_selected_client_name = ''
             self._last_selected_box_n = 0
@@ -440,7 +438,6 @@ class RayPatchbayManager(PatchbayManager):
                 break
         
         if box_found:
-            print('box found')
             self._last_selected_client_name = jack_client_name
             self._last_selected_box_n = box_n
         else:
@@ -480,7 +477,7 @@ class RayPatchbayManager(PatchbayManager):
         for client in self.session.client_list:
             if client.client_id == client_id:
                 for group in self.groups:
-                    if client.can_be_own_jack_client(group.name):
+                    if group_belongs_to_client(group.name, client.jack_client_name):
                         group.set_optional_gui_state(visible)
                 break
     
