@@ -348,7 +348,7 @@ class RayPatchbayManager(PatchbayManager):
                 return client.jack_client_name
         
         return group_name
-    
+
     def set_group_as_nsm_client(self, group: Group):
         for client in self.session.client_list:
             if group_belongs_to_client(group.name, client.jack_client_name):

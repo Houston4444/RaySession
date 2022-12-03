@@ -398,7 +398,8 @@ class MainObject:
             for key in (jacklib.JACK_METADATA_CONNECTED,
                         jacklib.JACK_METADATA_ORDER,
                         jacklib.JACK_METADATA_PORT_GROUP,
-                        jacklib.JACK_METADATA_PRETTY_NAME):
+                        jacklib.JACK_METADATA_PRETTY_NAME,
+                        jacklib.JACK_METADATA_SIGNAL_TYPE):
                 prop = jacklib.get_property(jport.uuid, key)
                 if prop is None:
                     continue
