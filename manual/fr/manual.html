@@ -21,8 +21,9 @@
 --secondarycolor:#ba3925;
 --tertiarycolor: #186d7a;
 --sidebarbackground:#232323; /* Grey 900 */
---linkcolor:#808080; /* Grey 200 */
---linkcoloralternate:#d0d0d0;
+--linkcolor:#663815; /* Brown */
+--linkhover: #9c5620;
+--linkcoloralternate: #9c5620;
 --white:#FFFFFF;
 --black:#000000;
 --gold:#ffd777;
@@ -47,7 +48,7 @@ a {
   color: var(--linkcolor);
 }
 a:hover {
-  color: var(--white);
+  color: var(--linkhover);
 }
 .quoteblock blockquote::before {
   color: var(--linkcoloralternate);
@@ -64,9 +65,9 @@ mark {
 th{background-color: var(--linkcolor);color:var(--white);}
 
 #toc.toc2{background-color:var(--sidebarbackground);color:var(--gold);}
-#toc.toc2.a{color:var(--gold);}
-#toc.toc2.a:active{color:var(--gold);}
-#toc.toc2.a:visited{color:var(--gold);}
+#toc a{color:var(--gold);}
+#toc a:visited{color: #999;}
+#toc a:active{color:var(--gold);}
 #toctitle{color:var(--gold); !important;background-color:var(--brown);font-size: 14px !important;padding:10px;border-radius:6px;}
 
 /* Responsiveness fixes */
@@ -121,7 +122,7 @@ table {
 </div>
 </div>
 <div class="paragraph">
-<p><em>pour la version 0.12.0</em></p>
+<p><em>pour la version 0.13.1</em></p>
 </div>
 </div>
 </div>
@@ -655,6 +656,9 @@ Celà est utile si vous voulez attraper et lancer des projets existants dans la 
 <h2 id="patchbay">Baie de brassage</h2>
 <div class="sectionbody">
 <div class="paragraph">
+<p><a href="patchbay/manual.html">Manuel de la baie de brassage</a></p>
+</div>
+<div class="paragraph">
 <p>la baie de brassage de JACK est affichée par défaut. Vous pouvez la cacher en cliquant sur <strong>Contrôle</strong> puis en décochant <strong>Afficher la baie de brassage de JACK</strong> (<em>ou Ctrl+J</em>). La baie de brassage contient tous les ports AUDIO et MIDI de JACK que vous pouvez interconnecter.</p>
 </div>
 <div class="paragraph">
@@ -666,262 +670,8 @@ Celà est utile si vous voulez attraper et lancer des projets existants dans la 
 <div class="paragraph">
 <p>RaySession n&#8217;inclut pas d&#8217;outils pour configurer le serveur JACK, <strong>QJackCtl</strong>, <strong>Studio Control</strong>, <strong>Cadence</strong>, ou l&#8217;utilitaire en ligne de commande <code>jack_control</code> font très bien ce travail. Notez que cette baie de brassage fonctionne également avec PipeWire.</p>
 </div>
-<div class="sect2">
-<h3 id="_vue_densemble">Vue d&#8217;ensemble</h3>
-<div class="imageblock">
-<div class="content">
-<img src="images/patchbay_base.png" alt="Vue d&#8217;ensemble de la baie de brassage">
-</div>
-</div>
 <div class="paragraph">
-<p>Voilà à quoi peut ressembler votre baie de brassage. Ici il y a 7 boîtes :</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>une boîte <strong>system</strong> comprenant vos ports correspondant aux entrées matérielles</p>
-</li>
-<li>
-<p>une boîte <strong>system</strong> comprenant vos ports correspondant aux sorties matérielles (enceintes, casque)</p>
-</li>
-<li>
-<p>une boîte <strong>a2j</strong> comprenant vos ports correspondant aux entrées MIDI</p>
-</li>
-<li>
-<p>une boîte <strong>a2j</strong> comprenant vos ports correspondant aux sorties MIDI</p>
-</li>
-<li>
-<p>une boîte <strong>PulseAudio JACK Source</strong></p>
-</li>
-<li>
-<p>une boîte <strong>PulseAudio JACK Sink</strong></p>
-</li>
-<li>
-<p>une boîte <strong>Guitarix</strong></p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Ici les ponts A2J et pulse2jack sont lancés.
-Vous observez que 4 de ces boîtes sont entourées d&#8217;une décoration (2 <strong>system</strong> et 2 <strong>a2j</strong>), ce sont les boîtes qui contiennent les ports matériels (votre interface audio, votre piano USB, n&#8217;importe quel contrôleur&#8230;&#8203;).</p>
-</div>
-<hr>
-<div class="paragraph">
-<p>Certains ports audios sont regroupés en sous-groupes, que l&#8217;on appellera portgroups. Ces portgroups sont pour la plupart des paires stéréo détectées automatiquement par le nom des ports. C&#8217;est le cas ici pour :</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>system:capture 1/2</p>
-</li>
-<li>
-<p>system:playback 1/2</p>
-</li>
-<li>
-<p>PulseAudio JACK Source:front L/R</p>
-</li>
-<li>
-<p>PulseAudio JACK Sink:front L/R</p>
-</li>
-<li>
-<p>Guitarix:out 0/1</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Ces portgroups facilitent les connexions et permettent une meilleur lisibilité générale.</p>
-</div>
-<hr>
-<div class="paragraph">
-<p>Les lignes incurvées bleues correspondent aux connexions audios. Vous pouvez observer que :</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>les ports audio d&#8217;entrées matérielles sont connectés à <strong>PulseAudio JACK Source</strong></p>
-</li>
-<li>
-<p>les ports de <strong>PulseAudio JACK Sink</strong> sont connectés aux sorties matérielles</p>
-</li>
-<li>
-<p>seul le premier port de <strong>system</strong> est connecté à l&#8217;entrée (<em>in 0</em>) du logiciel <strong>Guitarix</strong></p>
-</li>
-<li>
-<p>les ports audios de <strong>Guitarix</strong> sont connectés aux sorties matérielles</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_faire_et_défaire_une_connexion">Faire et défaire une connexion</h3>
-<div class="paragraph">
-<p>Vous pouvez établir une connexion entre 2 ports pourvu qu&#8217;ils remplissent les conditions suivantes :</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>les ports sont du même type (on ne peut pas connecter un port audio à un port MIDI)</p>
-</li>
-<li>
-<p>l&#8217;un est un port d&#8217;entrée, l&#8217;autre est un port de sortie</p>
-</li>
-</ul>
-</div>
-<div class="sect3">
-<h4 id="_méthode_intuitive">Méthode Intuitive</h4>
-<div class="paragraph">
-<p>Pour connecter ou déconnecter deux ports, cliquez sur un port sans relâcher le bouton de la souris, glissez le curseur jusqu&#8217;au port désiré puis relachez le bouton de la souris.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_méthode_alternative">Méthode Alternative</h4>
-<div class="paragraph">
-<p>Faites un clic droit sur un port, celà affichera un menu déroulant, choisissez <strong>Connecter</strong> puis le port désiré. Cliquez ailleurs pour faire disparaître ce menu. L&#8217;avantage de cette méthode est qu&#8217;elle permet de connecter rapidement un port à plusieurs autres, le menu restant affiché pendant les connexions.</p>
-</div>
-<div class="videoblock">
-<div class="content">
-<video src="images/video/patchbay_simple_connect.mp4" width="640" controls>
-Your browser does not support the video tag.
-</video>
-</div>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_les_options">Les options</h3>
-<div class="paragraph">
-<p>Un clic droit n&#8217;importe où sur la baie de brassage permet d&#8217;en afficher le menu. Ce menu est également présent dans le menu de RaySession (menu <strong>Baie de brassage</strong>).
-Il vous permettra de :</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>basculer la baie de brassage en plein écran</p>
-</li>
-<li>
-<p>chercher une boîte par son nom</p>
-</li>
-<li>
-<p>Filtrer les ports: n&#8217;afficher que les ports AUDIO ou MIDI ou les deux</p>
-</li>
-<li>
-<p>régler le niveau de zoom</p>
-</li>
-<li>
-<p>rafraîchir le canevas: redemander à JACK la liste des ports existants et leurs connexions</p>
-</li>
-<li>
-<p>Préférences du canevas: afficher une fenêtre d&#8217;options<br>
-Tous les changements dans cette fenêtre prennent effet immédiatement. Survolez les cases pour afficher les infobulles.</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_raccourcis_à_connaître">Raccourcis à connaître</h3>
-<div class="ulist">
-<ul>
-<li>
-<p>Un double clic n&#8217;importe où permet de basculer la baie de brassage en plein écran.</p>
-</li>
-<li>
-<p><em>Ctrl+Molette de la souris</em> permet de zoomer/dézoomer.</p>
-</li>
-<li>
-<p><em>Alt+Molette de la souris</em> permet déplacer la vue horizontallement.</p>
-</li>
-<li>
-<p>Le bouton de la molette permet de déplacer la vue</p>
-</li>
-<li>
-<p><em>Ctrl+bouton du milieu de la souris</em> permet de couper toutes les connexions passant sous le curseur</p>
-</li>
-<li>
-<p><em>Ctrl+F</em> permet de chercher une boîte par son nom</p>
-</li>
-</ul>
-</div>
-<div class="sect3">
-<h4 id="_connexions_en_rafale">Connexions en rafale</h4>
-<div class="paragraph">
-<p>Il est possible de connecter un port ou un portgroup à différents ports assez rapidement. Il suffit de terminer ses connexions par un clic droit. Une video sera bien plus explicite.</p>
-</div>
-<div class="videoblock">
-<div class="content">
-<video src="images/video/patchbay_rafal_connections.mp4" width="640" controls>
-Your browser does not support the video tag.
-</video>
-</div>
-</div>
-<div class="paragraph">
-<p>Ici nous voulons connecter les multiple sorties d&#8217;Hydrogen à des tranches de Jack-Mixer. Dans la video les ronds bleus apparaissent avec un clic droit.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_passer_les_connexions_dun_port_à_un_autre">Passer les connexions d&#8217;un port à un autre</h4>
-<div class="paragraph">
-<p>Il est parfois moins fastidieux de passer des connexions d&#8217;un port à un autre plutôt que de tout défaire pour tout refaire. Pour ce faire, partez du port qui contient les connexions et faites comme si vous vouliez faire une connexion, mais allez vers le port vers lequel vous souhaitez basculer les connexions.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Celà ne fonctionne que si le port de destination ne contient aucune connexion</p>
-</li>
-<li>
-<p>Celà fonctionne de port à port ou de portgroup à portgroup mais pas de port à portgroup</p>
-</li>
-</ul>
-</div>
-<div class="videoblock">
-<div class="content">
-<video src="images/video/patchbay_fast_cut_paste.mp4" width="640" controls>
-Your browser does not support the video tag.
-</video>
-</div>
-</div>
-<div class="paragraph">
-<p>Dans cette video nous avons un cas assez complexe où la source est branchée dans <strong>3 Band Splitter</strong>.
-Les basses et les aigües (<em>Output 1</em> et <em>Output 5</em>) sont envoyés directement dans <strong>EQ6Q Mono</strong> tandis que les medium (<em>Output 3</em>) passent d&#8217;abord par la distortion <strong>GxTubeScreamer</strong>. Nous voulons insérer la reverb <strong>Dragonfly Room Reverb</strong> avant l&#8217;égualisation <strong>EQ6Q Mono</strong>.</p>
-</div>
-<hr>
-<div class="paragraph">
-<p>Notez qu&#8217;avec la connexion par clic droit et le passage de connexions d&#8217;un port à l&#8217;autre, il est très rapide d&#8217;intégrer un nouveau greffon dans une chaîne, comme ici où nous branchons <strong>Plujain Ramp Live</strong> entre <strong>Dragonfly Room Reverb</strong> et <strong>EQ6Q Mono</strong>.</p>
-</div>
-<div class="videoblock">
-<div class="content">
-<video src="images/video/fast_new_plugin.mp4" width="640" controls>
-Your browser does not support the video tag.
-</video>
-</div>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_les_ports_a2j">Les ports A2J</h3>
-<div class="imageblock">
-<div class="content">
-<img src="images/patchbay_a2j.png" alt="ports a2j">
-</div>
-</div>
-<div class="paragraph">
-<p>Les ports MIDI fournis par le pont A2J (Alsa To Jack) présentent un trou à leur extrêmité pour les reconnaître. Leur véritable nom est un nom à ralonges, mais c&#8217;est à peu près la seule chose qui diffère avec les autres ports MIDI.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_les_ports_de_tension_de_contrôle_ports_cv">Les ports de tension de contrôle (ports CV)</h3>
-<div class="imageblock">
-<div class="content">
-<img src="images/patchbay_CV.png" alt="ports CV">
-</div>
-</div>
-<div class="paragraph">
-<p>les ports de tension de contrôle, appellés communément ports CV (Control Voltage) ont le même fonctionnement que les ports audio classiques, cependant, ils sont faits pour piloter un ou plusieurs paramètres avec une précision bien plus importante que les ports MIDI. Comme leur flux n&#8217;est pas fait pour être écouté, il n&#8217;est pas possible de connecter simplement un port CV de sortie vers une entrée audio classique, celà pourrait endommager votre casque, vos enceintes, et peut-être même bien vos oreilles.<br>
-Si vous souhaitez quand même le faire, faites un clic droit sur l&#8217;un des ports, puis <strong>Connecter</strong>, puis le menu <strong>DANGEREUX</strong>.<br>
-Vous ne pourrez pas dire que vous n&#8217;étiez pas prévenu, et il est quasiment impossible de faire ça par erreur.</p>
-</div>
-<div class="paragraph">
-<p>En revanche, connecter un port de sortie audio classique vers un port CV d&#8217;entrée est tout à fait possible, ça ne pose aucun problème.</p>
-</div>
+<p>Beaucoup plus d&#8217;infos sur la baie de brassage sont sur <a href="patchbay/manual.html">Le manuel de la baie de brassage</a>.</p>
 </div>
 </div>
 </div>
@@ -1578,7 +1328,7 @@ Si vous utilisez Ardour, lancez le toujours depuis RaySession, d&#8217;une part 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-12-17 09:44:35 +0100
+Last updated 2022-12-07 16:04:37 +0100
 </div>
 </div>
 </body>
