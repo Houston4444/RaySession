@@ -721,15 +721,16 @@ class MainWindow(QMainWindow):
 
     def _internal_manual(self):
         short_locale = 'en'
-        manual_dir = "%s/manual" % get_code_root()
+        manual_dir = get_code_root() / 'manual'
         locale_str = QLocale.system().name()
+        manual_file = manual_dir / locale_str[:2] / 'manual.html'
+        
         if (len(locale_str) > 2 and '_' in locale_str
-                and os.path.isfile(
-                    "%s/%s/manual.html" % (manual_dir, locale_str[:2]))):
+                and manual_file.is_file()):
             short_locale = locale_str[:2]
 
         QDesktopServices.openUrl(
-            QUrl("%s/%s/manual.html" % (manual_dir, short_locale)))
+            QUrl(str(manual_dir / short_locale / 'manual.html')))
 
     def _save_session(self):
         self.to_daemon('/ray/session/save')

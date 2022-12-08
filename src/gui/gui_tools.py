@@ -1,5 +1,6 @@
 import argparse
 import os
+from pathlib import Path
 import sys
 from PyQt5.QtCore import QSettings, QSize, QFile
 from PyQt5.QtWidgets import QApplication, QWidget
@@ -255,7 +256,8 @@ def dirname(*args) -> str:
 def basename(*args) -> str:
     return os.path.basename(*args)
 
-def get_code_root() -> str:
+def get_code_root() -> Path:
+    return Path(__file__).parent.parent.parent
     return dirname(dirname(dirname(os.path.realpath(__file__))))
 
 def server_status_string(server_status: int) -> str:
