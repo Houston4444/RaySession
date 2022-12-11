@@ -1,7 +1,7 @@
 = RaySession Manual
 :toc: left
 :toclevels: 1
-:imagesdir: images
+:imagesdir: ../en/images
 :stylesheet: patchbay/patchbay_manual.css
 
 [.text-right]

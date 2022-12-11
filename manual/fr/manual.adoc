@@ -6,9 +6,9 @@
 :stylesheet: patchbay/patchbay_manual.css
 
 [.text-right]
-image:flags/en.jpeg[EN, 30, 20, link=../en/manual.html] image:flags/fr.jpeg[FR, 40, 30, link=../fr/manual.html] image:flags/de.jpeg[DE, 30, 20, link=../de/manual.html]
+image:../../en/images/flags/en.jpeg[EN, 30, 20, link=../en/manual.html] image:../../en/images/flags/fr.jpeg[FR, 40, 30, link=../fr/manual.html] image:../../en/images/flags/de.jpeg[DE, 30, 20, link=../de/manual.html]
 
-image::raysession.svg["icon", 100, 100]
+image::../../en/images/raysession.svg["icon", 100, 100]
 
 _pour la version 0.13.1_
 
@@ -70,8 +70,8 @@ image::exemple_ardour_piste.png[Ajouter une piste Ardour pour Guitarix, 640, 480
 Servez-vous maintenant de la <<patchbay>> de JACK qui occupe la partie droite de la fenêtre de RaySession.
 Connectez l'entrée de Guitarix à une entrée matérielle et les sorties de Guitarix vers les entrées de cette nouvelle piste Ardour. Assurez vous que les entrées de votre piste *Guitare* ne sont pas connectées aux entrées matérielles.
 
-[caption="Figure 1: ",link=images/example_patchbay.png]
-image::example_patchbay.png[Baie de brassage de ma session]
+[caption="Figure 1: ",link=../en/images/example_patchbay.png]
+image::../../en/images/example_patchbay.png[Baie de brassage de ma session]
 
 Voilà, vous avez une configuration où vous pouvez enregistrer directement le son de votre guitare traité par Guitarix dans Ardour. Si vous n'avez pas de guitare, vous n'avez qu'à chanter faux dans un micro ou taper sur un coussin, ce n'est ici qu'un exemple.
 

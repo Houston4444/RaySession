@@ -177,8 +177,8 @@ class RayPatchbayManager(PatchbayManager):
     
     def _setup_canvas(self):
         SUBMODULE = 'HoustonPatchbay'
-        source_theme_path = Path(get_code_root()) / SUBMODULE / 'themes'
-        manual_path = Path(get_code_root()) / SUBMODULE / 'manual'
+        source_theme_path = get_code_root() / SUBMODULE / 'themes'
+        manual_path = get_code_root() / SUBMODULE / 'manual'
         theme_paths = list[Path]()
         
         app_title = ray.APP_TITLE.lower()
