@@ -2,7 +2,7 @@
 :toc: left
 :toclevels: 1
 :imagesdir: images
-:stylesheet: patchbay/patchbay_manual.css
+:stylesheet: ../../patchbay/en/patchbay_manual.css
 
 [.text-right]
 image:flags/en.jpeg[EN, 40, 30, link=../en/manual.html] image:flags/fr.jpeg[FR, 30, 20, link=../fr/manual.html] image:flags/de.jpeg[DE, 30, 20, link=../de/manual.html]
@@ -275,7 +275,7 @@ This is useful if you want to catch and launch existing projects in the session 
 [#patchbay]
 == Patchbay
 
-link:patchbay/manual.html[Patchbay Manual]
+link:../../patchbay/en/manual.html[Patchbay Manual]
 
 The JACK patchbay is displayed by default. You can hide it by clicking on *Control* and then uncheck *Show JACK Patchbay* (__or Ctrl+J__). The patchbay contains all the JACK AUDIO and MIDI ports that you can interconnect.
 
@@ -285,7 +285,7 @@ It is advisable to have the A2J bridge running if you want to work properly with
 
 RaySession does not include tools to configure the JACK server, *QJackCtl*, *Studio Control*, *Cadence*, or the command line utility `jack_control` do this job very well. Note that this patchbay also works with PipeWire.
 
-Learn more about the patchbay in the link:patchbay/manual.html[Patchbay Manual].
+Learn more about the patchbay in the link:../../patchbay/manual.html[Patchbay Manual].
 
 == Client Properties Window
 A client's properties window opens from the client menu by clicking Properties.

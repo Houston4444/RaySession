@@ -2,7 +2,7 @@
 :toc: left
 :toclevels: 1
 :imagesdir: ../en/images
-:stylesheet: patchbay/patchbay_manual.css
+:stylesheet: ../../patchbay/en/patchbay_manual.css
 
 [.text-right]
 image:flags/en.jpeg[EN, 30, 20, link=../en/manual.html] image:flags/fr.jpeg[FR, 30, 20, link=../fr/manual.html] image:flags/de.jpeg[DE, 40, 30, link=../de/manual.html]
@@ -70,14 +70,14 @@ image::example_session_ready.png[Session ready with Ardour and Guitarix]
 
 Fügen Sie in Ardour eine Spur hinzu (Menu: Spur → Füge Spur hinzu). In dem sich öffnenden Fenster, nennen sie die Spur *Guitar* und setzen Sie die Kanaleinstellungen auf _Stereo_.
 
-[caption="Figure 1: ",link=images/example_ardour_track.png]
+[caption="Figure 1: ",link=../en/images/example_ardour_track.png]
 image::example_ardour_track.png[Add a track in Ardour for Guitarix, 640, 480]
 
 Now use JACK's <<patchbay>> which occupies the right side of the RaySession window.
 
 Connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.
 
-[caption="Figure 1: ",link=images/example_patchbay.png]
+[caption="Figure 1: ",link=../en/images/example_patchbay.png]
 image::example_patchbay.png[My session patchbay]
 
 Dies ist ein Beispiel, in dem der Gitarrensound durch Guitarix verarbeitet direkt in Ardour aufgenommen wird. Falls Sie über keine Gitarre verfügen, können Sie auch in ein Mikrofon singen, es handelt sich lediglich um ein Beispiel.
@@ -293,7 +293,7 @@ Dies ist nützlich, wenn Sie in der Session bestehende Projekte bestimmen und st
 [#patchbay]
 == Patchbay
 
-link:patchbay/manual.html[Patchbay Manual]
+link:../../patchbay/en/manual.html[Patchbay Manual]
 
 The JACK patchbay is displayed by default. You can hide it by clicking on *Control* and then uncheck *Show JACK Patchbay* (__or Ctrl+J__). The patchbay contains all the JACK AUDIO and MIDI ports that you can interconnect.
 
@@ -303,7 +303,7 @@ It is advisable to have the A2J bridge running if you want to work properly with
 
 RaySession does not include tools to configure the JACK server, *QJackCtl*, *Studio Control*, *Cadence*, or the command line utility `jack_control` do this job very well. Note that this patchbay also works with PipeWire.
 
-Learn more about the patchbay in the link:patchbay/manual.html[Patchbay Manual].
+Learn more about the patchbay in the link:../../patchbay/manual.html[Patchbay Manual].
 
 
 == Klient Eigenschaften/Properties Fenster
@@ -453,13 +453,13 @@ image::audacity_save project.png[Save empty Audacity project]
 Klicken Sie auf *Validate* (Bestätigen) falls sich ein Warnfenster öffnet. +
 In der sich öffnenden Box um die Datei zu speichern, finden Sie den Session Ordner unten links (siehe <<session_folder_shortcuts>>). Klicken Sie darauf, um ihn zu öffnen. Darin sollten Sie den Ordner des Klienten mit dem Namen, der ihm im RayHack Tab gegeben wurde,finden. Nutzen Sie diesen. Fügen Sie in der Speicherbox den genauen Namen, den sie der Session im  *Name:* Feld gegeben haben und bestätigen Sie.
 
-[caption="Figure 1: ",link=images/audacity_save_file.png]
+[caption="Figure 1: ",link=../en/imagesages/audacity_save_file.png]
 image::audacity_save_file.png[Where to save Audacity project, 640, 480]
 
 Schliessen Sie Audacity. +
 Klicken Sie oben rechts im *Ray-Hack* Tab vom Eigenschaftern Fenster des Klienten auf *Browse*.
 
-[caption="Figure 1: ",link=images/audacity_load_config_file.png]
+[caption="Figure 1: ",link=../en/imagesages/audacity_load_config_file.png]
 image::audacity_load_config_file.png[Load CONFIG_FILE window, 640, 480]
 
 wählen Sie das gerade erstellte Audacity Projekt mit dem Session Namen und mit .aup endend.

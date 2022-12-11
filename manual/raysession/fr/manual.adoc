@@ -3,7 +3,7 @@
 :toc-title: Table des matières
 :toclevels: 1
 :imagesdir: images
-:stylesheet: patchbay/patchbay_manual.css
+:stylesheet: ../../patchbay/en/patchbay_manual.css
 
 [.text-right]
 image:../../en/images/flags/en.jpeg[EN, 30, 20, link=../en/manual.html] image:../../en/images/flags/fr.jpeg[FR, 40, 30, link=../fr/manual.html] image:../../en/images/flags/de.jpeg[DE, 30, 20, link=../de/manual.html]
@@ -272,7 +272,7 @@ image::ajout_executable_plus.png[Fenêtre d'ajout d'exécutable avancé]
 [#patchbay]
 == Baie de brassage
 
-link:patchbay/manual.html[Manuel de la baie de brassage]
+link:../../patchbay/fr/manual.html[Manuel de la baie de brassage]
 
 la baie de brassage de JACK est affichée par défaut. Vous pouvez la cacher en cliquant sur *Contrôle* puis en décochant *Afficher la baie de brassage de JACK* (__ou Ctrl+J__). La baie de brassage contient tous les ports AUDIO et MIDI de JACK que vous pouvez interconnecter.
 
@@ -282,7 +282,7 @@ Il est conseillé d'avoir le pont A2J lancé si vous voulez travailler correctem
 
 RaySession n'inclut pas d'outils pour configurer le serveur JACK, *QJackCtl*, *Studio Control*, *Cadence*, ou l'utilitaire en ligne de commande `jack_control` font très bien ce travail. Notez que cette baie de brassage fonctionne également avec PipeWire.
 
-Beaucoup plus d'infos sur la baie de brassage sont sur link:patchbay/manual.html[Le manuel de la baie de brassage].
+Beaucoup plus d'infos sur la baie de brassage sont sur link:../../patchbay/fr/manual.html[Le manuel de la baie de brassage].
 
     
 [#proprietes_de_client]
