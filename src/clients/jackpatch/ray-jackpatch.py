@@ -369,6 +369,7 @@ def openFile(project_path, session_name, full_client_id):
         while not node.isNull():
             el = node.toElement()
             if el.tagName() != "connection":
+                node = node.nextSibling()
                 continue
 
             port_from = el.attribute('from')
