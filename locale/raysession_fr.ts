@@ -1165,13 +1165,13 @@ Vous pouvez faire ré-apparaître la fenêtre depuis votre boîte à miniatures.
         <location filename="../resources/ui/add_application.ui" line="130"/>
         <source>Refresh
 Applications</source>
-        <translation>Raffraichir les
+        <translation>Rafraîchir les
 applications</translation>
     </message>
     <message>
         <location filename="../resources/ui/add_application.ui" line="637"/>
         <source>Refresh\nApplications</source>
-        <translation>Raffraichir les\napplications</translation>
+        <translation>Rafraîchir les\napplications</translation>
     </message>
     <message>
         <location filename="../resources/ui/add_application.ui" line="640"/>
@@ -2854,12 +2854,12 @@ pour une meilleure organisation.</translation>
     <message>
         <location filename="../resources/ui/raysession.ui" line="1237"/>
         <source>Internal Manual</source>
-        <translation type="obsolete">Manuel interne</translation>
+        <translation type="obsolete">Manuel embarqué</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="1433"/>
         <source>Displays internal manual in a web browser</source>
-        <translation>Ouvrir le manuel interne dans le navigateur web</translation>
+        <translation>Ouvrir le manuel embarqué dans le navigateur web</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="1418"/>
