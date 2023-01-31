@@ -2854,12 +2854,12 @@ pour une meilleure organisation.</translation>
     <message>
         <location filename="../resources/ui/raysession.ui" line="1237"/>
         <source>Internal Manual</source>
-        <translation type="obsolete">Manuel interne</translation>
+        <translation type="obsolete">Manuel embarqué</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="1433"/>
         <source>Displays internal manual in a web browser</source>
-        <translation>Ouvrir le manuel interne dans le navigateur web</translation>
+        <translation>Ouvrir le manuel embarqué dans le navigateur web</translation>
     </message>
     <message>
         <location filename="../resources/ui/raysession.ui" line="1418"/>
