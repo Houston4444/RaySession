@@ -1165,13 +1165,13 @@ Vous pouvez faire ré-apparaître la fenêtre depuis votre boîte à miniatures.
         <location filename="../resources/ui/add_application.ui" line="130"/>
         <source>Refresh
 Applications</source>
-        <translation>Raffraichir les
+        <translation>Rafraîchir les
 applications</translation>
     </message>
     <message>
         <location filename="../resources/ui/add_application.ui" line="637"/>
         <source>Refresh\nApplications</source>
-        <translation>Raffraichir les\napplications</translation>
+        <translation>Rafraîchir les\napplications</translation>
     </message>
     <message>
         <location filename="../resources/ui/add_application.ui" line="640"/>
