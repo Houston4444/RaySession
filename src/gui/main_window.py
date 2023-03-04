@@ -399,9 +399,13 @@ class MainWindow(QMainWindow):
         self._reversed_systray_menu = RS.settings.value(
             'reversed_systray_menu', False, type=bool)
 
+        systray_icon = QIcon.fromTheme('raysession')
+        if systray_icon.isNull():
+            systray_icon = QIcon(':main_icon/48x48/raysession')
+
         self._systray = QSystemTrayIcon(self)
         self._systray.activated.connect(self._systray_activated)
-        self._systray.setIcon(QIcon(':main_icon/48x48/raysession'))
+        self._systray.setIcon(systray_icon)
         self._systray.setToolTip(ray.APP_TITLE)
         self._systray_menu = QMenu()
         self._systray_menu_add = QMenu(self._systray_menu)
