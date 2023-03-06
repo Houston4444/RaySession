@@ -902,6 +902,13 @@ class OscServerThread(ClientCommunicating):
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to save.")
             return False
+        
+    @ray_method('/ray/session/save', 's')
+    def raySessionSaveWithArgs(self, path, args, types, src_addr):
+        if not self.session.path:
+            self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
+                      "No session to save.")
+            return False
 
     @ray_method('/ray/session/run_step', None)
     def raySessionProcessStep(self, path, args, types, src_addr):
