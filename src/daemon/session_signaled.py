@@ -732,11 +732,8 @@ class SignaledSession(OperatingSession):
         self.canvas_saver.save_portgroup(*args)
 
     @session_operation
-    def _ray_session_save(self, path, args, src_addr):
-        save_clients = 'without_clients' not in args
-        
-        self.steps_order = [(self.save, False, save_clients),
-                            self.snapshot, self.save_done]
+    def _ray_session_save(self, path, args, src_addr):        
+        self.steps_order = [self.save, self.snapshot, self.save_done]
 
     @session_operation
     def _ray_session_save_as_template(self, path, args, src_addr):
