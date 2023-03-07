@@ -58,9 +58,14 @@ You can run RaySession without install, by using:
 To run it, you'll additionally need:
 
    - python3-liblo
+   - python3-pyqt5.qtsvg
+
+On a debian-based operating system you can install them all using:
+
+    sudo apt install python3-liblo python3-pyqt5.qtsvg
 
 IMPORTANT: since python 3.11, because pyliblo has been totally abandonned
-by Dominic Sacre, you need to use the following fork:
+by Dominic Sacre, for liblo you need to use the following fork:
 
     https://github.com/gesellkammer/pyliblo3
 
