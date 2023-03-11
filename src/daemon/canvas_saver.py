@@ -218,19 +218,23 @@ class CanvasSaver(ServerSender):
             except json.JSONDecodeError:
                 Terminal.message("Failed to load session canvas file %s" % f)
 
-            needs_port_types_view_convert = False
+            session_version = (0, 14, 0)
 
             if isinstance(json_contents, dict):
                 if 'group_positions' in json_contents.keys():
                     gpos_list : list[dict]() = json_contents['group_positions']
-                if _get_version_tuple_json_dict(json_contents) < (0, 13, 0):
-                    needs_port_types_view_convert = True
+                session_version = _get_version_tuple_json_dict(json_contents)
 
             for gpos_dict in gpos_list:
                 gpos = ray.GroupPosition()
                 gpos.write_from_dict(gpos_dict)
-                if needs_port_types_view_convert and gpos.port_types_view == 3:
-                    gpos.port_types_view = 15
+                if session_version < (0, 13, 0):
+                    if gpos.port_types_view == 3:
+                        gpos.port_types_view = 15
+                
+                elif session_version < (0, 14, 0):
+                    if gpos.port_types_view == 15:
+                        gpos.port_types_view = 31
                 
                 if not [g for g in self.group_positions_session if g.is_same(gpos)]:
                     self.group_positions_session.append(gpos)

@@ -22,7 +22,7 @@ if QT_VERSION < (5, 6):
         "WARNING: You are using a version of QT older than 5.6.\n"
         + "You won't be warned if a process can't be launch.\n")
 
-VERSION = "0.13.1"
+VERSION = "0.14.0"
 
 APP_TITLE = 'RaySession'
 DEFAULT_SESSION_ROOT = "%s/Ray Sessions" % os.getenv('HOME')
