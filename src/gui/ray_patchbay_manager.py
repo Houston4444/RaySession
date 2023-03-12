@@ -414,7 +414,6 @@ class RayPatchbayManager(PatchbayManager):
         self.set_canvas_menu(CanvasMenu(self))
         self.set_options_dialog(
             CanvasOptionsDialog(self.main_win, self, RS.settings))
-        self.options_dialog.ui.checkBoxAlsa.setVisible(False)
         
     def fast_temp_file_memory(self, temp_path):
         '''receives a .json file path from daemon with groups positions

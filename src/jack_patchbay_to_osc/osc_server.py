@@ -141,7 +141,6 @@ class OscJackPatch(Server):
                         self._ray_patchbay_activate_transport)
 
         self.main_object = main_object
-        self.jack_client = main_object.jack_client
         self.port_list = main_object.port_list
         self.connection_list = main_object.connection_list
         self.metadata_list = main_object.metadata_list
@@ -152,9 +151,6 @@ class OscJackPatch(Server):
 
     def set_tmp_gui_url(self, gui_url: str):
         self._tmp_gui_url = gui_url
-
-    def set_jack_client(self, jack_client):
-        self.jack_client = jack_client
     
     def _ray_patchbay_add_gui(self, path, args, types, src_addr):
         self.add_gui(args[0])
@@ -187,12 +183,13 @@ class OscJackPatch(Server):
     def _ray_patchbay_connect(self, path, args):
         port_out_name, port_in_name = args
         # connect here
-        jacklib.connect(self.jack_client, port_out_name, port_in_name)
+        self.main_object.connect_ports(port_out_name, port_in_name)
     
     def _ray_patchbay_disconnect(self, path, args):
         port_out_name, port_in_name = args
         # disconnect here
-        jacklib.disconnect(self.jack_client, port_out_name, port_in_name)
+        self.main_object.connect_ports(
+            port_out_name, port_in_name, disconnect=True)
 
     def _ray_patchbay_set_buffersize(self, path, args):
         buffer_size = args[0]
@@ -254,6 +251,19 @@ class OscJackPatch(Server):
         for client_dict in self.client_list:
             patchbay_data['clients'].append(client_dict)
 
+        if self.main_object.alsa_mng is not None:
+            alsa_mng = self.main_object.alsa_mng
+            
+            for pdata in alsa_mng.parse_ports_and_flags():
+                port_dict = {'name': pdata.name, 'type': pdata.type,
+                             'flags': pdata.flags, 'uuid': pdata.uuid}
+                patchbay_data['ports'].append(port_dict)
+                
+            for port_out_name, port_in_name in alsa_mng.parse_connections():
+                conn_dict = {'port_out_name': port_out_name,
+                             'port_in_name': port_in_name}
+                patchbay_data['connections'].append(conn_dict)
+
         for src_addr in src_addr_list:
             # tmp file is deleted by the gui itself once read
             # so there is one tmp file per local GUI
@@ -281,7 +291,7 @@ class OscJackPatch(Server):
                                 '/ray/gui/patchbay/big_packets', 1)
                 time.sleep(self.slow_wait_time)
                 self.multi_send(src_addr_list,
-                                '/ray/gui/patchbay/big_packets', 0)
+                                '/ray/gui/patchbay/big_packets', 0)            
 
         for connection in self.connection_list:
             self.multi_send(src_addr_list,
@@ -309,6 +319,34 @@ class OscJackPatch(Server):
                 time.sleep(self.slow_wait_time)
                 self.multi_send(src_addr_list,
                                 '/ray/gui/patchbay/big_packets', 0)
+
+        if self.main_object.alsa_mng is not None:
+            alsa_mng = self.main_object.alsa_mng
+            for port in alsa_mng.parse_ports_and_flags():
+                self.multi_send(src_addr_list, '/ray/gui/patchbay/port_added',
+                                port.name, port.type, port.flags, port.uuid)
+
+                n += increment
+                if n % self.slow_wait_num < increment:
+                    self.multi_send(src_addr_list,
+                                    '/ray/gui/patchbay/big_packets', 1)
+                    time.sleep(self.slow_wait_time)
+                    self.multi_send(src_addr_list,
+                                    '/ray/gui/patchbay/big_packets', 0)
+            
+            for conn in alsa_mng.parse_connections():
+                self.multi_send(
+                    src_addr_list,
+                    '/ray/gui/patchbay/connection_added',
+                    *conn)
+
+                n += increment
+                if n % self.slow_wait_num < increment:
+                    self.multi_send(src_addr_list,
+                                    '/ray/gui/patchbay/big_packets', 1)
+                    time.sleep(self.slow_wait_time)
+                    self.multi_send(src_addr_list,
+                                    '/ray/gui/patchbay/big_packets', 0)
 
         self.multi_send(src_addr_list, '/ray/gui/patchbay/big_packets', 1)
 
@@ -360,24 +398,28 @@ class OscJackPatch(Server):
         self.send_gui('/ray/gui/patchbay/client_name_and_uuid',
                       client_name, uuid)
 
-    def port_added(self, port: 'JackPort'):
-        self.send_gui('/ray/gui/patchbay/port_added',
-                      port.name, port.type, port.flags, port.uuid) 
+    # def port_added(self, port: 'JackPort'):
+    #     self.send_gui('/ray/gui/patchbay/port_added',
+    #                   port.name, port.type, port.flags, port.uuid) 
 
-    def port_renamed(self, port: 'JackPort', ex_name: str):
-        self.send_gui('/ray/gui/patchbay/port_renamed', ex_name, port.name)
+    def port_added(self, pname: str, ptype: int, pflags: int, puuid: int):
+        self.send_gui('/ray/gui/patchbay/port_added',
+                      pname, ptype, pflags, puuid) 
+
+    def port_renamed(self, ex_name: str, new_name):
+        self.send_gui('/ray/gui/patchbay/port_renamed', ex_name, new_name)
     
-    def port_removed(self, port):
-        self.send_gui('/ray/gui/patchbay/port_removed', port.name)
+    def port_removed(self, port_name: str):
+        self.send_gui('/ray/gui/patchbay/port_removed', port_name)
     
     def metadata_updated(self, uuid: int, key: str, value: str):
         self.send_gui('/ray/gui/patchbay/metadata_updated', uuid, key, value)
     
-    def connection_added(self, connection: tuple[str]):
+    def connection_added(self, connection: tuple[str, str]):
         self.send_gui('/ray/gui/patchbay/connection_added',
                      connection[0], connection[1])
 
-    def connection_removed(self, connection: tuple[str]):
+    def connection_removed(self, connection: tuple[str, str]):
         self.send_gui('/ray/gui/patchbay/connection_removed',
                      connection[0], connection[1])
     

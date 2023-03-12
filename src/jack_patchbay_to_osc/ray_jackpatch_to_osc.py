@@ -5,6 +5,7 @@ from enum import IntEnum
 import os
 import signal
 import sys
+from typing import Optional
 import warnings
 
 import osc_server
@@ -14,12 +15,22 @@ import time
 import jacklib
 from jacklib.helpers import c_char_p_p_to_list, voidptr2str
 
+# check ALSA LIB
+try:
+    from pyalsa.alsaseq import SEQ_LIB_VERSION_STR
+    ALSA_VERSION_LIST = [int(num) for num in SEQ_LIB_VERSION_STR.split('.')]
+    assert ALSA_VERSION_LIST >= [1, 2, 4]
+    ALSA_LIB_OK = True
+    from alsa_manager import AlsaManager
+except:
+    ALSA_LIB_OK = False
+    
+
 PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1
 PORT_TYPE_MIDI = 2
 
 EXISTENCE_PATH = '/tmp/RaySession/patchbay_daemons/'
-
 
 
 
@@ -117,6 +128,7 @@ class MainObject:
     client_names_queue = list[str]()
     jack_running = False
     osc_server = None
+    alsa_mng: Optional['AlsaManager'] = None
     terminate = False
     jack_client = None
     samplerate = 48000
@@ -127,6 +139,7 @@ class MainObject:
     
     def __init__(self, daemon_port: str, gui_url: str):
         self._daemon_port = daemon_port
+        self.ALSA_LIB_OK = ALSA_LIB_OK
         self.last_sent_dsp_load = 0
         self.max_dsp_since_last_sent = 0.00
         self._waiting_jack_client_open = True
@@ -136,6 +149,10 @@ class MainObject:
         self.osc_server.set_tmp_gui_url(gui_url)
         self.write_existence_file()
         self.start_jack_client()
+        
+        if ALSA_LIB_OK:
+            self.alsa_mng = AlsaManager(self)
+            self.alsa_mng.add_all_ports()
     
     @staticmethod
     def get_metadata_value_str(prop: jacklib.Property) -> str:
@@ -276,6 +293,18 @@ class MainObject:
         self.last_transport_pos = transport_position
         self.osc_server.send_transport_position(transport_position)
     
+    def connect_ports(self, port_out_name: str, port_in_name: str,
+                      disconnect=False):
+        if self.alsa_mng is not None and port_out_name.startswith(':ALSA_OUT:'):
+            self.alsa_mng.connect_ports(
+                port_out_name, port_in_name, disconnect=disconnect)
+            return
+
+        if disconnect:
+            jacklib.disconnect(self.jack_client, port_out_name, port_in_name)
+        else:
+            jacklib.connect(self.jack_client, port_out_name, port_in_name)
+    
     def start_loop(self):
         n = 0
 
@@ -308,8 +337,14 @@ class MainObject:
         if self.jack_running:
             jacklib.deactivate(self.jack_client)
             jacklib.client_close(self.jack_client)
+
+        if self.alsa_mng is not None:
+            self.alsa_mng.stop_events_loop()
+
         self.remove_existence_file()
+        print('del osc server')
         del self.osc_server
+        print('c fini')
     
     def start_jack_client(self):
         self._waiting_jack_client_open = True
@@ -337,7 +372,6 @@ class MainObject:
             self.jack_running = True
             self.set_registrations()
             self.get_all_ports_and_connections()
-            self.osc_server.set_jack_client(self.jack_client)
             self.samplerate = jacklib.get_sample_rate(self.jack_client)
             self.buffer_size = jacklib.get_buffer_size(self.jack_client)
             self.osc_server.server_restarted()
@@ -478,12 +512,13 @@ class MainObject:
         if register:
             jport = JackPort(port_name, self.jack_client, port_ptr)
             self.port_list.append(jport)
-            self.osc_server.port_added(jport)
+            self.osc_server.port_added(
+                jport.name, jport.type, jport.flags, jport.uuid)
         else:
             for jport in self.port_list:
                 if jport.name == port_name:
                     self.port_list.remove(jport)
-                    self.osc_server.port_removed(jport)
+                    self.osc_server.port_removed(jport.name)
                     break
         return 0
     
@@ -493,7 +528,7 @@ class MainObject:
             if jport.name == str(old_name.decode()):
                 ex_name = jport.name
                 jport.name = str(new_name.decode())
-                self.osc_server.port_renamed(jport, ex_name)
+                self.osc_server.port_renamed(ex_name, jport.name)
                 break
         return 0
     
@@ -593,3 +628,4 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, MainObject.signal_handler)
     
     main_process()
+    print('c fini fini')
