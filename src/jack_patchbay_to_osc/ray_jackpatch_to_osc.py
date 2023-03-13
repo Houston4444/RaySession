@@ -344,6 +344,7 @@ class MainObject:
 
         if self.alsa_mng is not None:
             self.alsa_mng.stop_events_loop()
+            del self.alsa_mng
 
         self.remove_existence_file()
         del self.osc_server
@@ -630,4 +631,3 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, MainObject.signal_handler)
     
     main_process()
-    print('c fini fini')

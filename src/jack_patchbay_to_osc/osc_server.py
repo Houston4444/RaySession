@@ -8,10 +8,8 @@ from typing import TYPE_CHECKING
 
 from liblo import Server, Address
 
-import jacklib
-
 if TYPE_CHECKING:
-    from ray_jackpatch_to_osc import MainObject, JackPort, TransportPosition
+    from ray_jackpatch_to_osc import MainObject, TransportPosition
 
 ### Code copied from shared/ray.py
 ### we don't import ray.py here, because this executable is Qt free
@@ -108,8 +106,8 @@ def areOnSameMachine(url1: str, url2: str):
 
 
 class OscJackPatch(Server):
-    slow_wait_time = 0.020
-    slow_wait_num = 50
+    SLOW_WAIT_TIME = 0.020
+    SLOW_WAIT_NUM = 50
     
     def __init__(self, main_object: 'MainObject'):
         Server.__init__(self)
@@ -286,10 +284,10 @@ class OscJackPatch(Server):
                             port.name, port.type, port.flags, port.uuid)
             
             n += increment
-            if n % self.slow_wait_num < increment:
+            if n % self.SLOW_WAIT_NUM < increment:
                 self.multi_send(src_addr_list,
                                 '/ray/gui/patchbay/big_packets', 1)
-                time.sleep(self.slow_wait_time)
+                time.sleep(self.SLOW_WAIT_TIME)
                 self.multi_send(src_addr_list,
                                 '/ray/gui/patchbay/big_packets', 0)            
 
@@ -299,10 +297,10 @@ class OscJackPatch(Server):
                             connection[0], connection[1])
             
             n += increment
-            if n % self.slow_wait_num < increment:
+            if n % self.SLOW_WAIT_NUM < increment:
                 self.multi_send(src_addr_list,
                                 '/ray/gui/patchbay/big_packets', 1)
-                time.sleep(self.slow_wait_time)
+                time.sleep(self.SLOW_WAIT_TIME)
                 self.multi_send(src_addr_list,
                                 '/ray/gui/patchbay/big_packets', 0)
                 
@@ -313,10 +311,10 @@ class OscJackPatch(Server):
                             metadata['value'])
             
             n += increment
-            if n % self.slow_wait_num < increment:
+            if n % self.SLOW_WAIT_NUM < increment:
                 self.multi_send(src_addr_list,
                                 '/ray/gui/patchbay/big_packets', 1)
-                time.sleep(self.slow_wait_time)
+                time.sleep(self.SLOW_WAIT_TIME)
                 self.multi_send(src_addr_list,
                                 '/ray/gui/patchbay/big_packets', 0)
 
@@ -327,10 +325,10 @@ class OscJackPatch(Server):
                                 port.name, port.type, port.flags, port.uuid)
 
                 n += increment
-                if n % self.slow_wait_num < increment:
+                if n % self.SLOW_WAIT_NUM < increment:
                     self.multi_send(src_addr_list,
                                     '/ray/gui/patchbay/big_packets', 1)
-                    time.sleep(self.slow_wait_time)
+                    time.sleep(self.SLOW_WAIT_TIME)
                     self.multi_send(src_addr_list,
                                     '/ray/gui/patchbay/big_packets', 0)
             
@@ -341,10 +339,10 @@ class OscJackPatch(Server):
                     *conn)
 
                 n += increment
-                if n % self.slow_wait_num < increment:
+                if n % self.SLOW_WAIT_NUM < increment:
                     self.multi_send(src_addr_list,
                                     '/ray/gui/patchbay/big_packets', 1)
-                    time.sleep(self.slow_wait_time)
+                    time.sleep(self.SLOW_WAIT_TIME)
                     self.multi_send(src_addr_list,
                                     '/ray/gui/patchbay/big_packets', 0)
 
@@ -397,10 +395,6 @@ class OscJackPatch(Server):
     def client_name_and_uuid(self, client_name: str, uuid: int):
         self.send_gui('/ray/gui/patchbay/client_name_and_uuid',
                       client_name, uuid)
-
-    # def port_added(self, port: 'JackPort'):
-    #     self.send_gui('/ray/gui/patchbay/port_added',
-    #                   port.name, port.type, port.flags, port.uuid) 
 
     def port_added(self, pname: str, ptype: int, pflags: int, puuid: int):
         self.send_gui('/ray/gui/patchbay/port_added',

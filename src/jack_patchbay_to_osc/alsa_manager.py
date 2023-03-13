@@ -177,11 +177,8 @@ class AlsaManager:
             self._osc_server.port_removed(
                 f":ALSA_IN:{client.name}:{port.name}")
 
-    def add_all_ports(self):
-        print('Makke', self._event_thread)
-        
+    def add_all_ports(self):        
         if self._event_thread.is_alive():
-            print('stppooe')
             self.stop_events_loop()
 
         self.get_the_graph()
@@ -212,7 +209,6 @@ class AlsaManager:
                  f":ALSA_IN:{dest_client.name}:{dest_port.name}")
             )
     
-        print('OZkml', self._event_thread)    
         self._event_thread.start()
     
     def parse_ports_and_flags(self) -> Iterator[PortData]:
@@ -435,4 +431,6 @@ class AlsaManager:
         self._stopping = False
         self._event_thread = Thread(target=self.read_events)
     
+    def exit(self):
+        self.seq.exit()
     
