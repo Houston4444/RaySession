@@ -1,6 +1,7 @@
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterator
+import time
+from typing import TYPE_CHECKING, Iterator, Optional
 from threading import Thread
     
 from pyalsa import alsaseq
@@ -22,7 +23,6 @@ from pyalsa.alsaseq import (
     SEQ_EVENT_PORT_UNSUBSCRIBED,
     SequencerError
 )
-
 from port_data import PortData
 
 if TYPE_CHECKING:
@@ -53,6 +53,22 @@ class AlsaConn:
     source_port_id: int
     dest_client_id: int
     dest_port_id: int
+    
+    def as_port_names(self, clients: dict[int, 'AlsaClient']) -> Optional[tuple[str, str]]:
+        src_client = clients.get(self.source_client_id)
+        dest_client = clients.get(self.dest_client_id)
+        
+        if src_client is None or dest_client is None:
+            return None
+        
+        src_port = src_client.ports.get(self.source_port_id)
+        dest_port = dest_client.ports.get(self.dest_client_id)
+        
+        if src_port is None or dest_port is None:
+            return None
+        
+        return (f":ALSA_OUT:{src_client.name}:{src_port.name}",
+                f":ALSA_IN:{dest_client.name}:{dest_port.name}")
 
 
 class AlsaClient:
@@ -162,7 +178,10 @@ class AlsaManager:
                 f":ALSA_IN:{client.name}:{port.name}")
 
     def add_all_ports(self):
+        print('Makke', self._event_thread)
+        
         if self._event_thread.is_alive():
+            print('stppooe')
             self.stop_events_loop()
 
         self.get_the_graph()
@@ -192,7 +211,8 @@ class AlsaManager:
                 (f":ALSA_OUT:{source_client.name}:{source_port.name}",
                  f":ALSA_IN:{dest_client.name}:{dest_port.name}")
             )
-            
+    
+        print('OZkml', self._event_thread)    
         self._event_thread.start()
     
     def parse_ports_and_flags(self) -> Iterator[PortData]:
@@ -300,8 +320,14 @@ class AlsaManager:
                     except:
                         continue
 
+                    # Sometimes client name is not ready
+                    if client_info['name'] == f'Client-{client_id}':
+                        time.sleep(0.010)
+                        client_info = self.seq.get_client_info(client_id)
+
                     self._clients[client_id] = AlsaClient(
                         self, client_info['name'], client_id)
+
                 elif event.type == SEQ_EVENT_CLIENT_EXIT:
                     client_id = data['addr.client']
                     client = self._clients[client_id]
@@ -333,6 +359,18 @@ class AlsaManager:
                     port = client.ports.get(port_id)
                     if port is None:
                         continue
+                    
+                    to_rm_conns = list[AlsaConn]()
+                    
+                    for conn in self._connections:
+                        if (client_id, port_id) in ((conn.source_client_id, conn.source_port_id),
+                                                    (conn.dest_client_id, conn.dest_port_id)):
+                            to_rm_conns.append(conn)
+                            
+                    for conn in to_rm_conns:
+                        port_names = conn.as_port_names(self._clients)
+                        if port_names is not None:
+                            self._osc_server.connection_removed(port_names)
                     
                     self.remove_port_from_patchbay(client, port)
                     

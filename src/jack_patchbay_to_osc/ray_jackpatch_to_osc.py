@@ -150,6 +150,7 @@ class MainObject:
         self.write_existence_file()
         self.start_jack_client()
         
+        print('ALSA_LIB_OK', ALSA_LIB_OK)
         if ALSA_LIB_OK:
             self.alsa_mng = AlsaManager(self)
             self.alsa_mng.add_all_ports()
@@ -246,6 +247,9 @@ class MainObject:
         if self.jack_running:
             self.get_all_ports_and_connections()
             self.osc_server.server_restarted()
+            
+        if self.alsa_mng is not None:
+            self.alsa_mng.add_all_ports()
     
     def remember_dsp_load(self):
         self.max_dsp_since_last_sent = max(
@@ -342,9 +346,7 @@ class MainObject:
             self.alsa_mng.stop_events_loop()
 
         self.remove_existence_file()
-        print('del osc server')
         del self.osc_server
-        print('c fini')
     
     def start_jack_client(self):
         self._waiting_jack_client_open = True
