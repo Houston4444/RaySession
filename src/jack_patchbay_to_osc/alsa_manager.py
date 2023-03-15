@@ -326,12 +326,12 @@ class AlsaManager:
 
                 elif event.type == SEQ_EVENT_CLIENT_EXIT:
                     client_id = data['addr.client']
-                    client = self._clients[client_id]
+                    client = self._clients.get(client_id)
                     if client is not None:
                         for port in client.ports.values():
                             self.remove_port_from_patchbay(client, port)
 
-                    del self._clients[client_id]
+                        del self._clients[client_id]
                     
                 elif event.type == SEQ_EVENT_PORT_START:
                     client_id, port_id = data['addr.client'], data['addr.port']
