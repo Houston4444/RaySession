@@ -150,7 +150,6 @@ class MainObject:
         self.write_existence_file()
         self.start_jack_client()
         
-        print('ALSA_LIB_OK', ALSA_LIB_OK)
         if ALSA_LIB_OK:
             self.alsa_mng = AlsaManager(self)
             self.alsa_mng.add_all_ports()

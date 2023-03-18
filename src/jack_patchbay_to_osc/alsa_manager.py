@@ -316,13 +316,24 @@ class AlsaManager:
                     except:
                         continue
 
+                    n_tries = 0
+                    client_outed = False
+
                     # Sometimes client name is not ready
-                    if client_info['name'] == f'Client-{client_id}':
+                    while client_info['name'] == f'Client-{client_id}':
                         time.sleep(0.010)
                         try:
                             client_info = self.seq.get_client_info(client_id)
                         except:
-                            continue
+                            client_outed = True
+                            break
+                        
+                        n_tries += 1
+                        if n_tries >= 5:
+                            break
+                    
+                    if client_outed:
+                        continue
 
                     self._clients[client_id] = AlsaClient(
                         self, client_info['name'], client_id)
