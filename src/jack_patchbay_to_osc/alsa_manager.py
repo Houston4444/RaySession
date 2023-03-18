@@ -319,7 +319,10 @@ class AlsaManager:
                     # Sometimes client name is not ready
                     if client_info['name'] == f'Client-{client_id}':
                         time.sleep(0.010)
-                        client_info = self.seq.get_client_info(client_id)
+                        try:
+                            client_info = self.seq.get_client_info(client_id)
+                        except:
+                            continue
 
                     self._clients[client_id] = AlsaClient(
                         self, client_info['name'], client_id)
