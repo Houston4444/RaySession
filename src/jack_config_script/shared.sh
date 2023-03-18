@@ -173,7 +173,18 @@ reconfigure_pulseaudio(){
     current_pulse_vars=$(echo "$current_parameters"|grep ^pulseaudio_)
     wanted_pulse_vars=$(echo "$wanted_parameters"|grep ^pulseaudio_)
     
-    [[ "$1" == "as_it_just_was" ]] && as_it_just_was=true || as_it_just_was=false
+    as_it_just_was=false
+
+    for arg in "$@";do
+        case $arg in
+            as_it_just_was)
+                as_it_just_was=true
+                ;;
+            force)
+                unset current_pulse_vars
+                ;;
+        esac
+    done
     
     if ! $as_it_just_was && [[ "$wanted_pulse_vars" == "$current_pulse_vars" ]];then
         unset wanted_pulse_vars
