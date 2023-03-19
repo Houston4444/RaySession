@@ -17,7 +17,8 @@ make_diff_parameters
 
 [[ "$(current_value_of jack_started)" == 1 ]] && jack_was_started=true || jack_was_started=false
 
-# save the current configuration to can restore it (only if we are not in a switch situation)
+# save the current configuration to can restore it
+# (only if we are not in a switch situation)
 $RAY_SWITCHING_SESSION || echo "$current_parameters" > "$backup_jack_conf"
 
 # no reliable JACK infos because JACK was started before the checker script
@@ -26,16 +27,17 @@ if $RAY_JACK_RELIABILITY_CHECK && [[ "$(current_value_of reliable_infos)" == 0 ]
         $jack_was_started && stop_jack
         has_different_value /driver/rate && set_samplerate
         start_jack
-        $jack_was_started && reconfigure_pulseaudio as_it_just_was
+        $jack_was_started && reconfigure_pulseaudio force as_it_just_was
     else
         check_device
         $jack_was_started && stop_jack
         set_jack_parameters
         start_jack
+
         if [ -f "$session_jack_file" ];then
-            reconfigure_pulseaudio
+            reconfigure_pulseaudio force
         else
-            reconfigure_pulseaudio as_it_just_was
+            reconfigure_pulseaudio force as_it_just_was
         fi
     fi
     

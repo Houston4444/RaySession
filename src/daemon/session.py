@@ -1180,6 +1180,9 @@ class OperatingSession(Session):
             elif next_function == self.close:
                 if 'close_all' in run_step_args:
                     arguments = [True]
+            elif next_function == self.save:
+                if 'without_clients' in run_step_args:
+                    arguments = [False, False]
 
         self.steps_order.__delitem__(0)
         next_function(*arguments)
@@ -1362,7 +1365,7 @@ class OperatingSession(Session):
     # then, when timer is timeout or when all client replied,
     # save_substep1 is launched.
 
-    def save(self, outing=False):
+    def save(self, outing=False, save_clients=True):
         if not self.path:
             self.next_function()
             return
@@ -1375,31 +1378,34 @@ class OperatingSession(Session):
         self.send_gui_message(_translate('GUIMSG', '-- Saving session %s --')
                                 % highlight_text(self.get_short_path()))
 
-        for client in self.clients:
-            if client.can_save_now():
-                self.expected_clients.append(client)
-            client.save()
+        if save_clients:
+            for client in self.clients:
+                if client.can_save_now():
+                    self.expected_clients.append(client)
+                client.save()
 
-        if self.expected_clients:
-            if len(self.expected_clients) == 1:
-                self.send_gui_message(
-                    _translate('GUIMSG', 'waiting for %s to save...')
-                        % self.expected_clients[0].gui_msg_style())
-            else:
-                self.send_gui_message(
-                    _translate('GUIMSG', 'waiting for %i clients to save...')
-                        % len(self.expected_clients))
+            if self.expected_clients:
+                if len(self.expected_clients) == 1:
+                    self.send_gui_message(
+                        _translate('GUIMSG', 'waiting for %s to save...')
+                            % self.expected_clients[0].gui_msg_style())
+                else:
+                    self.send_gui_message(
+                        _translate('GUIMSG', 'waiting for %i clients to save...')
+                            % len(self.expected_clients))
 
-        self._wait_and_go_to(10000, (self.save_substep1, outing), ray.WaitFor.REPLY)
+        self._wait_and_go_to(10000, (self.save_substep1, outing),
+                             ray.WaitFor.REPLY)
 
-    def save_substep1(self, outing=False):
+    def save_substep1(self, outing=False, save_clients=True):
         self._clean_expected()
 
-        if outing:
+        if save_clients and outing:
             for client in self.clients:
                 if client.has_error():
-                    self._send_error(ray.Err.GENERAL_ERROR,
-                                  "Some clients could not save")
+                    self._send_error(
+                        ray.Err.GENERAL_ERROR,
+                        "Some clients could not save")
                     break
 
         if not self.path:
@@ -1440,7 +1446,7 @@ class OperatingSession(Session):
         self._send_reply("Saved.")
         self.set_server_status(ray.ServerStatus.READY)
 
-    def save_error(self, err_saving):
+    def save_error(self, err_saving: ray.Err):
         self.message("Failed")
         m = _translate('Load Error', "Unknown error")
 

@@ -709,7 +709,7 @@ class SignaledSession(OperatingSession):
         self.canvas_saver.save_portgroup(*args)
 
     @session_operation
-    def _ray_session_save(self, path, args, src_addr):
+    def _ray_session_save(self, path, args, src_addr):        
         self.steps_order = [self.save, self.snapshot, self.save_done]
 
     @session_operation

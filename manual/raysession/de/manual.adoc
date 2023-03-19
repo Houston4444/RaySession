@@ -1,14 +1,14 @@
 = RaySession Manual
 :toc: left
 :toclevels: 1
-:imagesdir: images
-:stylesheet: rs_manual.css
+:imagesdir: ../en/images
+:stylesheet: ../../patchbay/en/patchbay_manual.css
 
 [.text-right]
 image:flags/en.jpeg[EN, 30, 20, link=../en/manual.html] image:flags/fr.jpeg[FR, 30, 20, link=../fr/manual.html] image:flags/de.jpeg[DE, 40, 30, link=../de/manual.html]
 
 image::raysession.svg["icon", 100, 100]
-_für Version 0.12.0_
+_für Version 0.13.1_
 
 == Einführung
 RaySession ist ein Audio Session Manager für GNU / Linux. Er ermöglicht, verschiedene Audio Programme in einer Session zu starten und zu speichern, wodurch die Wiederherstellung einer bereits konfigurierten Session das Ausführen mehrerer Einzelschritte vermeidet.
@@ -70,14 +70,14 @@ image::example_session_ready.png[Session ready with Ardour and Guitarix]
 
 Fügen Sie in Ardour eine Spur hinzu (Menu: Spur → Füge Spur hinzu). In dem sich öffnenden Fenster, nennen sie die Spur *Guitar* und setzen Sie die Kanaleinstellungen auf _Stereo_.
 
-[caption="Figure 1: ",link=images/example_ardour_track.png]
+[caption="Figure 1: ",link=../en/images/example_ardour_track.png]
 image::example_ardour_track.png[Add a track in Ardour for Guitarix, 640, 480]
 
 Now use JACK's <<patchbay>> which occupies the right side of the RaySession window.
 
 Connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.
 
-[caption="Figure 1: ",link=images/example_patchbay.png]
+[caption="Figure 1: ",link=../en/images/example_patchbay.png]
 image::example_patchbay.png[My session patchbay]
 
 Dies ist ein Beispiel, in dem der Gitarrensound durch Guitarix verarbeitet direkt in Ardour aufgenommen wird. Falls Sie über keine Gitarre verfügen, können Sie auch in ein Mikrofon singen, es handelt sich lediglich um ein Beispiel.
@@ -292,7 +292,10 @@ Dies ist nützlich, wenn Sie in der Session bestehende Projekte bestimmen und st
 
 [#patchbay]
 == Patchbay
-the JACK patchbay is not displayed by default. You can display it by clicking on *Control* and then *Show JACK Patchbay* (__or Ctrl+J__). The patchbay contains all the JACK AUDIO and MIDI ports that you can interconnect.
+
+link:../../patchbay/en/manual.html[Patchbay Manual]
+
+The JACK patchbay is displayed by default. You can hide it by clicking on *Control* and then uncheck *Show JACK Patchbay* (__or Ctrl+J__). The patchbay contains all the JACK AUDIO and MIDI ports that you can interconnect.
 
 Obviously, if JACK is not started, this patchbay will be empty.
 
@@ -300,125 +303,8 @@ It is advisable to have the A2J bridge running if you want to work properly with
 
 RaySession does not include tools to configure the JACK server, *QJackCtl*, *Studio Control*, *Cadence*, or the command line utility `jack_control` do this job very well. Note that this patchbay also works with PipeWire.
 
-=== Overview
+Learn more about the patchbay in the link:../../patchbay/manual.html[Patchbay Manual].
 
-image::patchbay_base.png[Patchbay overview]
-
-This is what your patchbay can look like. Here there are 7 boxes:
-
-* a *system* box with your ports corresponding to the hardware inputs (microphone, guitar...)
-* a *system* box with your ports corresponding to the hardware outputs (headphones, speakers...)
-* an *a2j* box with your ports corresponding to the MIDI hardware inputs
-* an *a2j* box with your ports corresponding to the MIDI hardware outputs
-* a *PulseAudio JACK Source* box
-* a *PulseAudio JACK Sink* box, sound from firefox and all non JACK applications comes from theses ports
-* a *Guitarix* box
-
-Here A2J and pulse2jack bridges are launched.
-
-You notice that 4 of these boxes are surrounded by a decoration (2 *system* and 2 *a2j*), these are the boxes that contain the hardware ports (your audio interface, your USB piano, any controller...).
-
-'''
-
-Some audio ports are grouped into subgroups, which we will call portgroups. These portgroups are mostly stereo pairs automatically detected by the port names. This is the case here for :
-
-* system:capture 1/2
-* system:playback 1/2
-* PulseAudio JACK Source:front L/R
-* PulseAudio JACK Sink:front L/R
-* Guitarix:out 0/1
-
-These portgroups facilitate the connections and allow a better general readability.
-
-'''
-
-The blue curved lines correspond to the audio connections. You can observe that :
-
-* hardware input audio ports are connected to *PulseAudio JACK Source*.
-* the *PulseAudio JACK Sink* ports are connected to the hardware outputs
-* only the first port of *system* is connected to the input (__in 0__) of the *Guitarix* software
-* the audio ports of *Guitarix* are connected to the hardware outputs
-
-=== Make and break a connection
-
-You can establish a connection between 2 ports as long as they meet the following conditions:
-
-* he ports are of the same type (you can't connect an audio port to a MIDI port)
-* one is an input port, the other is an output port
-
-==== Intuitive Method
-
-To connect or disconnect two ports, click on a port without releasing the mouse button, drag the cursor to the desired port and release the mouse button.
-
-==== Alternative method
-
-Right click on a port, it will display a drop down menu, choose *Connect* then the desired port. Click elsewhere to make this menu disappear. The advantage of this method is that it allows you to quickly connect a port to several others, the menu remaining displayed during the connections.
-
-video::video/patchbay_simple_connect.mp4[width=640]
-
-=== Options
-
-Right click anywhere on the patchbay to display the menu. This menu is also present in the RaySession menu (*Patchbay* menu).
-It will allow you to :
-
-* switch the patchbay to full screen
-* Find a box with its name
-* Filter ports: show only AUDIO or MIDI ports or both
-* adjust the zoom level
-* refresh the canvas: ask JACK again for the list of existing ports and their connections
-* Canvas Preferences: display a window of options +
-    All changes in this window take effect immediately. Hover over the boxes to see the tooltips.
-
-=== Shortcuts you should know
-
-* A double click anywhere switches the patchbay to full screen.
-* __Ctrl+Mouse Wheel__ allows you to zoom in/out.
-* __Alt+Mouse wheel__ allows to move the view horizontally.
-* The wheel button is used to move the view
-* __Ctrl+middle mouse button__ cuts all connections passing under the cursor
-* __Ctrl+F__ allows to search a box with its name
-
-==== Burst Connections
-
-It is possible to connect a port or a portgroup to different ports quite quickly. You just have to end your connections with a right click. A video will be much more explicit.
-
-video::video/patchbay_rafal_connections.mp4[width=640]
-
-Here we want to connect the multiple outputs of Hydrogen to the Jack-Mixer tracks. In the video the blue circles appear with a right click.
-
-==== Passing connections from one port to another
-
-Sometimes it is less tedious to switch connections from one port to another than to undo and redo everything. To do this, start from the port that contains the connections and act as if you wanted to make a connection, but go to the port to which you want to switch the connections.
-
-* This only works if the destination port does not contain any connections
-* It works from port to port or from portgroup to portgroup but not from port to portgroup
-
-video::video/patchbay_fast_cut_paste.mp4[width=640]
-
-In this video we have a rather complex case where the source is plugged into *3 Band Splitter*.
-The bass and treble (_Output 1_ and _Output 5_) are sent directly to *EQ6Q Mono* while the midrange (_Output 3_) goes through the distortion *GxTubeScreamer* first. We want to insert the *Dragonfly Room Reverb* before the *EQ6Q Mono* equalization.
-
-'''
-
-Note that with the right-click connection and the switching of connections from one port to another, it is very quick to integrate a new plugin in a chain, as here where we plug *Plujain Ramp Live* between *Dragonfly Room Reverb* and *EQ6Q Mono*.
-
-video::video/fast_new_plugin.mp4[width=640]
-
-=== A2J ports
-
-image::patchbay_a2j.png[ports a2j]
-
-The MIDI ports provided by the A2J (Alsa To Jack) bridge have a hole at the end to identify them. Their real name is a long name, but that's about the only thing that differs from the other MIDI ports.
-
-=== Control Voltage ports (CV ports)
-
-image::patchbay_CV.png[ports CV]
-
-Control voltage ports, commonly called CV ports, work like regular audio ports, however, they can control one or more parameters with much more precision than MIDI ports. As their stream is not meant to be listened to, it is not possible to simply connect a CV output port to a regular audio input, as this could damage your headphones, your speakers, and maybe even your ears. +
-If you still want to do it, right click on one of the ports, then *Connect*, then the *DANGEROUS* menu. +
-You can't say you weren't warned, and it's almost impossible to do this by mistake.
-
-On the other hand, connecting a classic audio output port to a CV input port is perfectly possible, no problem.
 
 == Klient Eigenschaften/Properties Fenster
 Das Eigenschaften Fenster lässt sich öffnen, indem sie im Menu des Klienten (öffnet sich durch rechten Mausklick) auf Eigenschaften/Properties klicken
@@ -567,13 +453,13 @@ image::audacity_save project.png[Save empty Audacity project]
 Klicken Sie auf *Validate* (Bestätigen) falls sich ein Warnfenster öffnet. +
 In der sich öffnenden Box um die Datei zu speichern, finden Sie den Session Ordner unten links (siehe <<session_folder_shortcuts>>). Klicken Sie darauf, um ihn zu öffnen. Darin sollten Sie den Ordner des Klienten mit dem Namen, der ihm im RayHack Tab gegeben wurde,finden. Nutzen Sie diesen. Fügen Sie in der Speicherbox den genauen Namen, den sie der Session im  *Name:* Feld gegeben haben und bestätigen Sie.
 
-[caption="Figure 1: ",link=images/audacity_save_file.png]
+[caption="Figure 1: ",link=../en/imagesages/audacity_save_file.png]
 image::audacity_save_file.png[Where to save Audacity project, 640, 480]
 
 Schliessen Sie Audacity. +
 Klicken Sie oben rechts im *Ray-Hack* Tab vom Eigenschaftern Fenster des Klienten auf *Browse*.
 
-[caption="Figure 1: ",link=images/audacity_load_config_file.png]
+[caption="Figure 1: ",link=../en/imagesages/audacity_load_config_file.png]
 image::audacity_load_config_file.png[Load CONFIG_FILE window, 640, 480]
 
 wählen Sie das gerade erstellte Audacity Projekt mit dem Session Namen und mit .aup endend.

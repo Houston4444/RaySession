@@ -53,12 +53,13 @@ if __name__ == '__main__':
 
     app_translator = QTranslator()
     if app_translator.load(QLocale(), ray.APP_TITLE.lower(),
-                           '_', "%s/locale" % get_code_root()):
+                           '_', str(get_code_root() / 'locale')):
         app.installTranslator(app_translator)
 
     patchbay_translator = QTranslator()
-    if patchbay_translator.load(QLocale(), 'patchbay',
-                                '_', "%s/HoustonPatchbay/locale" % get_code_root()):
+    if patchbay_translator.load(
+            QLocale(), 'patchbay',
+            '_', str(get_code_root() / 'HoustonPatchbay' / 'locale')):
         app.installTranslator(patchbay_translator)
 
     sys_translator = QTranslator()

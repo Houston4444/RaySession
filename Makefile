@@ -166,6 +166,7 @@ install:
 
 	# Copy patchbay themes
 	cp -r HoustonPatchbay/themes $(DEST_RAY)/$(PATCHBAY_DIR)/
+	cp -r HoustonPatchbay/manual $(DEST_RAY)/$(PATCHBAY_DIR)/
 
 	# Copy Desktop Files
 	install -m 644 data/share/applications/*.desktop \

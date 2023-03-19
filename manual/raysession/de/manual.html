@@ -21,8 +21,9 @@
 --secondarycolor:#ba3925;
 --tertiarycolor: #186d7a;
 --sidebarbackground:#232323; /* Grey 900 */
---linkcolor:#808080; /* Grey 200 */
---linkcoloralternate:#d0d0d0;
+--linkcolor:#663815; /* Brown */
+--linkhover: #9c5620;
+--linkcoloralternate: #9c5620;
 --white:#FFFFFF;
 --black:#000000;
 --gold:#ffd777;
@@ -47,7 +48,7 @@ a {
   color: var(--linkcolor);
 }
 a:hover {
-  color: var(--white);
+  color: var(--linkhover);
 }
 .quoteblock blockquote::before {
   color: var(--linkcoloralternate);
@@ -64,9 +65,9 @@ mark {
 th{background-color: var(--linkcolor);color:var(--white);}
 
 #toc.toc2{background-color:var(--sidebarbackground);color:var(--gold);}
-#toc.toc2.a{color:var(--gold);}
-#toc.toc2.a:active{color:var(--gold);}
-#toc.toc2.a:visited{color:var(--gold);}
+#toc a{color:var(--gold);}
+#toc a:visited{color: #999;}
+#toc a:active{color:var(--gold);}
 #toctitle{color:var(--gold); !important;background-color:var(--brown);font-size: 14px !important;padding:10px;border-radius:6px;}
 
 /* Responsiveness fixes */
@@ -113,15 +114,15 @@ table {
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph text-right">
-<p><span class="image"><a class="image" href="../en/manual.html"><img src="images/flags/en.jpeg" alt="EN" width="30" height="20"></a></span> <span class="image"><a class="image" href="../fr/manual.html"><img src="images/flags/fr.jpeg" alt="FR" width="30" height="20"></a></span> <span class="image"><a class="image" href="../de/manual.html"><img src="images/flags/de.jpeg" alt="DE" width="40" height="30"></a></span></p>
+<p><span class="image"><a class="image" href="../en/manual.html"><img src="../en/images/flags/en.jpeg" alt="EN" width="30" height="20"></a></span> <span class="image"><a class="image" href="../fr/manual.html"><img src="../en/images/flags/fr.jpeg" alt="FR" width="30" height="20"></a></span> <span class="image"><a class="image" href="../de/manual.html"><img src="../en/images/flags/de.jpeg" alt="DE" width="40" height="30"></a></span></p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/raysession.svg" alt="icon" width="100" height="100">
+<img src="../en/images/raysession.svg" alt="icon" width="100" height="100">
 </div>
 </div>
 <div class="paragraph">
-<p><em>für Version 0.12.0</em></p>
+<p><em>für Version 0.13.1</em></p>
 </div>
 </div>
 </div>
@@ -160,7 +161,7 @@ sollten also installiert sein.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/example_new_session.png" alt="New session">
+<img src="../en/images/example_new_session.png" alt="New session">
 </div>
 </div>
 <div class="paragraph">
@@ -202,7 +203,7 @@ Session zu starten.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/example_session_launched.png" alt="Session launched">
+<img src="../en/images/example_session_launched.png" alt="Session launched">
 </div>
 </div>
 <div class="paragraph">
@@ -215,7 +216,7 @@ Dialogfenster wird sich öffnen (mehr hierzu unter <a href="#add_application">An
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/example_add_ardour.png" alt="Add Ardour to the session" width="640" height="480">
+<img src="../en/images/example_add_ardour.png" alt="Add Ardour to the session" width="640" height="480">
 </div>
 </div>
 <div class="paragraph">
@@ -226,7 +227,7 @@ Dialogfenster wird sich öffnen (mehr hierzu unter <a href="#add_application">An
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/example_session_ready.png" alt="Session ready with Ardour and Guitarix">
+<img src="../en/images/example_session_ready.png" alt="Session ready with Ardour and Guitarix">
 </div>
 </div>
 <div class="paragraph">
@@ -234,7 +235,7 @@ Dialogfenster wird sich öffnen (mehr hierzu unter <a href="#add_application">An
 </div>
 <div class="imageblock">
 <div class="content">
-<a class="image" href="images/example_ardour_track.png"><img src="images/example_ardour_track.png" alt="Add a track in Ardour for Guitarix" width="640" height="480"></a>
+<a class="image" href="../en/images/example_ardour_track.png"><img src="../en/images/example_ardour_track.png" alt="Add a track in Ardour for Guitarix" width="640" height="480"></a>
 </div>
 </div>
 <div class="paragraph">
@@ -245,7 +246,7 @@ Dialogfenster wird sich öffnen (mehr hierzu unter <a href="#add_application">An
 </div>
 <div class="imageblock">
 <div class="content">
-<a class="image" href="images/example_patchbay.png"><img src="images/example_patchbay.png" alt="My session patchbay"></a>
+<a class="image" href="../en/images/example_patchbay.png"><img src="../en/images/example_patchbay.png" alt="My session patchbay"></a>
 </div>
 </div>
 <div class="paragraph">
@@ -272,7 +273,7 @@ Dialogfenster wird sich öffnen (mehr hierzu unter <a href="#add_application">An
 <h3 id="_obere_zeile">Obere Zeile</h3>
 <div class="imageblock">
 <div class="content">
-<img src="images/session_top_line.png" alt="Top line of the session frame">
+<img src="../en/images/session_top_line.png" alt="Top line of the session frame">
 </div>
 </div>
 <div class="paragraph">
@@ -326,7 +327,7 @@ Die laufende Session muss nicht geschlossen werden, um eine weitere zu starten. 
 <h3 id="_untere_zeile">Untere Zeile</h3>
 <div class="imageblock">
 <div class="content">
-<img src="images/session_bottom_line.png" alt="Bottom line of the session frame">
+<img src="../en/images/session_bottom_line.png" alt="Bottom line of the session frame">
 </div>
 </div>
 <div class="paragraph">
@@ -405,7 +406,7 @@ Siehe <a href="#snapshots">Snapshots</a>.</p>
 <div class="sectionbody">
 <div class="imageblock">
 <div class="content">
-<img src="images/client_carla.png" alt="trame d&#8217;un client">
+<img src="../en/images/client_carla.png" alt="trame d&#8217;un client">
 </div>
 </div>
 <div class="paragraph">
@@ -530,7 +531,7 @@ Ist die Maus über diesem Symbol gehalten, ist das Folgende zu sehen</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/add_application.png" alt="Add Application window">
+<img src="../en/images/add_application.png" alt="Add Application window">
 </div>
 </div>
 <div class="paragraph">
@@ -542,7 +543,7 @@ Ist die Maus über diesem Symbol gehalten, ist das Folgende zu sehen</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/add_application_filter.png" alt="Filter block of Add Application window">
+<img src="../en/images/add_application_filter.png" alt="Filter block of Add Application window">
 </div>
 </div>
 <div class="ulist">
@@ -570,7 +571,7 @@ Ist die Maus über diesem Symbol gehalten, ist das Folgende zu sehen</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/add_application_infos.png" alt="Informations block of Add Application window">
+<img src="../en/images/add_application_infos.png" alt="Informations block of Add Application window">
 </div>
 </div>
 <div class="ulist">
@@ -608,7 +609,7 @@ Um zum Beispiel aus dem Hauptfenster der RaySession Carla hinzuzufügen, benutze
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/add_executable.png" alt="Add Executable window">
+<img src="../en/images/add_executable.png" alt="Add Executable window">
 </div>
 </div>
 <div class="paragraph">
@@ -640,7 +641,7 @@ Der Status eines solchen Programmes wird immer auf <strong>launch</strong> bleib
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/add_executable_plus.png" alt="Advanced Add Executable window">
+<img src="../en/images/add_executable_plus.png" alt="Advanced Add Executable window">
 </div>
 </div>
 <div class="ulist">
@@ -682,7 +683,10 @@ Dies ist nützlich, wenn Sie in der Session bestehende Projekte bestimmen und st
 <h2 id="patchbay">Patchbay</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>the JACK patchbay is not displayed by default. You can display it by clicking on <strong>Control</strong> and then <strong>Show JACK Patchbay</strong> (<em>or Ctrl+J</em>). The patchbay contains all the JACK AUDIO and MIDI ports that you can interconnect.</p>
+<p><a href="../../patchbay/en/manual.html">Patchbay Manual</a></p>
+</div>
+<div class="paragraph">
+<p>The JACK patchbay is displayed by default. You can hide it by clicking on <strong>Control</strong> and then uncheck <strong>Show JACK Patchbay</strong> (<em>or Ctrl+J</em>). The patchbay contains all the JACK AUDIO and MIDI ports that you can interconnect.</p>
 </div>
 <div class="paragraph">
 <p>Obviously, if JACK is not started, this patchbay will be empty.</p>
@@ -693,264 +697,8 @@ Dies ist nützlich, wenn Sie in der Session bestehende Projekte bestimmen und st
 <div class="paragraph">
 <p>RaySession does not include tools to configure the JACK server, <strong>QJackCtl</strong>, <strong>Studio Control</strong>, <strong>Cadence</strong>, or the command line utility <code>jack_control</code> do this job very well. Note that this patchbay also works with PipeWire.</p>
 </div>
-<div class="sect2">
-<h3 id="_overview">Overview</h3>
-<div class="imageblock">
-<div class="content">
-<img src="images/patchbay_base.png" alt="Patchbay overview">
-</div>
-</div>
 <div class="paragraph">
-<p>This is what your patchbay can look like. Here there are 7 boxes:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>a <strong>system</strong> box with your ports corresponding to the hardware inputs (microphone, guitar&#8230;&#8203;)</p>
-</li>
-<li>
-<p>a <strong>system</strong> box with your ports corresponding to the hardware outputs (headphones, speakers&#8230;&#8203;)</p>
-</li>
-<li>
-<p>an <strong>a2j</strong> box with your ports corresponding to the MIDI hardware inputs</p>
-</li>
-<li>
-<p>an <strong>a2j</strong> box with your ports corresponding to the MIDI hardware outputs</p>
-</li>
-<li>
-<p>a <strong>PulseAudio JACK Source</strong> box</p>
-</li>
-<li>
-<p>a <strong>PulseAudio JACK Sink</strong> box, sound from firefox and all non JACK applications comes from theses ports</p>
-</li>
-<li>
-<p>a <strong>Guitarix</strong> box</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Here A2J and pulse2jack bridges are launched.</p>
-</div>
-<div class="paragraph">
-<p>You notice that 4 of these boxes are surrounded by a decoration (2 <strong>system</strong> and 2 <strong>a2j</strong>), these are the boxes that contain the hardware ports (your audio interface, your USB piano, any controller&#8230;&#8203;).</p>
-</div>
-<hr>
-<div class="paragraph">
-<p>Some audio ports are grouped into subgroups, which we will call portgroups. These portgroups are mostly stereo pairs automatically detected by the port names. This is the case here for :</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>system:capture 1/2</p>
-</li>
-<li>
-<p>system:playback 1/2</p>
-</li>
-<li>
-<p>PulseAudio JACK Source:front L/R</p>
-</li>
-<li>
-<p>PulseAudio JACK Sink:front L/R</p>
-</li>
-<li>
-<p>Guitarix:out 0/1</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>These portgroups facilitate the connections and allow a better general readability.</p>
-</div>
-<hr>
-<div class="paragraph">
-<p>The blue curved lines correspond to the audio connections. You can observe that :</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>hardware input audio ports are connected to <strong>PulseAudio JACK Source</strong>.</p>
-</li>
-<li>
-<p>the <strong>PulseAudio JACK Sink</strong> ports are connected to the hardware outputs</p>
-</li>
-<li>
-<p>only the first port of <strong>system</strong> is connected to the input (<em>in 0</em>) of the <strong>Guitarix</strong> software</p>
-</li>
-<li>
-<p>the audio ports of <strong>Guitarix</strong> are connected to the hardware outputs</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_make_and_break_a_connection">Make and break a connection</h3>
-<div class="paragraph">
-<p>You can establish a connection between 2 ports as long as they meet the following conditions:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>he ports are of the same type (you can&#8217;t connect an audio port to a MIDI port)</p>
-</li>
-<li>
-<p>one is an input port, the other is an output port</p>
-</li>
-</ul>
-</div>
-<div class="sect3">
-<h4 id="_intuitive_method">Intuitive Method</h4>
-<div class="paragraph">
-<p>To connect or disconnect two ports, click on a port without releasing the mouse button, drag the cursor to the desired port and release the mouse button.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_alternative_method">Alternative method</h4>
-<div class="paragraph">
-<p>Right click on a port, it will display a drop down menu, choose <strong>Connect</strong> then the desired port. Click elsewhere to make this menu disappear. The advantage of this method is that it allows you to quickly connect a port to several others, the menu remaining displayed during the connections.</p>
-</div>
-<div class="videoblock">
-<div class="content">
-<video src="images/video/patchbay_simple_connect.mp4" width="640" controls>
-Your browser does not support the video tag.
-</video>
-</div>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_options">Options</h3>
-<div class="paragraph">
-<p>Right click anywhere on the patchbay to display the menu. This menu is also present in the RaySession menu (<strong>Patchbay</strong> menu).
-It will allow you to :</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>switch the patchbay to full screen</p>
-</li>
-<li>
-<p>Find a box with its name</p>
-</li>
-<li>
-<p>Filter ports: show only AUDIO or MIDI ports or both</p>
-</li>
-<li>
-<p>adjust the zoom level</p>
-</li>
-<li>
-<p>refresh the canvas: ask JACK again for the list of existing ports and their connections</p>
-</li>
-<li>
-<p>Canvas Preferences: display a window of options<br>
-All changes in this window take effect immediately. Hover over the boxes to see the tooltips.</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_shortcuts_you_should_know">Shortcuts you should know</h3>
-<div class="ulist">
-<ul>
-<li>
-<p>A double click anywhere switches the patchbay to full screen.</p>
-</li>
-<li>
-<p><em>Ctrl+Mouse Wheel</em> allows you to zoom in/out.</p>
-</li>
-<li>
-<p><em>Alt+Mouse wheel</em> allows to move the view horizontally.</p>
-</li>
-<li>
-<p>The wheel button is used to move the view</p>
-</li>
-<li>
-<p><em>Ctrl+middle mouse button</em> cuts all connections passing under the cursor</p>
-</li>
-<li>
-<p><em>Ctrl+F</em> allows to search a box with its name</p>
-</li>
-</ul>
-</div>
-<div class="sect3">
-<h4 id="_burst_connections">Burst Connections</h4>
-<div class="paragraph">
-<p>It is possible to connect a port or a portgroup to different ports quite quickly. You just have to end your connections with a right click. A video will be much more explicit.</p>
-</div>
-<div class="videoblock">
-<div class="content">
-<video src="images/video/patchbay_rafal_connections.mp4" width="640" controls>
-Your browser does not support the video tag.
-</video>
-</div>
-</div>
-<div class="paragraph">
-<p>Here we want to connect the multiple outputs of Hydrogen to the Jack-Mixer tracks. In the video the blue circles appear with a right click.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_passing_connections_from_one_port_to_another">Passing connections from one port to another</h4>
-<div class="paragraph">
-<p>Sometimes it is less tedious to switch connections from one port to another than to undo and redo everything. To do this, start from the port that contains the connections and act as if you wanted to make a connection, but go to the port to which you want to switch the connections.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>This only works if the destination port does not contain any connections</p>
-</li>
-<li>
-<p>It works from port to port or from portgroup to portgroup but not from port to portgroup</p>
-</li>
-</ul>
-</div>
-<div class="videoblock">
-<div class="content">
-<video src="images/video/patchbay_fast_cut_paste.mp4" width="640" controls>
-Your browser does not support the video tag.
-</video>
-</div>
-</div>
-<div class="paragraph">
-<p>In this video we have a rather complex case where the source is plugged into <strong>3 Band Splitter</strong>.
-The bass and treble (<em>Output 1</em> and <em>Output 5</em>) are sent directly to <strong>EQ6Q Mono</strong> while the midrange (<em>Output 3</em>) goes through the distortion <strong>GxTubeScreamer</strong> first. We want to insert the <strong>Dragonfly Room Reverb</strong> before the <strong>EQ6Q Mono</strong> equalization.</p>
-</div>
-<hr>
-<div class="paragraph">
-<p>Note that with the right-click connection and the switching of connections from one port to another, it is very quick to integrate a new plugin in a chain, as here where we plug <strong>Plujain Ramp Live</strong> between <strong>Dragonfly Room Reverb</strong> and <strong>EQ6Q Mono</strong>.</p>
-</div>
-<div class="videoblock">
-<div class="content">
-<video src="images/video/fast_new_plugin.mp4" width="640" controls>
-Your browser does not support the video tag.
-</video>
-</div>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_a2j_ports">A2J ports</h3>
-<div class="imageblock">
-<div class="content">
-<img src="images/patchbay_a2j.png" alt="ports a2j">
-</div>
-</div>
-<div class="paragraph">
-<p>The MIDI ports provided by the A2J (Alsa To Jack) bridge have a hole at the end to identify them. Their real name is a long name, but that&#8217;s about the only thing that differs from the other MIDI ports.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_control_voltage_ports_cv_ports">Control Voltage ports (CV ports)</h3>
-<div class="imageblock">
-<div class="content">
-<img src="images/patchbay_CV.png" alt="ports CV">
-</div>
-</div>
-<div class="paragraph">
-<p>Control voltage ports, commonly called CV ports, work like regular audio ports, however, they can control one or more parameters with much more precision than MIDI ports. As their stream is not meant to be listened to, it is not possible to simply connect a CV output port to a regular audio input, as this could damage your headphones, your speakers, and maybe even your ears.<br>
-If you still want to do it, right click on one of the ports, then <strong>Connect</strong>, then the <strong>DANGEROUS</strong> menu.<br>
-You can&#8217;t say you weren&#8217;t warned, and it&#8217;s almost impossible to do this by mistake.</p>
-</div>
-<div class="paragraph">
-<p>On the other hand, connecting a classic audio output port to a CV input port is perfectly possible, no problem.</p>
-</div>
+<p>Learn more about the patchbay in the <a href="../../patchbay/manual.html">Patchbay Manual</a>.</p>
 </div>
 </div>
 </div>
@@ -967,7 +715,7 @@ You can&#8217;t say you weren&#8217;t warned, and it&#8217;s almost impossible t
 <h3 id="_general_tab"><strong>General</strong> Tab</h3>
 <div class="imageblock">
 <div class="content">
-<img src="images/properties_general.png" alt="Client properties">
+<img src="../en/images/properties_general.png" alt="Client properties">
 </div>
 </div>
 <div class="paragraph">
@@ -1005,7 +753,7 @@ Schliessen <strong>Don&#8217;t prevent to stop this client again</strong> (nicht
 <h3 id="_nsm_tab"><strong>NSM</strong> Tab</h3>
 <div class="imageblock">
 <div class="content">
-<img src="images/properties_nsm.png" alt="NSM Client properties">
+<img src="../en/images/properties_nsm.png" alt="NSM Client properties">
 </div>
 </div>
 <div class="paragraph">
@@ -1029,14 +777,14 @@ Schliessen <strong>Don&#8217;t prevent to stop this client again</strong> (nicht
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/properties_ray_hack.png" alt="Ray-Hack Client properties">
+<img src="../en/images/properties_ray_hack.png" alt="Ray-Hack Client properties">
 </div>
 </div>
 <div class="sect3">
 <h4 id="_launch_block">Launch block</h4>
 <div class="imageblock">
 <div class="content">
-<img src="images/ray_hack_launch.png" alt="ray hack launch">
+<img src="../en/images/ray_hack_launch.png" alt="ray hack launch">
 </div>
 </div>
 <div class="ulist">
@@ -1069,7 +817,7 @@ Um zum Beispiel das Kommando  <code>my_command my_argument_1 "my argument 2"</co
 <h4 id="_signals_block">Signals block</h4>
 <div class="imageblock">
 <div class="content">
-<img src="images/ray_hack_signals.png" alt="ray hack signals">
+<img src="../en/images/ray_hack_signals.png" alt="ray hack signals">
 </div>
 </div>
 <div class="ulist">
@@ -1098,7 +846,7 @@ Das Kommando <code>kill -l</code> zeigt Ihnen im Terminal-Emulator die mögliche
 <h4 id="_non_saveable_management_block">Non-saveable management block</h4>
 <div class="imageblock">
 <div class="content">
-<img src="images/ray_hack_non_saveable.png" alt="ray hack non saveable">
+<img src="../en/images/ray_hack_non_saveable.png" alt="ray hack non saveable">
 </div>
 </div>
 <div class="paragraph">
@@ -1119,7 +867,7 @@ Das Kommando <code>kill -l</code> zeigt Ihnen im Terminal-Emulator die mögliche
 <h4 id="_test_area">Test area</h4>
 <div class="imageblock">
 <div class="content">
-<img src="images/ray_hack_test_zone.png" alt="ray hack test zone">
+<img src="../en/images/ray_hack_test_zone.png" alt="ray hack test zone">
 </div>
 </div>
 <div class="paragraph">
@@ -1143,7 +891,7 @@ Das Kommando <code>kill -l</code> zeigt Ihnen im Terminal-Emulator die mögliche
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/network_session_template.png" alt="Add a network session">
+<img src="../en/images/network_session_template.png" alt="Add a network session">
 </div>
 </div>
 <div class="paragraph">
@@ -1158,7 +906,7 @@ Das Kommando <code>kill -l</code> zeigt Ihnen im Terminal-Emulator die mögliche
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/network_session_invitation.png" alt="Configure a network session">
+<img src="../en/images/network_session_invitation.png" alt="Configure a network session">
 </div>
 </div>
 <div class="paragraph">
@@ -1169,7 +917,7 @@ Das Kommando <code>kill -l</code> zeigt Ihnen im Terminal-Emulator die mögliche
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/network_session_child.png" alt="network session child">
+<img src="../en/images/network_session_child.png" alt="network session child">
 </div>
 </div>
 <div class="paragraph">
@@ -1177,7 +925,7 @@ Das Kommando <code>kill -l</code> zeigt Ihnen im Terminal-Emulator die mögliche
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/network_session_client.png" alt="network session client">
+<img src="../en/images/network_session_client.png" alt="network session client">
 </div>
 </div>
 <div class="paragraph">
@@ -1203,7 +951,7 @@ In dem sich öffnenden Fenster <a href="#add_executable">Kommando hinzufügen Fe
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/audacity_executable.png" alt="Add Executable window well done">
+<img src="../en/images/audacity_executable.png" alt="Add Executable window well done">
 </div>
 </div>
 <div class="paragraph">
@@ -1214,7 +962,7 @@ In dem sich öffnenden Fenster <a href="#add_executable">Kommando hinzufügen Fe
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/audacity_save%20project.png" alt="Save empty Audacity project">
+<img src="../en/images/audacity_save%20project.png" alt="Save empty Audacity project">
 </div>
 </div>
 <div class="paragraph">
@@ -1223,7 +971,7 @@ In der sich öffnenden Box um die Datei zu speichern, finden Sie den Session Ord
 </div>
 <div class="imageblock">
 <div class="content">
-<a class="image" href="images/audacity_save_file.png"><img src="images/audacity_save_file.png" alt="Where to save Audacity project" width="640" height="480"></a>
+<a class="image" href="../en/imagesages/audacity_save_file.png"><img src="../en/images/audacity_save_file.png" alt="Where to save Audacity project" width="640" height="480"></a>
 </div>
 </div>
 <div class="paragraph">
@@ -1232,7 +980,7 @@ Klicken Sie oben rechts im <strong>Ray-Hack</strong> Tab vom Eigenschaftern Fens
 </div>
 <div class="imageblock">
 <div class="content">
-<a class="image" href="images/audacity_load_config_file.png"><img src="images/audacity_load_config_file.png" alt="Load CONFIG_FILE window" width="640" height="480"></a>
+<a class="image" href="../en/imagesages/audacity_load_config_file.png"><img src="../en/images/audacity_load_config_file.png" alt="Load CONFIG_FILE window" width="640" height="480"></a>
 </div>
 </div>
 <div class="paragraph">
@@ -1244,7 +992,7 @@ Aktivieren Sie <strong>Wait for a window before being considered ready</strong>,
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/audacity_ray_hack_final.png" alt="Ray-Hack tab of Audacity client well done">
+<img src="../en/images/audacity_ray_hack_final.png" alt="Ray-Hack tab of Audacity client well done">
 </div>
 </div>
 <div class="paragraph">
@@ -1281,7 +1029,7 @@ Klicken Sie auf das Symbol für den Audacity Klienten, wählen Sie im Drop-Down 
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/daemon_options.png" alt="Daemon options">
+<img src="../en/images/daemon_options.png" alt="Daemon options">
 </div>
 </div>
 <div class="paragraph">
@@ -1346,7 +1094,7 @@ Sollte trotz all dem der Snaphot Vorgang zu lange dauern, wird sich ein Fenster 
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="images/snapshots.png" alt="snapshots">
+<img src="../en/images/snapshots.png" alt="snapshots">
 </div>
 </div>
 <div class="paragraph">
@@ -1604,7 +1352,7 @@ Falls Sie Ardour nutzen, starten Sie es immer in einer RaySession. Erstens könn
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-12-17 09:44:34 +0100
+Last updated 2022-12-11 09:29:57 +0100
 </div>
 </div>
 </body>

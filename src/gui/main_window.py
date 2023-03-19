@@ -400,9 +400,13 @@ class MainWindow(QMainWindow):
         self._reversed_systray_menu = RS.settings.value(
             'reversed_systray_menu', False, type=bool)
 
+        systray_icon = QIcon.fromTheme('raysession')
+        if systray_icon.isNull():
+            systray_icon = QIcon(':main_icon/48x48/raysession')
+
         self._systray = QSystemTrayIcon(self)
         self._systray.activated.connect(self._systray_activated)
-        self._systray.setIcon(QIcon(':main_icon/48x48/raysession'))
+        self._systray.setIcon(systray_icon)
         self._systray.setToolTip(ray.APP_TITLE)
         self._systray_menu = QMenu()
         self._systray_menu_add = QMenu(self._systray_menu)
@@ -722,15 +726,16 @@ class MainWindow(QMainWindow):
 
     def _internal_manual(self):
         short_locale = 'en'
-        manual_dir = "%s/manual" % get_code_root()
+        manual_dir = get_code_root() / 'manual'
         locale_str = QLocale.system().name()
+        manual_file = manual_dir / locale_str[:2] / 'manual.html'
+        
         if (len(locale_str) > 2 and '_' in locale_str
-                and os.path.isfile(
-                    "%s/%s/manual.html" % (manual_dir, locale_str[:2]))):
+                and manual_file.is_file()):
             short_locale = locale_str[:2]
 
         QDesktopServices.openUrl(
-            QUrl("%s/%s/manual.html" % (manual_dir, short_locale)))
+            QUrl(str(manual_dir / short_locale / 'manual.html')))
 
     def _save_session(self):
         self.to_daemon('/ray/session/save')
@@ -1102,7 +1107,11 @@ class MainWindow(QMainWindow):
         if is_shown:
             self._systray.show()
 
-    def _systray_activated(self):
+    def _systray_activated(self, reason: QSystemTrayIcon.ActivationReason):
+        if reason not in (QSystemTrayIcon.Trigger,
+                          QSystemTrayIcon.DoubleClick):
+            return
+
         wayland = bool(ray.get_window_manager() == ray.WindowManager.WAYLAND)
 
         if self.isMinimized():

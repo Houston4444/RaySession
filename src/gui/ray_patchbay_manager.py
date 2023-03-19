@@ -91,25 +91,6 @@ def convert_portgrp_mem_from_patchbay_to_ray(
         int(pgmem.above_metadatas), *pgmem.port_names)
 
 
-class RayCanvasMenu(CanvasMenu):
-    def __init__(self, patchbay_manager: 'PatchbayManager'):
-        super().__init__(patchbay_manager)
-        self.action_manual.setVisible(True)
-    
-    def internal_manual(self):
-        short_locale = 'en'
-        manual_dir = "%s/manual" % get_code_root()
-        locale_str = QLocale.system().name()
-        if (len(locale_str) > 2 and '_' in locale_str
-                and os.path.isfile(
-                    "%s/%s/manual.html" % (manual_dir, locale_str[:2]))):
-            short_locale = locale_str[:2]
-
-        url = QUrl(f"file://{manual_dir}/{short_locale}/manual.html#patchbay")
-        # url = QUrl("file://%s/%s/manual.html#patchbay" % (manual_dir, short_locale))
-        QDesktopServices.openUrl(url)
-
-
 class RayPatchbayCallbacker(Callbacker):
     def __init__(self, manager: 'RayPatchbayManager'):
         super().__init__(manager)
@@ -213,7 +194,8 @@ class RayPatchbayManager(PatchbayManager):
     
     def _setup_canvas(self):
         SUBMODULE = 'HoustonPatchbay'
-        source_theme_path = Path(get_code_root()) / SUBMODULE / 'themes'
+        source_theme_path = get_code_root() / SUBMODULE / 'themes'
+        manual_path = get_code_root() / SUBMODULE / 'manual'
         theme_paths = list[Path]()
         
         app_title = ray.APP_TITLE.lower()
@@ -234,6 +216,7 @@ class RayPatchbayManager(PatchbayManager):
         self.app_init(self.main_win.ui.graphicsView,
                       theme_paths,
                       callbacker=RayPatchbayCallbacker(self),
+                      manual_path=manual_path,
                       default_theme_name='Yellow Boards')
     
     #### reimplemented functions ###
@@ -489,7 +472,7 @@ class RayPatchbayManager(PatchbayManager):
     def finish_init(self):
         self.set_main_win(self.session.main_win)
         self._setup_canvas()
-        self.set_canvas_menu(RayCanvasMenu(self))
+        self.set_canvas_menu(CanvasMenu(self))
         self.set_options_dialog(
             CanvasOptionsDialog(self.main_win, self, RS.settings))
         
