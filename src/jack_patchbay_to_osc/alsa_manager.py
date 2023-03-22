@@ -45,6 +45,9 @@ class AlsaPort:
     id: int
     caps: int
     physical: bool
+    
+    def pb_name(self, mode_str: str, client: 'AlsaClient'):
+        return f":ALSA_{mode_str}:{client.id}:{self.id}:{client.name}:{self.name}"
 
 @dataclass
 class AlsaConn:
@@ -66,8 +69,8 @@ class AlsaConn:
         if src_port is None or dest_port is None:
             return None
         
-        return (f":ALSA_OUT:{src_client.name}:{src_port.name}",
-                f":ALSA_IN:{dest_client.name}:{dest_port.name}")
+        return (src_port.pb_name('OUT', src_client),
+                dest_port.pb_name('IN', dest_client))
 
 
 class AlsaClient:
@@ -156,14 +159,14 @@ class AlsaManager:
         
         if port.caps & _PORT_READS == _PORT_READS:
             self._osc_server.port_added(
-                f':ALSA_OUT:{client.name}:{port.name}',
+                port.pb_name('OUT', client),
                 PORT_TYPE_MIDI_ALSA,
                 port_flags | PORT_IS_OUTPUT,
                 client.id * 0x10000 + port.id)
 
         if port.caps & _PORT_WRITES == _PORT_WRITES:
             self._osc_server.port_added(
-                f':ALSA_IN:{client.name}:{port.name}',
+                port.pb_name('IN', client),
                 PORT_TYPE_MIDI_ALSA,
                 port_flags | PORT_IS_INPUT,
                 client.id * 0x10000 + port.id)
@@ -171,10 +174,10 @@ class AlsaManager:
     def remove_port_from_patchbay(self, client: AlsaClient, port: AlsaPort):
         if port.caps & _PORT_READS == _PORT_READS:
             self._osc_server.port_removed(
-                f":ALSA_OUT:{client.name}:{port.name}")
+                port.pb_name('OUT', client))
         if port.caps & _PORT_WRITES == _PORT_WRITES:
             self._osc_server.port_removed(
-                f":ALSA_IN:{client.name}:{port.name}")
+                port.pb_name('IN', client))
 
     def add_all_ports(self):        
         if self._event_thread.is_alive():
@@ -204,9 +207,8 @@ class AlsaManager:
             self._connections.append(conn)
             
             self._osc_server.connection_added(
-                (f":ALSA_OUT:{source_client.name}:{source_port.name}",
-                 f":ALSA_IN:{dest_client.name}:{dest_port.name}")
-            )
+                source_port.pb_name('OUT', source_client),
+                dest_port.pb_name('IN', dest_client))
     
         self._event_thread.start()
     
@@ -222,14 +224,14 @@ class AlsaManager:
 
                 if port.caps & _PORT_READS == _PORT_READS:
                     yield PortData(
-                        f':ALSA_OUT:{client.name}:{port.name}',
+                        port.pb_name('OUT', client),
                         PORT_TYPE_MIDI_ALSA,
                         port_flags | PORT_IS_OUTPUT,
                         client.id * 0x10000 + port.id)
                 
                 if port.caps & _PORT_WRITES == _PORT_WRITES:
                     yield PortData(
-                        f':ALSA_IN:{client.name}:{port.name}',
+                        port.pb_name('IN', client),
                         PORT_TYPE_MIDI_ALSA,
                         port_flags | PORT_IS_INPUT,
                         client.id * 0x10000 + port.id)
@@ -247,41 +249,18 @@ class AlsaManager:
             if src_port is None or dest_port is None:
                 continue
             
-            yield (f':ALSA_OUT:{src_client.name}:{src_port.name}',
-                   f':ALSA_IN:{dest_client.name}:{dest_port.name}')
+            yield (src_port.pb_name('OUT', src_client),
+                   dest_port.pb_name('IN', dest_client))
     
     def connect_ports(self, port_out_name: str, port_in_name: str,
                       disconnect=False):
-        _, alsa_key, src_client_name, *rest = port_out_name.split(':')
-        src_port_name = ':'.join(rest)
-        _, alsa_key, dest_client_name, *rest = port_in_name.split(':')
-        dest_port_name = ':'.join(rest)
-        
-        port_out_name = port_out_name.replace(':ALSA_OUT:', '', 1)
-        port_in_name = port_in_name.replace(':ALSA_IN:', '', 1)
-
-        for src_client_id, src_client in self._clients.items():
-            if src_client.name == src_client_name:
-                break
-        else:
-            return
-        
-        for src_port_id, src_port in src_client.ports.items():
-            if src_port.name == src_port_name:
-                break
-        else:
-            return
-        
-        for dest_client_id, dest_client in self._clients.items():
-            if dest_client.name == dest_client_name:
-                break
-        else:
-            return
-        
-        for dest_port_id, dest_port in dest_client.ports.items():
-            if dest_port.name == dest_port_name:
-                break
-        else:
+        try:
+            _, alsa_key, src_client_id, src_port_id, *rest = port_out_name.split(':')
+            _, alsa_key, dest_client_id, dest_port_id, *rest = port_in_name.split(':')            
+            src_client_id, src_port_id = int(src_client_id), int(src_port_id)
+            dest_client_id, dest_port_id = int(dest_client_id), int(dest_port_id)
+        except:
+            # TODO log
             return
         
         try:
@@ -294,7 +273,7 @@ class AlsaManager:
                     (src_client_id, src_port_id),
                     (dest_client_id, dest_port_id),
                     0, 0, 0, 0)
-        except:
+        except Exception as e:
             # TODO log something
             pass
         
@@ -400,9 +379,8 @@ class AlsaManager:
                                  dest_client.id, dest_port.id))
 
                     self._osc_server.connection_added(
-                        (f":ALSA_OUT:{sender_client.name}:{sender_port.name}",
-                         f":ALSA_IN:{dest_client.name}:{dest_port.name}")
-                    )
+                        (sender_port.pb_name('OUT', sender_client),
+                         dest_port.pb_name('IN', dest_client)))
 
                 elif event.type == SEQ_EVENT_PORT_UNSUBSCRIBED:
                     sender_client = self._clients.get(data['connect.sender.client'])
@@ -425,8 +403,8 @@ class AlsaManager:
                             break 
 
                     self._osc_server.connection_removed(
-                        (f":ALSA_OUT:{sender_client.name}:{sender_port.name}",
-                         f":ALSA_IN:{dest_client.name}:{dest_port.name}")
+                        (sender_port.pb_name('OUT', sender_client),
+                         dest_port.pb_name('IN', dest_client))
                     )
                 
     def stop_events_loop(self):
