@@ -30,6 +30,7 @@ class Event(IntEnum):
     CONNECTION_REMOVED = 7
     JACK_STOPPED = 8
 
+
 class MonitorStates(IntEnum):
     NEVER_DONE = 0
     UPDATING = 1

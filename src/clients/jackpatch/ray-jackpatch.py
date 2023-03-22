@@ -344,7 +344,6 @@ def monitor_client_state(client_id: str, jack_name: str, is_started: int):
             # we modify the saved connections in consequence.
             # Note that this client can't be started.
             ex_jack_name = Glob.client_changing_id[0]
-            print('un ID à changéé!!!', Glob.client_changing_id)
             rm_conns = list[tuple[str, str]]()
             new_conns = list[tuple[str, str]]()
 
@@ -402,8 +401,6 @@ def monitor_client_event(client_id: str, event: str):
             out_port, in_port = conn
             if (port_belongs_to_client(out_port, jack_client_name)
                     or port_belongs_to_client(in_port, jack_client_name)):
-            # if jack_client_name in [p.partition(':')[0].partition('/')[0]
-            #                         for p in (out_port, in_port)]:
                 conns_to_unsave.append(conn)
         
         for conn in conns_to_unsave:

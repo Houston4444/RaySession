@@ -46,7 +46,6 @@ class AlsaPort:
     caps: int
     physical: bool
 
-
 @dataclass
 class AlsaConn:
     source_client_id: int
@@ -62,7 +61,7 @@ class AlsaConn:
             return None
         
         src_port = src_client.ports.get(self.source_port_id)
-        dest_port = dest_client.ports.get(self.dest_client_id)
+        dest_port = dest_client.ports.get(self.dest_port_id)
         
         if src_port is None or dest_port is None:
             return None
