@@ -207,8 +207,9 @@ class AlsaManager:
             self._connections.append(conn)
             
             self._osc_server.connection_added(
-                source_port.pb_name('OUT', source_client),
-                dest_port.pb_name('IN', dest_client))
+                (source_port.pb_name('OUT', source_client),
+                 dest_port.pb_name('IN', dest_client))
+            )
     
         self._event_thread.start()
     
