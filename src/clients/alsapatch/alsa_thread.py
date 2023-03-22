@@ -204,15 +204,19 @@ class AlsaManager:
                     for dest_client in dest_clients:
                         for dest_port_id, dest_port in dest_client.ports.items():
                             if dest_port.name == dest_port_name:
-                                if disconnect:
-                                    self.seq.disconnect_ports(
-                                        (src_client.id, src_port_id),
-                                        (dest_client.id, dest_port_id))
-                                else: 
-                                    self.seq.connect_ports(
-                                        (src_client.id, src_port_id),
-                                        (dest_client.id, dest_port_id),
-                                        0, 0, 0, 0)
+                                try:
+                                    if disconnect:
+                                        self.seq.disconnect_ports(
+                                            (src_client.id, src_port_id),
+                                            (dest_client.id, dest_port_id))
+                                    else: 
+                                        self.seq.connect_ports(
+                                            (src_client.id, src_port_id),
+                                            (dest_client.id, dest_port_id),
+                                            0, 0, 0, 0)
+                                except:
+                                    # TODO log something
+                                    continue
         
     def read_events(self):
         while True:
