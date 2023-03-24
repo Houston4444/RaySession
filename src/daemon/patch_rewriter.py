@@ -32,7 +32,7 @@ def rewrite_jack_patch_files(
             with open(patch_path, 'r') as f:
                 tree = ET.parse(f)
             root = tree.getroot()
-            assert root.tag == 'RAY-JACKPATCH'
+            assert root.tag in ('RAY-JACKPATCH', 'RAY-ALSAPATCH')
         except:
             continue
 
