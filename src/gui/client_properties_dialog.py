@@ -122,6 +122,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.lineEditIgnoredExtensions.setReadOnly(True)
         self.ui.checkBoxSaveStop.setEnabled(False)
         self.ui.pushButtonSaveChanges.setVisible(False)
+        self._advanced_dialog.lock_widgets()
 
     def set_for_template(self, template_name: str):
         self.lock_widgets()

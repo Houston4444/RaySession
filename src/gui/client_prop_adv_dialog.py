@@ -1,7 +1,7 @@
 
 from typing import TYPE_CHECKING
 from PyQt5.QtWidgets import QApplication, QAbstractButton, QDialogButtonBox
-from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt5.QtCore import pyqtSlot
 
 import ray
 from child_dialogs import ChildDialog
@@ -16,13 +16,14 @@ import ui.client_advanced_properties
 _translate = QApplication.translate
 
 class AdvancedPropertiesDialog(ChildDialog):
-    def __init__(self, parent: 'ClientPropertiesDialog', client: 'Client'):
+    def __init__(self, parent: 'ClientPropertiesDialog', client: ray.ClientData):
         super().__init__(parent)
         self.ui = ui.client_advanced_properties.Ui_Dialog()
         self.ui.setupUi(self)
         
         self._client = client
-                
+        self._client_is_real = False
+        
         self.ui.comboBoxPrefixMode.addItem(
             _translate('new_executable', 'Custom'))
         self.ui.comboBoxPrefixMode.addItem(
@@ -47,9 +48,13 @@ class AdvancedPropertiesDialog(ChildDialog):
         self.ui.checkBoxLongJackNaming.stateChanged.connect(self._update_preview)
         self.ui.buttonBox.clicked.connect(self._button_box_clicked)
         
-        client.status_changed.connect(self._client_status_changed)
+        if hasattr(client, 'status_changed'):
+            self._client_is_real = True
+            if TYPE_CHECKING:
+                assert(isinstance(client, Client))
+            self._client_status_changed(client.status)
+            client.status_changed.connect(self._client_status_changed)
         
-        self._client_status_changed(client.status)
         self._update_preview()
     
     # pyqtSlot(int)
@@ -59,7 +64,10 @@ class AdvancedPropertiesDialog(ChildDialog):
     
     def _update_preview(self, *args):
         if self.ui.comboBoxPrefixMode.currentIndex() == ray.PrefixMode.SESSION_NAME:
-            prefix_str = self._client.session.name
+            if self._client_is_real:
+                prefix_str = self._client.session.name
+            else:
+                prefix_str = "SESSION NAME"
         elif self.ui.comboBoxPrefixMode.currentIndex() == ray.PrefixMode.CLIENT_NAME:
             prefix_str = self._client.name
         else:
@@ -96,3 +104,10 @@ class AdvancedPropertiesDialog(ChildDialog):
                     int(self.ui.checkBoxLongJackNaming.isChecked()))
 
             self.hide()
+            
+    def lock_widgets(self):
+        self.ui.lineEditClientId.setReadOnly(True)
+        self.ui.comboBoxPrefixMode.setEnabled(False)
+        self.ui.lineEditCustomPrefix.setReadOnly(True)
+        self.ui.checkBoxLongJackNaming.setEnabled(False)
+        self.ui.buttonBox.button(QDialogButtonBox.Apply).setEnabled(False)
