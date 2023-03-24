@@ -358,8 +358,7 @@ class OscServerThread(ClientCommunicating):
             'daemon/options',
             ray.Option.BOOKMARK_SESSION
             + ray.Option.SNAPSHOTS
-            + ray.Option.SESSION_SCRIPTS
-            + ray.Option.GUI_STATES,
+            + ray.Option.SESSION_SCRIPTS,
             type=int)
 
         if CommandLineArgs.no_options:
