@@ -25,26 +25,6 @@ import logging
 import xml.etree.ElementTree as ET
 
 
-from pyalsa import alsaseq
-from pyalsa.alsaseq import (
-    SEQ_USER_CLIENT,
-    SEQ_PORT_CAP_NO_EXPORT,
-    SEQ_PORT_CAP_READ,
-    SEQ_PORT_CAP_SUBS_READ,
-    SEQ_PORT_CAP_WRITE,
-    SEQ_PORT_CAP_SUBS_WRITE,
-    SEQ_PORT_TYPE_APPLICATION,
-    SEQ_CLIENT_SYSTEM,
-    SEQ_PORT_SYSTEM_ANNOUNCE,
-    SEQ_EVENT_CLIENT_START,
-    SEQ_EVENT_CLIENT_EXIT,
-    SEQ_EVENT_PORT_START,
-    SEQ_EVENT_PORT_EXIT,
-    SEQ_EVENT_PORT_SUBSCRIBED,
-    SEQ_EVENT_PORT_UNSUBSCRIBED,
-    SequencerError
-)
-
 from nsm_client_noqt import NsmServer, NsmCallback, Err
 from bases import (EventHandler, MonitorStates, PortMode, PortType,
                    Event, AlsaPort, Timer, Glob, debug_conn_str)
@@ -168,7 +148,6 @@ def may_make_one_connection():
                 break
 
             alsa_mng.connect_ports(*sv_con)
-            # jacklib.connect(jack_client, *sv_con)
             one_connected = True
     else:
         Glob.pending_connection = False
@@ -191,7 +170,6 @@ def open_file(project_path: str, session_name: str,
             tree = ET.parse(file_path)
         except:
             sys.stderr.write('unable to read file %s\n' % file_path)
-            # Glob.terminate = True
             return (Err.BAD_PROJECT, f'{file_path} is not a correct .xml file')
         
         # read the DOM
