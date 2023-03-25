@@ -1790,11 +1790,17 @@ class SignaledSession(OperatingSession):
                       "impossible to change id while client is running")
             return
 
-        new_client_id = args[0]
+        new_client_id: str = args[0]
+        
         if new_client_id in [c.client_id for c in
                              self.clients + self.trashed_clients]:
             self.send(src_addr, '/error', path, ray.Err.BLACKLISTED,
                       f"client id '{new_client_id}' already exists in the session")
+            return
+        
+        if not new_client_id.replace('_', '').isalnum():
+            self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                      f"client id {new_client_id} contains forbidden characters")
             return
         
         ex_client_id = client.client_id

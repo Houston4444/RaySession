@@ -43,7 +43,7 @@ class AdvancedPropertiesDialog(ChildDialog):
         
         self.ui.checkBoxLongJackNaming.setChecked(client.jack_naming == 1)
         
-        self.ui.lineEditClientId.textEdited.connect(self._update_preview)
+        self.ui.lineEditClientId.textEdited.connect(self._client_id_line_edited)
         self.ui.comboBoxPrefixMode.currentIndexChanged.connect(
             self._prefix_mode_changed)
         self.ui.lineEditCustomPrefix.textEdited.connect(self._update_preview)
@@ -62,6 +62,12 @@ class AdvancedPropertiesDialog(ChildDialog):
     def _client_status_changed(self, status: int):
         self.ui.buttonBox.button(QDialogButtonBox.Apply).setEnabled(
             status == ray.ClientStatus.STOPPED)
+    
+    @pyqtSlot()
+    def _client_id_line_edited(self):
+        self.ui.lineEditClientId.setText(
+            self.ui.lineEditClientId.text().replace(' ', '_'))
+        self._update_preview()
     
     def _update_preview(self, *args):
         if self.ui.comboBoxPrefixMode.currentIndex() == ray.PrefixMode.SESSION_NAME:
