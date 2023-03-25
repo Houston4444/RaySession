@@ -336,7 +336,7 @@ class SignaledSession(Session):
             client.set_no_save_level(no_save_level)
 
     def _ray_gui_trash_add(self, path, args):
-        trashed_client = TrashedClient()
+        trashed_client = TrashedClient(self)
         trashed_client.update(*args)
         trash_action = self.main_win.trash_add(trashed_client)
         trashed_client.set_menu_action(trash_action)

@@ -18,15 +18,18 @@ class Client(QObject, ray.ClientData):
     def __init__(self, session: 'SignaledSession',
                  client_id: str, protocol: int):
         QObject.__init__(self)
-        ray.ClientData.gui_init(self, client_id, protocol)
 
         self.session = session
         self.main_win = self.session.main_win
 
-        self._previous_status = ray.ClientStatus.STOPPED
-
+        # set ClientData attributes
+        self.client_id = client_id
+        self.protocol = protocol
         self.ray_hack = ray.RayHack()
         self.ray_net = ray.RayNet()
+        
+        self._previous_status = ray.ClientStatus.STOPPED
+
         self.status = ray.ClientStatus.STOPPED
         self.has_gui = False
         self.gui_state = False
@@ -34,9 +37,8 @@ class Client(QObject, ray.ClientData):
         self.dirty_state = True
         self.no_save_level = 0
         self.last_save = time.time()
-        self.check_last_save = True
         self.widget = self.main_win.create_client_widget(self)
-        self._properties_dialog = None
+        self._properties_dialog: ClientPropertiesDialog = None
 
     def set_status(self, status: int):
         self._previous_status = self.status
@@ -189,7 +191,8 @@ class Client(QObject, ray.ClientData):
 
 
 class TrashedClient(ray.ClientData):
-    def __init__(self):
+    def __init__(self, session: 'SignaledSession'):
+        self.session = session
         self.menu_action: Optional[QAction] = None
 
     def set_menu_action(self, menu_action: QAction):

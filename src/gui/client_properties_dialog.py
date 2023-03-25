@@ -106,7 +106,7 @@ class ClientPropertiesDialog(ChildDialog):
         self._advanced_dialog.show()
 
     @staticmethod
-    def create(window, client: 'Client') -> 'ClientPropertiesDialog':
+    def create(window, client: ray.ClientData) -> 'ClientPropertiesDialog':
         if client.protocol == ray.Protocol.NSM:
             return NsmClientPropertiesDialog(window, client)
         if client.protocol == ray.Protocol.RAY_HACK:

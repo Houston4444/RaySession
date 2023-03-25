@@ -562,10 +562,6 @@ class ClientData:
                 client.template_origin,
                 client.jack_client_name, client.jack_naming)
 
-    def gui_init(self, client_id, protocol):
-        self.client_id = client_id
-        self.protocol = protocol
-
     def set_ray_hack(self, ray_hack):
         self.ray_hack = ray_hack
 

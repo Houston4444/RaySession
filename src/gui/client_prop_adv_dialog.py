@@ -1,5 +1,5 @@
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 from PyQt5.QtWidgets import QApplication, QAbstractButton, QDialogButtonBox
 from PyQt5.QtCore import pyqtSlot
 
@@ -9,20 +9,22 @@ from gui_server_thread import GuiServerThread
 
 if TYPE_CHECKING:
     from client_properties_dialog import ClientPropertiesDialog
-    from gui_client import Client
+    from gui_client import Client, TrashedClient
 
 import ui.client_advanced_properties
 
 _translate = QApplication.translate
 
+
 class AdvancedPropertiesDialog(ChildDialog):
-    def __init__(self, parent: 'ClientPropertiesDialog', client: ray.ClientData):
+    def __init__(self, parent: 'ClientPropertiesDialog',
+                 client: ray.ClientData):
         super().__init__(parent)
         self.ui = ui.client_advanced_properties.Ui_Dialog()
         self.ui.setupUi(self)
         
         self._client = client
-        self._client_is_real = False
+        self._client_is_real = hasattr(client, 'session')
         
         self.ui.comboBoxPrefixMode.addItem(
             _translate('new_executable', 'Custom'))
@@ -49,7 +51,6 @@ class AdvancedPropertiesDialog(ChildDialog):
         self.ui.buttonBox.clicked.connect(self._button_box_clicked)
         
         if hasattr(client, 'status_changed'):
-            self._client_is_real = True
             if TYPE_CHECKING:
                 assert(isinstance(client, Client))
             self._client_status_changed(client.status)
@@ -65,6 +66,8 @@ class AdvancedPropertiesDialog(ChildDialog):
     def _update_preview(self, *args):
         if self.ui.comboBoxPrefixMode.currentIndex() == ray.PrefixMode.SESSION_NAME:
             if self._client_is_real:
+                if TYPE_CHECKING:
+                    assert isinstance(self._client, (Client, TrashedClient))
                 prefix_str = self._client.session.name
             else:
                 prefix_str = "SESSION NAME"
