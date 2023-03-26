@@ -246,10 +246,8 @@ def open_file(project_path: str, session_name: str,
     return (Err.OK, '')
 
 def save_file():
-    print('ozpef')
     if not Glob.file_path:
         return
-    print('fooeoe')
 
     for connection in connection_list:
         if not connection in saved_connections:
@@ -291,7 +289,6 @@ def save_file():
         el_name = 'in_port' if port_mode is PortMode.INPUT else 'out_port'
 
         for jack_port in jack_ports[port_mode]:
-            print('SOpzl', jack_port.name)
             gp_name, colon, port_name = jack_port.name.partition(':')
             if group_names.get(gp_name) is None:
                 group_names[gp_name] = ET.SubElement(graph, 'group')
