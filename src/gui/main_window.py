@@ -1,14 +1,11 @@
-from pathlib import Path
-from signal import default_int_handler
 from typing import TYPE_CHECKING
 import time
-import os
 import subprocess
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QMenu, QDialog,
     QMessageBox, QToolButton, QAbstractItemView,
-    QBoxLayout, QSystemTrayIcon, QWidget, QShortcut)
+    QBoxLayout, QSystemTrayIcon, QShortcut)
 from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics, QCloseEvent
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
@@ -25,7 +22,7 @@ from gui_tools import (
 from gui_client import TrashedClient
 from gui_server_thread import GuiServerThread
 from utility_scripts import UtilityScriptLauncher
-from patchbay.base_elements import ToolDisplayed
+from patchbay.base_elements import ToolDisplayed, PortTypesViewFlag
 from patchbay.tools_widgets import PatchbayToolsWidget
 
 if TYPE_CHECKING:
@@ -1181,9 +1178,16 @@ class MainWindow(QMainWindow):
                 | ToolDisplayed.XRUNS
                 | ToolDisplayed.DSP_LOAD)
             
-            self.ui.toolBar.set_default_displayed_widgets(
-                default_disp_wdg.filtered_by_string(
-                    RS.settings.value('tool_bar/jack_elements', '', type=str)))
+            default_disp_wdg = default_disp_wdg.filtered_by_string(
+                RS.settings.value('tool_bar/jack_elements', '', type=str))
+            
+            self.ui.toolBar.set_default_displayed_widgets(default_disp_wdg)
+            
+            if not default_disp_wdg & ToolDisplayed.PORT_TYPES_VIEW:
+                RS.settings.setValue(
+                    'Canvas/default_port_types_view',
+                    PortTypesViewFlag.ALL)
+            
         self._canvas_menu = self.ui.menuBar.addMenu(canvas_menu)
 
     def create_client_widget(self, client):
@@ -1613,6 +1617,9 @@ class MainWindow(QMainWindow):
         RS.settings.setValue(
             'tool_bar/icons_only',
             self.ui.toolBar.force_main_actions_icons_only)
+        RS.settings.setValue(
+            'Canvas/default_port_types_view',
+            self.session.patchbay_manager.port_types_view.value)
         RS.settings.sync()
 
     # Reimplemented Qt Functions
