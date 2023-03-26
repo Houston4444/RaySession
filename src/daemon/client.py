@@ -422,6 +422,7 @@ class Client(ServerSender, ray.ClientData):
             old_client_id: str, new_client_id: str,
             old_client_links_dir: str, new_client_links_dir: str):
         spath = Path(spath_str)
+
         # rename client script dir
         scripts_dir = spath / f"{ray.SCRIPTS_DIR}.{old_client_id}"
         if os.access(scripts_dir, os.W_OK) and old_client_id != new_client_id:
@@ -434,7 +435,6 @@ class Client(ServerSender, ray.ClientData):
 
         if self.is_ray_hack():
             if project_path.is_dir():
-            # if os.path.isdir(project_path):
                 if not os.access(project_path, os.W_OK):
                     do_rename = False
                 else:
