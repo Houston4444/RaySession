@@ -119,7 +119,7 @@ class UtilityScriptLauncher:
         self.main_win = main_win
         self._process = QProcess()
 
-    def _which_terminal(self, title='')->list:
+    def _which_terminal(self, title='') -> list[str]:
         """ returns the most appropriate terminal executable
             with its arguments """
         terminals = ['gnome-terminal', 'mate-terminal', 'xfce4-terminal',

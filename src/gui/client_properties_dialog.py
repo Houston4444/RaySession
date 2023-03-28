@@ -96,7 +96,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.client.check_last_save = self.ui.checkBoxSaveStop.isChecked()
         self.client.ignored_extensions = \
                                     self.ui.lineEditIgnoredExtensions.text()
-
+        self.client.in_terminal = self.ui.checkBoxTerminal.isChecked()
         self.client.send_properties_to_daemon()
 
         # better for user to wait a little before close the window
@@ -145,7 +145,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.checkBoxSaveStop.setChecked(self.client.check_last_save)
         self.ui.lineEditIgnoredExtensions.setText(
             self.client.ignored_extensions)
-
+        self.ui.checkBoxTerminal.setChecked(self.client.in_terminal)
         self._change_icon_with_text(self.client.icon)
 
     def showEvent(self, a0: QShowEvent) -> None:

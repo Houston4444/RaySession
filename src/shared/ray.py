@@ -537,12 +537,13 @@ class ClientData:
     template_origin = ''
     jack_client_name = ''
     jack_naming = 0
+    in_terminal = False
     ray_hack: 'RayHack' = None
     ray_net: 'RayNet' = None
 
     @staticmethod
     def sisi():
-        return 'sissssissssssisssi'
+        return 'sissssissssssisssii'
 
     @staticmethod
     def new_from(*args):
@@ -560,7 +561,8 @@ class ClientData:
                 client.capabilities, int(client.check_last_save),
                 client.ignored_extensions,
                 client.template_origin,
-                client.jack_client_name, client.jack_naming)
+                client.jack_client_name, client.jack_naming,
+                int(client.in_terminal))
 
     def set_ray_hack(self, ray_hack):
         self.ray_hack = ray_hack
@@ -577,6 +579,7 @@ class ClientData:
                ignored_extensions,
                template_origin,
                jack_client_name, jack_naming,
+               in_terminal,
                secure=False):
         self.executable_path = str(executable)
         self.arguments = str(arguments)
@@ -591,10 +594,13 @@ class ClientData:
         self.ignored_extensions = str(ignored_extensions)
         self.template_origin = template_origin
         self.jack_naming = jack_naming
+        self.in_terminal = bool(in_terminal)
 
         if secure:
             return
 
+        # Now, if message is 'unsecure' only.
+        # change things that can't be changed normally
         self.client_id = str(client_id)
         self.protocol = int(protocol)
         if name:

@@ -13,11 +13,13 @@ from PyQt5.QtXml import QDomDocument, QDomElement
 
 import xdg
 import ray
+import terminal_starter
 from server_sender import ServerSender
 from daemon_tools  import (TemplateRoots, Terminal, RS,
                            get_code_root, highlight_text)
 from signaler import Signaler
 from scripter import ClientScripter
+
 
 # only used to identify session functions in the IDE
 # 'Session' is not importable simply because it would be
@@ -67,7 +69,6 @@ class Client(ServerSender, ray.ClientData):
 
     running_executable = ''
     running_arguments = ''
-    tmp_arguments = ''
 
     auto_start = True
     start_gui_hidden = False
@@ -836,6 +837,7 @@ class Client(ServerSender, ray.ClientData):
         self.label = ctx.attribute('label')
         self.description = ctx.attribute('description')
         self.icon = ctx.attribute('icon')
+        self.in_terminal = bool(ctx.attribute('in_terminal') in ('1', 'true'))
         self.auto_start = bool(ctx.attribute('launched') != '0')
         self.check_last_save = bool(ctx.attribute('check_last_save') != '0')
         self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
@@ -986,6 +988,9 @@ class Client(ServerSender, ray.ClientData):
 
         if self.jack_naming == ray.JackNaming.LONG:
             ctx.setAttribute('jack_naming', ray.JackNaming.LONG)
+
+        if self.in_terminal:
+            ctx.setAttribute('in_terminal', 1)
 
         if self.template_origin:
             ctx.setAttribute('template_origin', self.template_origin)
@@ -1265,7 +1270,12 @@ class Client(ServerSender, ray.ClientData):
         if self.protocol != ray.Protocol.RAY_HACK:
             process_env.insert('NSM_URL', self.get_server_url())
 
-        arguments = []
+        arguments = list[str]()
+        terminal_args = list[str]()
+        
+        if self.in_terminal:
+            terminal_args = terminal_starter.which_terminal(
+                title=self.jack_client_name, hold=True)
 
         if self.protocol == ray.Protocol.RAY_NET:
             server = self.get_server()
@@ -1282,9 +1292,6 @@ class Client(ServerSender, ray.ClientData):
             self._process.setProcessEnvironment(process_env)
             self._process.start(ray.RAYNET_BIN, arguments)
             return
-
-        if self.tmp_arguments:
-            arguments += shlex.split(self.tmp_arguments)
 
         arguments_line = self.arguments
 
@@ -1354,14 +1361,8 @@ class Client(ServerSender, ray.ClientData):
             'start_request', self.client_id)
 
         self._process.setProcessEnvironment(process_env)
-        self._process.start(self.executable_path, arguments)
-
-        ## Here for another way to debug clients.
-        ## Konsole is a terminal software.
-        #self.process.start(
-            #'konsole',
-            #['--hide-tabbar', '--hide-menubar', '-e', self.executable_path]
-                #+ arguments)
+        prog, *other_args = terminal_args + [self.executable_path] + arguments        
+        self._process.start(prog, other_args)
 
     def load(self, src_addr=None, src_path=''):
         if src_addr:

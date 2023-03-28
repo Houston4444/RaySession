@@ -20,11 +20,47 @@ PW video ports ?
 Damn connections (with ray-jackpatch)
 icons in theme
 
-generic icon for client
-set client id in add application dialog
+# set client id in add application dialog
 list ardour templates and select a template in add_application dialog for Ardour templates
-select client and patchbay boxes together (click another time to select another box)
-Forget connections of removed client
+# select client and patchbay boxes together (click another time to select another box)
+# Forget connections of removed client
+
+
+
+start client in terminal
+        déterminer par défaut (démon) 25mn
+        lancer client selon (démon)   5mn
+        Sauvegarder/charger dans settings 10mn
+        
+        chemin de réception (IGU)     5mn
+        entrée de menu                2mn
+        Fenêtre de dialogue (ou Preferences dialog) avec inputtext  15mn
+
+        dans propriétés du client: checkbox  10mn
+        un arg de plus pour ClientData       10mn
+
+        total 1h30
+
+Preferences dialog
+    Options du démon
+        ...
+    Affichage
+        Barre de menus
+        Afficher les messages
+        Baie de brassage
+        Garder le focus
+    Boite à miniatures
+        ...
+    Fenêtres d'infos
+        ...restaurer n'importe quelle fenêtre d'info
+    Manuel
+        Manuel offline
+        manuel inline
+        manuel baie de brassage
+    Dons
+
+
+
 
 
 
