@@ -1274,8 +1274,9 @@ class Client(ServerSender, ray.ClientData):
         terminal_args = list[str]()
         
         if self.in_terminal:
-            terminal_args = terminal_starter.which_terminal(
-                title=self.jack_client_name, hold=True)
+            server = self.get_server()
+            if server is not None:
+                terminal_args = shlex.split(server.terminal_command)
 
         if self.protocol == ray.Protocol.RAY_NET:
             server = self.get_server()

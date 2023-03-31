@@ -1,4 +1,5 @@
 import os
+import shlex
 import sys
 import random
 import shutil
@@ -15,6 +16,7 @@ from signaler import Signaler
 from multi_daemon_file import MultiDaemonFile
 from daemon_tools import (TemplateRoots, CommandLineArgs, Terminal, RS,
                           get_code_root)
+from terminal_starter import which_terminal
 if TYPE_CHECKING:
     from session_signaled import SignaledSession
 
@@ -359,7 +361,8 @@ class OscServerThread(ClientCommunicating):
             ray.Option.BOOKMARK_SESSION
             + ray.Option.SNAPSHOTS
             + ray.Option.SESSION_SCRIPTS,
-            type=int)
+            type=int
+        )
 
         if CommandLineArgs.no_options:
             self.options = 0
@@ -378,6 +381,14 @@ class OscServerThread(ClientCommunicating):
             'factory': [], 'user': []}
 
         self.session_to_preview = ''
+        
+        self._terminal_command_is_default = True
+        self.terminal_command = RS.settings.value(
+            'daemon/terminal_command', '', type=str)
+        if self.terminal_command:
+            self._terminal_command_is_default = False
+        else:
+            self.terminal_command = shlex.join(which_terminal())
 
         global instance
         instance = self
@@ -436,7 +447,6 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/server/ask_for_patchbay', '')
     def rayServerGetPatchbayPort(self, path, args, types, src_addr):
         patchbay_file = '/tmp/RaySession/patchbay_daemons/' + str(self.port)
-        patchbay_port = 0
 
         if not os.path.exists(patchbay_file):
             return True
@@ -555,6 +565,15 @@ class OscServerThread(ClientCommunicating):
             self.send(src_addr, '/error', path, ray.Err.OPERATION_PENDING,
                       "Can't change session_root. Operation pending")
             return False
+
+    @ray_method('/ray/server/set_terminal_command', 's')
+    def rayServerSetTerminalCommand(self, path, args, types, src_addr):
+        if args[0] != self.terminal_command:
+            self.terminal_command = args[0]
+            if not self.terminal_command:
+                self.terminal_command = shlex.join(which_terminal())
+            self.send_gui('/ray/gui/server/terminal_command',
+                          self.terminal_command)
 
     @ray_method('/ray/server/list_path', '')
     def rayServerListPath(self, path, args, types, src_addr):
@@ -1404,6 +1423,8 @@ class OscServerThread(ClientCommunicating):
         self.send(gui_addr, "/ray/gui/session/name",
                   self.session.name, self.session.path)
         self.send(gui_addr, '/ray/gui/session/notes', self.session.notes)
+        self.send(gui_addr, '/ray/gui/server/terminal_command',
+                  self.terminal_command)
 
         self.session.canvas_saver.send_all_group_positions(gui_addr)
 

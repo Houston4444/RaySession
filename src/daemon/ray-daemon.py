@@ -140,6 +140,11 @@ if __name__ == '__main__':
     if not CommandLineArgs.no_options:
         RS.settings.setValue('daemon/options', server.options)
 
+    if server._terminal_command_is_default:
+        RS.settings.setValue('daemon/terminal_command', '')
+    else:
+        RS.settings.setValue('daemon/terminal_command', server.terminal_command)
+
     # save JSON config group positions
     session.canvas_saver.save_config_file()
     
