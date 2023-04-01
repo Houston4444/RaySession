@@ -1218,15 +1218,25 @@ class OperatingSession(Session):
         self.send_gui('/ray/gui/server/progress', ratio)
 
     def _check_externals_states(self):
-        has_externals = False
+        '''checks if client started from external are still alive
+        or if clients launched in terminal have still their process active'''
+        has_alives = False
 
         for client in self.clients:
             if client.is_external:
-                has_externals = True
+                has_alives = True
                 if not os.path.exists('/proc/%i' % client.pid):
                     client.external_finished()
+            
+            elif (client.is_running()
+                    and client._launched_in_terminal
+                    and client.status != ray.ClientStatus.LOSE):
+                has_alives = True
+                if (client.status == ray.ClientStatus.READY
+                        and not os.path.exists('/proc/%i' % client.pid_from_nsm)):
+                    client.nsm_finished_terminal_alive()
 
-        if not has_externals:
+        if not has_alives:
             self.externals_timer.stop()
 
     def _check_windows_appears(self):

@@ -61,6 +61,7 @@ class Client(ServerSender, ray.ClientData):
     # have to be modified by main thread for security
     addr: Address = None
     pid = 0
+    pid_from_nsm = 0
     pending_command = ray.Command.NONE
     active = False
     did_announce = False
@@ -89,6 +90,8 @@ class Client(ServerSender, ray.ClientData):
     _desktop_description = ""
 
     jack_naming = ray.JackNaming.SHORT
+
+    _launched_in_terminal = False
 
     def __init__(self, parent_session: 'SignaledSession'):
         ServerSender.__init__(self)
@@ -1358,6 +1361,10 @@ class Client(ServerSender, ray.ClientData):
             self.jack_client_name = self.get_jack_client_name()
             self.send_gui_client_properties()
 
+        self._launched_in_terminal = self.in_terminal
+        if self._launched_in_terminal:
+            self.session.externals_timer.start()
+
         self.session.send_monitor_event(
             'start_request', self.client_id)
 
@@ -1401,13 +1408,13 @@ class Client(ServerSender, ray.ClientData):
     def terminate(self):
         if self.is_running():
             if self.is_external:
-                os.kill(self.pid, 15) # 15 means signal.SIGTERM
+                os.kill(self.pid, signal.SIGTERM)
             else:
                 self._process.terminate()
 
     def kill(self):
         if self.is_external:
-            os.kill(self.pid, 9) # 9 means signal.SIGKILL
+            os.kill(self.pid, signal.SIGKILL)
             return
 
         if self.is_running():
@@ -1439,6 +1446,13 @@ class Client(ServerSender, ray.ClientData):
 
     def external_finished(self):
         self._process_finished(0, 0)
+
+    def nsm_finished_terminal_alive(self):
+        # the client is not more alive
+        # but it has been launched from terminal
+        # and this terminal is not closed.
+        self.active = False
+        self.set_status(ray.ClientStatus.LOSE)
 
     def script_finished(self, exit_code):
         if self.scripter.is_asked_for_terminate():
@@ -1585,9 +1599,17 @@ class Client(ServerSender, ray.ClientData):
             self.session.send_monitor_event(
                 'stop_request', self.client_id)
 
+            if self._launched_in_terminal and self.pid_from_nsm:
+                try:
+                    os.kill(self.pid_from_nsm, signal.SIGTERM)
+                except ProcessLookupError:
+                    self.pid_from_nsm = 0
+                except:
+                    self.pid_from_nsm = 0
+
             if self.is_external:
-                os.kill(self.pid, 15) # 15 means signal.SIGTERM
-            elif self.is_ray_hack() and self.ray_hack.stop_sig != 15:
+                os.kill(self.pid, signal.SIGTERM)
+            elif self.is_ray_hack() and self.ray_hack.stop_sig != signal.SIGTERM.value:
                 os.kill(self._process.pid(), self.ray_hack.stop_sig)
             else:
                 self._process.terminate()
@@ -2160,7 +2182,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             old_client_id, new_client_id,
             old_client_links_dir, new_client_links_dir)
 
-    def server_announce(self, path, args, src_addr, is_new):
+    def server_announce(self, path, args, src_addr, is_new: bool):
         client_name, capabilities, executable_path, major, minor, pid = args
 
         if self.pending_command == ray.Command.STOP:
@@ -2181,6 +2203,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.name = client_name
         self.active = True
         self.did_announce = True
+        self.pid_from_nsm = pid
 
         if is_new:
             self.is_external = True

@@ -352,7 +352,8 @@ class ClientSlot(QFrame):
                 ray.ClientStatus.LAUNCH,
                 ray.ClientStatus.OPEN,
                 ray.ClientStatus.SWITCH,
-                ray.ClientStatus.NOOP):
+                ray.ClientStatus.NOOP,
+                ray.ClientStatus.LOSE):
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(True)
             self.ui.saveButton.setEnabled(False)

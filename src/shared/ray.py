@@ -62,6 +62,7 @@ class ClientStatus:
     REMOVED = 11
     UNDEF = 12
     SCRIPT = 13
+    LOSE = 14
 
 
 class ServerStatus:

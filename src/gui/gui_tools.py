@@ -303,7 +303,8 @@ def client_status_string(client_status: int) -> str:
         ray.ClientStatus.ERROR  : _translate('client status', "error"),
         ray.ClientStatus.REMOVED: _translate('client status', "removed"),
         ray.ClientStatus.UNDEF  : _translate('client_status', ""),
-        ray.ClientStatus.SCRIPT : _translate('client_status', 'script')}
+        ray.ClientStatus.SCRIPT : _translate('client_status', 'script'),
+        ray.ClientStatus.LOSE   : _translate('client_status', "lose")}
 
     if not 0 <= client_status < len(client_status_strings):
         return _translate('client_status', 'invalid')
