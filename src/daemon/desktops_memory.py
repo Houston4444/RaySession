@@ -69,7 +69,7 @@ class DesktopsMemory:
 
     def _is_name_in_session(self, name: str) -> bool:
         for client in self.session.clients:
-            if client.name == name and client.active:
+            if client.name == name and client.nsm_active:
                 return True
 
         return False

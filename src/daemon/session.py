@@ -254,7 +254,7 @@ class Session(ServerSender):
 
     def _clients_have_errors(self):
         for client in self.clients:
-            if client.active and client.has_error():
+            if client.nsm_active and client.has_error():
                 return True
         return False
 
@@ -1229,10 +1229,10 @@ class OperatingSession(Session):
                     client.external_finished()
             
             elif (client.is_running()
-                    and client._launched_in_terminal
+                    and client.launched_in_terminal
                     and client.status != ray.ClientStatus.LOSE):
                 has_alives = True
-                if (client.status == ray.ClientStatus.READY
+                if (client.nsm_active
                         and not os.path.exists('/proc/%i' % client.pid_from_nsm)):
                     client.nsm_finished_terminal_alive()
 
@@ -2444,7 +2444,7 @@ for better organization.""")
         self.set_server_status(ray.ServerStatus.OPEN)
 
         for client in self.clients:
-            if client.active and client.is_reply_pending():
+            if client.nsm_active and client.is_reply_pending():
                 self.expected_clients.append(client)
             elif client.is_running() and client.is_dumb_client():
                 client.set_status(ray.ClientStatus.NOOP)

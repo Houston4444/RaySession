@@ -190,23 +190,42 @@ class SignaledSession(OperatingSession):
         # we can't be absolutely sure that the announcer is the good one
         # but if client announce a known PID,
         # we can be sure of which client is announcing
+        
         for client in self.clients:
-            if client.pid == pid and not client.active and client.is_running():
+            if client.client_id == 'hydrogen':
+                print('dkflflqqq', client.pid, client._process.pid(), client._process.state(), client.nsm_active, client.is_running())
+                print('"lldd"', pid, is_pid_child_of(pid, client.pid))
+        
+        for client in self.clients:
+            if client.pid == pid and not client.nsm_active and client.is_running():
                 client.server_announce(path, args, src_addr, False)
                 break
         else:
             for client in self.clients:
-                if (not client.active and client.is_running()
+                if (not client.nsm_active and client.is_running()
                         and is_pid_child_of(pid, client.pid)):
                     client.server_announce(path, args, src_addr, False)
                     break
             else:
-                # Client launched externally from daemon
-                # by command : $:NSM_URL=url executable
-                client = self._new_client(executable_path)
-                self.externals_timer.start()
-                self.send_monitor_event('joined', client.client_id)
-                client.server_announce(path, args, src_addr, True)
+                for client in self.clients:
+                    if (client.launched_in_terminal
+                            and client.process_drowned
+                            and client.executable_path == executable_path):
+                        # when launched in terminal
+                        # the client process can be stopped
+                        # because the terminal process is 'linked' to an existing instance
+                        # then, we may can say this stopped client is the good one,
+                        # and we declare it as external because we won't check its process
+                        # state with QProcess.state().
+                        client.server_announce(path, args, src_addr, True)
+                        break
+                else:
+                    # Client launched externally from daemon
+                    # by command : $:NSM_URL=url executable
+                    client = self._new_client(executable_path)
+                    self.externals_timer.start()
+                    self.send_monitor_event('joined', client.client_id)
+                    client.server_announce(path, args, src_addr, True)
 
         if self.wait_for == ray.WaitFor.ANNOUNCE:
             self.end_timer_if_last_expected(client)
@@ -1258,7 +1277,7 @@ class SignaledSession(OperatingSession):
 
         for client in self.clients:
             if ((f_started < 0 or f_started == client.is_running())
-                and (f_active < 0 or f_active == client.active)
+                and (f_active < 0 or f_active == client.nsm_active)
                 and (f_auto_start < 0 or f_auto_start == client.auto_start)
                 and (f_no_save_level < 0
                      or f_no_save_level == int(bool(client.noSaveLevel())))):
@@ -1365,7 +1384,7 @@ class SignaledSession(OperatingSession):
             self.send_error_copy_running(src_addr, path)
             return
 
-        if client.active:
+        if client.nsm_active:
             self.send_gui_message(
                 _translate('GUIMSG', 'client %s is already active.')
                     % client.gui_msg_style())

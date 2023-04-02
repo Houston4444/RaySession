@@ -13,7 +13,6 @@ from PyQt5.QtXml import QDomDocument, QDomElement
 
 import xdg
 import ray
-import terminal_starter
 from server_sender import ServerSender
 from daemon_tools  import (TemplateRoots, Terminal, RS,
                            get_code_root, highlight_text)
@@ -63,7 +62,7 @@ class Client(ServerSender, ray.ClientData):
     pid = 0
     pid_from_nsm = 0
     pending_command = ray.Command.NONE
-    active = False
+    nsm_active = False
     did_announce = False
 
     status = ray.ClientStatus.STOPPED
@@ -91,7 +90,9 @@ class Client(ServerSender, ray.ClientData):
 
     jack_naming = ray.JackNaming.SHORT
 
-    _launched_in_terminal = False
+    launched_in_terminal = False
+    process_drowned = False
+    _process_start_time = 0.0
 
     def __init__(self, parent_session: 'SignaledSession'):
         ServerSender.__init__(self)
@@ -163,10 +164,10 @@ class Client(ServerSender, ray.ClientData):
     def _process_started(self):
         self.has_been_started = True
         self._stopped_since_long_ = False
+        self.process_drowned = False
+        self._process_start_time = time.time()
         self.pid = self._process.pid()
         self.set_status(ray.ClientStatus.LAUNCH)
-
-        #Terminal.message("Process has pid: %i" % self.pid)
 
         self.send_gui_message(_translate("GUIMSG", "  %s: launched")
                             % self.gui_msg_style())
@@ -184,7 +185,20 @@ class Client(ServerSender, ray.ClientData):
                 self.set_status(ray.ClientStatus.OPEN)
                 QTimer.singleShot(500, self._ray_hack_near_ready)
 
-    def _process_finished(self, exit_code, exit_status):
+    def _process_finished(self, exit_code: int, exit_status: QProcess.ExitStatus):
+        if (self.launched_in_terminal
+                and self.pending_command == ray.Command.START
+                and not exit_code
+                and time.time() - self._process_start_time < 1.0):
+            # when launched in terminal
+            # with some terminals (mate-terminal, gnome-terminal)
+            # if the terminal is already launched for another process,
+            # the launched process finishs fastly because
+            # the program is 'linked' in the current terminal process.
+            self.process_drowned = True
+            self.set_status(ray.ClientStatus.STOPPED)
+            return
+
         self._stopped_timer.stop()
         self.is_external = False
 
@@ -212,7 +226,7 @@ class Client(ServerSender, ray.ClientData):
         self.set_status(ray.ClientStatus.STOPPED)
 
         self.pending_command = ray.Command.NONE
-        self.active = False
+        self.nsm_active = False
         self.pid = 0
         self.addr = None
 
@@ -229,7 +243,7 @@ class Client(ServerSender, ray.ClientData):
             self.send_gui_message(
                 _translate('GUIMSG', "  %s: Failed to start !")
                     % self.gui_msg_style())
-            self.active = False
+            self.nsm_active = False
             self.pid = 0
             self.set_status(ray.ClientStatus.STOPPED)
             self.pending_command = ray.Command.NONE
@@ -1361,8 +1375,8 @@ class Client(ServerSender, ray.ClientData):
             self.jack_client_name = self.get_jack_client_name()
             self.send_gui_client_properties()
 
-        self._launched_in_terminal = self.in_terminal
-        if self._launched_in_terminal:
+        self.launched_in_terminal = self.in_terminal
+        if self.launched_in_terminal:
             self.session.externals_timer.start()
 
         self.session.send_monitor_event(
@@ -1376,7 +1390,7 @@ class Client(ServerSender, ray.ClientData):
         if src_addr:
             self._osc_srcs[OSC_SRC_OPEN] = (src_addr, src_path)
 
-        if self.active:
+        if self.nsm_active:
             self._send_reply_to_caller(OSC_SRC_OPEN, 'client active')
             return
 
@@ -1451,7 +1465,7 @@ class Client(ServerSender, ray.ClientData):
         # the client is not more alive
         # but it has been launched from terminal
         # and this terminal is not closed.
-        self.active = False
+        self.nsm_active = False
         self.set_status(ray.ClientStatus.LOSE)
 
     def script_finished(self, exit_code):
@@ -1510,7 +1524,7 @@ class Client(ServerSender, ray.ClientData):
         self.scripter.terminate()
 
     def tell_client_session_is_loaded(self):
-        if self.active and not self.is_dumb_client():
+        if self.nsm_active and not self.is_dumb_client():
             self.message("Telling client %s that session is loaded."
                              % self.name)
             self.send_to_self_address("/nsm/client/session_is_loaded")
@@ -1523,7 +1537,7 @@ class Client(ServerSender, ray.ClientData):
             return bool(self.is_running()
                         and self.pending_command == ray.Command.NONE)
 
-        return bool(self.active and not self.no_save_level)
+        return bool(self.nsm_active and not self.no_save_level)
 
     def save(self, src_addr=None, src_path=''):
         if self.switch_state in (ray.SwitchState.RESERVED,
@@ -1599,7 +1613,7 @@ class Client(ServerSender, ray.ClientData):
             self.session.send_monitor_event(
                 'stop_request', self.client_id)
 
-            if self._launched_in_terminal and self.pid_from_nsm:
+            if self.launched_in_terminal and self.pid_from_nsm:
                 try:
                     os.kill(self.pid_from_nsm, signal.SIGTERM)
                 except ProcessLookupError:
@@ -1675,7 +1689,7 @@ class Client(ServerSender, ray.ClientData):
         if self.protocol != other_client.protocol:
             return False
 
-        if not ((self.active and self.is_capable_of(':switch:'))
+        if not ((self.nsm_active and self.is_capable_of(':switch:'))
                 or (self.is_dumb_client() and self.is_running())):
             return False
 
@@ -2201,8 +2215,9 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.capabilities = capabilities
         self.addr = src_addr
         self.name = client_name
-        self.active = True
+        self.nsm_active = True
         self.did_announce = True
+        self.process_drowned = False
         self.pid_from_nsm = pid
 
         if is_new:

@@ -39,7 +39,7 @@ def which_terminal(title='', hold=True) -> list[str]:
             return list[str]()
 
         if terminal == 'gnome-terminal':
-            return [terminal, '--hide-menubar', '--']
+            return [terminal, '--hide-menubar', '--wait', '--']
 
         if terminal == 'konsole':
             base_args = [terminal, '--hide-tabbar', '--hide-menubar']
@@ -55,9 +55,9 @@ def which_terminal(title='', hold=True) -> list[str]:
 
         if terminal == 'mate-terminal':
             if title:
-                return [terminal, '--hide-menubar', '--title', title, '--']
+                return [terminal, '--hide-menubar', '--disable-factory', '--title', title, '--']
 
-            return [terminal, '--hide-menubar', '--']
+            return [terminal, '--hide-menubar', '--disable-factory', '--']
 
         if terminal == 'xfce4-terminal':
             if title:
