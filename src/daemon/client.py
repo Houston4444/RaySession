@@ -1293,7 +1293,10 @@ class Client(ServerSender, ray.ClientData):
         if self.in_terminal:
             server = self.get_server()
             if server is not None:
-                terminal_args = shlex.split(server.terminal_command)
+                terminal_args = [
+                    a.replace('RAY_TERMINAL_TITLE',
+                              f"{self.client_id} {self.executable_path}")
+                    for a in shlex.split(server.terminal_command)]
 
         if self.protocol == ray.Protocol.RAY_NET:
             server = self.get_server()

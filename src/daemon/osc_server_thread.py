@@ -388,7 +388,8 @@ class OscServerThread(ClientCommunicating):
         if self.terminal_command:
             self._terminal_command_is_default = False
         else:
-            self.terminal_command = shlex.join(which_terminal())
+            self.terminal_command = shlex.join(
+                which_terminal(title='RAY_TERMINAL_TITLE'))
 
         global instance
         instance = self
@@ -571,7 +572,8 @@ class OscServerThread(ClientCommunicating):
         if args[0] != self.terminal_command:
             self.terminal_command = args[0]
             if not self.terminal_command:
-                self.terminal_command = shlex.join(which_terminal())
+                self.terminal_command = shlex.join(
+                    which_terminal(title='RAY_TERMINAL_TITLE'))
             self.send_gui('/ray/gui/server/terminal_command',
                           self.terminal_command)
 
