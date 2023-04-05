@@ -40,12 +40,24 @@ control_operations = ('start', 'start_new', 'start_new_hidden', 'stop',
                       'has_local_gui', 'has_gui')
 
 server_operations = (
-    'quit', 'change_root', 'list_session_templates',
-    'list_user_client_templates', 'list_factory_client_templates',
-    'remove_client_template', 'list_sessions', 'new_session',
-    'open_session', 'open_session_off', 'save_session_template',
-    'rename_session', 'set_options', 'has_option',
-    'script_info', 'hide_script_info', 'script_user_action')
+    'quit',
+    'change_root',
+    'set_terminal_command',
+    'list_session_templates',
+    'list_user_client_templates',
+    'list_factory_client_templates',
+    'remove_client_template',
+    'list_sessions',
+    'new_session',
+    'open_session',
+    'open_session_off',
+    'save_session_template',
+    'rename_session',
+    'set_options',
+    'has_option',
+    'script_info',
+    'hide_script_info',
+    'script_user_action')
 
 
 def signal_handler(sig, frame):

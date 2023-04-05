@@ -576,6 +576,7 @@ class OscServerThread(ClientCommunicating):
                     which_terminal(title='RAY_TERMINAL_TITLE'))
             self.send_gui('/ray/gui/server/terminal_command',
                           self.terminal_command)
+        self.send(src_addr, '/reply', path, 'terminal command set')
 
     @ray_method('/ray/server/list_path', '')
     def rayServerListPath(self, path, args, types, src_addr):

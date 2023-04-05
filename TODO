@@ -26,21 +26,6 @@ list ardour templates and select a template in add_application dialog for Ardour
 # Forget connections of removed client
 
 
-
-start client in terminal
-        déterminer par défaut (démon) 25mn
-        lancer client selon (démon)   5mn
-        Sauvegarder/charger dans settings 10mn
-        
-        chemin de réception (IGU)     5mn
-        entrée de menu                2mn
-        Fenêtre de dialogue (ou Preferences dialog) avec inputtext  15mn
-
-        dans propriétés du client: checkbox  10mn
-        un arg de plus pour ClientData       10mn
-
-        total 1h30
-
 Preferences dialog
     Options du démon
         ...
