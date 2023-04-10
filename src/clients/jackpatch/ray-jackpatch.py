@@ -26,6 +26,7 @@ import xml.etree.ElementTree as ET
 
 import jacklib
 from jacklib.helpers import c_char_p_p_to_list
+from jacklib.api import JackPortFlags, JackOptions
 from nsm_client_noqt import NsmServer, NsmCallback, Err
 from bases import (EventHandler, MonitorStates, PortMode, PortType,
                    Event, JackPort, Timer, Glob, debug_conn_str)
@@ -432,9 +433,9 @@ def fill_ports_and_connections():
         port_ptr = jacklib.port_by_name(jack_client, port_name)
         port_flags = jacklib.port_flags(port_ptr)
 
-        if port_flags & jacklib.JackPortIsInput:
+        if port_flags & JackPortFlags.IS_INPUT:
             jack_port.mode = PortMode.INPUT
-        elif port_flags & jacklib.JackPortIsOutput:
+        elif port_flags & JackPortFlags.IS_OUTPUT:
             jack_port.mode = PortMode.OUTPUT
         else:
             jack_port.mode = PortMode.NULL
@@ -470,8 +471,8 @@ if __name__ == '__main__':
         sys.exit(1)
 
     jack_client = jacklib.client_open(
-        "ray-patcher",
-        jacklib.JackNoStartServer,
+        "ray-jackpatch",
+        JackOptions.NO_START_SERVER,
         None)
 
     if not jack_client:
@@ -480,8 +481,6 @@ if __name__ == '__main__':
     
     timer_dirty_check = Timer(0.300)
     timer_connect_check = Timer(0.200)
-    
-    
 
     jack_callbacks.set_callbacks(jack_client)
     jacklib.activate(jack_client)

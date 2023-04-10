@@ -1,8 +1,8 @@
 from ctypes import c_char_p, pointer
-from typing import Callable
 
 import jacklib
-from bases import EventHandler, Event, PortMode, PortType, b2str, Glob
+from jacklib import JackPortFlags
+from bases import EventHandler, Event, PortMode, PortType, b2str
 
 _jack_client: 'pointer[jacklib.jack_port_t]'
     
@@ -20,9 +20,9 @@ def _port_registration(port_id: int, register: bool, arg=None) -> int:
     port_flags = jacklib.port_flags(port_ptr)
     port_name = jacklib.port_name(port_ptr)
 
-    if port_flags & jacklib.JackPortIsInput:
+    if port_flags & JackPortFlags.IS_INPUT:
         port_mode = PortMode.INPUT
-    elif port_flags & jacklib.JackPortIsOutput:
+    elif port_flags & JackPortFlags.IS_OUTPUT:
         port_mode = PortMode.OUTPUT
     else:
         port_mode = PortMode.NULL
@@ -46,9 +46,9 @@ def _port_rename(
     port_ptr = jacklib.port_by_id(_jack_client, port_id)
     port_flags = jacklib.port_flags(port_ptr)
 
-    if port_flags & jacklib.JackPortIsInput:
+    if port_flags & JackPortFlags.IS_INPUT:
         port_mode = PortMode.INPUT
-    elif port_flags & jacklib.JackPortIsOutput:
+    elif port_flags & JackPortFlags.IS_OUTPUT:
         port_mode = PortMode.OUTPUT
     else:
         port_mode = PortMode.NULL
