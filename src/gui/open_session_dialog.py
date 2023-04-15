@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import (QApplication, QTreeWidget, QTreeWidgetItem,
                              QDialogButtonBox, QMenu, QMessageBox)
 from PyQt5.QtGui import QIcon, QCursor
 from PyQt5.QtCore import Qt, QTimer, QDateTime, QLocale, QPoint
+from typing import Optional
 
 import ray
 import child_dialogs
@@ -68,7 +69,7 @@ class SessionItem(QTreeWidgetItem):
         return bool(self.text(COLUMN_NAME).lower()
                     < other.text(COLUMN_NAME).lower())
 
-    def show_conditionnaly(self, string: str)->bool:
+    def show_conditionnaly(self, string: str) -> bool:
         show = bool(
             string.lower() in self.data(COLUMN_NAME, Qt.UserRole).lower())
 
@@ -83,7 +84,7 @@ class SessionItem(QTreeWidgetItem):
         self.setHidden(not show)
         return show
 
-    def find_item_with(self, string):
+    def find_item_with(self, string: str) -> 'Optional[SessionItem]':
         if self.data(COLUMN_NAME, Qt.UserRole) == string:
             return self
 
@@ -152,6 +153,7 @@ class SessionItem(QTreeWidgetItem):
     # Re-implemented protected Qt function
     def child(self, index: int) -> 'SessionItem':
         return QTreeWidgetItem.child(self, index)
+
 
 class SessionFolder:
     name = ""
@@ -358,7 +360,7 @@ class OpenSessionDialog(ChildDialog):
 
         self._set_preview_scripted(False)
 
-        self.folders = []
+        self.folders = list[SessionFolder]()
         self.all_items = []
 
         self.ui.filterBar.setFocus(Qt.OtherFocusReason)
@@ -442,7 +444,7 @@ class OpenSessionDialog(ChildDialog):
         self.folders.clear()
         self.to_daemon('/ray/server/list_sessions', 0)
 
-    def _add_sessions(self, session_names, out_of_listing=False):
+    def _add_sessions(self, session_names: list[str], out_of_listing=False):
         if not self._listing_sessions and not out_of_listing:
             # in case session server is listing sessions
             # but they are already listed.
@@ -497,7 +499,6 @@ class OpenSessionDialog(ChildDialog):
         for session_name in session_names:
             folder_div = session_name.split('/')
             folders = self.folders
-            #folder_path_list = []
 
             for i in range(len(folder_div)):
                 f = folder_div[i]
@@ -536,7 +537,8 @@ class OpenSessionDialog(ChildDialog):
 
         ## hide all non matching items
         for i in range(root_item.childCount()):
-            root_item.child(i).show_conditionnaly(filter_text)
+            sess_item: SessionItem = root_item.child(i)
+            sess_item.show_conditionnaly(filter_text)
 
         # if selected item not in list, then select the first visible
         if (not self.ui.sessionList.currentItem()
@@ -576,7 +578,7 @@ class OpenSessionDialog(ChildDialog):
                 self.ui.sessionList.setCurrentItem(start_item)
                 return
 
-    def _current_item_changed(self, item, previous_item):
+    def _current_item_changed(self, item: SessionItem, previous_item: SessionItem):
         self._has_selection = bool(item and item.data(COLUMN_NAME, Qt.UserRole))
         
         self.ui.listWidgetPreview.clear()
@@ -621,7 +623,7 @@ class OpenSessionDialog(ChildDialog):
             bool(self._server_will_accept and self._has_selection))
 
     def _show_context_menu(self):
-        item = self.ui.sessionList.currentItem()
+        item: SessionItem = self.ui.sessionList.currentItem()
         if item is None:
             return
 
@@ -817,7 +819,6 @@ class OpenSessionDialog(ChildDialog):
     def _session_renamed_by_server(self):
         old_name, new_name = self._session_renaming
         self._session_renaming = ('', '')
-
         current_name = ''
 
         item = self.ui.sessionList.currentItem()
@@ -832,7 +833,7 @@ class OpenSessionDialog(ChildDialog):
             # should rarely happens because rename session is very fast
             # in case session has been renamed but is not selected anymore
             for i in range(self.ui.sessionList.topLevelItemCount()):
-                item = self.ui.sessionList.topLevelItem(i)
+                item: SessionItem = self.ui.sessionList.topLevelItem(i)
                 session_item = item.find_item_with(old_name)
                 if session_item is not None:
                     session_item.setData(COLUMN_NAME, Qt.UserRole, new_long_name)
@@ -882,7 +883,7 @@ class OpenSessionDialog(ChildDialog):
             self._set_corner_group(CORNER_NOTIFICATION)
         self._set_pending_action(PENDING_ACTION_NONE)
     
-    def _deploy_item(self, item, column):
+    def _deploy_item(self, item: SessionItem, column):
         if column == COLUMN_NOTES and not item.icon(COLUMN_NOTES).isNull():
             # set preview tab to 'Notes' tab if user clicked on a notes icon 
             self.ui.tabWidget.setCurrentIndex(1)
@@ -895,7 +896,7 @@ class OpenSessionDialog(ChildDialog):
 
         self._last_mouse_click = time.time()
 
-    def _go_if_any(self, item, column):
+    def _go_if_any(self, item: SessionItem, column):
         if item.childCount():
             return
 
@@ -955,7 +956,7 @@ class OpenSessionDialog(ChildDialog):
         self.action_save_as_template.setEnabled(ok)
         self.action_remove.setEnabled(ok and allow_remove)
 
-    def _add_snapshots(self, snaptexts):
+    def _add_snapshots(self, snaptexts: list[str]):
         if not snaptexts and not self.main_snap_group.snapshots:
             # Snapshot list finished without any snapshot
             #self._no_snapshot_found()
@@ -979,10 +980,10 @@ class OpenSessionDialog(ChildDialog):
         #self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.treeWidgetSnapshots.clearSelection()
 
-    def _update_session_details(self, session_name:str,
-                                has_notes:int, modified:int, locked:int):
+    def _update_session_details(self, session_name: str,
+                                has_notes: int, modified: int, locked: int):
         for i in range(self.ui.sessionList.topLevelItemCount()):
-            item = self.ui.sessionList.topLevelItem(i)
+            item: SessionItem = self.ui.sessionList.topLevelItem(i)
             session_item = item.find_item_with(session_name)
             if session_item is not None:
                 if has_notes:
@@ -1000,7 +1001,7 @@ class OpenSessionDialog(ChildDialog):
         if dir_name == '':
             # means that all the session root directory is scripted
             for i in range(self.ui.sessionList.topLevelItemCount()):
-                item = self.ui.sessionList.topLevelItem(i)
+                item: SessionItem = self.ui.sessionList.topLevelItem(i)
                 item.set_scripted(script_flags)
             return
 

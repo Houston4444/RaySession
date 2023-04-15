@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+from typing import TYPE_CHECKING
 import warnings
 
 from PyQt5.QtCore import QProcess, QTimer
@@ -8,14 +9,19 @@ from osc_server_thread import OscServerThread
 from server_sender import ServerSender
 import ray
 
+if TYPE_CHECKING:
+    from session import Session
+
+
 class CopyFile:
     orig_path = ""
     dest_path = ""
     state = 0
     size = 0
 
+
 class FileCopier(ServerSender):
-    def __init__(self, session):
+    def __init__(self, session: 'Session'):
         ServerSender.__init__(self)
         self.session = session
 
@@ -23,7 +29,7 @@ class FileCopier(ServerSender):
         self._next_function = None
         self._abort_function = None
         self._next_args = []
-        self._copy_files = []
+        self._copy_files = list[CopyFile]()
         self._copy_size = 0
         self._aborted = False
         self._is_active = False

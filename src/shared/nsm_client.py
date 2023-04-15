@@ -3,8 +3,8 @@
 import os
 import sys
 from PyQt5.QtCore import QObject, pyqtSignal
-from liblo import ServerThread, make_method
-
+from liblo import ServerThread, make_method, Address
+from typing import Optional
 
 
 class NSMSignaler(QObject):
@@ -17,7 +17,8 @@ class NSMSignaler(QObject):
 instance = None
 
 class NSMThread(ServerThread):
-    def __init__(self, name, signaler, daemon_address, debug):
+    def __init__(self, name: str, signaler: NSMSignaler,
+                 daemon_address: Address, debug: bool):
         ServerThread.__init__(self)
         self.name = name
         self.signaler = signaler
@@ -29,7 +30,7 @@ class NSMThread(ServerThread):
         instance = self
 
     @staticmethod
-    def instance():
+    def instance() -> Optional['NSMThread']:
         return instance
 
     @make_method('/reply', None)

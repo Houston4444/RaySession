@@ -89,6 +89,16 @@
     <widget class="QLineEdit" name="lineEdit"/>
    </item>
    <item>
+    <widget class="QCheckBox" name="checkBoxIdRename">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Renames also the client identifiant, this identifiant will be used for its JACK client names.&lt;/p&gt;&lt;p&gt;Else, only the client label is renamed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Identifiant renaming (client must be stopped)</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <spacer name="verticalSpacer_3">
      <property name="orientation">
       <enum>Qt::Vertical</enum>

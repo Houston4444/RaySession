@@ -21,8 +21,8 @@ class Snapshot:
     sub_type = GROUP_ELEMENT
     item = None
     before_rewind_to = ''
-    date_time = None
-    rewind_date_time = None
+    date_time: QDateTime = None
+    rewind_date_time: QDateTime = None
     session_name = ""
     label = ''
     rewind_label = ''
@@ -31,7 +31,7 @@ class Snapshot:
     def __init__(self, date_time):
         self.date_time = date_time
 
-    def __lt__(self, other):
+    def __lt__(self, other: 'Snapshot'):
         if not other.is_valid():
             return True
 
@@ -103,10 +103,13 @@ class Snapshot:
     def can_take(self, other):
         return False
 
+    def sort(self):
+        pass
+
     def add(self, other):
         pass
 
-    def common_group(self, other):
+    def common_group(self, other: 'Snapshot'):
         if not (self.is_valid() and other.is_valid()):
             return GROUP_MAIN
 
@@ -120,7 +123,7 @@ class Snapshot:
                     common_group = GROUP_DAY
 
         if common_group <= self.sub_type:
-            return self.sub_type +1
+            return self.sub_type + 1
 
         return common_group
 
@@ -182,9 +185,9 @@ class SnapGroup(Snapshot):
         Snapshot.__init__(self, date_time)
         self.sub_type = sub_type
         self.valid = True
-        self.snapshots = []
+        self.snapshots = list[Snapshot]()
 
-    def can_take(self, other):
+    def can_take(self, other: 'Snapshot'):
         if self.sub_type <= other.sub_type:
             return False
 
@@ -208,7 +211,7 @@ class SnapGroup(Snapshot):
 
         return True
 
-    def add(self, new_snapshot):
+    def add(self, new_snapshot: 'Snapshot'):
         if not new_snapshot.is_valid():
             self.snapshots.append(new_snapshot)
             return
@@ -287,8 +290,8 @@ class SnapGroup(Snapshot):
         snap_group.add(new_snapshot)
         self.add_group(snap_group)
 
-    def add_group(self, snap_group):
-        to_rem = []
+    def add_group(self, snap_group: 'SnapGroup'):
+        to_rem = list[int]()
 
         for i in range(len(self.snapshots)):
             snapshot = self.snapshots[i]
@@ -304,8 +307,7 @@ class SnapGroup(Snapshot):
 
     def sort(self):
         for snapshot in self.snapshots:
-            if snapshot.sub_type:
-                snapshot.sort()
+            snapshot.sort()
 
         self.snapshots.sort()
         self.snapshots.reverse()
@@ -339,6 +341,7 @@ class SnapGroup(Snapshot):
         item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
 
         return item
+
 
 class TakeSnapshotDialog(ChildDialog):
     def __init__(self, parent):
@@ -421,7 +424,7 @@ class SnapshotsDialog(ChildDialog):
 
     def get_selected_snapshot(self):
         item = self.ui.snapshotsList.currentItem()
-        full_str = item.data(0, Qt.UserRole)
+        full_str: str = item.data(0, Qt.UserRole)
         snapshot_ref = full_str.partition('\n')[0].partition(':')[0]
 
         return snapshot_ref

@@ -55,6 +55,7 @@ raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/about_raysession.py \
 	    src/gui/ui/add_application.py \
 	    src/gui/ui/ardour_convert.py \
+		src/gui/ui/client_advanced_properties.py \
 	    src/gui/ui/client_properties.py \
 	    src/gui/ui/client_rename.py \
 	    src/gui/ui/client_slot.py \

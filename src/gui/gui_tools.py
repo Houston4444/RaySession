@@ -5,6 +5,7 @@ import sys
 from PyQt5.QtCore import QSettings, QSize, QFile
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QIcon, QPixmap, QPalette
+from liblo import Address
 
 import ray
 
@@ -94,8 +95,10 @@ def RayIcon(icon_name: str, dark=False) -> RayAbstractIcon:
 
 
 class CommandLineArgs(argparse.Namespace):
-    daemon_url = None
+    daemon_url: Address = None
+    daemon_port: Address = None
     out_daemon = False
+    session_root: str = ''
     config_dir = ''
     debug = False
     debug_only = False
@@ -300,7 +303,8 @@ def client_status_string(client_status: int) -> str:
         ray.ClientStatus.ERROR  : _translate('client status', "error"),
         ray.ClientStatus.REMOVED: _translate('client status', "removed"),
         ray.ClientStatus.UNDEF  : _translate('client_status', ""),
-        ray.ClientStatus.SCRIPT : _translate('client_status', 'script')}
+        ray.ClientStatus.SCRIPT : _translate('client_status', 'script'),
+        ray.ClientStatus.LOSE   : _translate('client_status', "lose")}
 
     if not 0 <= client_status < len(client_status_strings):
         return _translate('client_status', 'invalid')

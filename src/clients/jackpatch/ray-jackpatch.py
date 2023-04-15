@@ -1,541 +1,533 @@
 #!/usr/bin/python3 -u
 
+# ray-jackpatch is an executable launchable in NSM (or Ray) session.
+# It restores JACK connections.
+# To avoid many problems, the connection processus is slow.
+# Connections are made one by one, waiting to receive from jack
+# the callback that a connection has been made to make the 
+# following one.
+# It also disconnects connections undesired in the session.
+# To determinate that a connection is undesired, all the present ports
+# are saved in the save file. If a connection is not saved in the file,
+# and its ports were present at save time, this connection will be disconnected
+# at session open.
+# This disconnect behavior is (probably) not suitable if we start the 
+# ray-jackpatch client once the session is already loaded.
+# The only way we've got to know that the entire session is opening, 
+# is to check if session_is_loaded message is received.
+
+
 import os
 import signal
 import sys
+import liblo
+import logging
+import xml.etree.ElementTree as ET
 
-from PyQt5.QtCore import QCoreApplication, QObject, QTimer, pyqtSignal
-from PyQt5.QtXml import QDomDocument
-
-#from shared import *
 import jacklib
-import nsm_client
-import ray
+from jacklib.helpers import c_char_p_p_to_list
+from jacklib.api import JackPortFlags, JackOptions
+from nsm_client_noqt import NsmServer, NsmCallback, Err
+from bases import (EventHandler, MonitorStates, PortMode, PortType,
+                   Event, JackPort, Timer, Glob, debug_conn_str)
+from jack_renaming_tools import (
+    port_belongs_to_client, port_name_client_replaced)
+import jack_callbacks
 
-connection_list = []
-saved_connections = []
-port_list = []
+_logger = logging.getLogger(__name__)
+_logger.setLevel(logging.DEBUG)
 
-PORT_MODE_OUTPUT = 0
-PORT_MODE_INPUT = 1
-PORT_MODE_NULL = 2
+present_client_names = set[str]()
+brothers_dict = dict[str, str]()
+connection_list = list[tuple[str, str]]()
+saved_connections = list[tuple[str, str]]()
+to_disc_connections = list[tuple[str, str]]()
+jack_ports = dict[PortMode, list[JackPort]]()
+for port_mode in PortMode:
+    jack_ports[port_mode] = list[JackPort]()
 
-PORT_TYPE_AUDIO = 0
-PORT_TYPE_MIDI = 1
-PORT_TYPE_NULL = 2
-
-file_path = ""
-
-is_dirty = False
-
-pending_connection = False
-
-def signalHandler(sig, frame):
+def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
-        app.quit()
+        Glob.terminate = True
 
-class JackPort:
-    #is_new is used to prevent reconnections
-    # when a disconnection has not been saved and one new port append.
-    id = 0
-    name = ''
-    mode = PORT_MODE_NULL
-    type = PORT_TYPE_NULL
-    is_new = False
+def set_dirty_clean():
+    Glob.is_dirty = False
+    nsm_server.send_dirty_state(False)
 
-class ConnectTimer(QObject):
-    def __init__(self):
-        self.timer = QTimer()
-        self.timer.setInterval(200)
-        self.timer.setSingleShot(True)
-        self.timer.timeout.connect(makeMayConnections)
-
-    def start(self):
-        self.timer.start()
-
-def portExists(name, mode):
-    for port in port_list:
-        if port.name == name and port.mode == mode:
-            return True
-    return False
-
-def setDirtyClean():
-    global is_dirty
-    is_dirty = False
-    NSMServer.sendDirtyState(False)
-
-def timerDirtyFinish():
-    global is_dirty
-
-    if is_dirty:
+def timer_dirty_finished():
+    if Glob.is_dirty:
         return
 
-    if isDirtyNow():
-        is_dirty = True
-        NSMServer.sendDirtyState(True)
+    if Glob.pending_connection:
+        timer_dirty_check.start()
+        return
 
-def isDirtyNow():
-    for connection in connection_list:
-        if not connection in saved_connections:
+    if is_dirty_now():
+        Glob.is_dirty = True
+        nsm_server.send_dirty_state(True)
+    elif not Glob.dirty_state_sent:
+        nsm_server.send_dirty_state(False)
+        Glob.dirty_state_sent = True
+
+def is_dirty_now() -> bool:
+    for conn in connection_list:
+        if not conn in saved_connections:
+            # There is at least a present connection unsaved
             return True
 
-    output_ports = []
-    input_ports = []
-
-    for port in port_list:
-        if port.mode == PORT_MODE_OUTPUT:
-            output_ports.append(port.name)
-        elif port.mode == PORT_MODE_INPUT:
-            input_ports.append(port.name)
-
-    for connection in saved_connections:
-        if connection in connection_list:
+    for sv_con in saved_connections:
+        if sv_con in connection_list:
             continue
 
-        if connection[0] in output_ports and connection[1] in input_ports:
+        if (sv_con[0] in [p.name for p in jack_ports[PortMode.OUTPUT]]
+                and sv_con[1] in [p.name for p in jack_ports[PortMode.INPUT]]):
+            # There is at least one saved connection not present
+            # despite the fact its two ports are present.
             return True
 
     return False
 
-class DirtyChecker(QObject):
-    timer = QTimer()
-
-    def __init__(self):
-        self.timer.setInterval(500)
-        self.timer.setSingleShot(True)
-        self.timer.timeout.connect(timerDirtyFinish)
-
-    def start(self):
-        self.timer.start()
-
-def readyToConnect():
-    pass
-
-class Signaler(nsm_client.NSMSignaler):
-    port_added = pyqtSignal(str, int, int)
-    port_removed = pyqtSignal(str, int, int)
-    port_renamed = pyqtSignal(str, str, int, int)
-    connection_added = pyqtSignal(str, str)
-    connection_removed = pyqtSignal(str, str)
-
-def JackShutdownCallback(arg=None):
-    app.quit()
-    return 0
-
-def JackPortRegistrationCallback(portId, registerYesNo, arg=None):
-    portPtr = jacklib.port_by_id(jack_client, portId)
-    portFlags = jacklib.port_flags(portPtr)
-    port_name = str(jacklib.port_name(portPtr), encoding="utf-8")
-
-    port_mode = PORT_MODE_NULL
-
-    if portFlags & jacklib.JackPortIsInput:
-        port_mode = PORT_MODE_INPUT
-    elif portFlags & jacklib.JackPortIsOutput:
-        port_mode = PORT_MODE_OUTPUT
-
-    port_type = PORT_TYPE_NULL
-
-    portTypeStr = str(jacklib.port_type(portPtr), encoding="utf-8")
-    if portTypeStr == jacklib.JACK_DEFAULT_AUDIO_TYPE:
-        port_type = PORT_TYPE_AUDIO
-    elif portTypeStr == jacklib.JACK_DEFAULT_MIDI_TYPE:
-        port_type = PORT_TYPE_MIDI
-
-    if registerYesNo:
-        signaler.port_added.emit(port_name, port_mode, port_type)
-    else:
-        signaler.port_removed.emit(port_name, port_mode, port_type)
-
-    return 0
-
-def JackPortRenameCallback(portId, oldName, newName, arg=None):
-    portPtr = jacklib.port_by_id(jack_client, portId)
-    portFlags = jacklib.port_flags(portPtr)
-
-    port_mode = PORT_MODE_NULL
-
-    if portFlags & jacklib.JackPortIsInput:
-        port_mode = PORT_MODE_INPUT
-    elif portFlags & jacklib.JackPortIsOutput:
-        port_mode = PORT_MODE_OUTPUT
-
-    port_type = PORT_TYPE_NULL
-
-    portTypeStr = str(jacklib.port_type(portPtr), encoding="utf-8")
-    if portTypeStr == jacklib.JACK_DEFAULT_AUDIO_TYPE:
-        port_type = PORT_TYPE_AUDIO
-    elif portTypeStr == jacklib.JACK_DEFAULT_MIDI_TYPE:
-        port_type = PORT_TYPE_MIDI
-
-    signaler.port_renamed.emit(str(oldName, encoding='utf-8'),
-                               str(newName, encoding='utf-8'),
-                               port_mode,
-                               port_type)
-
-    return 0
-
-
-def JackPortConnectCallback(port_id_A, port_id_B, connect_yesno, arg=None):
-    port_ptr_A = jacklib.port_by_id(jack_client, port_id_A)
-    port_ptr_B = jacklib.port_by_id(jack_client, port_id_B)
-
-    port_str_A = str(jacklib.port_name(port_ptr_A), encoding="utf-8")
-    port_str_B = str(jacklib.port_name(port_ptr_B), encoding="utf-8")
-
-    if connect_yesno:
-        signaler.connection_added.emit(port_str_A, port_str_B)
-    else:
-        signaler.connection_removed.emit(port_str_A, port_str_B)
-
-    return 0
-
-def portAdded(port_name, port_mode, port_type):
+def port_added(port_name: str, port_mode: int, port_type: int):
     port = JackPort()
     port.name = port_name
-    port.mode = port_mode
-    port.type = port_type
+    port.mode = PortMode(port_mode)
+    port.type = PortType(port_type)
     port.is_new = True
 
-    port_list.append(port)
+    jack_ports[port_mode].append(port)
+    present_client_names.add(port_name.partition(':')[0])
+    timer_connect_check.start()
 
-    connect_timer.start()
-
-def portRemoved(port_name, port_mode, port_type):
-    for i in range(len(port_list)):
-        port = port_list[i]
-        if (port.name == port_name
-                and port.mode == port_mode
-                and port.type == port_type):
+def port_removed(port_name: str, port_mode: PortMode, port_type: PortType):
+    for port in jack_ports[port_mode]:
+        if port.name == port_name and port.type == port_type:
+            jack_ports[port_mode].remove(port)
             break
-    else:
-        return
 
-    port_list.__delitem__(i)
-
-def portRenamed(old_name, new_name, port_mode, port_type):
-    for port in port_list:
-        if (port.name == old_name
-                and port.mode == port_mode
-                and port.type == port_type):
+def port_renamed(old_name: str, new_name: str,
+                 port_mode: PortMode, port_type: PortType):
+    for port in jack_ports[port_mode]:
+        if port.name == old_name and port.type == port_type:
             port.name = new_name
             port.is_new = True
-            connect_timer.start()
+            timer_connect_check.start()
             break
+    
+def connection_added(port_str_a: str, port_str_b: str):
+    connection_list.append((port_str_a, port_str_b))
 
-def connectionAdded(port_str_A, port_str_B):
-    connection_list.append((port_str_A, port_str_B))
+    if Glob.pending_connection:
+        may_make_one_connection()
 
-    if pending_connection:
-        makeMayConnections()
+    if (port_str_a, port_str_b) not in saved_connections:
+        timer_dirty_check.start()
+        
+def connection_removed(port_str_a, port_str_b):
+    if (port_str_a, port_str_b) in connection_list:
+        connection_list.remove((port_str_a, port_str_b))
 
-    if (port_str_A, port_str_B) not in saved_connections:
-        dirty_checker.start()
+    if to_disc_connections:
+        may_make_one_connection()
 
-def connectionRemoved(port_str_A, port_str_B):
-    for i in range(len(connection_list)):
-        if (connection_list[i][0] == port_str_A
-                and connection_list[i][1] == port_str_B):
-            connection_list.__delitem__(i)
-            break
+    timer_dirty_check.start()
 
-    dirty_checker.start()
+def may_make_one_connection():
+    if Glob.allow_disconnections:
+        if to_disc_connections:
+            for to_disc_con in to_disc_connections:
+                if to_disc_con in connection_list:
+                    jacklib.disconnect(jack_client, *to_disc_con)
+                    return
+            else:
+                to_disc_connections.clear()
 
-def makeAllSavedConnections(port):
-    if port.mode == PORT_MODE_OUTPUT:
-        connectAllInputs(port)
-    elif port.mode == PORT_MODE_INPUT:
-        connectAllOutputs(port)
+    output_ports = [p.name for p in jack_ports[PortMode.OUTPUT]]
+    input_ports = [p.name for p in jack_ports[PortMode.INPUT]]
+    new_output_ports = [p.name for p in jack_ports[PortMode.OUTPUT] if p.is_new]
+    new_input_ports = [p.name for p in jack_ports[PortMode.INPUT] if p.is_new]
 
-def connectAllInputs(port):
-    if port.mode != PORT_MODE_OUTPUT:
-        return
-
-    input_ports = []
-
-    for jack_port in port_list:
-        if jack_port.mode == PORT_MODE_INPUT:
-            input_ports.append(jack_port.name)
-
-    for connection in saved_connections:
-        if connection in connection_list:
-            continue
-
-        if connection[0] == port.name and connection[1] in input_ports:
-            jacklib.connect(jack_client, port.name, connection[1])
-
-def connectAllOutputs(port):
-    if port.mode != PORT_MODE_INPUT:
-        return
-
-    output_ports = []
-
-    for jack_port in port_list:
-        if jack_port.mode == PORT_MODE_OUTPUT:
-            output_ports.append(jack_port.name)
-
-    for connection in saved_connections:
-        if connection in connection_list:
-            continue
-
-        if connection[0] in output_ports and connection[1] == port.name:
-            jacklib.connect(jack_client, connection[0], port.name)
-
-def makeMayConnections():
-    output_ports = []
-    input_ports = []
-    new_output_ports = []
-    new_input_ports = []
-
-    for port in port_list:
-        if port.mode == PORT_MODE_OUTPUT:
-            output_ports.append(port.name)
-            if port.is_new:
-                new_output_ports.append(port.name)
-
-        elif port.mode == PORT_MODE_INPUT:
-            input_ports.append(port.name)
-            if port.is_new:
-                new_input_ports.append(port.name)
-
-    global pending_connection
     one_connected = False
 
-    for connection in saved_connections:
-        if (not connection in connection_list
-                and connection[0] in output_ports
-                and connection[1] in input_ports
-                and (connection[0] in new_output_ports
-                     or connection[1] in new_input_ports)):
-
+    for sv_con in saved_connections:
+        if (not sv_con in connection_list
+                and sv_con[0] in output_ports
+                and sv_con[1] in input_ports
+                and (sv_con[0] in new_output_ports
+                     or sv_con[1] in new_input_ports)):
             if one_connected:
-                pending_connection = True
+                Glob.pending_connection = True
                 break
 
-            jacklib.connect(jack_client, connection[0], connection[1])
+            jacklib.connect(jack_client, *sv_con)
             one_connected = True
     else:
-        pending_connection = False
+        Glob.pending_connection = False
 
-        for port in port_list:
-            port.is_new = False
+        for port_mode in PortMode:
+            for port in jack_ports[port_mode]:
+                port.is_new = False
 
-def c_char_p_p_to_list(c_char_p_p):
-    i = 0
-    retList = []
+# ---- NSM callbacks ----
 
-    if not c_char_p_p:
-        return retList
-
-    while True:
-        new_char_p = c_char_p_p[i]
-        if new_char_p:
-            retList.append(str(new_char_p, encoding="utf-8"))
-            i += 1
-        else:
-            break
-
-    jacklib.free(c_char_p_p)
-    return retList
-
-
-def openFile(project_path, session_name, full_client_id):
+def open_file(project_path: str, session_name: str,
+              full_client_id: str) -> tuple[Err, str]:
     saved_connections.clear()
 
-    global file_path
-    file_path = "%s.xml" % project_path
+    file_path = project_path + '.xml'
+    Glob.file_path = file_path
 
     if os.path.isfile(file_path):
         try:
-            file = open(file_path, 'r')
+            tree = ET.parse(file_path)
         except:
             sys.stderr.write('unable to read file %s\n' % file_path)
-            app.quit()
-            return
+            # Glob.terminate = True
+            return (Err.BAD_PROJECT, f'{file_path} is not a correct .xml file')
+        
+        # read the DOM
+        root = tree.getroot()
+        if root.tag != 'RAY-JACKPATCH':
+            return (Err.BAD_PROJECT, f'{file_path} is not a RAY-JACKPATCH .xml file')
+        
+        graph_ports = dict[PortMode, list[str]]()
+        for port_mode in PortMode:
+            graph_ports[port_mode] = list[str]()
+        
+        for child in root:
+            if child.tag == 'connection':
+                port_from: str = child.attrib.get('from')
+                port_to: str = child.attrib.get('to')
+                nsm_client_from: str = child.attrib.get('nsm_client_from')
+                nsm_client_to: str = child.attrib.get('nsm_client_to')
 
-        xml = QDomDocument()
-        xml.setContent(file.read())
+                if not port_from and port_to:
+                    _logger.warning(
+                        f"{debug_conn_str((port_from, port_to))} is incomplete.")
+                    continue
 
-        content = xml.documentElement()
+                # ignore connection if NSM client has been definitely removed
+                if Glob.monitor_states_done is MonitorStates.DONE:
+                    if nsm_client_from and not nsm_client_from in brothers_dict.keys():
+                        _logger.info(
+                            f"{debug_conn_str((port_from, port_to))} is removed "
+                            f"because NSM client {nsm_client_from} has been removed")
+                        continue
+                    if nsm_client_to and not nsm_client_to in brothers_dict.keys():
+                        _logger.info(
+                            f"{debug_conn_str((port_from, port_to))} is removed "
+                            f"because NSM client {nsm_client_to} has been removed")
+                        continue
+                    
+                saved_connections.append((port_from, port_to))
+        
+            elif child.tag == 'graph':
+                for gp in child:
+                    if gp.tag != 'group':
+                        continue
+                    gp_name = gp.attrib['name']
+                    for pt in gp:
+                        if pt.tag == 'out_port':
+                            graph_ports[PortMode.OUTPUT].append(
+                                ':'.join((gp_name, pt.attrib['name'])))
+                        elif pt.tag == 'in_port':
+                            graph_ports[PortMode.INPUT].append(
+                                ':'.join((gp_name, pt.attrib['name'])))
 
-        if content.tagName() != "RAY-JACKPATCH":
-            file.close()
-            NSMServer.openReply()
-            return
+        # re-declare all ports as new in case we are switching session
+        for port_mode in PortMode:
+            for port in jack_ports[port_mode]:
+                port.is_new = True
 
-        cte = content.toElement()
-        node = cte.firstChild()
+        to_disc_connections.clear()
+        # disconnect connections not existing at last save
+        # if their both ports were present in the graph.
+        for conn in connection_list:
+            if (conn not in saved_connections
+                    and conn[0] in graph_ports[PortMode.OUTPUT]
+                    and conn[1] in graph_ports[PortMode.INPUT]):
+                to_disc_connections.append(conn)
 
-        while not node.isNull():
-            el = node.toElement()
-            if el.tagName() != "connection":
-                node = node.nextSibling()
-                continue
+        if Glob.open_done_once:
+            Glob.allow_disconnections = True
 
-            port_from = el.attribute('from')
-            port_to = el.attribute('to')
+        may_make_one_connection()
 
-            saved_connections.append((port_from, port_to))
+    Glob.is_dirty = False
+    Glob.open_done_once = True
+    timer_dirty_check.start()
+    return (Err.OK, '')
 
-            node = node.nextSibling()
-
-        makeMayConnections()
-
-    NSMServer.openReply()
-    setDirtyClean()
-    dirty_checker.start()
-
-
-def saveFile():
-    if not file_path:
+def save_file():
+    if not Glob.file_path:
         return
 
     for connection in connection_list:
         if not connection in saved_connections:
             saved_connections.append(connection)
 
-    delete_list = []
+    # delete from saved connected all connections when there ports are present
+    # and not currently connected    
+    del_list = list[tuple[str, str]]()
 
-    # delete connection of the saved_connections
-    # if its two ports are still presents and not connected
-    for i in range(len(saved_connections)):
-        if (portExists(saved_connections[i][0], PORT_MODE_OUTPUT)
-                and portExists(saved_connections[i][1], PORT_MODE_INPUT)):
-            if not saved_connections[i] in connection_list:
-                delete_list.append(i)
+    for sv_con in saved_connections:
+        if (not sv_con in connection_list
+                and sv_con[0] in [p.name for p in jack_ports[PortMode.OUTPUT]]
+                and sv_con[1] in [p.name for p in jack_ports[PortMode.INPUT]]):
+            del_list.append(sv_con)
+            
+    for del_con in del_list:
+        saved_connections.remove(del_con)
 
-    delete_list.reverse()
-    for i in delete_list:
-        saved_connections.__delitem__(i)
+    # write the XML file
+    root = ET.Element('RAY-JACKPATCH')
+    for sv_con in saved_connections:
+        conn_el = ET.SubElement(root, 'connection')
+        conn_el.attrib['from'], conn_el.attrib['to'] = sv_con
+        jack_con_from_name = sv_con[0].partition(':')[0].partition('/')[0]
+        jack_con_to_name = sv_con[1].partition(':')[0].partition('/')[0]
+        for key, value in brothers_dict.items():
+            if jack_con_from_name == value:
+                conn_el.attrib['nsm_client_from'] = key
+            if jack_con_to_name == value:
+                conn_el.attrib['nsm_client_to'] = key
 
+    graph = ET.SubElement(root, 'graph')
+    group_names = dict[str, ET.Element]()
+
+    for port_mode in PortMode:
+        if port_mode is PortMode.NULL:
+            continue
+
+        el_name = 'in_port' if port_mode is PortMode.INPUT else 'out_port'
+
+        for jack_port in jack_ports[port_mode]:
+            gp_name, colon, port_name = jack_port.name.partition(':')
+            if group_names.get(gp_name) is None:
+                group_names[gp_name] = ET.SubElement(graph, 'group')
+                group_names[gp_name].attrib['name'] = gp_name
+
+                gp_base_name = gp_name.partition('/')[0]
+                for key, value in brothers_dict.items():
+                    if value == gp_base_name:
+                        group_names[gp_name].attrib['nsm_client'] = key
+                        break
+
+            out_port_el = ET.SubElement(group_names[gp_name], el_name)
+            out_port_el.attrib['name'] = port_name
+    
+    if sys.version_info >= (3, 9):
+        # we can indent the xml tree since python3.9
+        ET.indent(root, space='  ', level=0)
+
+    tree = ET.ElementTree(root)
     try:
-        file = open(file_path, 'w')
+        tree.write(Glob.file_path)
     except:
-        sys.stderr.write('unable to write file %s\n' % file_path)
-        app.quit()
+        sys.stderr.write('unable to write file %s\n' % Glob.file_path)
+        Glob.terminate = True
         return
 
-    xml = QDomDocument()
-    p = xml.createElement('RAY-JACKPATCH')
+    set_dirty_clean()
+    return (Err.OK, 'Done')
 
-    for con in saved_connections:
-        ct = xml.createElement('connection')
-        ct.setAttribute('from', con[0])
-        ct.setAttribute('to', con[1])
-        p.appendChild(ct)
+def monitor_client_state(client_id: str, jack_name: str, is_started: int):
+    if Glob.monitor_states_done is not MonitorStates.UPDATING:
+        brothers_dict.clear()
 
-    xml.appendChild(p)
+    Glob.monitor_states_done = MonitorStates.UPDATING
+    
+    if client_id:
+        brothers_dict[client_id] = jack_name
+        
+        if (Glob.client_changing_id is not None
+                and Glob.client_changing_id[1] == client_id):
+            # we are here only in the case a client id was just changed
+            # we modify the saved connections in consequence.
+            # Note that this client can't be started.
+            ex_jack_name = Glob.client_changing_id[0]
+            rm_conns = list[tuple[str, str]]()
+            new_conns = list[tuple[str, str]]()
 
-    file.write(xml.toString())
-    file.close()
+            for conn in saved_connections:
+                out_port, in_port = conn
+                if (port_belongs_to_client(out_port, ex_jack_name)
+                        or port_belongs_to_client(in_port, ex_jack_name)):
+                    rm_conns.append(conn)
+                    new_conns.append(
+                        (port_name_client_replaced(
+                            out_port, ex_jack_name, jack_name),
+                         port_name_client_replaced(
+                             in_port, ex_jack_name, jack_name)))
 
-    NSMServer.saveReply()
+            for conn in rm_conns:
+                saved_connections.remove(conn)
+            saved_connections.extend(new_conns)
+            Glob.client_changing_id = None
+        
+    else:
+        n_clients = is_started
+        if len(brothers_dict) != n_clients:
+            _logger.warning('list of monitored clients is incomplete !')
+            ## following line would be the most obvious thing to do,
+            ## but in case of problem, we could have an infinite messages loop 
+            # nsm_server.send_monitor_reset()
+            return
 
-    setDirtyClean()
+        Glob.monitor_states_done = MonitorStates.DONE
 
+def monitor_client_event(client_id: str, event: str):
+    # TODO remove stopping_brothers key and all
+    # it was a test to see if session quit fails less
+    # if ray-jackpatch is the last client to stop. 
+    if event == 'stop_request':
+        if (client_id in brothers_dict
+                and brothers_dict[client_id]
+                    in [c.partition('/')[0] for c in present_client_names]):        
+            Glob.stopping_brothers.add(client_id)
+
+    elif event in ('stopped_by_server', 'stopped_by_itself'):
+        if client_id in Glob.stopping_brothers:
+            Glob.stopping_brothers.remove(client_id)
+
+    elif event == 'removed':
+        if client_id in brothers_dict:
+            jack_client_name = brothers_dict.pop(client_id)
+        else:
+            return
+        
+        # remove all saved connections from and to its client
+        conns_to_unsave = list[tuple[str, str]]()
+            
+        for conn in saved_connections:
+            out_port, in_port = conn
+            if (port_belongs_to_client(out_port, jack_client_name)
+                    or port_belongs_to_client(in_port, jack_client_name)):
+                conns_to_unsave.append(conn)
+        
+        for conn in conns_to_unsave:
+            saved_connections.remove(conn)
+
+    elif event.startswith('id_changed_to:'):
+        if client_id in brothers_dict.keys():
+            Glob.client_changing_id = (
+                brothers_dict[client_id], event.partition(':')[2])
+        nsm_server.send_monitor_reset()
+
+def session_is_loaded():
+    Glob.allow_disconnections = True
+    may_make_one_connection()
+
+# --- end of NSM callbacks --- 
+
+def fill_ports_and_connections():
+    '''get all current JACK ports and connections at startup'''
+    port_name_list = c_char_p_p_to_list(
+        jacklib.get_ports(jack_client, "", "", 0))
+
+    for port_name in port_name_list:
+        jack_port = JackPort()
+        jack_port.name = port_name
+        
+        present_client_names.add(port_name.partition(':')[0])
+
+        port_ptr = jacklib.port_by_name(jack_client, port_name)
+        port_flags = jacklib.port_flags(port_ptr)
+
+        if port_flags & JackPortFlags.IS_INPUT:
+            jack_port.mode = PortMode.INPUT
+        elif port_flags & JackPortFlags.IS_OUTPUT:
+            jack_port.mode = PortMode.OUTPUT
+        else:
+            jack_port.mode = PortMode.NULL
+
+        port_type_str = jacklib.port_type(port_ptr)
+        if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
+            jack_port.type = PortType.AUDIO
+        elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
+            jack_port.type = PortType.MIDI
+        else:
+            jack_port.type = PortType.NULL
+
+        jack_port.is_new = True
+
+        jack_ports[jack_port.mode].append(jack_port)
+
+        if jack_port.mode is PortMode.OUTPUT:
+            for port_con_name in jacklib.port_get_all_connections(
+                    jack_client, port_ptr):
+                connection_list.append((port_name, port_con_name))
+
+    
 if __name__ == '__main__':
-    NSM_URL = os.getenv('NSM_URL')
-    if not NSM_URL:
+    nsm_url = os.getenv('NSM_URL')
+    if not nsm_url:
         sys.stderr.write('Could not register as NSM client.\n')
-        sys.exit()
+        sys.exit(1)
 
-    daemon_address = ray.get_liblo_address(NSM_URL)
+    try:
+        daemon_address = liblo.Address(nsm_url)
+    except:
+        sys.stderr.write('NSM_URL seems to be invalid.\n')
+        sys.exit(1)
 
     jack_client = jacklib.client_open(
-        "ray-patcher",
-        jacklib.JackNoStartServer | jacklib.JackSessionID,
+        "ray-jackpatch",
+        JackOptions.NO_START_SERVER,
         None)
 
     if not jack_client:
         sys.stderr.write('Unable to make a jack client !\n')
-        sys.exit()
+        sys.exit(2)
+    
+    timer_dirty_check = Timer(0.300)
+    timer_connect_check = Timer(0.200)
 
-
-    jacklib.set_port_registration_callback(jack_client,
-                                           JackPortRegistrationCallback,
-                                           None)
-    jacklib.set_port_connect_callback(jack_client,
-                                      JackPortConnectCallback,
-                                      None)
-    jacklib.set_port_rename_callback(jack_client,
-                                     JackPortRenameCallback,
-                                     None)
-    jacklib.on_shutdown(jack_client, JackShutdownCallback, None)
+    jack_callbacks.set_callbacks(jack_client)
     jacklib.activate(jack_client)
 
-    signaler = Signaler()
-    signaler.port_added.connect(portAdded)
-    signaler.port_removed.connect(portRemoved)
-    signaler.port_renamed.connect(portRenamed)
-    signaler.connection_added.connect(connectionAdded)
-    signaler.connection_removed.connect(connectionRemoved)
-    signaler.server_sends_open.connect(openFile)
-    signaler.server_sends_save.connect(saveFile)
+    nsm_server = NsmServer(daemon_address)
+    nsm_server.set_callback(NsmCallback.OPEN, open_file)
+    nsm_server.set_callback(NsmCallback.SAVE, save_file)
+    nsm_server.set_callback(NsmCallback.MONITOR_CLIENT_STATE, monitor_client_state)
+    nsm_server.set_callback(NsmCallback.MONITOR_CLIENT_EVENT, monitor_client_event)
+    nsm_server.set_callback(NsmCallback.SESSION_IS_LOADED, session_is_loaded)
+    nsm_server.announce('JACK Connections', ':dirty:switch:monitor:', 'ray-jackpatch')
+    
+    #connect program interruption signals
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
-    #makeMayConnections()
+    fill_ports_and_connections()
+    
+    jack_stopped = False
+    
+    while True:
+        if Glob.terminate:
+        # if Glob.terminate and not Glob.stopping_brothers:
+            break
 
-    NSMServer = nsm_client.NSMThread('ray-jackpatch', signaler,
-                                     daemon_address, False)
-    NSMServer.start()
-    NSMServer.announce('JACK Connections', ':dirty:switch:', 'ray-jackpatch')
+        nsm_server.recv(50)
+        for event, args in EventHandler.new_events():
+            if event is Event.PORT_ADDED:
+                port_added(*args)
+            elif event is Event.PORT_REMOVED:
+                port_removed(*args)
+            elif event is Event.PORT_RENAMED:
+                port_renamed(*args)
+            elif event is Event.CONNECTION_ADDED:
+                connection_added(*args)
+            elif event is Event.CONNECTION_REMOVED:
+                connection_removed(*args)
+            elif event is Event.JACK_STOPPED:
+                jack_stopped = True
+                break
+        
+        if timer_dirty_check.elapsed():
+            timer_dirty_finished()
+        
+        if timer_connect_check.elapsed():
+            may_make_one_connection()
 
-    #connect signals
-    signal.signal(signal.SIGINT, signalHandler)
-    signal.signal(signal.SIGTERM, signalHandler)
-
-    #get all currents Jack ports and connections
-    portNameList = c_char_p_p_to_list(jacklib.get_ports(jack_client,
-                                                        "", "", 0))
-
-    for portName in portNameList:
-        jack_port = JackPort()
-        jack_port.name = portName
-
-        portPtr = jacklib.port_by_name(jack_client, portName)
-        portFlags = jacklib.port_flags(portPtr)
-
-        if portFlags & jacklib.JackPortIsInput:
-            jack_port.mode = PORT_MODE_INPUT
-        elif portFlags & jacklib.JackPortIsOutput:
-            jack_port.mode = PORT_MODE_OUTPUT
-        else:
-            jack_port.mode = PORT_MODE_NULL
-
-        portTypeStr = str(jacklib.port_type(portPtr), encoding="utf-8")
-        if portTypeStr == jacklib.JACK_DEFAULT_AUDIO_TYPE:
-            jack_port.type = PORT_TYPE_AUDIO
-        elif portTypeStr == jacklib.JACK_DEFAULT_MIDI_TYPE:
-            jack_port.type = PORT_TYPE_MIDI
-        else:
-            jack_port.type = PORT_TYPE_NULL
-
-        jack_port.is_new = True
-
-        port_list.append(jack_port)
-
-        if jacklib.port_flags(portPtr) & jacklib.JackPortIsInput:
-            continue
-
-        portConnectionNames = c_char_p_p_to_list(
-                                jacklib.port_get_all_connections(jack_client,
-                                                                 portPtr))
-
-        for portConName in portConnectionNames:
-            connection_list.append((portName, portConName))
-
-    app = QCoreApplication(sys.argv)
-
-
-
-    #needed for signals SIGINT, SIGTERM
-    timer = QTimer()
-    timer.start(200)
-    timer.timeout.connect(lambda: None)
-
-    connect_timer = ConnectTimer()
-    dirty_checker = DirtyChecker()
-
-    app.exec()
-
-    jacklib.deactivate(jack_client)
-    jacklib.client_close(jack_client)
+    if not jack_stopped:
+        jacklib.deactivate(jack_client)
+        jacklib.client_close(jack_client)

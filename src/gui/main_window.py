@@ -1,15 +1,12 @@
-from pathlib import Path
-from signal import default_int_handler
 from typing import TYPE_CHECKING
 import time
-import os
 import subprocess
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QMenu, QDialog,
     QMessageBox, QToolButton, QAbstractItemView,
-    QBoxLayout, QSystemTrayIcon, QWidget, QShortcut)
-from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics
+    QBoxLayout, QSystemTrayIcon, QShortcut)
+from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics, QCloseEvent
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
 import ray
@@ -22,9 +19,10 @@ import list_widget_clients
 from gui_tools import (
     RS, RayIcon, CommandLineArgs, _translate, server_status_string,
     is_dark_theme, get_code_root, get_app_icon)
+from gui_client import TrashedClient
 from gui_server_thread import GuiServerThread
 from utility_scripts import UtilityScriptLauncher
-from patchbay.base_elements import ToolDisplayed
+from patchbay.base_elements import ToolDisplayed, PortTypesViewFlag
 from patchbay.tools_widgets import PatchbayToolsWidget
 
 if TYPE_CHECKING:
@@ -342,11 +340,11 @@ class MainWindow(QMainWindow):
         self.ui.actionSessionNotes.setIcon(RayIcon('notes', dark))
         self.ui.toolButtonNotes.setIcon(RayIcon('notes', dark))
         self.ui.actionDesktopsMemory.setIcon(RayIcon('view-list-icons', dark))
-
         self.ui.toolButtonSessionMenu.setIcon(RayIcon('application-menu', dark))
-
         self.ui.listWidget.set_session(self.session)
-        
+        self.ui.listWidget.currentItemChanged.connect(
+            self._list_widget_item_changed)
+
         # concerns patchbay filters bar (activable with Ctrl+F)
         self.ui.framePatchbayFilters.set_patchbay_manager(
             self.session.patchbay_manager)
@@ -757,10 +755,13 @@ class MainWindow(QMainWindow):
 
         if dialog.result():
             template_name, factory = dialog.get_selected_template()
+            unique_id = dialog.get_selected_unique_id()
             self.to_daemon(
                 '/ray/session/add_client_template',
                 int(factory),
-                template_name)
+                template_name,
+                'start',
+                unique_id)
 
     def _add_executable(self):
         if self.session.server_status in (
@@ -1177,9 +1178,16 @@ class MainWindow(QMainWindow):
                 | ToolDisplayed.XRUNS
                 | ToolDisplayed.DSP_LOAD)
             
-            self.ui.toolBar.set_default_displayed_widgets(
-                default_disp_wdg.filtered_by_string(
-                    RS.settings.value('tool_bar/jack_elements', '', type=str)))
+            default_disp_wdg = default_disp_wdg.filtered_by_string(
+                RS.settings.value('tool_bar/jack_elements', '', type=str))
+            
+            self.ui.toolBar.set_default_displayed_widgets(default_disp_wdg)
+            
+            if not default_disp_wdg & ToolDisplayed.PORT_TYPES_VIEW:
+                RS.settings.setValue(
+                    'Canvas/default_port_types_view',
+                    PortTypesViewFlag.ALL)
+            
         self._canvas_menu = self.ui.menuBar.addMenu(canvas_menu)
 
     def create_client_widget(self, client):
@@ -1207,6 +1215,8 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.setObjectName("listWidget")
         self.ui.listWidget.set_session(self.session)
         self.ui.verticalLayout.addWidget(self.ui.listWidget)
+        self.ui.listWidget.currentItemChanged.connect(
+            self._list_widget_item_changed)
 
     def set_nsm_locked(self, nsm_locked: bool):
         self.ui.actionNewSession.setEnabled(not nsm_locked)
@@ -1238,6 +1248,14 @@ class MainWindow(QMainWindow):
             frame_style_sheet += "background-color: rgba(127, 127, 127, 35)}"
 
         self.ui.frameCurrentSession.setStyleSheet(frame_style_sheet)
+
+    def _list_widget_item_changed(self, current: list_widget_clients.ClientItem,
+                                  previous):
+        if current is None:
+            return
+
+        self.session.patchbay_manager.select_client_box(
+            current.widget.client.jack_client_name)
 
     def set_daemon_options(self, options):
         self.ui.actionBookmarkSessionFolder.setChecked(
@@ -1431,7 +1449,7 @@ class MainWindow(QMainWindow):
         dialog = child_dialogs.OpenNsmSessionInfoDialog(self)
         dialog.exec()
 
-    def trash_add(self, trashed_client):
+    def trash_add(self, trashed_client: TrashedClient):
         act_x_trashed = self._trash_menu.addAction(
             get_app_icon(trashed_client.icon, self),
             trashed_client.prettier_name())
@@ -1536,14 +1554,14 @@ class MainWindow(QMainWindow):
         self._script_info_dialog.show()
 
     def hide_script_info_dialog(self):
-        if self._script_info_dialog:
+        if self._script_info_dialog is not None:
             self._script_info_dialog.close()
 
         del self._script_info_dialog
         self._script_info_dialog = None
 
     def show_script_user_action_dialog(self, text: str):
-        if self._script_action_dialog:
+        if self._script_action_dialog is not None:
             self._script_action_dialog.close()
             del self._script_action_dialog
             self.to_daemon(
@@ -1599,11 +1617,14 @@ class MainWindow(QMainWindow):
         RS.settings.setValue(
             'tool_bar/icons_only',
             self.ui.toolBar.force_main_actions_icons_only)
+        RS.settings.setValue(
+            'Canvas/default_port_types_view',
+            self.session.patchbay_manager.port_types_view.value)
         RS.settings.sync()
 
     # Reimplemented Qt Functions
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent):        
         self.save_window_settings()
         self.session.patchbay_manager.save_patchcanvas_cache()
         self.hidden_maximized = self.isMaximized()

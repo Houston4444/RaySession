@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>714</width>
-    <height>535</height>
+    <height>537</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -619,17 +619,47 @@ Applications</string>
     </layout>
    </item>
    <item>
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineEditUniqueId">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set a unique indentifiant takes sense only if you run multiple instances of the same program in the session.&lt;/p&gt;&lt;p&gt;The unique identifiant will be used as client_id for the client, as label and for the JACK client name. This way, you will recognize its instance easily in the client list and in the patchbay.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="inputMask">
+        <string/>
+       </property>
+       <property name="placeholderText">
+        <string>Unique Identifiant</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDialogButtonBox" name="buttonBox">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
   <action name="actionRefreshApplications">

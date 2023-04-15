@@ -1,4 +1,5 @@
 import os
+import shlex
 import sys
 import random
 import shutil
@@ -15,6 +16,7 @@ from signaler import Signaler
 from multi_daemon_file import MultiDaemonFile
 from daemon_tools import (TemplateRoots, CommandLineArgs, Terminal, RS,
                           get_code_root)
+from terminal_starter import which_terminal
 if TYPE_CHECKING:
     from session_signaled import SignaledSession
 
@@ -52,7 +54,7 @@ def ray_method(path, types):
     return decorated
 
 class Controller:
-    addr = None
+    addr: liblo.Address = None
     pid = 0
 
 
@@ -72,7 +74,7 @@ class ClientCommunicating(liblo.ServerThread):
         self._net_master_daemon_url = ''
         self._list_asker_addr = None
 
-        self.gui_list = list[liblo.Address]()
+        self.gui_list = list[GuiAdress]()
         self.controller_list = list[Controller]()
         self.monitor_list = list[liblo.Address]()
         self.server_status = ray.ServerStatus.OFF
@@ -225,7 +227,10 @@ class ClientCommunicating(liblo.ServerThread):
             return False
 
         #don't allow clients to broadcast NSM commands
-        if args[0].startswith('/nsm/') or args[0].startswith('/ray'):
+        follow_path = args[0]
+        if not isinstance(follow_path, str):
+            return False
+        if follow_path.startswith(('/nsm/', '/ray/')):
             return False
 
         for client in self.session.clients:
@@ -355,9 +360,9 @@ class OscServerThread(ClientCommunicating):
             'daemon/options',
             ray.Option.BOOKMARK_SESSION
             + ray.Option.SNAPSHOTS
-            + ray.Option.SESSION_SCRIPTS
-            + ray.Option.GUI_STATES,
-            type=int)
+            + ray.Option.SESSION_SCRIPTS,
+            type=int
+        )
 
         if CommandLineArgs.no_options:
             self.options = 0
@@ -376,6 +381,15 @@ class OscServerThread(ClientCommunicating):
             'factory': [], 'user': []}
 
         self.session_to_preview = ''
+        
+        self._terminal_command_is_default = True
+        self.terminal_command = RS.settings.value(
+            'daemon/terminal_command', '', type=str)
+        if self.terminal_command:
+            self._terminal_command_is_default = False
+        else:
+            self.terminal_command = shlex.join(
+                which_terminal(title='RAY_TERMINAL_TITLE'))
 
         global instance
         instance = self
@@ -385,7 +399,7 @@ class OscServerThread(ClientCommunicating):
         return instance
 
     @ray_method('/ray/server/gui_announce', 'sisii')
-    def rayGuiGui_announce(self, path, args, types, src_addr):
+    def rayGuiGui_announce(self, path, args, types, src_addr: liblo.Address):
         (version, int_nsm_locked, net_master_daemon_url,
          gui_pid, net_daemon_id) = args
 
@@ -411,7 +425,7 @@ class OscServerThread(ClientCommunicating):
         self.announce_gui(src_addr.url, nsm_locked, is_net_free, gui_pid)
 
     @ray_method('/ray/server/gui_disannounce', '')
-    def rayGuiGui_disannounce(self, path, args, types, src_addr):
+    def rayGuiGui_disannounce(self, path, args, types, src_addr: liblo.Address):
         for addr in self.gui_list:
             if ray.are_same_osc_port(addr.url, src_addr.url):
                 break
@@ -434,7 +448,6 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/server/ask_for_patchbay', '')
     def rayServerGetPatchbayPort(self, path, args, types, src_addr):
         patchbay_file = '/tmp/RaySession/patchbay_daemons/' + str(self.port)
-        patchbay_port = 0
 
         if not os.path.exists(patchbay_file):
             return True
@@ -489,7 +502,7 @@ class OscServerThread(ClientCommunicating):
         self.send(src_addr, '/reply', path, 'announced')
 
     @ray_method('/ray/server/controller_disannounce', '')
-    def rayServerControllerDisannounce(self, path, args, types, src_addr):
+    def rayServerControllerDisannounce(self, path, args, types, src_addr: liblo.Address):
         for controller in self.controller_list:
             if controller.addr.url == src_addr.url:
                 break
@@ -507,7 +520,7 @@ class OscServerThread(ClientCommunicating):
         self.send(src_addr, '/reply', path, 'announced')
     
     @ray_method('/ray/server/monitor_quit', '')
-    def rayServerMonitorDisannounce(self, path, args, types, src_addr):
+    def rayServerMonitorDisannounce(self, path, args, types, src_addr: liblo.Address):
         for monitor_addr in self.monitor_list:
             if monitor_addr.url == src_addr.url:
                 break
@@ -518,7 +531,7 @@ class OscServerThread(ClientCommunicating):
         self.send(src_addr, '/reply', path, 'monitor exit')
 
     @ray_method('/ray/server/set_nsm_locked', '')
-    def rayServerSetNsmLocked(self, path, args, types, src_addr):
+    def rayServerSetNsmLocked(self, path, args, types, src_addr: liblo.Address):
         self.is_nsm_locked = True
         self._nsm_locker_url = src_addr.url
 
@@ -544,7 +557,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/server/change_root', 's')
     def rayServerChangeRoot(self, path, args, types, src_addr):
-        new_root = args[0]
+        new_root: str = args[0]
         if not(new_root.startswith('/') and _path_is_valid(new_root)):
             self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
                       "invalid session root !")
@@ -554,10 +567,21 @@ class OscServerThread(ClientCommunicating):
                       "Can't change session_root. Operation pending")
             return False
 
+    @ray_method('/ray/server/set_terminal_command', 's')
+    def rayServerSetTerminalCommand(self, path, args, types, src_addr):
+        if args[0] != self.terminal_command:
+            self.terminal_command = args[0]
+            if not self.terminal_command:
+                self.terminal_command = shlex.join(
+                    which_terminal(title='RAY_TERMINAL_TITLE'))
+            self.send_gui('/ray/gui/server/terminal_command',
+                          self.terminal_command)
+        self.send(src_addr, '/reply', path, 'terminal command set')
+
     @ray_method('/ray/server/list_path', '')
     def rayServerListPath(self, path, args, types, src_addr):
-        exec_list = []
-        tmp_exec_list = []
+        exec_list = list[str]()
+        tmp_exec_list = list[str]()
         n = 0
 
         pathlist = os.getenv('PATH').split(':')
@@ -589,7 +613,7 @@ class OscServerThread(ClientCommunicating):
             self.send(src_addr, '/reply', path)
             return False
 
-        template_list = []
+        template_list = list[str]()
 
         all_files = os.listdir(TemplateRoots.user_sessions)
         for file in all_files:
@@ -789,10 +813,13 @@ class OscServerThread(ClientCommunicating):
 
     # set options from ray_control
     @ray_method('/ray/server/set_options', None)
-    def rayServerSetOptions(self, path, args, types, src_addr):
+    def rayServerSetOptions(self, path, args, types, src_addr: liblo.Address):
         if not ray.types_are_all_strings(types):
             self._unknown_message(path, types, src_addr)
             return False
+
+        if TYPE_CHECKING:
+            assert isinstance(args, list[str])
 
         for option_str in args:
             option_value = True
@@ -806,12 +833,14 @@ class OscServerThread(ClientCommunicating):
                     if (option == ray.Option.DESKTOPS_MEMORY
                             and not self.options & ray.Option.HAS_WMCTRL):
                         self.send(src_addr, '/minor_error', path,
-                            "wmctrl is not present. Impossible to activate 'desktops_memory' option")
+                            "wmctrl is not present. "
+                            "Impossible to activate 'desktops_memory' option")
                         continue
                     if (option == ray.Option.SNAPSHOTS
                             and not self.options & ray.Option.HAS_GIT):
                         self.send(src_addr, '/minor_error', path,
-                            "git is not present. Impossible to activate 'snapshots' option")
+                            "git is not present. "
+                            "Impossible to activate 'snapshots' option")
                         continue
 
                 if not option_value:
@@ -882,7 +911,7 @@ class OscServerThread(ClientCommunicating):
                           *args)
 
     @ray_method('/ray/server/patchbay/save_portgroup', None)
-    def rayServerPatchbaySavePortGroup(self, path, args, types, src_addr):
+    def rayServerPatchbaySavePortGroup(self, path, args, types: str, src_addr):
         # args must be group_name, port_type, port_mode, above_metadatas, *port_names
         # where port_names are all strings
         # so types must start with 'siiis' and may continue with strings only
@@ -1062,7 +1091,7 @@ class OscServerThread(ClientCommunicating):
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False
 
-    @ray_method('/ray/session/add_client_template', 'is')
+    @ray_method('/ray/session/add_client_template', 'isss')
     def rayServerAddClientTemplate(self, path, args, types, src_addr):
         pass
 
@@ -1228,6 +1257,14 @@ class OscServerThread(ClientCommunicating):
             self._unknown_message(path, types, src_addr)
             return False
 
+    @ray_method('/ray/client/change_advanced_properties', 'ssisi')
+    def rayClientChangeAdvancedProperties(self, path, args, types, src_addr):
+        pass
+    
+    @ray_method('/ray/client/change_id', 'ss')
+    def rayClientChangeId(self, path, args, types, src_addr):
+        pass
+
     @ray_method('/ray/client/set_description', 'ss')
     def rayClientSetDescription(self, path, args, types, src_addr):
         pass
@@ -1389,6 +1426,8 @@ class OscServerThread(ClientCommunicating):
         self.send(gui_addr, "/ray/gui/session/name",
                   self.session.name, self.session.path)
         self.send(gui_addr, '/ray/gui/session/notes', self.session.notes)
+        self.send(gui_addr, '/ray/gui/server/terminal_command',
+                  self.terminal_command)
 
         self.session.canvas_saver.send_all_group_positions(gui_addr)
 
@@ -1479,14 +1518,14 @@ class OscServerThread(ClientCommunicating):
 
         return 0
 
-    def get_local_gui_pid_list(self)->str:
+    def get_local_gui_pid_list(self) -> str:
         pid_list = []
         for gui_addr in self.gui_list:
             if ray.are_on_same_machine(gui_addr.url, self.url):
                 pid_list.append(str(gui_addr.gui_pid))
         return ':'.join(pid_list)
 
-    def is_gui_address(self, addr)->bool:
+    def is_gui_address(self, addr: liblo.Address) -> bool:
         for gui_addr in self.gui_list:
             if ray.are_same_osc_port(gui_addr.url, addr.url):
                 return True

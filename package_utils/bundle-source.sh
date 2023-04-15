@@ -38,6 +38,6 @@ cd ..
 tar -zcvf "../dist/$TARBALL_NAME" "$SRCDIR"
 rm -rf "$SRCDIR"
 
-# gpg --armor --detach-sign --yes "../dist/$TARBALL_NAME"
+gpg --armor --detach-sign --yes "../dist/$TARBALL_NAME"
 cd ..
 ls -l dist

@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QBoxLayout
-from PyQt5.QtGui import QIcon, QPixmap, QFont, QFontDatabase, QFontMetrics
-from PyQt5.QtCore import pyqtSlot, QSize, pyqtSignal
+from PyQt5.QtGui import QIcon, QFontMetrics, QContextMenuEvent, QMouseEvent
+from PyQt5.QtCore import QSize, pyqtSignal
 
 import ray
 from gui_server_thread import GuiServerThread
@@ -66,8 +66,7 @@ class ClientSlot(QFrame):
     def get_client_id(self):
         return self.client.client_id
 
-    def update_disposition(self):
-        default_font_size = 13
+    def update_layout(self):
         font = self.ui.ClientName.font()
         main_size = QFontMetrics(font).width(self.client.prettier_name())
 
@@ -113,7 +112,7 @@ class ClientSlot(QFrame):
 
     def update_client_data(self):
         # set main label and main disposition
-        self.update_disposition()
+        self.update_layout()
 
         # set tool tip
         tool_tip = "<html><head/><body>"
@@ -139,13 +138,13 @@ class ClientSlot(QFrame):
         self._icon_off = QIcon(self._icon_on.pixmap(32, 32, QIcon.Disabled))
         self._gray_icon(False)
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event: QContextMenuEvent):
         act_selected = self._menu.exec(self.mapToGlobal(event.pos()))
         event.accept()
 
 
 class ClientItem(QListWidgetItem):
-    def __init__(self, parent, client_data):
+    def __init__(self, parent: 'ListWidgetPreviewClients', client_data):
         QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
 
         self.sort_number = 0
@@ -154,10 +153,10 @@ class ClientItem(QListWidgetItem):
         parent.setItemWidget(self, self.widget)
         self.setSizeHint(QSize(100, 45))
 
-    def __lt__(self, other):
+    def __lt__(self, other: 'ClientItem'):
         return self.sort_number < other.sort_number
 
-    def __gt__(self, other):
+    def __gt__(self, other: 'ClientItem'):
         return self.sort_number > other.sort_number
 
     def get_client_id(self):
@@ -183,7 +182,7 @@ class ListWidgetPreviewClients(QListWidget):
     def server_status_changed(self, server_status:int):
         self.server_status = server_status
         for i in range(self.count()):
-            item = self.item(i)
+            item: ClientItem = self.item(i)
             item.widget.server_status_changed(server_status)
 
     def create_client_widget(self, client_data):
@@ -195,14 +194,14 @@ class ListWidgetPreviewClients(QListWidget):
 
     def remove_client_widget(self, client_id):
         for i in range(self.count()):
-            item = self.item(i)
+            item: ClientItem = self.item(i)
             if item.get_client_id() == client_id:
                 widget = item.widget
                 self.takeItem(i)
                 del item
                 break
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
 
@@ -212,9 +211,9 @@ class ListWidgetPreviewClients(QListWidget):
     def resizeEvent(self, event):
         QListWidget.resizeEvent(self, event)
         for i in range(self.count()):
-            item = self.item(i)
-            widget = self.itemWidget(item)
+            item: ClientItem = self.item(i)
+            widget: ClientSlot = self.itemWidget(item)
             if widget is not None:
-                widget.update_disposition()
+                widget.update_layout()
 
 

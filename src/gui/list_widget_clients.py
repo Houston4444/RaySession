@@ -1,7 +1,10 @@
 
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QBoxLayout
-from PyQt5.QtGui import QIcon, QPixmap, QFont, QFontDatabase, QFontMetrics
-from PyQt5.QtCore import pyqtSlot, QSize
+from typing import TYPE_CHECKING
+from PyQt5.QtWidgets import (QListWidget, QListWidgetItem,
+                             QFrame, QMenu, QBoxLayout)
+from PyQt5.QtGui import (QIcon, QPixmap, QFontMetrics, QContextMenuEvent,
+                         QMouseEvent, QKeyEvent)
+from PyQt5.QtCore import pyqtSlot, QSize, Qt, pyqtSignal
 
 import ray
 import child_dialogs
@@ -11,19 +14,26 @@ from gui_server_thread import GuiServerThread
 from gui_tools import (client_status_string, _translate, is_dark_theme,
                        RayIcon, split_in_two, get_app_icon)
 
+if TYPE_CHECKING:
+    from gui_client import Client
+    from gui_session import Session
+
 import ui.client_slot
 
 
 class ClientSlot(QFrame):
-    def __init__(self, list_widget, list_widget_item, client):
+    clicked = pyqtSignal(str)
+    
+    def __init__(self, list_widget: 'ListWidgetClients',
+                 list_widget_item: 'ClientItem', client: 'Client'):
         QFrame.__init__(self)
         self.ui = ui.client_slot.Ui_ClientSlotWidget()
         self.ui.setupUi(self)
         self.client = client
         self.main_win = self.client.session.main_win
 
-        self._list_widget = list_widget
-        self._list_widget_item = list_widget_item
+        self.list_widget = list_widget
+        self.list_widget_item = list_widget_item
         self._gui_state = False
         self._stop_is_kill = False
         self._very_short = False
@@ -157,7 +167,7 @@ class ClientSlot(QFrame):
     def _find_patchbay_boxes(self):
         self.main_win.set_patchbay_filter_text(
             'client:' + self.get_client_id())
-        self._list_widget_item.setSelected(True)
+        self.list_widget_item.setSelected(True)
 
     def _rename_dialog(self):
         dialog = child_dialogs.ClientRenameDialog(self.main_win,
@@ -166,6 +176,11 @@ class ClientSlot(QFrame):
         if dialog.result():
             self.client.label = dialog.get_new_label()
             self.client.send_properties_to_daemon()
+
+            if dialog.is_identifiant_renamed():
+                self.to_daemon(
+                    '/ray/client/change_id',
+                    self.client.client_id, self.client.label.replace(' ', '_'))
 
     def _set_very_short(self, yesno: bool):
         self._very_short = yesno
@@ -190,12 +205,12 @@ class ClientSlot(QFrame):
         if yesno:
             self.ui.mainLayout.setDirection(QBoxLayout.TopToBottom)
             self.ui.spacerLeftOfDown.setVisible(True)
-            self._list_widget_item.setSizeHint(
+            self.list_widget_item.setSizeHint(
                 QSize(100, 80 if very_fat else 70))
         else:
             self.ui.spacerLeftOfDown.setVisible(False)
             self.ui.mainLayout.setDirection(QBoxLayout.LeftToRight)
-            self._list_widget_item.setSizeHint(QSize(100, 45))
+            self.list_widget_item.setSizeHint(QSize(100, 45))
 
     def _gray_icon(self, gray: bool):
         if gray:
@@ -206,16 +221,15 @@ class ClientSlot(QFrame):
     def get_client_id(self):
         return self.client.client_id
 
-    def update_disposition(self):
-        default_font_size = 13
+    def update_layout(self):
         font = self.ui.ClientName.font()
         main_size = QFontMetrics(font).width(self.client.prettier_name())
 
-        layout_width = self._list_widget.width()
+        layout_width = self.list_widget.width()
 
         self._set_very_short(layout_width < 233)
 
-        scroll_bar = self._list_widget.verticalScrollBar()
+        scroll_bar = self.list_widget.verticalScrollBar()
         if scroll_bar.isVisible():
             layout_width -= scroll_bar.width()
 
@@ -265,7 +279,7 @@ class ClientSlot(QFrame):
 
     def update_client_data(self):
         # set main label and main disposition
-        self.update_disposition()
+        self.update_layout()
 
         # set tool tip
         tool_tip = "<html><head/><body>"
@@ -338,7 +352,8 @@ class ClientSlot(QFrame):
                 ray.ClientStatus.LAUNCH,
                 ray.ClientStatus.OPEN,
                 ray.ClientStatus.SWITCH,
-                ray.ClientStatus.NOOP):
+                ray.ClientStatus.NOOP,
+                ray.ClientStatus.LOSE):
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(True)
             self.ui.saveButton.setEnabled(False)
@@ -452,13 +467,22 @@ class ClientSlot(QFrame):
     def patchbay_is_shown(self, yesno: bool):
         self.ui.actionFindBoxesInPatchbay.setVisible(yesno)
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event: QContextMenuEvent):
         act_selected = self._menu.exec(self.mapToGlobal(event.pos()))
         event.accept()
+        
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if (event.button() == Qt.LeftButton
+                and self.client.status != ray.ClientStatus.STOPPED
+                and self.client.jack_client_name
+                and self.list_widget_item.isSelected()):
+            self.client.session.patchbay_manager.select_client_box(
+                self.client.jack_client_name)
+        super().mousePressEvent(event)
 
 
 class ClientItem(QListWidgetItem):
-    def __init__(self, parent, client_data):
+    def __init__(self, parent: 'ListWidgetClients', client_data):
         QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
 
         self.sort_number = 0
@@ -466,10 +490,10 @@ class ClientItem(QListWidgetItem):
         parent.setItemWidget(self, self.widget)
         self.setSizeHint(QSize(100, 45))
 
-    def __lt__(self, other):
+    def __lt__(self, other: 'ClientItem'):
         return self.sort_number < other.sort_number
 
-    def __gt__(self, other):
+    def __gt__(self, other: 'ClientItem'):
         return self.sort_number > other.sort_number
 
     def get_client_id(self):
@@ -503,7 +527,7 @@ class ListWidgetClients(QListWidget):
 
     def remove_client_widget(self, client_id):
         for i in range(self.count()):
-            item = self.item(i)
+            item: ClientItem = self.item(i)
             if item.get_client_id() == client_id:
                 widget = item.widget
                 self.takeItem(i)
@@ -512,20 +536,23 @@ class ListWidgetClients(QListWidget):
 
     def client_properties_state_changed(self, client_id: str, visible: bool):
         for i in range(self.count()):
-            item = self.item(i)
+            item: ClientItem = self.item(i)
             if item.get_client_id() == client_id:
                 widget = item.widget
                 widget.set_hack_button_state(visible)
                 break
 
-    def set_session(self, session):
+    def set_session(self, session: 'Session'):
         self.session = session
 
     def patchbay_is_shown(self, yesno: bool):
         for i in range(self.count()):
-            item = self.item(i)
+            item: ClientItem = self.item(i)
             widget = item.widget
             widget.patchbay_is_shown(yesno)
+
+    def currentItem(self) -> ClientItem:
+        return super().currentItem()
 
     def dropEvent(self, event):
         QListWidget.dropEvent(self, event)
@@ -533,8 +560,7 @@ class ListWidgetClients(QListWidget):
         client_ids_list = []
 
         for i in range(self.count()):
-            item = self.item(i)
-            #widget = self.itemWidget(item)
+            item: ClientItem = self.item(i)
             client_id = item.get_client_id()
             client_ids_list.append(client_id)
 
@@ -548,7 +574,7 @@ class ListWidgetClients(QListWidget):
 
         QListWidget.mousePressEvent(self, event)
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event: QContextMenuEvent):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
 
@@ -582,8 +608,21 @@ class ListWidgetClients(QListWidget):
     def resizeEvent(self, event):
         QListWidget.resizeEvent(self, event)
         for i in range(self.count()):
-            item = self.item(i)
-            widget = self.itemWidget(item)
+            item: ClientItem = self.item(i)
+            widget: ClientSlot = self.itemWidget(item)
             if widget is not None:
-                widget.update_disposition()
+                widget.update_layout()
 
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        super().keyPressEvent(event)
+        
+        # parse patchbay boxes of the selected client 
+        if event.key() in (Qt.Key_Left, Qt.Key_Right):
+            client = self.currentItem().widget.client
+            if (client.status != ray.ClientStatus.STOPPED
+                    and client.jack_client_name
+                    and self.currentItem().isSelected()
+                    and self.session is not None):
+                self.session.patchbay_manager.select_client_box(
+                    client.jack_client_name,
+                    previous=bool(event.key() == Qt.Key_Left))

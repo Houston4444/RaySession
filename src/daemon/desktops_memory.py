@@ -3,12 +3,17 @@
 import os
 import subprocess
 import sys
+from typing import TYPE_CHECKING
 import warnings
 
 from PyQt5.QtCore import QProcess
+from PyQt5.QtXml import QDomElement
 
 import ray
 from daemon_tools import is_pid_child_of
+
+if TYPE_CHECKING:
+    from session import Session
 
 def move_win(win_id, desktop_from, desktop_to):
     if desktop_from == desktop_to:
@@ -33,16 +38,16 @@ class WindowProperties:
 
 
 class DesktopsMemory:
-    def __init__(self, session):
+    def __init__(self, session: 'Session'):
         self.session = session
 
-        self._active_window_list = []
-        self._daemon_pids = []
-        self._non_daemon_pids = []
+        self._active_window_list = list[WindowProperties]()
+        self._daemon_pids = list[int]()
+        self._non_daemon_pids = list[int]()
 
-        self.saved_windows = []
+        self.saved_windows = list[WindowProperties]()
 
-    def _is_child_of_daemon(self, pid)->bool:
+    def _is_child_of_daemon(self, pid: int) -> bool:
         if pid in self._daemon_pids:
             return True
 
@@ -62,9 +67,9 @@ class DesktopsMemory:
         self._non_daemon_pids.append(pid)
         return False
 
-    def _is_name_in_session(self, name: str)->bool:
+    def _is_name_in_session(self, name: str) -> bool:
         for client in self.session.clients:
-            if client.name == name and client.active:
+            if client.name == name and client.nsm_active:
                 return True
 
         return False
@@ -85,11 +90,7 @@ class DesktopsMemory:
             if not line:
                 continue
 
-            line_sep = line.split(' ')
-            properties = []
-            for el in line_sep:
-                if el:
-                    properties.append(el)
+            properties = [el for el in line.split(' ') if el]
 
             if (len(properties) >= 6
                     and properties[1].lstrip('-').isdigit()
@@ -179,7 +180,7 @@ class DesktopsMemory:
                             move_win(awin.id, awin.desktop, win.desktop)
                             break
 
-    def read_xml(self, xml_element):
+    def read_xml(self, xml_element: QDomElement):
         self.saved_windows.clear()
 
         nodes = xml_element.childNodes()
@@ -201,7 +202,7 @@ class DesktopsMemory:
 
             self.saved_windows.append(win)
 
-    def has_window(self, pid)->bool:
+    def has_window(self, pid: int) -> bool:
         if not self._active_window_list:
             # here fo ray_hack check window
             # if window manager doesn't supports wmctrl
@@ -213,7 +214,7 @@ class DesktopsMemory:
                 return True
         return False
 
-    def find_and_close(self, pid):
+    def find_and_close(self, pid: int):
         for awin in self._active_window_list:
             if is_pid_child_of(awin.pid, pid):
                 QProcess.startDetached('wmctrl', ['-i', '-c', awin.id])

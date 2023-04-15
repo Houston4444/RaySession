@@ -5,6 +5,7 @@ import signal
 import sys
 import xml.etree.ElementTree as ET
 import warnings
+
 # import subprocess and osc_server (local file) conditionnally
 # in order to answer faster in many cases.
 
@@ -16,6 +17,22 @@ OPERATION_TYPE_CLIENT = 4
 OPERATION_TYPE_TRASHED_CLIENT = 5
 OPERATION_TYPE_ALL = 6 # for help message
 
+
+class Daemon:
+    net_daemon_id = 0
+    root = ""
+    session_path = ""
+    pid = 0
+    port = 0
+    user = ""
+    not_default = False
+    has_gui = 0
+    has_local_gui = 0
+    
+    def __init__(self):
+        self.local_gui_pids = []
+
+
 control_operations = ('start', 'start_new', 'start_new_hidden', 'stop',
                       'list_daemons',
                       'get_root', 'get_port', 'get_port_gui_free',
@@ -23,20 +40,32 @@ control_operations = ('start', 'start_new', 'start_new_hidden', 'stop',
                       'has_local_gui', 'has_gui')
 
 server_operations = (
-    'quit', 'change_root', 'list_session_templates',
-    'list_user_client_templates', 'list_factory_client_templates',
-    'remove_client_template', 'list_sessions', 'new_session',
-    'open_session', 'open_session_off', 'save_session_template',
-    'rename_session', 'set_options', 'has_option',
-    'script_info', 'hide_script_info', 'script_user_action')
+    'quit',
+    'change_root',
+    'set_terminal_command',
+    'list_session_templates',
+    'list_user_client_templates',
+    'list_factory_client_templates',
+    'remove_client_template',
+    'list_sessions',
+    'new_session',
+    'open_session',
+    'open_session_off',
+    'save_session_template',
+    'rename_session',
+    'set_options',
+    'has_option',
+    'script_info',
+    'hide_script_info',
+    'script_user_action')
 
 
-def signalHandler(sig, frame):
+def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         global terminate
         terminate = True
 
-def addSelfBinToPath():
+def add_self_bin_to_path():
     # Add raysession/src/bin to $PATH to can use ray executables after make
     # Warning, will works only if link to this file is in RaySession/*/*/*.py
     this_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
@@ -44,7 +73,7 @@ def addSelfBinToPath():
     if not os.environ['PATH'].startswith("%s:" % bin_path):
         os.environ['PATH'] = "%s:%s" % (bin_path, os.environ['PATH'])
 
-def pidExists(pid: int)->bool:
+def pid_exists(pid: int) -> bool:
     if isinstance(pid, str):
         pid = int(pid)
 
@@ -55,7 +84,7 @@ def pidExists(pid: int)->bool:
     else:
         return True
 
-def pidIsStopped(pid: int)->bool:
+def pid_is_stopped(pid: int) -> bool:
     proc_file_path = '/proc/%i/status' % pid
     if os.path.exists(proc_file_path):
         proc_file = open(proc_file_path)
@@ -67,13 +96,13 @@ def pidIsStopped(pid: int)->bool:
         return False
     return True
 
-def getDaemonList():
+def get_daemon_list() -> list[Daemon]:
     try:
         tree = ET.parse('/tmp/RaySession/multi-daemon.xml')
     except:
         return []
 
-    l_daemon_list = []
+    l_daemon_list = list[Daemon]()
 
     root = tree.getroot()
     for child in root:
@@ -95,7 +124,7 @@ def getDaemonList():
 
             elif key == 'pid':
                 pid = child.attrib[key]
-                if pid.isdigit() and pidExists(pid):
+                if pid.isdigit() and pid_exists(pid):
                     l_daemon.pid = int(pid)
 
             elif key == 'port':
@@ -121,22 +150,7 @@ def getDaemonList():
         l_daemon_list.append(l_daemon)
     return l_daemon_list
 
-class Daemon:
-    net_daemon_id = 0
-    root = ""
-    session_path = ""
-    pid = 0
-    port = 0
-    user = ""
-    not_default = False
-    has_gui = 0
-    has_local_gui = 0
-    
-    def __init__(self):
-        self.local_gui_pids = []
-
-
-def printHelp(stdout=False, category=OPERATION_TYPE_NULL):
+def print_help(stdout=False, category=OPERATION_TYPE_NULL):
     script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     lang_file = "help_en_US"
 
@@ -174,7 +188,7 @@ def printHelp(stdout=False, category=OPERATION_TYPE_NULL):
     else:
         sys.stderr.write(message)
 
-def autoTypeString(string):
+def auto_type_string(string: str):
     if string.isdigit():
         return int(string)
     if string.replace('.', '', 1).isdigit():
@@ -185,10 +199,10 @@ def autoTypeString(string):
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore", category=DeprecationWarning)
-    addSelfBinToPath()
+    add_self_bin_to_path()
 
     if len(sys.argv) <= 1:
-        printHelp()
+        print_help()
         sys.exit(100)
 
     terminate = False
@@ -209,25 +223,25 @@ if __name__ == '__main__':
 
         if option.startswith('--help'):
             if option == '--help':
-                printHelp(True, OPERATION_TYPE_NULL)
+                print_help(True, OPERATION_TYPE_NULL)
             elif option == '--help-all':
-                printHelp(True, OPERATION_TYPE_ALL)
+                print_help(True, OPERATION_TYPE_ALL)
             elif option == '--help-control':
-                printHelp(True, OPERATION_TYPE_CONTROL)
+                print_help(True, OPERATION_TYPE_CONTROL)
             elif option == '--help-server':
-                printHelp(True, OPERATION_TYPE_SERVER)
+                print_help(True, OPERATION_TYPE_SERVER)
             elif option == '--help-session':
-                printHelp(True, OPERATION_TYPE_SESSION)
+                print_help(True, OPERATION_TYPE_SESSION)
             elif option in ('--help-client', '--help-clients'):
-                printHelp(True, OPERATION_TYPE_CLIENT)
+                print_help(True, OPERATION_TYPE_CLIENT)
             else:
-                printHelp()
+                print_help()
                 sys.exit(100)
             sys.exit(0)
 
         elif option == '--port':
             if not args:
-                printHelp()
+                print_help()
                 sys.exit(100)
             port = args.pop(0)
             if not port.isdigit():
@@ -239,13 +253,13 @@ if __name__ == '__main__':
         elif option == '--detach':
             detach = True
         else:
-            printHelp()
+            print_help()
             sys.exit(100)
 
     operation = args.pop(0)
     if operation in ('client', 'trashed_client'):
         if len(args) < 2:
-            printHelp(False, OPERATION_TYPE_CLIENT)
+            print_help(False, OPERATION_TYPE_CLIENT)
             sys.exit(100)
 
         operation_type = OPERATION_TYPE_CLIENT
@@ -263,7 +277,7 @@ if __name__ == '__main__':
         else:
             operation_type = OPERATION_TYPE_SESSION
 
-    arg_list = [autoTypeString(s) for s in args]
+    arg_list = [auto_type_string(s) for s in args]
     if operation_type in (OPERATION_TYPE_CLIENT,
                           OPERATION_TYPE_TRASHED_CLIENT):
         arg_list.insert(0, client_id)
@@ -279,7 +293,7 @@ if __name__ == '__main__':
     exit_code = 0
     daemon_announced = False
 
-    daemon_list = getDaemonList()
+    daemon_list = get_daemon_list()
     daemon_port = 0
     daemon_started = True
 
@@ -349,7 +363,7 @@ if __name__ == '__main__':
                                 # So consider this daemon has already a GUI
                                 break
 
-                            if pidExists(pid) and not pidIsStopped(pid):
+                            if pid_exists(pid) and not pid_is_stopped(pid):
                                 break
                         else:
                             sys.stdout.write('%s\n' % daemon.port)
@@ -409,7 +423,7 @@ if __name__ == '__main__':
                                  % (at_port, operation))
             sys.exit(100)
         else:
-            printHelp()
+            print_help()
             sys.exit(100)
 
     osc_order_path = '/ray/'
@@ -427,9 +441,9 @@ if __name__ == '__main__':
     if operation_type == OPERATION_TYPE_CONTROL and operation == 'stop':
         osc_order_path = '/ray/server/quit'
 
-    import osc_server  # see top of the file
+    import osc_server  # see top of the file    
     server = osc_server.OscServer(detach)
-    server.setOrderPathArgs(osc_order_path, arg_list)
+    server.set_order_path_args(osc_order_path, arg_list)
     daemon_process = None
 
     if (daemon_started
@@ -447,10 +461,10 @@ if __name__ == '__main__':
                             and not daemon.not_default):
                         daemon_port_list.append(daemon.port)
 
-            server.stopDaemons(daemon_port_list)
+            server.stop_daemons(daemon_port_list)
         else:
-            server.setDaemonAddress(daemon_port)
-            server.sendOrderMessage()
+            server.set_daemon_address(daemon_port)
+            server.send_order_message()
 
         if detach:
             sys.exit(0)
@@ -485,15 +499,15 @@ if __name__ == '__main__':
                                           subprocess.DEVNULL,
                                           subprocess.DEVNULL)
 
-        server.waitForStart()
+        server.wait_for_start()
 
         if (operation_type == OPERATION_TYPE_CONTROL
                 and operation in ('start', 'start_new', 'start_new_hidden')):
-            server.waitForStartOnly()
+            server.wait_for_start_only()
 
     #connect SIGINT and SIGTERM
-    signal.signal(signal.SIGINT, signalHandler)
-    signal.signal(signal.SIGTERM, signalHandler)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     exit_code = -1
 
@@ -503,11 +517,11 @@ if __name__ == '__main__':
         if terminate:
             break
 
-        exit_code = server.finalError()
+        exit_code = server.final_error()
         if exit_code >= 0:
             break
 
-        if server.isWaitingStartForALong():
+        if server.is_waiting_start_for_a_long():
             exit_code = 103
             break
 
@@ -519,10 +533,10 @@ if __name__ == '__main__':
     if (operation_type == OPERATION_TYPE_CONTROL
             and operation in ('start_new', 'start_new_hidden')
             and exit_code == 0):
-        daemon_port = server.getDaemonPort()
+        daemon_port = server.get_daemon_port()
         if daemon_port:
             sys.stdout.write("%i\n" % daemon_port)
 
-    server.disannounceToDaemon()
+    server.disannounce_to_daemon()
 
     sys.exit(exit_code)

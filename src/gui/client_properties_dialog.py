@@ -1,13 +1,21 @@
 import os
 import signal
+from tkinter import dialog
+from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import QTimer, QFile
+from PyQt5.QtGui import QShowEvent
 from PyQt5.QtWidgets import QFileDialog, QFrame
 
 import ray
 
 from gui_tools import _translate, client_status_string, get_app_icon
 from child_dialogs import ChildDialog
+from client_prop_adv_dialog import AdvancedPropertiesDialog
+from gui_server_thread import GuiServerThread
+
+if TYPE_CHECKING:
+    from gui_client import Client
 
 import ui.ray_hack_copy
 import ui.client_properties
@@ -37,7 +45,7 @@ class RayHackCopyDialog(ChildDialog):
 
 
 class ClientPropertiesDialog(ChildDialog):
-    def __init__(self, parent, client):
+    def __init__(self, parent, client: 'Client'):
         ChildDialog.__init__(self, parent)
         self.ui = ui.client_properties.Ui_Dialog()
         self.ui.setupUi(self)
@@ -51,10 +59,13 @@ class ClientPropertiesDialog(ChildDialog):
         self._acceptable_arguments = True
         self._current_status = ray.ClientStatus.STOPPED
 
+        self.ui.pushButtonAdvancedProperties.clicked.connect(
+            self._show_advanced_properties)
         self.ui.lineEditIcon.textEdited.connect(self._change_icon_with_text)
         self.ui.pushButtonSaveChanges.clicked.connect(self._save_changes)
-
         self.ui.tabWidget.setCurrentIndex(0)
+        
+        self._advanced_dialog = AdvancedPropertiesDialog(self.parentWidget(), client)
 
     def _change_icon_with_text(self, text: str):
         icon = get_app_icon(text, self)
@@ -80,19 +91,21 @@ class ClientPropertiesDialog(ChildDialog):
     def _save_changes(self):
         self.client.label = self.ui.lineEditLabel.text()
         self.client.description = \
-                                self.ui.plainTextEditDescription.toPlainText()
+            self.ui.plainTextEditDescription.toPlainText()
         self.client.icon = self.ui.lineEditIcon.text()
         self.client.check_last_save = self.ui.checkBoxSaveStop.isChecked()
         self.client.ignored_extensions = \
-                                    self.ui.lineEditIgnoredExtensions.text()
-
+            self.ui.lineEditIgnoredExtensions.text()
         self.client.send_properties_to_daemon()
 
         # better for user to wait a little before close the window
         QTimer.singleShot(150, self.accept)
 
+    def _show_advanced_properties(self):
+        self._advanced_dialog.show()
+
     @staticmethod
-    def create(window, client):
+    def create(window, client: ray.ClientData) -> 'ClientPropertiesDialog':
         if client.protocol == ray.Protocol.NSM:
             return NsmClientPropertiesDialog(window, client)
         if client.protocol == ray.Protocol.RAY_HACK:
@@ -108,6 +121,7 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.lineEditIgnoredExtensions.setReadOnly(True)
         self.ui.checkBoxSaveStop.setEnabled(False)
         self.ui.pushButtonSaveChanges.setVisible(False)
+        self._advanced_dialog.lock_widgets()
 
     def set_for_template(self, template_name: str):
         self.lock_widgets()
@@ -130,9 +144,11 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.checkBoxSaveStop.setChecked(self.client.check_last_save)
         self.ui.lineEditIgnoredExtensions.setText(
             self.client.ignored_extensions)
-
         self._change_icon_with_text(self.client.icon)
 
+    def showEvent(self, a0: QShowEvent) -> None:
+        self.ui.pushButtonSaveChanges.setFocus()
+        super().showEvent(a0)
 
 class NsmClientPropertiesDialog(ClientPropertiesDialog):
     def __init__(self, parent, client):
@@ -144,16 +160,30 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
 
         self.ui.tabWidget.setTabText(1, 'NSM')
 
+        self.set_terminal_command(self.session.terminal_command)
+
     def _save_changes(self):
         self.client.executable_path = self.nsmui.lineEditExecutable.text()
         self.client.arguments = self.nsmui.lineEditArguments.text()
         self.client.pre_env = self.nsmui.lineEditEnviron.text()
+        self.client.in_terminal = self.nsmui.groupBoxTerminal.isChecked()
+        
+        if self.client.in_terminal:
+            server = GuiServerThread.instance()
+            if server is not None:
+                server.to_daemon(
+                    '/ray/server/set_terminal_command',
+                    self.nsmui.lineEditTerminalCommand.text())
+        
         ClientPropertiesDialog._save_changes(self)
 
     def _change_icon_with_text(self, text: str):
         icon = get_app_icon(text, self)
         self.ui.toolButtonIcon.setIcon(icon)
         self.nsmui.toolButtonIcon.setIcon(icon)
+
+    def set_terminal_command(self, command: str):
+        self.nsmui.lineEditTerminalCommand.setText(command)
 
     def lock_widgets(self):
         ClientPropertiesDialog.lock_widgets(self)
@@ -172,6 +202,7 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
         self.nsmui.lineEditExecutable.setText(self.client.executable_path)
         self.nsmui.lineEditArguments.setText(self.client.arguments)
         self.nsmui.lineEditEnviron.setText(self.client.pre_env)
+        self.nsmui.groupBoxTerminal.setChecked(self.client.in_terminal)
 
 
 class RayHackClientPropertiesDialog(ClientPropertiesDialog):

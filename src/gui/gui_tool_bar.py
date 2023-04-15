@@ -9,6 +9,7 @@ from patchbay.patchbay_manager import PatchbayManager
 
 _translate = QApplication.translate
 
+
 class RayToolBar(PatchbayToolBar):
     def __init__(self, parent):
         super().__init__(parent)
@@ -25,16 +26,7 @@ class RayToolBar(PatchbayToolBar):
             self.setToolButtonStyle(Qt.ToolButtonIconOnly)
         else:
             self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        
-        # for action in self.actions():
-        #     tool_button = self.widgetForAction(action)            
-        #     if not isinstance(tool_button, QToolButton):
-        #         continue
 
-        #     if yesno:
-        #         tool_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
-        #     else:
-        #         tool_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.force_main_actions_icons_only = yesno
     
     def mousePressEvent(self, event: QMouseEvent):

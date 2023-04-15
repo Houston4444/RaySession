@@ -7,17 +7,17 @@ from typing import TYPE_CHECKING
 from PyQt5.QtWidgets import (
     QDialog, QDialogButtonBox, QCompleter, QMessageBox,
     QFileDialog, QApplication, QListWidgetItem)
-from PyQt5.QtGui import QIcon, QPixmap, QGuiApplication
+from PyQt5.QtGui import QIcon, QPixmap, QGuiApplication, QKeyEvent
 from PyQt5.QtCore import Qt, QTimer
 
 import ray
 import client_properties_dialog
-# import ui
 from gui_server_thread import GuiServerThread
 from gui_tools import (ErrDaemon, _translate, get_app_icon,
                        CommandLineArgs, RS, is_dark_theme)
 if TYPE_CHECKING:
     from main_window import MainWindow
+    from gui_client import Client
 
 import ui.new_session
 import ui.save_template_session
@@ -127,13 +127,20 @@ class ChildDialog(QDialog):
         RS.settings.setValue('default_session_root', root_folder)
         self.to_daemon('/ray/server/change_root', root_folder)
 
+    def parent(self) -> 'MainWindow':
+        super().parent()
+
     def leaveEvent(self, event):
-        if self.isActiveWindow():
-            self.parent().mouse_is_inside = False
+        parent = self.parent()
+        
+        if parent is not None and self.isActiveWindow():
+            parent.mouse_is_inside = False
         QDialog.leaveEvent(self, event)
 
     def enterEvent(self, event):
-        self.parent().mouse_is_inside = True
+        parent = self.parent()
+        if parent is not None:
+            parent.mouse_is_inside = True
         QDialog.enterEvent(self, event)
 
 
@@ -238,7 +245,7 @@ class NewSessionDialog(ChildDialog):
                                     len(ray.FACTORY_SESSION_TEMPLATES) + 1)
 
     def _set_last_template_selected(self):
-        last_used_template = RS.settings.value('last_used_template', type=str)
+        last_used_template: str = RS.settings.value('last_used_template', type=str)
 
         if last_used_template.startswith('///'):
             last_factory_template = last_used_template.replace('///', '', 1)
@@ -304,7 +311,7 @@ class NewSessionDialog(ChildDialog):
 
         self._set_last_template_selected()
 
-    def _text_changed(self, text):
+    def _text_changed(self, text: str):
         self._text_is_valid = bool(text
                                    and not text.endswith('/')
                                    and text not in self.session_list)
@@ -378,7 +385,7 @@ class AbstractSaveTemplateDialog(ChildDialog):
         self.ui.pushButtonAccept.clicked.connect(self._verify_and_accept)
         self.ui.pushButtonAccept.setEnabled(False)
 
-    def _text_edited(self, text):
+    def _text_edited(self, text: str):
         if '/' in text:
             self.ui.lineEdit.setText(text.replace('/', '⁄'))
         if self.ui.lineEdit.text() in self.template_list:
@@ -441,7 +448,7 @@ class SaveTemplateSessionDialog(AbstractSaveTemplateDialog):
 
 
 class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
-    def __init__(self, parent, client):
+    def __init__(self, parent, client: 'Client'):
         AbstractSaveTemplateDialog.__init__(self, parent)
         self.ui.labelSessionTitle.setVisible(False)
         self.ui.toolButtonClientIcon.setIcon(
@@ -939,7 +946,7 @@ class StopClientNoSaveDialog(ChildDialog):
 
 
 class ClientRenameDialog(ChildDialog):
-    def __init__(self, parent, client):
+    def __init__(self, parent, client: 'Client'):
         ChildDialog.__init__(self, parent)
         self.ui = ui.client_rename.Ui_Dialog()
         self.ui.setupUi(self)
@@ -950,10 +957,26 @@ class ClientRenameDialog(ChildDialog):
         self.ui.lineEdit.setText(client.prettier_name())
         self.ui.lineEdit.selectAll()
         self.ui.lineEdit.setFocus()
+        
+        self.ui.checkBoxIdRename.setEnabled(
+            client.status == ray.ClientStatus.STOPPED)
+        if client.protocol not in (ray.Protocol.NSM, ray.Protocol.RAY_HACK):
+            self.ui.checkBoxIdRename.setVisible(False)
+
+        client.status_changed.connect(self._client_status_changed)
+
+    def _client_status_changed(self, status: int):
+        self.ui.checkBoxIdRename.setEnabled(status == ray.ClientStatus.STOPPED)
+        if status == ray.ClientStatus.REMOVED:
+            self.reject()
+    
+    def is_identifiant_renamed(self):
+        return (self.ui.checkBoxIdRename.isEnabled()
+                and self.ui.checkBoxIdRename.isChecked())
 
     def get_new_label(self)->str:
         return self.ui.lineEdit.text()
-
+    
 
 class SnapShotProgressDialog(ChildDialog):
     def __init__(self, parent):
@@ -1287,7 +1310,7 @@ class StartupDialog(ChildDialog):
     def get_clicked_action(self)->int:
         return self._clicked_action
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key_Left:
             self.ui.pushButtonNewSession.setFocus(Qt.OtherFocusReason)
         elif event.key() == Qt.Key_Right:

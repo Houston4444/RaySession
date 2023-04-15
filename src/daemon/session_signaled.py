@@ -1,10 +1,10 @@
 
 import json
 import os
-import shutil
+from pathlib import Path
 import subprocess
-import sys
 import time
+from typing import TYPE_CHECKING
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QProcess
 from PyQt5.QtXml  import QDomDocument
@@ -18,9 +18,11 @@ from daemon_tools import (Terminal, RS, dirname,
                           is_pid_child_of, highlight_text)
 from session import OperatingSession
 import xdg
+from patch_rewriter import rewrite_jack_patch_files
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
+
 
 def session_operation(func):
     def wrapper(*args, **kwargs):
@@ -28,6 +30,10 @@ def session_operation(func):
             return
 
         sess, path, osc_args, src_addr, *rest = args
+        
+        if TYPE_CHECKING:
+            assert isinstance(sess, SignaledSession)
+            assert isinstance(path, str)
 
         if sess.steps_order:
             sess.send(src_addr, "/error", path, ray.Err.OPERATION_PENDING,
@@ -59,8 +65,12 @@ def client_action(func):
             return
 
         sess, path, osc_args, src_addr, *rest = args
+        
+        if TYPE_CHECKING:
+            assert isinstance(sess, SignaledSession)
+            assert isinstance(osc_args, list)
 
-        client_id = osc_args.pop(0)
+        client_id: str = osc_args.pop(0)
 
         for client in sess.clients:
             if client.client_id == client_id:
@@ -77,18 +87,21 @@ def client_action(func):
 # This is not the case for Session and OperatingSession.
 # This session receives signals from OSC server.
 class SignaledSession(OperatingSession):
-    def __init__(self, root):
+    def __init__(self, root: str):
         OperatingSession.__init__(self, root)
 
         signaler.osc_recv.connect(self.osc_receive)
         signaler.dummy_load_and_template.connect(self.dummy_load_and_template)
 
-        self.recent_sessions = RS.settings.value(
+        # dict where:
+        # key is a sessions root folder
+        # value is a list of recent sessions
+        self.recent_sessions: dict[str, list[str]] = RS.settings.value(
             'daemon/recent_sessions', {}, type=dict)
         self.check_recent_sessions_existing()
 
         self.preview_dummy_session = None
-        self.dummy_sessions = []
+        self.dummy_sessions = list[DummySession]()
         self._next_session_id = 1
         
         self._folder_sizes_and_dates = []
@@ -163,7 +176,7 @@ class SignaledSession(OperatingSession):
 
     ############## FUNCTIONS CONNECTED TO SIGNALS FROM OSC ###################
 
-    def _nsm_server_announce(self, path, args, src_addr):
+    def _nsm_server_announce(self, path: str, args, src_addr):
         client_name, capabilities, executable_path, major, minor, pid = args
 
         if self.wait_for == ray.WaitFor.QUIT:
@@ -177,59 +190,42 @@ class SignaledSession(OperatingSession):
         # we can't be absolutely sure that the announcer is the good one
         # but if client announce a known PID,
         # we can be sure of which client is announcing
+        
         for client in self.clients:
-            if client.pid == pid and not client.active and client.is_running():
+            if client.client_id == 'hydrogen':
+                print('dkflflqqq', client.pid, client._process.pid(), client._process.state(), client.nsm_active, client.is_running())
+                print('"lldd"', pid, is_pid_child_of(pid, client.pid))
+        
+        for client in self.clients:
+            if client.pid == pid and not client.nsm_active and client.is_running():
                 client.server_announce(path, args, src_addr, False)
                 break
         else:
             for client in self.clients:
-                if (not client.active and client.is_running()
+                if (not client.nsm_active and client.is_running()
                         and is_pid_child_of(pid, client.pid)):
                     client.server_announce(path, args, src_addr, False)
                     break
             else:
-                # Client launched externally from daemon
-                # by command : $:NSM_URL=url executable
-                client = self._new_client(executable_path)
-                self.externals_timer.start()
-                self.send_monitor_event('joined', client.client_id)
-                client.server_announce(path, args, src_addr, True)
-
-            #n = 0
-            #for client in self.clients:
-                #if (os.path.basename(client.executable_path) \
-                        #== os.path.basename(executable_path)
-                    #and not client.active
-                    #and client.pending_command == ray.Command.START):
-                        #n+=1
-                        #if n>1:
-                            #break
-
-            #if n == 0:
-                ## Client launched externally from daemon
-                ## by command : $:NSM_URL=url executable
-                #client = self._new_client(args[2])
-                #client.is_external = True
-                #self.externals_timer.start()
-                #client.server_announce(path, args, src_addr, True)
-                #return
-
-            #elif n == 1:
-                #for client in self.clients:
-                    #if (os.path.basename(client.executable_path) \
-                            #== os.path.basename(executable_path)
-                        #and not client.active
-                        #and client.pending_command == ray.Command.START):
-                            #client.server_announce(path, args, src_addr, False)
-                            #break
-            #else:
-                #for client in self.clients:
-                    #if (not client.active
-                        #and client.pending_command == ray.Command.START):
-                            #if is_pid_child_of(pid, client.pid):
-                                #client.server_announce(path, args,
-                                                      #src_addr, False)
-                                #break
+                for client in self.clients:
+                    if (client.launched_in_terminal
+                            and client.process_drowned
+                            and client.executable_path == executable_path):
+                        # when launched in terminal
+                        # the client process can be stopped
+                        # because the terminal process is 'linked' to an existing instance
+                        # then, we may can say this stopped client is the good one,
+                        # and we declare it as external because we won't check its process
+                        # state with QProcess.state().
+                        client.server_announce(path, args, src_addr, True)
+                        break
+                else:
+                    # Client launched externally from daemon
+                    # by command : $:NSM_URL=url executable
+                    client = self._new_client(executable_path)
+                    self.externals_timer.start()
+                    self.send_monitor_event('joined', client.client_id)
+                    client.server_announce(path, args, src_addr, True)
 
         if self.wait_for == ray.WaitFor.ANNOUNCE:
             self.end_timer_if_last_expected(client)
@@ -342,25 +338,25 @@ class SignaledSession(OperatingSession):
                        *self.recent_sessions[self.root])
 
     def _ray_server_list_client_templates(self, path, args, src_addr):
-        def send_gui_template_update(template_dict: dict):
-            template_name = template_dict['template_name']
-            template_client = template_dict['template_client']
-            display_name = template_dict['display_name']
+        # def send_gui_template_update(template_dict: dict):
+        #     template_name = template_dict['template_name']
+        #     template_client = template_dict['template_client']
+        #     display_name = template_dict['display_name']
             
-            self.send_gui(
-                '/ray/gui/client_template_update',
-                int(factory), template_name, display_name,
-                *template_client.spread())
-            if template_client.protocol == ray.Protocol.RAY_HACK:
-                self.send_gui(
-                    '/ray/gui/client_template_ray_hack_update',
-                    int(factory), template_name,
-                    *template_client.ray_hack.spread())
-            elif template_client.protocol == ray.Protocol.RAY_NET:
-                self.send_gui(
-                    '/ray/gui/client_template_ray_net_update',
-                    int(factory), template_name,
-                    *template_client.ray_net.spread())
+        #     self.send_gui(
+        #         '/ray/gui/client_template_update',
+        #         int(factory), template_name, display_name,
+        #         *template_client.spread())
+        #     if template_client.protocol == ray.Protocol.RAY_HACK:
+        #         self.send_gui(
+        #             '/ray/gui/client_template_ray_hack_update',
+        #             int(factory), template_name,
+        #             *template_client.ray_hack.spread())
+        #     elif template_client.protocol == ray.Protocol.RAY_NET:
+        #         self.send_gui(
+        #             '/ray/gui/client_template_ray_net_update',
+        #             int(factory), template_name,
+        #             *template_client.ray_net.spread())
         
         # if src_addr is an announced ray GUI
         # server will send it all templates properties
@@ -384,7 +380,7 @@ class SignaledSession(OperatingSession):
         for t in templates_database:
             if filters:
                 skipped_by_filter = False
-                message = t['template_client'].get_properties_message()
+                message = t.template_client.get_properties_message()
 
                 for filt in filters:
                     for line in message.splitlines():
@@ -397,15 +393,15 @@ class SignaledSession(OperatingSession):
                 if skipped_by_filter:
                     continue
                 
-            template_names.add(t['template_name'])
+            template_names.add(t.template_name)
 
         self.send(src_addr, '/reply', path, *template_names)
         
         if src_addr_is_gui:
-            for template_dict in templates_database:
-                template_name = template_dict['template_name']
-                template_client = template_dict['template_client']
-                display_name = template_dict['display_name']
+            for app_template in templates_database:
+                template_name = app_template.template_name
+                template_client = app_template.template_client
+                display_name = app_template.display_name
                 
                 self.send_gui(
                     '/ray/gui/client_template_update',
@@ -587,7 +583,7 @@ class SignaledSession(OperatingSession):
 
     @session_operation
     def _ray_server_open_session(self, path, args, src_addr, open_off=False):
-        session_name = args[0]
+        session_name: str = args[0]
         save_previous = True
         template_name = ''
 
@@ -857,7 +853,7 @@ class SignaledSession(OperatingSession):
 
     @session_operation
     def _ray_session_duplicate(self, path, args, src_addr):
-        new_session_full_name = args[0]
+        new_session_full_name: str = args[0]
 
         spath = ''
         if new_session_full_name.startswith('/'):
@@ -892,7 +888,7 @@ class SignaledSession(OperatingSession):
                             self.load,
                             self.duplicate_done]
 
-    def _ray_session_duplicate_only(self, path, args, src_addr):
+    def _ray_session_duplicate_only(self, path, args: list[str], src_addr):
         session_to_load, new_session, sess_root = args
 
         spath = ''
@@ -1007,7 +1003,7 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path, self.notes)
         self.send(src_addr, '/reply', path)
 
-    def _ray_session_add_executable(self, path, args, src_addr):
+    def _ray_session_add_executable(self, path: str, args, src_addr):
         protocol = ray.Protocol.NSM
         executable = args[0]
         via_proxy = 0
@@ -1021,6 +1017,9 @@ class SignaledSession(OperatingSession):
             pass
 
         elif ray.are_they_all_strings(args):
+            if TYPE_CHECKING:
+                assert isinstance(args, list[str])
+            
             via_proxy = int(bool('via_proxy' in args[1:]))
             start_it = int(bool('not_start' not in args[1:]))
             if 'ray_hack' in args[1:]:
@@ -1048,7 +1047,7 @@ class SignaledSession(OperatingSession):
                     if not client_id.replace('_', '').isalnum():
                         self.send(src_addr, '/error', path,
                                   ray.Err.CREATE_FAILED,
-                                  "client_id %s is not alphanumeric")
+                                  f"client_id {client_id} is not alphanumeric")
                         return
 
                     # Check if client_id already exists
@@ -1071,10 +1070,12 @@ class SignaledSession(OperatingSession):
             if prefix_mode == ray.PrefixMode.CUSTOM and not custom_prefix:
                 prefix_mode = ray.PrefixMode.SESSION_NAME
 
+            client_id: str
+
             if client_id:
                 if not client_id.replace('_', '').isalnum():
                     self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
-                      _translate("error", "client_id %s is not alphanumeric")
+                      _translate("error", f"client_id {client_id} is not alphanumeric")
                         % client_id)
                     return
 
@@ -1124,10 +1125,27 @@ class SignaledSession(OperatingSession):
             return
 
         factory = bool(args[0])
-        template_name = args[1]
+        template_name: str = args[1]
         auto_start = bool(len(args) <= 2 or args[2] != 'not_start')
+        unique_id: str = args[3] if len(args) > 3 else ''
 
-        self.add_client_template(src_addr, path, template_name, factory, auto_start)
+        if unique_id:
+            if not unique_id.replace('_', '').isalnum():
+                self.send(src_addr, '/error', path,
+                            ray.Err.CREATE_FAILED,
+                            f"client_id {unique_id} is not alphanumeric")
+                return
+
+            # Check if client_id already exists
+            for client in self.clients + self.trashed_clients:
+                if client.client_id == unique_id:
+                    self.send(src_addr, '/error', path,
+                        ray.Err.CREATE_FAILED,
+                        f"client_id {unique_id} is already used")
+                    return
+
+        self.add_client_template(
+            src_addr, path, template_name, factory, auto_start, unique_id)
 
     def _ray_session_add_factory_client_template(self, path, args, src_addr):
         self._ray_session_add_client_template(path, [1] + args, src_addr)
@@ -1224,7 +1242,7 @@ class SignaledSession(OperatingSession):
     def _ray_session_set_auto_snapshot(self, path, args, src_addr):
         self.snapshoter.set_auto_snapshot(bool(args[0]))
 
-    def _ray_session_list_clients(self, path, args, src_addr):
+    def _ray_session_list_clients(self, path, args: list[str], src_addr):
         if not self.path:
             self.send(src_addr, '/error', path, ray.Err.NO_SESSION_OPEN,
                       _translate('GUIMSG', 'No session to list clients !'))
@@ -1235,7 +1253,7 @@ class SignaledSession(OperatingSession):
         f_auto_start = -1
         f_no_save_level = -1
 
-        search_properties = []
+        search_properties = list[tuple[int, str]]()
 
         for arg in args:
             cape = 1
@@ -1255,11 +1273,11 @@ class SignaledSession(OperatingSession):
             elif arg == 'no_save_level':
                 f_no_save_level = cape
 
-        client_id_list = []
+        client_id_list = list[str]()
 
         for client in self.clients:
             if ((f_started < 0 or f_started == client.is_running())
-                and (f_active < 0 or f_active == client.active)
+                and (f_active < 0 or f_active == client.nsm_active)
                 and (f_auto_start < 0 or f_auto_start == client.auto_start)
                 and (f_no_save_level < 0
                      or f_no_save_level == int(bool(client.noSaveLevel())))):
@@ -1286,7 +1304,7 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path)
 
     def _ray_session_list_trashed_clients(self, path, args, src_addr):
-        client_id_list = []
+        client_id_list = list[str]()
 
         for trashed_client in self.trashed_clients:
             client_id_list.append(trashed_client.client_id)
@@ -1366,7 +1384,7 @@ class SignaledSession(OperatingSession):
             self.send_error_copy_running(src_addr, path)
             return
 
-        if client.active:
+        if client.nsm_active:
             self.send_gui_message(
                 _translate('GUIMSG', 'client %s is already active.')
                     % client.gui_msg_style())
@@ -1700,7 +1718,7 @@ class SignaledSession(OperatingSession):
             custom_prefix = args[1]
             if not custom_prefix:
                 self.send(
-                    src_addr, '/error', path, ray.err.GENERAL_ERROR,
+                    src_addr, '/error', path, ray.Err.GENERAL_ERROR,
                     "You need to specify a custom prefix as 2nd argument")
                 return
 
@@ -1713,6 +1731,134 @@ class SignaledSession(OperatingSession):
 
         self.send(src_addr, '/reply', path, 'prefix changed')
 
+    @client_action
+    def _ray_client_change_advanced_properties(self, path, args, src_addr, client: Client):
+        if client.is_running():
+            self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
+                      "impossible to change id while client is running")
+            return
+
+        new_client_id: str
+        prefix_mode: int
+        custom_prefix: str
+        jack_naming: int
+
+        new_client_id, prefix_mode, custom_prefix, jack_naming = args
+
+        if new_client_id != client.client_id:
+            if new_client_id in [c.client_id for c in
+                                self.clients + self.trashed_clients]:
+                self.send(src_addr, '/error', path, ray.Err.BLACKLISTED,
+                        f"client id '{new_client_id}' already exists in the session")
+                return
+
+        if prefix_mode == ray.PrefixMode.CUSTOM and not custom_prefix:
+            self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                      "Custom prefix missing is missing !")
+            return
+
+        tmp_client = Client(self)
+        tmp_client.eat_attributes(client)
+        tmp_client.client_id = new_client_id
+        tmp_client.prefix_mode = prefix_mode
+        tmp_client.custom_prefix = custom_prefix
+        tmp_client.jack_naming = jack_naming
+        
+        client.set_status(ray.ClientStatus.REMOVED)
+        
+        client._rename_files(
+            Path(self.path),
+            self.name, self.name,
+            client.get_prefix_string(), tmp_client.get_prefix_string(),
+            client.client_id, tmp_client.client_id,
+            client.get_links_dir(), tmp_client.get_links_dir())
+
+        ex_jack_name = client.get_jack_client_name()
+        ex_client_id = client.client_id
+        new_jack_name = client.get_jack_client_name()
+
+        client.client_id = new_client_id
+        client.prefix_mode = prefix_mode
+        client.custom_prefix = custom_prefix
+        client.jack_naming = jack_naming
+
+        if new_jack_name != ex_jack_name:
+            rewrite_jack_patch_files(
+                self, ex_client_id, new_client_id,
+                ex_jack_name, new_jack_name)
+            self.canvas_saver.client_jack_name_changed(
+                ex_jack_name, new_jack_name)
+
+        client.sent_to_gui = False
+        client.send_gui_client_properties()
+        self.send_gui('/ray/gui/session/sort_clients',
+                      *[c.client_id for c in self.clients])
+
+        # we need to save session file here
+        # else, if session is aborted
+        # client won't find its files at next restart
+        self._save_session_file()
+
+        self.send_monitor_event('id_changed_to:' + new_client_id, ex_client_id)
+        self.send(src_addr, '/reply', path, 'client id changed')
+
+    @client_action
+    def _ray_client_change_id(self, path, args, src_addr, client: Client):
+        if client.is_running():
+            self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
+                      "impossible to change id while client is running")
+            return
+
+        new_client_id: str = args[0]
+        
+        if new_client_id in [c.client_id for c in
+                             self.clients + self.trashed_clients]:
+            self.send(src_addr, '/error', path, ray.Err.BLACKLISTED,
+                      f"client id '{new_client_id}' already exists in the session")
+            return
+        
+        if not new_client_id.replace('_', '').isalnum():
+            self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                      f"client id {new_client_id} contains forbidden characters")
+            return
+        
+        ex_client_id = client.client_id
+        ex_jack_name = client.get_jack_client_name()
+        client.set_status(ray.ClientStatus.REMOVED)
+
+        prefix = client.get_prefix_string()
+        links_dir = client.get_links_dir()
+
+        client._rename_files(
+            Path(self.path),
+            self.name, self.name,
+            prefix, prefix,
+            ex_client_id, new_client_id,
+            links_dir, links_dir)
+
+        client.client_id = new_client_id
+        new_jack_name = client.get_jack_client_name()
+
+        if new_jack_name != ex_jack_name:
+            rewrite_jack_patch_files(
+                self, ex_client_id, new_client_id,
+                ex_jack_name, new_jack_name)
+            self.canvas_saver.client_jack_name_changed(
+                ex_jack_name, new_jack_name)
+
+        client.sent_to_gui = False
+        client.send_gui_client_properties()
+        self.send_gui('/ray/gui/session/sort_clients',
+                      *[c.client_id for c in self.clients])
+
+        # we need to save session file here
+        # else, if session is aborted
+        # client won't find its files at next restart
+        self._save_session_file()
+
+        self.send_monitor_event('id_changed_to:' + new_client_id, ex_client_id)
+        self.send(src_addr, '/reply', path, 'client id changed')
+    
     def _ray_trashed_client_restore(self, path, args, src_addr):
         if not self.path:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
@@ -1809,7 +1955,7 @@ class SignaledSession(OperatingSession):
     def check_recent_sessions_existing(self):
         # check here if recent sessions still exist
         if self.root in self.recent_sessions.keys():
-            to_remove_list = []
+            to_remove_list = list[str]()
             for sess in self.recent_sessions[self.root]:
                 if not os.path.exists(
                         "%s/%s/raysession.xml" % (self.root, sess)):

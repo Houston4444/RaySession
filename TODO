@@ -20,11 +20,32 @@ PW video ports ?
 Damn connections (with ray-jackpatch)
 icons in theme
 
-generic icon for client
-set client id in add application dialog
+# set client id in add application dialog
 list ardour templates and select a template in add_application dialog for Ardour templates
-select client and patchbay boxes together (click another time to select another box)
-Forget connections of removed client
+# select client and patchbay boxes together (click another time to select another box)
+# Forget connections of removed client
+
+
+Preferences dialog
+    Options du démon
+        ...
+    Affichage
+        Barre de menus
+        Afficher les messages
+        Baie de brassage
+        Garder le focus
+    Boite à miniatures
+        ...
+    Fenêtres d'infos
+        ...restaurer n'importe quelle fenêtre d'info
+    Manuel
+        Manuel offline
+        manuel inline
+        manuel baie de brassage
+    Dons
+
+
+
 
 
 

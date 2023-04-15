@@ -68,6 +68,8 @@ control RaySession daemons
         Aborts current session (if any) and stop the daemon
     change_root NEW_ROOT_FOLDER
         Changes root directory for the sessions to NEW_ROOT_FOLDER
+    set_terminal_command TERMINAL_COMMAND
+        change terminal command for clients, set TERMINAL_COMMAND to '' to reset to default
     list_session_templates
         Lists session templates
     list_user_client_templates

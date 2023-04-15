@@ -1,6 +1,7 @@
 
 
 import argparse
+from typing import TYPE_CHECKING, Optional
 import liblo
 import os
 import shlex
@@ -61,6 +62,7 @@ class ClientStatus:
     REMOVED = 11
     UNDEF = 12
     SCRIPT = 13
+    LOSE = 14
 
 
 class ServerStatus:
@@ -183,7 +185,7 @@ class Systray:
 
 
 class Favorite():
-    def __init__(self, name, icon, factory):
+    def __init__(self, name: str, icon: str, factory: bool):
         self.name = name
         self.icon = icon
         self.factory = factory
@@ -245,7 +247,7 @@ def get_list_in_settings(settings: QSettings, path: str) -> list:
         return settings_list
     return []
 
-def is_git_taggable(string)->bool:
+def is_git_taggable(string: str) -> bool:
     ''' know if a string can be a git tag, not used currently '''
     if not string:
         return False
@@ -319,7 +321,7 @@ def is_valid_osc_url(url: str) -> bool:
     except BaseException:
         return False
 
-def get_liblo_address(url: str):
+def get_liblo_address(url: str) -> Optional[liblo.Address]:
     valid_url = False
     try:
         address = liblo.Address(url)
@@ -337,7 +339,7 @@ def get_liblo_address(url: str):
             msg = "%r is an unknown osc url" % url
             raise argparse.ArgumentTypeError(msg)
 
-def get_liblo_address_from_port(port:int):
+def get_liblo_address_from_port(port:int) -> Optional[liblo.Address]:
     try:
         port = int(port)
     except:
@@ -430,14 +432,14 @@ def are_on_same_machine(url1, url2):
 
     return False
 
-def get_net_url(port)->str:
+def get_net_url(port) -> str:
     ip = Machine192.get()
     if not ip:
         return ''
 
     return "osc.udp://%s:%i/" % (ip, port)
 
-def shell_line_to_args(string:str)->list:
+def shell_line_to_args(string:str) -> list:
     try:
         args = shlex.split(string)
     except BaseException:
@@ -445,19 +447,19 @@ def shell_line_to_args(string:str)->list:
 
     return args
 
-def types_are_all_strings(types:str)->bool:
+def types_are_all_strings(types:str) -> bool:
     for char in types:
         if char != 's':
             return False
     return True
 
-def are_they_all_strings(args:list)->bool:
+def are_they_all_strings(args:list) -> bool:
     for arg in args:
         if not isinstance(arg, str):
             return False
     return True
 
-def get_window_manager():
+def get_window_manager() -> WindowManager:
     if os.getenv('WAYLAND_DISPLAY'):
         return WindowManager.WAYLAND
 
@@ -466,25 +468,14 @@ def get_window_manager():
 
     return WindowManager.NONE
 
-def get_full_path(root, session_name):
-    spath = "%s%s%s" % (root, os.sep, session_name)
-
-    if session_name.startswith(os.sep):
-        spath = session_name
-
-    if spath.endswith(os.sep):
-        spath = spath[:-1]
-
-    return spath
-
-def protocol_to_str(protocol: int)->str:
+def protocol_to_str(protocol: int) -> str:
     if protocol == Protocol.RAY_HACK:
         return "Ray-Hack"
     if protocol == Protocol.RAY_NET:
         return "Ray-Net"
     return "NSM"
 
-def protocol_from_str(protocol_str: str)->int:
+def protocol_from_str(protocol_str: str) -> int:
     if protocol_str.lower() in ('ray_hack', 'ray-hack'):
         return Protocol.RAY_HACK
     elif protocol_str.lower() in ('ray_net', 'ray-net'):
@@ -497,7 +488,7 @@ class Machine192:
     read_done = False
     
     @staticmethod
-    def read()->str:
+    def read() -> str:
         try:
             ips = subprocess.check_output(
                 ['ip', 'route', 'get', '1']).decode()
@@ -547,12 +538,13 @@ class ClientData:
     template_origin = ''
     jack_client_name = ''
     jack_naming = 0
-    ray_hack = None
-    ray_net = None
+    in_terminal = False
+    ray_hack: 'RayHack' = None
+    ray_net: 'RayNet' = None
 
     @staticmethod
     def sisi():
-        return 'sissssissssssisssi'
+        return 'sissssissssssisssii'
 
     @staticmethod
     def new_from(*args):
@@ -561,7 +553,7 @@ class ClientData:
         return client_data
 
     @staticmethod
-    def spread_client(client)->tuple:
+    def spread_client(client: 'ClientData') -> tuple:
         return (client.client_id, client.protocol,
                 client.executable_path, client.arguments, client.pre_env,
                 client.name, client.prefix_mode, client.custom_prefix,
@@ -570,11 +562,8 @@ class ClientData:
                 client.capabilities, int(client.check_last_save),
                 client.ignored_extensions,
                 client.template_origin,
-                client.jack_client_name, client.jack_naming)
-
-    def gui_init(self, client_id, protocol):
-        self.client_id = client_id
-        self.protocol = protocol
+                client.jack_client_name, client.jack_naming,
+                int(client.in_terminal))
 
     def set_ray_hack(self, ray_hack):
         self.ray_hack = ray_hack
@@ -591,6 +580,7 @@ class ClientData:
                ignored_extensions,
                template_origin,
                jack_client_name, jack_naming,
+               in_terminal,
                secure=False):
         self.executable_path = str(executable)
         self.arguments = str(arguments)
@@ -605,10 +595,13 @@ class ClientData:
         self.ignored_extensions = str(ignored_extensions)
         self.template_origin = template_origin
         self.jack_naming = jack_naming
+        self.in_terminal = bool(in_terminal)
 
         if secure:
             return
 
+        # Now, if message is 'unsecure' only.
+        # change things that can't be changed normally
         self.client_id = str(client_id)
         self.protocol = int(protocol)
         if name:
@@ -629,10 +622,10 @@ class ClientData:
     def update_secure(self, *args):
         self.update(*args, secure=True)
 
-    def spread(self)->tuple:
+    def spread(self) -> tuple:
         return ClientData.spread_client(self)
     
-    def prettier_name(self)->str:
+    def prettier_name(self) -> str:
         if self.label:
             return self.label
         if (self.protocol != Protocol.RAY_HACK

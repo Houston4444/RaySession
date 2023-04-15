@@ -13,7 +13,8 @@ import threading
 import time
 
 import jacklib
-from jacklib.helpers import c_char_p_p_to_list, voidptr2str
+from jacklib.helpers import c_char_p_p_to_list
+from jacklib.enums import JackOptions, JackPortFlags, JackMetadata
 
 # check ALSA LIB
 try:
@@ -108,8 +109,8 @@ class JackPort:
         elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
             self.type = PORT_TYPE_MIDI
             
-        order_prop = jacklib.get_property(self.uuid,
-                                          jacklib.JACK_METADATA_ORDER)
+        order_prop = jacklib.get_property(
+            self.uuid, JackMetadata.ORDER)
 
         ret, alias_1, alias_2 = jacklib.port_get_aliases(port_ptr)
         if ret:
@@ -284,7 +285,7 @@ class MainObject:
         transport_position = TransportPosition(
             int(pos.frame),
             bool(state),
-            bool(pos.valid & jacklib.JackPositionBBT),
+            bool(pos.valid & jacklib.JackPositionBits.POSITION_BBT),
             int(pos.bar),
             int(pos.beat),
             int(pos.tick),
@@ -361,7 +362,7 @@ class MainObject:
         with suppress_stdout_stderr():
             self.jack_client = jacklib.client_open(
                 "ray-patch_to_osc",
-                jacklib.JackNoStartServer | jacklib.JackSessionID,
+                JackOptions.NO_START_SERVER | JackOptions.SESSION_ID,
                 None)
 
         self._waiting_jack_client_open = False
@@ -431,10 +432,11 @@ class MainObject:
                 client_names.append(client_name)
 
             # get port metadatas
-            for key in (jacklib.JACK_METADATA_CONNECTED,
-                        jacklib.JACK_METADATA_ORDER,
-                        jacklib.JACK_METADATA_PORT_GROUP,
-                        jacklib.JACK_METADATA_PRETTY_NAME):
+            for key in (JackMetadata.CONNECTED,
+                        JackMetadata.ORDER,
+                        JackMetadata.PORT_GROUP,
+                        JackMetadata.PRETTY_NAME,
+                        JackMetadata.SIGNAL_TYPE):
                 prop = jacklib.get_property(jport.uuid, key)
                 if prop is None:
                     continue
@@ -445,7 +447,7 @@ class MainObject:
                      'key': key,
                      'value': value})
 
-            if jport.flags & jacklib.JackPortIsInput:
+            if jport.flags & JackPortFlags.IS_INPUT:
                 continue
 
             port_ptr = jacklib.port_by_name(self.jack_client, jport.name)
@@ -466,8 +468,8 @@ class MainObject:
             
             # we only look for icon_name now, but in the future other client
             # metadatas could be enabled
-            for key in (jacklib.JACK_METADATA_ICON_NAME,):
-                prop = jacklib.get_property(int(uuid), jacklib.JACK_METADATA_ICON_NAME)
+            for key in (JackMetadata.ICON_NAME,):
+                prop = jacklib.get_property(int(uuid), JackMetadata.ICON_NAME)
                 if prop is None:
                     continue
                 value = self.get_metadata_value_str(prop)
@@ -560,11 +562,11 @@ class MainObject:
         
         value = ''
 
-        if name and type_ != jacklib.PropertyDeleted:
+        if name and type_ != jacklib.JackPropertyChange.DELETED:
             prop = jacklib.get_property(uuid, name)
             if prop is None:
                 return 0
-            
+
             value = self.get_metadata_value_str(prop)
         
         for metadata in self.metadata_list:
@@ -574,7 +576,7 @@ class MainObject:
         else:
             self.metadata_list.append(
                 {'uuid': uuid, 'key': name, 'value': value})
-        
+
         self.osc_server.metadata_updated(uuid, name, value)
 
         return 0

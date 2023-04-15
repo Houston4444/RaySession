@@ -92,8 +92,8 @@ class DaemonManager(QObject):
             QApplication.quit()
 
     def _receive_announce(
-            self, src_addr, version, server_status,
-            options, session_root, is_net_free):
+            self, src_addr: Address, version: str, server_status: int,
+            options: int, session_root: str, is_net_free: int):
         self._announce_timer.stop()
 
         if version.split('.')[:2] != ray.VERSION.split('.')[:2]:
@@ -166,7 +166,7 @@ class DaemonManager(QObject):
     def set_external(self):
         self.launched_before = True
 
-    def set_osc_address(self, address):
+    def set_osc_address(self, address: Address):
         self.address = address
         self.launched_before = True
         self._port = self.address.port

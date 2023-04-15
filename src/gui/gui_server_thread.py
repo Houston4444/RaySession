@@ -15,6 +15,8 @@ def ray_method(path, types):
         @liblo.make_method(path, types)
         def wrapper(*args, **kwargs):
             t_thread, t_path, t_args, t_types, src_addr, rest = args
+            if TYPE_CHECKING:
+                assert isinstance(t_thread, GuiServerThread)
 
             if CommandLineArgs.debug:
                 sys.stderr.write(
@@ -77,6 +79,7 @@ class GuiServerThread(liblo.ServerThread):
             ('/ray/gui/server/nsm_locked', 'i'),
             ('/ray/gui/server/options', 'i'),
             ('/ray/gui/server/message', 's'),
+            ('/ray/gui/server/terminal_command', 's'),
             ('/ray/gui/session/name', 'ss'),
             ('/ray/gui/session/notes', 's'),
             ('/ray/gui/session/notes_shown', ''),

@@ -1,19 +1,19 @@
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 import os
 import sys
 
 from PyQt5.QtCore import QLocale, QUrl
 from PyQt5.QtGui import QDesktopServices
 
-
 import ray
 import xdg
 from gui_server_thread import GuiServerThread
 from gui_tools import RS, get_code_root, is_dark_theme, RayIcon
 
+from jack_renaming_tools import group_belongs_to_client
 from patchbay.base_elements import (Group, GroupPos, PortgroupMem,
                                     PortMode, BoxLayoutMode, PortType, ToolDisplayed,
                                     PortTypesViewFlag)
@@ -22,7 +22,8 @@ from patchbay import (
     Callbacker,
     PatchbayToolsWidget,
     CanvasOptionsDialog,
-    CanvasMenu
+    CanvasMenu,
+    patchcanvas
 )
 
 if TYPE_CHECKING:
@@ -122,12 +123,25 @@ class RayPatchbayCallbacker(Callbacker):
             return
 
         for client in self.mng.session.client_list:
-            if client.can_be_own_jack_client(group.name):
+            if group_belongs_to_client(group.name, client.jack_client_name):
                 show = 'show' if visible else 'hide'
                 self.mng.send_to_daemon(
-                    '/ray/client/%s_optional_gui' % show,
+                    f'/ray/client/{show}_optional_gui',
                     client.client_id)
                 break
+            
+    def _group_selected(self, group_id: int, splitted_mode: PortMode):
+        # select client widget matching with the selected box
+        group = self.mng.get_group_from_id(group_id)
+        if group is None:
+            return
+        
+        for client in self.mng.session.client_list:
+            if group_belongs_to_client(group.name, client.jack_client_name):
+                item = client.widget.list_widget_item
+                item.setSelected(True)
+                client.widget.list_widget.scrollToItem(item)
+                break                
 
 
 class RayPatchbayManager(PatchbayManager):    
@@ -135,6 +149,9 @@ class RayPatchbayManager(PatchbayManager):
         super().__init__(RS.settings)
         self.session = session
         self.set_tools_widget(PatchbayToolsWidget())
+        
+        self._last_selected_client_name = ''
+        self._last_selected_box_n = 1
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
@@ -314,10 +331,10 @@ class RayPatchbayManager(PatchbayManager):
                 return client.jack_client_name
         
         return group_name
-    
+
     def set_group_as_nsm_client(self, group: Group):
         for client in self.session.client_list:
-            if client.can_be_own_jack_client(group.name):
+            if group_belongs_to_client(group.name, client.jack_client_name):
                 group.set_client_icon(client.icon)
                 
                 # in case of long jack naming (ClientName.ClientId)
@@ -330,7 +347,7 @@ class RayPatchbayManager(PatchbayManager):
                 if client.has_gui:
                     group.set_optional_gui_state(client.gui_state)
                 break
-    
+
     def transport_play_pause(self, play: bool):
         self.send_to_patchbay_daemon('/ray/patchbay/transport_play', int(play))
     
@@ -367,6 +384,50 @@ class RayPatchbayManager(PatchbayManager):
 
         #### added functions ####
     
+    def select_client_box(self, jack_client_name: str, previous=False):
+        if not jack_client_name:
+            self._last_selected_client_name = ''
+            self._last_selected_box_n = 0
+            patchcanvas.canvas.scene.clearSelection()
+            return
+        
+        box_n = 0
+        if jack_client_name == self._last_selected_client_name:            
+            n_max = 0
+            for group in self.groups:
+                if group_belongs_to_client(group.name, jack_client_name):
+                    n_max += group.get_number_of_boxes()
+            
+            if previous:
+                if self._last_selected_box_n == 0:
+                    self._last_selected_box_n = n_max -1
+                else:
+                    self._last_selected_box_n -= 1
+            else:
+                self._last_selected_box_n += 1
+
+            box_n = self._last_selected_box_n % n_max
+            
+        n = 0
+        box_found = False
+        for group in self.groups:
+            if group_belongs_to_client(group.name, jack_client_name):
+                if group.get_number_of_boxes() + n <= box_n:
+                    n += group.get_number_of_boxes()
+                    continue
+                
+                group.select_filtered_box(1 + box_n -n)
+                box_found = True
+                break
+        
+        if box_found:
+            self._last_selected_client_name = jack_client_name
+            self._last_selected_box_n = box_n
+        else:
+            patchcanvas.canvas.scene.clearSelection()
+            self._last_selected_client_name = ''
+            self._last_selected_box_n = 0
+
     def update_group_position(self, *args):
         # arguments are these ones delivered from ray.GroupPosition.spread()
         # Not define them allows easier code modifications.
@@ -399,7 +460,7 @@ class RayPatchbayManager(PatchbayManager):
         for client in self.session.client_list:
             if client.client_id == client_id:
                 for group in self.groups:
-                    if client.can_be_own_jack_client(group.name):
+                    if group_belongs_to_client(group.name, client.jack_client_name):
                         group.set_optional_gui_state(visible)
                 break
     
@@ -469,34 +530,31 @@ class RayPatchbayManager(PatchbayManager):
 
         for key in patchbay_data.keys():
             if key == 'ports':
+                p: dict[str, Any]
                 for p in patchbay_data[key]:
-                    if TYPE_CHECKING and not isinstance(p, dict):
-                        continue
                     self.add_port(p.get('name'), p.get('type'),
                                   p.get('flags'), p.get('uuid'))
 
             elif key == 'connections':
+                c: dict[str, Any]
                 for c in patchbay_data[key]:
-                    if TYPE_CHECKING and not isinstance(c, dict):
-                        continue
                     self.add_connection(c.get('port_out_name'),
                                         c.get('port_in_name'))
 
         for key in patchbay_data.keys():
             if key == 'clients':
+                cnu: dict[str, Any]
                 for cnu in patchbay_data[key]:
-                    if TYPE_CHECKING and not isinstance(cnu, dict):
-                        continue
                     self.set_group_uuid_from_name(cnu.get('name'), cnu.get('uuid'))
                 break
 
         for key in patchbay_data.keys():
             if key == 'metadatas':
+                m: dict[str, Any]
                 for m in patchbay_data[key]:
-                    if TYPE_CHECKING and not isinstance(m, dict):
-                        continue
                     self.metadata_update(
                         m.get('uuid'), m.get('key'), m.get('value'))
+                break
 
         for group in self.groups:
             group.sort_ports_in_canvas()

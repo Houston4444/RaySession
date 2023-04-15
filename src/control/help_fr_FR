@@ -71,6 +71,8 @@ contrôle les démons de RaySession
         puis arrête le démon.
     change_root NOUVEAU_DOSSIER_RACINE
         Change le dossier racine des session en NOUVEAU_DOSSIER_RACINE
+    set_terminal_command TERMINAL_COMMAND
+        change la commande de terminal pour les clients, définir TERMINAL_COMMAND à '' pour remettre par défaut
     list_session_templates
         Liste les modèles de session
     list_user_client_templates

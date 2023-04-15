@@ -1,15 +1,18 @@
 
 import time
-from enum import IntFlag
+from typing import TYPE_CHECKING
 from PyQt5.QtWidgets import (
     QLineEdit, QStackedWidget, QLabel, QToolButton, QFrame,
     QSplitter, QSplitterHandle, QDialogButtonBox, QPushButton,
-    QDialog, QToolBar, QMenu, QApplication, QAction, QWidget, QSizePolicy)
+    QDialog, QApplication, QWidget)
 from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QKeyEvent, QMouseEvent)
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QPoint
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
 from patchbay import filter_frame, PatchGraphicsView
+
+if TYPE_CHECKING:
+    from gui_session import Session
 
 _translate = QApplication.translate
 
@@ -269,8 +272,10 @@ class FakeToolButton(QToolButton):
         QToolButton.__init__(self, parent)
         self.setStyleSheet("QToolButton{border:none}")
 
-    def mousePressEvent(self, event):
-        self.parent().mousePressEvent(event)
+    def mousePressEvent(self, event: QMouseEvent):
+        parent = self.parent()
+        if isinstance(parent, QWidget):
+            parent.mousePressEvent(event)
 
 
 class FavoriteToolButton(QToolButton):
@@ -283,7 +288,7 @@ class FavoriteToolButton(QToolButton):
         self._favicon_not = QIcon(':scalable/breeze/draw-star.svg')
         self._favicon_yes = QIcon(':scalable/breeze/star-yellow.svg')
 
-        self.session = None
+        self.session: Session = None
 
         self.setIcon(self._favicon_not)
 
@@ -292,7 +297,7 @@ class FavoriteToolButton(QToolButton):
         if not self._state:
             self.setIcon(self._favicon_not)
 
-    def set_session(self, session):
+    def set_session(self, session: 'Session'):
         self.session = session
 
     def set_template(self, template_name: str,
@@ -315,38 +320,6 @@ class FavoriteToolButton(QToolButton):
         else:
             self.session.add_favorite(
                 self._template_name, self._template_icon, self._factory)
-
-
-# # taken from carla (falktx)
-# class DraggableGraphicsView(QGraphicsView):
-#     def __init__(self, parent):
-#         QGraphicsView.__init__(self, parent)
-
-#         self._panning = False
-
-#         try:
-#             self._middle_button = Qt.MiddleButton
-#         except:
-#             self._middle_button = Qt.MidButton
-
-#     def mousePressEvent(self, event):
-#         if (event.button() == self._middle_button
-#                 and not QApplication.keyboardModifiers() & Qt.ControlModifier):
-#             self._panning = True
-#             self.setDragMode(QGraphicsView.ScrollHandDrag)
-#             event = QMouseEvent(event.type(), event.pos(), Qt.LeftButton,
-#                                 Qt.LeftButton, event.modifiers())
-
-#         QGraphicsView.mousePressEvent(self, event)
-
-#     def mouseReleaseEvent(self, event):
-#         QGraphicsView.mouseReleaseEvent(self, event)
-
-#         if not self._panning:
-#             return
-
-#         self._panning = False
-#         self.setDragMode(QGraphicsView.NoDrag)
 
 
 class CanvasSplitterHandle(QSplitterHandle):
@@ -393,7 +366,7 @@ class StartupDialogButtonBox(QDialogButtonBox):
     def __init__(self, parent):
         QDialogButtonBox.__init__(self, parent)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent):
         if event.key in (Qt.Key_Up, Qt.Key_Down):
             self.key_event.emit(event)
             return
@@ -442,6 +415,3 @@ class PreviewFrame(QFrame):
 class CanvasGroupFilterFrame(filter_frame.FilterFrame):
     def __init__(self, parent):
         super().__init__(parent)
-
-
-                        

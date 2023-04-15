@@ -1,14 +1,19 @@
 
-from io import TextIOWrapper
 import json
 import os
 import tempfile
 import time
+from typing import TYPE_CHECKING
+from liblo import Address
 
 import ray
 
 from daemon_tools import RS, dirname, Terminal
 from server_sender import ServerSender
+from jack_renaming_tools import group_belongs_to_client
+
+if TYPE_CHECKING:
+    from session_signaled import SignaledSession
 
 JSON_PATH = 'ray_canvas.json'
 
@@ -26,7 +31,7 @@ def _get_version_tuple_json_dict(json_contents: dict) -> tuple[int, int, int]:
 
 
 class CanvasSaver(ServerSender):
-    def __init__(self, session):
+    def __init__(self, session: 'SignaledSession'):
         ServerSender.__init__(self)
         self.session = session
 
@@ -82,8 +87,8 @@ class CanvasSaver(ServerSender):
                 portgroup.write_from_dict(pg_dict)
                 self.portgroups.append(portgroup)
 
-    def get_all_group_positions(self)->list:
-        group_positions_config_exclu = []
+    def get_all_group_positions(self) -> list[ray.GroupPosition]:
+        group_positions_config_exclu = list[ray.GroupPosition]()
 
         for gpos_cf in self.group_positions_config:
             for gpos_ss in self.group_positions_session:
@@ -128,7 +133,7 @@ class CanvasSaver(ServerSender):
                               '/ray/gui/patchbay/update_group_position',
                               *gpos.spread())
 
-    def send_all_group_positions(self, src_addr):
+    def send_all_group_positions(self, src_addr: Address):
         if ray.are_on_same_machine(self.get_server_url(), src_addr.url):
             # GUI is on the same machine than the daemon
             # send group positions via a tmp file because they can be many
@@ -281,3 +286,16 @@ class CanvasSaver(ServerSender):
             self.portgroups.remove(portgroup)
 
         self.portgroups.append(new_portgroup)
+
+    def client_jack_name_changed(self, old_jack_name: str, new_jack_name: str):
+        server = self.session.get_server()
+        
+        for gpos in self.group_positions_session:
+            if group_belongs_to_client(gpos.group_name, old_jack_name):
+                gpos.group_name = gpos.group_name.replace(
+                    old_jack_name, new_jack_name, 1)
+
+                if server is not None:
+                    server.send_gui(
+                        '/ray/gui/patchbay/update_group_position',
+                        *gpos.spread())

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import functools
 import math
 import os
@@ -7,9 +8,11 @@ import string
 import subprocess
 import sys
 import time
+from typing import Optional
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QTimer, QProcess
-from PyQt5.QtXml  import QDomDocument
+from PyQt5.QtXml  import QDomDocument, QDomElement
+import liblo
 
 import ray
 
@@ -25,7 +28,7 @@ from scripter import StepScripter
 from canvas_saver import CanvasSaver
 from daemon_tools import (
     TemplateRoots, RS, Terminal, get_git_default_un_and_ignored,
-    dirname, basename, highlight_text)
+    dirname, basename, highlight_text, AppTemplate)
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
@@ -43,8 +46,7 @@ class Session(ServerSender):
         self.trashed_clients = list[Client]()
         self.future_trashed_clients = list[Client]()
         self.new_client_exec_args = list[str]
-        self.favorites = []
-        self.recent_sessions = {}
+        self.recent_sessions = dict[str, list[str]]()
 
         self.name = ""
         self.path = ""
@@ -57,7 +59,7 @@ class Session(ServerSender):
         self.load_locked = False
 
         self.is_renameable = True
-        self.forbidden_ids_set = set()
+        self.forbidden_ids_set = set[str]()
 
         self.file_copier = FileCopier(self)
         self.bookmarker = BookMarker()
@@ -65,6 +67,8 @@ class Session(ServerSender):
         self.snapshoter = Snapshoter(self)
         self.step_scripter = StepScripter(self)
         self.canvas_saver = CanvasSaver(self)
+        
+        self.osc_src_addr: liblo.Address = None
 
     #############
     def osc_reply(self, *args):
@@ -105,7 +109,7 @@ class Session(ServerSender):
     def _set_name(self, session_name):
         self.name = session_name
 
-    def _set_path(self, session_path, session_name=''):
+    def _set_path(self, session_path: str, session_name=''):
         if not self.is_dummy:
             if self.path:
                 self.bookmarker.remove_all(self.path)
@@ -167,16 +171,16 @@ class Session(ServerSender):
             if len(self.recent_sessions[self.root]) > 7:
                 self.recent_sessions[self.root] = self.recent_sessions[self.root][:7]
             self.send_gui('/ray/gui/server/recent_sessions',
-                         *self.recent_sessions[self.root])
+                          *self.recent_sessions[self.root])
 
-    def get_client(self, client_id:str)->Client:
+    def get_client(self, client_id: str) -> Client:
         for client in self.clients:
             if client.client_id == client_id:
                 return client
 
         sys.stderr.write("client_id %s is not in ray-daemon session\n")
 
-    def get_client_by_address(self, addr)->Client:
+    def get_client_by_address(self, addr: liblo.Address) -> Client:
         if not addr:
             return None
 
@@ -184,7 +188,7 @@ class Session(ServerSender):
             if client.addr and client.addr.url == addr.url:
                 return client
 
-    def _new_client(self, executable, client_id=None)->Client:
+    def _new_client(self, executable: str, client_id=None)->Client:
         client = Client(self)
         client.executable_path = executable
         client.name = basename(executable)
@@ -238,7 +242,7 @@ class Session(ServerSender):
 
         self.clients.remove(client)
 
-    def _restore_client(self, client)->bool:
+    def _restore_client(self, client: Client) -> bool:
         client.sent_to_gui = False
 
         if not self._add_client(client):
@@ -250,7 +254,7 @@ class Session(ServerSender):
 
     def _clients_have_errors(self):
         for client in self.clients:
-            if client.active and client.has_error():
+            if client.nsm_active and client.has_error():
                 return True
         return False
 
@@ -272,7 +276,7 @@ class Session(ServerSender):
         for client in self.clients + self.trashed_clients:
             self.forbidden_ids_set.add(client.client_id)
 
-    def _get_search_template_dirs(self, factory)->list:
+    def _get_search_template_dirs(self, factory: bool) -> list[str]:
         if factory:
             # search templates in /etc/xdg (RaySession installed)
             templates_root = TemplateRoots.factory_clients_xdg
@@ -290,7 +294,7 @@ class Session(ServerSender):
 
         return [TemplateRoots.user_clients]
 
-    def _generate_client_id_as_nsm(self)->str:
+    def _generate_client_id_as_nsm(self) -> str:
         client_id = 'n'
         for i in range(4):
             client_id += random.choice(string.ascii_uppercase)
@@ -376,10 +380,10 @@ class Session(ServerSender):
 
         file.close()
 
-    def generate_abstract_client_id(self, wanted_id:str)->str:
-        ''' generates a client_id from wanted_id
-            not regarding the existing ids in the session
-            or session directory. Useful for templates '''
+    def generate_abstract_client_id(self, wanted_id:str) -> str:
+        '''generates a client_id from wanted_id
+           not regarding the existing ids in the session
+           or session directory. Useful for templates'''
         for to_rm in ('ray-', 'non-', 'carla-'):
             if wanted_id.startswith(to_rm):
                 wanted_id = wanted_id.replace(to_rm, '', 1)
@@ -422,7 +426,7 @@ class Session(ServerSender):
             
         return wanted_id
 
-    def generate_client_id(self, wanted_id="", abstract=False)->str:
+    def generate_client_id(self, wanted_id="", abstract=False) -> str:
         self._update_forbidden_ids_set()
         wanted_id = basename(wanted_id)
 
@@ -457,7 +461,7 @@ class Session(ServerSender):
         self.forbidden_ids_set.add(client_id)
         return client_id
 
-    def _add_client(self, client)->bool:
+    def _add_client(self, client: Client) -> bool:
         if self.load_locked or not self.path:
             return False
 
@@ -476,8 +480,9 @@ class Session(ServerSender):
         
         return True
 
-    def _re_order_clients(self, client_ids_list, src_addr=None, src_path=''):
-        client_newlist = []
+    def _re_order_clients(self, client_ids_list: list[str],
+                          src_addr=None, src_path=''):
+        client_newlist = list[Client]()
 
         for client_id in client_ids_list:
             for client in self.clients:
@@ -500,7 +505,7 @@ class Session(ServerSender):
             self.answer(src_addr, src_path, "clients reordered")
 
         self.send_gui('/ray/gui/session/sort_clients',
-                     *[c.client_id for c in self.clients])
+                      *[c.client_id for c in self.clients])
 
     def _is_path_in_a_session_dir(self, spath):
         if self.is_nsm_locked() and os.getenv('NSM_URL'):
@@ -514,7 +519,7 @@ class Session(ServerSender):
 
         return False
 
-    def _rewrite_user_templates_file(self, content, templates_file)->bool:
+    def _rewrite_user_templates_file(self, content: QDomElement, templates_file)->bool:
         if not os.access(templates_file, os.W_OK):
             return False
 
@@ -588,14 +593,17 @@ class Session(ServerSender):
         else:
             return False
         
-    def send_initial_monitor(self, monitor_addr, monitor_is_client=True):
-        ''' send clients states to a new monitor '''
+    def send_initial_monitor(self, monitor_addr: Address, monitor_is_client=True):
+        '''send clients states to a new monitor'''
         prefix = '/nsm/client/monitor/'
         if not monitor_is_client:
             prefix = '/ray/monitor/'
 
+        n_clients = 0
+
         for client in self.clients:
-            if (client.addr is not None
+            if (monitor_is_client
+                    and client.addr is not None
                     and ray.are_same_osc_port(client.addr.url, monitor_addr.url)):
                 continue
 
@@ -603,17 +611,23 @@ class Session(ServerSender):
                 monitor_addr,
                 prefix + 'client_state',
                 client.client_id,
+                client.get_jack_client_name(),
                 int(client.is_running()))
+            n_clients += 1
 
         for client in self.trashed_clients:
             self.send(
                 monitor_addr,
                 prefix + 'client_state',
                 client.client_id,
-                0)
+                client.get_jack_client_name(),
+                0)            
+            n_clients += 1
 
-    def send_monitor_event(self, event:str, client_id = ''):
-        ''' send an event message to clients capable of ":monitor:" '''
+        self.send(monitor_addr, prefix + 'client_state', '', '', n_clients)
+
+    def send_monitor_event(self, event: str, client_id=''):
+        '''send an event message to clients capable of ":monitor:"'''
         for client in self.clients:
             if (client.client_id != client_id
                     and client.is_capable_of(':monitor:')):
@@ -626,8 +640,8 @@ class Session(ServerSender):
                 self.send(monitor_addr, '/ray/monitor/client_event',
                           client_id, event)
     
-    def _rebuild_templates_database(self, base):        
-        def get_nsm_capable_execs_from_desktop_files()->list:
+    def _rebuild_templates_database(self, base: str):        
+        def get_nsm_capable_execs_from_desktop_files() -> list:
             ''' returns a list of tuples 
                 {'executable': str,
                  'name': str,
@@ -730,7 +744,7 @@ class Session(ServerSender):
         
         template_names = set()
         
-        from_desktop_execs = []
+        from_desktop_execs = list[dict]()
         if base == 'factory':
             from_desktop_execs = get_nsm_capable_execs_from_desktop_files()
 
@@ -918,14 +932,10 @@ class Session(ServerSender):
                 display_name = ''
                 if ct.attribute('tp_display_name_is_label') == 'true':
                     display_name = template_client.label
-                
-                template_dict = {'template_name': template_name,
-                                 'template_client': template_client,
-                                 'display_name': display_name,
-                                 'templates_root': search_path}
 
                 template_names.add(template_name)
-                templates_database.append(template_dict)
+                templates_database.append(AppTemplate(
+                    template_name, template_client, display_name, search_path))
         
         # add fake templates from desktop files
         for fde in from_desktop_execs:
@@ -946,15 +956,10 @@ class Session(ServerSender):
             template_client.prefix_mode = ray.PrefixMode.CLIENT_NAME
             template_client.jack_naming = ray.JackNaming.LONG
             template_client.update_infos_from_desktop_file()
-
-            template_dict = {
-                 'template_name': template_name,
-                 'template_client': template_client,
-                 'display_name': fde['name'],
-                 'templates_root': ''}
             
             template_names.add(template_name)
-            templates_database.append(template_dict)
+            templates_database.append(AppTemplate(
+                template_name, template_client, fde['name'], ''))
 
         if file_rewritten:
             try:
@@ -973,17 +978,18 @@ class OperatingSession(Session):
 
         self.timer = QTimer()
         self.timer_redondant = False
-        self.expected_clients = []
+        self.expected_clients = list[Client]()
 
         self.timer_launch = QTimer()
         self.timer_launch.setInterval(100)
         self.timer_launch.timeout.connect(self._timer_launch_timeout)
-        self.clients_to_launch = []
+        self.clients_to_launch = list[Client]()
 
         self.timer_quit = QTimer()
         self.timer_quit.setInterval(100)
         self.timer_quit.timeout.connect(self._timer_quit_timeout)
-        self.clients_to_quit = []
+        self._client_quitting: Optional[Client] = None
+        self.clients_to_quit = list[Client]()
 
         self.timer_waituser_progress = QTimer()
         self.timer_waituser_progress.setInterval(500)
@@ -1190,11 +1196,16 @@ class OperatingSession(Session):
             self.timer_launch.stop()
 
     def _timer_quit_timeout(self):
+        # if (self._client_quitting is not None
+        #         and self._client_quitting.is_running()):
+        #     return
+        
         if self.clients_to_quit:
-            client = self.clients_to_quit.pop(0)
-            client.stop()
+            self._client_quitting = self.clients_to_quit.pop(0)
+            self._client_quitting.stop()
 
         if not self.clients_to_quit:
+            self._client_quitting = None
             self.timer_quit.stop()
 
     def _timer_wait_user_progress_timeOut(self):
@@ -1207,15 +1218,25 @@ class OperatingSession(Session):
         self.send_gui('/ray/gui/server/progress', ratio)
 
     def _check_externals_states(self):
-        has_externals = False
+        '''checks if client started from external are still alive
+        or if clients launched in terminal have still their process active'''
+        has_alives = False
 
         for client in self.clients:
             if client.is_external:
-                has_externals = True
+                has_alives = True
                 if not os.path.exists('/proc/%i' % client.pid):
                     client.external_finished()
+            
+            elif (client.is_running()
+                    and client.launched_in_terminal
+                    and client.status != ray.ClientStatus.LOSE):
+                has_alives = True
+                if (client.nsm_active
+                        and not os.path.exists('/proc/%i' % client.pid_from_nsm)):
+                    client.nsm_finished_terminal_alive()
 
-        if not has_externals:
+        if not has_alives:
             self.externals_timer.stop()
 
     def _check_windows_appears(self):
@@ -1560,8 +1581,11 @@ class OperatingSession(Session):
             self.next_function()
             return
 
-        keep_client_list = [] # clients we will keep alive
-        byebye_client_list = [] # stopped clients we will remove immediately
+        # clients we will keep alive
+        keep_client_list = list[Client]()
+
+        # stopped clients we will remove immediately
+        byebye_client_list = list[Client]()
 
         if not clear_all_clients:
             for future_client in self.future_clients:
@@ -1595,7 +1619,7 @@ class OperatingSession(Session):
             if client in self.clients:
                 self._remove_client(client)
             else:
-                raise NameError('no client %s to remove' % client.client_id)
+                raise NameError(f'no client {client.client_id} to remove')
 
         if self.expected_clients:
             if len(self.expected_clients) == 1:
@@ -1902,8 +1926,8 @@ for better organization.""")
         self._send_reply("Session template aborted")
         self.set_server_status(ray.ServerStatus.READY)
 
-    def prepare_template(self, new_session_full_name,
-                         template_name, net=False):
+    def prepare_template(self, new_session_full_name: str,
+                         template_name: str, net=False):
         template_root = TemplateRoots.user_sessions
 
         if net:
@@ -2296,10 +2320,10 @@ for better organization.""")
 
         self.message("Commanding smart clients to switch")
         has_switch = False
-        new_client_id_list = []
+        new_client_id_list = list[str]()
 
         # remove stopped clients
-        rm_indexes = []
+        rm_indexes = list[int]()
         for i in range(len(self.clients)):
             client = self.clients[i]
             if not client.is_running():
@@ -2333,7 +2357,7 @@ for better organization.""")
                     if (client.switch_state == ray.SwitchState.NEEDED
                             and client.client_id == future_client.client_id
                             and client.can_switch_with(future_client)):
-                        #we found the good existing client
+                        # we found the good existing client
                         break
                 else:
                     for client in self.clients:
@@ -2346,6 +2370,8 @@ for better organization.""")
 
             if client:
                 client.switch_state = ray.SwitchState.DONE
+                self.send_monitor_event(
+                    f"switched_to:{future_client.client_id}", client.client_id)
                 client.client_id = future_client.client_id
                 client.eat_attributes(future_client)
                 has_switch = True
@@ -2368,6 +2394,22 @@ for better organization.""")
 
         self._re_order_clients(new_client_id_list)
         self.send_gui('/ray/gui/session/sort_clients', *new_client_id_list)
+        
+        # send initial monitor infos for all monitors
+        # Note that a monitor client starting here with the session
+        # will not receive theses messages, because it is not known as capable
+        # of ':monitor:' yet.
+        # However, a monitor client capable of :switch: will get theses messages.
+        # An outside monitor (saved in server.monitor_list) will get theses messages
+        # in all cases. 
+        server = self.get_server()
+        if server is not None:
+            for monitor_addr in server.monitor_list:
+                self.send_initial_monitor(monitor_addr, False)
+                
+            for client in self.clients:
+                if client.is_running() and client.is_capable_of(':monitor:'):
+                    self.send_initial_monitor(client.addr, True)
 
         self._no_future()
 
@@ -2375,7 +2417,6 @@ for better organization.""")
             self.set_server_status(ray.ServerStatus.SWITCH)
         else:
             self.set_server_status(ray.ServerStatus.LAUNCH)
-
 
         #* this part is a little tricky... the clients need some time to
         #* send their 'announce' messages before we can send them 'open'
@@ -2403,7 +2444,7 @@ for better organization.""")
         self.set_server_status(ray.ServerStatus.OPEN)
 
         for client in self.clients:
-            if client.active and client.is_reply_pending():
+            if client.nsm_active and client.is_reply_pending():
                 self.expected_clients.append(client)
             elif client.is_running() and client.is_dumb_client():
                 client.set_status(ray.ClientStatus.NOOP)
@@ -2509,37 +2550,45 @@ for better organization.""")
         QCoreApplication.quit()
 
     def add_client_template(self, src_addr, src_path,
-                            template_name, factory=False, auto_start=True):
+                            template_name, factory=False, auto_start=True,
+                            unique_id=''):
         search_paths = self._get_search_template_dirs(factory)
         base = 'factory' if factory else 'user'
         templates_database = self.get_client_templates_database(base)
 
         # if this client template is not present in the database
         # first, rebuild the database
-        if template_name not in [t['template_name'] for t in templates_database]:
+        if template_name not in [t.template_name for t in templates_database]:
             self._rebuild_templates_database(base)
 
         for t in templates_database:
-            if t['template_name'] == template_name:
-                full_name_files = []
-                template_path = "%s/%s" % (t['templates_root'], template_name)
+            if t.template_name == template_name:
+                full_name_files = list[str]()
+                template_path = os.path.join(t.templates_root, template_name)
 
-                if t['templates_root'] and os.path.isdir(template_path):
+                if t.templates_root and os.path.isdir(template_path):
                     for file in os.listdir(template_path):
                         full_name_files.append(
-                            "%s/%s" % (template_path, file))
+                            os.path.join(template_path, file))
 
-                template_client = t['template_client']
+                template_client = t.template_client
                 client = Client(self)
                 client.protocol = template_client.protocol
                 client.ray_hack = template_client.ray_hack
                 client.ray_net = template_client.ray_net
                 client.template_origin = template_name
-                if t['display_name']:
-                    client.template_origin = t['display_name']
+                if t.display_name:
+                    client.template_origin = t.display_name
                 client.eat_attributes(template_client)
                 client.auto_start = auto_start
-                client.client_id = self.generate_client_id(template_client.client_id)
+
+                if unique_id:
+                    client.client_id = unique_id
+                    client.label = unique_id.replace('_', ' ')
+                    client.jack_naming = ray.JackNaming.LONG
+                else:
+                    client.client_id = self.generate_client_id(
+                        template_client.client_id)
                 
                 if not self._add_client(client):
                     self.answer(src_addr, src_path,
@@ -2572,7 +2621,7 @@ for better organization.""")
                   _translate('GUIMSG', "%s is not an existing template !")
                   % highlight_text(template_name))
 
-    def add_client_template_step_1(self, src_addr, src_path, client):
+    def add_client_template_step_1(self, src_addr, src_path, client: Client):
         client.adjust_files_after_copy(self.name, ray.Template.CLIENT_LOAD)
 
         if client.auto_start:
@@ -2582,12 +2631,12 @@ for better organization.""")
 
         self.answer(src_addr, src_path, client.client_id)
 
-    def add_client_template_aborted(self, src_addr, src_path, client):
+    def add_client_template_aborted(self, src_addr, src_path, client: Client):
         self._remove_client(client)
         self.send(src_addr, '/error', src_path, ray.Err.COPY_ABORTED,
                   _translate('GUIMSG', 'Copy has been aborted !'))
 
-    def close_client(self, client):
+    def close_client(self, client: Client):
         self.set_server_status(ray.ServerStatus.READY)
 
         self.expected_clients.append(client)
@@ -2596,7 +2645,7 @@ for better organization.""")
         self._wait_and_go_to(30000, (self.close_client_substep1, client),
                              ray.WaitFor.STOP_ONE)
 
-    def close_client_substep1(self, client):
+    def close_client_substep1(self, client: Client):
         if client in self.expected_clients:
             client.kill()
 
@@ -2634,7 +2683,7 @@ for better organization.""")
         self.send(self.osc_src_addr, '/reply', self.osc_path,
                   'Client snapshot loaded')
 
-    def start_client(self, client):
+    def start_client(self, client: Client):
         client.start()
         self.next_function()
 
