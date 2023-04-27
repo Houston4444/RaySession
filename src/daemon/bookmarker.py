@@ -223,7 +223,7 @@ class PickerTypeQt4(PickerType):
             bookmarks.append(qUrl)
 
         history_len = stream.readUInt32()
-        history = [stream.readQString() for h in history_len]
+        history = [stream.readQString() for h in range(history_len)]
         current_dir = stream.readQString()
         header_data = stream.readBytes()
         view_mode = stream.readUInt32()
