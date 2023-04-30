@@ -6,6 +6,11 @@
 # The script parse all sessions and modify all RAY-JACKPATCH xml files
 # directly present in the session folder.
 
+# for example:
+#   a2j:USB Keystation 61es [24] (capture): USB Keystation 61es MIDI 1
+# will become :
+#   a2j:USB Keystation 61es (capture): USB Keystation 61es MIDI 1
+# in all RAY-JACKPATCH files.
 
 import xml.etree.ElementTree as ET
 from typing import Iterator, Optional
