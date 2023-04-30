@@ -115,5 +115,3 @@ def list_patch_files() -> Iterator[str]:
 if __name__ == '__main__':
     for patchfile in list_patch_files():
         modify_file(patchfile)
-
-
