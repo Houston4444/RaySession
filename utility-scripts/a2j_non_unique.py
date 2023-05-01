@@ -2,7 +2,7 @@
 
 # run this script if you were using a2j bridge with unique port names
 # (aka port name including the ALSA client ID)
-# and you know use a2j bridge without unique port names.
+# and you now use a2j bridge without unique port names.
 # The script parse all sessions and modify all RAY-JACKPATCH xml files
 # directly present in the session folder.
 
