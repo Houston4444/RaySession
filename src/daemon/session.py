@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 import functools
 import math
 import os
@@ -13,6 +12,7 @@ from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QTimer, QProcess
 from PyQt5.QtXml  import QDomDocument, QDomElement
 import liblo
+from pathlib import Path
 
 import ray
 
@@ -29,6 +29,7 @@ from canvas_saver import CanvasSaver
 from daemon_tools import (
     TemplateRoots, RS, Terminal, get_git_default_un_and_ignored,
     dirname, basename, highlight_text, AppTemplate)
+import ardour_templates
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
@@ -641,8 +642,8 @@ class Session(ServerSender):
                           client_id, event)
     
     def _rebuild_templates_database(self, base: str):        
-        def get_nsm_capable_execs_from_desktop_files() -> list:
-            ''' returns a list of tuples 
+        def get_nsm_capable_execs_from_desktop_files() -> list[dict]:
+            ''' returns a list of dicts
                 {'executable': str,
                  'name': str,
                  'desktop_file': str,
@@ -654,8 +655,8 @@ class Session(ServerSender):
                 '/usr/local',
                 '/usr')
 
-            application_dicts = []
-            
+            application_dicts = list[dict]()
+
             lang = os.getenv('LANG')
             lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
 
@@ -878,7 +879,7 @@ class Session(ServerSender):
                     if (needed_version.startswith('.')
                             or needed_version.endswith('.')
                             or not needed_version.replace('.', '').isdigit()):
-                        #needed-version not writed correctly, ignores it
+                        # needed-version not writed correctly, ignores it
                         needed_version = ''
 
                     if needed_version:
@@ -936,7 +937,37 @@ class Session(ServerSender):
                 template_names.add(template_name)
                 templates_database.append(AppTemplate(
                     template_name, template_client, display_name, search_path))
-        
+                
+                # for Ardour, list ardour templates
+                if (base == 'factory'
+                        and ct.attribute('list_ardour_templates')
+                            in ('true', '1')):
+                    for ard_tp_path in ardour_templates.list_templates_from_exec(
+                            template_client.executable_path):
+                        ard_template_client = Client(self)
+                        ard_template_client.eat_attributes(template_client)
+                        ard_template_client.client_id = template_client.client_id
+
+                        descrip_prefix = _translate(
+                            'ardour_tp', 'Session template "%s"') % ard_tp_path.name
+
+                        dsc = descrip_prefix
+                        dsc += '.'
+                        
+                        tp_dsc = ardour_templates.get_description(ard_tp_path)
+                        if tp_dsc:
+                            dsc += '\n\n'
+                            dsc += tp_dsc
+                        
+                        ard_template_client.description = dsc
+
+                        ard_template_name = f"/ardour_tp/{template_name}/{ard_tp_path.name}"
+                        ard_display_name = f"{template_name} -> {ard_tp_path.name}"
+
+                        templates_database.append(AppTemplate(
+                            ard_template_name, ard_template_client,
+                            ard_display_name, search_path))
+                        
         # add fake templates from desktop files
         for fde in from_desktop_execs:
             if fde['skipped']:
@@ -2589,6 +2620,22 @@ for better organization.""")
                 else:
                     client.client_id = self.generate_client_id(
                         template_client.client_id)
+                
+                # If It is an Ardour template
+                if t.template_name.startswith('/ardour_tp/'):
+                    ard_tp_name = t.template_name.rpartition('/')[2]
+                    ard_tp_path = ardour_templates.get_template_path_from_name(
+                        ard_tp_name, client.executable_path)
+                    ard_tp_copyed = ardour_templates.copy_template_to_session(
+                        ard_tp_path,
+                        Path(self.path),
+                        client.get_prefix_string(),
+                        client.client_id
+                    )
+                    if not ard_tp_copyed:
+                        self.answer(src_addr, src_path, "Failed to copy Ardour template",
+                                    ray.Err.BAD_PROJECT)
+                        return
                 
                 if not self._add_client(client):
                     self.answer(src_addr, src_path,
