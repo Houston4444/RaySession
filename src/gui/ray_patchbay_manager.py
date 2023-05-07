@@ -406,7 +406,8 @@ class RayPatchbayManager(PatchbayManager):
             else:
                 self._last_selected_box_n += 1
 
-            box_n = self._last_selected_box_n % n_max
+            if n_max:
+                box_n = self._last_selected_box_n % n_max
             
         n = 0
         box_found = False
