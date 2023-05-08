@@ -101,7 +101,7 @@ class GuiServerThread(liblo.ServerThread):
             ('/ray/gui/trash/ray_net_update', 's' + ray.RayNet.sisi()),
             ('/ray/gui/trash/remove', 's'),
             ('/ray/gui/trash/clear', ''),
-            ('/ray/gui/favorites/added', 'ssi'),
+            ('/ray/gui/favorites/added', 'ssis'),
             ('/ray/gui/favorites/removed', 'si'),
             ('/ray/gui/preview/clear', ''),
             ('/ray/gui/preview/notes', 's'),

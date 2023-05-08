@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QProcess
 from PyQt5.QtXml  import QDomDocument
+import sys
 
 import ray
 
@@ -155,7 +156,9 @@ class SignaledSession(OperatingSession):
                       "/nsm/server/quit" : "/ray/server/quit"}
                       # /nsm/server/list is not used here because it doesn't
                       # works as /ray/server/list_sessions
-
+        print(sys.version)
+        print('rallv', path, type(path))
+        print('rallo', nsm_equivs.get(path))
         nsm_path = nsm_equivs.get(path)
         func_path = nsm_path if nsm_path else path
 
@@ -1123,7 +1126,7 @@ class SignaledSession(OperatingSession):
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return
-
+        print('qmqmqmqmqm', args)
         factory = bool(args[0])
         template_name: str = args[1]
         auto_start = bool(len(args) <= 2 or args[2] != 'not_start')

@@ -53,7 +53,8 @@ class TemplateSlot(QFrame):
 
         self.ui.toolButtonFavorite.set_session(self.session)
         self.ui.toolButtonFavorite.set_template(
-            self._name, self.client_data.icon, self._factory)
+            self._name, self.client_data.icon, self._factory,
+            self.get_display_name())
 
         if is_dark_theme(self):
             self.ui.toolButtonUser.setIcon(
@@ -65,7 +66,8 @@ class TemplateSlot(QFrame):
         self.ui.toolButtonIcon.setIcon(
             get_app_icon(self.client_data.icon, self))
         self.ui.toolButtonFavorite.set_template(
-            self._name, self.client_data.icon, self._factory)
+            self._name, self.client_data.icon, self._factory,
+            self.get_display_name())
 
     def update_ray_hack_data(self, *args):
         if self.client_data.ray_hack is None:
@@ -80,7 +82,7 @@ class TemplateSlot(QFrame):
     def set_display_name(self, display_name: str):
         self.ui.label.setText(display_name)
 
-    def get_display_name(self)->str:
+    def get_display_name(self) -> str:
         return self.ui.label.text()
 
     def remove_template(self):
@@ -247,8 +249,8 @@ class AddApplicationDialog(ChildDialog):
 
         self.ui.filterBar.setFocus()
 
-    def _favorite_added(self, template_name: str,
-                        template_icon: str, factory: bool):
+    def _favorite_added(self, template_name: str, template_icon: str,
+                        factory: bool, display_name: str):
         for i in range(self.ui.templateList.count()):
             item: TemplateItem = self.ui.templateList.item(i)
             if item is None:
@@ -499,7 +501,8 @@ class AddApplicationDialog(ChildDialog):
 
         self.ui.toolButtonUser.setVisible(not item.is_factory)
         self.ui.toolButtonFavorite.set_template(
-            item.data(TEMPLATE_NAME_DATA), cdata.icon, item.is_factory)
+            item.data(TEMPLATE_NAME_DATA), cdata.icon, item.is_factory,
+            item.get_display_name())
         self.ui.toolButtonFavorite.set_as_favorite(self.session.is_favorite(
             item.data(TEMPLATE_NAME_DATA), item.is_factory))
 

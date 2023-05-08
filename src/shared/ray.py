@@ -1,6 +1,7 @@
 
 
 import argparse
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 import liblo
 import os
@@ -183,12 +184,12 @@ class Systray:
     SESSION_ONLY = 1
     ALWAYS = 2
 
-
-class Favorite():
-    def __init__(self, name: str, icon: str, factory: bool):
-        self.name = name
-        self.icon = icon
-        self.factory = factory
+@dataclass
+class Favorite:
+    name: str
+    icon: str
+    factory: bool
+    display_name: str
 
 
 class ScriptFile:
@@ -199,7 +200,7 @@ class ScriptFile:
     CLOSE = 0x8
 
     @classmethod
-    def by_string(cls, action:str)->int:
+    def by_string(cls, action:str) -> int:
         if action == 'load':
             return cls.LOAD
         if action == 'save':

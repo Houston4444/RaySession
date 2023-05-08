@@ -77,13 +77,13 @@ def init_daemon_tools():
     RS.set_settings(l_settings)
 
     RS.set_non_active_clients(
-        ray.get_list_in_settings(l_settings, 'daemon/non_active_list'))    
+        ray.get_list_in_settings(l_settings, 'daemon/non_active_list'))
     RS.set_favorites(ray.get_list_in_settings(l_settings, 'daemon/favorites'))
     TemplateRoots.init_config()
 
-def get_git_default_un_and_ignored(executable:str)->tuple:
-    ignored = []
-    unignored = []
+def get_git_default_un_and_ignored(executable:str) -> tuple[list[str], list[str]]:
+    ignored = list[str]()
+    unignored = list[str]()
 
     if executable in ('luppp', 'sooperlooper', 'sooperlooper_nsm'):
         unignored.append('.wav')
@@ -119,8 +119,24 @@ class RS:
 
     @classmethod
     def set_favorites(cls, favorites: list[ray.Favorite]):
-        cls.favorites = favorites
-
+        cls.favorites.clear()
+        
+        for fav in favorites:
+            fav_dict = fav.__dict__
+            if (isinstance(fav_dict.get('name'), str)
+                    and isinstance(fav_dict.get('factory'), bool)
+                    and isinstance(fav_dict.get('icon'), str)):
+                display_name = fav_dict.get('display_name')
+                if not isinstance(display_name, str):
+                    display_name = ''
+                
+                if not display_name:
+                    display_name = fav_dict.get('name')
+                cls.favorites.append(ray.Favorite(
+                    fav_dict.get('name'),
+                    fav_dict.get('icon'),
+                    fav_dict.get('factory'),
+                    display_name))
 
 class TemplateRoots:
     net_session_name = ".ray-net-session-templates"

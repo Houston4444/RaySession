@@ -281,9 +281,10 @@ class FakeToolButton(QToolButton):
 class FavoriteToolButton(QToolButton):
     def __init__(self, parent):
         QToolButton.__init__(self, parent)
-        self._template_name = ""
-        self._template_icon = ""
+        self._template_name = ''
+        self._template_icon = ''
         self._factory = True
+        self._display_name = ''
         self._state = False
         self._favicon_not = QIcon(':scalable/breeze/draw-star.svg')
         self._favicon_yes = QIcon(':scalable/breeze/star-yellow.svg')
@@ -300,11 +301,12 @@ class FavoriteToolButton(QToolButton):
     def set_session(self, session: 'Session'):
         self.session = session
 
-    def set_template(self, template_name: str,
-                    template_icon: str, factory: bool):
+    def set_template(self, template_name: str, template_icon: str,
+                     factory: bool, display_name: str):
         self._template_name = template_name
         self._template_icon = template_icon
         self._factory = factory
+        self._display_name = display_name
 
     def set_as_favorite(self, yesno: bool):
         self._state = yesno
@@ -319,7 +321,8 @@ class FavoriteToolButton(QToolButton):
             self.session.remove_favorite(self._template_name, self._factory)
         else:
             self.session.add_favorite(
-                self._template_name, self._template_icon, self._factory)
+                self._template_name, self._template_icon,
+                self._factory, self._display_name)
 
 
 class CanvasSplitterHandle(QSplitterHandle):

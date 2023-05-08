@@ -43,7 +43,7 @@ class Signaler(QObject):
 
     client_properties_state_changed = pyqtSignal(str, bool)
 
-    favorite_added = pyqtSignal(str, str, bool)
+    favorite_added = pyqtSignal(str, str, bool, str)
     favorite_removed = pyqtSignal(str, bool)
 
     canvas_callback = pyqtSignal(enum.IntEnum, tuple)

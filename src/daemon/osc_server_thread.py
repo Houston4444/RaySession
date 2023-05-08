@@ -1329,17 +1329,19 @@ class OscServerThread(ClientCommunicating):
     def rayDuplicateState(self, path, args, types, src_addr):
         pass
 
-    @ray_method('/ray/favorites/add', 'ssi')
+    @ray_method('/ray/favorites/add', 'ssis')
     def rayFavoriteAdd(self, path, args, types, src_addr):
-        name, icon, int_factory = args
+        name, icon, int_factory, display_name = args
 
         for favorite in RS.favorites:
             if (favorite.name == name
                     and bool(int_factory) == favorite.factory):
                 favorite.icon = icon
+                favorite.display_name = display_name
                 break
         else:
-            RS.favorites.append(ray.Favorite(name, icon, bool(int_factory)))
+            RS.favorites.append(
+                ray.Favorite(name, icon, bool(int_factory), display_name))
 
         self.send_gui('/ray/gui/favorites/added', *args)
 
@@ -1432,8 +1434,11 @@ class OscServerThread(ClientCommunicating):
         self.session.canvas_saver.send_all_group_positions(gui_addr)
 
         for favorite in RS.favorites:
+            print('fafav', favorite)
+            print(type(favorite))
             self.send(gui_addr, "/ray/gui/favorites/added",
-                      favorite.name, favorite.icon, int(favorite.factory))
+                      favorite.name, favorite.icon, int(favorite.factory),
+                      favorite.display_name)
 
         for client in self.session.clients:
             self.send(gui_addr,
