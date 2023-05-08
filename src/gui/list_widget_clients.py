@@ -515,8 +515,13 @@ class ListWidgetClients(QListWidget):
     @pyqtSlot()
     def _launch_favorite(self):
         template_name, factory = self.sender().data()
-        self.to_daemon('/ray/session/add_client_template',
-                       int(factory), template_name)
+        print('chiccicic', int(factory), template_name)
+        self.to_daemon(
+            '/ray/session/add_client_template',
+            int(factory),
+            template_name,
+            'start',
+            '')
 
     def create_client_widget(self, client_data):
         item = ClientItem(self, client_data)
