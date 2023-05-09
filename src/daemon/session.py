@@ -70,6 +70,8 @@ class Session(ServerSender):
         self.canvas_saver = CanvasSaver(self)
         
         self.osc_src_addr: liblo.Address = None
+        
+        self._time_at_open = 0
 
     #############
     def osc_reply(self, *args):

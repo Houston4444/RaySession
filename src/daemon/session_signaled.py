@@ -9,6 +9,7 @@ from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QProcess
 from PyQt5.QtXml  import QDomDocument
 import sys
+import inspect
 
 import ray
 
@@ -156,9 +157,6 @@ class SignaledSession(OperatingSession):
                       "/nsm/server/quit" : "/ray/server/quit"}
                       # /nsm/server/list is not used here because it doesn't
                       # works as /ray/server/list_sessions
-        print(sys.version)
-        print('rallv', path, type(path))
-        print('rallo', nsm_equivs.get(path))
         nsm_path = nsm_equivs.get(path)
         func_path = nsm_path if nsm_path else path
 

@@ -515,7 +515,6 @@ class ListWidgetClients(QListWidget):
     @pyqtSlot()
     def _launch_favorite(self):
         template_name, factory = self.sender().data()
-        print('chiccicic', int(factory), template_name)
         self.to_daemon(
             '/ray/session/add_client_template',
             int(factory),
@@ -596,7 +595,7 @@ class ListWidgetClients(QListWidget):
 
                 for favorite in self.session.favorite_list:
                     act_app = fav_menu.addAction(
-                        get_app_icon(favorite.icon, self), favorite.name)
+                        get_app_icon(favorite.icon, self), favorite.display_name)
                     act_app.setData([favorite.name, favorite.factory])
                     act_app.triggered.connect(self._launch_favorite)
 
