@@ -2628,6 +2628,11 @@ for better organization.""")
                     ard_tp_name = t.template_name.rpartition('/')[2]
                     ard_tp_path = ardour_templates.get_template_path_from_name(
                         ard_tp_name, client.executable_path)
+                    if ard_tp_path is None:
+                        self.answer(src_addr, src_path, "Failed to copy Ardour template",
+                                    ray.Err.BAD_PROJECT)
+                        return
+                    
                     ard_tp_copyed = ardour_templates.copy_template_to_session(
                         ard_tp_path,
                         Path(self.path),

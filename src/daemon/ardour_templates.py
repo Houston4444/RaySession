@@ -9,11 +9,8 @@ import xml.etree.ElementTree as ET
 _logger = logging.getLogger()
 
 
-def list_templates(ardour_version: int) -> Iterator[Path]:
-    templates_path = \
-        Path.home() / '.config' / f'ardour{str(ardour_version)}' / 'templates'
-
-    if not templates_path.exists():
+def list_templates(templates_path: Path) -> Iterator[Path]:
+    if not templates_path.is_dir():
         return
     
     for path in templates_path.iterdir():
@@ -22,11 +19,28 @@ def list_templates(ardour_version: int) -> Iterator[Path]:
             if tp_file.is_file():
                 yield path
 
-def get_template_path_from_name(template_name: str, executable: str) -> Path:
-    ard_version = get_executable_version(executable)
-    return (Path.home() / '.config' / f'ardour{str(ard_version)}'
-            / 'templates' / template_name)
- 
+def get_template_path_from_name(
+        template_name: str, executable: str) -> Optional[Path]:
+    templates_dir = get_templates_dir(executable)
+    if templates_dir is None:
+        return None
+    return templates_dir / template_name
+
+def get_templates_dir(executable: str) -> Optional[Path]:
+    if executable.lower().startswith('ardour'):
+        ard_version = get_executable_version(executable)
+        if ard_version is None:
+            return None
+        
+        return Path.home() / '.config' / f'ardour{ard_version}' / 'templates'
+    
+    if executable.lower().startswith('mixbus'):
+        base_exe = executable.rpartition('/')[2]
+        
+        return Path.home() / '.config' / base_exe.lower() / 'templates'
+    
+    return None
+
 def get_description(template_path: Path) -> str:
     tp_file_path = template_path / f'{template_path.name}.template'
     
@@ -63,7 +77,7 @@ def get_executable_version(executable: str) -> Optional[int]:
         version_str = low_name[-1] + version_str
         low_name = low_name[:-1]
         
-    if low_name == 'ardour' and version_str:
+    if low_name in ('ardour', 'mixbus') and version_str:
         return int(version_str)
 
     with open(exec_path, 'r') as f:
@@ -77,9 +91,9 @@ def get_executable_version(executable: str) -> Optional[int]:
     return None
 
 def list_templates_from_exec(executable: str) -> Iterator[Path]:
-    version = get_executable_version(executable)
-    if version:
-        for tp_name in list_templates(version):
+    templates_path = get_templates_dir(executable)
+    if templates_path:
+        for tp_name in list_templates(templates_path):
             yield tp_name
 
 def copy_template_to_session(template: Path, session_path: Path,
@@ -125,15 +139,3 @@ def copy_template_to_session(template: Path, session_path: Path,
         return False
 
     return True
-
-
-if __name__ == '__main__':
-    for tp in list_templates_from_exec('ardour'):
-        print(tp.name)
-        if tp.name == 'Gazoduc':
-            # copy_template_to_session(
-            #     tp, Path.home() / 'ray_tests', 'cholola', 'mikel')
-            # # copy_template_to_session(
-            # #     tp, Path('/usr') / 'ray_tests', 'cholola', 'mikel')
-            print(get_description(tp))
-            break

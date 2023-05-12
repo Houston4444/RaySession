@@ -1942,9 +1942,22 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         else:
             desk_file_found = False
+            
+            # alter_exec is used for Mixbus but could be used by others
+            # if the executable is a symlink, we can search desktop file
+            # finding the symlink target as executable in desktop file.
+            alter_exec = None
+            full_exec = shutil.which(self.executable_path)
+
+            if full_exec is not None:
+                if Path(full_exec).is_symlink():
+                    try:
+                        alter_exec = str(Path(full_exec).readlink())
+                    except BaseException as e:
+                        _logger.warning(str(e))
 
             for desk_data_path in desk_path_list:
-                desk_app_path = desk_data_path.joinpath('applications')
+                desk_app_path = desk_data_path / 'applications'
 
                 if not desk_app_path.is_dir():
                     continue
@@ -1968,7 +1981,9 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                     for line in contents.splitlines():
                         if line.startswith('Exec='):
                             value = line.partition('=')[2]
-                            if self.executable_path in value.split():
+                            if (self.executable_path in value.split()
+                                    or (alter_exec is not None
+                                        and alter_exec in value.split())):
                                 desk_file_found = True
 
                                 self.desktop_file = desk_path.name
