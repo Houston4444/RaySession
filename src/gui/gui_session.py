@@ -385,7 +385,6 @@ class SignaledSession(Session):
         self.main_win.trash_clear()
 
     def _ray_gui_favorites_added(self, path, args):
-        print('favooadded', args)
         template_name, icon_name, int_factory, display_name = args
 
         for favorite in self.favorite_list:
