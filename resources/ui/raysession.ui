@@ -921,6 +921,8 @@ QToolButton {border: none}</string>
     <addaction name="separator"/>
     <addaction name="actionSystemTrayIconOptions"/>
     <addaction name="actionMakeReappearDialogs"/>
+    <addaction name="separator"/>
+    <addaction name="actionPreferences"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -1496,6 +1498,17 @@ QToolButton {border: none}</string>
    </property>
    <property name="text">
     <string>Convert &amp;session to NSM file format</string>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="icon">
+    <iconset theme="preferences"/>
+   </property>
+   <property name="text">
+    <string>Preferences</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
  </widget>

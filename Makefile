@@ -84,6 +84,7 @@ raysession: src/gui/ui/abort_copy.py \
 	    src/gui/ui/script_info.py \
 	    src/gui/ui/script_user_action.py \
 	    src/gui/ui/session_notes.py \
+		src/gui/ui/settings.py \
 	    src/gui/ui/snapshot_name.py \
 	    src/gui/ui/snapshots_info.py \
 	    src/gui/ui/snapshot_progress.py \
