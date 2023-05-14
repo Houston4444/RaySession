@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <property name="elideMode">
       <enum>Qt::ElideLeft</enum>
@@ -33,7 +33,8 @@
      </property>
      <widget class="QWidget" name="tabDaemon">
       <attribute name="icon">
-       <iconset theme="daemon"/>
+       <iconset theme="daemon">
+        <normaloff>.</normaloff>.</iconset>
       </attribute>
       <attribute name="title">
        <string>Daemon</string>
@@ -42,35 +43,35 @@
        <item>
         <widget class="QCheckBox" name="checkBoxBookmarks">
          <property name="text">
-          <string>Provide bookmarks for session folder</string>
+          <string/>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QCheckBox" name="checkBoxAutoSnapshot">
          <property name="text">
-          <string>Auto snapshot at save</string>
+          <string/>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QCheckBox" name="checkBoxDesktopsMemory">
          <property name="text">
-          <string>Desktops memory</string>
+          <string/>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QCheckBox" name="checkBoxSessionScripts">
          <property name="text">
-          <string>Session scripts</string>
+          <string/>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QCheckBox" name="checkBoxGuiStates">
          <property name="text">
-          <string>Remember optional GUI states</string>
+          <string/>
          </property>
         </widget>
        </item>
@@ -91,7 +92,8 @@
      </widget>
      <widget class="QWidget" name="tabDisplay">
       <attribute name="icon">
-       <iconset theme="preferences-desktop-display"/>
+       <iconset theme="preferences-desktop-display">
+        <normaloff>.</normaloff>.</iconset>
       </attribute>
       <attribute name="title">
        <string>Display</string>
@@ -100,21 +102,21 @@
        <item>
         <widget class="QCheckBox" name="checkBoxMenuBar">
          <property name="text">
-          <string>Show menu bar</string>
+          <string/>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QCheckBox" name="checkBoxMessages">
          <property name="text">
-          <string>Show messages</string>
+          <string/>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QCheckBox" name="checkBoxJackPatchbay">
          <property name="text">
-          <string>Show JACK patchbay</string>
+          <string/>
          </property>
         </widget>
        </item>
@@ -142,7 +144,8 @@
             <string>Show patchbay preferences</string>
            </property>
            <property name="icon">
-            <iconset theme="preferences"/>
+            <iconset theme="preferences">
+             <normaloff>.</normaloff>.</iconset>
            </property>
           </widget>
          </item>
@@ -171,7 +174,7 @@
        <item>
         <widget class="QCheckBox" name="checkBoxKeepFocus">
          <property name="text">
-          <string>Keep focus while opening clients</string>
+          <string/>
          </property>
         </widget>
        </item>
@@ -192,7 +195,8 @@
      </widget>
      <widget class="QWidget" name="tabTrayIcon">
       <attribute name="icon">
-       <iconset theme="org.kde.plasma.systemtray"/>
+       <iconset theme="org.kde.plasma.systemtray">
+        <normaloff>.</normaloff>.</iconset>
       </attribute>
       <attribute name="title">
        <string>Tray Icon</string>
@@ -257,7 +261,8 @@
      </widget>
      <widget class="QWidget" name="tabDialogs">
       <attribute name="icon">
-       <iconset theme="dialog-messages"/>
+       <iconset theme="dialog-messages">
+        <normaloff>.</normaloff>.</iconset>
       </attribute>
       <attribute name="title">
        <string>Dialogs</string>
