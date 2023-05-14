@@ -35,6 +35,8 @@ class Session:
         server = GuiServerThread.instance()
         server.start()
 
+        RS.set_signaler(self.signaler)
+
         self.daemon_manager = DaemonManager(self)
         if CommandLineArgs.daemon_url:
             self.daemon_manager.set_osc_address(CommandLineArgs.daemon_url)

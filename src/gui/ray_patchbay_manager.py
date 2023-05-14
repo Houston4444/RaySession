@@ -5,13 +5,10 @@ from typing import TYPE_CHECKING, Any
 import os
 import sys
 
-from PyQt5.QtCore import QLocale, QUrl
-from PyQt5.QtGui import QDesktopServices
-
 import ray
 import xdg
 from gui_server_thread import GuiServerThread
-from gui_tools import RS, get_code_root, is_dark_theme, RayIcon
+from gui_tools import RS, get_code_root
 
 from jack_renaming_tools import group_belongs_to_client
 from patchbay.base_elements import (Group, GroupPos, PortgroupMem,

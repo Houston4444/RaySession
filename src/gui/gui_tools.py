@@ -2,12 +2,16 @@ import argparse
 import os
 from pathlib import Path
 import sys
-from PyQt5.QtCore import QSettings, QSize, QFile
+from typing import TYPE_CHECKING
+from PyQt5.QtCore import QSettings, QSize, QFile, QObject, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QIcon, QPixmap, QPalette
 from liblo import Address
 
 import ray
+
+if TYPE_CHECKING:
+    from gui_signaler import Signaler
 
 _translate = QApplication.translate
 
@@ -31,7 +35,9 @@ class RS:
     HD_SystrayClose = 0x040
     HD_StartupRecentSessions = 0x080
     HD_ArdourConversion = 0x100
-
+    
+    _signaler: 'Signaler' = None
+    
     @classmethod
     def set_settings(cls, settings):
         del cls.settings
@@ -52,10 +58,19 @@ class RS:
             hidden_dialogs &= ~hiddeable_dialog
 
         cls.settings.setValue('hidden_dialogs', hidden_dialogs)
+        
+        if cls._signaler is not None:
+            cls._signaler.hiddens_changed.emit(hidden_dialogs)
 
     @classmethod
     def reset_hiddens(cls):
         cls.settings.setValue('hidden_dialogs', 0)
+        if cls._signaler is not None:
+            cls._signaler.hiddens_changed.emit(0)
+        
+    @classmethod
+    def set_signaler(cls, signaler: 'Signaler'):
+        cls._signaler = signaler
 
 
 class ErrDaemon:
@@ -78,6 +93,7 @@ class RayAbstractIcon(QIcon):
             QPixmap(
                 ':scalable/%s/disabled/%s' %
                 (breeze, icon_name)), QIcon.Disabled, QIcon.Off)
+
 
 def RayIcon(icon_name: str, dark=False) -> RayAbstractIcon:
     if dark and icon_name in _RAY_ICONS_CACHE_DARK.keys():
@@ -261,7 +277,6 @@ def basename(*args) -> str:
 
 def get_code_root() -> Path:
     return Path(__file__).parent.parent.parent
-    return dirname(dirname(dirname(os.path.realpath(__file__))))
 
 def server_status_string(server_status: int) -> str:
     server_status_strings = {
@@ -278,10 +293,10 @@ def server_status_string(server_status: int) -> str:
         ray.ServerStatus.CLOSE   : _translate('server status', "close"),
         ray.ServerStatus.SNAPSHOT: _translate('server_status', "snapshot"),
         ray.ServerStatus.REWIND  : _translate('server_status', "rewind"),
-        ray.ServerStatus.WAIT_USER : _translate('server_status', "waiting"),
-        ray.ServerStatus.OUT_SAVE  : _translate('server_status', "save"),
+        ray.ServerStatus.WAIT_USER   : _translate('server_status', "waiting"),
+        ray.ServerStatus.OUT_SAVE    : _translate('server_status', "save"),
         ray.ServerStatus.OUT_SNAPSHOT: _translate('server_status', "snapshot"),
-        ray.ServerStatus.SCRIPT : _translate('server_status', "script")}
+        ray.ServerStatus.SCRIPT  : _translate('server_status', "script")}
 
     if not 0 <= server_status < len(server_status_strings):
         return _translate('server status', "invalid")

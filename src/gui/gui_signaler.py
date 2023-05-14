@@ -46,6 +46,8 @@ class Signaler(QObject):
     favorite_added = pyqtSignal(str, str, bool, str)
     favorite_removed = pyqtSignal(str, bool)
 
+    hiddens_changed = pyqtSignal(int)
+
     canvas_callback = pyqtSignal(enum.IntEnum, tuple)
 
     def __init__(self):

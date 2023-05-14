@@ -14,6 +14,7 @@ import add_application_dialog
 import open_session_dialog
 import child_dialogs
 import snapshots_dialog
+import preferences_dialog
 import list_widget_clients
 
 from gui_tools import (
@@ -137,7 +138,7 @@ class MainWindow(QMainWindow):
             self.restoreState(RS.settings.value('MainWindow/WindowState'))
         self.ui.actionShowMenuBar.activate(RS.settings.value(
             'MainWindow/ShowMenuBar', False, type=bool))
-        self.ui.actionToggleShowMessages.triggered.connect(
+        self.ui.actionToggleShowMessages.toggled.connect(
             self._show_messages_widget)
 
         self.ui.actionToggleShowMessages.setChecked(
@@ -216,8 +217,10 @@ class MainWindow(QMainWindow):
         self.ui.actionDonate.triggered.connect(self.donate)
         self.ui.actionSystemTrayIconOptions.triggered.connect(
             self._open_systray_options)
-        self.ui.actionMakeReappearDialogs.triggered.connect(
-            self._make_all_dialogs_reappear)
+        # self.ui.actionMakeReappearDialogs.triggered.connect(
+        #     self._make_all_dialogs_reappear)
+        self.ui.actionPreferences.triggered.connect(
+            self._show_preferences_dialog)
 
         self.ui.lineEditServerStatus.status_pressed.connect(
             self._status_bar_pressed)
@@ -416,6 +419,8 @@ class MainWindow(QMainWindow):
                         and self.session.server_status != ray.ServerStatus.OFF))):
             self._systray.show()
 
+        self._preferences_dialog: preferences_dialog.PreferencesDialog = None
+
         self._startup_time = time.time()
 
     def _splitter_session_vs_messages_moved(self, pos: int, index: int):
@@ -492,26 +497,20 @@ class MainWindow(QMainWindow):
     def _open_file_manager(self):
         self.to_daemon('/ray/session/open_folder')
 
-    def _open_systray_options(self):
-        dialog = child_dialogs.SystrayManagement(self)
-        dialog.set_systray_mode(self._systray_mode)
-        dialog.set_wild_shutdown(self._wild_shutdown)
-        dialog.set_reversed_state(self._reversed_systray_menu)
-
-        dialog.exec()
-        if not dialog.result():
-            return
-
-        self._systray_mode = dialog.get_systray_mode()
-        self._wild_shutdown = dialog.wild_shutdown()
-        reversed_systray_menu = dialog.menu_should_be_reversed()
-        RS.settings.setValue('systray_mode', self._systray_mode)
-        RS.settings.setValue('wild_shutdown', self._wild_shutdown)
-        RS.settings.setValue('reversed_systray_menu', reversed_systray_menu)
-
+    def change_systray_options(
+            self, systray_mode: int, wild_shutdown: bool,
+            reversed_systray_menu: bool):        
+        self._systray_mode = systray_mode
+        self._wild_shutdown = wild_shutdown
+        
         if reversed_systray_menu != self._reversed_systray_menu:
             self._reversed_systray_menu = reversed_systray_menu
             self._build_systray_menu()
+
+        RS.settings.setValue('systray_mode', self._systray_mode)
+        RS.settings.setValue('wild_shutdown', self._wild_shutdown)
+        RS.settings.setValue('reversed_systray_menu',
+                             self._reversed_systray_menu)
 
         if self._systray_mode == ray.Systray.OFF:
             self._systray.hide()
@@ -522,6 +521,41 @@ class MainWindow(QMainWindow):
                 self._systray.show()
         elif self._systray_mode == ray.Systray.ALWAYS:
             self._systray.show()
+
+    def _open_systray_options(self):
+        self._show_preferences_dialog()
+        if self._preferences_dialog is not None:
+            self._preferences_dialog.set_on_tab(
+                preferences_dialog.PreferencesTab.SYSTRAY)
+        # dialog = child_dialogs.SystrayManagement(self)
+        # dialog.set_systray_mode(self._systray_mode)
+        # dialog.set_wild_shutdown(self._wild_shutdown)
+        # dialog.set_reversed_state(self._reversed_systray_menu)
+
+        # dialog.exec()
+        # if not dialog.result():
+        #     return
+
+        # self._systray_mode = dialog.get_systray_mode()
+        # self._wild_shutdown = dialog.wild_shutdown()
+        # reversed_systray_menu = dialog.menu_should_be_reversed()
+        # RS.settings.setValue('systray_mode', self._systray_mode)
+        # RS.settings.setValue('wild_shutdown', self._wild_shutdown)
+        # RS.settings.setValue('reversed_systray_menu', reversed_systray_menu)
+
+        # if reversed_systray_menu != self._reversed_systray_menu:
+        #     self._reversed_systray_menu = reversed_systray_menu
+        #     self._build_systray_menu()
+
+        # if self._systray_mode == ray.Systray.OFF:
+        #     self._systray.hide()
+        # elif self._systray_mode == ray.Systray.SESSION_ONLY:
+        #     if self.session.server_status == ray.ServerStatus.OFF:
+        #         self._systray.hide()
+        #     else:
+        #         self._systray.show()
+        # elif self._systray_mode == ray.Systray.ALWAYS:
+        #     self._systray.show()
 
     def _raise_window(self):
         if self.mouse_is_inside:
@@ -1039,18 +1073,6 @@ class MainWindow(QMainWindow):
                 dialog = child_dialogs.WaitingCloseUserDialog(self)
                 dialog.exec()
 
-    def _make_all_dialogs_reappear(self):
-        ok = QMessageBox.question(
-            self,
-            _translate('hidden_dialogs', 'Make reappear dialog windows'),
-            _translate('hidden_dialogs',
-                       'Do you want to make reappear all dialogs you wanted to hide ?'))
-
-        if not ok:
-            return
-
-        RS.reset_hiddens()
-
     def _build_systray_menu(self):
         is_shown = self._systray.isVisible()
         self._systray.hide()
@@ -1288,6 +1310,12 @@ class MainWindow(QMainWindow):
     def donate(self, display_no_again=False):
         dialog = child_dialogs.DonationsDialog(self, display_no_again)
         dialog.exec()
+
+    def _show_preferences_dialog(self):
+        if self._preferences_dialog is None:
+            self._preferences_dialog = preferences_dialog.PreferencesDialog(self)
+        
+        self._preferences_dialog.show()
 
     def edit_notes(self, close=False):
         icon_str = 'notes'
