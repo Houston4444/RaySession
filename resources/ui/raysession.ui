@@ -919,8 +919,6 @@ QToolButton {border: none}</string>
     <addaction name="separator"/>
     <addaction name="actionKeepFocus"/>
     <addaction name="separator"/>
-    <addaction name="actionSystemTrayIconOptions"/>
-    <addaction name="actionMakeReappearDialogs"/>
     <addaction name="separator"/>
     <addaction name="actionPreferences"/>
    </widget>
@@ -951,6 +949,8 @@ QToolButton {border: none}</string>
     <addaction name="actionDesktopsMemory"/>
     <addaction name="actionSessionScripts"/>
     <addaction name="actionRememberOptionalGuiStates"/>
+    <addaction name="separator"/>
+    <addaction name="actionPreferences"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSession"/>
@@ -1360,15 +1360,6 @@ QToolButton {border: none}</string>
     <string>&amp;Edit Session Notes</string>
    </property>
   </action>
-  <action name="actionMakeReappearDialogs">
-   <property name="icon">
-    <iconset theme="show-dialogs">
-     <normaloff>.</normaloff>.</iconset>
-   </property>
-   <property name="text">
-    <string>Make &amp;reappear all dialog windows</string>
-   </property>
-  </action>
   <action name="actionSaveTemplateSession_2">
    <property name="icon">
     <iconset theme="document-save-as-template">
@@ -1459,11 +1450,6 @@ QToolButton {border: none}</string>
     <string>System tray &amp;icon options</string>
    </property>
   </action>
-  <action name="actionezf">
-   <property name="text">
-    <string>ezf</string>
-   </property>
-  </action>
   <action name="actionConvertArdourSession">
    <property name="icon">
     <iconset theme="ardour">
@@ -1502,7 +1488,8 @@ QToolButton {border: none}</string>
   </action>
   <action name="actionPreferences">
    <property name="icon">
-    <iconset theme="preferences"/>
+    <iconset theme="preferences">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Preferences</string>

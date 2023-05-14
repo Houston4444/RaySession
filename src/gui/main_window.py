@@ -217,8 +217,6 @@ class MainWindow(QMainWindow):
         self.ui.actionDonate.triggered.connect(self.donate)
         self.ui.actionSystemTrayIconOptions.triggered.connect(
             self._open_systray_options)
-        # self.ui.actionMakeReappearDialogs.triggered.connect(
-        #     self._make_all_dialogs_reappear)
         self.ui.actionPreferences.triggered.connect(
             self._show_preferences_dialog)
 
@@ -255,7 +253,7 @@ class MainWindow(QMainWindow):
         self._control_menu.addAction(self.ui.actionSessionScripts)
         self._control_menu.addAction(self.ui.actionRememberOptionalGuiStates)
         self._control_menu.addSeparator()
-        self._control_menu.addAction(self.ui.actionMakeReappearDialogs)
+        self._control_menu.addAction(self.ui.actionPreferences)
 
         self._control_tool_button = self.ui.toolBar.widgetForAction(
             self.ui.actionControlMenu)
@@ -527,35 +525,6 @@ class MainWindow(QMainWindow):
         if self._preferences_dialog is not None:
             self._preferences_dialog.set_on_tab(
                 preferences_dialog.PreferencesTab.SYSTRAY)
-        # dialog = child_dialogs.SystrayManagement(self)
-        # dialog.set_systray_mode(self._systray_mode)
-        # dialog.set_wild_shutdown(self._wild_shutdown)
-        # dialog.set_reversed_state(self._reversed_systray_menu)
-
-        # dialog.exec()
-        # if not dialog.result():
-        #     return
-
-        # self._systray_mode = dialog.get_systray_mode()
-        # self._wild_shutdown = dialog.wild_shutdown()
-        # reversed_systray_menu = dialog.menu_should_be_reversed()
-        # RS.settings.setValue('systray_mode', self._systray_mode)
-        # RS.settings.setValue('wild_shutdown', self._wild_shutdown)
-        # RS.settings.setValue('reversed_systray_menu', reversed_systray_menu)
-
-        # if reversed_systray_menu != self._reversed_systray_menu:
-        #     self._reversed_systray_menu = reversed_systray_menu
-        #     self._build_systray_menu()
-
-        # if self._systray_mode == ray.Systray.OFF:
-        #     self._systray.hide()
-        # elif self._systray_mode == ray.Systray.SESSION_ONLY:
-        #     if self.session.server_status == ray.ServerStatus.OFF:
-        #         self._systray.hide()
-        #     else:
-        #         self._systray.show()
-        # elif self._systray_mode == ray.Systray.ALWAYS:
-        #     self._systray.show()
 
     def _raise_window(self):
         if self.mouse_is_inside:
