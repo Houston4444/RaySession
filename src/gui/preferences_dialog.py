@@ -31,7 +31,8 @@ class PreferencesDialog(ChildDialog):
         
         self._main_win = parent
         wui = self._main_win.ui
-            
+        
+        # auto connect and fill checkboxes with matching actions
         self._check_box_actions = {
             self.ui.checkBoxBookmarks: wui.actionBookmarkSessionFolder,
             self.ui.checkBoxAutoSnapshot: wui.actionAutoSnapshot,
@@ -52,21 +53,34 @@ class PreferencesDialog(ChildDialog):
             check_box.stateChanged.connect(self._check_box_state_changed)
             action.changed.connect(self._action_changed)
 
+        # connect other widgets
         self.ui.pushButtonPatchbayPreferences.clicked.connect(
             self._main_win.session.patchbay_manager.show_options_dialog)
+        self.ui.pushButtonReappear.clicked.connect(
+            self._make_all_dialogs_reappear)
+        self.ui.checkboxStartupDialogs.stateChanged.connect(
+            self._show_startup_dialog)
         
+        # update directly hiddens dialogs changes in this window
+        self._main_win.session.signaler.hiddens_changed.connect(
+            self._hiddens_changed)
+
+        # fill systray checkboxes
+        self.ui.groupBoxSystray.setChecked(
+            self._main_win.systray_mode != ray.Systray.OFF)
+        self.ui.checkBoxOnlySessionRunning.setChecked(
+            self._main_win.systray_mode == ray.Systray.SESSION_ONLY)
+        self.ui.checkBoxReversedMenu.setChecked(
+            self._main_win.reversed_systray_menu)
+        self.ui.checkBoxShutdown.setChecked(
+            self._main_win.wild_shutdown)
+        
+        # connect systray checkboxes
         self.ui.groupBoxSystray.toggled.connect(self._systray_changed)
         for check_box in (self.ui.checkBoxOnlySessionRunning,
                           self.ui.checkBoxReversedMenu,
                           self.ui.checkBoxShutdown):
             check_box.stateChanged.connect(self._systray_changed)
-        
-        self.ui.pushButtonReappear.clicked.connect(
-            self._make_all_dialogs_reappear)
-        self.ui.checkboxStartupDialogs.stateChanged.connect(
-            self._show_startup_dialog)
-        self._main_win.session.signaler.hiddens_changed.connect(
-            self._hiddens_changed)
 
     @pyqtSlot()
     def _check_box_state_changed(self):

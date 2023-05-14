@@ -391,11 +391,11 @@ class MainWindow(QMainWindow):
         self.hidden_maximized = False
         
         # systray icon and related
-        self._wild_shutdown = RS.settings.value(
+        self.wild_shutdown: bool = RS.settings.value(
             'wild_shutdown', False, type=bool)
-        self._systray_mode = RS.settings.value(
+        self.systray_mode: int = RS.settings.value(
             'systray_mode', ray.Systray.SESSION_ONLY, type=int)
-        self._reversed_systray_menu = RS.settings.value(
+        self.reversed_systray_menu: bool = RS.settings.value(
             'reversed_systray_menu', False, type=bool)
 
         systray_icon = QIcon.fromTheme('raysession')
@@ -412,8 +412,8 @@ class MainWindow(QMainWindow):
         self._build_systray_menu()
 
         if (not CommandLineArgs.under_nsm
-            and (self._systray_mode == ray.Systray.ALWAYS
-                    or (self._systray_mode == ray.Systray.SESSION_ONLY
+            and (self.systray_mode == ray.Systray.ALWAYS
+                    or (self.systray_mode == ray.Systray.SESSION_ONLY
                         and self.session.server_status != ray.ServerStatus.OFF))):
             self._systray.show()
 
@@ -498,26 +498,26 @@ class MainWindow(QMainWindow):
     def change_systray_options(
             self, systray_mode: int, wild_shutdown: bool,
             reversed_systray_menu: bool):        
-        self._systray_mode = systray_mode
-        self._wild_shutdown = wild_shutdown
+        self.systray_mode = systray_mode
+        self.wild_shutdown = wild_shutdown
         
-        if reversed_systray_menu != self._reversed_systray_menu:
-            self._reversed_systray_menu = reversed_systray_menu
+        if reversed_systray_menu != self.reversed_systray_menu:
+            self.reversed_systray_menu = reversed_systray_menu
             self._build_systray_menu()
 
-        RS.settings.setValue('systray_mode', self._systray_mode)
-        RS.settings.setValue('wild_shutdown', self._wild_shutdown)
+        RS.settings.setValue('systray_mode', self.systray_mode)
+        RS.settings.setValue('wild_shutdown', self.wild_shutdown)
         RS.settings.setValue('reversed_systray_menu',
-                             self._reversed_systray_menu)
+                             self.reversed_systray_menu)
 
-        if self._systray_mode == ray.Systray.OFF:
+        if self.systray_mode == ray.Systray.OFF:
             self._systray.hide()
-        elif self._systray_mode == ray.Systray.SESSION_ONLY:
+        elif self.systray_mode == ray.Systray.SESSION_ONLY:
             if self.session.server_status == ray.ServerStatus.OFF:
                 self._systray.hide()
             else:
                 self._systray.show()
-        elif self._systray_mode == ray.Systray.ALWAYS:
+        elif self.systray_mode == ray.Systray.ALWAYS:
             self._systray.show()
 
     def _open_systray_options(self):
@@ -565,7 +565,7 @@ class MainWindow(QMainWindow):
         self._flash_open_bool = not self._flash_open_bool
 
     def _quit_app(self):
-        if self._wild_shutdown and not CommandLineArgs.under_nsm:
+        if self.wild_shutdown and not CommandLineArgs.under_nsm:
             self.daemon_manager.disannounce()
             QTimer.singleShot(10, QApplication.quit)
             return
@@ -941,7 +941,7 @@ class MainWindow(QMainWindow):
         self.ui.frameCurrentSession.setEnabled(
             bool(server_status != ray.ServerStatus.OFF))
 
-        if self._systray_mode == ray.Systray.SESSION_ONLY:
+        if self.systray_mode == ray.Systray.SESSION_ONLY:
             if server_status == ray.ServerStatus.OFF:
                 self._systray.hide()
             else:
@@ -1064,7 +1064,7 @@ class MainWindow(QMainWindow):
                  ray.ServerStatus.WAIT_USER, ray.ServerStatus.OUT_SAVE,
                  ray.ServerStatus.OUT_SNAPSHOT))
 
-        if self._reversed_systray_menu:
+        if self.reversed_systray_menu:
             self._systray_menu.addAction(self.ui.actionQuit)
             self._systray_menu.addSeparator()
             self._systray_menu.addAction(self.ui.actionSystemTrayIconOptions)
