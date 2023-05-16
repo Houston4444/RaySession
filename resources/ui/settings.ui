@@ -90,6 +90,63 @@
             </property>
            </widget>
           </item>
+          <item>
+           <layout class="QGridLayout" name="gridLayout">
+            <item row="0" column="1">
+             <widget class="QLabel" name="labelTerminalCommand">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Edit here the command used to run the program in a terminal.&lt;/p&gt;&lt;p&gt;NSM programs can be launched in a terminal modifying the NSM tab of their properties dialog.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Terminal command :</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLineEdit" name="lineEditTerminalCommand"/>
+            </item>
+            <item row="1" column="2">
+             <widget class="QPushButton" name="pushButtonResetTerminal">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reset the terminal command to the default value.&lt;/p&gt;&lt;p&gt;The default terminal command depends on your desktop environment and on your installed terminals.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Reset</string>
+              </property>
+              <property name="icon">
+               <iconset theme="edit-reset">
+                <normaloff>.</normaloff>.</iconset>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0" rowspan="2">
+             <widget class="FakeToolButton" name="toolButtonTerminal">
+              <property name="styleSheet">
+               <string notr="true">QToolButton{border:none}</string>
+              </property>
+              <property name="text">
+               <string>...</string>
+              </property>
+              <property name="icon">
+               <iconset theme="utilities-terminal">
+                <normaloff>.</normaloff>.</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_5"/>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_4"/>
+          </item>
          </layout>
         </widget>
        </item>
@@ -234,7 +291,8 @@
             <string>Make reappear all dialog windows</string>
            </property>
            <property name="icon">
-            <iconset theme="dialog-messages"/>
+            <iconset theme="dialog-messages">
+             <normaloff>.</normaloff>.</iconset>
            </property>
           </widget>
          </item>
@@ -334,34 +392,17 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tabDialogs">
-      <attribute name="icon">
-       <iconset theme="dialog-messages">
-        <normaloff>.</normaloff>.</iconset>
-      </attribute>
-      <attribute name="title">
-       <string>Dialogs</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_5">
-       <item>
-        <spacer name="verticalSpacer_4">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </widget>
     </widget>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FakeToolButton</class>
+   <extends>QToolButton</extends>
+   <header>surclassed_widgets</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

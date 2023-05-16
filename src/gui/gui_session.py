@@ -204,12 +204,9 @@ class SignaledSession(Session):
 
     def _ray_gui_server_terminal_command(self, path, args):
         self.terminal_command = args[0]
-        for client in self.client_list:
-            if (client.protocol is ray.Protocol.NSM
-                    and isinstance(client._properties_dialog,
-                                   NsmClientPropertiesDialog)):
-                client._properties_dialog.set_terminal_command(
-                    self.terminal_command)
+        if self.main_win.preferences_dialog is not None:
+            self.main_win.preferences_dialog.set_terminal_command(
+                self.terminal_command)
 
     def _ray_gui_server_options(self, path, args):
         options = args[0]

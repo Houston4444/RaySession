@@ -417,7 +417,7 @@ class MainWindow(QMainWindow):
                         and self.session.server_status != ray.ServerStatus.OFF))):
             self._systray.show()
 
-        self._preferences_dialog: preferences_dialog.PreferencesDialog = None
+        self.preferences_dialog: preferences_dialog.PreferencesDialog = None
 
         self._startup_time = time.time()
 
@@ -522,8 +522,8 @@ class MainWindow(QMainWindow):
 
     def _open_systray_options(self):
         self._show_preferences_dialog()
-        if self._preferences_dialog is not None:
-            self._preferences_dialog.set_on_tab(
+        if self.preferences_dialog is not None:
+            self.preferences_dialog.set_on_tab(
                 preferences_dialog.PreferencesTab.SYSTRAY)
 
     def _raise_window(self):
@@ -1281,10 +1281,10 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
     def _show_preferences_dialog(self):
-        if self._preferences_dialog is None:
-            self._preferences_dialog = preferences_dialog.PreferencesDialog(self)
+        if self.preferences_dialog is None:
+            self.preferences_dialog = preferences_dialog.PreferencesDialog(self)
         
-        self._preferences_dialog.show()
+        self.preferences_dialog.show()
 
     def edit_notes(self, close=False):
         icon_str = 'notes'

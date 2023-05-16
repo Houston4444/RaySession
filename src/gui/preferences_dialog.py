@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtCore import pyqtSlot
 
 from child_dialogs import ChildDialog
+from gui_server_thread import GuiServerThread
 from gui_tools import RS
 import ray
 
@@ -20,7 +21,6 @@ class PreferencesTab(IntEnum):
     DAEMON = 0
     DISPLAY = 1
     SYSTRAY = 2
-    DIALOGS = 3
 
 
 class PreferencesDialog(ChildDialog):
@@ -82,6 +82,18 @@ class PreferencesDialog(ChildDialog):
                           self.ui.checkBoxShutdown):
             check_box.stateChanged.connect(self._systray_changed)
 
+        # terminal command
+        self.ui.pushButtonResetTerminal.clicked.connect(
+            self._reset_terminal_command)
+        self.ui.toolButtonTerminal.setToolTip(
+            self.ui.labelTerminalCommand.toolTip())
+        self.ui.lineEditTerminalCommand.setToolTip(
+            self.ui.labelTerminalCommand.toolTip())
+        self.ui.lineEditTerminalCommand.textEdited.connect(
+            self._terminal_edited)
+        self.ui.lineEditTerminalCommand.setText(
+            self._main_win.session.terminal_command)
+
     @pyqtSlot()
     def _check_box_state_changed(self):
         sender = self.sender()
@@ -133,3 +145,23 @@ class PreferencesDialog(ChildDialog):
         
     def set_on_tab(self, tab: PreferencesTab):
         self.ui.tabWidget.setCurrentIndex(int(tab))
+        
+    def set_terminal_command(self, command: str):
+        if not self.ui.lineEditTerminalCommand.text():
+            # prevent to auto-fill the line input when user clears it
+            # because when we send empty command to deamon
+            # it sends the default terminal command
+            return
+
+        if command != self.ui.lineEditTerminalCommand.text():
+            self.ui.lineEditTerminalCommand.setText(command)
+        
+    def _reset_terminal_command(self):
+        server = GuiServerThread.instance()
+        if server is not None:        
+            server.to_daemon('/ray/server/set_terminal_command', '')
+            
+    def _terminal_edited(self, text: str):
+        server = GuiServerThread.instance()
+        if server is not None:        
+            server.to_daemon('/ray/server/set_terminal_command', text)
