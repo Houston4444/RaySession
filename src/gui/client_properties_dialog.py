@@ -1,6 +1,5 @@
 import os
 import signal
-from tkinter import dialog
 from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import QTimer, QFile
@@ -12,7 +11,6 @@ import ray
 from gui_tools import _translate, client_status_string, get_app_icon
 from child_dialogs import ChildDialog
 from client_prop_adv_dialog import AdvancedPropertiesDialog
-from gui_server_thread import GuiServerThread
 
 if TYPE_CHECKING:
     from gui_client import Client
