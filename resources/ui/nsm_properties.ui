@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>416</width>
-    <height>527</height>
+    <height>475</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -284,31 +284,10 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBoxTerminal">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Launch the program in a terminal.&lt;/p&gt;&lt;p&gt;Mostly for debug purpose, some things may behave differently, such as the way the program is stopped.&lt;/p&gt;&lt;p&gt;The terminal command line is global, it will be applyed to all clients using this option in all sessions.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="title">
+    <widget class="QCheckBox" name="checkBoxTerminal">
+     <property name="text">
       <string>Launch in a terminal</string>
      </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <item>
-       <widget class="QLabel" name="label_5">
-        <property name="text">
-         <string>Terminal command :</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="lineEditTerminalCommand"/>
-      </item>
-     </layout>
     </widget>
    </item>
   </layout>

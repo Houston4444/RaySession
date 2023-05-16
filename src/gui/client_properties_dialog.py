@@ -65,7 +65,8 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.pushButtonSaveChanges.clicked.connect(self._save_changes)
         self.ui.tabWidget.setCurrentIndex(0)
         
-        self._advanced_dialog = AdvancedPropertiesDialog(self.parentWidget(), client)
+        self._advanced_dialog = AdvancedPropertiesDialog(
+            self.parentWidget(), client)
 
     def _change_icon_with_text(self, text: str):
         icon = get_app_icon(text, self)
@@ -160,30 +161,17 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
 
         self.ui.tabWidget.setTabText(1, 'NSM')
 
-        self.set_terminal_command(self.session.terminal_command)
-
     def _save_changes(self):
         self.client.executable_path = self.nsmui.lineEditExecutable.text()
         self.client.arguments = self.nsmui.lineEditArguments.text()
         self.client.pre_env = self.nsmui.lineEditEnviron.text()
-        self.client.in_terminal = self.nsmui.groupBoxTerminal.isChecked()
-        
-        if self.client.in_terminal:
-            server = GuiServerThread.instance()
-            if server is not None:
-                server.to_daemon(
-                    '/ray/server/set_terminal_command',
-                    self.nsmui.lineEditTerminalCommand.text())
-        
+        self.client.in_terminal = self.nsmui.checkBoxTerminal.isChecked()
         ClientPropertiesDialog._save_changes(self)
 
     def _change_icon_with_text(self, text: str):
         icon = get_app_icon(text, self)
         self.ui.toolButtonIcon.setIcon(icon)
         self.nsmui.toolButtonIcon.setIcon(icon)
-
-    def set_terminal_command(self, command: str):
-        self.nsmui.lineEditTerminalCommand.setText(command)
 
     def lock_widgets(self):
         ClientPropertiesDialog.lock_widgets(self)
@@ -202,7 +190,7 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
         self.nsmui.lineEditExecutable.setText(self.client.executable_path)
         self.nsmui.lineEditArguments.setText(self.client.arguments)
         self.nsmui.lineEditEnviron.setText(self.client.pre_env)
-        self.nsmui.groupBoxTerminal.setChecked(self.client.in_terminal)
+        self.nsmui.checkBoxTerminal.setChecked(self.client.in_terminal)
 
 
 class RayHackClientPropertiesDialog(ClientPropertiesDialog):
