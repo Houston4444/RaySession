@@ -41,7 +41,6 @@ import ui.daemon_url
 import ui.waiting_close_user
 import ui.donations
 import ui.systray_close
-import ui.systray_management
 import ui.startup_dialog
 import ui.error_dialog
 
