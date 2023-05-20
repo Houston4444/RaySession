@@ -135,7 +135,26 @@ debug:
 
 # -------------------------
 
-install:
+install: uninstall pure_install
+
+uninstall:
+	rm -f $(DESTDIR)$(PREFIX)/bin/raysession
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray-daemon
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray-proxy
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray-jack_checker_daemon
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray-jack_config_script
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray-pulse2jack
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray_control
+	rm -f $(DESTDIR)$(PREFIX)/bin/ray_git
+	
+	rm -f $(DESTDIR)$(PREFIX)/share/applications/raysession.desktop
+	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/*/apps/raysession.png
+	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/raysession.svg
+	rm -rf $(DESTDIR)/etc/xdg/raysession/client_templates/40_ray_nsm
+	rm -rf $(DESTDIR)/etc/xdg/raysession/client_templates/60_ray_lash
+	rm -rf $(DEST_RAY)
+
+pure_install:
 	# Create directories
 	install -d $(DESTDIR)$(PREFIX)/bin/
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
@@ -198,6 +217,8 @@ install:
 	cp -r src $(DEST_RAY)/
 	rm $(DEST_RAY)/src/gui/patchbay
 	cp -r $(PATCHBAY_DIR)/patchbay $(DEST_RAY)/src/gui/
+	rm $(DEST_RAY)/src/clients/jackpatch/jacklib
+	cp -r pyjacklib/jacklib $(DEST_RAY)/src/clients/jackpatch/
 	
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_checker_daemon $(DESTDIR)$(PREFIX)/bin/
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_config_script  $(DESTDIR)$(PREFIX)/bin/
@@ -230,19 +251,4 @@ install:
 	install -m 644 locale/*.qm $(DEST_RAY)/locale/
 	install -m 644 $(PATCHBAY_DIR)/locale/*.qm $(DEST_RAY)/$(PATCHBAY_DIR)/locale
 
-uninstall:
-	rm -f $(DESTDIR)$(PREFIX)/bin/raysession
-	rm -f $(DESTDIR)$(PREFIX)/bin/ray-daemon
-	rm -f $(DESTDIR)$(PREFIX)/bin/ray-proxy
-	rm -f $(DESTDIR)$(PREFIX)/bin/ray-jack_checker_daemon
-	rm -f $(DESTDIR)$(PREFIX)/bin/ray-jack_config_script
-	rm -f $(DESTDIR)$(PREFIX)/bin/ray-pulse2jack
-	rm -f $(DESTDIR)$(PREFIX)/bin/ray_control
-	rm -f $(DESTDIR)$(PREFIX)/bin/ray_git
-	
-	rm -f $(DESTDIR)$(PREFIX)/share/applications/raysession.desktop
-	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/*/apps/raysession.png
-	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/raysession.svg
-	rm -rf $(DESTDIR)/etc/xdg/raysession/client_templates/40_ray_nsm
-	rm -rf $(DESTDIR)/etc/xdg/raysession/client_templates/60_ray_lash
-	rm -rf $(DEST_RAY)
+
