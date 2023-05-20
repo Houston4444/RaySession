@@ -219,6 +219,8 @@ pure_install:
 	cp -r $(PATCHBAY_DIR)/patchbay $(DEST_RAY)/src/gui/
 	rm $(DEST_RAY)/src/clients/jackpatch/jacklib
 	cp -r pyjacklib/jacklib $(DEST_RAY)/src/clients/jackpatch/
+	rm $(DEST_RAY)/src/jack_patchbay_to_osc/jacklib
+	cp -r pyjacklib/jacklib $(DEST_RAY)/src/jack_patchbay_to_osc/
 	
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_checker_daemon $(DESTDIR)$(PREFIX)/bin/
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_config_script  $(DESTDIR)$(PREFIX)/bin/
