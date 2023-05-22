@@ -20,17 +20,17 @@ def signal_handler(sig, frame):
 
 
 if __name__ == '__main__':
-    #add RaySession/src/bin to $PATH
+    # add RaySession/src/bin to $PATH
     ray.add_self_bin_to_path()
 
-    #create app
+    # create app
     app = QCoreApplication(sys.argv)
     app.setApplicationName("RaySession")
     app.setOrganizationName("RaySession")
 
     init_daemon_tools()
 
-    ### Translation process
+    # Translation process
     locale = QLocale.system().name()
     appTranslator = QTranslator()
 
@@ -40,17 +40,17 @@ if __name__ == '__main__':
 
     _translate = app.translate
 
-    #check arguments
+    # check arguments
     parser = ArgParser()
 
-    #manage session_root
+    # manage session_root
     session_root = CommandLineArgs.session_root
     if not session_root:
         session_root = "%s/%s" % (os.getenv('HOME'),
                                   _translate('daemon',
                                              'Ray Network Sessions'))
 
-    #make session_root folder if needed
+    # make session_root folder if needed
     if not os.path.isdir(session_root):
         if os.path.exists(session_root):
             sys.stderr.write(
@@ -66,10 +66,10 @@ if __name__ == '__main__':
             sys.exit(1)
 
 
-    #create session
+    # create session
     session = SignaledSession(session_root)
 
-    #create and start server
+    # create and start server
     if CommandLineArgs.findfreeport:
         server = OscServerThread(session,
                                  ray.get_free_osc_port(
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     if CommandLineArgs.hidden:
         server.not_default = True
 
-    #announce server to GUI
+    # announce server to GUI
     if CommandLineArgs.gui_url:
         server.announce_gui(CommandLineArgs.gui_url.url,
                             gui_pid=CommandLineArgs.gui_pid)
@@ -100,40 +100,40 @@ if __name__ == '__main__':
     if CommandLineArgs.control_url:
         server.announce_controller(CommandLineArgs.control_url)
 
-    #print server url
+    # print server url
     Terminal.message('URL : %s' % ray.get_net_url(server.port))
     Terminal.message('      %s' % server.url)
     Terminal.message('ROOT: %s' % CommandLineArgs.session_root)
 
-    #create or update multi_daemon_file in /tmp
+    # create or update multi_daemon_file in /tmp
     multi_daemon_file = MultiDaemonFile(session, server)
     multi_daemon_file.update()
 
-    #clean bookmarks created by crashed daemons
+    # clean bookmarks created by crashed daemons
     session.bookmarker.clean(multi_daemon_file.get_all_session_paths())
 
-    #load session asked from command line
+    # load session asked from command line
     if CommandLineArgs.session:
         session.server_open_session_at_start(CommandLineArgs.session)
 
-    #connect SIGINT and SIGTERM
+    # connect SIGINT and SIGTERM
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    #needed for SIGINT and SIGTERM
+    # needed for SIGINT and SIGTERM
     timer = QTimer()
     timer.setInterval(200)
     timer.timeout.connect(lambda: None)
     timer.start()
 
-    #start app
+    # start app
     app.exec()
-    #app is stopped
+    # app is stopped
 
-    #update multi_daemon_file without this server
+    # update multi_daemon_file without this server
     multi_daemon_file.quit()
 
-    #save RS.settings
+    # save RS.settings
     RS.settings.setValue('daemon/non_active_list', RS.non_active_clients)
     RS.settings.setValue('daemon/favorites', RS.favorites)
     RS.settings.setValue('daemon/recent_sessions', session.recent_sessions)
@@ -153,7 +153,7 @@ if __name__ == '__main__':
 
     RS.settings.sync()
 
-    #stop the server
+    # stop the server
     server.stop()
 
     del server
