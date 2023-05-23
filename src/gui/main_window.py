@@ -1177,8 +1177,8 @@ class MainWindow(QMainWindow):
             if not default_disp_wdg & ToolDisplayed.PORT_TYPES_VIEW:
                 RS.settings.setValue(
                     'Canvas/default_port_types_view',
-                    PortTypesViewFlag.ALL)
-            
+                    PortTypesViewFlag.ALL.value)
+
         self._canvas_menu = self.ui.menuBar.addMenu(canvas_menu)
 
     def create_client_widget(self, client):
