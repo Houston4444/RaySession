@@ -529,13 +529,15 @@ class Session(ServerSender):
 
         return False
 
-    def _rewrite_user_templates_file(self, content: QDomElement, templates_file)->bool:
+    def _rewrite_user_templates_file(
+            self, content: QDomElement, templates_file: Path) -> bool:
         if not os.access(templates_file, os.W_OK):
             return False
 
         file_version = content.attribute('VERSION')
 
-        if ray.version_to_tuple(file_version) >= ray.version_to_tuple(ray.VERSION):
+        if (ray.version_to_tuple(file_version)
+                >= ray.version_to_tuple(ray.VERSION)):
             return False
 
         content.setAttribute('VERSION', ray.VERSION)
@@ -762,11 +764,10 @@ class Session(ServerSender):
         file_rewritten = False
 
         for search_path in search_paths:
-            templates_file = "%s/%s" % (search_path, 'client_templates.xml')
-
-            if not os.path.isfile(templates_file):
+            templates_file = search_path / 'client_templates.xml'
+            if not templates_file.is_file():
                 continue
-
+            
             if not os.access(templates_file, os.R_OK):
                 sys.stderr.write("ray-daemon:No access to %s in %s, ignore it"
                                  % (templates_file, search_path))
@@ -786,7 +787,7 @@ class Session(ServerSender):
                 # we may rewrite user client templates file
                 if content.attribute('VERSION') != ray.VERSION:
                     file_rewritten = self._rewrite_user_templates_file(
-                                        content, templates_file)
+                        content, templates_file)
 
             erased_by_nsm_desktop_global = bool(
                 content.attribute('erased_by_nsm_desktop_file').lower() == 'true')
