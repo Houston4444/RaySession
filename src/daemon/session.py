@@ -7,7 +7,7 @@ import string
 import subprocess
 import sys
 import time
-from typing import Optional
+from typing import Optional, TypedDict
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QTimer, QProcess
 from PyQt5.QtXml  import QDomDocument, QDomElement
@@ -33,6 +33,14 @@ import ardour_templates
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
+
+
+class NsmDesktopExec(TypedDict):
+    executable: str
+    name: str
+    desktop_file: str
+    nsm_capable: bool
+    skipped: bool
 
 
 class Session(ServerSender):
@@ -279,23 +287,22 @@ class Session(ServerSender):
         for client in self.clients + self.trashed_clients:
             self.forbidden_ids_set.add(client.client_id)
 
-    def _get_search_template_dirs(self, factory: bool) -> list[str]:
+    def _get_search_template_dirs(self, factory: bool) -> list[Path]:
         if factory:
             # search templates in /etc/xdg (RaySession installed)
-            templates_root = TemplateRoots.factory_clients_xdg
+            templates_root = Path(TemplateRoots.factory_clients_xdg)
 
             # search templates in source code
-            if not os.path.isdir(templates_root):
-                templates_root = TemplateRoots.factory_clients
+            if not templates_root.is_dir():
+                templates_root = Path(TemplateRoots.factory_clients)
 
-            if (os.path.isdir(templates_root)
+            if (templates_root.is_dir()
                     and os.access(templates_root, os.R_OK)):
-                return ["%s/%s" % (templates_root, f)
-                        for f in sorted(os.listdir(templates_root))]
+                return sorted([t for t in templates_root.iterdir()])
 
             return []
 
-        return [TemplateRoots.user_clients]
+        return [Path(TemplateRoots.user_clients)]
 
     def _generate_client_id_as_nsm(self) -> str:
         client_id = 'n'
@@ -644,7 +651,7 @@ class Session(ServerSender):
                           client_id, event)
     
     def _rebuild_templates_database(self, base: str):        
-        def get_nsm_capable_execs_from_desktop_files() -> list[dict]:
+        def get_nsm_capable_execs_from_desktop_files() -> list[NsmDesktopExec]:
             ''' returns a list of dicts
                 {'executable': str,
                  'name': str,
@@ -657,7 +664,7 @@ class Session(ServerSender):
                 '/usr/local',
                 '/usr')
 
-            application_dicts = list[dict]()
+            application_dicts = list[NsmDesktopExec]()
 
             lang = os.getenv('LANG')
             lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
@@ -747,7 +754,7 @@ class Session(ServerSender):
         
         template_names = set()
         
-        from_desktop_execs = list[dict]()
+        from_desktop_execs = list[NsmDesktopExec]()
         if base == 'factory':
             from_desktop_execs = get_nsm_capable_execs_from_desktop_files()
 
@@ -2585,7 +2592,6 @@ for better organization.""")
     def add_client_template(self, src_addr, src_path,
                             template_name, factory=False, auto_start=True,
                             unique_id=''):
-        search_paths = self._get_search_template_dirs(factory)
         base = 'factory' if factory else 'user'
         templates_database = self.get_client_templates_database(base)
 
