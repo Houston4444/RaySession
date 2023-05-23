@@ -6,14 +6,14 @@
       and if the template-name has not already been added -->
 <RAY-CLIENT-TEMPLATES erased_by_nsm_desktop_file="false">
  <Client-Template template-name="Hydrogen" client_id="hydrogen" executable="hydrogen" needed-version="1.1"/> 
- <Client-Template template-name="Ardour" executable="ardour" name="Ardour" icon="ardour" client_id="ardour"/>
- <Client-Template template-name="Ardour7" executable="Ardour7" name="Ardour" icon="ardour" client_id="ardour"/>
- <Client-Template template-name="ardour7" executable="ardour7" name="Ardour" icon="ardour" client_id="ardour"/>
- <Client-Template template-name="Ardour6" executable="Ardour6" name="Ardour" icon="ardour" client_id="ardour"/>
- <Client-Template template-name="ardour6" executable="ardour6" name="Ardour" icon="ardour" client_id="ardour"/>
+ <Client-Template template-name="Ardour" executable="ardour" name="Ardour" icon="ardour" client_id="ardour" list_ardour_templates="true"/>
+ <Client-Template template-name="Ardour7" executable="Ardour7" name="Ardour" icon="ardour" client_id="ardour" list_ardour_templates="true"/>
+ <Client-Template template-name="ardour7" executable="ardour7" name="Ardour" icon="ardour" client_id="ardour" list_ardour_templates="true"/>
+ <Client-Template template-name="Ardour6" executable="Ardour6" name="Ardour" icon="ardour" client_id="ardour" list_ardour_templates="true"/>
+ <Client-Template template-name="ardour6" executable="ardour6" name="Ardour" icon="ardour" client_id="ardour" list_ardour_templates="true"/>
  <Client-Template template-name="Ardour5" executable="Ardour5" name="Ardour" icon="ardour" client_id="ardour"/>
  <Client-Template template-name="ardour5" executable="ardour5" name="Ardour" icon="ardour" client_id="ardour"/>
- <Client-Template template-name="Mixbus8" executable="Mixbus8" name="Mixbus" client_id="mixbus" label="Mixbus8"/>
+ <Client-Template template-name="Mixbus8" executable="Mixbus8" name="Mixbus" client_id="mixbus" label="Mixbus8" list_ardour_templates="true"/>
  <Client-Template template-name="amsynth" executable="amsynth" name="amsynth" client_id="amsynth" check_nsm_bin="1" prefix_mode="1"/>
  <Client-Template template-name="Carla" executable="carla-jack-multi" client_id="Carla" label="Carla" jack_naming="1" prefix_mode="1"/>
  <Client-Template template-name="Carla-Rack" executable="carla-rack" client_id="rack" prefix_mode="1"/>
