@@ -9,7 +9,7 @@ from liblo import Address
 from PyQt5.QtCore import (QCoreApplication, QProcess,
                           QProcessEnvironment, QTimer)
 from PyQt5.QtXml import QDomDocument, QDomElement
-
+import xml.etree.ElementTree as ET
 
 import xdg
 import ray
@@ -44,6 +44,12 @@ signaler = Signaler.instance()
 
 def basename(*args):
     return os.path.basename(*args)
+
+def str_attrib(elem: ET.Element, attrib: str, default='') -> str:
+    ret_value = elem.attrib.get(attrib)
+    if ret_value is None:
+        return default
+    return ret_value
 
 
 class Client(ServerSender, ray.ClientData):
@@ -844,6 +850,133 @@ class Client(ServerSender, ray.ClientData):
 
         return jack_client_name
 
+    def read_xml_et_properties(self, c: ET.Element):
+        # ctx is an xml sibling for client
+        
+        
+        self.executable_path = str_attrib(c, 'executable')
+        self.arguments = str_attrib(c, 'arguments')
+        self.pre_env = str_attrib(c, 'pre_env')
+        self.name = str_attrib(c, 'name')
+        self.desktop_file = str_attrib(c, 'desktop_file')
+        self.label = str_attrib(c, 'label')
+        self.description = str_attrib(c, 'description')
+        self.icon = str_attrib(c, 'icon')
+        self.in_terminal = bool(str_attrib(c, 'in_terminal') in ('1', 'true'))
+        self.auto_start = bool(str_attrib(c, 'launched') != '0')
+        self.check_last_save = bool(str_attrib(c, 'check_last_save') != '0')
+        self.start_gui_hidden = bool(str_attrib(c, 'gui_visible') == '0')
+        self.template_origin = str_attrib(c, 'template_origin')
+
+        print('yafouue', self.executable_path, self.icon)
+
+        if (str_attrib(c, 'from_nsm_file') == '1'
+                or str_attrib(c, 'jack_naming') in ('1', 'long')):
+            self.jack_naming = ray.JackNaming.LONG
+
+        # ensure client has a name
+        if not self.name:
+            self.name = basename(self.executable_path)
+
+        self.update_infos_from_desktop_file()
+
+        ign_exts = str_attrib(c, 'ignored_extensions').split(' ')
+        unign_exts = str_attrib(c, 'unignored_extensions').split(' ')
+
+        global_exts = ray.GIT_IGNORED_EXTENSIONS.split(' ')
+        self.ignored_extensions = ""
+
+        for ext in global_exts:
+            if ext and not ext in unign_exts:
+                self.ignored_extensions += " %s" % ext
+
+        for ext in ign_exts:
+            if ext and not ext in global_exts:
+                self.ignored_extensions += " %s" % ext
+
+        open_duration = str_attrib(c, 'last_open_duration')
+        if open_duration.replace('.', '', 1).isdigit():
+            self.last_open_duration = float(open_duration)
+
+        prefix_mode = str_attrib(c, 'prefix_mode')
+
+        if (prefix_mode and prefix_mode.isdigit()
+                and 0 <= int(prefix_mode) <= 2):
+            self.prefix_mode = int(prefix_mode)
+            if self.prefix_mode == ray.PrefixMode.CUSTOM:
+                self.custom_prefix = str_attrib(c, 'custom_prefix')
+
+        self.protocol = ray.protocol_from_str(str_attrib(c, 'protocol'))
+
+        if self.protocol == ray.Protocol.RAY_HACK:
+            self.ray_hack.config_file = str_attrib(c, 'config_file')
+            ray_hack_save_sig = str_attrib(c, 'save_signal')
+            if ray_hack_save_sig.isdigit():
+                self.ray_hack.save_sig = int(ray_hack_save_sig)
+
+            ray_hack_stop_sig = str_attrib(c, 'stop_signal')
+            if ray_hack_stop_sig.isdigit():
+                self.ray_hack.stop_sig = int(ray_hack_stop_sig)
+
+            self.ray_hack.wait_win = bool(str_attrib(c, 'wait_window') == "1")
+            no_save_level = str_attrib(c, 'no_save_level')
+            if no_save_level.isdigit() and 0 <= int(no_save_level) <= 2:
+                self.ray_hack.no_save_level = int(no_save_level)
+
+        # backward compatibility with network session
+        if (self.protocol == ray.Protocol.NSM
+                and basename(self.executable_path) == 'ray-network'):
+            self.protocol = ray.Protocol.RAY_NET
+
+            if self.arguments:
+                eat_url = eat_root = False
+
+                for arg in shlex.split(self.arguments):
+                    if arg in ('--daemon-url', '-u'):
+                        eat_url = True
+                        continue
+                    elif arg in ('--session-root', '-r'):
+                        eat_root = True
+                        continue
+                    elif not (eat_url or eat_root):
+                        eat_url = False
+                        eat_root = False
+                        continue
+
+                    if eat_url:
+                        self.ray_net.daemon_url = arg
+                        eat_url = False
+                    elif eat_root:
+                        self.ray_net.session_root = arg
+                        eat_root = False
+            self.ray_net.session_template = str_attrib(c, 'net_session_template')
+
+        elif self.protocol == ray.Protocol.RAY_NET:
+            self.ray_net.daemon_url = str_attrib(c, 'net_daemon_url')
+            self.ray_net.session_root = str_attrib(c, 'net_session_root')
+            self.ray_net.session_template = str_attrib(c, 'net_session_template')
+            self.ray_net.daemon_url = str_attrib(c, 'net_daemon_url')
+            self.ray_net.session_root = str_attrib(c, 'net_session_root')
+            self.ray_net.session_template = str_attrib(c, 'net_session_template')
+
+        if self.protocol == ray.Protocol.RAY_NET:
+            # neeeded only to know if RAY_NET client is capable of switch
+            self.executable_path = ray.RAYNET_BIN
+            if self.ray_net.daemon_url and self.ray_net.session_root:
+                self.arguments = self.get_ray_net_arguments_line()
+
+        if str_attrib(c, 'id'):
+            # session uses "id" for absolutely needed client_id
+            self.client_id = str_attrib(c, 'id')
+        else:
+            # template uses "client_id" for wanted client_id
+            self.client_id = self.session.generate_client_id(
+                str_attrib(c, 'client_id'))
+
+        for cc in c:
+            if cc.tag == 'custom_data':
+                self.custom_data = c.attrib.copy()
+
     def read_xml_properties(self, ctx: QDomElement):
         # ctx is an xml sibling for client
         self.executable_path = ctx.attribute('executable')
@@ -1063,7 +1196,6 @@ class Client(ServerSender, ray.ClientData):
             for data in self.custom_data:
                 cdt_xml.setAttribute(data, self.custom_data[data])
             ctx.appendChild(cdt_xml)
-
 
     def set_reply(self, errcode, message):
         self._reply_message = message
@@ -1908,6 +2040,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             return
 
         desktop_file = self.desktop_file
+        print('exxec', self.executable_path, 'desko', self.desktop_file)
         if desktop_file == '//not_found':
             return
 
@@ -1917,7 +2050,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if not desktop_file.endswith('.desktop'):
             desktop_file += ".desktop"
 
-        desk_path_list = ([Path(get_code_root()).joinpath('data', 'share')]
+        desk_path_list = ([Path(get_code_root()) / 'data' / 'share']
                           + xdg.xdg_data_dirs())
 
         for desk_data_path in desk_path_list:
@@ -1947,7 +2080,9 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             # if the executable is a symlink, we can search desktop file
             # finding the symlink target as executable in desktop file.
             alter_exec = None
+            print(' bef which', time.time())
             full_exec = shutil.which(self.executable_path)
+            print(' aft which', time.time())
 
             if full_exec is not None:
                 if Path(full_exec).is_symlink():
@@ -1996,6 +2131,8 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                     break
             else:
                 self.desktop_file = '//not_found'
+                
+            print('  aft list', time.time())
 
     def save_as_template(self, template_name, src_addr=None, src_path=''):
         if src_addr:
