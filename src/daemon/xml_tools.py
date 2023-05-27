@@ -1,10 +1,15 @@
+from typing import Iterator
 import xml.etree.ElementTree as ET
 
 
 class XmlElement:
     def __init__(self, element: ET.Element):
         self.el = element
-        
+    
+    def parse(self):
+        for child in self.el:
+            yield XmlElement(child)
+    
     def str(self, attribute: str, default='') -> str:
         ret_value = self.el.attrib.get(attribute)
         if ret_value is None:

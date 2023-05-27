@@ -234,12 +234,10 @@ def rebuild_templates_database(session: 'Session', base: str):
     for search_path, child in _list_xml_elements(base):
         template_execs.add(XmlElement(child).str('executable'))
 
-    # TODO optimize
-
-    # from_desktop_execs = list[NsmDesktopExec]()
-    # if base == 'factory':
-    from_desktop_execs, exec_and_desks = _first_desktops_scan()
-    session.exec_and_desks = exec_and_desks
+    from_desktop_execs = list[NsmDesktopExec]()
+    if base == 'factory':
+        from_desktop_execs, exec_and_desks = _first_desktops_scan()
+        session.exec_and_desks = exec_and_desks
 
     for search_path, child in _list_xml_elements(base):
         c = XmlElement(child)
