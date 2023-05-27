@@ -81,6 +81,8 @@ class Session(ServerSender):
         self.osc_src_addr: liblo.Address = None
         
         self._time_at_open = 0
+        
+        self.exec_and_desks = dict[str, str]()
 
     #############
     def osc_reply(self, *args):

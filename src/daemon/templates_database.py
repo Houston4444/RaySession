@@ -19,9 +19,6 @@ from xml_tools import XmlElement
 if TYPE_CHECKING:
     from session import Session
 
-# TODO
-# optimize listing
-
 
 _translate = QCoreApplication.translate
 _logger = logging.getLogger(__name__)
@@ -51,10 +48,12 @@ def _get_search_template_dirs(factory: bool) -> list[Path]:
 
     return [Path(TemplateRoots.user_clients)]
 
-def _get_nsm_capable_execs_from_desktop_files() -> list[NsmDesktopExec]:
+def _first_desktops_scan() -> tuple[
+        list[NsmDesktopExec], dict[str, str]]:
     desk_paths = [xdg.xdg_data_home()] + xdg.xdg_data_dirs()
 
     application_dicts = list[NsmDesktopExec]()
+    exec_and_desks = dict[str, str]()
 
     lang = os.getenv('LANG')
     lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
@@ -96,6 +95,7 @@ def _get_nsm_capable_execs_from_desktop_files() -> list[NsmDesktopExec]:
                     if line.startswith('Exec='):
                         executable_and_args = line.partition('=')[2].strip()
                         executable = executable_and_args.partition(' ')[0]
+                        exec_and_desks[executable] = full_desk_file
                     
                     elif line.lower().startswith('x-nsm-capable='):
                         has_nsm_mention = True
@@ -135,7 +135,7 @@ def _get_nsm_capable_execs_from_desktop_files() -> list[NsmDesktopExec]:
                          'nsm_capable': nsm_capable,
                          'skipped': False})
     
-    return [a for a in application_dicts if a['nsm_capable']]
+    return ([a for a in application_dicts if a['nsm_capable']], exec_and_desks)
 
 def _should_rewrite_user_templates_file(
         root: ET.Element, templates_file: Path) -> bool:
@@ -236,9 +236,10 @@ def rebuild_templates_database(session: 'Session', base: str):
 
     # TODO optimize
 
-    from_desktop_execs = list[NsmDesktopExec]()
-    if base == 'factory':
-        from_desktop_execs = _get_nsm_capable_execs_from_desktop_files()
+    # from_desktop_execs = list[NsmDesktopExec]()
+    # if base == 'factory':
+    from_desktop_execs, exec_and_desks = _first_desktops_scan()
+    session.exec_and_desks = exec_and_desks
 
     for search_path, child in _list_xml_elements(base):
         c = XmlElement(child)

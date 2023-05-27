@@ -1317,7 +1317,7 @@ class Client(ServerSender, ray.ClientData):
 
         return ''
 
-    def get_project_path(self):
+    def get_project_path(self) -> str:
         if self.protocol == ray.Protocol.RAY_NET:
             return self.session.get_short_path()
 
@@ -1976,18 +1976,17 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         return message
 
     def noSaveLevel(self)->int:
-        ''' This method will be renamed or deleted later
+        '''This method will be renamed or deleted later
         no_save_level will be deprecated for NSM client
-        it will applies only on Ray-Hack clients '''
+        it will applies only on Ray-Hack clients'''
         if self.is_ray_hack():
             return self.ray_hack.noSaveLevel()
 
         return self.no_save_level
 
-    def get_project_files(self):
-        ''' returns a list of full filenames '''
-        client_files = []
-
+    def get_project_files(self) -> list[str]:
+        '''returns a list of full filenames'''
+        client_files = list[str]()
         project_path = self.get_project_path()
         if os.path.exists(project_path):
             client_files.append(project_path)
@@ -2025,6 +2024,9 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         desktop_file = self.desktop_file
         if desktop_file == '//not_found':
             return
+
+        if not desktop_file:
+            desktop_file = self.session.exec_and_desks.get(self.executable_path)
 
         if not desktop_file:
             desktop_file = os.path.basename(self.executable_path)
