@@ -2,14 +2,12 @@
 
 import os
 import subprocess
-import sys
 from typing import TYPE_CHECKING
 import warnings
 
 from PyQt5.QtCore import QProcess
-from PyQt5.QtXml import QDomElement
 
-import ray
+from xml_tools import XmlElement
 from daemon_tools import is_pid_child_of
 
 if TYPE_CHECKING:
@@ -179,27 +177,21 @@ class DesktopsMemory:
                                 and awin.name.endswith(win_name_sps[1])):
                             move_win(awin.id, awin.desktop, win.desktop)
                             break
-
-    def read_xml(self, xml_element: QDomElement):
+            
+    def read_xml(self, xml_element: XmlElement):
         self.saved_windows.clear()
 
-        nodes = xml_element.childNodes()
-
-        for i in range(nodes.count()):
-            node = nodes.at(i)
-            el = node.toElement()
-            if el.tagName() != "window":
+        for w in xml_element.parse():
+            if w.el.tag != 'window':
                 continue
-
+            
             win = WindowProperties()
-
-            win.wclass = el.attribute('class')
-            win.name = el.attribute('name')
-
-            desktop = el.attribute('desktop')
+            win.wclass = w.str('class')
+            win.name = w.str('name')
+            desktop = w.str('desktop')
             if desktop.lstrip('-').isdigit():
                 win.desktop = int(desktop)
-
+            
             self.saved_windows.append(win)
 
     def has_window(self, pid: int) -> bool:

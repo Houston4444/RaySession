@@ -1,6 +1,7 @@
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 from PyQt5.QtXml import QDomDocument, QDomElement
+from pathlib import Path
 
 import ray
 
@@ -195,7 +196,9 @@ class MultiDaemonFile:
 
         return True
 
-    def is_free_for_session(self, session_path)->bool:
+    def is_free_for_session(self, session_path: Union[str, Path]) -> bool:
+        session_path = str(session_path)
+        
         if not self._open_file():
             return True
 

@@ -897,8 +897,7 @@ class Client(ServerSender, ray.ClientData):
         self.start_gui_hidden = not c.str('gui_visible', True)
         self.template_origin = c.str('template_origin')
 
-        if (c.bool('from_nsm_file', False)
-                or c.str('jack_naming') in ('1', 'long')):
+        if c.bool('from_nsm_file') or c.bool('jack_naming'):
             self.jack_naming = ray.JackNaming.LONG
 
         # ensure client has a name
