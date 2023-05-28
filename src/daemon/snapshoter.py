@@ -1,15 +1,21 @@
 
 import os
 import socket
+import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
 from PyQt5.QtCore import QProcess, QObject, QDateTime
 from PyQt5.QtXml import QDomDocument, QDomElement
+import xml.etree.ElementTree as ET
 
 import ray
 from daemon_tools import Terminal
+from xml_tools import XmlElement
 
 if TYPE_CHECKING:
     from session import Session
+    
+_logger = logging.getLogger(__name__)
 
 def git_stringer(string:str) -> str:
     for char in (' ', '*', '?', '[', ']', '(', ')'):
@@ -158,58 +164,48 @@ class Snapshoter(QObject):
 
         return tagdate
 
-    def _write_history_file(self, date_str, snapshot_name='', rewind_snapshot='') -> int:
+    def _write_history_file(self, date_str: str, snapshot_name='', rewind_snapshot='') -> int:
         if not self.session.path:
             return ray.Err.NO_SESSION_OPEN
 
         file_path = self._get_history_full_path()
 
-        xml = QDomDocument()
-
         try:
-            history_file = open(file_path, 'r')
-            xml.setContent(history_file.read())
-            history_file.close()
-        except:
-            pass
+            tree = ET.parse(file_path)
+            root = tree.getroot()
+        except BaseException as e:
+            _logger.info(str(e))
+            root = ET.Element('SNAPSHOTS')
+            tree = ET.ElementTree(root)
 
-        if xml.firstChild().isNull():
-            SNS_xml = xml.createElement('SNAPSHOTS')
-            xml.appendChild(SNS_xml)
-        else:
-            SNS_xml = xml.firstChild()
-
-        snapshot_el = xml.createElement('Snapshot')
-        snapshot_el.setAttribute('ref', date_str)
-        snapshot_el.setAttribute('name', snapshot_name)
-        snapshot_el.setAttribute('rewind_snapshot', rewind_snapshot)
-        snapshot_el.setAttribute('session_name', self.session.name)
-        snapshot_el.setAttribute('VERSION', ray.VERSION)
-
+        root.tag = 'SNAPSHOTS'
+        snapshot_el = ET.SubElement(root, 'Snapshot')
+        s = XmlElement(snapshot_el)
+        s.set_str('ref', date_str)
+        s.set_str('name', snapshot_name)
+        s.set_str('rewind_snapshot', rewind_snapshot)
+        s.set_str('session_name', self.session.name)
+        s.set_str('VERSION', ray.VERSION)
+        
         for client in self.session.clients + self.session.trashed_clients:
-            client_el = xml.createElement('client')
-            client.write_xml_properties(client_el)
-            client_el.setAttribute('client_id', client.client_id)
-
+            client_el = ET.SubElement(snapshot_el, 'client')
+            c = XmlElement(client_el)
+            client.write_xml_et_properties(c)
+            c.set_str('client_id', client.client_id)
+            
             for client_file_path in client.get_project_files():
-                base_path = client_file_path.replace(
-                    "%s/" % self.session.path, '', 1)
-                file_xml = xml.createElement('file')
-                file_xml.setAttribute('path', base_path)
-                client_el.appendChild(file_xml)
-
-            snapshot_el.appendChild(client_el)
-
-        SNS_xml.appendChild(snapshot_el)
-
+                base_path = str(
+                    Path(client_file_path).relative_to(self.session.path))
+                file_xml = ET.SubElement(client_el, 'file')
+                fxl = XmlElement(file_xml)
+                fxl.set_str('path', base_path)
+                
         try:
-            history_file = open(file_path, 'w')
-            history_file.write(xml.toString())
-            history_file.close()
-        except:
+            tree.write(file_path)
+            return ray.Err.OK
+        except BaseException as e:
+            _logger.error(str(e))
             return ray.Err.CREATE_FAILED
-
-        return ray.Err.OK
 
     def _get_exclude_file_full_path(self) -> str:
         return "%s/%s/%s" % (

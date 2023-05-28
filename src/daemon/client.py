@@ -892,7 +892,7 @@ class Client(ServerSender, ray.ClientData):
         self.description = c.str('description')
         self.icon = c.str('icon')
         self.in_terminal = c.bool('in_terminal')
-        self.auto_start = c.str('launched', True)
+        self.auto_start = c.bool('launched', True)
         self.check_last_save = c.str('check_last_save', True)
         self.start_gui_hidden = not c.str('gui_visible', True)
         self.template_origin = c.str('template_origin')
@@ -995,135 +995,6 @@ class Client(ServerSender, ray.ClientData):
         for cc in c.el:
             if cc.tag == 'custom_data':
                 self.custom_data = c.el.attrib.copy()
-
-    def read_xml_properties(self, ctx: QDomElement):
-        # ctx is an xml sibling for client
-        self.executable_path = ctx.attribute('executable')
-        self.arguments = ctx.attribute('arguments')
-        self.pre_env = ctx.attribute('pre_env')
-        self.name = ctx.attribute('name')
-        self.desktop_file = ctx.attribute('desktop_file')
-        self.label = ctx.attribute('label')
-        self.description = ctx.attribute('description')
-        self.icon = ctx.attribute('icon')
-        self.in_terminal = bool(ctx.attribute('in_terminal') in ('1', 'true'))
-        self.auto_start = bool(ctx.attribute('launched') != '0')
-        self.check_last_save = bool(ctx.attribute('check_last_save') != '0')
-        self.start_gui_hidden = bool(ctx.attribute('gui_visible') == '0')
-        self.template_origin = ctx.attribute('template_origin')
-
-        if (ctx.attribute('from_nsm_file') == '1'
-                or ctx.attribute('jack_naming') in ('1', 'long')):
-            self.jack_naming = ray.JackNaming.LONG
-
-        # ensure client has a name
-        if not self.name:
-            self.name = basename(self.executable_path)
-
-        self.update_infos_from_desktop_file()
-
-        ign_exts = ctx.attribute('ignored_extensions').split(' ')
-        unign_exts = ctx.attribute('unignored_extensions').split(' ')
-
-        global_exts = ray.GIT_IGNORED_EXTENSIONS.split(' ')
-        self.ignored_extensions = ""
-
-        for ext in global_exts:
-            if ext and not ext in unign_exts:
-                self.ignored_extensions += " %s" % ext
-
-        for ext in ign_exts:
-            if ext and not ext in global_exts:
-                self.ignored_extensions += " %s" % ext
-
-        open_duration = ctx.attribute('last_open_duration')
-        if open_duration.replace('.', '', 1).isdigit():
-            self.last_open_duration = float(open_duration)
-
-        prefix_mode = ctx.attribute('prefix_mode')
-
-        if (prefix_mode and prefix_mode.isdigit()
-                and 0 <= int(prefix_mode) <= 2):
-            self.prefix_mode = int(prefix_mode)
-            if self.prefix_mode == ray.PrefixMode.CUSTOM:
-                self.custom_prefix = ctx.attribute('custom_prefix')
-
-        self.protocol = ray.protocol_from_str(ctx.attribute('protocol'))
-
-        if self.protocol == ray.Protocol.RAY_HACK:
-            self.ray_hack.config_file = ctx.attribute('config_file')
-            ray_hack_save_sig = ctx.attribute('save_signal')
-            if ray_hack_save_sig.isdigit():
-                self.ray_hack.save_sig = int(ray_hack_save_sig)
-
-            ray_hack_stop_sig = ctx.attribute('stop_signal')
-            if ray_hack_stop_sig.isdigit():
-                self.ray_hack.stop_sig = int(ray_hack_stop_sig)
-
-            self.ray_hack.wait_win = bool(ctx.attribute('wait_window') == "1")
-
-            no_save_level = ctx.attribute('no_save_level')
-            if no_save_level.isdigit() and 0 <= int(no_save_level) <= 2:
-                self.ray_hack.no_save_level = int(no_save_level)
-
-        # backward compatibility with network session
-        if (self.protocol == ray.Protocol.NSM
-                and basename(self.executable_path) == 'ray-network'):
-            self.protocol = ray.Protocol.RAY_NET
-
-            if self.arguments:
-                eat_url = eat_root = False
-
-                for arg in shlex.split(self.arguments):
-                    if arg in ('--daemon-url', '-u'):
-                        eat_url = True
-                        continue
-                    elif arg in ('--session-root', '-r'):
-                        eat_root = True
-                        continue
-                    elif not (eat_url or eat_root):
-                        eat_url = False
-                        eat_root = False
-                        continue
-
-                    if eat_url:
-                        self.ray_net.daemon_url = arg
-                        eat_url = False
-                    elif eat_root:
-                        self.ray_net.session_root = arg
-                        eat_root = False
-            self.ray_net.session_template = ctx.attribute('net_session_template')
-
-        elif self.protocol == ray.Protocol.RAY_NET:
-            self.ray_net.daemon_url = ctx.attribute('net_daemon_url')
-            self.ray_net.session_root = ctx.attribute('net_session_root')
-            self.ray_net.session_template = ctx.attribute('net_session_template')
-
-        if self.protocol == ray.Protocol.RAY_NET:
-            # neeeded only to know if RAY_NET client is capable of switch
-            self.executable_path = ray.RAYNET_BIN
-            if self.ray_net.daemon_url and self.ray_net.session_root:
-                self.arguments = self.get_ray_net_arguments_line()
-
-        if ctx.attribute('id'):
-            # session uses "id" for absolutely needed client_id
-            self.client_id = ctx.attribute('id')
-        else:
-            # template uses "client_id" for wanted client_id
-            self.client_id = self.session.generate_client_id(
-                ctx.attribute('client_id'))
-
-        nodes = ctx.childNodes()
-        for i in range(nodes.count()):
-            node = nodes.at(i)
-            el = node.toElement()
-            if el.tagName() == 'custom_data':
-                attributes = el.attributes()
-                for j in range(attributes.count()):
-                    attribute = attributes.item(j)
-                    attribute_str = attribute.toAttr().name()
-                    value = el.attribute(attribute_str)
-                    self.custom_data[attribute_str] = value
 
     def write_xml_et_properties(self, c: XmlElement):
         if self.protocol != ray.Protocol.RAY_NET:
