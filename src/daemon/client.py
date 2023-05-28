@@ -704,78 +704,115 @@ class Client(ServerSender, ray.ClientData):
             _logger.warning(f'renaming file "{now_path}" to "{next_path}"')
             os.rename(now_path, next_path)
 
-    def _save_as_template_substep1(self, template_name):
+    def _save_as_template_substep1(self, template_name: str):
         self.set_status(self.status) # see set_status to see why
 
         if self.prefix_mode != ray.PrefixMode.CUSTOM:
             self.adjust_files_after_copy(template_name,
                                          ray.Template.CLIENT_SAVE)
 
-        xml_file = "%s/%s" % (TemplateRoots.user_clients,
-                              'client_templates.xml')
+        user_clients_path = Path(TemplateRoots.user_clients)
+        xml_file = user_clients_path / 'client_templates.xml'
 
         # security check
-        if os.path.exists(xml_file):
+        if xml_file.exists():
             if not os.access(xml_file, os.W_OK):
                 self._send_error_to_caller(
                     OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
                     _translate('GUIMSG', '%s is not writeable !') % xml_file)
                 return
 
-            if os.path.isdir(xml_file):
-                #should not be a dir, remove it !
-                shutil.rmtree(xml_file)
+            if xml_file.is_dir():
+                # should not be a dir, remove it !
+                _logger.info(
+                    'removing {xml_file} because it is a dir, it must be a file')
+                try:
+                    shutil.rmtree(xml_file)
+                except:
+                    self._send_error_to_caller(
+                        OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                        _translate('GUIMSG', 'Failed to remove %s directory !') % xml_file)
+                    return
 
-        if not os.path.isdir(TemplateRoots.user_clients):
-            os.makedirs(TemplateRoots.user_clients)
+        if not user_clients_path.is_dir():
+            try:
+                user_clients_path.mkdir(parents=True)
+            except BaseException as e:
+                _logger.error(str(e))
+                self._send_error_to_caller(
+                    OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                    _translate('GUIMSG', 'Failed to create directories for %s')
+                        % user_clients_path)
+                return
 
-        #create client_templates.xml if not exists
-        if not os.path.isfile(xml_file):
-            file = open(xml_file, 'w')
+        # create client_templates.xml if it does not exists
+        if not xml_file.is_file():
+            root = ET.Element('RAY-CLIENT-TEMPLATES')
+            tree = ET.ElementTree(root)
+            try:
+                tree.write(xml_file)
+            except:
+                _logger.error(
+                    'Failed to create user client templates xml file')
+                self._send_error_to_caller(
+                    OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                    _translate('GUIMSG', 'Failed to write xml file  %s')
+                        % str(xml_file))
+                return
 
-            xml = QDomDocument()
-            rct = xml.createElement('RAY-CLIENT-TEMPLATES')
-            xml.appendChild(rct)
-            file.write(xml.toString())
-            file.close()
-            del xml
-
-        file = open(xml_file, 'r')
-        xml = QDomDocument()
-        xml.setContent(file.read())
-        file.close()
-        content = xml.documentElement()
-
-        if not content.tagName() == 'RAY-CLIENT-TEMPLATES':
+        try:
+            tree = ET.parse(xml_file)
+        except BaseException as e:
+            _logger.error(str(e))
+            self._send_error_to_caller(
+                OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                _translate('GUIMSG', '%s seems to not be a valid XML file.')
+                    % str(xml_file))
             return
 
-        # remove existing template if it has the same name as the new one
-        node = content.firstChild()
-        while not node.isNull():
-            if node.toElement().tagName() != 'Client-Template':
-                node = node.nextSibling()
+        root = tree.getroot()
+        
+        if root.tag != 'RAY-CLIENT-TEMPLATES':
+            self._send_error_to_caller(
+                OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                _translate('GUIMSG', '%s is not a client templates XML file.')
+                    % str(xml_file))
+            return
+        
+        # remove the existant templates with the same name
+        to_rm_childs = list[ET.Element]()
+        for child in root:
+            if child.tag != 'Client-Template':
                 continue
+            
+            c = XmlElement(child)
+            if c.str('template-name') == template_name:
+                to_rm_childs.append(child)
+                
+        for child in to_rm_childs:
+            root.remove(child)
 
-            if node.toElement().attribute('template-name') == template_name:
-                content.removeChild(node)
-
-            node = node.nextSibling()
-
-        #create template
-        rct = xml.createElement('Client-Template')
-
-        self.write_xml_properties(rct)
-        rct.setAttribute('template-name', template_name)
-        rct.setAttribute('client_id', self._pretty_client_id())
-
+        # create the client template item in xml file
+        c = XmlElement(ET.SubElement(root, 'Client-Template'))
+        self.write_xml_et_properties(c)
+        c.set_str('template-name', template_name)
+        c.set_str('client_id', self._pretty_client_id())
+        
         if not self.is_running():
-            rct.setAttribute('launched', False)
-
-        content.appendChild(rct)
-
-        file = open(xml_file, 'w')
-        file.write(xml.toString())
-        file.close()
+            c.set_bool('launched', False)
+        
+        # write the file
+        ET.indent(tree, level=0)
+        
+        try:
+            tree.write(xml_file)
+        except Exception as e:
+            _logger.error(str(e))
+            self._send_error_to_caller(
+                OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                _translate('GUIMSG', 'Failed to write XML file %s.')
+                    % str(xml_file))
+            return
 
         self.template_origin = template_name
         self.send_gui_client_properties()
@@ -854,7 +891,7 @@ class Client(ServerSender, ray.ClientData):
         self.label = c.str('label')
         self.description = c.str('description')
         self.icon = c.str('icon')
-        self.in_terminal = c.bool('in_terminal', False)
+        self.in_terminal = c.bool('in_terminal')
         self.auto_start = c.str('launched', True)
         self.check_last_save = c.str('check_last_save', True)
         self.start_gui_hidden = not c.str('gui_visible', True)
@@ -1088,6 +1125,92 @@ class Client(ServerSender, ray.ClientData):
                     attribute_str = attribute.toAttr().name()
                     value = el.attribute(attribute_str)
                     self.custom_data[attribute_str] = value
+
+    def write_xml_et_properties(self, c: XmlElement):
+        if self.protocol != ray.Protocol.RAY_NET:
+            c.set_str('executable', self.executable_path)
+            if self.arguments:
+                c.set_str('arguments', self.arguments)
+
+        if self.pre_env:
+            c.set_str('pre_env', self.pre_env)
+
+        c.set_str('name', self.name)
+        if self.desktop_file:
+            c.set_str('desktop_file', self.desktop_file)
+        if self.label != self._desktop_label:
+            c.set_str('label', self.label)
+        if self.description != self._desktop_description:
+            c.set_str('description', self.description)
+        if self.icon != self._desktop_icon:
+            c.set_str('icon', self.icon)
+        if not self.check_last_save:
+            c.set_bool('check_last_save', False)
+
+        if self.prefix_mode != ray.PrefixMode.SESSION_NAME:
+            c.set_int('prefix_mode', self.prefix_mode)
+            if self.prefix_mode == ray.PrefixMode.CUSTOM:
+                c.set_str('custom_prefix', self.custom_prefix)
+
+        if self.is_capable_of(':optional-gui:'):
+            c.set_bool('gui_visible', not self.start_gui_hidden)
+
+        if self.jack_naming == ray.JackNaming.LONG:
+            c.set_bool('jack_naming', True)
+
+        if self.in_terminal:
+            c.set_bool('in_terminal', True)
+
+        if self.template_origin:
+            c.set_str('template_origin', self.template_origin)
+
+        if self.protocol != ray.Protocol.NSM:
+            c.set_str('protocol', ray.protocol_to_str(self.protocol))
+
+            if self.protocol == ray.Protocol.RAY_HACK:
+                c.set_str('config_file', self.ray_hack.config_file)
+                c.set_int('save_signal', self.ray_hack.save_sig)
+                c.set_int('stop_signal', self.ray_hack.stop_sig)
+                c.set_bool('wait_win', self.ray_hack.wait_win)
+                c.set_int('no_save_level', self.ray_hack.no_save_level)
+
+            elif self.protocol == ray.Protocol.RAY_NET:
+                c.set_str('net_daemon_url', self.ray_net.daemon_url)
+                c.set_str('net_session_root', self.ray_net.session_root)
+                c.set_str('net_session_template', self.ray_net.session_template)
+
+        if self.ignored_extensions != ray.GIT_IGNORED_EXTENSIONS:
+            ignored = ""
+            unignored = ""
+            client_exts = [e for e in self.ignored_extensions.split(' ') if e]
+            global_exts = [e for e in ray.GIT_IGNORED_EXTENSIONS.split(' ') if e]
+
+            for cext in client_exts:
+                if not cext in global_exts:
+                    ignored += " %s" % cext
+
+            for gext in global_exts:
+                if not gext in client_exts:
+                    unignored += " %s" % gext
+
+            if ignored:
+                c.set_str('ignored_extensions', ignored)
+            else:
+                c.remove('ignored_extensions')
+
+            if unignored:
+                c.set_str('unignored_extensions', unignored)
+            else:
+                c.remove('unignored_extensions')
+
+        if self.last_open_duration >= 5.0:
+            c.set_float('last_open_duration', self.last_open_duration)
+
+        if self.custom_data:
+            sub_child = ET.SubElement(c.el, 'custom_data')
+            for data in self.custom_data:
+                sub_child[data] = self.custom_data[data]
+            ET.dump(c.el)
 
     def write_xml_properties(self, ctx: QDomElement):
         if self.protocol != ray.Protocol.RAY_NET:

@@ -68,3 +68,7 @@ class XmlElement:
         
     def set_float(self, attribute: str, value: float):
         self.el.attrib[attribute] = str(float(value))
+        
+    def remove(self, attribute: str):
+        if attribute in self.el:
+            self.el.pop(attribute)
