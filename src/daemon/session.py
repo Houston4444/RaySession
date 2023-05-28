@@ -1,4 +1,5 @@
 import functools
+import logging
 import math
 import os
 import random
@@ -13,6 +14,7 @@ from PyQt5.QtCore import QCoreApplication, QTimer, QProcess
 from PyQt5.QtXml  import QDomDocument, QDomElement
 import liblo
 from pathlib import Path
+import xml.etree.ElementTree as ET
 
 import ray
 
@@ -31,8 +33,10 @@ from daemon_tools import (
     dirname, basename, highlight_text)
 import ardour_templates
 import templates_database
+from xml_tools import XmlElement
 
 _translate = QCoreApplication.translate
+_logger = logging.getLogger(__name__)
 signaler = Signaler.instance()
 
 
@@ -944,61 +948,57 @@ class OperatingSession(Session):
 
         self.next_function()
 
-    def adjust_files_after_copy(self, new_session_full_name, template_mode):
-        new_session_name = basename(new_session_full_name)
-
-        spath = "%s/%s" % (self.root, new_session_full_name)
-        if new_session_full_name.startswith('/'):
-            spath = new_session_full_name
+    def adjust_files_after_copy(self, new_session_full_name: str,
+                                template_mode: ray.Template):
+        new_session_short_path = Path(new_session_full_name)
+        
+        if new_session_short_path.is_absolute():
+            spath = new_session_short_path
+        else:
+            spath = Path(self.root) / new_session_short_path
 
         # create tmp clients from raysession.xml to adjust files after copy
-        session_file = "%s/%s" % (spath, "raysession.xml")
+        session_file = spath / 'raysession.xml'
 
         try:
-            ray_file = open(session_file, 'r')
-        except:
-            self._send_error(ray.Err.BAD_PROJECT,
-                           _translate("error", "impossible to read %s")
-                           % session_file)
+            tree = ET.parse(session_file)
+        except Exception as e:
+            _logger.error(str(e))
+            self._send_error(
+                ray.Err.BAD_PROJECT,
+                _translate("error", "impossible to read %s as a XML file")
+                    % session_file)
             return
-
-        tmp_clients = list[Client]()
-
-        xml = QDomDocument()
-        xml.setContent(ray_file.read())
-
-        content = xml.documentElement()
-
-        if content.tagName() != "RAYSESSION":
-            ray_file.close()
+        
+        root = tree.getroot()
+        if root.tag != 'RAYSESSION':
             self.load_error(ray.Err.BAD_PROJECT)
             return
+        
+        root.attrib['name'] = spath.name
 
-        content.setAttribute('name', new_session_name)
+        tmp_clients = list[Client]()
+        
+        for child in root:
+            if not child.tag in ('Clients', 'RemovedClients'):
+                continue
+            
+            client = Client(self)
+            client.read_xml_et_properties(XmlElement(child))
+            if not client.executable_path:
+                continue
+            
+            tmp_clients.append(client)
 
-        nodes = content.childNodes()
-
-        for i in range(nodes.count()):
-            node = nodes.at(i)
-            tag_name = node.toElement().tagName()
-            if tag_name in ('Clients', 'RemovedClients'):
-                clients_xml = node.toElement().childNodes()
-
-                for j in range(clients_xml.count()):
-                    client_xml = clients_xml.at(j)
-                    client = Client(self)
-                    cx = client_xml.toElement()
-                    client.read_xml_properties(cx)
-                    if not client.executable_path:
-                        continue
-
-                    tmp_clients.append(client)
-
-        ray_file.close()
-
-        ray_file_w = open(session_file, 'w')
-        ray_file_w.write(xml.toString())
-        ray_file_w.close()
+        try:
+            tree.write(session_file)
+        except BaseException as e:
+            _logger.error(str(e))
+            self._send_error(
+                ray.Err.CREATE_FAILED,
+                _translate("error", "impossible to write XML file %s")
+                    % session_file)
+            return
 
         for client in tmp_clients:
             client.adjust_files_after_copy(new_session_full_name, template_mode)

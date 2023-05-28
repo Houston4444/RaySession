@@ -2,6 +2,7 @@
 
 import argparse
 from dataclasses import dataclass
+from enum import IntEnum
 from typing import TYPE_CHECKING, Optional
 import liblo
 import os
@@ -155,7 +156,7 @@ class WaitFor:
     SCRIPT_QUIT = 7
 
 
-class Template:
+class Template(IntEnum):
     NONE = 0
     RENAME = 1
     SESSION_SAVE = 2
