@@ -8,7 +8,7 @@ from pathlib import Path
 from liblo import Address
 from PyQt5.QtCore import (QCoreApplication, QProcess,
                           QProcessEnvironment, QTimer)
-from PyQt5.QtXml import QDomDocument, QDomElement
+from PyQt5.QtXml import QDomDocument
 import xml.etree.ElementTree as ET
 
 import xdg
@@ -1066,12 +1066,12 @@ class Client(ServerSender, ray.ClientData):
             if ignored:
                 c.set_str('ignored_extensions', ignored)
             else:
-                c.remove('ignored_extensions')
+                c.remove_attr('ignored_extensions')
 
             if unignored:
                 c.set_str('unignored_extensions', unignored)
             else:
-                c.remove('unignored_extensions')
+                c.remove_attr('unignored_extensions')
 
         if self.last_open_duration >= 5.0:
             c.set_float('last_open_duration', self.last_open_duration)

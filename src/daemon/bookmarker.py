@@ -391,7 +391,7 @@ class PickerTypeKde5(PickerType):
 
         contents = self._get_contents()
         if not contents:
-            #we won't write a file for kde5 if file doesn't already exists
+            # we won't write a file for kde5 if file doesn't already exists
             return
 
         url = pathlib.Path(spath).as_uri()

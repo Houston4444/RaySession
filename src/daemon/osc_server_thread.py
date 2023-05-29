@@ -1,3 +1,4 @@
+import logging
 import os
 import shlex
 import sys
@@ -7,15 +8,16 @@ import subprocess
 import time
 from typing import TYPE_CHECKING
 import liblo
-
+from pathlib import Path
+import xml.etree.ElementTree as ET
 from PyQt5.QtCore import QCoreApplication
-from PyQt5.QtXml import QDomDocument
 
 import ray
 from signaler import Signaler
 from multi_daemon_file import MultiDaemonFile
 from daemon_tools import (TemplateRoots, CommandLineArgs, Terminal, RS,
                           get_code_root)
+from xml_tools import XmlElement
 from terminal_starter import which_terminal
 if TYPE_CHECKING:
     from session_signaled import SignaledSession
@@ -23,6 +25,7 @@ if TYPE_CHECKING:
 instance = None
 signaler = Signaler.instance()
 _translate = QCoreApplication.translate
+_logger = logging.getLogger(__name__)
 
 def _path_is_valid(path: str) -> bool:
     if path.startswith(('./', '../')):
@@ -646,12 +649,11 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/server/remove_client_template', 's')
     def rayServerRemoveClientTemplate(self, path, args, types, src_addr):
-        template_name = args[0]
+        template_name: str = args[0]
+        templates_root = Path(TemplateRoots.user_clients)
+        templates_file = templates_root / 'client_templates.xml'
 
-        templates_root = TemplateRoots.user_clients
-        templates_file = "%s/%s" % (templates_root, 'client_templates.xml')
-
-        if not os.path.isfile(templates_file):
+        if not templates_file.is_file():
             self.send(src_addr, '/error', path, ray.Err.NO_SUCH_FILE,
                       "file %s is missing !" % templates_file)
             return False
@@ -661,44 +663,46 @@ class OscServerThread(ClientCommunicating):
                       "file %s in unwriteable !" % templates_file)
             return False
 
-        file = open(templates_file, 'r')
-        xml = QDomDocument()
-        xml.setContent(file.read())
-        file.close()
+        tree = ET.parse(templates_file)
+        root = tree.getroot()
 
-        content = xml.documentElement()
-
-        if content.tagName() != "RAY-CLIENT-TEMPLATES":
+        if root.tag != 'RAY-CLIENT-TEMPLATES':
             self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
                       "file %s is not write correctly !" % templates_file)
             return False
 
-        nodes = content.childNodes()
+        xroot = XmlElement(root)
 
-        for i in range(nodes.count()):
-            node = nodes.at(i)
-            ct = node.toElement()
-            tag_name = ct.tagName()
-            if tag_name != 'Client-Template':
+        for c in xroot.iter():
+            if c.el.tag != 'Client-Template':
                 continue
-
-            if template_name == ct.attribute('template-name'):
+            
+            if c.str('template-name') == template_name:
                 break
         else:
             self.send(src_addr, '/error', path, ray.Err.NO_SUCH_FILE,
                       "No template \"%s\" to remove !" % template_name)
             return False
-
-        content.removeChild(nodes.at(i))
-
-        file = open(templates_file, 'w')
-        file.write(xml.toString())
-        file.close()
-
-        template_dir = '%s/%s' % (templates_root, template_name)
-
-        if os.path.isdir(template_dir):
-            subprocess.run(['rm', '-R', template_dir])
+        
+        root.remove(c.el)
+        
+        try:
+            tree.write(templates_file)
+        except BaseException as e:
+            _logger.error(str(e))
+            self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
+                      "Impossible to rewrite user client templates xml file")
+            return False
+        
+        templates_dir = templates_root / template_name
+        if templates_dir.is_dir():
+            try:
+                shutil.rmtree(templates_dir)
+            except BaseException as e:
+                _logger.error(str(e))
+                self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
+                      "Failed to remove the folder %s" % str(templates_dir))
+                return False
 
         self.send(src_addr, '/reply', path,
                   "template \"%s\" removed." % template_name)
