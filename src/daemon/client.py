@@ -1937,7 +1937,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if not desktop_file.endswith('.desktop'):
             desktop_file += ".desktop"
 
-        desk_path_list = ([Path(get_code_root()) / 'data' / 'share']
+        desk_path_list = ([get_code_root() / 'data' / 'share']
                           + xdg.xdg_data_dirs())
 
         for desk_data_path in desk_path_list:

@@ -3,8 +3,10 @@ import os
 import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+from pathlib import Path
 from PyQt5.QtCore import (QCoreApplication, QStandardPaths, QSettings,
                           QDateTime, QLocale)
+
 
 import ray
 import liblo
@@ -31,8 +33,8 @@ def get_app_config_path()->str:
             QStandardPaths.writableLocation(QStandardPaths.ConfigLocation),
             QCoreApplication.organizationName())
 
-def get_code_root()->str:
-    return dirname(dirname(dirname(os.path.realpath(__file__))))
+def get_code_root() -> Path:
+    return Path(__file__).parent.parent.parent
 
 def is_pid_child_of(child_pid, parent_pid)->bool:
     if child_pid < parent_pid:
@@ -145,8 +147,8 @@ class RS:
 
 class TemplateRoots:
     net_session_name = ".ray-net-session-templates"
-    factory_sessions = "%s/session_templates" % get_code_root()
-    factory_clients = "%s/client_templates"  % get_code_root()
+    factory_sessions = "%s/session_templates" % str(get_code_root())
+    factory_clients = "%s/client_templates"  % str(get_code_root())
     factory_clients_xdg = "/etc/xdg/raysession/client_templates"
 
     @classmethod

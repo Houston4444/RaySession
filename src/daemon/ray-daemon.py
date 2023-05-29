@@ -8,7 +8,7 @@ from PyQt5.QtCore import (QCoreApplication, QTimer,
                           QLocale, QTranslator)
 
 import ray
-from daemon_tools import (init_daemon_tools, RS, get_code_root,
+from daemon_tools import (get_code_root, init_daemon_tools, RS,
                           CommandLineArgs, ArgParser, Terminal)
 from osc_server_thread import OscServerThread
 from multi_daemon_file import MultiDaemonFile
@@ -34,8 +34,8 @@ if __name__ == '__main__':
     locale = QLocale.system().name()
     appTranslator = QTranslator()
 
-    if appTranslator.load("%s/locale/raysession_%s"
-                          % (get_code_root(), locale)):
+    if appTranslator.load(
+        str(get_code_root() / 'locale' / f'raysession_{locale}')):
         app.installTranslator(appTranslator)
 
     _translate = app.translate

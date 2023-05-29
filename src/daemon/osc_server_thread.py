@@ -7,18 +7,24 @@ import shutil
 import subprocess
 import time
 from typing import TYPE_CHECKING
-import liblo
 from pathlib import Path
 import xml.etree.ElementTree as ET
+
+import liblo
 from PyQt5.QtCore import QCoreApplication
 
 import ray
 from signaler import Signaler
 from multi_daemon_file import MultiDaemonFile
-from daemon_tools import (TemplateRoots, CommandLineArgs, Terminal, RS,
-                          get_code_root)
+from daemon_tools import (
+    TemplateRoots,
+    CommandLineArgs,
+    Terminal,
+    RS,
+    get_code_root)
 from xml_tools import XmlElement
 from terminal_starter import which_terminal
+
 if TYPE_CHECKING:
     from session_signaled import SignaledSession
 
@@ -889,21 +895,22 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/server/exotic_action', 's')
     def rayServerExoticAction(self, path, args, types, src_addr):
         action = args[0]
-        autostart_dir = "%s/.config/autostart" % os.getenv('HOME')
+        autostart_dir = Path.home() / '.config' / 'autostart'
         desk_file = "ray-jack_checker.desktop"
+        dest_full_path = autostart_dir / desk_file
 
         if action == 'set_jack_checker_autostart':
-            if not os.path.exists(autostart_dir):
-                os.makedirs(autostart_dir)
+            if not autostart_dir.exists():
+                autostart_dir.mkdir(parents=True)
 
-            src_full_file = "%s/data/share/applications/%s" % (get_code_root(),
-                                                               desk_file)
-            dest_full_path = "%s/%s" % (autostart_dir, desk_file)
-
+            src_full_file = (
+                get_code_root()
+                / 'data' / 'share' / 'applications' / desk_file)
+            
             shutil.copyfile(src_full_file, dest_full_path)
 
         elif action == 'unset_jack_checker_autostart':
-            os.remove("%s/%s" % (autostart_dir, desk_file))
+            dest_full_path.unlink(missing_ok=True)
 
     @ray_method('/ray/server/patchbay/save_group_position',
                 ray.GroupPosition.sisi())
