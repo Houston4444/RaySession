@@ -370,7 +370,7 @@ def rebuild_templates_database(session: 'Session', base: str):
                     continue
 
         template_client = Client(session)
-        template_client.read_xml_et_properties(XmlElement(child))
+        template_client.read_xml_properties(XmlElement(child))
         template_client.client_id = c.str('client_id')        
         if not template_client.client_id:
             template_client.client_id == session.generate_abstract_client_id(

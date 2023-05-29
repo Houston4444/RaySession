@@ -794,7 +794,7 @@ class Client(ServerSender, ray.ClientData):
 
         # create the client template item in xml file
         c = XmlElement(ET.SubElement(root, 'Client-Template'))
-        self.write_xml_et_properties(c)
+        self.write_xml_properties(c)
         c.set_str('template-name', template_name)
         c.set_str('client_id', self._pretty_client_id())
         
@@ -882,7 +882,7 @@ class Client(ServerSender, ray.ClientData):
 
         return jack_client_name
 
-    def read_xml_et_properties(self, c: XmlElement):
+    def read_xml_properties(self, c: XmlElement):
         self.executable_path = c.str('executable')
         self.arguments = c.str('arguments')
         self.pre_env = c.str('pre_env')
@@ -996,7 +996,7 @@ class Client(ServerSender, ray.ClientData):
             if cc.tag == 'custom_data':
                 self.custom_data = c.el.attrib.copy()
 
-    def write_xml_et_properties(self, c: XmlElement):
+    def write_xml_properties(self, c: XmlElement):
         if self.protocol != ray.Protocol.RAY_NET:
             c.set_str('executable', self.executable_path)
             if self.arguments:
@@ -1081,97 +1081,6 @@ class Client(ServerSender, ray.ClientData):
             for data in self.custom_data:
                 sub_child[data] = self.custom_data[data]
             ET.dump(c.el)
-
-    def write_xml_properties(self, ctx: QDomElement):
-        if self.protocol != ray.Protocol.RAY_NET:
-            ctx.setAttribute('executable', self.executable_path)
-            if self.arguments:
-                ctx.setAttribute('arguments', self.arguments)
-
-        if self.pre_env:
-            ctx.setAttribute('pre_env', self.pre_env)
-
-        ctx.setAttribute('name', self.name)
-        if self.desktop_file:
-            ctx.setAttribute('desktop_file', self.desktop_file)
-        if self.label != self._desktop_label:
-            ctx.setAttribute('label', self.label)
-        if self.description != self._desktop_description:
-            ctx.setAttribute('description', self.description)
-        if self.icon != self._desktop_icon:
-            ctx.setAttribute('icon', self.icon)
-        if not self.check_last_save:
-            ctx.setAttribute('check_last_save', 0)
-
-        if self.prefix_mode != ray.PrefixMode.SESSION_NAME:
-            ctx.setAttribute('prefix_mode', self.prefix_mode)
-            if self.prefix_mode == ray.PrefixMode.CUSTOM:
-                ctx.setAttribute('custom_prefix', self.custom_prefix)
-
-        if self.is_capable_of(':optional-gui:'):
-            ctx.setAttribute('gui_visible',
-                             str(int(not self.start_gui_hidden)))
-
-        if self.jack_naming == ray.JackNaming.LONG:
-            ctx.setAttribute('jack_naming', ray.JackNaming.LONG)
-
-        if self.in_terminal:
-            ctx.setAttribute('in_terminal', 1)
-
-        if self.template_origin:
-            ctx.setAttribute('template_origin', self.template_origin)
-
-        if self.protocol != ray.Protocol.NSM:
-            ctx.setAttribute('protocol', ray.protocol_to_str(self.protocol))
-
-            if self.protocol == ray.Protocol.RAY_HACK:
-                ctx.setAttribute('config_file', self.ray_hack.config_file)
-                ctx.setAttribute('save_signal', self.ray_hack.save_sig)
-                ctx.setAttribute('stop_signal', self.ray_hack.stop_sig)
-                ctx.setAttribute('wait_win', int(self.ray_hack.wait_win))
-                ctx.setAttribute('no_save_level', self.ray_hack.no_save_level)
-
-            elif self.protocol == ray.Protocol.RAY_NET:
-                ctx.setAttribute('net_daemon_url', self.ray_net.daemon_url)
-                ctx.setAttribute('net_session_root',
-                                 self.ray_net.session_root)
-                ctx.setAttribute('net_session_template',
-                                 self.ray_net.session_template)
-
-        if self.ignored_extensions != ray.GIT_IGNORED_EXTENSIONS:
-            ignored = ""
-            unignored = ""
-            client_exts = [e for e in self.ignored_extensions.split(' ') if e]
-            global_exts = [e for e in ray.GIT_IGNORED_EXTENSIONS.split(' ') if e]
-
-            for cext in client_exts:
-                if not cext in global_exts:
-                    ignored += " %s" % cext
-
-            for gext in global_exts:
-                if not gext in client_exts:
-                    unignored += " %s" % gext
-
-            if ignored:
-                ctx.setAttribute('ignored_extensions', ignored)
-            else:
-                ctx.removeAttribute('ignored_extensions')
-
-            if unignored:
-                ctx.setAttribute('unignored_extensions', unignored)
-            else:
-                ctx.removeAttribute('unignored_extensions')
-
-        if self.last_open_duration >= 5.0:
-            ctx.setAttribute('last_open_duration',
-                             str(self.last_open_duration))
-
-        if self.custom_data:
-            xml = QDomDocument()
-            cdt_xml = xml.createElement('custom_data')
-            for data in self.custom_data:
-                cdt_xml.setAttribute(data, self.custom_data[data])
-            ctx.appendChild(cdt_xml)
 
     def set_reply(self, errcode, message):
         self._reply_message = message

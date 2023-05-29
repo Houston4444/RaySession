@@ -340,13 +340,13 @@ class Session(ServerSender):
                 or (client.auto_start
                     and not client.has_been_started))
             c.set_bool('launched', launched)            
-            client.write_xml_et_properties(c)
+            client.write_xml_properties(c)
         
         # save trashed clients attributes
         for client in self.trashed_clients:
             c = rcs.new_child('client')
             c.set_str('id', client.client_id)
-            client.write_xml_et_properties(c)
+            client.write_xml_properties(c)
             
         # save desktop memory of windows if needed
         if self.has_server_option(ray.Option.DESKTOPS_MEMORY):
@@ -981,7 +981,7 @@ class OperatingSession(Session):
                 continue
             
             client = Client(self)
-            client.read_xml_et_properties(XmlElement(child))
+            client.read_xml_properties(XmlElement(child))
             if not client.executable_path:
                 continue
             
@@ -1801,7 +1801,7 @@ for better organization.""")
                     for cchild in child:
                         c = XmlElement(cchild)
                         client = Client(self)
-                        client.read_xml_et_properties(c)
+                        client.read_xml_properties(c)
                         
                         if not client.executable_path:
                             continue

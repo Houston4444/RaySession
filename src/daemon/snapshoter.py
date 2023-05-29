@@ -190,7 +190,7 @@ class Snapshoter(QObject):
         for client in self.session.clients + self.session.trashed_clients:
             client_el = ET.SubElement(snapshot_el, 'client')
             c = XmlElement(client_el)
-            client.write_xml_et_properties(c)
+            client.write_xml_properties(c)
             c.set_str('client_id', client.client_id)
             
             for client_file_path in client.get_project_files():
