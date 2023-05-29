@@ -15,6 +15,7 @@ from PyQt5.QtXml  import QDomDocument, QDomElement
 import liblo
 from pathlib import Path
 import xml.etree.ElementTree as ET
+from io import BytesIO
 
 import ray
 
@@ -302,84 +303,79 @@ class Session(ServerSender):
         return client_id
 
     def _save_session_file(self) -> int:
-        session_file = self.path + '/raysession.xml'
+        session_path = Path(self.path)
+        # session_file = self.path + '/raysession.xml'
+        session_file = session_path / 'raysession.xml'
 
         if self.is_nsm_locked() and os.getenv('NSM_URL'):
-            session_file = self.path + '/raysubsession.xml'
+            # session_file = self.path + '/raysubsession.xml'
+            session_file = session_path / 'raysubsession.xml'
 
-        if (os.path.isfile(session_file)
-                and not os.access(session_file, os.W_OK)):
+        if session_file.is_file() and not os.access(session_file, os.W_OK):
             return ray.Err.CREATE_FAILED
 
-        try:
-            file = open(session_file, 'w')
-        except:
-            return ray.Err.CREATE_FAILED
+        # if (os.path.isfile(session_file)
+        #         and not os.access(session_file, os.W_OK)):
+        #     return ray.Err.CREATE_FAILED
 
-        xml = QDomDocument()
-        p = xml.createElement('RAYSESSION')
-        p.setAttribute('VERSION', ray.VERSION)
-        p.setAttribute('name', self.name)
+
+        root = ET.Element('RAYSESSION')
+        xroot = XmlElement(root)
+        xroot.set_str('VERSION', ray.VERSION)
+        xroot.set_str('name', self.name)
         if self.notes_shown:
-            p.setAttribute('notes_shown', 'true')
-
-        xml_cls = xml.createElement('Clients')
-        xml_rmcls = xml.createElement('RemovedClients')
-        xml_wins = xml.createElement('Windows')
-
+            xroot.set_bool('notes_shown', True)
+        
+        cs = xroot.new_child('Clients')
+        rcs = xroot.new_child('RemovedClients')
+        ws = xroot.new_child('Windows')
+        
         # save clients attributes
         for client in self.clients:
-            cl = xml.createElement('client')
-            cl.setAttribute('id', client.client_id)
-
-            launched = int(bool(client.is_running() or
-                                (client.auto_start
-                                 and not client.has_been_started)))
-
-            cl.setAttribute('launched', launched)
-
-            client.write_xml_properties(cl)
-
-            xml_cls.appendChild(cl)
-
+            c = cs.new_child('client')
+            c.set_str('id', client.client_id)
+            
+            launched = bool(
+                client.is_running()
+                or (client.auto_start
+                    and not client.has_been_started))
+            c.set_bool('launched', launched)            
+            client.write_xml_et_properties(c)
+        
         # save trashed clients attributes
         for client in self.trashed_clients:
-            cl = xml.createElement('client')
-            cl.setAttribute('id', client.client_id)
-
-            client.write_xml_properties(cl)
-
-            xml_rmcls.appendChild(cl)
-
+            c = rcs.new_child('client')
+            c.set_str('id', client.client_id)
+            client.write_xml_et_properties(c)
+            
         # save desktop memory of windows if needed
         if self.has_server_option(ray.Option.DESKTOPS_MEMORY):
             self.desktops_memory.save()
-
+            
         for win in self.desktops_memory.saved_windows:
-            xml_win = xml.createElement('window')
-            xml_win.setAttribute('class', win.wclass)
-            xml_win.setAttribute('name', win.name)
-            xml_win.setAttribute('desktop', win.desktop)
-            xml_wins.appendChild(xml_win)
+            w = ws.new_child('window')
+            w.set_str('class', win.wclass)
+            w.set_str('name', win.name)
+            w.set_int('desktop', win.desktop)
 
-        p.appendChild(xml_cls)
-        p.appendChild(xml_rmcls)
-        p.appendChild(xml_wins)
-        xml.appendChild(p)
-
-        contents = ("<?xml version='1.0' encoding='UTF-8'?>\n"
-                    "<!DOCTYPE RAYSESSION>\n")
-
-        contents += xml.toString()
+        tree = ET.ElementTree(root)
+        ET.indent(tree, level=0)
 
         try:
-            file.write(contents)
-        except:
-            file.close()
-            return ray.Err.CREATE_FAILED
-            #self.save_error(ray.Err.CREATE_FAILED)
+            f = BytesIO()
+            tree.write(f)
+            header = ("<?xml version='1.0' encoding='UTF-8'?>\n"
+                    "<!DOCTYPE RAYSESSION>\n")
+            text = header + f.getvalue().decode()
+            
+            with open(session_file, 'w') as f:
+                f.write(text)
 
-        file.close()
+        except BaseException as e:
+            _logger.error(str(e))
+            return ray.Err.CREATE_FAILED
+        
+        return ray.Err.OK
 
     def generate_abstract_client_id(self, wanted_id:str) -> str:
         '''generates a client_id from wanted_id

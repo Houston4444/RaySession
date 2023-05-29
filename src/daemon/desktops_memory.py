@@ -181,7 +181,7 @@ class DesktopsMemory:
     def read_xml(self, xml_element: XmlElement):
         self.saved_windows.clear()
 
-        for w in xml_element.parse():
+        for w in xml_element.iter():
             if w.el.tag != 'window':
                 continue
             

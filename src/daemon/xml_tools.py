@@ -1,4 +1,3 @@
-from typing import Iterator
 import xml.etree.ElementTree as ET
 
 
@@ -6,9 +5,12 @@ class XmlElement:
     def __init__(self, element: ET.Element):
         self.el = element
     
-    def parse(self):
+    def iter(self):
         for child in self.el:
             yield XmlElement(child)
+    
+    def new_child(self, tag: str) -> 'XmlElement':
+        return XmlElement(ET.SubElement(self.el, tag))
     
     def str(self, attribute: str, default='') -> str:
         ret_value = self.el.attrib.get(attribute)
