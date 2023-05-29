@@ -15,7 +15,8 @@ import xdg
 import ray
 from server_sender import ServerSender
 from daemon_tools  import (TemplateRoots, Terminal, RS,
-                           get_code_root, highlight_text)
+                           get_code_root, highlight_text,
+                           exec_and_desktops)
 from signaler import Signaler
 from scripter import ClientScripter
 from xml_tools import XmlElement
@@ -1928,7 +1929,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             return
 
         if not desktop_file:
-            desktop_file = self.session.exec_and_desks.get(self.executable_path)
+            desktop_file = exec_and_desktops.get(self.executable_path)
 
         if not desktop_file:
             desktop_file = os.path.basename(self.executable_path)

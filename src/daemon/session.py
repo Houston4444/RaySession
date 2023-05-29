@@ -10,7 +10,7 @@ import sys
 import time
 from typing import Optional, TypedDict
 from liblo import Address
-from PyQt5.QtCore import QCoreApplication, QTimer, QProcess
+from PyQt5.QtCore import QCoreApplication, QTimer
 from PyQt5.QtXml  import QDomDocument
 import liblo
 from pathlib import Path
@@ -41,14 +41,6 @@ _logger = logging.getLogger(__name__)
 signaler = Signaler.instance()
 
 
-class NsmDesktopExec(TypedDict):
-    executable: str
-    name: str
-    desktop_file: str
-    nsm_capable: bool
-    skipped: bool
-
-
 class Session(ServerSender):
     def __init__(self, root, session_id=0):
         ServerSender.__init__(self)
@@ -60,7 +52,6 @@ class Session(ServerSender):
         self.future_clients = list[Client]()
         self.trashed_clients = list[Client]()
         self.future_trashed_clients = list[Client]()
-        self.new_client_exec_args = list[str]
         self.recent_sessions = dict[str, list[str]]()
 
         self.name = ""
@@ -86,8 +77,6 @@ class Session(ServerSender):
         self.osc_src_addr: liblo.Address = None
         
         self._time_at_open = 0
-        
-        self.exec_and_desks = dict[str, str]()
 
     #############
     def osc_reply(self, *args):

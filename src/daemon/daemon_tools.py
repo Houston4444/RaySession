@@ -15,10 +15,15 @@ if TYPE_CHECKING:
 
 settings = QSettings()
 
-def dirname(*args)->str:
+# remember here associated desktop files for executables
+# key: executable, value: desktop_file name
+exec_and_desktops = dict[str, str]()
+
+
+def dirname(*args) -> str:
     return os.path.dirname(*args)
 
-def basename(*args)->str:
+def basename(*args) -> str:
     return os.path.basename(*args)
 
 def get_app_config_path()->str:

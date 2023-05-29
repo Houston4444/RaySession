@@ -9,6 +9,7 @@ from PyQt5.QtCore import QProcess, QCoreApplication
 import xdg
 import ray
 from daemon_tools import (
+    exec_and_desktops,
     TemplateRoots,
     get_git_default_un_and_ignored,
     AppTemplate)
@@ -22,6 +23,10 @@ if TYPE_CHECKING:
 
 _translate = QCoreApplication.translate
 _logger = logging.getLogger(__name__)
+
+
+
+
 
 class NsmDesktopExec(TypedDict):
     executable: str
@@ -48,12 +53,12 @@ def _get_search_template_dirs(factory: bool) -> list[Path]:
 
     return [Path(TemplateRoots.user_clients)]
 
-def _first_desktops_scan() -> tuple[
-        list[NsmDesktopExec], dict[str, str]]:
+def _first_desktops_scan() -> list[NsmDesktopExec]:
     desk_paths = [xdg.xdg_data_home()] + xdg.xdg_data_dirs()
 
     application_dicts = list[NsmDesktopExec]()
-    exec_and_desks = dict[str, str]()
+    # exec_and_desks = dict[str, str]()
+    exec_and_desktops.clear()
 
     lang = os.getenv('LANG')
     lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
@@ -95,7 +100,7 @@ def _first_desktops_scan() -> tuple[
                     if line.startswith('Exec='):
                         executable_and_args = line.partition('=')[2].strip()
                         executable = executable_and_args.partition(' ')[0]
-                        exec_and_desks[executable] = full_desk_file
+                        exec_and_desktops[executable] = full_desk_file
                     
                     elif line.lower().startswith('x-nsm-capable='):
                         has_nsm_mention = True
@@ -134,8 +139,8 @@ def _first_desktops_scan() -> tuple[
                          'desktop_file': f,
                          'nsm_capable': nsm_capable,
                          'skipped': False})
-    
-    return ([a for a in application_dicts if a['nsm_capable']], exec_and_desks)
+
+    return [a for a in application_dicts if a['nsm_capable']]
 
 def _should_rewrite_user_templates_file(
         root: ET.Element, templates_file: Path) -> bool:
@@ -170,7 +175,7 @@ def _should_rewrite_user_templates_file(
 
     return True
 
-def _list_xml_elements(base: str) -> Iterator[tuple[Path, ET.Element]]:
+def _list_xml_elements(base: str) -> Iterator[tuple[Path, XmlElement]]:
     factory = bool(base == 'factory')
     search_paths = _get_search_template_dirs(factory)
     
@@ -203,17 +208,16 @@ def _list_xml_elements(base: str) -> Iterator[tuple[Path, ET.Element]]:
         xroot = XmlElement(root)
         erased_by_nsm_desktop_global = xroot.bool('erased_by_nsm_desktop_file')
 
-        for child in root:
-            if child.tag != 'Client-Template':
+        for c in xroot.iter():
+        # for child in root:
+            if c.el.tag != 'Client-Template':
                 continue
-            
-            c = XmlElement(child)
             
             if (erased_by_nsm_desktop_global
                     and not c.bool('erased_by_nsm_desktop_file')):
-                child.attrib['erased_by_nsm_desktop_file'] = 'true'
+                c.set_bool('erased_by_nsm_desktop_file', True)
                 
-            yield search_path, child
+            yield search_path, c
 
         if file_rewritten:
             _logger.info('rewrite user client templates XML file')
@@ -231,16 +235,14 @@ def rebuild_templates_database(session: 'Session', base: str):
     template_names = set[str]()
     template_execs = set[str]()
     
-    for search_path, child in _list_xml_elements(base):
-        template_execs.add(XmlElement(child).str('executable'))
+    for search_path, c in _list_xml_elements(base):
+        template_execs.add(c.str('executable'))
 
     from_desktop_execs = list[NsmDesktopExec]()
     if base == 'factory':
-        from_desktop_execs, exec_and_desks = _first_desktops_scan()
-        session.exec_and_desks = exec_and_desks
+        from_desktop_execs = _first_desktops_scan()
 
-    for search_path, child in _list_xml_elements(base):
-        c = XmlElement(child)
+    for search_path, c in _list_xml_elements(base):
         template_name = c.str('template-name')
 
         if (not template_name
@@ -370,7 +372,7 @@ def rebuild_templates_database(session: 'Session', base: str):
                     continue
 
         template_client = Client(session)
-        template_client.read_xml_properties(XmlElement(child))
+        template_client.read_xml_properties(c)
         template_client.client_id = c.str('client_id')        
         if not template_client.client_id:
             template_client.client_id == session.generate_abstract_client_id(
