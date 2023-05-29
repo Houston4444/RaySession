@@ -42,7 +42,7 @@ signaler = Signaler.instance()
 
 
 class Session(ServerSender):
-    def __init__(self, root, session_id=0):
+    def __init__(self, root: str, session_id=0):
         ServerSender.__init__(self)
         self.root = root
         self.is_dummy = False
@@ -509,8 +509,7 @@ class Session(ServerSender):
                                     export_path:str)->bool:
         # still work in progress and not used function
         # will see later if it is really useful
-        templates_file = "%s/%s" % (
-            TemplateRoots.user_clients, 'client_templates.xml')
+        templates_file = TemplateRoots.user_clients / 'client_templates.xml'
 
         if not os.path.isfile(templates_file):
             return False
@@ -1552,18 +1551,16 @@ for better organization.""")
         template_root = TemplateRoots.user_sessions
 
         if net:
-            template_root = "%s/%s" \
-                            % (self.root, TemplateRoots.net_session_name)
+            template_root = Path(self.root) / TemplateRoots.net_session_name
 
-        template_path = "%s/%s" % (template_root, template_name)
+        template_path = template_root / template_name
 
         if template_name.startswith('///'):
             # we use here a factory session template
             template_name = template_name.replace('///', '')
-            template_path = "%s/%s" \
-                            % (TemplateRoots.factory_sessions, template_name)
+            template_path = TemplateRoots.factory_sessions / template_name
 
-        if not os.path.isdir(template_path):
+        if not template_path.is_dir():
             self._send_minor_error(ray.Err.GENERAL_ERROR,
                                    _translate("error", "No template named %s")
                                    % template_name)
@@ -1596,7 +1593,7 @@ for better organization.""")
                        'start copy from template to session folder'))
 
         self.file_copier.start_session_copy(
-            template_path, spath,
+            str(template_path), spath,
             self.prepare_template_substep1,
             self.prepare_template_aborted,
             [new_session_full_name])

@@ -4,12 +4,13 @@ import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from pathlib import Path
+
 from PyQt5.QtCore import (QCoreApplication, QStandardPaths, QSettings,
                           QDateTime, QLocale)
+import liblo
 
 
 import ray
-import liblo
 
 if TYPE_CHECKING:
     from client import Client
@@ -28,7 +29,7 @@ def dirname(*args) -> str:
 def basename(*args) -> str:
     return os.path.basename(*args)
 
-def get_app_config_path()->str:
+def get_app_config_path() -> str:
     return "%s/%s" % (
             QStandardPaths.writableLocation(QStandardPaths.ConfigLocation),
             QCoreApplication.organizationName())
@@ -36,7 +37,7 @@ def get_app_config_path()->str:
 def get_code_root() -> Path:
     return Path(__file__).parent.parent.parent
 
-def is_pid_child_of(child_pid, parent_pid)->bool:
+def is_pid_child_of(child_pid, parent_pid) -> bool:
     if child_pid < parent_pid:
         return False
 
@@ -70,7 +71,7 @@ def is_pid_child_of(child_pid, parent_pid)->bool:
 
     return False
 
-def highlight_text(string)->str:
+def highlight_text(string) -> str:
     if "'" in string:
         return '"%s"' % string
     return "'%s'" % string
@@ -147,9 +148,9 @@ class RS:
 
 class TemplateRoots:
     net_session_name = ".ray-net-session-templates"
-    factory_sessions = "%s/session_templates" % str(get_code_root())
-    factory_clients = "%s/client_templates"  % str(get_code_root())
-    factory_clients_xdg = "/etc/xdg/raysession/client_templates"
+    factory_sessions = get_code_root() / 'session_templates'
+    factory_clients = get_code_root() / 'client_templates'    
+    factory_clients_xdg = Path('/etc/xdg/raysession/client_templates')
 
     @classmethod
     def init_config(cls):
@@ -158,8 +159,8 @@ class TemplateRoots:
         else:
             app_config_path = get_app_config_path()
 
-        cls.user_sessions = "%s/session_templates" % app_config_path
-        cls.user_clients = "%s/client_templates"  % app_config_path
+        cls.user_sessions = Path(app_config_path) / 'session_templates'
+        cls.user_clients = Path(app_config_path) / 'client_templates'
 
 
 class Terminal:

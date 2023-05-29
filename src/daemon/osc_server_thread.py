@@ -618,7 +618,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/server/list_session_templates', '')
     def rayServerListSessionTemplates(self, path, args, types, src_addr):
-        if not os.path.isdir(TemplateRoots.user_sessions):
+        if not TemplateRoots.user_sessions.is_dir():
             self.send(src_addr, '/reply', path)
             return False
 
@@ -656,7 +656,7 @@ class OscServerThread(ClientCommunicating):
     @ray_method('/ray/server/remove_client_template', 's')
     def rayServerRemoveClientTemplate(self, path, args, types, src_addr):
         template_name: str = args[0]
-        templates_root = Path(TemplateRoots.user_clients)
+        templates_root = TemplateRoots.user_clients
         templates_file = templates_root / 'client_templates.xml'
 
         if not templates_file.is_file():

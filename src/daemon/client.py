@@ -712,7 +712,7 @@ class Client(ServerSender, ray.ClientData):
             self.adjust_files_after_copy(template_name,
                                          ray.Template.CLIENT_SAVE)
 
-        user_clients_path = Path(TemplateRoots.user_clients)
+        user_clients_path = TemplateRoots.user_clients
         xml_file = user_clients_path / 'client_templates.xml'
 
         # security check
@@ -2185,13 +2185,12 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             spath = Path(self.session.get_full_path(new_session_full_name))
 
         elif template_save == ray.Template.RENAME:
-            # spath = self.session.path
             pass
 
         elif template_save == ray.Template.SESSION_SAVE:
             spath = Path(new_session_full_name)
             if not spath.is_absolute():
-                spath = Path(TemplateRoots.user_sessions) / new_session_full_name
+                spath = TemplateRoots.user_sessions / new_session_full_name
             new_session_name = X_SESSION_X
 
         elif template_save == ray.Template.SESSION_SAVE_NET:
@@ -2209,7 +2208,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             old_session_name = X_SESSION_X
 
         elif template_save == ray.Template.CLIENT_SAVE:
-            spath = Path(TemplateRoots.user_clients) / new_session_full_name
+            spath = TemplateRoots.user_clients / new_session_full_name
             new_session_name = X_SESSION_X
             new_client_id = X_CLIENT_ID_X
             new_client_links_dir = X_CLIENT_LINKS_DIR_X

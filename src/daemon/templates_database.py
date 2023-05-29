@@ -39,11 +39,11 @@ class NsmDesktopExec(TypedDict):
 def _get_search_template_dirs(factory: bool) -> list[Path]:
     if factory:
         # search templates in /etc/xdg (RaySession installed)
-        templates_root = Path(TemplateRoots.factory_clients_xdg)
+        templates_root = TemplateRoots.factory_clients_xdg
 
         # search templates in source code
         if not templates_root.is_dir():
-            templates_root = Path(TemplateRoots.factory_clients)
+            templates_root = TemplateRoots.factory_clients
 
         if (templates_root.is_dir()
                 and os.access(templates_root, os.R_OK)):
@@ -51,7 +51,7 @@ def _get_search_template_dirs(factory: bool) -> list[Path]:
 
         return []
 
-    return [Path(TemplateRoots.user_clients)]
+    return [TemplateRoots.user_clients]
 
 def _first_desktops_scan() -> list[NsmDesktopExec]:
     desk_paths = [xdg.xdg_data_home()] + xdg.xdg_data_dirs()
