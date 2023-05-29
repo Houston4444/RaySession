@@ -8,8 +8,6 @@ from typing import TYPE_CHECKING
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QProcess
 from PyQt5.QtXml  import QDomDocument
-import sys
-import inspect
 
 import ray
 

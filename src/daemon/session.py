@@ -11,7 +11,7 @@ import time
 from typing import Optional, TypedDict
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QTimer, QProcess
-from PyQt5.QtXml  import QDomDocument, QDomElement
+from PyQt5.QtXml  import QDomDocument
 import liblo
 from pathlib import Path
 import xml.etree.ElementTree as ET
