@@ -711,7 +711,7 @@ class OscServerThread(ClientCommunicating):
                 return False
 
         self.send(src_addr, '/reply', path,
-                  "template \"%s\" removed." % template_name)
+                  f'template "{template_name}" removed.')
 
     @ray_method('/ray/server/list_sessions', '')
     def rayServerListSessions(self, path, args, types, src_addr):
