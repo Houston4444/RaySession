@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import subprocess
@@ -12,6 +13,7 @@ import ray
 if TYPE_CHECKING:
     from session import Session
 
+_logger = logging.getLogger(__name__)
 
 class CopyFile:
     orig_path = ""
@@ -47,15 +49,16 @@ class FileCopier(ServerSender):
         self._abort_src_addr = None
         self._abort_src_path = ''
 
-    def _get_file_size(self, filepath):
+    def _get_file_size(self, filepath) -> int:
         if not os.path.exists(filepath):
             return 0
 
         try:
             du_full = subprocess.check_output(
                 ['nice', '-n', '15', 'du', '-sb', filepath]).decode()
-        except:
-            warnings.warn('unable to decode size of file %s' % filepath)
+        except BaseException as e:
+            _logger.error(str(e))
+            _logger.error(f'unable to decode size of file {filepath}')
             du_full = ""
 
         if not du_full:
@@ -94,7 +97,7 @@ class FileCopier(ServerSender):
 
         self._timer.start()
 
-    def _process_finished(self, exit_code, exit_status):
+    def _process_finished(self, exit_code: int, exit_status: int):
         self._timer.stop()
 
         for copy_file in self._copy_files:
@@ -152,9 +155,10 @@ class FileCopier(ServerSender):
         for copy_file in self._copy_files:
             if copy_file.state == 0:
                 copy_file.state = 1
-                self._process.start('nice',
-                                   ['-n', '+15', 'cp', '-R',
-                                    copy_file.orig_path, copy_file.dest_path])
+                self._process.start(
+                    'nice',
+                    ['-n', '+15', 'cp', '-R',
+                     copy_file.orig_path, copy_file.dest_path])
                 break
 
         self._timer.start()
