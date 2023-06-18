@@ -1168,7 +1168,7 @@ QToolButton {border: none}</string>
     <string>&amp;Keep focus while opening clients</string>
    </property>
    <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Keep focus for the RaySession window while opening clients.&lt;/p&gt;&lt;p&gt;This option does not works with Wayland (window protocol used by Gnome).&lt;/p&gt;&lt;p&gt;It makes more sense to use it if RaySession window is little, without the patchbay.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Keep focus for the RaySession window while opening clients.&lt;/p&gt;&lt;p&gt;This option does not works with Wayland (window protocol used by Gnome). It makes more sense to use it if RaySession window is little, without the patchbay.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+H</string>
@@ -1273,7 +1273,11 @@ QToolButton {border: none}</string>
     <string>&amp;Provide bookmarks for session folder</string>
    </property>
    <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Provide bookmarks for session folder in your file manager.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;In audio production, creating audio or midi file with one program and load it into another is an usual case. This option offers something purely practical: a shortcut to the current session folder in your file manager and in the dialog boxes provided for fetching or saving files. It simply avoids wasting time browsing through your personal folder tree to find a file that you have put in your session folder, since that is where it belongs.&lt;/span&gt;&lt;/p&gt;&lt;pre style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;Of course, this shortcut is deleted when the session is unloaded.&lt;/span&gt;&lt;/pre&gt;&lt;pre style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.&lt;/span&gt;&lt;/pre&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>Provide bookmarks for session folder in your file manager.
+
+In audio production, creating audio or midi file with one program and load it into another is an usual case. This option offers something purely practical: a shortcut to the current session folder in your file manager and in the dialog boxes provided for fetching or saving files. It simply avoids wasting time browsing through your personal folder tree to find a file that you have put in your session folder, since that is where it belongs. Of course, this shortcut is deleted when the session is unloaded. 
+
+Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.</string>
    </property>
   </action>
   <action name="actionDesktopsMemory">
@@ -1288,7 +1292,7 @@ QToolButton {border: none}</string>
     <string>&amp;Desktops Memory (requires wmctrl)</string>
    </property>
    <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;pre style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; line-height:16px;&quot;&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;If this option is activated, RaySession will save (or attempt to save)&lt;/span&gt;&lt;/pre&gt;&lt;pre style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; line-height:16px; background-color:#1f1f1f;&quot;&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;the number of the virtual desktop on which the client windows&lt;/span&gt;&lt;/pre&gt;&lt;pre style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; line-height:16px; background-color:#1f1f1f;&quot;&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;were located when the session was saved.&lt;/span&gt;&lt;/pre&gt;&lt;pre style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Hack';&quot;&gt;&lt;br/&gt;&lt;/pre&gt;&lt;pre style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;So when you restart the session or the clients,&lt;/span&gt;&lt;/pre&gt;&lt;pre style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;the windows will be redispatched to the desktops on which they appeared.&lt;/span&gt;&lt;/pre&gt;&lt;pre style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;This option requires you to have the program `wmctrl` installed to work,&lt;/span&gt;&lt;/pre&gt;&lt;pre style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;and probably will not work with Wayland.&lt;/span&gt;&lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If this option is activated, RaySession will save (or attempt to save) the number of the virtual desktop on which the client windows were located when the session was saved. So when you restart the session or the clients, the windows will be redispatched to the desktops on which they appeared.&lt;/p&gt;&lt;p&gt;This option requires you to have the program `wmctrl` installed to work, and probably will not work with Wayland.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="actionReturnToAPreviousState">
@@ -1318,7 +1322,7 @@ QToolButton {border: none}</string>
     <string>&amp;Auto Snapshot At Save (requires git)</string>
    </property>
    <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;pre style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; line-height:16px;&quot;&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;This option is far from being trivial, it allows you to take a snapshot of the session after each session save. This means that in case of a technical or artistic error you will be able to find the session in the state it was in at the moment of the snapshot. This option requires that you have the `git` program installed.&lt;/span&gt;&lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This option is far from being trivial, it allows you to take a snapshot of the session after each session save. This means that in case of a technical or artistic error you will be able to find the session in the state it was in at the moment of the snapshot.&lt;/p&gt;&lt;p&gt;This option requires that you have the `git` program installed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="actionDonate">
@@ -1342,7 +1346,7 @@ QToolButton {border: none}</string>
     <string>&amp;Session Scripts</string>
    </property>
    <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;pre style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; line-height:16px; background-color:#1f1f1f;&quot;&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;Disable this option to not activate any session script, and thus open, save or close a session completely ignoring the scripts associated with these actions.&lt;/span&gt;&lt;/pre&gt;&lt;pre style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;These scripts are used by sessions with &lt;/span&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; font-weight:600; color:#ce9178;&quot;&gt;jack configuration memory&lt;/span&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;.&lt;/span&gt;&lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Disable this option to not activate any session script, and thus open, save or close a session completely ignoring the scripts associated with these actions. &lt;/p&gt;&lt;p&gt;These scripts are used by sessions with jack configuration memory.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="actionRememberOptionalGuiStates">
@@ -1357,7 +1361,7 @@ QToolButton {border: none}</string>
     <string>&amp;Remember optional GUI states</string>
    </property>
    <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;pre style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; line-height:16px; background-color:#1f1f1f;&quot;&gt;&lt;span style=&quot; font-family:'Droid Sans Mono','monospace','monospace'; font-size:12px; color:#cccccc;&quot;&gt;This option only concerns NSM clients capable of showing/hiding their graphical interface. Without this option, some of them will always start hidden, others will remember if they were visible when they were last saved. With this option enabled, the graphical interfaces will be displayed when the session is ready if they were visible during the last save or if the client has never been launched.&lt;/span&gt;&lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This option only concerns NSM clients capable of showing/hiding their graphical interface.&lt;/p&gt;&lt;p&gt;Without this option, some of them will always start hidden, others will remember if they were visible when they were last saved. With this option enabled, the graphical interfaces will be displayed when the session is ready if they were visible during the last save or if the client has never been launched.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="actionSessionNotes">
