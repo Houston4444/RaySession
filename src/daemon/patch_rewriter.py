@@ -62,8 +62,6 @@ def rewrite_jack_patch_files(
             ET.indent(root, space='  ', level=0)
             
         tree = ET.ElementTree(root)
-        print('____', patch_path, '____')
-        # print(tree.w)
 
         try:
             tree.write(patch_path, encoding="utf8")

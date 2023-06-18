@@ -191,11 +191,6 @@ class SignaledSession(OperatingSession):
         # we can be sure of which client is announcing
         
         for client in self.clients:
-            if client.client_id == 'hydrogen':
-                print('dkflflqqq', client.pid, client._process.pid(), client._process.state(), client.nsm_active, client.is_running())
-                print('"lldd"', pid, is_pid_child_of(pid, client.pid))
-        
-        for client in self.clients:
             if client.pid == pid and not client.nsm_active and client.is_running():
                 client.server_announce(path, args, src_addr, False)
                 break
@@ -1122,7 +1117,7 @@ class SignaledSession(OperatingSession):
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return
-        print('qmqmqmqmqm', args)
+
         factory = bool(args[0])
         template_name: str = args[1]
         auto_start = bool(len(args) <= 2 or args[2] != 'not_start')

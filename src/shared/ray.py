@@ -1,6 +1,7 @@
 
 
 import argparse
+from asyncio.log import logger
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import TYPE_CHECKING, Optional
@@ -10,8 +11,12 @@ import shlex
 import socket
 import subprocess
 import sys
+import logging
+
 from liblo import Server, Address
 from PyQt5.QtCore import QT_VERSION_STR, QSettings
+
+_logger = logging.getLogger(__name__)
 
 # get qt version in list of ints
 QT_VERSION = []
@@ -826,10 +831,10 @@ class GroupPosition:
     
     def set_layout_mode(self, port_mode: int, layout_mode: int):
         if not (1 <= port_mode <= 3 or 0 <= layout_mode <= 2):
-            print('group position set_layout_mode wrong port_mode or layout_mode',
-                  port_mode, layout_mode)
+            logger.warning(
+                "group position set_layout_mode, wrong port mode or layout mode")
             return
-        
+
         layout_mode_str = "%03d" % self.layout_mode
         new_string = ''
         for i in range(len(layout_mode_str)):
