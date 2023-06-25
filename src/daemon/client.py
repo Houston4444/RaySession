@@ -894,7 +894,7 @@ class Client(ServerSender, ray.ClientData):
         self.icon = c.str('icon')
         self.in_terminal = c.bool('in_terminal')
         self.auto_start = c.bool('launched', True)
-        self.check_last_save = c.str('check_last_save', True)
+        self.check_last_save = c.bool('check_last_save', True)
         self.start_gui_hidden = not c.str('gui_visible', True)
         self.template_origin = c.str('template_origin')
 
