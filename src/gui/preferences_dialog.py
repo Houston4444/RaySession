@@ -65,6 +65,10 @@ class PreferencesDialog(ChildDialog):
         self._main_win.session.signaler.hiddens_changed.connect(
             self._hiddens_changed)
 
+        # fill startup dialog started checkbox
+        self.ui.checkboxStartupDialogs.setChecked(
+            not RS.is_hidden(RS.HD_StartupRecentSessions))
+
         # fill systray checkboxes
         self.ui.groupBoxSystray.setChecked(
             self._main_win.systray_mode != ray.Systray.OFF)
