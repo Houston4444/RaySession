@@ -41,10 +41,11 @@ def convert_group_pos_from_ray_to_patchbay(
     gpos.out_xy = ray_gpos.out_xy
     gpos.flags = ray_gpos.flags
     
-    for port_mode in PortMode:
+    print(gpos.group_name, gpos.port_types_view, ray_gpos.layout_mode )
+    for port_mode in (PortMode.INPUT, PortMode.OUTPUT, PortMode.BOTH):
         layout_mode = ray_gpos.get_layout_mode(port_mode.value)
         gpos.set_layout_mode(port_mode, BoxLayoutMode(layout_mode))
-    
+
     gpos.fully_set = ray_gpos.fully_set
     return gpos
 
@@ -503,8 +504,8 @@ class RayPatchbayManager(PatchbayManager):
             pass
 
     def fast_temp_file_running(self, temp_path: str):
-        ''' receives a .json file path from patchbay daemon with all ports, connections
-            and jack metadatas'''
+        '''receives a .json file path from patchbay daemon with all ports, connections
+           and jack metadatas'''
             
         patchbay_data = self._get_json_contents_from_path(temp_path)
         if not patchbay_data:
