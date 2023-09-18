@@ -1,23 +1,41 @@
 0.14.0 / 2023-09-??
-    This release is probably the last major release before 1.0.0 (others 0.14.X may exist). Long time users (before 0.9.0) may take note of the fact ray-proxy and related methods will be removed in 1.0.0, because RayHack pseudo-protocol does the same thing better, and I don't want to maintain this code part anymore.
+    This release is probably the last major release before 1.0.0 (others 0.14.X may exist).
+
+    Packagers should set python3-pyalsa (>=1.2.4) as a dependency, else ALSA MIDI ports wont be displayed in the patchbay, and ALSA Connections client will not work.
+
+    Long time users (before 0.9.0) may note that ray-proxy and related methods will be removed in 1.0.0, because RayHack pseudo-protocol does the same thing better, and I don't want to maintain this code part anymore.
 
     RaySession itself:
-        RaySession has now a preferences dialog with tooltips.
-        List factory templates also list templates for Ardour (and Mixbus) templates, it allows user to start directly Ardour with an ardour user session template.
-        Add possibility to start NSM client in a terminal, with a customizable global terminal command.
-        Add new client status (lose) when the client is closed but its terminal is still running.
-        Use xml.etree everywhere instead of PyQt5.QtXml to read/write xml files, now attributes order is always the same at each save.
+        New Features:
+            RaySession has now a preferences dialog with tooltips.
+            List factory templates also list templates for Ardour (and Mixbus) templates, it allows user to start directly Ardour with an ardour user session template.
+            Start a template choosing its unique identifiant (this identifiant is also used by client to set its JACK group names), useful if you use many instances of the same client.
+            Change client identifiant, prefix mode or jack_naming method when the client is stopped, connections are updated.
+            Start NSM client in a terminal, with a customizable global terminal command.
+
+        Changes:
+            "Gui states" option is now disabled by default, because it can be very confusing for NSM apps devs.
+            Add new client status (lose) when the client is closed but its terminal is still running.
+            Use xml.etree everywhere instead of PyQt5.QtXml to read/write xml files, now attributes order is always the same at each save.
+            Take systray icon from system if it exists
+
+        Fixes:
+            fix SESSION_NAME not replaced in advanced trashed client properties
 
     JACK Connections (ray-jackpatch):
-        At startup, it now disconnects ports if theses ports where present and disconnected at last save
+        Has been fully rewritten to not use Qt anymore, so, it should be lighter. 
+        At startup, it now disconnects ports if theses ports were present and not connected at last save
 
     ALSA Connections (ray-alsapatch):
         This NSM client has been added, it makes exactly the same thing than ray-jackpatch, but for ALSA MIDI ports.
         
     HoustonPatchbay:
         Add the possibility to show ALSA MIDI ports (not enabled by default).
-        
-        
+        Port types view is now restored at startup if the ports type filter widget is visible.
+        make Mixbus groups behave as Ardour ones
+        Fix box layout (large or high) not restored with python >=3.10
+        fix various crashes
+
 
 0.13.1 / 2023-01-20
     This release fixes the following bugs:

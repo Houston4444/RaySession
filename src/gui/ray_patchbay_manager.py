@@ -41,7 +41,6 @@ def convert_group_pos_from_ray_to_patchbay(
     gpos.out_xy = ray_gpos.out_xy
     gpos.flags = ray_gpos.flags
     
-    print(gpos.group_name, gpos.port_types_view, ray_gpos.layout_mode )
     for port_mode in (PortMode.INPUT, PortMode.OUTPUT, PortMode.BOTH):
         layout_mode = ray_gpos.get_layout_mode(port_mode.value)
         gpos.set_layout_mode(port_mode, BoxLayoutMode(layout_mode))
