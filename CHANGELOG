@@ -1,3 +1,65 @@
+0.14.0 / 2023-09-??
+    This release is probably the last major release before 1.0.0 (others 0.14.X may exist). Long time users (before 0.9.0) may take note of the fact ray-proxy and related methods will be removed in 1.0.0, because RayHack pseudo-protocol does the same thing better, and I don't want to maintain this code part anymore.
+
+    RaySession itself:
+        RaySession has now a preferences dialog with tooltips.
+        List factory templates also list templates for Ardour (and Mixbus) templates, it allows user to start directly Ardour with an ardour user session template.
+        Add possibility to start NSM client in a terminal, with a customizable global terminal command.
+        Add new client status (lose) when the client is closed but its terminal is still running.
+        Use xml.etree everywhere instead of PyQt5.QtXml to read/write xml files, now attributes order is always the same at each save.
+
+    JACK Connections (ray-jackpatch):
+        At startup, it now disconnects ports if theses ports where present and disconnected at last save
+
+    ALSA Connections (ray-alsapatch):
+        This NSM client has been added, it makes exactly the same thing than ray-jackpatch, but for ALSA MIDI ports.
+        
+    HoustonPatchbay:
+        Add the possibility to show ALSA MIDI ports (not enabled by default).
+        
+        
+
+0.13.1 / 2023-01-20
+    This release fixes the following bugs:
+
+    RaySession itself:
+
+        window was highlighted on right click on systray icon
+        fix multiple same group positions possible in json files (at load)
+        add Ardour7 template / remove Ardour 4 template (probably no one use it anymore)
+        save environment variables for clients
+
+    HoustonPatchbay :
+
+        add Patchichi export function in options dialog (this is the only one new feature)
+        Port is now CV if it is mentioned only in the port metadatas
+        fix CV ports not really readable in "dark boards" theme
+        allow custom metadata icons for any box type
+        fix theme not renamed after duplicate with new name
+        fix inconsistent portgroup name if portgroup name endswith with AUX with at least digits at end of the port name.
+
+    Patchbay manual has been splitted from the RaySession manual, because of the existence of Patchance and Patchichi.
+
+0.13.0 / 2022-09-18
+    Patchbay has been extracted in a new submodule named HoustonPatchbay. This module is now used by Patchance and could be used by any other python Qt program.
+
+    New Features (all coming for HoustonPatchbay):
+
+        Editable themes (+ 6 new themes) in a .conf file format
+        boxes can have two different layouts
+        Move the view when mouse cursor is near the border while selecting, moving or connecting boxes (optional)
+        Adapt port/portgroup connect context menu style to patchbay theme
+        Start connection from double click on port/portgroup for easier touchpad use
+        Add JACK Tranport widget to the tool bar
+        Add port type filter to the tool bar
+        Customizable tool bar, right click and select which widgets you want
+
+    Bug Fixes
+
+        fix box making leapfrog when moved from another box with "prevent overlap" option
+        fix some python3.10 crashes
+
+    
 0.12.0 / 2021-12-17
     Features:
         Add "Startup" dialog which let you open a recent session. This way, just lanch RaySession and press Enter to load the last session.
