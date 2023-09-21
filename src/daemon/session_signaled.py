@@ -1741,7 +1741,7 @@ class SignaledSession(OperatingSession):
 
         if new_client_id != client.client_id:
             if new_client_id in [c.client_id for c in
-                                self.clients + self.trashed_clients]:
+                                 self.clients + self.trashed_clients]:
                 self.send(src_addr, '/error', path, ray.Err.BLACKLISTED,
                         f"client id '{new_client_id}' already exists in the session")
                 return
@@ -1769,7 +1769,8 @@ class SignaledSession(OperatingSession):
 
         ex_jack_name = client.get_jack_client_name()
         ex_client_id = client.client_id
-        new_jack_name = client.get_jack_client_name()
+        new_jack_name = tmp_client.get_jack_client_name()
+        client.set_status(ray.ClientStatus.REMOVED)
 
         client.client_id = new_client_id
         client.prefix_mode = prefix_mode

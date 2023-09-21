@@ -378,7 +378,8 @@ def monitor_client_state(client_id: str, jack_name: str, is_started: int):
 def monitor_client_event(client_id: str, event: str):
     # TODO remove stopping_brothers key and all
     # it was a test to see if session quit fails less
-    # if ray-jackpatch is the last client to stop. 
+    # if ray-jackpatch is the last client to stop.
+
     if event == 'stop_request':
         if (client_id in brothers_dict
                 and brothers_dict[client_id]
