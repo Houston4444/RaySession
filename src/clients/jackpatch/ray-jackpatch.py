@@ -43,7 +43,7 @@ connection_list = list[tuple[str, str]]()
 saved_connections = list[tuple[str, str]]()
 to_disc_connections = list[tuple[str, str]]()
 jack_ports = dict[PortMode, list[JackPort]]()
-for port_mode in PortMode:
+for port_mode in (PortMode.NULL, PortMode.INPUT, PortMode.OUTPUT):
     jack_ports[port_mode] = list[JackPort]()
 
 def signal_handler(sig, frame):
@@ -102,6 +102,19 @@ def port_removed(port_name: str, port_mode: PortMode, port_type: PortType):
     for port in jack_ports[port_mode]:
         if port.name == port_name and port.type == port_type:
             jack_ports[port_mode].remove(port)
+            break
+    
+    else:
+        # strange, but in some cases,
+        # JACK does not sends the good port mode at remove time.
+        for pmode in (PortMode.INPUT, PortMode.OUTPUT):
+            if pmode is port_mode:
+                continue
+            
+            for port in jack_ports[pmode]:
+                if port.name == port_name and port.type == port_type:
+                    jack_ports[pmode].remove(port)
+                    break
             break
 
 def port_renamed(old_name: str, new_name: str,
@@ -163,7 +176,7 @@ def may_make_one_connection():
     else:
         Glob.pending_connection = False
 
-        for port_mode in PortMode:
+        for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
             for port in jack_ports[port_mode]:
                 port.is_new = False
 
@@ -190,7 +203,7 @@ def open_file(project_path: str, session_name: str,
             return (Err.BAD_PROJECT, f'{file_path} is not a RAY-JACKPATCH .xml file')
         
         graph_ports = dict[PortMode, list[str]]()
-        for port_mode in PortMode:
+        for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
             graph_ports[port_mode] = list[str]()
         
         for child in root:
@@ -234,7 +247,7 @@ def open_file(project_path: str, session_name: str,
                                 ':'.join((gp_name, pt.attrib['name'])))
 
         # re-declare all ports as new in case we are switching session
-        for port_mode in PortMode:
+        for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
             for port in jack_ports[port_mode]:
                 port.is_new = True
 
@@ -294,10 +307,7 @@ def save_file():
     graph = ET.SubElement(root, 'graph')
     group_names = dict[str, ET.Element]()
 
-    for port_mode in PortMode:
-        if port_mode is PortMode.NULL:
-            continue
-
+    for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
         el_name = 'in_port' if port_mode is PortMode.INPUT else 'out_port'
 
         for jack_port in jack_ports[port_mode]:
@@ -331,6 +341,8 @@ def save_file():
     return (Err.OK, 'Done')
 
 def monitor_client_state(client_id: str, jack_name: str, is_started: int):
+    print('MONST', client_id, jack_name, is_started)
+    
     if Glob.monitor_states_done is not MonitorStates.UPDATING:
         brothers_dict.clear()
 
