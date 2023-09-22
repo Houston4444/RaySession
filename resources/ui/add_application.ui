@@ -636,13 +636,13 @@ Applications</string>
      <item>
       <widget class="QLineEdit" name="lineEditUniqueId">
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set a unique indentifiant takes sense only if you run multiple instances of the same program in the session.&lt;/p&gt;&lt;p&gt;The unique identifiant will be used as client_id for the client, as label and for the JACK client name. This way, you will recognize its instance easily in the client list and in the patchbay.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set an unique identifier takes sense only if you run multiple instances of the same program in the session.&lt;/p&gt;&lt;p&gt;The unique identifier will be used as client_id for the client, as label and for the JACK client name. This way, you will recognize its instance easily in the client list and in the patchbay.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="inputMask">
         <string/>
        </property>
        <property name="placeholderText">
-        <string>Unique Identifiant</string>
+        <string>Unique Identifier</string>
        </property>
       </widget>
      </item>

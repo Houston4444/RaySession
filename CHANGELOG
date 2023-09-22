@@ -9,8 +9,8 @@
         New Features:
             RaySession has now a preferences dialog with tooltips.
             List factory templates also list templates for Ardour (and Mixbus) templates, it allows user to start directly Ardour with an ardour user session template.
-            Start a template choosing its unique identifiant (this identifiant is also used by client to set its JACK group names), useful if you use many instances of the same client.
-            Change client identifiant, prefix mode or jack_naming method when the client is stopped, connections are updated.
+            Start a template choosing its unique identifier (this identifier is also used by client to set its JACK group names), useful if you use many instances of the same client.
+            Change client identifier, prefix mode or jack_naming method when the client is stopped, connections are updated.
             Start NSM client in a terminal, with a customizable global terminal command.
 
         Changes:

@@ -824,12 +824,12 @@ You can make the window re-appear from your system tray.</source>
     </message>
     <message>
         <location filename="../resources/ui/client_rename.ui" line="94"/>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Renames also the client identifiant, this identifiant will be used for its JACK client names.&lt;/p&gt;&lt;p&gt;Else, only the client label is renamed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Renames also the client identifier, this identifier will be used for its JACK client names.&lt;/p&gt;&lt;p&gt;Else, only the client label is renamed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../resources/ui/client_rename.ui" line="97"/>
-        <source>Identifiant renaming (client must be stopped)</source>
+        <source>Identifier renaming (client must be stopped)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1001,12 +1001,12 @@ Applications</source>
     </message>
     <message>
         <location filename="../resources/ui/add_application.ui" line="639"/>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set a unique indentifiant takes sense only if you run multiple instances of the same program in the session.&lt;/p&gt;&lt;p&gt;The unique identifiant will be used as client_id for the client, as label and for the JACK client name. This way, you will recognize its instance easily in the client list and in the patchbay.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set an unique identifier takes sense only if you run multiple instances of the same program in the session.&lt;/p&gt;&lt;p&gt;The unique identifier will be used as client_id for the client, as label and for the JACK client name. This way, you will recognize its instance easily in the client list and in the patchbay.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../resources/ui/add_application.ui" line="645"/>
-        <source>Unique Identifiant</source>
+        <source>Unique Identifier</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1589,17 +1589,17 @@ Applications</source>
 <context>
     <name>GUIMSG</name>
     <message>
-        <location filename="../src/daemon/session.py" line="1084"/>
+        <location filename="../src/daemon/session.py" line="1106"/>
         <source>Can&apos;t save session, session file is unwriteable !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1313"/>
+        <location filename="../src/daemon/session.py" line="1335"/>
         <source>Creating new session &quot;%s&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1339"/>
+        <location filename="../src/daemon/session.py" line="1361"/>
         <source>Session is ready</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1709,7 +1709,7 @@ Applications</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2264"/>
+        <location filename="../src/daemon/session.py" line="2286"/>
         <source>Copy has been aborted !</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1739,127 +1739,127 @@ Applications</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="741"/>
+        <location filename="../src/daemon/session.py" line="763"/>
         <source>%s didn&apos;t announce.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="746"/>
+        <location filename="../src/daemon/session.py" line="768"/>
         <source>%s still alive !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1008"/>
+        <location filename="../src/daemon/session.py" line="1030"/>
         <source>-- Saving session %s --</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1019"/>
+        <location filename="../src/daemon/session.py" line="1041"/>
         <source>waiting for %s to save...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1023"/>
+        <location filename="../src/daemon/session.py" line="1045"/>
         <source>waiting for %i clients to save...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1068"/>
+        <location filename="../src/daemon/session.py" line="1090"/>
         <source>Session &apos;%s&apos; saved.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1109"/>
+        <location filename="../src/daemon/session.py" line="1131"/>
         <source>snapshot started...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1116"/>
+        <location filename="../src/daemon/session.py" line="1138"/>
         <source>Snapshot aborted!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1169"/>
+        <location filename="../src/daemon/session.py" line="1191"/>
         <source>waiting for no saveable clients to be closed gracefully...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1191"/>
+        <location filename="../src/daemon/session.py" line="1213"/>
         <source>waiting you to close yourself unsaveable clients...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1246"/>
+        <location filename="../src/daemon/session.py" line="1268"/>
         <source>waiting for %s to quit...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1251"/>
+        <location filename="../src/daemon/session.py" line="1273"/>
         <source>waiting for %i clients to quit...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1378"/>
+        <location filename="../src/daemon/session.py" line="1400"/>
         <source>-- Duplicating session %s to %s --</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1397"/>
+        <location filename="../src/daemon/session.py" line="1419"/>
         <source>waiting for network daemons to start duplicate...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1410"/>
+        <location filename="../src/daemon/session.py" line="1432"/>
         <source>start session copy...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1425"/>
+        <location filename="../src/daemon/session.py" line="1447"/>
         <source>...session copy finished.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1432"/>
+        <location filename="../src/daemon/session.py" line="1454"/>
         <source>waiting for network daemons to finish duplicate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1519"/>
+        <location filename="../src/daemon/session.py" line="1541"/>
         <source>start session copy to template...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1537"/>
+        <location filename="../src/daemon/session.py" line="1559"/>
         <source>...session saved as template named %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1591"/>
+        <location filename="../src/daemon/session.py" line="1613"/>
         <source>start copy from template to session folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1922"/>
+        <location filename="../src/daemon/session.py" line="1944"/>
         <source>-- Opening session %s --</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2063"/>
+        <location filename="../src/daemon/session.py" line="2085"/>
         <source>waiting for %s to load its project...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2068"/>
+        <location filename="../src/daemon/session.py" line="2090"/>
         <source>waiting for %s clients to load their project...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2090"/>
+        <location filename="../src/daemon/session.py" line="2112"/>
         <source>session %s is loaded.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2248"/>
+        <location filename="../src/daemon/session.py" line="2270"/>
         <source>%s is not an existing template !</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1949,7 +1949,7 @@ Applications</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1118"/>
+        <location filename="../src/daemon/session.py" line="1140"/>
         <source>...Snapshot finished.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1995,32 +1995,32 @@ Applications</source>
 <context>
     <name>Load Error</name>
     <message>
-        <location filename="../src/daemon/session.py" line="2116"/>
+        <location filename="../src/daemon/session.py" line="2138"/>
         <source>Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2118"/>
+        <location filename="../src/daemon/session.py" line="2140"/>
         <source>Could not create session file!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2120"/>
+        <location filename="../src/daemon/session.py" line="2142"/>
         <source>Session is locked by another process!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2123"/>
+        <location filename="../src/daemon/session.py" line="2145"/>
         <source>The named session does not exist.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2125"/>
+        <location filename="../src/daemon/session.py" line="2147"/>
         <source>Could not load session file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2127"/>
+        <location filename="../src/daemon/session.py" line="2149"/>
         <source>Can&apos;t create session in a dir containing a session
 for better organization.</source>
         <translation type="unfinished"></translation>
@@ -2581,53 +2581,53 @@ Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.</sour
 <context>
     <name>Snapshot Error</name>
     <message>
-        <location filename="../src/daemon/session.py" line="1126"/>
+        <location filename="../src/daemon/session.py" line="1148"/>
         <source>Unknown error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1128"/>
+        <location filename="../src/daemon/session.py" line="1150"/>
         <source>git didn&apos;t stop normally.
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1131"/>
+        <location filename="../src/daemon/session.py" line="1153"/>
         <source>git crashes.
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1134"/>
+        <location filename="../src/daemon/session.py" line="1156"/>
         <source>git exit with an error code.
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2290"/>
+        <location filename="../src/daemon/session.py" line="2312"/>
         <source>Snapshot error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2292"/>
+        <location filename="../src/daemon/session.py" line="2314"/>
         <source>command didn&apos;t stop normally:
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2295"/>
+        <location filename="../src/daemon/session.py" line="2317"/>
         <source>command crashes:
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2298"/>
+        <location filename="../src/daemon/session.py" line="2320"/>
         <source>command exit with an error code:
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="2301"/>
+        <location filename="../src/daemon/session.py" line="2323"/>
         <source>error reading file:
 %s</source>
         <translation type="unfinished"></translation>
@@ -2936,17 +2936,17 @@ Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.</sour
 <context>
     <name>error</name>
     <message>
-        <location filename="../src/daemon/session.py" line="1372"/>
+        <location filename="../src/daemon/session.py" line="1394"/>
         <source>Some clients could not save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1485"/>
+        <location filename="../src/daemon/session.py" line="1507"/>
         <source>Impossible to save template, unwriteable file !</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1564"/>
+        <location filename="../src/daemon/session.py" line="1586"/>
         <source>No template named %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2957,14 +2957,14 @@ Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.</sour
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1573"/>
+        <location filename="../src/daemon/session.py" line="1595"/>
         <source>Folder
 %s
 already exists</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1579"/>
+        <location filename="../src/daemon/session.py" line="1601"/>
         <source>Can&apos;t create session in a dir containing a session
 for better organization.</source>
         <translation type="unfinished"></translation>
@@ -2980,12 +2980,12 @@ for better organization.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="952"/>
+        <location filename="../src/daemon/session.py" line="974"/>
         <source>impossible to read %s as a XML file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="982"/>
+        <location filename="../src/daemon/session.py" line="1004"/>
         <source>impossible to write XML file %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3076,12 +3076,12 @@ for better organization.</source>
 <context>
     <name>hidden_dialogs</name>
     <message>
-        <location filename="../src/gui/preferences_dialog.py" line="129"/>
+        <location filename="../src/gui/preferences_dialog.py" line="133"/>
         <source>Make reappear dialog windows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/preferences_dialog.py" line="129"/>
+        <location filename="../src/gui/preferences_dialog.py" line="133"/>
         <source>Do you want to make reappear all dialogs you wanted to hide ?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3216,12 +3216,12 @@ for better organization.</source>
 <context>
     <name>rename</name>
     <message>
-        <location filename="../src/daemon/session.py" line="1619"/>
+        <location filename="../src/daemon/session.py" line="1641"/>
         <source>Impossible to rename session.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/daemon/session.py" line="1619"/>
+        <location filename="../src/daemon/session.py" line="1641"/>
         <source>Folder %s already exists,</source>
         <translation type="unfinished"></translation>
     </message>
