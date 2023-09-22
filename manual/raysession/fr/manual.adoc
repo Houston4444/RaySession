@@ -10,7 +10,7 @@ image:../../en/images/flags/en.jpeg[EN, 30, 20, link=../en/manual.html] image:..
 
 image::../../en/images/raysession.svg["icon", 100, 100]
 
-_pour la version 0.13.1_
+_pour la version 0.14.1_
 
 == Introduction
 RaySession est un gestionnaire de session audio pour GNU/Linux. Il permet de démarrer dans une même session plusieurs programmes audio, de sauvegarder leurs projets ensemble et ainsi d’éviter de multiples manipulations pour retourner à une configuration donnée.
@@ -162,7 +162,9 @@ Un client contient de gauche à droite:
     ** *Sauvegarder comme modèle d'application* +
         Le modèle créé apparaîtra alors dans la <<ajout_application>>. Celà permet par la suite de lancer directement un client avec la configuration souhaitée (Ardour avec telles pistes, Hydrogen avec tel kit de batterie...). Attention, celà copie tous les fichiers du client donc évitez de le faire si le client contient beaucoup de fichiers audio.
     ** *Renommer* +
-        Changer le nom du client situé à droite de son icône, il s'agit d'un nom purement visuel qui peut vous aider à retrouver vos moutons
+        Changer le nom du client. +
+        La fenêtre de dialogue qui s'ouvre alors contient la case *Renommage de l'identifiant*, si vous la cochez le nouveau nom sera appliqué à l'étiquette, à l'identifiant, aux clients JACK et aux fichiers dans le dossier de la session. +
+        Sinon, ça ne modifiera que l'étiquette située à droite de l'icône du client, il s'agit d'un nom purement visuel qui peut vous aider à retrouver vos moutons
     ** *retourner à un état précédent* +
         Permet de faire revenir uniquement le client à un état antérieur de la session, voir <<cliches>>. +
         Vous ne pourrez toutefois pas revenir à un état antérieur à un renommage de la session, pour celà il faut faire revenir toute la session en arrière.
@@ -190,6 +192,7 @@ Ce menu est aussi accessible par clique droit n'importe où sur le client
         *** si c'est un client Ray-Hack, qu'il n'a pas de fichier de configuration
         *** s'il est lancé comme un client NSM, qu'il n'est pas compatible NSM, et qu'ainsi toute sauvegarde est vaine. Il peut être pratique de lancer de cette façon certains programmes tels qu'une baie de brassage (Catia) ou un utilitaire dont on n'a pas besoin de sauvegarder l'état (Qrest).
     ** *bascule* : le client change de projet pendant un changement de session
+    ** *perdu* : le client est arrêté mais le terminal qui le lance est toujours ouvert (si le client est lancé dans un terminal, voir <<proprietes_de_client>>.)
     
 * le bouton en forme de disquette qui permet de sauvegarder le client. +
     Si par dessus cette disquette vous voyez
@@ -233,6 +236,16 @@ image::ajout_application_infos.png[Bloc d'informations sur le modèle sélection
 
 *Astuce :* Cette fenêtre est conçue pour un ajout d'application très rapide, et se comporter comme _Alt+F2_ sur votre bureau. +
 Par exemple, depuis la fenêtre principale de RaySession, pour ajouter Carla tapez _Ctrl+A_, puis `carla`, sélectionnez le bon modèle avec les flèches Haut/Bas, puis Entrée.
+...
+
+Tout en bas de la fenêtre figure le champ *Identifiant unique*.
+
+image::ajout_application_unique_id.png[Champ de saisie de l'identifiant unique]
+
+Ce champ est utile si vous utilisez plusieurs instances du même programme (par exemple plusieurs fois Carla), pour les distinguer plus facilement dans la liste d'applications, dans la baie de brassage et dans les fichiers de la session.
+L'identifiant final du programme lancé ne contiendra ni espaces ni caractères spéciaux, mais ils peuvent être utilisés pour l'étiquette.
+
+Si vous ne savez pas quoi taper ici, ne tapez rien, ça devrait bien se passer. 
 
 [#ajout_executable]
 == Fenêtre d'ajout d'exécutable
@@ -322,6 +335,20 @@ Les capacités sont celle qui sont transmises par le client à son démarrage. S
 Éditer l'exécutable permet de changer la commande qui lance le client. Ne le changez que pour un autre exécutable capable de charger le projet du client existant. C'est utile par exemple si vous avez deux versions d'Ardour, l'une se lançant avec la commande `ardour`, l'autre avec `Ardour6`, et que vous voulez changer la version à utiliser.
 
 Éditer les arguments est fortement déconseillé, et n'est surtout pas adapté au chargement d'un fichier comme argument.
+
+Vous pouvez éditer les variables d'environnement que vous voulez appliquer au programme en les séparant par des espaces, par exemple comme ceci:
+
+`MA_VARIABLE=ma_valeur MA_VARIABLE2="autre valeur"`
+
+Les variables d'environnement permettent d'annoncer au programme l'environnement dans lequel il évolue, par exemple:
+
+`LANG=it_IT.UTF-8`
+
+permet de lancer le programme en italien s'il en est capable. 
+
+Cochez la case *Lancer dans un terminal* si vous souhaitez obtenir des informations de débogage sur le programme. Celà peut faire légèrement varier le comportement du client, notamment la façon dont il est arrêté. Pour choisir l'application de terminal qui exécute les programmes lancés dans un terminal, rendez-vous dans la fenêtre de préférences de RaySession.
+
+
 
 === Onglet *Ray-Hack*
 
