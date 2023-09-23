@@ -114,7 +114,7 @@ class Session(ServerSender):
         else:
             Terminal.message(string)
 
-    def _set_name(self, session_name):
+    def _set_name(self, session_name: str):
         self.name = session_name
 
     def _set_path(self, session_path: str, session_name=''):
@@ -989,13 +989,14 @@ class OperatingSession(Session):
         for child in root:
             if not child.tag in ('Clients', 'RemovedClients'):
                 continue
+
+            for client_xml in child:
+                client = Client(self)
+                client.read_xml_properties(XmlElement(client_xml))
+                if not client.executable_path:
+                    continue
             
-            client = Client(self)
-            client.read_xml_properties(XmlElement(child))
-            if not client.executable_path:
-                continue
-            
-            tmp_clients.append(client)
+                tmp_clients.append(client)
 
         try:
             tree.write(session_file)
@@ -1389,7 +1390,7 @@ for better organization.""")
         self.set_server_status(ray.ServerStatus.OFF)
         self.steps_order.clear()
 
-    def duplicate(self, new_session_full_name):
+    def duplicate(self, new_session_full_name: str):
         if self._clients_have_errors():
             self._send_error(
                 ray.Err.GENERAL_ERROR,
@@ -1425,7 +1426,7 @@ for better organization.""")
             (self.duplicate_substep1, new_session_full_name),
             ray.WaitFor.DUPLICATE_START)
 
-    def duplicate_substep1(self, new_session_full_name):
+    def duplicate_substep1(self, new_session_full_name: str):
         spath = self.get_full_path(new_session_full_name)
         self.set_server_status(ray.ServerStatus.COPY)
 
@@ -1441,7 +1442,7 @@ for better organization.""")
             self.duplicate_substep2, self.duplicate_aborted,
             [new_session_full_name])
 
-    def duplicate_substep2(self, new_session_full_name):
+    def duplicate_substep2(self, new_session_full_name: str):
         self._clean_expected()
         
         self.send_gui_message(_translate('GUIMSG', '...session copy finished.'))
@@ -1460,7 +1461,7 @@ for better organization.""")
             (self.duplicate_substep3, new_session_full_name),
             ray.WaitFor.DUPLICATE_FINISH)
 
-    def duplicate_substep3(self, new_session_full_name):
+    def duplicate_substep3(self, new_session_full_name: str):
         self.adjust_files_after_copy(new_session_full_name, ray.Template.NONE)
 
         # unlock the directory of the new session created
