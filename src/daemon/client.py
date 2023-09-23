@@ -549,22 +549,22 @@ class Client(ServerSender, ray.ClientData):
 
                         files_to_rename.append((ardour_file, new_ardour_file))
 
-                    # change ardour session name
-                    try:
-                        file = open(ardour_file, 'r')
-                        xml = QDomDocument()
-                        xml.setContent(file.read())
-                        file.close()
-                        root = xml.documentElement()
+                        # change ardour session name
+                        try:
+                            file = open(ardour_file, 'r')
+                            xml = QDomDocument()
+                            xml.setContent(file.read())
+                            file.close()
+                            root = xml.documentElement()
 
-                        if root.tagName() == 'Session':
-                            root.setAttribute('name', new_prefix)
-                            file = open(ardour_file, 'w')
-                            file.write(xml.toString())
+                            if root.tagName() == 'Session':
+                                root.setAttribute('name', new_prefix)
+                                file = open(ardour_file, 'w')
+                                file.write(xml.toString())
 
-                    except:
-                        _logger.warning(
-                            'Failed to change ardour session name to "{new_prefix}"')
+                        except:
+                            _logger.warning(
+                                f'Failed to change ardour session name to "{new_prefix}"')
 
                     if ardour_bak.is_file() and os.access(ardour_bak, os.W_OK):
                         new_ardour_bak = project_path / f"{new_prefix}.ardour.bak"

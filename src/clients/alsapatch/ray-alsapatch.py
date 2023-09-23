@@ -399,6 +399,9 @@ def monitor_client_event(client_id: str, event: str):
                 brothers_dict[client_id], event.partition(':')[2])
         nsm_server.send_monitor_reset()
 
+def monitor_client_updated(client_id: str, jack_name: str, is_started: int):
+    brothers_dict[client_id] = jack_name
+
 def session_is_loaded():
     Glob.allow_disconnections = True
     may_make_one_connection()
@@ -407,42 +410,6 @@ def session_is_loaded():
 
 def fill_ports_and_connections():
     pass
-    # '''get all current JACK ports and connections at startup'''
-    # port_name_list = c_char_p_p_to_list(
-    #     jacklib.get_ports(jack_client, "", "", 0))
-
-    # for port_name in port_name_list:
-    #     jack_port = AlsaPort()
-    #     jack_port.name = port_name
-        
-    #     present_client_names.add(port_name.partition(':')[0])
-
-    #     port_ptr = jacklib.port_by_name(jack_client, port_name)
-    #     port_flags = jacklib.port_flags(port_ptr)
-
-    #     if port_flags & jacklib.JackPortIsInput:
-    #         jack_port.mode = PortMode.INPUT
-    #     elif port_flags & jacklib.JackPortIsOutput:
-    #         jack_port.mode = PortMode.OUTPUT
-    #     else:
-    #         jack_port.mode = PortMode.NULL
-
-    #     port_type_str = jacklib.port_type(port_ptr)
-    #     if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
-    #         jack_port.type = PortType.AUDIO
-    #     elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
-    #         jack_port.type = PortType.MIDI
-    #     else:
-    #         jack_port.type = PortType.NULL
-
-    #     jack_port.is_new = True
-
-    #     jack_ports[jack_port.mode].append(jack_port)
-
-    #     if jack_port.mode is PortMode.OUTPUT:
-    #         for port_con_name in jacklib.port_get_all_connections(
-    #                 jack_client, port_ptr):
-    #             connection_list.append((port_name, port_con_name))
 
     
 if __name__ == '__main__':
@@ -458,42 +425,21 @@ if __name__ == '__main__':
         sys.exit(1)
 
     alsa_mng = AlsaManager()
-    # alsa_seq = alsaseq.Sequencer(clientname='ray-alsapatch')
-    
-    # port_caps = (SEQ_PORT_CAP_WRITE
-    #                  | SEQ_PORT_CAP_SUBS_WRITE
-    #                  | SEQ_PORT_CAP_NO_EXPORT)
-    # input_id = alsa_seq.create_simple_port(
-    #     name="raysession_port",
-    #     type=SEQ_PORT_TYPE_APPLICATION,
-    #     caps=port_caps)
-
-    # alsa_seq.connect_ports(
-    #     (SEQ_CLIENT_SYSTEM, SEQ_PORT_SYSTEM_ANNOUNCE),
-    #     (alsa_seq.client_id, input_id))
-    
-    # # jack_client = jacklib.client_open(
-    # #     "ray-patcher",
-    # #     jacklib.JackNoStartServer,
-    # #     None)
-
-    # if not alsa_seq:
-    #     sys.stderr.write('Unable to make an Alsa client !\n')
-    #     sys.exit(2)
-    
     timer_dirty_check = Timer(0.300)
     timer_connect_check = Timer(0.200)
-
-    # jack_callbacks.set_callbacks(jack_client)
-    # jacklib.activate(jack_client)
 
     nsm_server = NsmServer(daemon_address)
     nsm_server.set_callback(NsmCallback.OPEN, open_file)
     nsm_server.set_callback(NsmCallback.SAVE, save_file)
-    nsm_server.set_callback(NsmCallback.MONITOR_CLIENT_STATE, monitor_client_state)
-    nsm_server.set_callback(NsmCallback.MONITOR_CLIENT_EVENT, monitor_client_event)
+    nsm_server.set_callback(
+        NsmCallback.MONITOR_CLIENT_STATE, monitor_client_state)
+    nsm_server.set_callback(
+        NsmCallback.MONITOR_CLIENT_EVENT, monitor_client_event)
+    nsm_server.set_callback(
+        NsmCallback.MONITOR_CLIENT_UPDATED, monitor_client_updated)
     nsm_server.set_callback(NsmCallback.SESSION_IS_LOADED, session_is_loaded)
-    nsm_server.announce('ALSA Connections', ':dirty:switch:monitor:', 'ray-jackpatch')
+    nsm_server.announce(
+        'ALSA Connections', ':dirty:switch:monitor:', 'ray-jackpatch')
     
     #connect program interruption signals
     signal.signal(signal.SIGINT, signal_handler)
