@@ -14,8 +14,7 @@ when all client are listed, server sends
 where empty_str is '', number_of_clients is the number_of_clients monitored, 
 it does not count this monitor client.
 
-If a monitor client is capable of ':switch:', the same client_state list will be received at session
-change.
+If a monitor client is capable of ':switch:', the same client_state list will be received at session change.
 
 No 'client_state' message will be received if its started state change.
 

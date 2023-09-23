@@ -30,6 +30,7 @@ class NsmCallback(IntEnum):
     HIDE_OPTIONAL_GUI = 5
     MONITOR_CLIENT_STATE = 6
     MONITOR_CLIENT_EVENT = 7
+    MONITOR_CLIENT_UPDATED = 8
 
 
 class NsmServer(Server):
@@ -91,9 +92,13 @@ class NsmServer(Server):
         self._exec_callback(NsmCallback.MONITOR_CLIENT_STATE, *args)
     
     @make_method('/nsm/client/monitor/client_event', 'ss')
-    def nsm_client_monitor_client_event(self, path, args):
+    def _nsm_client_monitor_client_event(self, path, args):
         self._exec_callback(NsmCallback.MONITOR_CLIENT_EVENT, *args)
 
+    @make_method('/nsm/client/monitor/client_updated', 'ssi')
+    def _nsm_client_monitor_client_properties(self, path, args):
+        self._exec_callback(NsmCallback.MONITOR_CLIENT_UPDATED, *args)
+    
     def set_callback(self, on_event: NsmCallback, func: Callable):
         self._callbacks[on_event] = func
 

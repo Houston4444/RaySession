@@ -189,7 +189,7 @@ class SignaledSession(OperatingSession):
         # we can't be absolutely sure that the announcer is the good one
         # but if client announce a known PID,
         # we can be sure of which client is announcing
-        
+
         for client in self.clients:
             if client.pid == pid and not client.nsm_active and client.is_running():
                 client.server_announce(path, args, src_addr, False)

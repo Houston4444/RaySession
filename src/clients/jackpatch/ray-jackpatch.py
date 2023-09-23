@@ -341,8 +341,6 @@ def save_file():
     return (Err.OK, 'Done')
 
 def monitor_client_state(client_id: str, jack_name: str, is_started: int):
-    print('MONST', client_id, jack_name, is_started)
-    
     if Glob.monitor_states_done is not MonitorStates.UPDATING:
         brothers_dict.clear()
 
@@ -426,6 +424,10 @@ def monitor_client_event(client_id: str, event: str):
                 brothers_dict[client_id], event.partition(':')[2])
         nsm_server.send_monitor_reset()
 
+def monitor_client_updated(client_id: str, jack_name: str,
+                           is_started: int):
+    brothers_dict[client_id] = jack_name
+
 def session_is_loaded():
     Glob.allow_disconnections = True
     may_make_one_connection()
@@ -501,10 +503,16 @@ if __name__ == '__main__':
     nsm_server = NsmServer(daemon_address)
     nsm_server.set_callback(NsmCallback.OPEN, open_file)
     nsm_server.set_callback(NsmCallback.SAVE, save_file)
-    nsm_server.set_callback(NsmCallback.MONITOR_CLIENT_STATE, monitor_client_state)
-    nsm_server.set_callback(NsmCallback.MONITOR_CLIENT_EVENT, monitor_client_event)
-    nsm_server.set_callback(NsmCallback.SESSION_IS_LOADED, session_is_loaded)
-    nsm_server.announce('JACK Connections', ':dirty:switch:monitor:', 'ray-jackpatch')
+    nsm_server.set_callback(
+        NsmCallback.MONITOR_CLIENT_STATE, monitor_client_state)
+    nsm_server.set_callback(
+        NsmCallback.MONITOR_CLIENT_EVENT, monitor_client_event)
+    nsm_server.set_callback(
+        NsmCallback.MONITOR_CLIENT_UPDATED, monitor_client_updated)
+    nsm_server.set_callback(
+        NsmCallback.SESSION_IS_LOADED, session_is_loaded)
+    nsm_server.announce(
+        'JACK Connections', ':dirty:switch:monitor:', 'ray-jackpatch')
     
     #connect program interruption signals
     signal.signal(signal.SIGINT, signal_handler)

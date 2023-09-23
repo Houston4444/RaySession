@@ -462,7 +462,7 @@ class Session(ServerSender):
         client.update_infos_from_desktop_file()
         self.clients.append(client)
         client.send_gui_client_properties()
-        self.send_monitor_state(client)
+        self.send_monitor_client_update(client)
         self._update_forbidden_ids_set()
         
         return True
@@ -578,26 +578,26 @@ class Session(ServerSender):
 
         self.send(monitor_addr, prefix + 'client_state', '', '', n_clients)
 
-    def send_monitor_state(self, client_to_state: Client):
+    def send_monitor_client_update(self, client: Client):
         '''send an event message to clients capable of ":monitor:"'''
-        for client in self.clients:
-            if (client is not client_to_state
-                    and client.is_capable_of(':monitor:')):
-                client.send_to_self_address(
-                    '/nsm/client/monitor/client_state',
-                    client_to_state.client_id,
-                    client_to_state.get_jack_client_name(),
-                    int(client_to_state.is_running()))
+        for other_client in self.clients:
+            if (other_client is not client
+                    and other_client.is_capable_of(':monitor:')):
+                other_client.send_to_self_address(
+                    '/nsm/client/monitor/client_updated',
+                    client.client_id,
+                    client.get_jack_client_name(),
+                    int(client.is_running()))
         
         server = self.get_server()
         if server is not None:
             for monitor_addr in server.monitor_list:
                 self.send(
                     monitor_addr,
-                    '/ray/monitor/client_state',
-                    client_to_state.client_id,
-                    client_to_state.get_jack_client_name(),
-                    int(client_to_state.is_running()))
+                    '/ray/monitor/client_updated',
+                    client.client_id,
+                    client.get_jack_client_name(),
+                    int(client.is_running()))
 
     def send_monitor_event(self, event: str, client_id=''):
         '''send an event message to clients capable of ":monitor:"'''
