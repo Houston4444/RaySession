@@ -1,130 +1,142 @@
 # -*- coding: utf-8 -*-
 
+from enum import IntEnum
 import os
-import sys
-from PyQt5.QtCore import QObject, pyqtSignal
-from liblo import ServerThread, make_method, Address
-from typing import Optional
+from liblo import Server, make_method, Address
+from typing import Callable, Optional
 
 
-class NSMSignaler(QObject):
-    server_sends_open = pyqtSignal(str, str, str)
-    server_sends_save = pyqtSignal()
-    session_is_loaded = pyqtSignal()
-    show_optional_gui = pyqtSignal()
-    hide_optional_gui = pyqtSignal()
+class Err(IntEnum):
+    OK =  0
+    GENERAL_ERROR = -1
+    INCOMPATIBLE_API = -2
+    BLACKLISTED = -3
+    LAUNCH_FAILED = -4
+    NO_SUCH_FILE = -5
+    NO_SESSION_OPEN = -6
+    UNSAVED_CHANGES = -7
+    NOT_NOW = -8
+    BAD_PROJECT = -9
+    CREATE_FAILED = -10
+    SESSION_LOCKED = -11
+    OPERATION_PENDING = -12
 
-instance = None
 
-class NSMThread(ServerThread):
-    def __init__(self, name: str, signaler: NSMSignaler,
-                 daemon_address: Address, debug: bool):
-        ServerThread.__init__(self)
-        self.name = name
-        self.signaler = signaler
-        self.daemon_address = daemon_address
-        self.debug = debug
-        self.server_capabilities = ""
+class NsmCallback(IntEnum):
+    OPEN = 1
+    SAVE = 2
+    SESSION_IS_LOADED = 3
+    SHOW_OPTIONAL_GUI = 4
+    HIDE_OPTIONAL_GUI = 5
+    MONITOR_CLIENT_STATE = 6
+    MONITOR_CLIENT_EVENT = 7
+    MONITOR_CLIENT_UPDATED = 8
 
-        global instance
-        instance = self
 
-    @staticmethod
-    def instance() -> Optional['NSMThread']:
-        return instance
+class NsmServer(Server):
+    def __init__(self, daemon_address: Address):
+        Server.__init__(self)
+        self._daemon_address = daemon_address
+        self._server_capabilities = ""
+        
+        self._callbacks = dict[NsmCallback, Callable]()
 
     @make_method('/reply', None)
-    def serverReply(self, path, args):
+    def _reply(self, path, args):
         if args:
             reply_path = args[0]
         else:
             return
 
         if reply_path == '/nsm/server/announce':
-            self.server_capabilities = args[3]
+            self._server_capabilities = args[3]
 
     @make_method('/nsm/client/open', 'sss')
-    def nsmClientOpen(self, path, args):
-        self.ifDebug(
-            'serverOSC::%s_receives %s, %s' %
-            (self.name, path, str(args)))
-
-        self.signaler.server_sends_open.emit(*args)
+    def _nsm_client_open(self, path, args):
+        ret = self._exec_callback(NsmCallback.OPEN, *args)
+        if ret is None:
+            return
+        
+        err, err_text = ret
+        if err is Err.OK:
+            self._send_to_daemon('/reply', path, 'Ready')
+        else:
+            self._send_to_daemon('/error', path, err, err_text)
 
     @make_method('/nsm/client/save', '')
-    def nsmClientSave(self, path, args):
-        self.ifDebug(
-            'serverOSC::%s_receives %s, %s' %
-            (self.name, path, str(args)))
-        self.signaler.server_sends_save.emit()
+    def _nsm_client_save(self, path, args):
+        ret = self._exec_callback(NsmCallback.SAVE)
+        if ret is None:
+            return
+        
+        err, err_text = ret
+        if err is Err.OK:
+            self._send_to_daemon('/reply', path, 'Saved')
+        else:
+            self._send_to_daemon('/error', path, err_text)
 
     @make_method('/nsm/client/session_is_loaded', '')
-    def nsmClientSessionIsLoaded(self, path, args):
-        self.ifDebug(
-            'serverOSC::%s_receives %s, %s' %
-            (self.name, path, str(args)))
-        self.signaler.session_is_loaded.emit()
+    def _nsm_client_session_is_loaded(self, path, args):
+        self._exec_callback(NsmCallback.SESSION_IS_LOADED)
 
     @make_method('/nsm/client/show_optional_gui', '')
-    def nsmClientShow_optional_gui(self, path, args):
-        self.ifDebug(
-            'serverOSC::%s_receives %s, %s' %
-            (self.name, path, str(args)))
-        self.signaler.show_optional_gui.emit()
+    def _nsm_client_show_optional_gui(self, path, args):
+        self._exec_callback(NsmCallback.SHOW_OPTIONAL_GUI)
 
     @make_method('/nsm/client/hide_optional_gui', '')
-    def nsmClientHide_optional_gui(self, path, args):
-        self.ifDebug(
-            'serverOSC::%s_receives %s, %s' %
-            (self.name, path, str(args)))
-        self.signaler.hide_optional_gui.emit()
+    def _nsm_client_hide_optional_gui(self, path, args):
+        self._exec_callback(NsmCallback.HIDE_OPTIONAL_GUI)
     
-    @make_method('/nsm/client/monitor/client_state', 'si')
-    def nsm_client_brother_client_state(self, path, args):
-        pass
+    @make_method('/nsm/client/monitor/client_state', 'ssi')
+    def _nsm_client_monitor_client_state(self, path, args):
+        self._exec_callback(NsmCallback.MONITOR_CLIENT_STATE, *args)
     
     @make_method('/nsm/client/monitor/client_event', 'ss')
-    def nsm_client_monitor_event(self, path, args):
-        pass
+    def _nsm_client_monitor_client_event(self, path, args):
+        self._exec_callback(NsmCallback.MONITOR_CLIENT_EVENT, *args)
 
-    def getServerCapabilities(self):
-        return self.server_capabilities
+    @make_method('/nsm/client/monitor/client_updated', 'ssi')
+    def _nsm_client_monitor_client_properties(self, path, args):
+        self._exec_callback(NsmCallback.MONITOR_CLIENT_UPDATED, *args)
+    
+    def set_callback(self, on_event: NsmCallback, func: Callable):
+        self._callbacks[on_event] = func
 
-    def ifDebug(self, string):
-        if self.debug:
-            sys.stderr.write("%s\n" % string)
+    def _exec_callback(self, event: NsmCallback, *args) -> Optional[tuple[Err, str]]:
+        if event in self._callbacks.keys():
+            return self._callbacks[event](*args)
 
-    def sendToDaemon(self, *args):
-        self.send(self.daemon_address, *args)
+    def get_server_capabilities(self):
+        return self._server_capabilities
 
-    def announce(self, client_name, capabilities, executable_path):
-        major = 1
-        minor = 0
+    def _send_to_daemon(self, *args):
+        self.send(self._daemon_address, *args)
+
+    def announce(self, client_name: str, capabilities: str, executable_path: str):
+        MAJOR, MINOR = 1, 0
         pid = os.getpid()
 
-        self.sendToDaemon(
+        self._send_to_daemon(
             '/nsm/server/announce',
             client_name,
             capabilities,
             executable_path,
-            major,
-            minor,
+            MAJOR,
+            MINOR,
             pid)
 
-    def openReply(self):
-        self.sendToDaemon('/reply', '/nsm/client/open', 'Ready')
-
-    def saveReply(self):
-        self.sendToDaemon('/reply', '/nsm/client/save', 'Saved')
-
-    def sendDirtyState(self, bool_dirty):
-        if bool_dirty:
-            self.sendToDaemon('/nsm/client/is_dirty')
+    def send_dirty_state(self, dirty: bool):
+        if dirty:
+            self._send_to_daemon('/nsm/client/is_dirty')
         else:
-            self.sendToDaemon('/nsm/client/is_clean')
+            self._send_to_daemon('/nsm/client/is_clean')
 
-    def sendGuiState(self, state):
+    def send_gui_state(self, state: bool):
         if state:
-            self.sendToDaemon('/nsm/client/gui_is_shown')
+            self._send_to_daemon('/nsm/client/gui_is_shown')
         else:
-            self.sendToDaemon('/nsm/client/gui_is_hidden')
+            self._send_to_daemon('/nsm/client/gui_is_hidden')
+            
+    def send_monitor_reset(self):
+        if ':monitor:' in self._server_capabilities:
+            self._send_to_daemon('/nsm/server/monitor_reset')

@@ -23,7 +23,7 @@ import logging
 import xml.etree.ElementTree as ET
 
 
-from nsm_client_noqt import NsmServer, NsmCallback, Err
+from nsm_client import NsmServer, NsmCallback, Err
 from bases import (EventHandler, MonitorStates, PortMode, PortType,
                    Event, AlsaPort, Timer, Glob, debug_conn_str)
 from jack_renaming_tools import (

@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING
 
 import ray
-import nsm_client
+from nsm_client_qt import NSMThread, NSMSignaler
 from gui_tools import CommandLineArgs, _translate
 from gui_server_thread import GuiServerThread
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class NsmChild:
     def __init__(self, session: 'SignaledSession'):
         self.session = session
-        self.nsm_signaler = nsm_client.NSMSignaler()
+        self.nsm_signaler = NSMSignaler()
         self.nsm_signaler.server_sends_open.connect(self._open)
         self.nsm_signaler.server_sends_save.connect(self._save)
         self.nsm_signaler.show_optional_gui.connect(self._show_optional_gui)
@@ -24,10 +24,9 @@ class NsmChild:
         self.wait_for_save = False
         self.project_path = ''
 
-        serverNSM = nsm_client.NSMThread('raysession_child',
-                                         self.nsm_signaler,
-                                         CommandLineArgs.NSM_URL,
-                                         CommandLineArgs.debug)
+        serverNSM = NSMThread(
+            'raysession_child', self.nsm_signaler,
+            CommandLineArgs.NSM_URL, CommandLineArgs.debug)
         serverNSM.start()
 
         self.session.signaler.daemon_announce_ok.connect(
@@ -36,7 +35,7 @@ class NsmChild:
             self._server_status_changed)
 
     def _announce_to_parent(self):
-        server_nsm = nsm_client.NSMThread.instance()
+        server_nsm = NSMThread.instance()
 
         if server_nsm:
             server_nsm.announce(_translate('child_session', 'Child Session'),
@@ -44,7 +43,7 @@ class NsmChild:
 
     def _server_status_changed(self, server_status: int):
         if server_status == ray.ServerStatus.READY:
-            server_nsm = nsm_client.NSMThread.instance()
+            server_nsm = NSMThread.instance()
             if not server_nsm:
                 return
 
@@ -85,7 +84,7 @@ class NsmChild:
             self.session.main_win.hide()
 
     def send_gui_state(self, state: bool):
-        serverNSM = nsm_client.NSMThread.instance()
+        serverNSM = NSMThread.instance()
 
         if serverNSM:
             serverNSM.sendGuiState(state)
@@ -97,7 +96,7 @@ class NsmChildOutside(NsmChild):
         self.wait_for_close = False
 
     def _announce_to_parent(self):
-        server_nsm = nsm_client.NSMThread.instance()
+        server_nsm = NSMThread.instance()
 
         if server_nsm:
             server_nsm.announce(
@@ -111,7 +110,7 @@ class NsmChildOutside(NsmChild):
         self.session.main_win.hide()
 
     def _save(self):
-        server_nsm = nsm_client.NSMThread.instance()
+        server_nsm = NSMThread.instance()
 
         if server_nsm:
             server_nsm.sendToDaemon(

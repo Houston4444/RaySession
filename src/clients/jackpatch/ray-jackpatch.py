@@ -27,7 +27,7 @@ import xml.etree.ElementTree as ET
 import jacklib
 from jacklib.helpers import c_char_p_p_to_list
 from jacklib.api import JackPortFlags, JackOptions
-from nsm_client_noqt import NsmServer, NsmCallback, Err
+from nsm_client import NsmServer, NsmCallback, Err
 from bases import (EventHandler, MonitorStates, PortMode, PortType,
                    Event, JackPort, Timer, Glob, debug_conn_str)
 from jack_renaming_tools import (

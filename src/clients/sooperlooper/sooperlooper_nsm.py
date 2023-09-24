@@ -11,7 +11,7 @@ from PyQt5.QtCore import (QCoreApplication, pyqtSignal, QObject, QTimer,
 from PyQt5.QtXml import QDomDocument
 
 import ray
-import nsm_client
+from nsm_client_qt import NSMThread, NSMSignaler
 import jacklib
 
 def signalHandler(sig, frame):
@@ -19,9 +19,9 @@ def signalHandler(sig, frame):
         general_object.leave()
 
 
-class SlOSCThread(nsm_client.NSMThread):
+class SlOSCThread(NSMThread):
     def __init__(self, name, signaler, daemon_address, debug):
-        nsm_client.NSMThread.__init__(self, name, signaler,
+        NSMThread.__init__(self, name, signaler,
                                       daemon_address, debug)
         self.sl_is_ready = False
         self.number_of_loops = 0
@@ -342,7 +342,7 @@ if __name__ == '__main__':
     timer.timeout.connect(lambda: None)
     timer.start()
 
-    signaler = nsm_client.NSMSignaler()
+    signaler = NSMSignaler()
 
     server = SlOSCThread('sooperlooper_nsm', signaler, daemon_address, False)
 

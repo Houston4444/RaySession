@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (QApplication, QDialog, QFileDialog,
 from PyQt5.QtXml import QDomDocument
 
 import ray
-import nsm_client
+from nsm_client_qt import NSMThread, NSMSignaler
 import ui_proxy_gui
 import ui_proxy_copy
 
@@ -806,10 +806,10 @@ if __name__ == '__main__':
     timer.timeout.connect(lambda: None)
     timer.start()
 
-    signaler = nsm_client.NSMSignaler()
+    signaler = NSMSignaler()
 
-    server = nsm_client.NSMThread('ray-proxy', signaler,
-                                  daemon_address, debug)
+    server = NSMThread('ray-proxy', signaler,
+                       daemon_address, debug)
     server.start()
 
     proxy = Proxy(executable)
