@@ -30,7 +30,7 @@ if QT_VERSION < (5, 6):
         "WARNING: You are using a version of QT older than 5.6.\n"
         + "You won't be warned if a process can't be launch.\n")
 
-VERSION = "0.14.0"
+VERSION = "0.14.2"
 
 APP_TITLE = 'RaySession'
 DEFAULT_SESSION_ROOT = "%s/Ray Sessions" % os.getenv('HOME')
@@ -206,7 +206,7 @@ class ScriptFile:
     CLOSE = 0x8
 
     @classmethod
-    def by_string(cls, action:str) -> int:
+    def by_string(cls, action: str) -> int:
         if action == 'load':
             return cls.LOAD
         if action == 'save':
@@ -222,7 +222,7 @@ def ifDebug(string):
     if debug:
         sys.stderr.write("%s\n" % string)
 
-def version_to_tuple(version_str):
+def version_to_tuple(version_str: str):
     version_list = []
     for c in version_str.split('.'):
         if not c.isdigit():

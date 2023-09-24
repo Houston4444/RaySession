@@ -2,13 +2,6 @@
 
 Of course, the main objectives of RaySession are already achieved. There are still a lot of features ideas for the patchbay, see https://github.com/Houston4444/HoustonPatchbay/blob/main/plans.md. But few features can be added to RaySession itself too.
 
-## Client <=> Patchbay box parrallel selection
-
-Pure GUI feature, select a client on left panel also selects a matching box in the patchbay, (re-click selects another one if any). Click on a client box in the patchbay also selects the client frame in the left panel.
-
-## Settings dialog
-
-It's quite strange that RaySession does not have preferences dialog, we could move the systray preferences, add a checkbox for startup dialog, probably many things.
 
 ## Add some widgets to the tool bar
 
@@ -28,23 +21,10 @@ In client properties dialog, it would be nice to can select an icon directly, Un
 
 Give some user tips in donations dialog, make it prettier.
 
-## list Ardour templates as RS applications
-
-look into ~/.config/ardourX/templates and add an RS template per ardour template. This template should copy the ardour template to the RS session directory (and make the needed modifications) before to start ardour. The main problematic is with ardour versions (sometimes ardour executable is ardour, ardour7, Ardour7, etc...)
-
-## Select a ClientId in Application Dialog
-
-Maybe at bottom left, add a field for application to launch with specific client_id. If any, it will launch the app with long jack naming (__Application.client_id__ instead of __Application__). Useful if user uses many instances of the same software.
 
 ## Connections
 
-ray-jackpatch could be rewritten from scratch, it uses Qt and it is clearly not needed.
-
 Allow some automatic disconnections, sometimes some programs auto-connect some ports and it can be annoying. Of course user can set JACK settings to prevent that, but it can be boring for other softwares.
-
-Something to see is, what to do with connections out from NSM clients at session switch? Currently it does nothing, keeping all existing connections. But if the user makes for its current session some hardware to hardware connections, theses connections won't be removed at session switch. Obviously, we can't decide to remove them when ray-jackpatch is started, it would remove (for example) PulseAudio bridges connections.
-
-This problematic does not exists with regular NSM clients, because they remove and re-add their JACK clients (and may rename them).
 
 ## Pipewire config script
 
@@ -53,3 +33,9 @@ Such as Jack Config Memory script, it would be useful to can switch pipewire con
 ## Rooms
 
 As carla-patchbay, be able to load inside a session, a session starting a new JACK instance (or PW if possible), with audio and midi ports. I don't know if it is really doable without extra latency.
+
+## Plugin launcher
+
+First, there is a client to write for this, maybe starting from carla-single, starting with carla-database window if no config file is found. We could add a button directly in RaySession GUI (Add Plugin). What would be nice would be to can select the default plugin GUI or a generic one (it needs one more NSM capability I think).
+
+It can be very long to implement, but it would be a big step forward.

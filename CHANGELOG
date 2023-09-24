@@ -1,4 +1,18 @@
-0.14.0 / 2023-09-??
+0.14.1 / 2023-09-23
+    Important Bug Fix Release
+
+    Major Fixes:
+        Some client project files were not renamed at session duplicate (and certainly when creating a session from user template)
+        ray-jackpatch and ray-alsapatch various problems that involve loss of connections
+        "Optional-gui states" option was not working at all
+        typo: replace 'identifiant' with 'identifier' in english version
+
+    Minor fixes in patchbay (all theses bugs did already existed in 0.13.1)
+        'navigation on borders' option state was not restored at startup
+        Drag with middle click wrongly activate 'navigation on borders'
+        Shift + Mouse wheel for horizontal scrolling was not working
+
+0.14.0 / 2023-09-18
     This release is probably the last major release before 1.0.0 (others 0.14.X may exist).
 
     Packagers should set python3-pyalsa (>=1.2.4) as a dependency, else ALSA MIDI ports wont be displayed in the patchbay, and ALSA Connections client will not work.
