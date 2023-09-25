@@ -16,7 +16,6 @@ class JackEngine(ProtoEngine):
     def __init__(self):
         super().__init__()
         self._jack_client: 'pointer[jack_client_t]' = None
-        self._stopped = False
 
     def init(self) -> bool:
         self._jack_client = jacklib.client_open(
@@ -75,9 +74,6 @@ class JackEngine(ProtoEngine):
 
     def disconnect_ports(self, port_out: str, port_in: str):
         jacklib.disconnect(self._jack_client, port_out, port_in)
-
-    def stopped(self) -> bool:
-        return self._stopped
 
     def quit(self):
         jacklib.deactivate(self._jack_client)

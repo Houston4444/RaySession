@@ -22,7 +22,7 @@ from pyalsa.alsaseq import (
     SEQ_EVENT_PORT_UNSUBSCRIBED,
 )
 
-from bases import Glob, EventHandler, Event, PortMode
+from bases import Glob, EventHandler, Event, PortMode, PortType
 
 _PORT_READS = SEQ_PORT_CAP_READ | SEQ_PORT_CAP_SUBS_READ
 _PORT_WRITES = SEQ_PORT_CAP_WRITE | SEQ_PORT_CAP_SUBS_WRITE
@@ -159,11 +159,11 @@ class AlsaManager:
                 if port.caps & _PORT_READS == _PORT_READS:
                     EventHandler.add_event(
                         Event.PORT_ADDED, f'{client.name}:{port.name}',
-                        PortMode.OUTPUT)
+                        PortMode.OUTPUT, PortType.MIDI)
                 if port.caps & _PORT_WRITES == _PORT_WRITES:
                     EventHandler.add_event(
                         Event.PORT_ADDED, f'{client.name}:{port.name}',
-                        PortMode.INPUT)
+                        PortMode.INPUT, PortType.MIDI)
 
         for conn in self._connections:
             port_names = conn.as_port_names(self._clients)
@@ -311,11 +311,11 @@ class AlsaManager:
                     if port.caps & _PORT_READS == _PORT_READS:
                         EventHandler.add_event(
                             Event.PORT_REMOVED, f'{client.name}:{port.name}',
-                            PortMode.OUTPUT)
+                            PortMode.OUTPUT, PortType.MIDI)
                     if port.caps & _PORT_WRITES == _PORT_WRITES:
                         EventHandler.add_event(
                             Event.PORT_REMOVED, f'{client.name}:{port.name}',
-                            PortMode.INPUT)
+                            PortMode.INPUT, PortType.MIDI)
 
                 elif event.type == SEQ_EVENT_PORT_SUBSCRIBED:
                     sender_client = self._clients.get(data['connect.sender.client'])

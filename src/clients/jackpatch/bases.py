@@ -44,8 +44,6 @@ class ProtoEngine:
         ...
     def quit(self):
         ...
-    def stopped(self) -> bool:
-        return False
 
 
 class Event(IntEnum):

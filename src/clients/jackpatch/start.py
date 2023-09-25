@@ -42,6 +42,10 @@ jack_ports = dict[PortMode, list[JackPort]]()
 for port_mode in (PortMode.NULL, PortMode.INPUT, PortMode.OUTPUT):
     jack_ports[port_mode] = list[JackPort]()
 
+timer_dirty_check = Timer(0.300)
+timer_connect_check = Timer(0.200)
+nsm_server: NsmServer
+
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         Glob.terminate = True
@@ -130,7 +134,7 @@ def connection_added(port_str_a: str, port_str_b: str):
     if (port_str_a, port_str_b) not in saved_connections:
         timer_dirty_check.start()
         
-def connection_removed(port_str_a, port_str_b):
+def connection_removed(port_str_a: str, port_str_b: str):
     if (port_str_a, port_str_b) in connection_list:
         connection_list.remove((port_str_a, port_str_b))
 
@@ -415,7 +419,9 @@ def session_is_loaded():
 
 # --- end of NSM callbacks --- 
 
-if __name__ == '__main__':
+def run():
+    global nsm_server
+
     nsm_url = os.getenv('NSM_URL')
     if not nsm_url:
         _logger.error('Could not register as NSM client.')
@@ -429,9 +435,6 @@ if __name__ == '__main__':
 
     if not engine.init():
         sys.exit(2)
-    
-    timer_dirty_check = Timer(0.300)
-    timer_connect_check = Timer(0.200)
 
     nsm_server = NsmServer(daemon_address)
     nsm_server.set_callback(NsmCallback.OPEN, open_file)
@@ -454,7 +457,7 @@ if __name__ == '__main__':
     engine.fill_ports_and_connections(jack_ports, connection_list)
     
     jack_stopped = False
-    
+
     while True:
         if Glob.terminate:
             break
