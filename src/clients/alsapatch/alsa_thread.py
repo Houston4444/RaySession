@@ -281,11 +281,11 @@ class AlsaManager:
                     if port.caps & _PORT_READS == _PORT_READS:
                         EventHandler.add_event(
                             Event.PORT_ADDED, f'{client.name}:{port.name}',
-                            PortMode.OUTPUT)
+                            PortMode.OUTPUT, PortType.MIDI)
                     if port.caps & _PORT_WRITES == _PORT_WRITES:
                         EventHandler.add_event(
                             Event.PORT_ADDED, f'{client.name}:{port.name}',
-                            PortMode.INPUT)
+                            PortMode.INPUT, PortType.MIDI)
                     
                 elif event.type == SEQ_EVENT_PORT_EXIT:
                     client_id, port_id = data['addr.client'], data['addr.port']

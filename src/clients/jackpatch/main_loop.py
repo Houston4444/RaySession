@@ -31,7 +31,11 @@ from jack_renaming_tools import (
 from engine import Engine, XML_TAG, NSM_NAME
 
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.DEBUG)
+_log_handler = logging.StreamHandler()
+_log_handler.setFormatter(logging.Formatter(
+    f"%(name)s - %(levelname)s - %(message)s"))
+_logger.setLevel(logging.WARNING)
+_logger.addHandler(_log_handler)
 
 engine = Engine()
 brothers_dict = dict[str, str]()
@@ -148,6 +152,7 @@ def may_make_one_connection():
         if to_disc_connections:
             for to_disc_con in to_disc_connections:
                 if to_disc_con in connection_list:
+                    _logger.info(f'disconnect ports: {to_disc_con}')
                     engine.disconnect_ports(*to_disc_con)
                     return
             else:
@@ -170,6 +175,7 @@ def may_make_one_connection():
                 Glob.pending_connection = True
                 break
 
+            _logger.info(f'connect ports: {sv_con}')
             engine.connect_ports(*sv_con)
             one_connected = True
     else:
@@ -187,6 +193,7 @@ def open_file(project_path: str, session_name: str,
 
     file_path = project_path + '.xml'
     Glob.file_path = file_path
+    _logger.info(f'open file: {file_path}')
 
     if os.path.isfile(file_path):
         try:
@@ -328,6 +335,7 @@ def save_file():
         # we can indent the xml tree since python3.9
         ET.indent(root, space='  ', level=0)
 
+    _logger.info(f'save file: {Glob.file_path}')
     tree = ET.ElementTree(root)
     try:
         tree.write(Glob.file_path)
@@ -421,6 +429,26 @@ def session_is_loaded():
 
 def run():
     global nsm_server
+
+    # set log level with exec arguments
+    if len(sys.argv) > 1:
+        read_log_level = False
+        log_level = logging.WARNING
+
+        for arg in sys.argv[1:]:
+            if arg in ('-log', '--log'):
+                read_log_level = True
+                log_level = logging.DEBUG
+
+            elif read_log_level:
+                if arg.isdigit():
+                    log_level = int(uarg)
+                else:
+                    uarg = arg.upper()
+                    if (uarg in logging.__dict__.keys()
+                            and isinstance(logging.__dict__[uarg], int)):
+                        log_level = logging.__dict__[uarg]
+        _logger.setLevel(log_level)
 
     nsm_url = os.getenv('NSM_URL')
     if not nsm_url:

@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -u
 
-import start
+import main_loop
 
 if __name__ == '__main__':
-    start.run()
+    main_loop.run()
