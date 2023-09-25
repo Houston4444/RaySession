@@ -16,7 +16,6 @@
 # The only way we've got to know that the entire session is opening, 
 # is to check if session_is_loaded message is received.
 
-
 import os
 import signal
 import sys
@@ -24,20 +23,17 @@ import liblo
 import logging
 import xml.etree.ElementTree as ET
 
-import jacklib
-from jacklib.helpers import c_char_p_p_to_list
-from jacklib.api import JackPortFlags, JackOptions
 from nsm_client import NsmServer, NsmCallback, Err
 from bases import (EventHandler, MonitorStates, PortMode, PortType,
                    Event, JackPort, Timer, Glob, debug_conn_str)
 from jack_renaming_tools import (
     port_belongs_to_client, port_name_client_replaced)
-import jack_callbacks
+from engine import Engine, XML_TAG, NSM_NAME
 
 _logger = logging.getLogger(__name__)
 _logger.setLevel(logging.DEBUG)
 
-present_client_names = set[str]()
+engine = Engine()
 brothers_dict = dict[str, str]()
 connection_list = list[tuple[str, str]]()
 saved_connections = list[tuple[str, str]]()
@@ -95,7 +91,6 @@ def port_added(port_name: str, port_mode: int, port_type: int):
     port.is_new = True
 
     jack_ports[port_mode].append(port)
-    present_client_names.add(port_name.partition(':')[0])
     timer_connect_check.start()
 
 def port_removed(port_name: str, port_mode: PortMode, port_type: PortType):
@@ -149,7 +144,7 @@ def may_make_one_connection():
         if to_disc_connections:
             for to_disc_con in to_disc_connections:
                 if to_disc_con in connection_list:
-                    jacklib.disconnect(jack_client, *to_disc_con)
+                    engine.disconnect_ports(*to_disc_con)
                     return
             else:
                 to_disc_connections.clear()
@@ -171,7 +166,7 @@ def may_make_one_connection():
                 Glob.pending_connection = True
                 break
 
-            jacklib.connect(jack_client, *sv_con)
+            engine.connect_ports(*sv_con)
             one_connected = True
     else:
         Glob.pending_connection = False
@@ -193,14 +188,14 @@ def open_file(project_path: str, session_name: str,
         try:
             tree = ET.parse(file_path)
         except:
-            sys.stderr.write('unable to read file %s\n' % file_path)
-            # Glob.terminate = True
+            _logger.error(f'unable to read file {file_path}')
             return (Err.BAD_PROJECT, f'{file_path} is not a correct .xml file')
         
         # read the DOM
         root = tree.getroot()
-        if root.tag != 'RAY-JACKPATCH':
-            return (Err.BAD_PROJECT, f'{file_path} is not a RAY-JACKPATCH .xml file')
+        if root.tag != XML_TAG:
+            _logger.error(f'{file_path} is not a {XML_TAG} .xml file')
+            return (Err.BAD_PROJECT, f'{file_path} is not a {XML_TAG} .xml file')
         
         graph_ports = dict[PortMode, list[str]]()
         for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
@@ -292,7 +287,7 @@ def save_file():
         saved_connections.remove(del_con)
 
     # write the XML file
-    root = ET.Element('RAY-JACKPATCH')
+    root = ET.Element(XML_TAG)
     for sv_con in saved_connections:
         conn_el = ET.SubElement(root, 'connection')
         conn_el.attrib['from'], conn_el.attrib['to'] = sv_con
@@ -333,7 +328,7 @@ def save_file():
     try:
         tree.write(Glob.file_path)
     except:
-        sys.stderr.write('unable to write file %s\n' % Glob.file_path)
+        _logger.error(f'unable to write file {Glob.file_path}')
         Glob.terminate = True
         return
 
@@ -386,21 +381,7 @@ def monitor_client_state(client_id: str, jack_name: str, is_started: int):
         Glob.monitor_states_done = MonitorStates.DONE
 
 def monitor_client_event(client_id: str, event: str):
-    # TODO remove stopping_brothers key and all
-    # it was a test to see if session quit fails less
-    # if ray-jackpatch is the last client to stop.
-
-    if event == 'stop_request':
-        if (client_id in brothers_dict
-                and brothers_dict[client_id]
-                    in [c.partition('/')[0] for c in present_client_names]):        
-            Glob.stopping_brothers.add(client_id)
-
-    elif event in ('stopped_by_server', 'stopped_by_itself'):
-        if client_id in Glob.stopping_brothers:
-            Glob.stopping_brothers.remove(client_id)
-
-    elif event == 'removed':
+    if event == 'removed':
         if client_id in brothers_dict:
             jack_client_name = brothers_dict.pop(client_id)
         else:
@@ -434,71 +415,23 @@ def session_is_loaded():
 
 # --- end of NSM callbacks --- 
 
-def fill_ports_and_connections():
-    '''get all current JACK ports and connections at startup'''
-    port_name_list = c_char_p_p_to_list(
-        jacklib.get_ports(jack_client, "", "", 0))
-
-    for port_name in port_name_list:
-        jack_port = JackPort()
-        jack_port.name = port_name
-        
-        present_client_names.add(port_name.partition(':')[0])
-
-        port_ptr = jacklib.port_by_name(jack_client, port_name)
-        port_flags = jacklib.port_flags(port_ptr)
-
-        if port_flags & JackPortFlags.IS_INPUT:
-            jack_port.mode = PortMode.INPUT
-        elif port_flags & JackPortFlags.IS_OUTPUT:
-            jack_port.mode = PortMode.OUTPUT
-        else:
-            jack_port.mode = PortMode.NULL
-
-        port_type_str = jacklib.port_type(port_ptr)
-        if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
-            jack_port.type = PortType.AUDIO
-        elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
-            jack_port.type = PortType.MIDI
-        else:
-            jack_port.type = PortType.NULL
-
-        jack_port.is_new = True
-
-        jack_ports[jack_port.mode].append(jack_port)
-
-        if jack_port.mode is PortMode.OUTPUT:
-            for port_con_name in jacklib.port_get_all_connections(
-                    jack_client, port_ptr):
-                connection_list.append((port_name, port_con_name))
-
-    
 if __name__ == '__main__':
     nsm_url = os.getenv('NSM_URL')
     if not nsm_url:
-        sys.stderr.write('Could not register as NSM client.\n')
+        _logger.error('Could not register as NSM client.')
         sys.exit(1)
 
     try:
         daemon_address = liblo.Address(nsm_url)
     except:
-        sys.stderr.write('NSM_URL seems to be invalid.\n')
+        _logger.error('NSM_URL seems to be invalid.')
         sys.exit(1)
 
-    jack_client = jacklib.client_open(
-        "ray-jackpatch",
-        JackOptions.NO_START_SERVER,
-        None)
-
-    if not jack_client:
-        sys.stderr.write('Unable to make a jack client !\n')
+    if not engine.init():
         sys.exit(2)
     
     timer_dirty_check = Timer(0.300)
     timer_connect_check = Timer(0.200)
-
-    jack_callbacks.set_callbacks(jack_client)
-    jacklib.activate(jack_client)
 
     nsm_server = NsmServer(daemon_address)
     nsm_server.set_callback(NsmCallback.OPEN, open_file)
@@ -512,19 +445,18 @@ if __name__ == '__main__':
     nsm_server.set_callback(
         NsmCallback.SESSION_IS_LOADED, session_is_loaded)
     nsm_server.announce(
-        'JACK Connections', ':dirty:switch:monitor:', 'ray-jackpatch')
+        NSM_NAME, ':dirty:switch:monitor:', sys.argv[0].rpartition('/')[2])
     
     #connect program interruption signals
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    fill_ports_and_connections()
+    engine.fill_ports_and_connections(jack_ports, connection_list)
     
     jack_stopped = False
     
     while True:
         if Glob.terminate:
-        # if Glob.terminate and not Glob.stopping_brothers:
             break
 
         nsm_server.recv(50)
@@ -550,5 +482,4 @@ if __name__ == '__main__':
             may_make_one_connection()
 
     if not jack_stopped:
-        jacklib.deactivate(jack_client)
-        jacklib.client_close(jack_client)
+        engine.quit()

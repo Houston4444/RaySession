@@ -20,6 +20,34 @@ class PortType(IntEnum):
     MIDI = 2
 
 
+class JackPort:
+    # is_new is used to prevent reconnections
+    # when a disconnection has not been saved and one new port append.
+    id = 0
+    name = ''
+    mode = PortMode.NULL
+    type = PortType.NULL
+    is_new = False
+    
+    
+class ProtoEngine:
+    def init(self) -> bool:
+        return True
+
+    def fill_ports_and_connections(
+            self, port_list: dict[PortMode, list[JackPort]],
+            connection_list: list[tuple[str, str]]):
+        ...
+    def connect_ports(self, port_out: str, port_in: str):
+        ...
+    def disconnect_ports(self, port_out: str, port_in: str):
+        ...
+    def quit(self):
+        ...
+    def stopped(self) -> bool:
+        return False
+
+
 class Event(IntEnum):
     CLIENT_ADDED = 1
     CLIENT_REMOVED = 2
@@ -36,16 +64,6 @@ class MonitorStates(IntEnum):
     UPDATING = 1
     DONE = 2
 
-
-class JackPort:
-    # is_new is used to prevent reconnections
-    # when a disconnection has not been saved and one new port append.
-    id = 0
-    name = ''
-    mode = PortMode.NULL
-    type = PortType.NULL
-    is_new = False
-    
 
 class Timer:
     _last_ask = 0.0
@@ -88,7 +106,6 @@ class Glob:
     open_done_once = False
     allow_disconnections = False
     terminate = False
-    stopping_brothers = set[str]()
     monitor_states_done = MonitorStates.NEVER_DONE
     client_changing_id: Optional[tuple[str, str]] = None
 
