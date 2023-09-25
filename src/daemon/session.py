@@ -8,7 +8,7 @@ import string
 import subprocess
 import sys
 import time
-from typing import Optional
+from typing import Callable, Optional, Any, Union
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QTimer
 from PyQt5.QtXml  import QDomDocument
@@ -35,6 +35,7 @@ from daemon_tools import (
 import ardour_templates
 import templates_database
 from xml_tools import XmlElement
+from patch_rewriter import rewrite_jack_patch_files
 
 _translate = QCoreApplication.translate
 _logger = logging.getLogger(__name__)
@@ -640,14 +641,14 @@ class OperatingSession(Session):
         self.timer_waituser_progress = QTimer()
         self.timer_waituser_progress.setInterval(500)
         self.timer_waituser_progress.timeout.connect(
-            self._timer_wait_user_progress_timeOut)
+            self._timer_wait_user_progress_timeout)
         self.timer_wu_progress_n = 0
 
         self.osc_src_addr = None
         self.osc_path = ''
         self.osc_args = []
 
-        self.steps_order = []
+        self.steps_order = list[Union[Callable, list[Any]]]()
 
         self.terminated_yet = False
 
@@ -842,10 +843,6 @@ class OperatingSession(Session):
             self.timer_launch.stop()
 
     def _timer_quit_timeout(self):
-        # if (self._client_quitting is not None
-        #         and self._client_quitting.is_running()):
-        #     return
-        
         if self.clients_to_quit:
             self._client_quitting = self.clients_to_quit.pop(0)
             self._client_quitting.stop()
@@ -854,7 +851,7 @@ class OperatingSession(Session):
             self._client_quitting = None
             self.timer_quit.stop()
 
-    def _timer_wait_user_progress_timeOut(self):
+    def _timer_wait_user_progress_timeout(self):
         if not self.expected_clients:
             self.timer_waituser_progress.stop()
 
@@ -2287,6 +2284,68 @@ for better organization.""")
         self.send(src_addr, '/error', src_path, ray.Err.COPY_ABORTED,
                   _translate('GUIMSG', 'Copy has been aborted !'))
 
+    def save_client(self, client: Client):
+        self.expected_clients.append(client)
+        client.save()
+        
+        self._wait_and_go_to(
+            10000, (self.next_function, client), ray.WaitFor.REPLY)
+
+    def rename_full_client(self, client: Client, new_name: str, new_client_id: str):
+        tmp_client = Client(self)
+        tmp_client.eat_attributes(client)
+        tmp_client.client_id = new_client_id
+        tmp_client.prefix_mode = client.prefix_mode
+        tmp_client.custom_prefix = client.custom_prefix
+        tmp_client.jack_naming = ray.JackNaming.LONG
+        
+        client.set_status(ray.ClientStatus.REMOVED)
+        
+        client._rename_files(
+            Path(self.path),
+            self.name, self.name,
+            client.get_prefix_string(), tmp_client.get_prefix_string(),
+            client.client_id, tmp_client.client_id,
+            client.get_links_dir(), tmp_client.get_links_dir())
+
+        ex_jack_name = client.get_jack_client_name()
+        ex_client_id = client.client_id
+        new_jack_name = tmp_client.get_jack_client_name()
+
+        client.client_id = new_client_id
+        client.jack_naming = ray.JackNaming.LONG
+        client.label = new_name
+
+        if new_jack_name != ex_jack_name:
+            rewrite_jack_patch_files(
+                self, ex_client_id, new_client_id,
+                ex_jack_name, new_jack_name)
+            self.canvas_saver.client_jack_name_changed(
+                ex_jack_name, new_jack_name)
+
+        client.sent_to_gui = False
+        client.send_gui_client_properties()
+        self.send_gui('/ray/gui/session/sort_clients',
+                      *[c.client_id for c in self.clients])
+
+        # we need to save session file here
+        # else, if session is aborted
+        # client won't find its files at next restart
+        self._save_session_file()
+
+        self.send_monitor_event('id_changed_to:' + new_client_id, ex_client_id)
+        self._wait_and_go_to(0, (self.next_function, client), ray.WaitFor.NONE)
+        
+    def rename_full_client_done(self, client: Client):
+        self.message("Done")
+        self._send_reply("full client rename done.")
+        self.set_server_status(ray.ServerStatus.READY)
+        self._forget_osc_args()
+
+    def restart_client(self, client: Client):
+        client.start()
+        self._wait_and_go_to(0, (self.next_function, client), ray.WaitFor.NONE)
+
     def close_client(self, client: Client):
         self.set_server_status(ray.ServerStatus.READY)
 
@@ -2301,6 +2360,17 @@ for better organization.""")
             client.kill()
 
         self._wait_and_go_to(1000, self.next_function, ray.WaitFor.STOP_ONE)
+
+    def switch_client(self, client: Client):
+        if not client.is_capable_of(':switch:'):
+            _logger.error(f'client {client.client_id} is not capable of switch')
+            return
+        
+        if client.status != ray.ClientStatus.READY:
+            _logger.error(f'client {client.client_id} is not ready to switch')
+
+        client.switch()
+        self.next_function(client)
 
     def load_client_snapshot(self, client_id, snapshot):
         self.set_server_status(ray.ServerStatus.REWIND)

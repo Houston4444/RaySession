@@ -1208,7 +1208,7 @@ class Client(ServerSender, ray.ClientData):
             self.send_gui("/ray/gui/client/status", self.client_id,
                           ray.ClientStatus.COPY)
 
-    def get_prefix_string(self):
+    def get_prefix_string(self) -> str:
         if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
             return self.session.name
 

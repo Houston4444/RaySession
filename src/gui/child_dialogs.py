@@ -957,15 +957,15 @@ class ClientRenameDialog(ChildDialog):
         self.ui.lineEdit.selectAll()
         self.ui.lineEdit.setFocus()
         
-        self.ui.checkBoxIdRename.setEnabled(
-            client.status == ray.ClientStatus.STOPPED)
+        # self.ui.checkBoxIdRename.setEnabled(
+        #     client.status == ray.ClientStatus.STOPPED)
         if client.protocol not in (ray.Protocol.NSM, ray.Protocol.RAY_HACK):
             self.ui.checkBoxIdRename.setVisible(False)
 
         client.status_changed.connect(self._client_status_changed)
 
     def _client_status_changed(self, status: int):
-        self.ui.checkBoxIdRename.setEnabled(status == ray.ClientStatus.STOPPED)
+        # self.ui.checkBoxIdRename.setEnabled(status == ray.ClientStatus.STOPPED)
         if status == ray.ClientStatus.REMOVED:
             self.reject()
     

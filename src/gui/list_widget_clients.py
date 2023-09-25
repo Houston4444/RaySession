@@ -174,17 +174,25 @@ class ClientSlot(QFrame):
                                                   self.client)
         dialog.exec()
         if dialog.result():
-            self.client.label = dialog.get_new_label()
-            self.client.send_properties_to_daemon()
-
+            label = dialog.get_new_label()
+            
             if dialog.is_identifiant_renamed():
                 self.to_daemon(
-                    '/ray/client/change_advanced_properties',
+                    '/ray/client/full_rename',
                     self.client.client_id,
-                    self.client.label.replace(' ', '_'),
-                    int(self.client.prefix_mode),
-                    self.client.custom_prefix,
-                    int(ray.JackNaming.LONG))
+                    label)
+                # self.to_daemon(
+                #     '/ray/client/change_advanced_properties',
+                #     self.client.client_id,
+                #     self.client.label.replace(' ', '_'),
+                #     int(self.client.prefix_mode),
+                #     self.client.custom_prefix,
+                #     int(ray.JackNaming.LONG))
+                return
+
+            self.client.label = label
+            self.client.send_properties_to_daemon()
+
 
     def _set_very_short(self, yesno: bool):
         self._very_short = yesno

@@ -1272,6 +1272,10 @@ class OscServerThread(ClientCommunicating):
     def rayClientChangeAdvancedProperties(self, path, args, types, src_addr):
         pass
     
+    @ray_method('/ray/client/full_rename', 'ss')
+    def rayClientFullRename(self, path, args, types, src_addr):
+        pass
+    
     @ray_method('/ray/client/change_id', 'ss')
     def rayClientChangeId(self, path, args, types, src_addr):
         pass

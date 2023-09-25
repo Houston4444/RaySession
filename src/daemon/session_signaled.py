@@ -1770,7 +1770,6 @@ class SignaledSession(OperatingSession):
         ex_jack_name = client.get_jack_client_name()
         ex_client_id = client.client_id
         new_jack_name = tmp_client.get_jack_client_name()
-        client.set_status(ray.ClientStatus.REMOVED)
 
         client.client_id = new_client_id
         client.prefix_mode = prefix_mode
@@ -1796,6 +1795,54 @@ class SignaledSession(OperatingSession):
 
         self.send_monitor_event('id_changed_to:' + new_client_id, ex_client_id)
         self.send(src_addr, '/reply', path, 'client id changed')
+
+    @client_action
+    def _ray_client_full_rename(self, path, args, src_addr, client: Client):
+        if self.steps_order:
+            self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
+                      "Session is not ready for full client rename")
+            return
+        
+        new_client_name: str = args[0]
+        new_client_id = new_client_name.replace(' ', '_')
+        if not new_client_id or not new_client_id.isalnum():
+            self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                      f'client_id {new_client_id} is not alphanumeric')
+            return
+
+        for client in self.clients + self.trashed_clients:
+            if client.client_id == new_client_id:
+                self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                          f'client_id {new_client_id} already exists in the session')
+                return
+
+        if client.is_running():
+            if not client.status == ray.ClientStatus.READY:
+                self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
+                          f'client_id {new_client_id} is not ready')
+                return
+            
+            if client.is_capable_of(':switch:'):
+                self.steps_order = [
+                    (self.save_client, client),
+                    (self.rename_full_client, client, new_client_name, new_client_id),
+                    (self.switch_client, client),
+                    (self.rename_full_client_done, client)]
+            else:
+                self.steps_order = [
+                    (self.save_client, client),
+                    (self.close_client, client),
+                    (self.rename_full_client, client, new_client_name, new_client_id),
+                    (self.restart_client, client),
+                    (self.rename_full_client_done, client)
+                ]
+        else:
+            self.steps_order = [
+                (self.rename_full_client, client, new_client_name, new_client_id),
+                (self.rename_full_client_done, client)
+            ]
+        
+        self.next_function()
 
     @client_action
     def _ray_client_change_id(self, path, args, src_addr, client: Client):
