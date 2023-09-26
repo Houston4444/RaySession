@@ -30,6 +30,11 @@ if TYPE_CHECKING:
     from session_signaled import SignaledSession
 
 _logger = logging.getLogger(__name__)
+_log_handler = logging.StreamHandler()
+_log_handler.setFormatter(logging.Formatter(
+    f"%(name)s - %(levelname)s - %(message)s"))
+_logger.setLevel(logging.DEBUG)
+_logger.addHandler(_log_handler)
 
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
@@ -141,7 +146,7 @@ class Client(ServerSender, ray.ClientData):
         self.ray_hack_waiting_win = False
 
     @staticmethod
-    def short_client_id(wanted:str) -> str:
+    def short_client_id(wanted: str) -> str:
         if '_' in wanted:
             begin, udsc, end = wanted.rpartition('_')
 
@@ -486,16 +491,18 @@ class Client(ServerSender, ray.ClientData):
                     if not os.access(file_path, os.W_OK):
                         do_rename = False
                         break
-                    
+
                     endfile = file_path.name.replace(
                         f"{old_prefix}.{old_client_id}.", '', 1)
 
                     next_path = spath / f"{new_prefix}.{new_client_id}.{endfile}"
-                    if next_path.exists():
-                        do_rename = False
-                        break
-                    
-                    files_to_rename.append((file_path, next_path))
+
+                    if next_path != file_path:
+                        if next_path.exists():
+                            do_rename = False
+                            break
+                        
+                        files_to_rename.append((file_path, next_path))
 
                 elif file_path.name == f"{old_prefix}.{old_client_id}":
                     if not os.access(file_path, os.W_OK):
@@ -503,7 +510,7 @@ class Client(ServerSender, ray.ClientData):
                         break
 
                     next_path = spath / f"{new_prefix}.{new_client_id}"
-
+                    
                     if next_path.exists():
                         do_rename = False
                         break
@@ -518,11 +525,12 @@ class Client(ServerSender, ray.ClientData):
                         new_hydro_file = (
                             project_path / f"{new_prefix}.{new_client_id}.h2song")
                         
-                        if new_hydro_file.exists():
-                            do_rename = False
-                            break
+                        if new_hydro_file != hydrogen_file:
+                            if new_hydro_file.exists():
+                                do_rename = False
+                                break
 
-                        files_to_rename.append((hydrogen_file, new_hydro_file))
+                            files_to_rename.append((hydrogen_file, new_hydro_file))
 
                     if (hydrogen_autosave.is_file()
                             and os.access(hydrogen_autosave, os.W_OK)):
@@ -530,11 +538,12 @@ class Client(ServerSender, ray.ClientData):
                             project_path
                             / f"{new_prefix}.{new_client_id}.autosave.h2song")
 
-                        if new_hydro_autosave.exists():
-                            do_rename = False
-                            break
+                        if new_hydro_autosave != hydrogen_autosave:
+                            if new_hydro_autosave.exists():
+                                do_rename = False
+                                break
 
-                        files_to_rename.append((hydrogen_autosave, new_hydro_autosave))
+                            files_to_rename.append((hydrogen_autosave, new_hydro_autosave))
 
                     # only for ardour
                     ardour_file = project_path / f"{old_prefix}.ardour"
@@ -543,51 +552,57 @@ class Client(ServerSender, ray.ClientData):
 
                     if ardour_file.is_file() and os.access(ardour_file, os.W_OK):
                         new_ardour_file = project_path / f"{new_prefix}.ardour"
-                        if new_ardour_file.exists():
-                            do_rename = False
-                            break
+                        if new_ardour_file != ardour_file:
+                            if new_ardour_file.exists():
+                                do_rename = False
+                                break
 
-                        files_to_rename.append((ardour_file, new_ardour_file))
+                            files_to_rename.append((ardour_file, new_ardour_file))
 
-                        # change ardour session name
-                        try:
-                            file = open(ardour_file, 'r')
-                            xml = QDomDocument()
-                            xml.setContent(file.read())
-                            file.close()
-                            root = xml.documentElement()
+                            # change ardour session name
+                            try:
+                                file = open(ardour_file, 'r')
+                                xml = QDomDocument()
+                                xml.setContent(file.read())
+                                file.close()
+                                root = xml.documentElement()
 
-                            if root.tagName() == 'Session':
-                                root.setAttribute('name', new_prefix)
-                                file = open(ardour_file, 'w')
-                                file.write(xml.toString())
+                                if root.tagName() == 'Session':
+                                    root.setAttribute('name', new_prefix)
+                                    file = open(ardour_file, 'w')
+                                    file.write(xml.toString())
 
-                        except:
-                            _logger.warning(
-                                f'Failed to change ardour session name to "{new_prefix}"')
+                            except:
+                                _logger.warning(
+                                    f'Failed to change ardour session name to "{new_prefix}"')
 
                     if ardour_bak.is_file() and os.access(ardour_bak, os.W_OK):
                         new_ardour_bak = project_path / f"{new_prefix}.ardour.bak"
-                        if new_ardour_bak.exists():
-                            do_rename = False
-                            break
+                        if new_ardour_bak != ardour_bak:
+                            if new_ardour_bak.exists():
+                                do_rename = False
+                                break
 
-                        files_to_rename.append((ardour_bak, new_ardour_bak))
+                            files_to_rename.append((ardour_bak, new_ardour_bak))
 
                     if ardour_audio.is_dir() and os.access(ardour_audio, os.W_OK):
                         new_ardour_audio = (
-                            project_path / 'interchange' / f"{new_prefix}.{new_client_id}") 
-                    if os.path.isdir(ardour_audio) and os.access(ardour_audio, os.W_OK):
-                        if new_ardour_audio.exists():
-                            do_rename = False
-                            break
+                            project_path / 'interchange' / f"{new_prefix}.{new_client_id}")
+                        
+                        if new_ardour_audio != ardour_audio:
+                            if new_ardour_audio.exists():
+                                do_rename = False
+                                break
 
-                        files_to_rename.append((ardour_audio, new_ardour_audio))
+                            files_to_rename.append((ardour_audio, new_ardour_audio))
 
                     # for Vee One Suite
                     for extfile in ('samplv1', 'synthv1', 'padthv1', 'drumkv1'):
                         old_veeone_file = project_path / f"{old_session_name}.{extfile}"
                         new_veeone_file = project_path / f"{new_session_name}.{extfile}"
+                        if new_veeone_file == old_veeone_file:
+                            continue
+
                         if (old_veeone_file.is_file()
                                 and os.access(old_veeone_file, os.W_OK)):
                             if new_veeone_file.exists():
@@ -673,6 +688,8 @@ class Client(ServerSender, ray.ClientData):
         if not do_rename:
             self.prefix_mode = ray.PrefixMode.CUSTOM
             self.custom_prefix = old_prefix
+            _logger.warning(
+                f"daemon choose to not rename files for client_id {self.client_id}")
             # it should not be a client_id problem here
             return
 
@@ -1083,7 +1100,7 @@ class Client(ServerSender, ray.ClientData):
                 sub_child[data] = self.custom_data[data]
             ET.dump(c.el)
 
-    def set_reply(self, errcode, message):
+    def set_reply(self, errcode: int, message: str):
         self._reply_message = message
         self._reply_errcode = errcode
 
@@ -1152,6 +1169,7 @@ class Client(ServerSender, ray.ClientData):
         self.pending_command = ray.Command.NONE
 
         if self.session.wait_for == ray.WaitFor.REPLY:
+            print(self.client_id, 'ok reply')
             self.session.end_timer_if_last_expected(self)
 
     def set_label(self, label:str):

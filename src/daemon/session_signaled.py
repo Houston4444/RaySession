@@ -1804,14 +1804,16 @@ class SignaledSession(OperatingSession):
             return
         
         new_client_name: str = args[0]
+        print('atchhoo', client.client_id, 'tood', new_client_name)
         new_client_id = new_client_name.replace(' ', '_')
+
         if not new_client_id or not new_client_id.isalnum():
             self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
                       f'client_id {new_client_id} is not alphanumeric')
             return
 
-        for client in self.clients + self.trashed_clients:
-            if client.client_id == new_client_id:
+        for other_client in self.clients + self.trashed_clients:
+            if other_client.client_id == new_client_id:
                 self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
                           f'client_id {new_client_id} already exists in the session')
                 return

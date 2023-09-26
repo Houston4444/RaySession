@@ -39,6 +39,12 @@ from patch_rewriter import rewrite_jack_patch_files
 
 _translate = QCoreApplication.translate
 _logger = logging.getLogger(__name__)
+_log_handler = logging.StreamHandler()
+_log_handler.setFormatter(logging.Formatter(
+    f"%(name)s - %(levelname)s - %(message)s"))
+_logger.setLevel(logging.DEBUG)
+_logger.addHandler(_log_handler)
+
 signaler = Signaler.instance()
 
 
@@ -723,6 +729,7 @@ class OperatingSession(Session):
                 else:
                     message = _translate('GUIMSG',
                         'waiting for %i clients to stop...' % n_expected)
+                self.send_gui_message(message)
 
             self.timer_redondant = redondant
 
@@ -2287,9 +2294,9 @@ for better organization.""")
     def save_client(self, client: Client):
         self.expected_clients.append(client)
         client.save()
+        print('siigo', time.time())
         
-        self._wait_and_go_to(
-            10000, (self.next_function, client), ray.WaitFor.REPLY)
+        self._wait_and_go_to(10000, self.next_function, ray.WaitFor.REPLY)
 
     def rename_full_client(self, client: Client, new_name: str, new_client_id: str):
         tmp_client = Client(self)
@@ -2334,7 +2341,7 @@ for better organization.""")
         self._save_session_file()
 
         self.send_monitor_event('id_changed_to:' + new_client_id, ex_client_id)
-        self._wait_and_go_to(0, (self.next_function, client), ray.WaitFor.NONE)
+        self.next_function()
         
     def rename_full_client_done(self, client: Client):
         self.message("Done")
@@ -2362,13 +2369,13 @@ for better organization.""")
         self._wait_and_go_to(1000, self.next_function, ray.WaitFor.STOP_ONE)
 
     def switch_client(self, client: Client):
-        if not client.is_capable_of(':switch:'):
-            _logger.error(f'client {client.client_id} is not capable of switch')
-            return
+        # if not client.is_capable_of(':switch:'):
+        #     _logger.error(f'client {client.client_id} is not capable of switch')
+        #     return
         
-        if client.status != ray.ClientStatus.READY:
-            _logger.error(f'client {client.client_id} is not ready to switch')
-
+        # if client.status != ray.ClientStatus.READY:
+        #     _logger.error(f'client {client.client_id} is not ready to switch')
+        print('aroussa', client.client_id)
         client.switch()
         self.next_function(client)
 

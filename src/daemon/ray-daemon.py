@@ -3,7 +3,7 @@
 import os
 import signal
 import sys
-
+import logging
 from PyQt5.QtCore import (QCoreApplication, QTimer,
                           QLocale, QTranslator)
 
@@ -13,6 +13,13 @@ from daemon_tools import (get_code_root, init_daemon_tools, RS,
 from osc_server_thread import OscServerThread
 from multi_daemon_file import MultiDaemonFile
 from session_signaled import SignaledSession
+
+_logger = logging.getLogger(__name__)
+_log_handler = logging.StreamHandler()
+_log_handler.setFormatter(logging.Formatter(
+    f"%(name)s - %(levelname)s - %(message)s"))
+_logger.setLevel(logging.DEBUG)
+_logger.addHandler(_log_handler)
 
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
