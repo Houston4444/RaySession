@@ -2320,6 +2320,7 @@ for better organization.""")
         client.client_id = new_client_id
         client.jack_naming = ray.JackNaming.LONG
         client.label = new_name
+        self._update_forbidden_ids_set()
 
         if new_jack_name != ex_jack_name:
             rewrite_jack_patch_files(

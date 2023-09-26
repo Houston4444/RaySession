@@ -956,24 +956,72 @@ class ClientRenameDialog(ChildDialog):
         self.ui.lineEdit.setText(client.prettier_name())
         self.ui.lineEdit.selectAll()
         self.ui.lineEdit.setFocus()
-        
-        # self.ui.checkBoxIdRename.setEnabled(
-        #     client.status == ray.ClientStatus.STOPPED)
+        self.ui.lineEdit.textEdited.connect(self._text_edited)
+        self.ui.checkBoxIdRename.stateChanged.connect(
+            self._id_rename_state_changed)
+
         if client.protocol not in (ray.Protocol.NSM, ray.Protocol.RAY_HACK):
             self.ui.checkBoxIdRename.setVisible(False)
 
+        self._change_box_text_with_status(client.status)
         client.status_changed.connect(self._client_status_changed)
 
+    def _change_box_text_with_status(self, status: int):
+        can_switch = ':switch:' in self.client.capabilities
+
+        if status in (
+                ray.ClientStatus.STOPPED, ray.ClientStatus.PRECOPY,
+                ray.ClientStatus.QUIT, ray.ClientStatus.LOSE):
+            text = ''
+        elif status == ray.ClientStatus.READY and can_switch:
+            text = _translate(
+                'id_renaming', 'The client project will be reload')
+        else:
+            text = _translate(
+                'id_renaming', 'The client will be restarted')
+        
+        full_text = _translate('id_renaming', 'Rename Identifier')
+        if text:
+            full_text += f'\n({text})'
+        
+        self.ui.checkBoxIdRename.setText(full_text)    
+
     def _client_status_changed(self, status: int):
-        # self.ui.checkBoxIdRename.setEnabled(status == ray.ClientStatus.STOPPED)
         if status == ray.ClientStatus.REMOVED:
             self.reject()
+            
+        self._change_box_text_with_status(status)
     
-    def is_identifiant_renamed(self):
-        return (self.ui.checkBoxIdRename.isEnabled()
-                and self.ui.checkBoxIdRename.isChecked())
+    def _id_rename_state_changed(self, state: int):
+        if state:
+            self._text_edited(self.ui.lineEdit.text())
+    
+    def _text_edited(self, text: str):
+        if not self.is_identifiant_renamed():
+            return
+        
+        out_text = ''.join([c for c in text if c.isalnum() or c == ' '])
 
-    def get_new_label(self)->str:
+        if out_text != text:
+            self.ui.lineEdit.setText(out_text)
+        
+        out_id = out_text.replace(' ', '_')
+        session = self.client.session
+        ok = True
+        
+        for cl in session.client_list + session.trashed_clients:
+            cl: Client
+            if cl.client_id == out_id:
+                self.ui.buttonBox.button(
+                    QDialogButtonBox.Ok).setEnabled(False)
+                return
+        
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(True)
+    
+    def is_identifiant_renamed(self) -> bool:
+        return self.ui.checkBoxIdRename.isChecked()
+
+    def get_new_label(self) -> str:
         return self.ui.lineEdit.text()
     
 

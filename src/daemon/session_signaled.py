@@ -1776,6 +1776,7 @@ class SignaledSession(OperatingSession):
         client.prefix_mode = prefix_mode
         client.custom_prefix = custom_prefix
         client.jack_naming = jack_naming
+        self._update_forbidden_ids_set()
 
         if new_jack_name != ex_jack_name:
             rewrite_jack_patch_files(
@@ -1807,7 +1808,7 @@ class SignaledSession(OperatingSession):
         new_client_name: str = args[0]
         new_client_id = new_client_name.replace(' ', '_')
 
-        if not new_client_id or not new_client_id.isalnum():
+        if not new_client_id or not new_client_id.replace('_', '').isalnum():
             self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
                       f'client_id {new_client_id} is not alphanumeric')
             return
@@ -1815,6 +1816,7 @@ class SignaledSession(OperatingSession):
         if new_client_id in self.forbidden_ids_set:
             self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
                       f'client_id {new_client_id} is forbidden in this session')
+            return
 
         if client.is_running():
             if not client.status == ray.ClientStatus.READY:
@@ -1822,7 +1824,7 @@ class SignaledSession(OperatingSession):
                           f'client_id {new_client_id} is not ready')
                 return
 
-            if client.is_capable_of(':switch:'):
+            elif client.is_capable_of(':switch:'):
                 self.steps_order = [
                     (self.save_client_and_patchers, client),
                     (self.rename_full_client, client, new_client_name, new_client_id),
@@ -1879,6 +1881,7 @@ class SignaledSession(OperatingSession):
             links_dir, links_dir)
 
         client.client_id = new_client_id
+        self._update_forbidden_ids_set()
         new_jack_name = client.get_jack_client_name()
 
         if new_jack_name != ex_jack_name:
