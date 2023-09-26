@@ -22,8 +22,6 @@ _log_handler.setFormatter(logging.Formatter(
     f"%(name)s - %(levelname)s - %(message)s"))
 _logger.setLevel(logging.DEBUG)
 _logger.addHandler(_log_handler)
-print('oaezll', __name__, _logger, _logger.root, _logger.parent)
-print(sys.version)
 
 
 def signal_handler(sig, frame):
