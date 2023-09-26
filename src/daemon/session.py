@@ -2351,14 +2351,17 @@ for better organization.""")
         client.start()
         self._wait_and_go_to(0, (self.next_function, client), ray.WaitFor.NONE)
 
-    def close_client(self, client: Client):
+    def before_close_client_for_snapshot(self):
         self.set_server_status(ray.ServerStatus.READY)
-
+        self.next_function()
+    
+    def close_client(self, client: Client):
         self.expected_clients.append(client)
         client.stop()
 
-        self._wait_and_go_to(30000, (self.close_client_substep1, client),
-                             ray.WaitFor.STOP_ONE)
+        self._wait_and_go_to(
+            30000, (self.close_client_substep1, client),
+            ray.WaitFor.STOP_ONE)
 
     def close_client_substep1(self, client: Client):
         if client in self.expected_clients:
@@ -2367,13 +2370,6 @@ for better organization.""")
         self._wait_and_go_to(1000, self.next_function, ray.WaitFor.STOP_ONE)
 
     def switch_client(self, client: Client):
-        # if not client.is_capable_of(':switch:'):
-        #     _logger.error(f'client {client.client_id} is not capable of switch')
-        #     return
-        
-        # if client.status != ray.ClientStatus.READY:
-        #     _logger.error(f'client {client.client_id} is not ready to switch')
-        print('aroussa', client.client_id)
         client.switch()
         self.next_function(client)
 

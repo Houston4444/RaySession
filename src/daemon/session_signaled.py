@@ -1625,6 +1625,7 @@ class SignaledSession(OperatingSession):
                     self.steps_order = [
                         self.save,
                         (self.snapshot, '', snapshot, True),
+                        self.before_close_client_for_snapshot,
                         (self.close_client, client),
                         (self.load_client_snapshot, client_id, snapshot),
                         (self.start_client, client),
@@ -1804,7 +1805,6 @@ class SignaledSession(OperatingSession):
             return
         
         new_client_name: str = args[0]
-        print('atchhoo', client.client_id, 'tood', new_client_name)
         new_client_id = new_client_name.replace(' ', '_')
 
         if not new_client_id or not new_client_id.isalnum():
@@ -1812,18 +1812,16 @@ class SignaledSession(OperatingSession):
                       f'client_id {new_client_id} is not alphanumeric')
             return
 
-        for other_client in self.clients + self.trashed_clients:
-            if other_client.client_id == new_client_id:
-                self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
-                          f'client_id {new_client_id} already exists in the session')
-                return
+        if new_client_id in self.forbidden_ids_set:
+            self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
+                      f'client_id {new_client_id} is forbidden in this session')
 
         if client.is_running():
             if not client.status == ray.ClientStatus.READY:
                 self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
                           f'client_id {new_client_id} is not ready')
                 return
-            
+
             if client.is_capable_of(':switch:'):
                 self.steps_order = [
                     (self.save_client_and_patchers, client),
