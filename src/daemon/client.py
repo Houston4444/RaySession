@@ -30,11 +30,7 @@ if TYPE_CHECKING:
     from session_signaled import SignaledSession
 
 _logger = logging.getLogger(__name__)
-_log_handler = logging.StreamHandler()
-_log_handler.setFormatter(logging.Formatter(
-    f"%(name)s - %(levelname)s - %(message)s"))
-_logger.setLevel(logging.DEBUG)
-_logger.addHandler(_log_handler)
+_logger.parent = logging.getLogger('__main__')
 
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
@@ -719,7 +715,7 @@ class Client(ServerSender, ray.ClientData):
                 False
 
         for now_path, next_path in files_to_rename:
-            _logger.warning(f'renaming file "{now_path}" to "{next_path}"')
+            _logger.info(f'renaming\n\tfile: {now_path}\n\tto:   {next_path}')
             os.rename(now_path, next_path)
 
     def _save_as_template_substep1(self, template_name: str):

@@ -1826,13 +1826,13 @@ class SignaledSession(OperatingSession):
             
             if client.is_capable_of(':switch:'):
                 self.steps_order = [
-                    (self.save_client, client),
+                    (self.save_client_and_patchers, client),
                     (self.rename_full_client, client, new_client_name, new_client_id),
                     (self.switch_client, client),
                     (self.rename_full_client_done, client)]
             else:
                 self.steps_order = [
-                    (self.save_client, client),
+                    (self.save_client_and_patchers, client),
                     (self.close_client, client),
                     (self.rename_full_client, client, new_client_name, new_client_id),
                     (self.restart_client, client),
@@ -1843,7 +1843,7 @@ class SignaledSession(OperatingSession):
                 (self.rename_full_client, client, new_client_name, new_client_id),
                 (self.rename_full_client_done, client)
             ]
-        
+
         self.next_function()
 
     @client_action

@@ -39,11 +39,6 @@ from patch_rewriter import rewrite_jack_patch_files
 
 _translate = QCoreApplication.translate
 _logger = logging.getLogger(__name__)
-_log_handler = logging.StreamHandler()
-_log_handler.setFormatter(logging.Formatter(
-    f"%(name)s - %(levelname)s - %(message)s"))
-_logger.setLevel(logging.DEBUG)
-_logger.addHandler(_log_handler)
 
 signaler = Signaler.instance()
 
@@ -2291,10 +2286,15 @@ for better organization.""")
         self.send(src_addr, '/error', src_path, ray.Err.COPY_ABORTED,
                   _translate('GUIMSG', 'Copy has been aborted !'))
 
-    def save_client(self, client: Client):
-        self.expected_clients.append(client)
-        client.save()
-        print('siigo', time.time())
+    def save_client_and_patchers(self, client: Client):
+        for oth_client in self.clients:
+            if (oth_client is client or 
+                    (oth_client.is_running()
+                        and oth_client.is_capable_of(':monitor:')
+                        and oth_client.executable_path.startswith('ray-')
+                        and oth_client.executable_path.endswith('patch'))):
+                self.expected_clients.append(oth_client)
+                oth_client.save()
         
         self._wait_and_go_to(10000, self.next_function, ray.WaitFor.REPLY)
 
@@ -2302,8 +2302,6 @@ for better organization.""")
         tmp_client = Client(self)
         tmp_client.eat_attributes(client)
         tmp_client.client_id = new_client_id
-        tmp_client.prefix_mode = client.prefix_mode
-        tmp_client.custom_prefix = client.custom_prefix
         tmp_client.jack_naming = ray.JackNaming.LONG
         
         client.set_status(ray.ClientStatus.REMOVED)
