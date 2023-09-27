@@ -232,7 +232,7 @@ def version_to_tuple(version_str: str):
     return tuple(version_list)
 
 def add_self_bin_to_path():
-    # Add raysession/src/bin to $PATH to can use ray executables after make
+    # Add RaySession/src/bin to $PATH to can use ray executables after make
     # Warning, will works only if link to this file is in RaySession/*/*/*.py
     this_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
     bin_path = "%s/bin" % os.path.dirname(this_path)

@@ -2,8 +2,6 @@ client noSavelLevel gardé comme ça pour l'instant parce client.no_save_level e
 
 -> Déprecier no_save_level de l'exterieur, uniquement en RayHack
 
-
-
 afficher le sous dossier -> preview ; session en cours
 
 Display server address in window title (network session).
@@ -20,12 +18,8 @@ PW video ports ?
 Damn connections (with ray-jackpatch)
 icons in theme
 
-# set client id in add application dialog
-# list ardour templates and select a template in add_application dialog for Ardour templates
-# select client and patchbay boxes together (click another time to select another box)
-# Forget connections of removed client
-
-
-# Preferences dialog (tooltips à fond)
-griser lancer dans un terminal depuis les modèles
 etree pour le renommage de modèles (daemon)
+barre d'outils sur 2 lignes possible
+outil pour session récentes
+régler le nb de sessions récentes dans les préfs
+favoriser le démon unique

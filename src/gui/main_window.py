@@ -1504,7 +1504,7 @@ class MainWindow(QMainWindow):
     def launch_favorite(self):
         template_name, factory = self.sender().data()
         self.to_daemon('/ray/session/add_client_template',
-                       int(factory), template_name)
+                       int(factory), template_name, 'start', '')
 
     def toggle_patchbay_filters_bar(self):
         if not self.ui.graphicsView.isVisible():
