@@ -175,11 +175,13 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
         ClientPropertiesDialog.lock_widgets(self)
         self.nsmui.lineEditExecutable.setReadOnly(True)
         self.nsmui.lineEditArguments.setReadOnly(True)
+        self.nsmui.lineEditEnviron.setReadOnly(True)
         for widget in (self.nsmui.labelCapabilitiesTitle,
                        self.nsmui.labelCapabilitiesColon,
                        self.nsmui.labelCapabilities,
                        self.nsmui.labelExecutableWarning):
             widget.setVisible(False)
+        self.nsmui.checkBoxTerminal.setEnabled(False)
 
     def update_contents(self):
         ClientPropertiesDialog.update_contents(self)
@@ -385,8 +387,9 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
     def lock_widgets(self):
         ClientPropertiesDialog.lock_widgets(self)
         self.rhack.lineEditExecutable.setReadOnly(True)
-        self.rhack.lineEditArguments.setReadOnly(True)
         self.rhack.lineEditConfigFile.setReadOnly(True)
+        self.rhack.lineEditArguments.setReadOnly(True)
+        self.rhack.lineEditEnviron.setReadOnly(True)
         self.rhack.checkBoxCloseGracefully.setEnabled(False)
         self.rhack.checkBoxTellUser.setEnabled(False)
         self.rhack.checkBoxWaitWindow.setEnabled(False)
