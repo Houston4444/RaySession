@@ -7,6 +7,8 @@
 <RAY-CLIENT-TEMPLATES erased_by_nsm_desktop_file="false">
  <Client-Template template-name="Hydrogen" client_id="hydrogen" executable="hydrogen" needed-version="1.1"/> 
  <Client-Template template-name="Ardour" executable="ardour" name="Ardour" icon="ardour" client_id="ardour" list_ardour_templates="true"/>
+ <Client-Template template-name="Ardour8" executable="Ardour8" name="Ardour" icon="ardour" client_id="ardour" list_ardour_templates="true"/>
+ <Client-Template template-name="ardour8" executable="ardour8" name="Ardour" icon="ardour" client_id="ardour" list_ardour_templates="true"/>
  <Client-Template template-name="Ardour7" executable="Ardour7" name="Ardour" icon="ardour" client_id="ardour" list_ardour_templates="true"/>
  <Client-Template template-name="ardour7" executable="ardour7" name="Ardour" icon="ardour" client_id="ardour" list_ardour_templates="true"/>
  <Client-Template template-name="Ardour6" executable="Ardour6" name="Ardour" icon="ardour" client_id="ardour" list_ardour_templates="true"/>
