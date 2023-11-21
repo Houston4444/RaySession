@@ -1786,6 +1786,7 @@ for better organization.""")
         sess_name = ""
 
         if is_ray_file:
+            print('marrouubma')
             try:
                 tree = ET.parse(session_ray_file)
             except BaseException as e:
@@ -1818,18 +1819,18 @@ for better organization.""")
                             # prevent double same id
                             continue
                             
-                        if child.tag == 'Clients':
+                        if child.tag is 'Clients':
                             self.future_clients.append(client)
-                        elif child.tag == 'RemovedClients':
+                        elif child.tag is 'RemovedClients':
                             self.future_trashed_clients.append(client)
                         else:
                             continue
                         
                         client_ids.add(client.client_id)
 
-                elif child.tag == 'Windows':
+                elif child.tag is 'Windows':
                     if self.has_server_option(ray.Option.DESKTOPS_MEMORY):
-                        self.desktops_memory.read_xml(c)
+                        self.desktops_memory.read_xml(child)
 
         else:
             # prevent to load a locked NSM session
