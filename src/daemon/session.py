@@ -1819,18 +1819,18 @@ for better organization.""")
                             # prevent double same id
                             continue
                             
-                        if child.tag is 'Clients':
+                        if child.tag == 'Clients':
                             self.future_clients.append(client)
-                        elif child.tag is 'RemovedClients':
+                        elif child.tag == 'RemovedClients':
                             self.future_trashed_clients.append(client)
                         else:
                             continue
                         
                         client_ids.add(client.client_id)
 
-                elif child.tag is 'Windows':
+                elif child.tag == 'Windows':
                     if self.has_server_option(ray.Option.DESKTOPS_MEMORY):
-                        self.desktops_memory.read_xml(child)
+                        self.desktops_memory.read_xml(XmlElement(child))
 
         else:
             # prevent to load a locked NSM session
