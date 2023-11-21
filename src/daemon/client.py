@@ -1165,7 +1165,6 @@ class Client(ServerSender, ray.ClientData):
         self.pending_command = ray.Command.NONE
 
         if self.session.wait_for == ray.WaitFor.REPLY:
-            print(self.client_id, 'ok reply')
             self.session.end_timer_if_last_expected(self)
 
     def set_label(self, label:str):
