@@ -391,7 +391,7 @@ class Client(ServerSender, ray.ClientData):
             self.session.end_timer_if_last_expected(self)
 
     def _set_infos_from_desktop_contents(self, contents: str):
-        lang = os.getenv('LANG')
+        lang = os.getenv('LANG', default="C")
         lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
         all_data = {'Comment': ['', '', ''],
                     'Name': ['', '', ''],
