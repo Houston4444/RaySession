@@ -1,3 +1,18 @@
+0.14.2 / 2023-10-22
+    Minor bug fix release, probably the last of the year.
+
+    BugFix:
+        Top left Favorites button was not working, template were listed, but nothing happened when clicking on it
+        fix a possible ray-alsapatch crash
+        some widgets were not locked in client properties dialog when it is launched for a template preview
+
+    Change:
+        client full rename now restarts the client or make it reload its project if it is already started
+
+    Templates:
+        add Ardour8 template
+
+
 0.14.1 / 2023-09-23
     Important Bug Fix Release
 
