@@ -1,3 +1,17 @@
+0.14.3 / 2023-12-02
+    Bug fix release.
+
+    Bug Fixes:
+        Daemon crashed at session open with no clients (making Network Sessions not working well)
+        Desktops Memory option was totally broken
+        Daemon crashed if $LANG environment variable was not defined (thanks to Gaël de Chalendar)
+    
+    Templates:
+        add Mixbus9 and Mixbus32C 8 and 9 templates (thanks to Erich Eickmeyer)
+        remove Jack Mixer old LASH template (Ray-Hack) (Jack Mixer uses NSM for a long time now)
+        rename Calf JACK Host template with a folder without spaces (adapt to debian policy)
+
+
 0.14.2 / 2023-10-22
     Minor bug fix release, probably the last of the year.
 
