@@ -1069,7 +1069,7 @@ class SignaledSession(OperatingSession):
             if client_id:
                 if not client_id.replace('_', '').isalnum():
                     self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
-                      _translate("error", f"client_id {client_id} is not alphanumeric")
+                      _translate("error", "client_id %s is not alphanumeric")
                         % client_id)
                     return
 
