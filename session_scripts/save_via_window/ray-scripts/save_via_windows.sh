@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 
-for executable in xdotool;do
-    if ! which "$executable" >/dev/null;then
+for executable in xdotool; do
+    if ! command -v "$executable" >/dev/null; then
         exit
     fi
 done
@@ -11,16 +11,16 @@ done
 start_win=$(xdotool getactivewindow)
 focus_changed=false
 
-for client_id in `ray_control list_clients no_save_level`;do
-    executable_line="$(ray_control client $client_id get_proxy_properties|grep ^executable:)"
-    executable="$(basename "${executable_line#*:}")"
-    
+for client_id in $(ray_control list_clients no_save_level); do
+    executable_line=$(ray_control client "$client_id" get_proxy_properties | grep ^executable:)
+    executable=$(basename "${executable_line#*:}")
+
     [ -n "$executable" ] || continue
-    
+
     wins=$(xdotool search --class "$executable")
-    
-    for windowid in $wins;do
-        if [[ "$(xdotool getwindowname "$windowid")" ~= "*" ]];then
+
+    for windowid in $wins; do
+        if [ "$(xdotool getwindowname "$windowid")" != "*" ]; then
             focus_changed=true
             xdotool windowactivate "$windowid"
             xdotool key ctrl+s
@@ -28,8 +28,8 @@ for client_id in `ray_control list_clients no_save_level`;do
         fi
     done
 done
-            
-if $focus_changed;then
+
+if $focus_changed; then
     xdotool windowactivate "$start_win"
 fi
 
