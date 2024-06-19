@@ -3,10 +3,8 @@ import os
 import shutil
 import subprocess
 from typing import TYPE_CHECKING
-import warnings
 
 from PyQt5.QtCore import QProcess, QTimer
-from osc_server_thread import OscServerThread
 from server_sender import ServerSender
 import ray
 
@@ -238,17 +236,17 @@ class FileCopier(ServerSender):
         else:
             self.send_gui('/ray/gui/server/copying', state)
 
-    def start_client_copy(self, client_id, src_list, dest_dir, next_function,
-                          abort_function, next_args=[]):
+    def start_client_copy(self, client_id: str, src_list, dest_dir,
+                          next_function, abort_function, next_args=[]):
         self._client_id = client_id
         self._start(src_list, dest_dir, next_function,
-                   abort_function, next_args)
+                    abort_function, next_args)
 
     def start_session_copy(self, src_dir, dest_dir, next_function,
                            abort_function, next_args=[]):
         self._client_id = ''
         self._start(src_dir, dest_dir, next_function,
-                    abort_function, next_args)
+                     abort_function, next_args)
 
     def abort(self, abort_function=None, next_args=[]):
         if abort_function:

@@ -1576,9 +1576,9 @@ for better organization.""")
             template_root = Path(self.root) / TemplateRoots.net_session_name
 
         template_path = template_root / template_name
+        is_factory = template_name.startswith('///')
 
-        if template_name.startswith('///'):
-            # we use here a factory session template
+        if is_factory:
             template_name = template_name.replace('///', '')
             template_path = TemplateRoots.factory_sessions / template_name
 
@@ -1592,9 +1592,10 @@ for better organization.""")
         spath = self.get_full_path(new_session_full_name)
 
         if os.path.exists(spath):
-            self._send_error(ray.Err.CREATE_FAILED,
-                             _translate("error", "Folder\n%s\nalready exists")
-                             % spath)
+            self._send_error(
+                ray.Err.CREATE_FAILED,
+                _translate("error", "Folder\n%s\nalready exists")
+                % spath)
             return
 
         if self._is_path_in_a_session_dir(spath):
@@ -1620,12 +1621,12 @@ for better organization.""")
             self.prepare_template_aborted,
             [new_session_full_name])
 
-    def prepare_template_substep1(self, new_session_full_name):
+    def prepare_template_substep1(self, new_session_full_name: str):
         self.adjust_files_after_copy(new_session_full_name,
                                      ray.Template.SESSION_LOAD)
         self.next_function()
 
-    def prepare_template_aborted(self, new_session_full_name):
+    def prepare_template_aborted(self, new_session_full_name: str):
         self.steps_order.clear()
         if self.path:
             self.set_server_status(ray.ServerStatus.READY)
