@@ -34,7 +34,7 @@ class FileCopier(ServerSender):
         self.session = session
 
         self._client_id = ''
-        self._factory_source = False
+        self._src_is_factory = False
         self._next_function = None
         self._abort_function = None
         self._next_args = []
@@ -247,17 +247,17 @@ class FileCopier(ServerSender):
 
     def start_client_copy(self, client_id: str, src_list, dest_dir,
                           next_function, abort_function,
-                          next_args=[], factory_source=False):
+                          next_args=[], src_is_factory=False):
         self._client_id = client_id
-        self._factory_source = factory_source
+        self._src_is_factory = src_is_factory
         self._start(src_list, dest_dir, next_function,
                     abort_function, next_args)
 
     def start_session_copy(self, src_dir, dest_dir, next_function,
                            abort_function, next_args=[],
-                           factory_source=False):
+                           src_is_factory=False):
         self._client_id = ''
-        self._factory_source = factory_source
+        self._src_is_factory = src_is_factory
         self._start(src_dir, dest_dir, next_function,
                      abort_function, next_args)
 
