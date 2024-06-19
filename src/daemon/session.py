@@ -1619,7 +1619,8 @@ for better organization.""")
             str(template_path), spath,
             self.prepare_template_substep1,
             self.prepare_template_aborted,
-            [new_session_full_name])
+            [new_session_full_name],
+            src_is_factory=True)
 
     def prepare_template_substep1(self, new_session_full_name: str):
         self.adjust_files_after_copy(new_session_full_name,
@@ -2254,7 +2255,8 @@ for better organization.""")
                         client.client_id, full_name_files, self.path,
                         self.add_client_template_step_1,
                         self.add_client_template_aborted,
-                        [src_addr, src_path, client])
+                        [src_addr, src_path, client],
+                        src_is_factory=factory)
                 else:
                     self.add_client_template_step_1(src_addr, src_path,
                                                     client)

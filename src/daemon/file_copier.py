@@ -3,7 +3,7 @@ import logging
 import os
 import shutil
 import subprocess
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Union
 
 from PyQt5.QtCore import QProcess, QTimer
 from server_sender import ServerSender
@@ -110,6 +110,14 @@ class FileCopier(ServerSender):
         for copy_file in self._copy_files:
             if copy_file.state is CopyState.COPYING:
                 copy_file.state = CopyState.DONE
+                if self._src_is_factory:
+                    try:
+                        subprocess.run(['chmod', '-R', '+w',
+                                        copy_file.dest_path])
+                    except BaseException as e:
+                        _logger.error(
+                            f'Failed to set path writable {copy_file.dest_path}\n'
+                            f'{str(e)}')
                 break
 
         if self._aborted:
@@ -170,8 +178,9 @@ class FileCopier(ServerSender):
 
         self._timer.start()
 
-    def _start(self, src_list, dest_dir, next_function,
-               abort_function, next_args=[]):
+    def _start(self, src_list: Union[str, list[str]], dest_dir: str,
+               next_function: Callable, abort_function: Callable,
+               next_args=[]):
         self._abort_function = abort_function
         self._next_function = next_function
         self._next_args = next_args
@@ -189,7 +198,7 @@ class FileCopier(ServerSender):
 
         if isinstance(src_list, str):
             src_dir = src_list
-            src_list = []
+            src_list = list[str]()
 
             if not os.path.isdir(src_dir):
                 self._abort_function(*self._next_args)
@@ -245,17 +254,19 @@ class FileCopier(ServerSender):
         else:
             self.send_gui('/ray/gui/server/copying', state)
 
-    def start_client_copy(self, client_id: str, src_list, dest_dir,
-                          next_function, abort_function,
-                          next_args=[], src_is_factory=False):
+    def start_client_copy(
+            self, client_id: str, src_list: list[str], dest_dir: str,
+            next_function: Callable, abort_function: Callable,
+            next_args=[], src_is_factory=False):
         self._client_id = client_id
         self._src_is_factory = src_is_factory
         self._start(src_list, dest_dir, next_function,
                     abort_function, next_args)
 
-    def start_session_copy(self, src_dir, dest_dir, next_function,
-                           abort_function, next_args=[],
-                           src_is_factory=False):
+    def start_session_copy(
+            self, src_dir: str, dest_dir: str,
+            next_function: Callable, abort_function: Callable, next_args=[],
+            src_is_factory=False):
         self._client_id = ''
         self._src_is_factory = src_is_factory
         self._start(src_dir, dest_dir, next_function,
