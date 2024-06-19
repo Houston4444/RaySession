@@ -1,3 +1,4 @@
+from enum import Enum
 import logging
 import os
 import shutil
@@ -13,10 +14,17 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 
+
+class CopyState(Enum):
+    OFF = 0
+    COPYING = 1
+    DONE = 2
+
+
 class CopyFile:
     orig_path = ""
     dest_path = ""
-    state = 0
+    state = CopyState.OFF
     size = 0
 
 
@@ -26,6 +34,7 @@ class FileCopier(ServerSender):
         self.session = session
 
         self._client_id = ''
+        self._factory_source = False
         self._next_function = None
         self._abort_function = None
         self._next_args = []
@@ -73,9 +82,9 @@ class FileCopier(ServerSender):
         self._timer.stop()
 
         for copy_file in self._copy_files:
-            if copy_file.state == 2:
+            if copy_file.state is CopyState.DONE:
                 current_size += copy_file.size
-            elif copy_file.state == 1:
+            elif copy_file.state is CopyState.COPYING:
                 current_size += self._get_file_size(copy_file.dest_path)
                 break
 
@@ -99,14 +108,14 @@ class FileCopier(ServerSender):
         self._timer.stop()
 
         for copy_file in self._copy_files:
-            if copy_file.state == 1:
-                copy_file.state = 2
+            if copy_file.state is CopyState.COPYING:
+                copy_file.state = CopyState.DONE
                 break
 
         if self._aborted:
             ##remove all created files
             for copy_file in self._copy_files:
-                if copy_file.state > 0:
+                if copy_file.state is not CopyState.OFF:
                     file_to_remove = copy_file.dest_path
 
                     if os.path.exists(file_to_remove):
@@ -130,7 +139,7 @@ class FileCopier(ServerSender):
 
         # run next_function if copy is terminated
         for copy_file in self._copy_files:
-            if copy_file.state != 2:
+            if copy_file.state is not CopyState.DONE:
                 break
         else:
             self._is_active = False
@@ -151,8 +160,8 @@ class FileCopier(ServerSender):
         self._is_active = True
 
         for copy_file in self._copy_files:
-            if copy_file.state == 0:
-                copy_file.state = 1
+            if copy_file.state is CopyState.OFF:
+                copy_file.state = CopyState.COPYING
                 self._process.start(
                     'nice',
                     ['-n', '+15', 'cp', '-R',
@@ -208,7 +217,7 @@ class FileCopier(ServerSender):
 
         for orig_path in src_list:
             copy_file = CopyFile()
-            copy_file.state = 0
+            copy_file.state = CopyState.OFF
             copy_file.orig_path = orig_path
             copy_file.size = self._get_file_size(orig_path)
 
@@ -237,14 +246,18 @@ class FileCopier(ServerSender):
             self.send_gui('/ray/gui/server/copying', state)
 
     def start_client_copy(self, client_id: str, src_list, dest_dir,
-                          next_function, abort_function, next_args=[]):
+                          next_function, abort_function,
+                          next_args=[], factory_source=False):
         self._client_id = client_id
+        self._factory_source = factory_source
         self._start(src_list, dest_dir, next_function,
                     abort_function, next_args)
 
     def start_session_copy(self, src_dir, dest_dir, next_function,
-                           abort_function, next_args=[]):
+                           abort_function, next_args=[],
+                           factory_source=False):
         self._client_id = ''
+        self._factory_source = factory_source
         self._start(src_dir, dest_dir, next_function,
                      abort_function, next_args)
 
