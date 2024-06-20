@@ -1,7 +1,5 @@
 from enum import Enum
 import logging
-import os
-import shutil
 import subprocess
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 from pathlib import Path
@@ -248,7 +246,7 @@ class FileCopier(ServerSender):
         else:
             self._next_function(*self._next_args)
 
-    def _send_copy_state_to_gui(self, state:int):
+    def _send_copy_state_to_gui(self, state: int):
         if self.session.session_id:
             self.send_gui('/ray/gui/server/parrallel_copy_state',
                           self.session.session_id, state)
@@ -256,24 +254,24 @@ class FileCopier(ServerSender):
             self.send_gui('/ray/gui/server/copying', state)
 
     def start_client_copy(
-            self, client_id: str, src_list: list[str], dest_dir: str,
+            self, client_id: str, src_list: list[str], dest_dir: Path,
             next_function: Callable, abort_function: Callable,
             next_args=[], src_is_factory=False):
         self._client_id = client_id
         self._src_is_factory = src_is_factory
-        self._start([Path(s) for s in src_list], Path(dest_dir), next_function,
+        self._start([Path(s) for s in src_list], dest_dir, next_function,
                     abort_function, next_args)
 
     def start_session_copy(
-            self, src_dir: str, dest_dir: str,
+            self, src_dir: str, dest_dir: Path,
             next_function: Callable, abort_function: Callable, next_args=[],
             src_is_factory=False):
         self._client_id = ''
         self._src_is_factory = src_is_factory
-        self._start(Path(src_dir), Path(dest_dir), next_function,
+        self._start(Path(src_dir), dest_dir, next_function,
                      abort_function, next_args)
 
-    def abort(self, abort_function=None, next_args=[]):
+    def abort(self, abort_function: Callable =None, next_args=[]):
         if abort_function:
             self._abort_function = abort_function
             self._next_args = next_args
