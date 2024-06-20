@@ -1707,7 +1707,7 @@ class Client(ServerSender, ray.ClientData):
                          % (self.name, client_project_path))
 
         self.send_to_self_address("/nsm/client/open", client_project_path,
-                                  self.session.name, self.jack_client_name)
+                                  self.label, self.jack_client_name)
 
         self.pending_command = ray.Command.OPEN
         
@@ -2319,7 +2319,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.session.send_monitor_client_update(self)
 
         self.send(src_addr, "/nsm/client/open", client_project_path,
-                  self.session.name, self.jack_client_name)
+                  self.label, self.jack_client_name)
 
         self.pending_command = ray.Command.OPEN
 
