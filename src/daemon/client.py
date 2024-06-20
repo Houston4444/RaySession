@@ -2068,7 +2068,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if client_files:
             self.set_status(ray.ClientStatus.COPY)
             self.session.file_copier.start_client_copy(
-                self.client_id, client_files, Path(template_dir),
+                self.client_id, [Path(cf) for cf in client_files], Path(template_dir),
                 self._save_as_template_substep1,
                 self._save_as_template_aborted,
                 [template_name])
@@ -2098,7 +2098,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.set_status(ray.ClientStatus.PRECOPY)
         
         self.session.file_copier.start_client_copy(
-            self.client_id, client.get_project_files(), Path(tmp_work_dir),
+            self.client_id, [Path(f) for f in client.get_project_files()], Path(tmp_work_dir),
             self.eat_other_session_client_step_1,
             self.eat_other_session_client_aborted,
             [src_addr, osc_path, client, tmp_work_dir])

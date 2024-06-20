@@ -1437,7 +1437,7 @@ for better organization.""")
             multi_daemon_file.add_locked_path(spath)
 
         self.file_copier.start_session_copy(
-            self.path, Path(spath),
+            Path(self.path), Path(spath),
             self.duplicate_substep2, self.duplicate_aborted,
             [new_session_full_name])
 
@@ -1542,7 +1542,7 @@ for better organization.""")
             _translate('GUIMSG', 'start session copy to template...'))
 
         self.file_copier.start_session_copy(
-            self.path, Path(spath),
+            Path(self.path), Path(spath),
             self.save_session_template_substep_1,
             self.save_session_template_aborted,
             [template_name, net])
@@ -1616,7 +1616,7 @@ for better organization.""")
                        'start copy from template to session folder'))
 
         self.file_copier.start_session_copy(
-            str(template_path), Path(spath),
+            template_path, Path(spath),
             self.prepare_template_substep1,
             self.prepare_template_aborted,
             [new_session_full_name],
@@ -2252,7 +2252,7 @@ for better organization.""")
                 if full_name_files:
                     client.set_status(ray.ClientStatus.PRECOPY)
                     self.file_copier.start_client_copy(
-                        client.client_id, full_name_files, Path(self.path),
+                        client.client_id, [Path(fnf) for fnf in full_name_files], Path(self.path),
                         self.add_client_template_step_1,
                         self.add_client_template_aborted,
                         [src_addr, src_path, client],

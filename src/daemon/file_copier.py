@@ -254,22 +254,22 @@ class FileCopier(ServerSender):
             self.send_gui('/ray/gui/server/copying', state)
 
     def start_client_copy(
-            self, client_id: str, src_list: list[str], dest_dir: Path,
+            self, client_id: str, src_list: list[Path], dest_dir: Path,
             next_function: Callable, abort_function: Callable,
             next_args=[], src_is_factory=False):
         self._client_id = client_id
         self._src_is_factory = src_is_factory
-        self._start([Path(s) for s in src_list], dest_dir, next_function,
+        self._start(src_list, dest_dir, next_function,
                     abort_function, next_args)
 
     def start_session_copy(
-            self, src_dir: str, dest_dir: Path,
+            self, src_dir: Path, dest_dir: Path,
             next_function: Callable, abort_function: Callable, next_args=[],
             src_is_factory=False):
         self._client_id = ''
         self._src_is_factory = src_is_factory
-        self._start(Path(src_dir), dest_dir, next_function,
-                     abort_function, next_args)
+        self._start(src_dir, dest_dir, next_function,
+                    abort_function, next_args)
 
     def abort(self, abort_function: Callable =None, next_args=[]):
         if abort_function:
