@@ -26,7 +26,7 @@ class CopyState(Enum):
 
 class CopyFile:
     orig_path = Path()
-    dest_path = ""
+    dest_path = Path()
     state = CopyState.OFF
     size = 0
 
@@ -59,8 +59,11 @@ class FileCopier(ServerSender):
         self._abort_src_addr: Optional[liblo.Address] = None
         self._abort_src_path = ''
 
-    def _get_file_size(self, filepath) -> int:
-        if not os.path.exists(filepath):
+    def _get_file_size(self, filepath: Path) -> int:
+        if isinstance(filepath, str):
+            filepath = Path(filepath)
+        
+        if not filepath.exists():
             return 0
 
         try:
@@ -75,10 +78,10 @@ class FileCopier(ServerSender):
             return 0
 
         du_str = du_full.split('\t')[0]
-        if not du_str.isdigit():
+        try:
+            return int(du_str)
+        except:
             return 0
-
-        return int(du_str)
 
     def _check_progress_size(self):
         current_size = 0
@@ -129,12 +132,12 @@ class FileCopier(ServerSender):
                 if copy_file.state is not CopyState.OFF:
                     file_to_remove = copy_file.dest_path
 
-                    if os.path.exists(file_to_remove):
+                    if file_to_remove.exists():
                         try:
-                            if os.path.isfile(file_to_remove):
-                                os.remove(file_to_remove)
-                            elif os.path.isdir(file_to_remove):
-                                shutil.rmtree(file_to_remove)
+                            if file_to_remove.is_file():
+                                file_to_remove.unlink()
+                            elif file_to_remove.is_dir():
+                                file_to_remove.rmdir()
                         except:
                             if self._abort_src_addr and self._abort_src_path:
                                 self.send(self._abort_src_addr,
@@ -176,7 +179,7 @@ class FileCopier(ServerSender):
                 self._process.start(
                     'nice',
                     ['-n', '+15', 'cp', '-R',
-                     str(copy_file.orig_path), copy_file.dest_path])
+                     str(copy_file.orig_path), str(copy_file.dest_path)])
                 break
 
         self._timer.start()
@@ -236,11 +239,11 @@ class FileCopier(ServerSender):
             self._copy_size += copy_file.size
 
             if dest_path_exists:
-                copy_file.dest_path = "%s/%s" % (dest_dir,
-                                                 os.path.basename(orig_path))
+                copy_file.dest_path = (
+                    Path(dest_dir) / copy_file.orig_path.name)
             else:
                 #WARNING works only with one file !!!
-                copy_file.dest_path = dest_dir
+                copy_file.dest_path = Path(dest_dir)
 
             self._copy_files.append(copy_file)
 
