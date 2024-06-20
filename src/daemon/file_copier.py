@@ -3,9 +3,12 @@ import logging
 import os
 import shutil
 import subprocess
-from typing import TYPE_CHECKING, Callable, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from pathlib import Path
 
 from PyQt5.QtCore import QProcess, QTimer
+import liblo
+
 from server_sender import ServerSender
 import ray
 
@@ -22,7 +25,7 @@ class CopyState(Enum):
 
 
 class CopyFile:
-    orig_path = ""
+    orig_path = Path()
     dest_path = ""
     state = CopyState.OFF
     size = 0
@@ -35,9 +38,9 @@ class FileCopier(ServerSender):
 
         self._client_id = ''
         self._src_is_factory = False
-        self._next_function = None
-        self._abort_function = None
-        self._next_args = []
+        self._next_function: Optional[Callable] = None
+        self._abort_function: Optional[Callable] = None
+        self._next_args = list[Any]()
         self._copy_files = list[CopyFile]()
         self._copy_size = 0
         self._aborted = False
@@ -53,7 +56,7 @@ class FileCopier(ServerSender):
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._check_progress_size)
 
-        self._abort_src_addr = None
+        self._abort_src_addr: Optional[liblo.Address] = None
         self._abort_src_path = ''
 
     def _get_file_size(self, filepath) -> int:
@@ -173,7 +176,7 @@ class FileCopier(ServerSender):
                 self._process.start(
                     'nice',
                     ['-n', '+15', 'cp', '-R',
-                     copy_file.orig_path, copy_file.dest_path])
+                     str(copy_file.orig_path), copy_file.dest_path])
                 break
 
         self._timer.start()
@@ -227,7 +230,7 @@ class FileCopier(ServerSender):
         for orig_path in src_list:
             copy_file = CopyFile()
             copy_file.state = CopyState.OFF
-            copy_file.orig_path = orig_path
+            copy_file.orig_path = Path(orig_path)
             copy_file.size = self._get_file_size(orig_path)
 
             self._copy_size += copy_file.size
