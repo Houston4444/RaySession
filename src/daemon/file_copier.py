@@ -60,9 +60,6 @@ class FileCopier(ServerSender):
         self._abort_src_path = ''
 
     def _get_file_size(self, filepath: Path) -> int:
-        if isinstance(filepath, str):
-            filepath = Path(filepath)
-        
         if not filepath.exists():
             return 0
 
@@ -184,7 +181,7 @@ class FileCopier(ServerSender):
 
         self._timer.start()
 
-    def _start(self, src_list: Union[str, list[str]], dest_dir: str,
+    def _start(self, src_list: Union[str, list[str]], dest_dir: Path,
                next_function: Callable, abort_function: Callable,
                next_args=[]):
         self._abort_function = abort_function
@@ -195,9 +192,9 @@ class FileCopier(ServerSender):
         self._copy_size = 0
         self._copy_files.clear()
 
-        dest_path_exists = bool(os.path.exists(dest_dir))
+        dest_path_exists = dest_dir.exists()
         if dest_path_exists:
-            if not os.path.isdir(dest_dir):
+            if not dest_dir.is_dir():
                 #TODO send error, but it should not append
                 self._abort_function(*self._next_args)
                 return
@@ -225,7 +222,7 @@ class FileCopier(ServerSender):
 
             if not dest_path_exists:
                 try:
-                    os.makedirs(dest_dir)
+                    dest_dir.mkdir(parents=True)
                 except:
                     self._abort_function(*self._next_args)
                     return
@@ -234,16 +231,15 @@ class FileCopier(ServerSender):
             copy_file = CopyFile()
             copy_file.state = CopyState.OFF
             copy_file.orig_path = Path(orig_path)
-            copy_file.size = self._get_file_size(orig_path)
+            copy_file.size = self._get_file_size(copy_file.orig_path)
 
             self._copy_size += copy_file.size
 
             if dest_path_exists:
-                copy_file.dest_path = (
-                    Path(dest_dir) / copy_file.orig_path.name)
+                copy_file.dest_path = dest_dir / copy_file.orig_path.name
             else:
-                #WARNING works only with one file !!!
-                copy_file.dest_path = Path(dest_dir)
+                # WARNING works only with one file !!!
+                copy_file.dest_path = dest_dir
 
             self._copy_files.append(copy_file)
 
@@ -266,7 +262,7 @@ class FileCopier(ServerSender):
             next_args=[], src_is_factory=False):
         self._client_id = client_id
         self._src_is_factory = src_is_factory
-        self._start(src_list, dest_dir, next_function,
+        self._start(src_list, Path(dest_dir), next_function,
                     abort_function, next_args)
 
     def start_session_copy(
@@ -275,7 +271,7 @@ class FileCopier(ServerSender):
             src_is_factory=False):
         self._client_id = ''
         self._src_is_factory = src_is_factory
-        self._start(src_dir, dest_dir, next_function,
+        self._start(src_dir, Path(dest_dir), next_function,
                      abort_function, next_args)
 
     def abort(self, abort_function=None, next_args=[]):
