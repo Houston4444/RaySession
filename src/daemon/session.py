@@ -2315,7 +2315,7 @@ for better organization.""")
             self.name, self.name,
             client.get_prefix_string(), tmp_client.get_prefix_string(),
             client.client_id, tmp_client.client_id,
-            client.get_links_dir(), tmp_client.get_links_dir())
+            client.get_links_dirname(), tmp_client.get_links_dirname())
 
         ex_jack_name = client.get_jack_client_name()
         ex_client_id = client.client_id

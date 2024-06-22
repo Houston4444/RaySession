@@ -848,7 +848,7 @@ class Client(ServerSender, ray.ClientData):
         self._send_error_to_caller(OSC_SRC_SAVE_TP, ray.Err.COPY_ABORTED,
             _translate('GUIMSG', 'Copy has been aborted !'))
 
-    def get_links_dir(self)->str:
+    def get_links_dirname(self) -> str:
         ''' returns the dir path used by carla for links such as
         audio convolutions or soundfonts '''
         links_dir = self.get_jack_client_name()
@@ -856,7 +856,7 @@ class Client(ServerSender, ray.ClientData):
             links_dir = links_dir.replace(c, '_')
         return links_dir
 
-    def is_ray_hack(self)->bool:
+    def is_ray_hack(self) -> bool:
         return bool(self.protocol == ray.Protocol.RAY_HACK)
 
     def send_to_self_address(self, *args):
@@ -1174,13 +1174,13 @@ class Client(ServerSender, ray.ClientData):
         self.label = label
         self.send_gui_client_properties()
 
-    def has_error(self)->bool:
+    def has_error(self) -> bool:
         return bool(self._reply_errcode)
 
-    def is_reply_pending(self)->bool:
+    def is_reply_pending(self) -> bool:
         return bool(self.pending_command)
 
-    def is_dumb_client(self)->bool:
+    def is_dumb_client(self) -> bool:
         if self.is_ray_hack():
             return False
 
@@ -1209,7 +1209,7 @@ class Client(ServerSender, ray.ClientData):
                 self.ray_net.daemon_url,
                 self.ray_net.session_root.replace('"', '\\"'))
 
-    def set_status(self, status):
+    def set_status(self, status: int):
         # ray.ClientStatus.COPY is not a status as the other ones.
         # GUI needs to know if client is started/open/stopped while files are
         # copied, so self.status doesn't remember ray.ClientStatus.COPY,
@@ -1925,7 +1925,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if scripts_dir.exists():
             client_files.append(scripts_dir)
 
-        full_links_dir = spath / self.get_links_dir()
+        full_links_dir = spath / self.get_links_dirname()
         if full_links_dir.exists():
             client_files.append(full_links_dir)
 
@@ -2109,7 +2109,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             Path(tmp_work_dir), client.session.name, self.session.name,
             client.get_prefix_string(), self.get_prefix_string(),
             client.client_id, self.client_id,
-            client.get_links_dir(), self.get_links_dir())
+            client.get_links_dirname(), self.get_links_dirname())
 
         has_move_errors = False
 
@@ -2164,7 +2164,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         elif prefix_mode == ray.PrefixMode.CUSTOM:
             new_prefix = custom_prefix
 
-        links_dir = self.get_links_dir()
+        links_dir = self.get_links_dirname()
 
         self._rename_files(
             Path(self.session.path),
@@ -2184,7 +2184,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         new_session_name = basename(new_session_full_name)
         new_client_id = self.client_id
         old_client_id = self.client_id
-        new_client_links_dir = self.get_links_dir()
+        new_client_links_dir = self.get_links_dirname()
         old_client_links_dir = new_client_links_dir
 
         X_SESSION_X = "XXX_SESSION_NAME_XXX"
