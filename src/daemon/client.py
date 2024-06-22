@@ -12,6 +12,7 @@ from PyQt5.QtXml import QDomDocument
 import xml.etree.ElementTree as ET
 
 import xdg
+from daemon.session_signaled import client_action
 import ray
 from server_sender import ServerSender
 from daemon_tools  import (TemplateRoots, Terminal, RS,
@@ -1900,35 +1901,29 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         return self.no_save_level
 
-    def get_project_files(self) -> list[str]:
-        '''returns a list of full filenames'''
-        client_files = list[str]()
-        project_path = self.get_project_path()
-        if os.path.exists(project_path):
+    def get_project_files(self) -> list[Path]:
+        client_files = list[Path]()
+        project_path = Path(self.get_project_path())
+        spath = Path(self.session.path)
+
+        if project_path.exists():
             client_files.append(project_path)
 
-        if project_path.startswith('%s/' % self.session.path):
-            base_project = project_path.replace('%s/' % self.session.path,
-                                                '', 1)
+        if project_path.is_relative_to(spath):
+            for file_path in spath.iterdir():
+                if file_path == project_path:
+                    if not file_path in client_files:
+                        client_files.append(file_path)
+                        
+                elif file_path.name.startswith(project_path.name + '.'):
+                    client_files.append(file_path)
 
-            for filename in os.listdir(self.session.path):
-                if filename == base_project:
-                    full_file_name = "%s/%s" % (self.session.path, filename)
-                    if not full_file_name in client_files:
-                        client_files.append(full_file_name)
-
-                elif filename.startswith('%s.' % base_project):
-                    client_files.append('%s/%s'
-                                        % (self.session.path, filename))
-
-        scripts_dir = "%s/%s.%s" % (self.session.path, ray.SCRIPTS_DIR,
-                                    self.client_id)
-
-        if os.path.exists(scripts_dir):
+        scripts_dir = spath / ray.SCRIPTS_DIR / self.client_id
+        if scripts_dir.exists():
             client_files.append(scripts_dir)
 
-        full_links_dir = os.path.join(self.session.path, self.get_links_dir())
-        if os.path.exists(full_links_dir):
+        full_links_dir = spath / self.get_links_dir()
+        if full_links_dir.exists():
             client_files.append(full_links_dir)
 
         return client_files
@@ -2066,7 +2061,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if client_files:
             self.set_status(ray.ClientStatus.COPY)
             self.session.file_copier.start_client_copy(
-                self.client_id, [Path(cf) for cf in client_files], Path(template_dir),
+                self.client_id, client_files, Path(template_dir),
                 self._save_as_template_substep1,
                 self._save_as_template_aborted,
                 [template_name])
@@ -2099,7 +2094,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         
         self.session.file_copier.start_client_copy(
             self.client_id,
-            [Path(f) for f in client.get_project_files()],
+            client.get_project_files(),
             tmp_work_dir,
             self.eat_other_session_client_step_1,
             self.eat_other_session_client_aborted,

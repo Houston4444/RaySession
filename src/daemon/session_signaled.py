@@ -1599,8 +1599,8 @@ class SignaledSession(OperatingSession):
 
     @client_action
     def _ray_client_list_files(self, path, args, src_addr, client:Client):
-        client_files = client.get_project_files()
-        self.send(src_addr, '/reply', path, *client_files)
+        self.send(src_addr, '/reply', path,
+                  *[str(c) for c in client.get_project_files()])
         self.send(src_addr, '/reply', path)
 
     @client_action
@@ -1938,12 +1938,12 @@ class SignaledSession(OperatingSession):
 
         self.send_gui('/ray/gui/trash/remove', client.client_id)
 
-        for file in client.get_project_files():
+        for file_path in client.get_project_files():
             try:
-                subprocess.run(['rm', '-R', file])
+                subprocess.run(['rm', '-R', file_path])
             except:
                 self.send(src_addr, '/minor_error', path, -10,
-                          "Error while removing client file %s" % file)
+                          f"Error while removing client file {file_path}")
                 continue
 
         self.trashed_clients.remove(client)

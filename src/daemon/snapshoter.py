@@ -195,7 +195,7 @@ class Snapshoter(QObject):
             
             for client_file_path in client.get_project_files():
                 base_path = str(
-                    Path(client_file_path).relative_to(self.session.path))
+                    client_file_path.relative_to(self.session.path))
                 file_xml = ET.SubElement(client_el, 'file')
                 fxl = XmlElement(file_xml)
                 fxl.set_str('path', base_path)
