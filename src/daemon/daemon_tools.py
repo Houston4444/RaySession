@@ -71,7 +71,7 @@ def is_pid_child_of(child_pid, parent_pid) -> bool:
 
     return False
 
-def highlight_text(string) -> str:
+def highlight_text(string: str) -> str:
     if "'" in string:
         return '"%s"' % string
     return "'%s'" % string

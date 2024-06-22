@@ -2030,19 +2030,17 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             else:
                 self.desktop_file = '//not_found'
 
-    def save_as_template(self, template_name, src_addr=None, src_path=''):
+    def save_as_template(self, template_name: str, src_addr=None, src_path=''):
         if src_addr:
             self._osc_srcs[OSC_SRC_SAVE_TP] = (src_addr, src_path)
 
         #copy files
         client_files = self.get_project_files()
 
-        template_dir = "%s/%s" % (TemplateRoots.user_clients,
-                                  template_name)
-
-        if os.path.exists(template_dir):
+        template_dir = TemplateRoots.user_clients / template_name
+        if template_dir.exists():
             if os.access(template_dir, os.W_OK):
-                shutil.rmtree(template_dir)
+                template_dir.rmdir()
             else:
                 self._send_error_to_caller(
                     OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
@@ -2050,7 +2048,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                     % highlight_text(template_dir))
                 return
 
-        os.makedirs(template_dir)
+        template_dir.mkdir(parents=True)
 
         if self.protocol == ray.Protocol.RAY_NET:
             if self.ray_net.daemon_url:
@@ -2082,23 +2080,27 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.send_gui_client_properties()
         
         tmp_basedir = ".tmp_ray_workdir"
-        while os.path.exists("%s/%s" % (self.session.path, tmp_basedir)):
+        spath = Path(self.session.path)
+        
+        while Path(spath / tmp_basedir).exists():
             tmp_basedir += 'X'
-    
-        tmp_work_dir = "%s/%s" % (self.session.path, tmp_basedir)
+        tmp_work_dir = spath / tmp_basedir
         
         try:
-            os.makedirs(tmp_work_dir)
+            tmp_work_dir.mkdir(parents=True)
         except:
-            self.send(src_addr, '/error', osc_path, ray.Err.CREATE_FAILED,
-                      "impossible to make a tmp workdir at %s. Abort." % tmp_work_dir)
+            self.send(
+                src_addr, '/error', osc_path, ray.Err.CREATE_FAILED,
+                f"impossible to make a tmp workdir at {tmp_work_dir}. Abort.")
             self.session._remove_client(self)
             return
 
         self.set_status(ray.ClientStatus.PRECOPY)
         
         self.session.file_copier.start_client_copy(
-            self.client_id, [Path(f) for f in client.get_project_files()], Path(tmp_work_dir),
+            self.client_id,
+            [Path(f) for f in client.get_project_files()],
+            tmp_work_dir,
             self.eat_other_session_client_step_1,
             self.eat_other_session_client_aborted,
             [src_addr, osc_path, client, tmp_work_dir])
