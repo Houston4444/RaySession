@@ -322,9 +322,9 @@ class Client(ServerSender, ray.ClientData):
         wanted = self.client_id
 
         if self.executable_path == 'ray-proxy':
-            proxy_file = "%s/ray-proxy.xml" % self.get_project_path()
+            proxy_file = self.get_project_path() / 'ray-proxy.xml'
 
-            if os.path.exists(proxy_file):
+            if proxy_file.exists():
                 file = open(proxy_file, 'r')
                 xml = QDomDocument()
                 xml.setContent(file.read())
@@ -341,8 +341,10 @@ class Client(ServerSender, ray.ClientData):
     def _get_proxy_executable(self):
         if os.path.basename(self.executable_path) != 'ray-proxy':
             return ""
-        xml_file = "%s/ray-proxy.xml" % self.get_project_path()
+        
+        xml_file = self.get_project_path() / 'ray-proxy.xml'
         xml = QDomDocument()
+
         try:
             file = open(xml_file, 'r')
             xml.setContent(file.read())
@@ -1234,23 +1236,23 @@ class Client(ServerSender, ray.ClientData):
 
         return ''
 
-    def get_project_path(self) -> str:
+    def get_project_path(self) -> Path:
         if self.protocol == ray.Protocol.RAY_NET:
-            return self.session.get_short_path()
+            return Path(self.session.get_short_path())
+
+        spath = Path(self.session.path)
 
         if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
-            return "%s/%s.%s" % (self.session.path, self.session.name,
-                                 self.client_id)
+            return spath / f'{self.session.name}.{self.client_id}'
 
         if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
-            return "%s/%s.%s" % (self.session.path, self.name, self.client_id)
+            return spath / f'{self.name}.{self.client_id}'
 
         if self.prefix_mode == ray.PrefixMode.CUSTOM:
-            return "%s/%s.%s" % (self.session.path, self.custom_prefix,
-                                 self.client_id)
+            return spath / f'{self.custom_prefix}.{self.client_id}'
+
         # should not happens
-        return "%s/%s.%s" % (self.session.path, self.session.name,
-                             self.client_id)
+        return spath / f'{self.session.name}.{self.client_id}'
 
     def set_default_git_ignored(self, executable=""):
         executable = executable if executable else self.executable_path
@@ -1373,11 +1375,11 @@ class Client(ServerSender, ray.ClientData):
 
             back_pwd = os.getenv('PWD')
             ray_hack_pwd = self.get_project_path()
-            os.environ['PWD'] = ray_hack_pwd
+            os.environ['PWD'] = str(ray_hack_pwd)
 
-            if not os.path.exists(ray_hack_pwd):
+            if not ray_hack_pwd.exists():
                 try:
-                    os.makedirs(ray_hack_pwd)
+                    ray_hack_pwd.mkdir(parents=True)
                 except:
                     os.environ['PWD'] = back_pwd
                     # TODO
@@ -1403,7 +1405,7 @@ class Client(ServerSender, ray.ClientData):
         self.running_arguments = self.arguments
 
         if self.is_ray_hack():
-            self._process.setWorkingDirectory(ray_hack_pwd)
+            self._process.setWorkingDirectory(str(ray_hack_pwd))
             process_env.insert('RAY_SESSION_NAME', self.session.name)
             process_env.insert('RAY_CLIENT_ID', self.client_id)
 
@@ -1704,11 +1706,12 @@ class Client(ServerSender, ray.ClientData):
         self.jack_client_name = self.get_jack_client_name()
         client_project_path = self.get_project_path()
         self.send_gui_client_properties()
-        self.message("Commanding %s to switch \"%s\""
-                         % (self.name, client_project_path))
+        self.message(
+            f'Commanding {self.name} to switch "{client_project_path}"')
 
-        self.send_to_self_address("/nsm/client/open", client_project_path,
-                                  self.session.name, self.jack_client_name)
+        self.send_to_self_address(
+            "/nsm/client/open", str(client_project_path),
+            self.session.name, self.jack_client_name)
 
         self.pending_command = ray.Command.OPEN
         
@@ -1903,7 +1906,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
     def get_project_files(self) -> list[Path]:
         client_files = list[Path]()
-        project_path = Path(self.get_project_path())
+        project_path = self.get_project_path()
         spath = Path(self.session.path)
 
         if project_path.exists():
@@ -2301,7 +2304,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                   ray.APP_TITLE,
                   server_capabilities)
 
-        client_project_path = self.get_project_path()
+        client_project_path = str(self.get_project_path())
         self.jack_client_name = self.get_jack_client_name()
 
         if self.protocol == ray.Protocol.RAY_NET:

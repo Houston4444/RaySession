@@ -1469,9 +1469,9 @@ class SignaledSession(OperatingSession):
     @client_action
     def _ray_client_get_proxy_properties(self, path, args, src_addr,
                                          client:Client):
-        proxy_file = '%s/ray-proxy.xml' % client.get_project_path()
+        proxy_file = client.get_project_path() / 'ray-proxy.xml'
 
-        if not os.path.isfile(proxy_file):
+        if not proxy_file.is_file():
             self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s seems to not be a proxy client !')
                     % client.gui_msg_style())
@@ -1522,16 +1522,16 @@ class SignaledSession(OperatingSession):
                'Impossible to set proxy properties while client is running.'))
             return
 
-        proxy_file = '%s/ray-proxy.xml' % client.get_project_path()
+        proxy_file = client.get_project_path() / 'ray-proxy.xml'
 
-        if (not os.path.isfile(proxy_file)
+        if (not proxy_file.is_file()
                 and client.executable_path != 'ray-proxy'):
             self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s seems to not be a proxy client !')
                     % client.gui_msg_style())
             return
 
-        if os.path.isfile(proxy_file):
+        if proxy_file.is_file():
             try:
                 file = open(proxy_file, 'r')
                 xml = QDomDocument()
@@ -1550,9 +1550,10 @@ class SignaledSession(OperatingSession):
             xml.appendChild(p)
             content = xml.documentElement()
 
-            if not os.path.isdir(client.get_project_path()):
+            client_project_path = client.get_project_path()
+            if not client_project_path.is_dir():
                 try:
-                    os.makedirs(client.get_project_path())
+                    client_project_path.mkdir(parents=True)
                 except:
                     self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
                               "Impossible to create proxy directory")

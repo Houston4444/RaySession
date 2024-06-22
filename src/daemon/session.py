@@ -455,9 +455,9 @@ class Session(ServerSender):
 
         if client.is_ray_hack():
             project_path = client.get_project_path()
-            if not os.path.isdir(project_path):
+            if not project_path.is_dir():
                 try:
-                    os.makedirs(project_path)
+                    project_path.mkdir(parents=True)
                 except:
                     return False
 
