@@ -2061,7 +2061,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if client_files:
             self.set_status(ray.ClientStatus.COPY)
             self.session.file_copier.start_client_copy(
-                self.client_id, client_files, Path(template_dir),
+                self.client_id, client_files, template_dir,
                 self._save_as_template_substep1,
                 self._save_as_template_aborted,
                 [template_name])
