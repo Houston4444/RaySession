@@ -1491,7 +1491,7 @@ for better organization.""")
         if net:
             template_root = self.root / TemplateRoots.net_session_name
 
-        spath = self.root / template_name
+        spath = template_root / template_name
 
         #overwrite existing template
         if spath.is_dir():            

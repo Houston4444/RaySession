@@ -2203,6 +2203,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             spath = Path(new_session_full_name)
             if not spath.is_absolute():
                 spath = TemplateRoots.user_sessions / new_session_full_name
+            print('temmpllate save', new_session_full_name, spath)
             new_session_name = X_SESSION_X
 
         elif template_save == ray.Template.SESSION_SAVE_NET:
@@ -2239,7 +2240,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             old_prefix = new_prefix = self.custom_prefix
 
         self._rename_files(
-            spath,
+            str(spath),
             old_session_name, new_session_name,
             old_prefix, new_prefix,
             old_client_id, new_client_id,
