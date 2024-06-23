@@ -58,7 +58,7 @@ class Session(ServerSender):
 
         self.name = ""
         self.path = ""
-        self.future_session_path = ""
+        self.future_session_path = Path()
         self.future_session_name = ""
         self.notes = ""
         self.future_notes = ""
@@ -145,7 +145,7 @@ class Session(ServerSender):
 
     def _no_future(self):
         self.future_clients.clear()
-        self.future_session_path = ''
+        self.future_session_path = Path()
         self.future_session_name = ''
         self.future_trashed_clients.clear()
         self.future_notes = ""
@@ -1846,7 +1846,7 @@ for better organization.""")
             nsm_file.close()
             self.send_gui('/ray/gui/session/is_nsm')
 
-        self.canvas_saver.load_json_session_canvas(spath)
+        self.canvas_saver.load_json_session_canvas(str(spath))
 
         full_notes_path = spath / ray.NOTES_PATH
 
@@ -1857,14 +1857,14 @@ for better organization.""")
             self.future_notes = notes_file.read(65000)
             notes_file.close()
 
-        self.future_session_path = str(spath)
+        self.future_session_path = spath
         self.future_session_name = sess_name
         self.switching_session = bool(self.path)
 
         self.next_function()
 
     def take_place(self):
-        self._set_path(Path(self.future_session_path),
+        self._set_path(self.future_session_path,
                        self.future_session_name)
 
         if (self.name and self.name != basename(self.path)):
@@ -1872,7 +1872,7 @@ for better organization.""")
             # so rename session to it
             for client in self.future_clients + self.future_trashed_clients:
                 client.adjust_files_after_copy(self.path, ray.Template.RENAME)
-            self._set_path(Path(self.future_session_path))
+            self._set_path(self.future_session_path)
             
             # session has been renamed and client files have been moved
             # save session file is required here, else clients could not

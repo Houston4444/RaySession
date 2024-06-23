@@ -26,8 +26,5 @@ favoriser le démon unique
 
 
 str -> Path
-    _set_path
     path
-
-    bookmarker.make_all
-
+    canvas_saver.load_json_session_canvas
