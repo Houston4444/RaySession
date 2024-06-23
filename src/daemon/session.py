@@ -486,16 +486,17 @@ class Session(ServerSender):
         self.send_gui('/ray/gui/session/sort_clients',
                       *[c.client_id for c in self.clients])
 
-    def _is_path_in_a_session_dir(self, spath: str):
+    def _is_path_in_a_session_dir(self, spath: Path):
         if self.is_nsm_locked() and os.getenv('NSM_URL'):
             return False
 
         base_path = spath
-        while not base_path in ('/', ''):
-            base_path = dirname(base_path)
-            if os.path.isfile("%s/raysession.xml" % base_path):
+        
+        while base_path.parent != base_path:
+            base_path = base_path.parent
+            if Path(base_path / 'raysession.xml').is_file():
                 return True
-
+            
         return False
 
     def export_user_client_template(self, src_addr, template_name:str,
@@ -1327,7 +1328,7 @@ class OperatingSession(Session):
             % new_session_name)
         spath = self.root / new_session_name
 
-        if self._is_path_in_a_session_dir(str(spath)):
+        if self._is_path_in_a_session_dir(spath):
             self._send_error(
                 ray.Err.SESSION_IN_SESSION_DIR,
                 """Can't create session in a dir containing a session
@@ -1423,7 +1424,7 @@ for better organization.""")
         # lock the directory of the new session created
         multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
-            multi_daemon_file.add_locked_path(str(spath))
+            multi_daemon_file.add_locked_path(spath)
 
         self.file_copier.start_session_copy(
             Path(self.path), spath,
@@ -1456,7 +1457,7 @@ for better organization.""")
         multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
             multi_daemon_file.unlock_path(
-                str(self.root / new_session_full_name))
+                self.root / new_session_full_name)
         
         self.next_function()
 
@@ -1467,7 +1468,7 @@ for better organization.""")
         multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
             multi_daemon_file.unlock_path(
-                str(self.root / new_session_full_name))
+                self.root / new_session_full_name)
 
         if self.osc_path == '/nsm/server/duplicate':
             # for nsm server control API compatibility
@@ -1586,7 +1587,7 @@ for better organization.""")
                 % spath)
             return
 
-        if self._is_path_in_a_session_dir(str(spath)):
+        if self._is_path_in_a_session_dir(spath):
             self._send_error(
                 ray.Err.SESSION_IN_SESSION_DIR,
                 _translate("error",
@@ -1625,7 +1626,7 @@ for better organization.""")
             self._set_path('')
             self.send_gui('/ray/gui/session/name', '', '')
 
-    def rename(self, new_session_name:str):
+    def rename(self, new_session_name: str):
         spath = "%s/%s" % (dirname(self.path), new_session_name)
         if os.path.exists(spath):
             self._send_error(
@@ -1713,7 +1714,7 @@ for better organization.""")
             # session directory doesn't exists,
             # create this session.            
             
-            if self._is_path_in_a_session_dir(str(spath)):
+            if self._is_path_in_a_session_dir(spath):
                 # prevent to create a session in a session directory
                 # for better user organization
                 self.load_error(ray.Err.SESSION_IN_SESSION_DIR)

@@ -26,11 +26,6 @@ favoriser le démon unique
 
 
 str -> Path
-    session.get_full_path()
-
-    _is_path_in_a_session_dir
     _set_path
     path
 
-    multi_daemon_file.add_locked_path
-    multi_daemon_file.unlock_path

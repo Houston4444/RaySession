@@ -243,12 +243,12 @@ class MultiDaemonFile:
 
         return all_session_paths
 
-    def add_locked_path(self, path:str):
-        self._locked_session_paths.add(path)
+    def add_locked_path(self, path: Path):
+        self._locked_session_paths.add(str(path))
         self.update()
     
-    def unlock_path(self, path:str):
-        self._locked_session_paths.discard(path)
+    def unlock_path(self, path: Path):
+        self._locked_session_paths.discard(str(path))
         self.update()
 
     def get_daemon_list(self)->list:
