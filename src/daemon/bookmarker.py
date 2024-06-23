@@ -6,7 +6,7 @@ import sys
 from typing import Optional
 
 from PyQt5.QtCore import QSettings, QDataStream, QIODevice, QUrl, QByteArray
-from PyQt5.QtXml  import QDomDocument
+from PyQt5.QtXml  import QDomDocument, QDomNode
 
 import ray
 from daemon_tools import get_app_config_path, dirname
@@ -15,37 +15,33 @@ QFILEDIALOG_MAGIC = 190
 
 
 class PickerType:
-    def __init__(self, config_path):
-        self.config_path = config_path
-        self.written = False
+    def __init__(self, config_path: Path):
+        self._config_path = config_path
+        self._written = False
 
-    def _get_contents(self):
-        if os.path.exists(self.config_path):
+    def _get_contents(self) -> Optional[str]:
+        if self._config_path.exists():
             try:
-                file = open(self.config_path, 'r')
-                contents = file.read()
-                file.close()
+                with open(self._config_path, 'r') as file:
+                    contents = file.read()                    
                 return contents
             except:
                 return None
         else:
             return ""
 
-    def _print_contents(self, contents):
+    def _print_contents(self, contents: str) -> bool:
         try:
-            file = open(self.config_path, 'w')
+            with open(self._config_path, 'w') as file:
+                file.write(contents)
         except:
             return False
-
-        file.write(contents)
-        file.close()
-
         return True
 
-    def make_bookmark(self, spath):
+    def make_bookmark(self, spath: Path):
         pass
 
-    def remove_bookmark(self, spath):
+    def remove_bookmark(self, spath: Path):
         pass
 
 class PickerTypeGtk(PickerType):
@@ -54,12 +50,11 @@ class PickerTypeGtk(PickerType):
             return
 
         url = spath.as_uri()
+        config_dir = self._config_path.parent
 
-        config_dir = dirname(self.config_path)
-
-        if not os.path.exists(config_dir):
+        if not config_dir.exists():
             try:
-                os.makedirs(config_dir)
+                config_dir.mkdir(parents=True)
             except:
                 return
 
@@ -191,13 +186,13 @@ class PickerTypeQt4(PickerType):
         if self.written:
             return
 
-        if not os.path.exists(self.config_path):
+        if not self._config_path.exists():
             #do not write shortcuts if file was not created by Qt4 himself
             return
 
         url = spath.as_uri()
 
-        settings_qt4 = QSettings(self.config_path, QSettings.IniFormat)
+        settings_qt4 = QSettings(str(self._config_path), QSettings.IniFormat)
         if not settings_qt4.isWritable():
             return
 
@@ -258,13 +253,13 @@ class PickerTypeQt4(PickerType):
         if not self.written:
             return
 
-        if not os.path.exists(self.config_path):
+        if not self._config_path.exists():
             self.written = False
             return
 
         url = spath.as_uri()
 
-        settings_qt4 = QSettings(self.config_path, QSettings.IniFormat)
+        settings_qt4 = QSettings(str(self._config_path), QSettings.IniFormat)
         if not settings_qt4.isWritable():
             self.written = False
             return
@@ -336,13 +331,13 @@ class PickerTypeQt5(PickerType):
         if self.written:
             return
 
-        if not os.path.exists(self.config_path):
+        if not self._config_path.exists():
             #do not write shortcuts if file was not created by Qt5 himself
             return
 
         url = spath.as_uri()
 
-        settings_qt5 = QSettings(self.config_path, QSettings.IniFormat)
+        settings_qt5 = QSettings(str(self._config_path), QSettings.IniFormat)
         if not settings_qt5.isWritable():
             return
 
@@ -364,13 +359,13 @@ class PickerTypeQt5(PickerType):
         if not self.written:
             return
 
-        if not os.path.exists(self.config_path):
+        if not self._config_path.exists():
             self.written = False
             return
 
-        settings_qt5 = QSettings(self.config_path, QSettings.IniFormat)
-        shortcuts = ray.get_list_in_settings(settings_qt5,
-                                             'FileDialog/shortcuts')
+        settings_qt5 = QSettings(str(self._config_path), QSettings.IniFormat)
+        shortcuts = ray.get_list_in_settings(
+            settings_qt5, 'FileDialog/shortcuts')
 
         for sc in shortcuts:
             sc_url = QUrl(sc)
@@ -424,7 +419,6 @@ class PickerTypeKde5(PickerType):
         if self._print_contents(xml.toString()):
             self.written = True
 
-
     def remove_bookmark(self, spath: Path):
         if not self.written:
             return
@@ -465,15 +459,22 @@ class BookMarker:
         self._bookmarks_memory = "%s/bookmarks.xml" % get_app_config_path()
         self._daemon_port = 0
 
-        home = os.getenv('HOME')
+        home = Path(os.getenv('HOME'))
 
-        self._gtk2 = PickerTypeGtk("%s/.gtk-bookmarks" % home)
-        self._gtk3 = PickerTypeGtk("%s/.config/gtk-3.0/bookmarks" % home)
+        self._gtk2 = PickerTypeGtk(home / '.gtk-bookmarks')
+        self._gtk3 = PickerTypeGtk(home / '.config/gtk-3.0/bookmarks')
         self._fltk = PickerTypeFltk(
-            "%s/._fltk/fltk.org/filechooser.prefs" % home)
-        self._kde5 = PickerTypeKde5("%s/.local/share/user-places.xbel" % home)
-        self._qt4 = PickerTypeQt4("%s/.config/Trolltech.conf" % home)
-        self._qt5 = PickerTypeQt5("%s/.config/QtProject.conf" % home)
+            home / '._fltk/fltk.org/filechooser.prefs')
+        self._kde5 = PickerTypeKde5(home / '.local/share/user-places.xbel')
+        self._qt4 = PickerTypeQt4(home / '.config/Trolltech.conf')
+        self._qt5 = PickerTypeQt5(home / '.config/QtProject.conf')
+        # self._gtk2 = PickerTypeGtk("%s/.gtk-bookmarks" % home)
+        # self._gtk3 = PickerTypeGtk("%s/.config/gtk-3.0/bookmarks" % home)
+        # self._fltk = PickerTypeFltk(
+        #     "%s/._fltk/fltk.org/filechooser.prefs" % home)
+        # self._kde5 = PickerTypeKde5("%s/.local/share/user-places.xbel" % home)
+        # self._qt4 = PickerTypeQt4("%s/.config/Trolltech.conf" % home)
+        # self._qt5 = PickerTypeQt5("%s/.config/QtProject.conf" % home)
 
     def _get_xml(self) -> Optional[QDomDocument]:
         xml = QDomDocument()
@@ -570,14 +571,14 @@ class BookMarker:
         self._write_xml_file(xml)
 
 
-    def clean(self, all_session_paths):
+    def clean(self, all_session_paths: list[str]):
         xml = self._get_xml()
         if not xml:
             return
 
         xml_content = xml.documentElement()
         nodes = xml_content.childNodes()
-        nodes_to_remove = []
+        nodes_to_remove = list[QDomNode]()
 
         for i in range(nodes.count()):
             node = nodes.at(i)
@@ -589,25 +590,27 @@ class BookMarker:
                 nodes_to_remove.append(node)
                 continue
 
+            pspath = Path(spath)
+
             if not spath in all_session_paths:
                 if ":gtk2:" in pickers:
                     self._gtk2.written = True
-                    self._gtk2.remove_bookmark(spath)
+                    self._gtk2.remove_bookmark(pspath)
                 if ":gtk3:" in pickers:
                     self._gtk3.written = True
-                    self._gtk3.remove_bookmark(spath)
+                    self._gtk3.remove_bookmark(pspath)
                 if ":fltk:" in pickers:
                     self._fltk.written = True
-                    self._fltk.remove_bookmark(spath)
+                    self._fltk.remove_bookmark(pspath)
                 if ":kde5:" in pickers:
                     self._kde5.written = True
-                    self._kde5.remove_bookmark(spath)
+                    self._kde5.remove_bookmark(pspath)
                 if ":qt4:" in pickers:
                     self._qt4.written = True
-                    self._qt4.remove_bookmark(spath)
+                    self._qt4.remove_bookmark(pspath)
                 if ":qt5:" in pickers:
                     self._qt5.written = True
-                    self._qt5.remove_bookmark(spath)
+                    self._qt5.remove_bookmark(pspath)
 
                 nodes_to_remove.append(node)
 
