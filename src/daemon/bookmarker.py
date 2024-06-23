@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import os
-import pathlib
+from pathlib import Path
 import sys
 from typing import Optional
+
 from PyQt5.QtCore import QSettings, QDataStream, QIODevice, QUrl, QByteArray
 from PyQt5.QtXml  import QDomDocument
 
@@ -48,11 +49,11 @@ class PickerType:
         pass
 
 class PickerTypeGtk(PickerType):
-    def make_bookmark(self, spath):
+    def make_bookmark(self, spath: Path):
         if self.written:
             return
 
-        url = pathlib.Path(spath).as_uri()
+        url = spath.as_uri()
 
         config_dir = dirname(self.config_path)
 
@@ -76,11 +77,11 @@ class PickerTypeGtk(PickerType):
         if self._print_contents(contents):
             self.written = True
 
-    def remove_bookmark(self, spath):
+    def remove_bookmark(self, spath: Path):
         if not self.written:
             return
 
-        url = pathlib.Path(spath).as_uri()
+        url = spath.as_uri()
 
         contents = self._get_contents()
         if not contents:
@@ -104,7 +105,7 @@ class PickerTypeGtk(PickerType):
         self.written = False
 
 class PickerTypeFltk(PickerType):
-    def make_bookmark(self, spath):
+    def make_bookmark(self, spath: Path):
         if self.written:
             return
 
@@ -124,7 +125,7 @@ class PickerTypeFltk(PickerType):
                 fav0_found = True
 
                 if line.partition(':')[2]:
-                    if line.partition(':')[2] == spath:
+                    if line.partition(':')[2] == str(spath):
                         #bookmark already written, do nothing
                         return
 
@@ -133,7 +134,7 @@ class PickerTypeFltk(PickerType):
                         num = int(num_s)
                 else:
                     if not empty_fav:
-                        line += spath
+                        line += str(spath)
                         empty_fav = True
 
             if line or not fav0_found:
@@ -146,7 +147,7 @@ class PickerTypeFltk(PickerType):
         if self._print_contents(contents):
             self.written = True
 
-    def remove_bookmark(self, spath):
+    def remove_bookmark(self, spath: Path):
         if not self.written:
             return
 
@@ -156,18 +157,18 @@ class PickerTypeFltk(PickerType):
             return
 
         lines = contents.split('\n')
-        favorites = []
+        favorites = list[str]()
 
         for line in lines:
             if line.startswith('favorite') and ':' in line:
                 fav = line.partition(':')[2]
                 favorites.append(fav)
 
-        if not spath in favorites:
+        if not str(spath) in favorites:
             self.written = False
             return
 
-        favorites.remove(spath)
+        favorites.remove(str(spath))
         contents = ""
         num = 0
 
@@ -186,7 +187,7 @@ class PickerTypeFltk(PickerType):
         self.written = False
 
 class PickerTypeQt4(PickerType):
-    def make_bookmark(self, spath):
+    def make_bookmark(self, spath: Path):
         if self.written:
             return
 
@@ -194,7 +195,7 @@ class PickerTypeQt4(PickerType):
             #do not write shortcuts if file was not created by Qt4 himself
             return
 
-        url = pathlib.Path(spath).as_uri()
+        url = spath.as_uri()
 
         settings_qt4 = QSettings(self.config_path, QSettings.IniFormat)
         if not settings_qt4.isWritable():
@@ -216,7 +217,7 @@ class PickerTypeQt4(PickerType):
             qUrl = QUrl()
             stream >> qUrl
 
-            if qUrl.isLocalFile() and qUrl.toLocalFile() == spath:
+            if qUrl.isLocalFile() and qUrl.toLocalFile() == str(spath):
                 #spath already in qt4 bookmarks
                 return
 
@@ -253,7 +254,7 @@ class PickerTypeQt4(PickerType):
 
         self.written = True
 
-    def remove_bookmark(self, spath):
+    def remove_bookmark(self, spath: Path):
         if not self.written:
             return
 
@@ -261,7 +262,7 @@ class PickerTypeQt4(PickerType):
             self.written = False
             return
 
-        url = pathlib.Path(spath).as_uri()
+        url = spath.as_uri()
 
         settings_qt4 = QSettings(self.config_path, QSettings.IniFormat)
         if not settings_qt4.isWritable():
@@ -286,7 +287,7 @@ class PickerTypeQt4(PickerType):
             qUrl = QUrl()
             stream >> qUrl
 
-            if qUrl.isLocalFile() and qUrl.toLocalFile() == spath:
+            if qUrl.isLocalFile() and qUrl.toLocalFile() == str(spath):
                 bookmark_found = True
             else:
                 bookmarks.append(qUrl)
@@ -331,7 +332,7 @@ class PickerTypeQt4(PickerType):
         self.written = False
 
 class PickerTypeQt5(PickerType):
-    def make_bookmark(self, spath):
+    def make_bookmark(self, spath: Path):
         if self.written:
             return
 
@@ -339,7 +340,7 @@ class PickerTypeQt5(PickerType):
             #do not write shortcuts if file was not created by Qt5 himself
             return
 
-        url = pathlib.Path(spath).as_uri()
+        url = spath.as_uri()
 
         settings_qt5 = QSettings(self.config_path, QSettings.IniFormat)
         if not settings_qt5.isWritable():
@@ -350,7 +351,7 @@ class PickerTypeQt5(PickerType):
 
         for sc in shortcuts:
             sc_url = QUrl(sc)
-            if sc_url.isLocalFile() and sc_url.toLocalFile() == spath:
+            if sc_url.isLocalFile() and sc_url.toLocalFile() == str(spath):
                 return
 
         shortcuts.append(url)
@@ -359,7 +360,7 @@ class PickerTypeQt5(PickerType):
         settings_qt5.sync()
         self.written = True
 
-    def remove_bookmark(self, spath):
+    def remove_bookmark(self, spath: Path):
         if not self.written:
             return
 
@@ -373,7 +374,7 @@ class PickerTypeQt5(PickerType):
 
         for sc in shortcuts:
             sc_url = QUrl(sc)
-            if sc_url.isLocalFile() and sc_url.toLocalFile() == spath:
+            if sc_url.isLocalFile() and sc_url.toLocalFile() == str(spath):
                 shortcuts.remove(sc)
                 break
         else:
@@ -385,7 +386,7 @@ class PickerTypeQt5(PickerType):
         self.written = False
 
 class PickerTypeKde5(PickerType):
-    def make_bookmark(self, spath):
+    def make_bookmark(self, spath: Path):
         if self.written:
             return
 
@@ -394,7 +395,7 @@ class PickerTypeKde5(PickerType):
             # we won't write a file for kde5 if file doesn't already exists
             return
 
-        url = pathlib.Path(spath).as_uri()
+        url = spath.as_uri()
 
         xml = QDomDocument()
         xml.setContent(contents)
@@ -415,7 +416,7 @@ class PickerTypeKde5(PickerType):
         bk = xml.createElement('bookmark')
         bk.setAttribute('href', url)
         title = xml.createElement('title')
-        title_text = xml.createTextNode(os.path.basename(spath))
+        title_text = xml.createTextNode(spath.name)
         title.appendChild(title_text)
         bk.appendChild(title)
         content.appendChild(bk)
@@ -424,7 +425,7 @@ class PickerTypeKde5(PickerType):
             self.written = True
 
 
-    def remove_bookmark(self, spath):
+    def remove_bookmark(self, spath: Path):
         if not self.written:
             return
 
@@ -433,7 +434,7 @@ class PickerTypeKde5(PickerType):
             self.written = False
             return
 
-        url = pathlib.Path(spath).as_uri()
+        url = spath.as_uri()
 
         xml = QDomDocument()
         xml.setContent(contents)
@@ -522,7 +523,7 @@ class BookMarker:
     def set_daemon_port(self, port):
         self._daemon_port = port
 
-    def make_all(self, spath: str):
+    def make_all(self, spath: Path):
         for picker in (self._gtk2, self._gtk3, self._fltk,
                        self._kde5, self._qt4, self._qt5):
             picker.make_bookmark(spath)
@@ -542,7 +543,7 @@ class BookMarker:
 
         self._write_xml_file(xml)
 
-    def remove_all(self, spath):
+    def remove_all(self, spath: Path):
         for picker in (self._gtk2, self._gtk3, self._fltk,
                        self._kde5, self._qt4, self._qt5):
             picker.remove_bookmark(spath)
@@ -562,7 +563,7 @@ class BookMarker:
 
             if (port.isdigit()
                     and int(port) == self._daemon_port
-                    and session_path == spath):
+                    and session_path == str(spath)):
                 xml_content.removeChild(node)
                 break
 
@@ -615,6 +616,7 @@ class BookMarker:
 
         self._write_xml_file(xml)
 
+
 if __name__ == '__main__':
     bm_maker = BookMarker()
-    bm_maker.make_all(sys.argv[1])
+    bm_maker.make_all(Path(sys.argv[1]))

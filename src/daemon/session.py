@@ -119,7 +119,7 @@ class Session(ServerSender):
     def _set_path(self, session_path: Optional[Path], session_name=''):
         if not self.is_dummy:
             if self.path:
-                self.bookmarker.remove_all(self.path)
+                self.bookmarker.remove_all(Path(self.path))
 
         if session_path is None:
             self.path = ''
@@ -141,7 +141,7 @@ class Session(ServerSender):
         if self.path:
             if (self.has_server_option(ray.Option.BOOKMARK_SESSION)):
                 self.bookmarker.set_daemon_port(self.get_server_port())
-                self.bookmarker.make_all(self.path)
+                self.bookmarker.make_all(Path(self.path))
 
     def _no_future(self):
         self.future_clients.clear()

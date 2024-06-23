@@ -715,9 +715,9 @@ class SignaledSession(OperatingSession):
         if abs(option) == ray.Option.BOOKMARK_SESSION:
             if self.path:
                 if option > 0:
-                    self.bookmarker.make_all(self.path)
+                    self.bookmarker.make_all(Path(self.path))
                 else:
-                    self.bookmarker.remove_all(self.path)
+                    self.bookmarker.remove_all(Path(self.path))
 
     def _ray_server_patchbay_save_group_position(self, path, args, src_addr):
         self.canvas_saver.save_group_position(*args)
