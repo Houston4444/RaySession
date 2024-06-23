@@ -153,7 +153,7 @@ class ClientCommunicating(liblo.ServerThread):
     def nsmServerAdd(self, path, args, types, src_addr):
         executable_path = args[0]
 
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return False
@@ -165,7 +165,7 @@ class ClientCommunicating(liblo.ServerThread):
 
     @ray_method('/nsm/server/save', '')
     def nsmServerSave(self, path, args, types, src_addr):
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to save.")
             return False
@@ -186,7 +186,7 @@ class ClientCommunicating(liblo.ServerThread):
 
     @ray_method('/nsm/server/duplicate', 's')
     def nsmServerDuplicate(self, path, args, types, src_addr):
-        if self.is_nsm_locked or not self.session.path:
+        if self.is_nsm_locked or self.session.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to duplicate.")
             return False
@@ -198,14 +198,14 @@ class ClientCommunicating(liblo.ServerThread):
 
     @ray_method('/nsm/server/close', '')
     def nsmServerClose(self, path, args, types, src_addr):
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to close.")
             return False
 
     @ray_method('/nsm/server/abort', '')
     def nsmServerAbort(self, path, args, types, src_addr):
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to abort.")
             return False
@@ -221,7 +221,7 @@ class ClientCommunicating(liblo.ServerThread):
 
     @ray_method('/nsm/server/announce', 'sssiii')
     def nsmServerAnnounce(self, path, args, types, src_addr):
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Sorry, but there's no session open "
                       + "for this application to join.")
@@ -938,7 +938,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/save', '')
     def raySessionSave(self, path, args, types, src_addr):
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to save.")
             return False
@@ -959,7 +959,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/get_session_name', '')
     def raySessionGetSessionName(self, path, args, types, src_addr):
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session loaded.")
             return False
@@ -984,7 +984,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/close', '')
     def raySessionClose(self, path, args, types, src_addr):
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to close.")
             return False
@@ -995,7 +995,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/cancel_close', '')
     def raySessionCancelClose(self, path, args, types, src_addr):
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to cancel close.")
             return False
@@ -1010,7 +1010,7 @@ class OscServerThread(ClientCommunicating):
         if self.is_nsm_locked:
             return False
 
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to duplicate.")
             return False
@@ -1049,7 +1049,7 @@ class OscServerThread(ClientCommunicating):
         if self._is_operation_pending(src_addr, path):
             return False
 
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to rename.")
             return False
@@ -1072,7 +1072,7 @@ class OscServerThread(ClientCommunicating):
         executable_path, auto_start, protocol, \
             prefix_mode, prefix_pattern, client_id, jack_naming = args
 
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return False
@@ -1088,7 +1088,7 @@ class OscServerThread(ClientCommunicating):
             self._unknown_message(path, types, src_addr)
             return False
 
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return False
@@ -1150,7 +1150,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/show_notes', '')
     def raySessionShowNotes(self, path, args, types, src_addr):
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, '/error', path, ray.Err.NO_SESSION_OPEN,
                       "No session to show notes")
             return False
@@ -1161,7 +1161,7 @@ class OscServerThread(ClientCommunicating):
 
     @ray_method('/ray/session/hide_notes', '')
     def raySessionHideNotes(self, path, args, types, src_addr):
-        if not self.session.path:
+        if self.session.path is None:
             self.send(src_addr, '/error', path, ray.Err.NO_SESSION_OPEN,
                       "No session to hide notes")
             return False
@@ -1440,8 +1440,11 @@ class OscServerThread(ClientCommunicating):
                   int(is_net_free))
 
         self.send(gui_addr, "/ray/gui/server/status", self.server_status)
-        self.send(gui_addr, "/ray/gui/session/name",
-                  self.session.name, self.session.path)
+        if self.session.path is None:
+            self.send(gui_addr, "/ray/gui/session/name", "")
+        else:
+            self.send(gui_addr, "/ray/gui/session/name",
+                      self.session.name, str(self.session.path))
         self.send(gui_addr, '/ray/gui/session/notes', self.session.notes)
         self.send(gui_addr, '/ray/gui/server/terminal_command',
                   self.terminal_command)

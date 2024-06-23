@@ -123,11 +123,11 @@ class StepScripter(Scripter):
         if self.is_running():
             return False
 
-        if not self.session.path:
+        if self.session.path is None:
             return False
 
         scripts_dir, parent_scripts_dir = self._get_script_dirs(
-                                                            self.session.path)
+                                                            str(self.session.path))
         future_scripts_dir, future_parent_scripts_dir = self._get_script_dirs(
                                             self.session.future_session_path)
 
@@ -154,7 +154,7 @@ class StepScripter(Scripter):
         process_env.insert('RAY_FUTURE_SCRIPTS_DIR', future_scripts_dir)
         process_env.insert('RAY_SWITCHING_SESSION',
                            str(self.session.switching_session).lower())
-        process_env.insert('RAY_SESSION_PATH', self.session.path)
+        process_env.insert('RAY_SESSION_PATH', str(self.session.path))
 
         self._process.setProcessEnvironment(process_env)
         self._process.start(script_path, [str(a) for a in arguments])
@@ -196,6 +196,9 @@ class ClientScripter(Scripter):
         elif command == ray.Command.STOP:
             command_string = 'stop'
         else:
+            return False
+
+        if self._client.session.path is None:
             return False
 
         scripts_dir = "%s/%s.%s" % \

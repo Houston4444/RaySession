@@ -59,7 +59,7 @@ class XmlElement:
         
         return 0.0
     
-    def set_str(self, attribute:str, value: str):
+    def set_str(self, attribute: str, value: str):
         self.el.attrib[attribute] = str(value)
         
     def set_bool(self, attribute: str, yesno: bool):

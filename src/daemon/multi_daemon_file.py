@@ -87,7 +87,7 @@ class MultiDaemonFile:
     def _set_attributes(self, element: QDomElement):
         element.setAttribute('net_daemon_id', self.server.net_daemon_id)
         element.setAttribute('root', str(self.session.root))
-        element.setAttribute('session_path', self.session.path)
+        element.setAttribute('session_path', str(self.session.path))
         element.setAttribute('pid', os.getpid())
         element.setAttribute('port', self.server.port)
         element.setAttribute('user', os.getenv('USER'))
@@ -228,7 +228,7 @@ class MultiDaemonFile:
         if not self._open_file():
             return []
 
-        all_session_paths = []
+        all_session_paths = list[str]()
 
         xml_content = self._xml.documentElement()
         nodes = xml_content.childNodes()

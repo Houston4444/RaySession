@@ -108,10 +108,10 @@ class SignaledSession(OperatingSession):
         
         self._folder_sizes_and_dates = []
         
-        self._cache_folder_sizes_path = xdg.xdg_cache_home().joinpath(
-            'RaySession', 'folder_sizes.json')
+        self._cache_folder_sizes_path = (
+            xdg.xdg_cache_home() / ray.APP_TITLE / 'folder_sizes.json')
 
-        if os.path.isfile(self._cache_folder_sizes_path):
+        if self._cache_folder_sizes_path.is_file():
             try:
                 self._folder_sizes_and_dates = json.load(
                     self._cache_folder_sizes_path)
@@ -607,7 +607,7 @@ class SignaledSession(OperatingSession):
 
         spath = self.root / session_name
 
-        if spath == Path(self.path):
+        if spath == self.path:
             self._send_error(ray.Err.SESSION_LOCKED,
                 _translate('GUIMSG', 'session %s is already opened !')
                     % highlight_text(session_name))
@@ -715,9 +715,9 @@ class SignaledSession(OperatingSession):
         if abs(option) == ray.Option.BOOKMARK_SESSION:
             if self.path:
                 if option > 0:
-                    self.bookmarker.make_all(Path(self.path))
+                    self.bookmarker.make_all(self.path)
                 else:
-                    self.bookmarker.remove_all(Path(self.path))
+                    self.bookmarker.remove_all(self.path)
 
     def _ray_server_patchbay_save_group_position(self, path, args, src_addr):
         self.canvas_saver.save_group_position(*args)
@@ -744,7 +744,7 @@ class SignaledSession(OperatingSession):
 
     @session_operation
     def _ray_session_take_snapshot(self, path, args, src_addr):
-        if not self.path:
+        if self.path is None:
             self.send(src_addr, '/error', path, ray.Err.NO_SESSION_OPEN,
                       'No session is loaded, impossible to take snapshot')
             return
@@ -773,7 +773,7 @@ class SignaledSession(OperatingSession):
                             self.close_done]
 
     def _ray_session_abort(self, path, args, src_addr):
-        if not self.path:
+        if self.path is None:
             self.file_copier.abort()
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "No session to abort.")
@@ -915,7 +915,7 @@ class SignaledSession(OperatingSession):
 
     @session_operation
     def _ray_session_open_snapshot(self, path, args, src_addr):
-        if not self.path:
+        if self.path is None:
             return
 
         snapshot = args[0]
@@ -924,8 +924,8 @@ class SignaledSession(OperatingSession):
                               self.close_no_save_clients,
                               (self.snapshot, '', snapshot, True),
                               (self.close, True),
-                              (self.init_snapshot, self.path, snapshot),
-                              (self.preload, self.path),
+                              (self.init_snapshot, str(self.path), snapshot),
+                              (self.preload, str(self.path)),
                               self.take_place,
                               self.load,
                               self.load_done]
@@ -936,7 +936,7 @@ class SignaledSession(OperatingSession):
         if self.steps_order:
             return
 
-        if not self.path:
+        if self.path is None:
             return
 
         if self.file_copier.is_active():
@@ -946,8 +946,8 @@ class SignaledSession(OperatingSession):
             return
 
         if not self.is_nsm_locked():
-            for filename in os.listdir(dirname(self.path)):
-                if filename == new_session_name:
+            for filename in self.path.parent.iterdir():
+                if filename.name == new_session_name:
                     # another directory exists with new session name
                     return
 
@@ -963,7 +963,7 @@ class SignaledSession(OperatingSession):
 
         if not self.is_nsm_locked():
             try:
-                spath = Path(self.path).parent / new_session_name
+                spath = self.path.parent / new_session_name
                 subprocess.run(['mv', self.path, spath])
                 self._set_path(spath)
 
@@ -982,7 +982,7 @@ class SignaledSession(OperatingSession):
         self.send_gui_message(
             _translate('GUIMSG', 'Session %s has been renamed to %s .')
             % (self.name, new_session_name))
-        self.send_gui('/ray/gui/session/name', self.name, self.path)
+        self.send_gui('/ray/gui/session/name', self.name, str(self.path))
 
     def _ray_session_set_notes(self, path, args, src_addr):
         self.notes = args[0]
@@ -1108,7 +1108,7 @@ class SignaledSession(OperatingSession):
                       "Impossible to add client now")
 
     def _ray_session_add_client_template(self, path, args, src_addr):
-        if not self.path:
+        if self.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return
@@ -1156,7 +1156,7 @@ class SignaledSession(OperatingSession):
         # there is nothing to wait to have a loaded session
         # This is quite dirty but so easier
 
-        if not dummy_session.path:
+        if dummy_session.path is None:
             self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
                       "falied to load other session %s" % other_session)
             return
@@ -1182,7 +1182,7 @@ class SignaledSession(OperatingSession):
     def _ray_session_reorder_clients(self, path, args, src_addr):
         client_ids_list = args
 
-        if not self.path:
+        if self.path is None:
             self.send(src_addr, '/error', path, ray.Err.NO_SESSION_OPEN,
                       "no session to reorder clients")
 
@@ -1201,7 +1201,7 @@ class SignaledSession(OperatingSession):
         self.clear_clients(src_addr, path, *args)
 
     def _ray_session_list_snapshots(self, path, args, src_addr, client_id=""):
-        if not self.path:
+        if self.path is None:
             self.send(src_addr, '/error', path, ray.Err.NO_SESSION_OPEN,
                       "no session to list snapshots")
             return
@@ -1232,7 +1232,7 @@ class SignaledSession(OperatingSession):
         self.snapshoter.set_auto_snapshot(bool(args[0]))
 
     def _ray_session_list_clients(self, path, args: list[str], src_addr):
-        if not self.path:
+        if self.path is None:
             self.send(src_addr, '/error', path, ray.Err.NO_SESSION_OPEN,
                       _translate('GUIMSG', 'No session to list clients !'))
             return
@@ -1758,7 +1758,7 @@ class SignaledSession(OperatingSession):
         client.set_status(ray.ClientStatus.REMOVED)
         
         client._rename_files(
-            Path(self.path),
+            self.path,
             self.name, self.name,
             client.get_prefix_string(), tmp_client.get_prefix_string(),
             client.client_id, tmp_client.client_id,
@@ -1870,7 +1870,7 @@ class SignaledSession(OperatingSession):
         links_dir = client.get_links_dirname()
 
         client._rename_files(
-            Path(self.path),
+            self.path,
             self.name, self.name,
             prefix, prefix,
             ex_client_id, new_client_id,
@@ -1901,7 +1901,7 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path, 'client id changed')
     
     def _ray_trashed_client_restore(self, path, args, src_addr):
-        if not self.path:
+        if self.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Nothing in trash because no session is loaded.")
             return
@@ -1918,7 +1918,7 @@ class SignaledSession(OperatingSession):
             self.send(src_addr, "/error", path, -10, "No such client.")
 
     def _ray_trashed_client_remove_definitely(self, path, args, src_addr):
-        if not self.path:
+        if self.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Nothing in trash because no session is loaded.")
             return
@@ -1949,7 +1949,7 @@ class SignaledSession(OperatingSession):
         self.send_monitor_event('removed', client_id)
 
     def _ray_trashed_client_remove_keep_files(self, path, args, src_addr):
-        if not self.path:
+        if self.path is None:
             self.send(src_addr, "/error", path, ray.Err.NO_SESSION_OPEN,
                       "Nothing in trash because no session is loaded.")
             return
@@ -2080,7 +2080,7 @@ class DummySession(OperatingSession):
         self.next_function()
     
     def ray_server_get_session_preview(self, path, args, src_addr,
-                                       folder_sizes:list):
+                                       folder_sizes: list):
         session_name = args[0]
         self.steps_order = [(self.preload, session_name, False),
                             self.take_place,

@@ -1239,7 +1239,7 @@ class Client(ServerSender, ray.ClientData):
         if self.protocol == ray.Protocol.RAY_NET:
             return Path(self.session.get_short_path())
 
-        spath = Path(self.session.path)
+        spath = self.session.path
 
         if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
             return spath / f'{self.session.name}.{self.client_id}'
@@ -1294,7 +1294,7 @@ class Client(ServerSender, ray.ClientData):
             return
 
         if (self.protocol == ray.Protocol.RAY_NET
-                and not Path(self.session.path).is_relative_to(self.session.root)):
+                and not self.session.path.is_relative_to(self.session.root)):
             self._send_error_to_caller(OSC_SRC_START, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG',
                     "Impossible to run Ray-Net client when session is not in root folder"))
@@ -1906,7 +1906,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
     def get_project_files(self) -> list[Path]:
         client_files = list[Path]()
         project_path = self.get_project_path()
-        spath = Path(self.session.path)
+        spath = self.session.path
 
         if project_path.exists():
             client_files.append(project_path)
@@ -2077,7 +2077,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.send_gui_client_properties()
         
         tmp_basedir = ".tmp_ray_workdir"
-        spath = Path(self.session.path)
+        spath = self.session.path
         
         while Path(spath / tmp_basedir).exists():
             tmp_basedir += 'X'
@@ -2166,7 +2166,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         links_dir = self.get_links_dirname()
 
         self._rename_files(
-            Path(self.session.path),
+            self.session.path,
             self.session.name, self.session.name,
             old_prefix, new_prefix,
             self.client_id, self.client_id,
@@ -2178,9 +2178,9 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
     def adjust_files_after_copy(self, new_session_full_name: str,
                                 template_save=ray.Template.NONE):
-        spath = Path(self.session.path)
+        spath = self.session.path
         old_session_name = self.session.name
-        new_session_name = basename(new_session_full_name)
+        new_session_name = Path(new_session_full_name).name
         new_client_id = self.client_id
         old_client_id = self.client_id
         new_client_links_dir = self.get_links_dirname()
@@ -2227,7 +2227,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             new_client_links_dir = X_CLIENT_LINKS_DIR_X
 
         elif template_save == ray.Template.CLIENT_LOAD:
-            spath = Path(self.session.path)
+            spath = self.session.path
             old_session_name = X_SESSION_X
             old_client_id = X_CLIENT_ID_X
             old_client_links_dir = X_CLIENT_LINKS_DIR_X

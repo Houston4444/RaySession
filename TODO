@@ -28,3 +28,8 @@ favoriser le démon unique
 str -> Path
     path
     canvas_saver.load_json_session_canvas
+
+    scripter._get_scripts_dir
+    ClientScripter.start
+    AppTemplate
+    snapshoter.load
