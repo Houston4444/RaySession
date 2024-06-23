@@ -2194,7 +2194,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             if self.prefix_mode != ray.PrefixMode.SESSION_NAME:
                 return
 
-            spath = Path(self.session.get_full_path(new_session_full_name))
+            spath = self.session.root / new_session_full_name
 
         elif template_save == ray.Template.RENAME:
             pass
@@ -2213,11 +2213,11 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             new_session_name = X_SESSION_X
 
         elif template_save == ray.Template.SESSION_LOAD:
-            spath = Path(self.session.get_full_path(new_session_full_name))
+            spath = self.session.root / new_session_full_name
             old_session_name = X_SESSION_X
 
         elif template_save == ray.Template.SESSION_LOAD_NET:
-            spath = Path(self.session.get_full_path(new_session_full_name))
+            spath = self.session.root / new_session_full_name
             old_session_name = X_SESSION_X
 
         elif template_save == ray.Template.CLIENT_SAVE:

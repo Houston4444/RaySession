@@ -158,9 +158,6 @@ class Session(ServerSender):
 
         return self.name
 
-    def get_full_path(self, session_name: str) -> str:
-        return str(self.root / session_name)
-
     def remember_as_recent(self):
         # put loaded session (if exists) in recent sessions
         if self.name and not self.is_dummy:
@@ -1328,9 +1325,9 @@ class OperatingSession(Session):
         self.send_gui_message(
             _translate('GUIMSG', "Creating new session \"%s\"")
             % new_session_name)
-        spath = self.get_full_path(new_session_name)
+        spath = self.root / new_session_name
 
-        if self._is_path_in_a_session_dir(spath):
+        if self._is_path_in_a_session_dir(str(spath)):
             self._send_error(
                 ray.Err.SESSION_IN_SESSION_DIR,
                 """Can't create session in a dir containing a session
@@ -1338,14 +1335,14 @@ for better organization.""")
             return
 
         try:
-            os.makedirs(spath)
+            spath.mkdir(parents=True)
         except:
             self._send_error(ray.Err.CREATE_FAILED,
                              "Could not create the session directory")
             return
 
         self.set_server_status(ray.ServerStatus.NEW)
-        self._set_path(spath)
+        self._set_path(str(spath))
         self.send_gui("/ray/gui/session/name",
                       self.name, self.path)
         self.next_function()
@@ -1419,18 +1416,17 @@ for better organization.""")
             ray.WaitFor.DUPLICATE_START)
 
     def duplicate_substep1(self, new_session_full_name: str):
-        spath = self.get_full_path(new_session_full_name)
+        spath = self.root / new_session_full_name
         self.set_server_status(ray.ServerStatus.COPY)
-
         self.send_gui_message(_translate('GUIMSG', 'start session copy...'))
 
         # lock the directory of the new session created
         multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
-            multi_daemon_file.add_locked_path(spath)
+            multi_daemon_file.add_locked_path(str(spath))
 
         self.file_copier.start_session_copy(
-            Path(self.path), Path(spath),
+            Path(self.path), spath,
             self.duplicate_substep2, self.duplicate_aborted,
             [new_session_full_name])
 
@@ -1460,7 +1456,7 @@ for better organization.""")
         multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
             multi_daemon_file.unlock_path(
-                self.get_full_path(new_session_full_name))
+                str(self.root / new_session_full_name))
         
         self.next_function()
 
@@ -1471,7 +1467,7 @@ for better organization.""")
         multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
             multi_daemon_file.unlock_path(
-                self.get_full_path(new_session_full_name))
+                str(self.root / new_session_full_name))
 
         if self.osc_path == '/nsm/server/duplicate':
             # for nsm server control API compatibility
@@ -1581,16 +1577,16 @@ for better organization.""")
             self.next_function()
             return
 
-        spath = self.get_full_path(new_session_full_name)
+        spath = self.root / new_session_full_name
 
-        if os.path.exists(spath):
+        if spath.exists():
             self._send_error(
                 ray.Err.CREATE_FAILED,
                 _translate("error", "Folder\n%s\nalready exists")
                 % spath)
             return
 
-        if self._is_path_in_a_session_dir(spath):
+        if self._is_path_in_a_session_dir(str(spath)):
             self._send_error(
                 ray.Err.SESSION_IN_SESSION_DIR,
                 _translate("error",
@@ -1608,7 +1604,7 @@ for better organization.""")
                        'start copy from template to session folder'))
 
         self.file_copier.start_session_copy(
-            template_path, Path(spath),
+            template_path, spath,
             self.prepare_template_substep1,
             self.prepare_template_aborted,
             [new_session_full_name],

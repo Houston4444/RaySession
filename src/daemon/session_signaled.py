@@ -654,10 +654,10 @@ class SignaledSession(OperatingSession):
 
     def _ray_server_rename_session(self, path, args, src_addr):
         old_session_name, new_session_name = args
-        spath = self.get_full_path(old_session_name)
+        spath = self.root / old_session_name
 
         for f in 'raysession.xml', 'session.nsm':
-            if os.path.isfile("%s/%s" % (spath, f)):
+            if Path(spath / f).is_file():
                 break
         else:
             self.send(src_addr, '/error', path, ray.Err.BAD_PROJECT,
