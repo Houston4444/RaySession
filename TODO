@@ -29,3 +29,5 @@ str -> Path
     _set_path
     path
 
+    bookmarker.make_all
+

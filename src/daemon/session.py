@@ -116,20 +116,20 @@ class Session(ServerSender):
         else:
             Terminal.message(string)
 
-    def _set_name(self, session_name: str):
-        self.name = session_name
-
-    def _set_path(self, session_path: str, session_name=''):
+    def _set_path(self, session_path: Optional[Path], session_name=''):
         if not self.is_dummy:
             if self.path:
                 self.bookmarker.remove_all(self.path)
 
-        self.path = session_path
+        if session_path is None:
+            self.path = ''
+        else:
+            self.path = str(session_path)
 
         if session_name:
-            self._set_name(session_name)
+            self.name = session_name
         else:
-            self._set_name(session_path.rpartition('/')[2])
+            self.name = session_path.name
 
         if self.is_dummy:
             return
@@ -1293,13 +1293,13 @@ class OperatingSession(Session):
             self.remember_as_recent()
 
         if clear_all_clients:
-            self._set_path('')
+            self._set_path(None)
         self.next_function()
 
     def close_done(self):
         self._clean_expected()
         self.clients.clear()
-        self._set_path('')
+        self._set_path(None)
         self.send_gui('/ray/gui/session/name', '', '')
         self.send_gui('/ray/gui/session/notes', '')
         self.send_gui('/ray/gui/session/notes_hidden')
@@ -1312,7 +1312,7 @@ class OperatingSession(Session):
     def abort_done(self):
         self._clean_expected()
         self.clients.clear()
-        self._set_path('')
+        self._set_path(None)
         self.send_gui('/ray/gui/session/name', '', '')
         self.send_gui('/ray/gui/notes', '')
         self.send_gui('/ray/gui/session/notes_hidden')
@@ -1343,7 +1343,7 @@ for better organization.""")
             return
 
         self.set_server_status(ray.ServerStatus.NEW)
-        self._set_path(str(spath))
+        self._set_path(spath)
         self.send_gui("/ray/gui/session/name",
                       self.name, self.path)
         self.next_function()
@@ -1623,12 +1623,12 @@ for better organization.""")
         else:
             self.set_server_status(ray.ServerStatus.OFF)
 
-            self._set_path('')
+            self._set_path(None)
             self.send_gui('/ray/gui/session/name', '', '')
 
     def rename(self, new_session_name: str):
-        spath = "%s/%s" % (dirname(self.path), new_session_name)
-        if os.path.exists(spath):
+        spath = Path(self.path).parent / new_session_name
+        if spath.exists():        
             self._send_error(
                 ray.Err.CREATE_FAILED,
                 _translate('rename', "Folder %s already exists,")
@@ -1864,14 +1864,15 @@ for better organization.""")
         self.next_function()
 
     def take_place(self):
-        self._set_path(self.future_session_path, self.future_session_name)
+        self._set_path(Path(self.future_session_path),
+                       self.future_session_name)
 
         if (self.name and self.name != basename(self.path)):
             # session folder has been renamed
             # so rename session to it
             for client in self.future_clients + self.future_trashed_clients:
                 client.adjust_files_after_copy(self.path, ray.Template.RENAME)
-            self._set_path(self.future_session_path)
+            self._set_path(Path(self.future_session_path))
             
             # session has been renamed and client files have been moved
             # save session file is required here, else clients could not
@@ -2164,7 +2165,7 @@ for better organization.""")
 
     def exit_now(self):
         self.set_server_status(ray.ServerStatus.OFF)
-        self._set_path('')
+        self._set_path(None)
         self.message("Bye Bye...")
         self._send_reply("Bye Bye...")
         self.send_gui('/ray/gui/server/disannounce')

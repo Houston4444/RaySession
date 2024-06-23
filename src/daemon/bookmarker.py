@@ -522,7 +522,7 @@ class BookMarker:
     def set_daemon_port(self, port):
         self._daemon_port = port
 
-    def make_all(self, spath):
+    def make_all(self, spath: str):
         for picker in (self._gtk2, self._gtk3, self._fltk,
                        self._kde5, self._qt4, self._qt5):
             picker.make_bookmark(spath)

@@ -963,7 +963,7 @@ class SignaledSession(OperatingSession):
 
         if not self.is_nsm_locked():
             try:
-                spath = "%s/%s" % (dirname(self.path), new_session_name)
+                spath = Path(self.path).parent / new_session_name
                 subprocess.run(['mv', self.path, spath])
                 self._set_path(spath)
 
