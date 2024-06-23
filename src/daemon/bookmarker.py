@@ -9,7 +9,7 @@ from PyQt5.QtCore import QSettings, QDataStream, QIODevice, QUrl, QByteArray
 from PyQt5.QtXml  import QDomDocument, QDomNode
 
 import ray
-from daemon_tools import get_app_config_path, dirname
+from daemon_tools import get_app_config_path
 
 QFILEDIALOG_MAGIC = 190
 
@@ -17,7 +17,7 @@ QFILEDIALOG_MAGIC = 190
 class PickerType:
     def __init__(self, config_path: Path):
         self._config_path = config_path
-        self._written = False
+        self.written = False
 
     def _get_contents(self) -> Optional[str]:
         if self._config_path.exists():
@@ -537,7 +537,7 @@ class BookMarker:
 
         bke = xml.createElement('bookmarker')
         bke.setAttribute('port', self._daemon_port)
-        bke.setAttribute('session_path', spath)
+        bke.setAttribute('session_path', str(spath))
         bke.setAttribute('pickers', self._get_pickers_for_xml())
 
         xml_content.appendChild(bke)

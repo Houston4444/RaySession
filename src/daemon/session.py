@@ -123,13 +123,13 @@ class Session(ServerSender):
 
         if session_path is None:
             self.path = ''
+            self.name = ''
         else:
             self.path = str(session_path)
-
-        if session_name:
-            self.name = session_name
-        else:
-            self.name = session_path.name
+            if session_name:
+                self.name = session_name
+            else:
+                self.name = session_path.name
 
         if self.is_dummy:
             return
@@ -139,7 +139,7 @@ class Session(ServerSender):
             multi_daemon_file.update()
 
         if self.path:
-            if (self.has_server_option(ray.Option.BOOKMARK_SESSION)):
+            if self.has_server_option(ray.Option.BOOKMARK_SESSION):
                 self.bookmarker.set_daemon_port(self.get_server_port())
                 self.bookmarker.make_all(Path(self.path))
 
