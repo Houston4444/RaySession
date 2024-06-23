@@ -46,7 +46,7 @@ signaler = Signaler.instance()
 class Session(ServerSender):
     def __init__(self, root: str, session_id=0):
         ServerSender.__init__(self)
-        self.root = root
+        self.root = Path(root)
         self.is_dummy = False
         self.session_id = session_id
 
@@ -54,7 +54,7 @@ class Session(ServerSender):
         self.future_clients = list[Client]()
         self.trashed_clients = list[Client]()
         self.future_trashed_clients = list[Client]()
-        self.recent_sessions = dict[str, list[str]]()
+        self.recent_sessions = dict[Path, list[str]]()
 
         self.name = ""
         self.path = ""
@@ -151,27 +151,20 @@ class Session(ServerSender):
         self.future_notes = ""
         self.future_notes_shown = False
 
-    def get_short_path(self):
-        if self.path.startswith("%s/" % self.root):
-            return self.path.replace("%s/" % self.root, '', 1)
+    def get_short_path(self) -> str:
+        spath = Path(self.path)
+        if spath.is_relative_to(self.root):
+            return str(spath.relative_to(self.root))
 
         return self.name
 
     def get_full_path(self, session_name: str) -> str:
-        spath = "%s%s%s" % (self.root, os.sep, session_name)
-
-        if session_name.startswith(os.sep):
-            spath = session_name
-
-        if spath.endswith(os.sep):
-            spath = spath[:-1]
-
-        return spath
+        return str(self.root / session_name)
 
     def remember_as_recent(self):
         # put loaded session (if exists) in recent sessions
         if self.name and not self.is_dummy:
-            long_name = self.path.replace(self.root + '/', '', 1)
+            long_name = str(Path(self.path).relative_to(self.root))
 
             if not self.root in self.recent_sessions.keys():
                 self.recent_sessions[self.root] = []
@@ -961,7 +954,7 @@ class OperatingSession(Session):
         if new_session_short_path.is_absolute():
             spath = new_session_short_path
         else:
-            spath = Path(self.root) / new_session_short_path
+            spath = self.root / new_session_short_path
 
         # create tmp clients from raysession.xml to adjust files after copy
         session_file = spath / 'raysession.xml'
@@ -1331,7 +1324,7 @@ class OperatingSession(Session):
         self.set_server_status(ray.ServerStatus.OFF)
         self._forget_osc_args()
 
-    def new(self, new_session_name):
+    def new(self, new_session_name: str):
         self.send_gui_message(
             _translate('GUIMSG', "Creating new session \"%s\"")
             % new_session_name)
@@ -1496,13 +1489,12 @@ for better organization.""")
         template_root = TemplateRoots.user_sessions
 
         if net:
-            template_root = "%s/%s" \
-                            % (self.root, TemplateRoots.net_session_name)
+            template_root = self.root / TemplateRoots.net_session_name
 
-        spath = "%s/%s" % (template_root, template_name)
+        spath = self.root / template_name
 
         #overwrite existing template
-        if os.path.isdir(spath):
+        if spath.is_dir():            
             if not os.access(spath, os.W_OK):
                 self._send_error(
                     ray.Err.GENERAL_ERROR,
@@ -1513,10 +1505,10 @@ for better organization.""")
                 self.set_server_status(ray.ServerStatus.READY)
                 return
 
-            shutil.rmtree(spath)
+            spath.rmdir()
 
-        if not os.path.exists(template_root):
-            os.makedirs(template_root)
+        if not template_root.exists():
+            template_root.mkdir(parents=True)
 
         # For network sessions,
         # save as template the network session only
@@ -1542,7 +1534,7 @@ for better organization.""")
             _translate('GUIMSG', 'start session copy to template...'))
 
         self.file_copier.start_session_copy(
-            Path(self.path), Path(spath),
+            Path(self.path), spath,
             self.save_session_template_substep_1,
             self.save_session_template_aborted,
             [template_name, net])
@@ -1573,7 +1565,7 @@ for better organization.""")
         template_root = TemplateRoots.user_sessions
 
         if net:
-            template_root = Path(self.root) / TemplateRoots.net_session_name
+            template_root = self.root / TemplateRoots.net_session_name
 
         template_path = template_root / template_name
         is_factory = template_name.startswith('///')
@@ -1684,7 +1676,7 @@ for better organization.""")
         if session_short_path.is_absolute():
             spath = session_short_path
         else:
-            spath = Path(self.root) / session_short_path
+            spath = self.root / session_short_path
 
         if spath == Path(self.path):
             self.load_error(ray.Err.SESSION_LOCKED)
@@ -1788,7 +1780,6 @@ for better organization.""")
         sess_name = ""
 
         if is_ray_file:
-            print('marrouubma')
             try:
                 tree = ET.parse(session_ray_file)
             except BaseException as e:

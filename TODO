@@ -23,3 +23,9 @@ barre d'outils sur 2 lignes possible
 outil pour session récentes
 régler le nb de sessions récentes dans les préfs
 favoriser le démon unique
+
+
+str -> Path
+    session.get_short_path()
+    session.get_full_path()
+    recent_sessions (Path as key ?)

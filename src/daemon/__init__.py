@@ -146,7 +146,12 @@ if __name__ == '__main__':
     # save RS.settings
     RS.settings.setValue('daemon/non_active_list', RS.non_active_clients)
     RS.settings.setValue('daemon/favorites', RS.favorites)
-    RS.settings.setValue('daemon/recent_sessions', session.recent_sessions)
+
+    recent_sessions = dict[str, list[str]]()
+    for root_path, sessions in session.recent_sessions.items():
+        recent_sessions[str(root_path)] = sessions
+
+    RS.settings.setValue('daemon/recent_sessions', recent_sessions)
     if not CommandLineArgs.no_options:
         RS.settings.setValue('daemon/options', server.options)
 

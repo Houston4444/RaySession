@@ -93,11 +93,13 @@ class SignaledSession(OperatingSession):
         signaler.osc_recv.connect(self.osc_receive)
         signaler.dummy_load_and_template.connect(self.dummy_load_and_template)
 
-        # dict where:
-        # key is a sessions root folder
-        # value is a list of recent sessions
-        self.recent_sessions: dict[str, list[str]] = RS.settings.value(
+        # fill recent sessions
+        recent_sessions: dict[str, list[str]] = RS.settings.value(
             'daemon/recent_sessions', {}, type=dict)
+
+        for root_path, session_list in recent_sessions.items():
+            self.recent_sessions[Path(root_path)] = session_list
+
         self.check_recent_sessions_existing()
 
         self.preview_dummy_session = None
@@ -117,12 +119,12 @@ class SignaledSession(OperatingSession):
                 # cache file load failed and this is really not strong
                 pass
     
-    def _get_new_dummy_session_id(self)->int:
+    def _get_new_dummy_session_id(self) -> int:
         to_return = self._next_session_id
         self._next_session_id += 1
         return to_return
 
-    def _new_dummy_session(self, root:str):
+    def _new_dummy_session(self, root: str):
         new_dummy = DummySession(root, self._get_new_dummy_session_id())
         self.dummy_sessions.append(new_dummy)
         return new_dummy
@@ -296,27 +298,29 @@ class SignaledSession(OperatingSession):
         self.snapshoter.abort()
 
     def _ray_server_change_root(self, path, args, src_addr):
-        session_root = args[0]
+        new_root_str = args[0]
         if self.path:
             self.send(src_addr, '/error', path, ray.Err.SESSION_LOCKED,
                       "impossible to change root. session %s is loaded"
                       % self.path)
             return
 
-        if not os.path.exists(session_root):
+        new_root = Path(new_root_str)
+
+        if not new_root.exists():
             try:
-                os.makedirs(session_root)
+                new_root.mkdir(parents=True)
             except:
                 self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
                           "invalid session root !")
                 return
 
-        if not os.access(session_root, os.W_OK):
+        if not os.access(new_root_str, os.W_OK):
             self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
                       "unwriteable session root !")
             return
 
-        self.root = session_root
+        self.root = new_root
 
         multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
@@ -324,7 +328,7 @@ class SignaledSession(OperatingSession):
 
         self.send(src_addr, '/reply', path,
                   "root folder changed to %s" % self.root)
-        self.send_gui('/ray/gui/server/root', self.root)
+        self.send_gui('/ray/gui/server/root', str(self.root))
 
         if self.root not in self.recent_sessions.keys():
             self.recent_sessions[self.root] = []
@@ -435,12 +439,12 @@ class SignaledSession(OperatingSession):
                     self.send(Address(client.ray_net.daemon_url),
                               '/ray/server/list_sessions', 1)
 
-        if not self.root:
+        if not self.root.is_absolute():
             self.send(src_addr, '/error', path, ray.Err.GENERAL_ERROR,
                       "no session root, so no sessions to list")
             return
 
-        session_list = []
+        session_list = list[str]()
         sessions_set = set()
         n = 0
 
@@ -449,7 +453,7 @@ class SignaledSession(OperatingSession):
             files = [f for f in files if not f.startswith('.')]
             dirs[:] = [d for d in dirs  if not d.startswith('.')]
 
-            if root == self.root:
+            if root == str(self.root):
                 continue
 
             for file in files:
@@ -457,7 +461,7 @@ class SignaledSession(OperatingSession):
                     # prevent search in sub directories
                     dirs.clear()
 
-                    basefolder = root.replace(self.root + '/', '', 1)
+                    basefolder = str(Path(root).relative_to(self.root))
                     session_list.append(basefolder)
                     sessions_set.add(basefolder)
                     n += len(basefolder)
@@ -478,13 +482,20 @@ class SignaledSession(OperatingSession):
         search_scripts_dir = self.root
         has_general_scripts = False
         
-        while search_scripts_dir and not search_scripts_dir != '/':
-            if os.path.isdir(search_scripts_dir + '/' + ray.SCRIPTS_DIR):
+        while str(search_scripts_dir) != search_scripts_dir.root:
+            if Path(search_scripts_dir / ray.SCRIPTS_DIR).is_dir():
                 has_general_scripts = True
                 break
-            search_scripts_dir = dirname(search_scripts_dir)
+            search_scripts_dir = search_scripts_dir.parent
+        
+        
+        # while search_scripts_dir and not search_scripts_dir != '/':
+        #     if os.path.isdir(search_scripts_dir + '/' + ray.SCRIPTS_DIR):
+        #         has_general_scripts = True
+        #         break
+        #     search_scripts_dir = dirname(search_scripts_dir)
 
-        locked_sessions = []
+        locked_sessions = list[str]()
         multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file is not None:
             locked_sessions = multi_daemon_file.get_all_session_paths()
@@ -494,20 +505,20 @@ class SignaledSession(OperatingSession):
             files = [f for f in files if not f.startswith('.')]
             dirs[:] = [d for d in dirs  if not d.startswith('.')]
 
-            if root == self.root:
+            if root == str(self.root):
                 if has_general_scripts:
                     self.send(src_addr, '/ray/gui/listed_session/scripted_dir',
                               '', ray.ScriptFile.PARENT)
                 continue
             
-            basefolder = root.replace(self.root + '/', '', 1)
+            basefolder = str(Path(root).relative_to(self.root))
             
             if ray.SCRIPTS_DIR in dirs:
                 script_files = ray.ScriptFile.PREVENT
                 
                 for action in ('load', 'save', 'close'):
                     if os.access(
-                            "%s/%s/%s.sh" % (root, ray.SCRIPTS_DIR, action),
+                            Path(root) / ray.SCRIPTS_DIR / f'{action}.sh',
                             os.X_OK):
                         script_files += ray.ScriptFile.by_string(action)
 
@@ -528,18 +539,18 @@ class SignaledSession(OperatingSession):
             dirs.clear()        
 
     def _nsm_server_list(self, path, args, src_addr):
-        if self.root:
+        if self.root.is_absolute():
             for root, dirs, files in os.walk(self.root):
                 #exclude hidden files and dirs
                 files = [f for f in files if not f.startswith('.')]
                 dirs[:] = [d for d in dirs  if not d.startswith('.')]
 
-                if root == self.root:
+                if root == str(self.root):
                     continue
 
                 for file in files:
                     if file in ('raysession.xml', 'session.nsm'):
-                        basefolder = root.replace(self.root + '/', '', 1)
+                        basefolder = str(Path(root).relative_to(self.root))
                         self.send(src_addr, '/reply', path, basefolder)
 
         self.send(src_addr, '/reply', path, "")
@@ -547,15 +558,12 @@ class SignaledSession(OperatingSession):
     @session_operation
     def _ray_server_new_session(self, path, args, src_addr):
         if len(args) == 2 and args[1]:
+            session_name: str
             session_name, template_name = args
 
-            spath = ''
-            if session_name.startswith('/'):
-                spath = session_name
-            else:
-                spath = "%s/%s" % (self.root, session_name)
+            spath = self.root / session_name
 
-            if not os.path.exists(spath):
+            if not spath.exists():
                 self.steps_order = [self.save,
                                     self.close_no_save_clients,
                                     self.snapshot,
@@ -597,13 +605,9 @@ class SignaledSession(OperatingSession):
                 self._send_error(ray.Err.CREATE_FAILED, 'invalid template name')
                 return
 
-        spath = ''
-        if session_name.startswith('/'):
-            spath = session_name
-        else:
-            spath = "%s/%s" % (self.root, session_name)
+        spath = self.root / session_name
 
-        if spath == self.path:
+        if spath == Path(self.path):
             self._send_error(ray.Err.SESSION_LOCKED,
                 _translate('GUIMSG', 'session %s is already opened !')
                     % highlight_text(session_name))
@@ -613,7 +617,7 @@ class SignaledSession(OperatingSession):
         if (multi_daemon_file
                 and not multi_daemon_file.is_free_for_session(spath)):
             Terminal.warning("Session %s is used by another daemon"
-                              % highlight_text(spath))
+                              % highlight_text(str(spath)))
 
             self._send_error(ray.Err.SESSION_LOCKED,
                 _translate('GUIMSG',
@@ -622,7 +626,7 @@ class SignaledSession(OperatingSession):
             return
 
         # don't use template if session folder already exists
-        if os.path.exists(spath):
+        if spath.exists():
             template_name = ''
 
         self.steps_order = []
@@ -665,19 +669,19 @@ class SignaledSession(OperatingSession):
                       "'/' is not allowed in new_session_name")
             return False
 
-        tmp_session = self._new_dummy_session(self.root)
+        tmp_session = self._new_dummy_session(str(self.root))
         tmp_session.ray_server_rename_session(path, args, src_addr)
 
     def _ray_server_save_session_template(self, path, args, src_addr):
         if len(args) == 2:
             session_name, template_name = args
-            sess_root = self.root
+            sess_root = str(self.root)
             net = False
         else:
             session_name, template_name, sess_root = args
             net = True
 
-        if (sess_root != self.root
+        if (sess_root != str(self.root)
                 or session_name != self.get_short_path()):
             tmp_session = self._new_dummy_session(sess_root)
             tmp_session.ray_server_save_session_template(
@@ -701,7 +705,7 @@ class SignaledSession(OperatingSession):
             return
 
         del self.preview_dummy_session
-        self.preview_dummy_session = DummySession(self.root)
+        self.preview_dummy_session = DummySession(str(self.root))
         self.preview_dummy_session.ray_server_get_session_preview(
             path, args, src_addr, self._folder_sizes_and_dates)
 
@@ -848,14 +852,9 @@ class SignaledSession(OperatingSession):
     @session_operation
     def _ray_session_duplicate(self, path, args, src_addr):
         new_session_full_name: str = args[0]
+        spath = self.root / new_session_full_name
 
-        spath = ''
-        if new_session_full_name.startswith('/'):
-            spath = new_session_full_name
-        else:
-            spath = "%s/%s" % (self.root, new_session_full_name)
-
-        if os.path.exists(spath):
+        if spath.exists():
             self._send_error(ray.Err.CREATE_FAILED,
                 _translate('GUIMSG', "%s already exists !")
                     % highlight_text(spath))
@@ -884,21 +883,17 @@ class SignaledSession(OperatingSession):
 
     def _ray_session_duplicate_only(self, path, args: list[str], src_addr):
         session_to_load, new_session, sess_root = args
+        spath = Path(sess_root) / new_session
 
-        spath = ''
-        if new_session.startswith('/'):
-            spath = new_session
-        else:
-            spath = "%s/%s" % (sess_root, new_session)
-
-        if os.path.exists(spath):
+        if spath.exists():
             self.send(src_addr, '/ray/net_daemon/duplicate_state', 1)
             self.send(src_addr, '/error', path, ray.Err.CREATE_FAILED,
                       _translate('GUIMSG', "%s already exists !")
-                        % highlight_text(spath))
+                        % highlight_text(str(spath)))
             return
 
-        if sess_root == self.root and session_to_load == self.get_short_path():
+        if (sess_root == str(self.root)
+                and session_to_load == self.get_short_path()):
             if (self.steps_order
                     or self.file_copier.is_active()):
                 self.send(src_addr, '/ray/net_daemon/duplicate_state', 1)
@@ -1154,7 +1149,7 @@ class SignaledSession(OperatingSession):
         # @session_operation remember them but this is not needed here
         self._forget_osc_args()
 
-        dummy_session = DummySession(self.root)
+        dummy_session = DummySession(str(self.root))
         dummy_session.dummy_load(other_session)
         
         # hopefully for a dummy session,
@@ -2003,8 +1998,7 @@ class SignaledSession(OperatingSession):
         if self.root in self.recent_sessions.keys():
             to_remove_list = list[str]()
             for sess in self.recent_sessions[self.root]:
-                if not os.path.exists(
-                        "%s/%s/raysession.xml" % (self.root, sess)):
+                if not Path(self.root / sess / 'raysession.xml').exists():
                     to_remove_list.append(sess)
             for sess in to_remove_list:
                 self.recent_sessions[self.root].remove(sess)
@@ -2017,7 +2011,7 @@ class SignaledSession(OperatingSession):
         self.next_function()
 
     def dummy_load_and_template(self, session_name, template_name, sess_root):
-        tmp_session = self._new_dummy_session(sess_root)
+        tmp_session = self._new_dummy_session(str(sess_root))
         tmp_session.dummy_load_and_template(session_name, template_name)
 
     def terminate(self):

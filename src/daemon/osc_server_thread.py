@@ -1436,7 +1436,7 @@ class OscServerThread(ClientCommunicating):
         gui_addr.gui_pid = gui_pid
 
         self.send(gui_addr, "/ray/gui/server/announce", ray.VERSION,
-                  self.server_status, self.options, self.session.root,
+                  self.server_status, self.options, str(self.session.root),
                   int(is_net_free))
 
         self.send(gui_addr, "/ray/gui/server/status", self.server_status)
@@ -1515,7 +1515,7 @@ class OscServerThread(ClientCommunicating):
         self.controller_list.append(controller)
         self.send(control_address, "/ray/control/server/announce",
                   ray.VERSION, self.server_status, self.options,
-                  self.session.root, 1)
+                  str(self.session.root), 1)
 
     def send_controller_message(self, message):
         for controller in self.controller_list:

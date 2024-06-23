@@ -12,7 +12,6 @@ from PyQt5.QtXml import QDomDocument
 import xml.etree.ElementTree as ET
 
 import xdg
-from daemon.session_signaled import client_action
 import ray
 from server_sender import ServerSender
 from daemon_tools  import (TemplateRoots, Terminal, RS,
@@ -1295,7 +1294,7 @@ class Client(ServerSender, ray.ClientData):
             return
 
         if (self.protocol == ray.Protocol.RAY_NET
-                and not self.session.path.startswith(self.session.root + '/')):
+                and not Path(self.session.path).is_relative_to(self.session.root)):
             self._send_error_to_caller(OSC_SRC_START, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG',
                     "Impossible to run Ray-Net client when session is not in root folder"))
@@ -2207,7 +2206,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             new_session_name = X_SESSION_X
 
         elif template_save == ray.Template.SESSION_SAVE_NET:
-            spath = (Path(self.session.root)
+            spath = (self.session.root
                      / TemplateRoots.net_session_name
                      / new_session_full_name)
             new_session_name = X_SESSION_X

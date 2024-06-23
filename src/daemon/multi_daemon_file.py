@@ -86,7 +86,7 @@ class MultiDaemonFile:
 
     def _set_attributes(self, element: QDomElement):
         element.setAttribute('net_daemon_id', self.server.net_daemon_id)
-        element.setAttribute('root', self.session.root)
+        element.setAttribute('root', str(self.session.root))
         element.setAttribute('session_path', self.session.path)
         element.setAttribute('pid', os.getpid())
         element.setAttribute('port', self.server.port)
@@ -178,7 +178,7 @@ class MultiDaemonFile:
         xml_content.removeChild(node)
         self._write_file()
 
-    def is_free_for_root(self, daemon_id, root_path)->bool:
+    def is_free_for_root(self, daemon_id, root_path: Path) -> bool:
         if not self._open_file():
             return True
 
@@ -189,7 +189,7 @@ class MultiDaemonFile:
             node = nodes.at(i)
             dxe = node.toElement()
             if (dxe.attribute('net_daemon_id') == str(daemon_id)
-                    and dxe.attribute('root') == root_path):
+                    and dxe.attribute('root') == str(root_path)):
                 pid = dxe.attribute('pid')
                 if pid.isdigit() and self._pid_exists(int(pid)):
                     return False
@@ -224,7 +224,7 @@ class MultiDaemonFile:
 
         return True
 
-    def get_all_session_paths(self)->list:
+    def get_all_session_paths(self) -> list[str]:
         if not self._open_file():
             return []
 
