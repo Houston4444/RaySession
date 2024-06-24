@@ -1,6 +1,7 @@
 
 import json
 import os
+from pathlib import Path
 import tempfile
 import time
 from typing import TYPE_CHECKING
@@ -206,12 +207,11 @@ class CanvasSaver(ServerSender):
             else:
                 group_positions.append(gp)
 
-    def load_json_session_canvas(self, session_path: str):
+    def load_json_session_canvas(self, session_path: Path):
         self.group_positions_session.clear()
 
-        session_canvas_file = "%s/.%s" % (session_path, JSON_PATH)
-
-        if not os.path.exists(session_canvas_file):
+        session_canvas_file = session_path / f'.{JSON_PATH}'
+        if not session_canvas_file.exists():
             return
 
         with open(session_canvas_file, 'r') as f:
@@ -244,8 +244,8 @@ class CanvasSaver(ServerSender):
                 if not [g for g in self.group_positions_session if g.is_same(gpos)]:
                     self.group_positions_session.append(gpos)
 
-    def save_json_session_canvas(self, session_path: str):
-        session_json_path = "%s/.%s" % (session_path, JSON_PATH)
+    def save_json_session_canvas(self, session_path: Path):
+        session_json_path = session_path / f'.{JSON_PATH}'
 
         if not self.group_positions_session:
             return
