@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 from pathlib import Path
 
 from PyQt5.QtCore import (QCoreApplication, QStandardPaths, QSettings,
@@ -71,10 +71,12 @@ def is_pid_child_of(child_pid, parent_pid) -> bool:
 
     return False
 
-def highlight_text(string: str) -> str:
+def highlight_text(string: Union[str, Path]) -> str:
+    string = str(string)
+
     if "'" in string:
-        return '"%s"' % string
-    return "'%s'" % string
+        return f'"{string}"'
+    return f"'{string}'"
 
 def init_daemon_tools():
     if CommandLineArgs.config_dir:

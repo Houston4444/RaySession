@@ -1,5 +1,7 @@
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
+
 from PyQt5.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 
 import ray
@@ -93,22 +95,22 @@ class StepScripter(Scripter):
         self._step_str = ''
         self._stepper_has_call = False
 
-    def _get_script_dirs(self, spath):
+    def _get_script_dirs(self, spath: Path) -> tuple[Path, Path]:
         base_path = spath
-        scripts_dir = ''
-        parent_scripts_dir = ''
+        scripts_dir = Path()
+        parent_scripts_dir = Path()
 
-        while base_path not in ('/', ''):
-            tmp_scripts_dir = "%s/%s" % (base_path, ray.SCRIPTS_DIR)
-            if os.path.isdir(tmp_scripts_dir):
-                if not scripts_dir:
+        while base_path.name:
+            tmp_scripts_dir = base_path / ray.SCRIPTS_DIR
+            if tmp_scripts_dir.is_dir():
+                if not scripts_dir.name:
                     scripts_dir = tmp_scripts_dir
                 else:
                     parent_scripts_dir = tmp_scripts_dir
                     break
-
-            base_path = dirname(base_path)
-
+            
+            base_path = base_path.parent
+            
         return (scripts_dir, parent_scripts_dir)
 
     def _process_started(self):
@@ -119,19 +121,20 @@ class StepScripter(Scripter):
         self.session.step_scripter_finished()
         self._stepper_has_call = False
 
-    def start(self, step_str, arguments, src_addr=None, src_path=''):
+    def start(self, step_str: str, arguments, src_addr=None, src_path=''):
         if self.is_running():
             return False
 
         if self.session.path is None:
             return False
 
-        scripts_dir, parent_scripts_dir = self._get_script_dirs(
-                                                            str(self.session.path))
-        future_scripts_dir, future_parent_scripts_dir = self._get_script_dirs(
-                                            self.session.future_session_path)
+        scripts_dir, parent_scripts_dir = \
+            self._get_script_dirs(self.session.path)
+        future_scripts_dir, future_parent_scripts_dir = \
+            self._get_script_dirs(self.session.future_session_path)
 
-        script_path = "%s/%s.sh" % (scripts_dir, step_str)
+        script_path = scripts_dir / f'{step_str}.sh'
+        
         if not os.access(script_path, os.X_OK):
             return False
 
@@ -148,16 +151,16 @@ class StepScripter(Scripter):
         process_env = QProcessEnvironment.systemEnvironment()
         process_env.insert('RAY_CONTROL_PORT', str(self.get_server_port()))
         process_env.insert('RAY_SCRIPTS_DIR', scripts_dir)
-        process_env.insert('RAY_PARENT_SCRIPTS_DIR', parent_scripts_dir)
+        process_env.insert('RAY_PARENT_SCRIPTS_DIR', str(parent_scripts_dir))
         process_env.insert('RAY_FUTURE_SESSION_PATH',
                            self.session.future_session_path)
-        process_env.insert('RAY_FUTURE_SCRIPTS_DIR', future_scripts_dir)
+        process_env.insert('RAY_FUTURE_SCRIPTS_DIR', str(future_scripts_dir))
         process_env.insert('RAY_SWITCHING_SESSION',
                            str(self.session.switching_session).lower())
         process_env.insert('RAY_SESSION_PATH', str(self.session.path))
 
         self._process.setProcessEnvironment(process_env)
-        self._process.start(script_path, [str(a) for a in arguments])
+        self._process.start(str(script_path), [str(a) for a in arguments])
         return True
 
     def get_step(self):
@@ -201,9 +204,9 @@ class ClientScripter(Scripter):
         if self._client.session.path is None:
             return False
 
-        scripts_dir = "%s/%s.%s" % \
-            (self._client.session.path, ray.SCRIPTS_DIR, self._client.client_id)
-        script_path = "%s/%s.sh" % (scripts_dir, command_string)
+        scripts_dir = (self._client.session.path
+                       / f'{ray.SCRIPTS_DIR}.{self._client.client_id}')
+        script_path = scripts_dir / f'{command_string}.sh'
 
         if not os.access(script_path, os.X_OK):
             return False
@@ -220,7 +223,7 @@ class ClientScripter(Scripter):
 
         process_env = QProcessEnvironment.systemEnvironment()
         process_env.insert('RAY_CONTROL_PORT', str(self.get_server_port()))
-        process_env.insert('RAY_CLIENT_SCRIPTS_DIR', scripts_dir)
+        process_env.insert('RAY_CLIENT_SCRIPTS_DIR', str(scripts_dir))
         process_env.insert('RAY_CLIENT_ID', self._client.client_id)
         process_env.insert('RAY_CLIENT_EXECUTABLE',
                            self._client.executable_path)
@@ -231,7 +234,7 @@ class ClientScripter(Scripter):
             _translate('GUIMSG', '--- Custom script %s started...%s')
                     % (highlight_text(script_path), self._client.client_id))
 
-        self._process.start(script_path, [])
+        self._process.start(str(script_path), [])
         return True
 
     def pending_command(self):
