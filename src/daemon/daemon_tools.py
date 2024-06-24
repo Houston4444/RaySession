@@ -107,7 +107,7 @@ class AppTemplate:
     template_name: str
     template_client: 'Client'
     display_name: str
-    templates_root: str
+    templates_root: Path
 
 
 class RS:

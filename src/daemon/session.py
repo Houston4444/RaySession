@@ -2173,7 +2173,7 @@ for better organization.""")
         QCoreApplication.quit()
 
     def add_client_template(self, src_addr, src_path,
-                            template_name, factory=False, auto_start=True,
+                            template_name: str, factory=False, auto_start=True,
                             unique_id=''):
         if self.path is None:
             return
@@ -2188,13 +2188,12 @@ for better organization.""")
 
         for t in templates_database:
             if t.template_name == template_name:
-                full_name_files = list[str]()
-                template_path = os.path.join(t.templates_root, template_name)
+                file_paths = list[Path]()
+                template_path = t.templates_root / template_name
 
-                if t.templates_root and os.path.isdir(template_path):
-                    for file in os.listdir(template_path):
-                        full_name_files.append(
-                            os.path.join(template_path, file))
+                if t.templates_root.name and template_path.is_dir():
+                    for file_path in template_path.iterdir():
+                        file_paths.append(file_path)
 
                 template_client = t.template_client
                 client = Client(self)
@@ -2242,10 +2241,10 @@ for better organization.""")
                                 ray.Err.NOT_NOW)
                     return
                 
-                if full_name_files:
+                if file_paths:
                     client.set_status(ray.ClientStatus.PRECOPY)
                     self.file_copier.start_client_copy(
-                        client.client_id, [Path(fnf) for fnf in full_name_files], self.path,
+                        client.client_id, file_paths, self.path,
                         self.add_client_template_step_1,
                         self.add_client_template_aborted,
                         [src_addr, src_path, client],
