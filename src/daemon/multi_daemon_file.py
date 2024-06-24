@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import TYPE_CHECKING, Union
 from PyQt5.QtXml import QDomDocument, QDomElement
@@ -9,7 +10,10 @@ if TYPE_CHECKING:
     from session import Session
     from osc_server_thread import OscServerThread
 
-instance = None
+
+_logger = logging.getLogger(__name__)
+_instance = None
+
 
 class Daemon:
     net_daemon_id = 0
@@ -22,7 +26,7 @@ class Daemon:
 
 
 class MultiDaemonFile:
-    file_path = '/tmp/RaySession/multi-daemon.xml'
+    file_path = Path('/tmp/RaySession/multi-daemon.xml')
 
     def __init__(self, session: 'Session', server: 'OscServerThread'):
         self.session = session
@@ -30,19 +34,16 @@ class MultiDaemonFile:
 
         self._xml = QDomDocument()
 
-        global instance
-        instance = self
+        global _instance
+        _instance = self
 
         self._locked_session_paths = set()
 
     @staticmethod
     def get_instance():
-        return instance
+        return _instance
 
-    def _pid_exists(self, pid)->bool:
-        if isinstance(pid, str):
-            pid = int(pid)
-
+    def _pid_exists(self, pid: int) -> bool:
         try:
             os.kill(pid, 0)
         except OSError:
@@ -52,24 +53,24 @@ class MultiDaemonFile:
 
     def _remove_file(self):
         try:
-            os.remove(self.file_path)
-        except:
+            self.file_path.unlink(missing_ok=True)
+        except BaseException as e:
+            _logger.warning(
+                f"Failed to remove multi_daemon_file {self.file_path}\n"
+                f"{str(e)}")
             return
 
-    def _open_file(self)->bool:
-        if not os.path.exists(self.file_path):
-            dir_path = os.path.dirname(self.file_path)
-            if not os.path.exists(dir_path):
-                os.makedirs(dir_path)
-                # give read/write access for all users
-                os.chmod(dir_path, 0o777)
-
+    def _open_file(self) -> bool:
+        if not self.file_path.exists():
+            self.file_path.parent.mkdir(parents=True, exist_ok=True)
+            # give read/write access for all users
+            os.chmod(self.file_path.parent, 0o777)
+            
             return False
 
         try:
-            file = open(self.file_path, 'r')
-            self._xml.setContent(file.read())
-            file.close()
+            with open(self.file_path, 'r') as file:
+                self._xml.setContent(file.read())
             return True
 
         except:
@@ -78,9 +79,8 @@ class MultiDaemonFile:
 
     def _write_file(self):
         try:
-            file = open(self.file_path, 'w')
-            file.write(self._xml.toString())
-            file.close()
+            with open(self.file_path, 'w') as file:
+                file.write(self._xml.toString())
         except:
             return
 
@@ -178,7 +178,7 @@ class MultiDaemonFile:
         xml_content.removeChild(node)
         self._write_file()
 
-    def is_free_for_root(self, daemon_id, root_path: Path) -> bool:
+    def is_free_for_root(self, daemon_id: int, root_path: Path) -> bool:
         if not self._open_file():
             return True
 
@@ -251,8 +251,8 @@ class MultiDaemonFile:
         self._locked_session_paths.discard(str(path))
         self.update()
 
-    def get_daemon_list(self)->list:
-        daemon_list = []
+    def get_daemon_list(self) -> list[Daemon]:
+        daemon_list = list[Daemon]()
         has_dirty_pid = False
 
         if not self._open_file():
@@ -277,7 +277,7 @@ class MultiDaemonFile:
             if net_daemon_id.isdigit():
                 daemon.net_daemon_id = net_daemon_id
             if pid.isdigit():
-                daemon.pid = pid
+                daemon.pid = int(pid)
             if port.isdigit():
                 daemon.port = port
 
