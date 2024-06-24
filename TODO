@@ -25,8 +25,4 @@ régler le nb de sessions récentes dans les préfs
 favoriser le démon unique
 
 
-str -> Path
-    canvas_saver.load_json_session_canvas
 
-    scripter._get_scripts_dir
-    ClientScripter.start

@@ -1061,7 +1061,7 @@ class OperatingSession(Session):
             self.save_error(ray.Err.CREATE_FAILED)
             return
 
-        self.canvas_saver.save_json_session_canvas(str(self.path))
+        self.canvas_saver.save_json_session_canvas(self.path)
 
         full_notes_path = self.path / ray.NOTES_PATH
 
@@ -1847,7 +1847,7 @@ for better organization.""")
             nsm_file.close()
             self.send_gui('/ray/gui/session/is_nsm')
 
-        self.canvas_saver.load_json_session_canvas(str(spath))
+        self.canvas_saver.load_json_session_canvas(spath)
 
         full_notes_path = spath / ray.NOTES_PATH
 
