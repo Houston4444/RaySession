@@ -924,7 +924,7 @@ class SignaledSession(OperatingSession):
                               self.close_no_save_clients,
                               (self.snapshot, '', snapshot, True),
                               (self.close, True),
-                              (self.init_snapshot, str(self.path), snapshot),
+                              (self.init_snapshot, self.path, snapshot),
                               (self.preload, str(self.path)),
                               self.take_place,
                               self.load,

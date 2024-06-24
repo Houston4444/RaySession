@@ -1355,7 +1355,7 @@ for better organization.""")
         self.set_server_status(ray.ServerStatus.READY)
         self._forget_osc_args()
 
-    def init_snapshot(self, spath: str, snapshot: str):
+    def init_snapshot(self, spath: Path, snapshot: str):
         self.set_server_status(ray.ServerStatus.REWIND)
         if self.snapshoter.load(spath, snapshot, self.init_snapshot_error):
             self.next_function()

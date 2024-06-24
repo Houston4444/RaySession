@@ -96,7 +96,7 @@ class Snapshoter(QObject):
     def _run_git_process(self, *all_args) -> int:
         return self._run_git_process_at(str(self.session.path), *all_args)
 
-    def _run_git_process_at(self, spath, *all_args) -> int:
+    def _run_git_process_at(self, spath: str, *all_args) -> int:
         self._git_command = ''
         for arg in all_args:
             self._git_command += ' %s' % arg
@@ -511,15 +511,15 @@ class Snapshoter(QObject):
 
         # self.adder_process.finished is connected to self._save_step_1
 
-    def load(self, spath: str, snapshot: str, error_function: Callable):
+    def load(self, spath: Path, snapshot: str, error_function: Callable):
         self._error_function = error_function
 
         snapshot_ref = snapshot.partition('\n')[0].partition(':')[0]
 
-        if not self._run_git_process_at(spath, 'reset', '--hard'):
+        if not self._run_git_process_at(str(spath), 'reset', '--hard'):
             return False
 
-        if not self._run_git_process_at(spath, 'checkout', snapshot_ref):
+        if not self._run_git_process_at(str(spath), 'checkout', snapshot_ref):
             return False
         return True
 
