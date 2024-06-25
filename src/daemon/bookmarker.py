@@ -456,7 +456,7 @@ class PickerTypeKde5(PickerType):
 
 class BookMarker:
     def __init__(self):
-        self._bookmarks_memory = "%s/bookmarks.xml" % get_app_config_path()
+        self._bookmarks_memory = get_app_config_path() / 'bookmarks.xml'
         self._daemon_port = 0
 
         home = Path(os.getenv('HOME'))
@@ -480,14 +480,14 @@ class BookMarker:
         xml = QDomDocument()
         file_exists = False
 
-        if os.path.exists(self._bookmarks_memory):
+        if self._bookmarks_memory.exists():
             try:
-                file = open(self._bookmarks_memory, 'r')
-                xml.setContent(file.read())
+                with open(self._bookmarks_memory, 'r') as file:
+                    xml.setContent(file.read())
                 file_exists = True
             except:
                 try:
-                    os.remove(self._bookmarks_memory)
+                    self._bookmarks_memory.unlink()
                 except:
                     return None
 
@@ -499,8 +499,8 @@ class BookMarker:
 
     def _write_xml_file(self, xml: QDomDocument):
         try:
-            file = open(self._bookmarks_memory, 'w')
-            file.write(xml.toString())
+            with open(self._bookmarks_memory, 'w') as file:
+                file.write(xml.toString())
         except:
             return
 
