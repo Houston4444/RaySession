@@ -30,8 +30,7 @@ from client import Client
 from scripter import StepScripter
 from canvas_saver import CanvasSaver
 from daemon_tools import (
-    TemplateRoots, RS, Terminal,
-    dirname, basename, highlight_text)
+    TemplateRoots, RS, Terminal, highlight_text)
 import ardour_templates
 import templates_database
 from xml_tools import XmlElement
@@ -196,7 +195,7 @@ class Session(ServerSender):
     def _new_client(self, executable: str, client_id=None)->Client:
         client = Client(self)
         client.executable_path = executable
-        client.name = basename(executable)
+        client.name = Path(executable).name
         client.client_id = client_id
         if not client_id:
             client.client_id = self.generate_client_id(executable)
@@ -407,7 +406,7 @@ class Session(ServerSender):
 
     def generate_client_id(self, wanted_id="", abstract=False) -> str:
         self._update_forbidden_ids_set()
-        wanted_id = basename(wanted_id)
+        wanted_id = Path(wanted_id).name
 
         if wanted_id:
             wanted_id = self.generate_abstract_client_id(wanted_id)

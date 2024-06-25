@@ -14,8 +14,7 @@ import ray
 from client import Client
 from multi_daemon_file import MultiDaemonFile
 from signaler import Signaler
-from daemon_tools import (Terminal, RS, dirname,
-                          is_pid_child_of, highlight_text)
+from daemon_tools import Terminal, RS, is_pid_child_of, highlight_text
 from session import OperatingSession
 import xdg
 from patch_rewriter import rewrite_jack_patch_files
@@ -130,18 +129,17 @@ class SignaledSession(OperatingSession):
         return new_dummy
 
     def save_folder_sizes_cache_file(self):
-        cache_dir = dirname(self._cache_folder_sizes_path)
-        if not os.path.exists(cache_dir):
+        cache_dir = self._cache_folder_sizes_path.parent
+        if not cache_dir.exists():
             try:
-                os.makedirs(cache_dir)
+                cache_dir.mkdir(parents=True)
             except:
                 # can't save cache file, this is really not strong
                 return
         
         try:
-            file = open(self._cache_folder_sizes_path, 'w')
-            json.dump(self._folder_sizes_and_dates, file)
-            file.close()
+            with open(self._cache_folder_sizes_path, 'w') as file:
+                json.dump(self._folder_sizes_and_dates, file)
         except:
             # cache file save failed, not strong
             pass

@@ -22,13 +22,6 @@ settings = QSettings()
 # key: executable, value: desktop_file name
 exec_and_desktops = dict[str, str]()
 
-
-def dirname(*args) -> str:
-    return os.path.dirname(*args)
-
-def basename(*args) -> str:
-    return os.path.basename(*args)
-
 def get_app_config_path() -> Path:
     return (Path(
         QStandardPaths.writableLocation(QStandardPaths.ConfigLocation))

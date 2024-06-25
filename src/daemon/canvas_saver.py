@@ -9,7 +9,7 @@ from liblo import Address
 
 import ray
 
-from daemon_tools import RS, dirname, Terminal
+from daemon_tools import RS, Terminal
 from server_sender import ServerSender
 from jack_renaming_tools import group_belongs_to_client
 
@@ -39,10 +39,10 @@ class CanvasSaver(ServerSender):
         self.group_positions_session = list[ray.GroupPosition]()
         self.group_positions_config = list[ray.GroupPosition]()
         self.portgroups = list[ray.PortGroupMemory]()
-        self._config_json_path = "%s/%s" % (
-            dirname(RS.settings.fileName()), JSON_PATH)
+        self._config_json_path = \
+            Path(RS.settings.fileName()).parent / JSON_PATH
 
-        if not os.path.exists(self._config_json_path):
+        if not self._config_json_path.exists():
             return
 
         with open(self._config_json_path, 'r') as f:

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 
 import ray
-from daemon_tools import Terminal, dirname, highlight_text
+from daemon_tools import Terminal, highlight_text
 from server_sender import ServerSender
 
 if TYPE_CHECKING:
