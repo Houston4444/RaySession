@@ -624,11 +624,10 @@ class OscServerThread(ClientCommunicating):
 
         template_list = list[str]()
 
-        all_files = os.listdir(TemplateRoots.user_sessions)
-        for file in all_files:
-            if os.path.isdir("%s/%s" % (TemplateRoots.user_sessions, file)):
-                template_list.append(file)
-
+        for file in TemplateRoots.user_sessions.iterdir():
+            if file.is_dir():
+                template_list.append(file.name)
+                
                 if len(template_list) == 100:
                     self.send(src_addr, '/reply', path, *template_list)
                     template_list.clear()
