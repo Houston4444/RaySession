@@ -86,7 +86,7 @@ def client_action(func):
 # This is not the case for Session and OperatingSession.
 # This session receives signals from OSC server.
 class SignaledSession(OperatingSession):
-    def __init__(self, root: str):
+    def __init__(self, root: Path):
         OperatingSession.__init__(self, root)
 
         signaler.osc_recv.connect(self.osc_receive)
@@ -123,7 +123,7 @@ class SignaledSession(OperatingSession):
         self._next_session_id += 1
         return to_return
 
-    def _new_dummy_session(self, root: str):
+    def _new_dummy_session(self, root: Path):
         new_dummy = DummySession(root, self._get_new_dummy_session_id())
         self.dummy_sessions.append(new_dummy)
         return new_dummy
@@ -667,7 +667,7 @@ class SignaledSession(OperatingSession):
                       "'/' is not allowed in new_session_name")
             return False
 
-        tmp_session = self._new_dummy_session(str(self.root))
+        tmp_session = self._new_dummy_session(self.root)
         tmp_session.ray_server_rename_session(path, args, src_addr)
 
     def _ray_server_save_session_template(self, path, args, src_addr):
@@ -681,7 +681,7 @@ class SignaledSession(OperatingSession):
 
         if (sess_root != str(self.root)
                 or session_name != self.get_short_path()):
-            tmp_session = self._new_dummy_session(sess_root)
+            tmp_session = self._new_dummy_session(Path(sess_root))
             tmp_session.ray_server_save_session_template(
                 path, [session_name, template_name, net], src_addr)
             return
@@ -907,7 +907,7 @@ class SignaledSession(OperatingSession):
             self.next_function()
 
         else:
-            tmp_session = self._new_dummy_session(sess_root)
+            tmp_session = self._new_dummy_session(Path(sess_root))
             tmp_session.osc_src_addr = src_addr
             tmp_session.dummy_duplicate(path, args, src_addr)
 
@@ -2008,8 +2008,9 @@ class SignaledSession(OperatingSession):
                             self.load_done]
         self.next_function()
 
-    def dummy_load_and_template(self, session_name, template_name, sess_root):
-        tmp_session = self._new_dummy_session(str(sess_root))
+    def dummy_load_and_template(
+            self, session_name: str, template_name: str, sess_root: str):
+        tmp_session = self._new_dummy_session(Path(sess_root))
         tmp_session.dummy_load_and_template(session_name, template_name)
 
     def terminate(self):
@@ -2026,7 +2027,7 @@ class SignaledSession(OperatingSession):
 
 
 class DummySession(OperatingSession):
-    ''' A dummy session allows to make such operations on not current session
+    ''' A dummy session allows to make such operations on not current session.
         It is used for session preview, or duplicate a session for example.
         When a session is dummy, it has no server options
         (bookmarks, snapshots, session scripts...).
@@ -2034,7 +2035,7 @@ class DummySession(OperatingSession):
         Their file copier is not dummy, it can send OSC messages to gui,
         That is why we need a session_id to find it '''
 
-    def __init__(self, root, session_id=0):
+    def __init__(self, root: Path, session_id=0):
         OperatingSession.__init__(self, root, session_id)
         self.is_dummy = True
         self.canvas_saver.is_dummy = True

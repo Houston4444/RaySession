@@ -150,10 +150,10 @@ class StepScripter(Scripter):
 
         process_env = QProcessEnvironment.systemEnvironment()
         process_env.insert('RAY_CONTROL_PORT', str(self.get_server_port()))
-        process_env.insert('RAY_SCRIPTS_DIR', scripts_dir)
+        process_env.insert('RAY_SCRIPTS_DIR', str(scripts_dir))
         process_env.insert('RAY_PARENT_SCRIPTS_DIR', str(parent_scripts_dir))
         process_env.insert('RAY_FUTURE_SESSION_PATH',
-                           self.session.future_session_path)
+                           str(self.session.future_session_path))
         process_env.insert('RAY_FUTURE_SCRIPTS_DIR', str(future_scripts_dir))
         process_env.insert('RAY_SWITCHING_SESSION',
                            str(self.session.switching_session).lower())

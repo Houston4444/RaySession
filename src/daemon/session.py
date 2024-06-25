@@ -43,9 +43,9 @@ signaler = Signaler.instance()
 
 
 class Session(ServerSender):
-    def __init__(self, root: str, session_id=0):
+    def __init__(self, root: Path, session_id=0):
         ServerSender.__init__(self)
-        self.root = Path(root)
+        self.root = root
         self.is_dummy = False
         self.session_id = session_id
 
@@ -611,7 +611,7 @@ class Session(ServerSender):
 
 
 class OperatingSession(Session):
-    def __init__(self, root, session_id=0):
+    def __init__(self, root: Path, session_id=0):
         Session.__init__(self, root, session_id)
         self.wait_for = ray.WaitFor.NONE
 
