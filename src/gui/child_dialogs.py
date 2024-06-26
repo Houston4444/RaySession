@@ -1035,8 +1035,8 @@ class SnapShotProgressDialog(ChildDialog):
     def _server_status_changed(self, server_status):
         self.close()
 
-    def server_progress(self, value):
-        self.ui.progressBar.setValue(value * 100)
+    def server_progress(self, value: float):
+        self.ui.progressBar.setValue(int(value * 100))
 
 
 class ScriptInfoDialog(ChildDialog):
