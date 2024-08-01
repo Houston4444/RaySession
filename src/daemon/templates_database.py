@@ -437,6 +437,6 @@ def rebuild_templates_database(session: 'Session', base: str):
         
         template_names.add(template_name)
         templates_database.append(AppTemplate(
-            template_name, template_client, fde['name'], ''))
+            template_name, template_client, fde['name'], Path()))
 
 
