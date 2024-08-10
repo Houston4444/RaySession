@@ -74,7 +74,7 @@ def client_action(func):
 
         for client in sess.clients:
             if client.client_id == client_id:
-                response = func(*args, client)
+                response = func(*args, client, **kwargs)
                 break
         else:
             sess.send_error_no_client(src_addr, path, client_id)

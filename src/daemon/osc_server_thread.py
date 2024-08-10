@@ -51,8 +51,9 @@ def ray_method(path, types):
         def wrapper(*args, **kwargs):
             t_thread, t_path, t_args, t_types, src_addr, rest = args
             if CommandLineArgs.debug:
-                sys.stderr.write('\033[94mOSC::daemon_receives\033[0m %s, %s, %s, %s\n'
-                                 % (t_path, t_types, t_args, src_addr.url))
+                sys.stderr.write(
+                    '\033[94mOSC::daemon_receives\033[0m %s, %s, %s, %s\n'
+                    % (t_path, t_types, t_args, src_addr.url))
 
             response = func(*args[:-1], **kwargs)
             if response != False:
@@ -62,6 +63,7 @@ def ray_method(path, types):
         return wrapper
     return decorated
 
+
 class Controller:
     addr: liblo.Address = None
     pid = 0
@@ -69,6 +71,7 @@ class Controller:
 
 class GuiAdress(liblo.Address):
     gui_pid = 0
+
 
 # Osc server thread separated in many classes for confort.
 
