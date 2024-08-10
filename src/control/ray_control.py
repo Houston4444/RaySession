@@ -33,13 +33,21 @@ class Daemon:
         self.local_gui_pids = []
 
 
-control_operations = ('start', 'start_new', 'start_new_hidden', 'stop',
-                      'list_daemons',
-                      'get_root', 'get_port', 'get_port_gui_free',
-                      'get_pid', 'get_session_path',
-                      'has_local_gui', 'has_gui')
+CONTROL_OPERATIONS = (
+    'start',
+    'start_new',
+    'start_new_hidden',
+    'stop',
+    'list_daemons',
+    'get_root',
+    'get_port',
+    'get_port_gui_free',
+    'get_pid',
+    'get_session_path',
+    'has_local_gui',
+    'has_gui')
 
-server_operations = (
+SERVER_OPERATIONS = (
     'quit',
     'change_root',
     'set_terminal_command',
@@ -270,9 +278,9 @@ if __name__ == '__main__':
         operation = args.pop(0)
 
     if not operation_type:
-        if operation in control_operations:
+        if operation in CONTROL_OPERATIONS:
             operation_type = OPERATION_TYPE_CONTROL
-        elif operation in server_operations:
+        elif operation in SERVER_OPERATIONS:
             operation_type = OPERATION_TYPE_SERVER
         else:
             operation_type = OPERATION_TYPE_SESSION
