@@ -53,7 +53,7 @@ def session_operation(func):
 
         sess.remember_osc_args(path, osc_args, src_addr)
 
-        response = func(*args)
+        response = func(*args, **kwargs)
         sess.next_function()
 
         return response
@@ -640,6 +640,7 @@ class SignaledSession(OperatingSession):
                                  template_name, True)]
 
         self.steps_order += [(self.preload, session_name),
+                             # if open_off, clear all clients at close
                              (self.close, open_off),
                              self.take_place,
                              (self.load, open_off),
