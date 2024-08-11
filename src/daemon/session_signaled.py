@@ -1722,7 +1722,8 @@ class SignaledSession(OperatingSession):
         self.send(src_addr, '/reply', path, 'prefix changed')
 
     @client_action
-    def _ray_client_change_advanced_properties(self, path, args, src_addr, client: Client):
+    def _ray_client_change_advanced_properties(
+            self, path, args, src_addr, client: Client):
         if client.is_running():
             self.send(src_addr, '/error', path, ray.Err.NOT_NOW,
                       "impossible to change id while client is running")
