@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import logging
 import os
 import shlex
@@ -6,7 +7,7 @@ import random
 import shutil
 import subprocess
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
@@ -32,6 +33,15 @@ instance = None
 signaler = Signaler.instance()
 _translate = QCoreApplication.translate
 _logger = logging.getLogger(__name__)
+
+
+@dataclass()
+class OscPack:
+    path: str
+    args: list
+    types: str
+    src_addr: liblo.Address
+        
 
 def _path_is_valid(path: str) -> bool:
     if path.startswith(('./', '../')):
@@ -64,6 +74,30 @@ def ray_method(path, types):
     return decorated
 
 
+def ray_method2(path: str, types: str):
+    def decorated(func: Callable):
+        @liblo.make_method(path, types)
+        def wrapper(*args, **kwargs):
+            t_thread, t_path, t_args, t_types, src_addr, rest = args
+            if CommandLineArgs.debug:
+                sys.stderr.write(
+                    '\033[94mOSC::daemon_receives\033[0m %s, %s, %s, %s\n'
+                    % (t_path, t_types, t_args, src_addr.url))
+
+            response = func(
+                t_thread,
+                OscPack(t_path, t_args, t_types, src_addr),
+                **kwargs)
+
+            if response != False:
+                signaler.osc_recv.emit(t_path, t_args, t_types, src_addr)
+
+            return response
+        return wrapper
+    return decorated
+
+
+
 class Controller:
     addr: liblo.Address = None
     pid = 0
@@ -75,9 +109,11 @@ class GuiAdress(liblo.Address):
 
 # Osc server thread separated in many classes for confort.
 
-# ClientCommunicating contains NSM protocol.
-# OSC paths have to be never changed.
+
 class ClientCommunicating(liblo.ServerThread):
+    '''Contains NSM protocol.
+    OSC paths have to be never changed.'''
+    
     def __init__(self, session: 'SignaledSession', osc_num=0):
         liblo.ServerThread.__init__(self, osc_num)
         self.session = session
@@ -719,9 +755,14 @@ class OscServerThread(ClientCommunicating):
     def rayServerListSessions(self, path, args, types, src_addr):
         self._list_asker_addr = src_addr
 
-    @ray_method('/ray/server/list_sessions', 'i')
-    def rayServerListSessionsWithNet(self, path, args, types, src_addr):
-        self._list_asker_addr = src_addr
+    @ray_method2('/ray/server/list_sessions', 'i')
+    def rayServerListSessionsWithNet(self, osp: OscPack):
+        print('chapolist', osp.path, osp.args, osp.types)
+        self._list_asker_addr = osp.src_addr
+
+    # @ray_method('/ray/server/list_sessions', 'i')
+    # def rayServerListSessionsWithNet(self, path, args, types, src_addr):
+    #     self._list_asker_addr = src_addr
 
     @ray_method('/ray/server/new_session', None)
     def rayServerNewSession(self, path, args, types, src_addr):
