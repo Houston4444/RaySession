@@ -1788,7 +1788,6 @@ for better organization.""")
         sess_name = ""
 
         if is_ray_file:
-            print('marrouubma')
             try:
                 tree = ET.parse(session_ray_file)
             except BaseException as e:

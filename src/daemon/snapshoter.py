@@ -384,16 +384,17 @@ class Snapshoter(QObject):
             if not self._run_git_process('tag', '-a', ref, '-m', 'ray'):
                 return
 
-            err = self._write_history_file(ref, self._next_snapshot_name,
-                                    self._rw_snapshot)
+            err = self._write_history_file(
+                ref, self._next_snapshot_name, self._rw_snapshot)
+
             if err:
                 if self._error_function:
                     self._error_function(err)
 
             # not really a reply, not strong.
             self.session.send_gui('/reply', '/ray/session/list_snapshots',
-                                full_ref_for_gui(ref, self._next_snapshot_name,
-                                            self._rw_snapshot))
+                                  full_ref_for_gui(ref, self._next_snapshot_name,
+                                                   self._rw_snapshot))
         self._error_function = None
         self._next_snapshot_name = ''
         self._rw_snapshot = ''
@@ -511,6 +512,8 @@ class Snapshoter(QObject):
             self.has_changes()
 
         self._changes_counted = False
+        
+        print('manikal', self._n_file_changed)
 
         if self._n_file_changed:
             all_args = self._get_git_command_list('add', '-A', '-v')
