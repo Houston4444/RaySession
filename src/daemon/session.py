@@ -1461,7 +1461,7 @@ for better organization.""")
         
         self.next_function()
 
-    def duplicate_aborted(self, new_session_full_name):
+    def duplicate_aborted(self, new_session_full_name: str):
         self.steps_order.clear()
 
         # unlock the directory of the aborted session
