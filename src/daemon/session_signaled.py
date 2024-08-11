@@ -4,13 +4,14 @@ import os
 from pathlib import Path
 import subprocess
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 from liblo import Address
 from PyQt5.QtCore import QCoreApplication, QProcess
 from PyQt5.QtXml  import QDomDocument
 
 import ray
 
+from osc_pack import OscPack
 from client import Client
 from multi_daemon_file import MultiDaemonFile
 from signaler import Signaler
@@ -23,7 +24,7 @@ _translate = QCoreApplication.translate
 signaler = Signaler.instance()
 
 
-def session_operation(func):
+def session_operation(func: Callable):
     def wrapper(*args, **kwargs):
         if len(args) < 4:
             return
@@ -31,8 +32,8 @@ def session_operation(func):
         sess, path, osc_args, src_addr, *rest = args
         
         if TYPE_CHECKING:
-            assert isinstance(sess, SignaledSession)
-            assert isinstance(path, str)
+            sess: SignaledSession
+            path: str
 
         if sess.steps_order:
             sess.send(src_addr, "/error", path, ray.Err.OPERATION_PENDING,
@@ -58,7 +59,7 @@ def session_operation(func):
         return response
     return wrapper
 
-def client_action(func):
+def client_action(func: Callable):
     def wrapper(*args, **kwargs):
         if len(args) < 4:
             return
@@ -66,8 +67,9 @@ def client_action(func):
         sess, path, osc_args, src_addr, *rest = args
         
         if TYPE_CHECKING:
-            assert isinstance(sess, SignaledSession)
-            assert isinstance(osc_args, list)
+            sess = SignaledSession
+            osc_args: list
+            client: Client
 
         client_id: str = osc_args.pop(0)
 
@@ -144,7 +146,7 @@ class SignaledSession(OperatingSession):
             # cache file save failed, not strong
             pass
 
-    def osc_receive(self, path, args, types, src_addr):
+    def osc_receive(self, osp: OscPack):
         nsm_equivs = {"/nsm/server/add" : "/ray/session/add_executable",
                       "/nsm/server/save": "/ray/session/save",
                       "/nsm/server/open": "/ray/server/open_session",
@@ -155,14 +157,15 @@ class SignaledSession(OperatingSession):
                       "/nsm/server/quit" : "/ray/server/quit"}
                       # /nsm/server/list is not used here because it doesn't
                       # works as /ray/server/list_sessions
-        nsm_path = nsm_equivs.get(path)
-        func_path = nsm_path if nsm_path else path
+
+        nsm_path = nsm_equivs.get(osp.path)
+        func_path = nsm_path if nsm_path else osp.path
 
         func_name = func_path.replace('/', '_')
 
         if func_name in self.__dir__():
             function = self.__getattribute__(func_name)
-            function(path, args, src_addr)
+            function(osp.path, osp.args, osp.src_addr)
 
     def send_error_no_client(self, src_addr, path, client_id):
         self.send(src_addr, "/error", path, ray.Err.CREATE_FAILED,
@@ -334,26 +337,6 @@ class SignaledSession(OperatingSession):
                        *self.recent_sessions[self.root])
 
     def _ray_server_list_client_templates(self, path, args, src_addr):
-        # def send_gui_template_update(template_dict: dict):
-        #     template_name = template_dict['template_name']
-        #     template_client = template_dict['template_client']
-        #     display_name = template_dict['display_name']
-            
-        #     self.send_gui(
-        #         '/ray/gui/client_template_update',
-        #         int(factory), template_name, display_name,
-        #         *template_client.spread())
-        #     if template_client.protocol == ray.Protocol.RAY_HACK:
-        #         self.send_gui(
-        #             '/ray/gui/client_template_ray_hack_update',
-        #             int(factory), template_name,
-        #             *template_client.ray_hack.spread())
-        #     elif template_client.protocol == ray.Protocol.RAY_NET:
-        #         self.send_gui(
-        #             '/ray/gui/client_template_ray_net_update',
-        #             int(factory), template_name,
-        #             *template_client.ray_net.spread())
-        
         # if src_addr is an announced ray GUI
         # server will send it all templates properties
         # else, server replies only templates names

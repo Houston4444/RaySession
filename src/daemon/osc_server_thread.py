@@ -15,6 +15,7 @@ import liblo
 from PyQt5.QtCore import QCoreApplication
 
 import ray
+from osc_pack import OscPack
 from signaler import Signaler
 from multi_daemon_file import MultiDaemonFile
 from daemon_tools import (
@@ -36,12 +37,7 @@ _translate = QCoreApplication.translate
 _logger = logging.getLogger(__name__)
 
 
-@dataclass()
-class OscPack:
-    path: str
-    args: list
-    types: str
-    src_addr: liblo.Address
+
         
 
 def _path_is_valid(path: str) -> bool:
@@ -66,13 +62,11 @@ def osp_method(path: str, types: str):
                     '\033[94mOSC::daemon_receives\033[0m %s, %s, %s, %s\n'
                     % (t_path, t_types, t_args, src_addr.url))
 
-            response = func(
-                t_thread,
-                OscPack(t_path, t_args, t_types, src_addr),
-                **kwargs)
+            osp = OscPack(t_path, t_args, t_types, src_addr)
+            response = func(t_thread, osp, **kwargs)
 
             if response != False:
-                signaler.osc_recv.emit(t_path, t_args, t_types, src_addr)
+                signaler.osc_recv.emit(osp)
 
             return response
         return wrapper
