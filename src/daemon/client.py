@@ -5,6 +5,8 @@ import shutil
 import signal
 import time
 from pathlib import Path
+from enum import Enum
+
 from liblo import Address
 from PyQt5.QtCore import (QCoreApplication, QProcess,
                           QProcessEnvironment, QTimer)
@@ -20,12 +22,13 @@ from daemon_tools  import (TemplateRoots, Terminal, RS,
 from signaler import Signaler
 from scripter import ClientScripter
 from xml_tools import XmlElement
+from osc_pack import OscPack
 
 
 # only used to identify session functions in the IDE
 # 'Session' is not importable simply because it would be
 # a circular import.
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from session_signaled import SignaledSession
 
@@ -35,11 +38,14 @@ _logger.parent = logging.getLogger('__main__')
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
 
-OSC_SRC_START = 0
-OSC_SRC_OPEN = 1
-OSC_SRC_SAVE = 2
-OSC_SRC_SAVE_TP = 3
-OSC_SRC_STOP = 4
+
+class OscSrc(Enum):
+    START = 0
+    OPEN = 1
+    SAVE = 2
+    SAVE_TP = 3
+    STOP = 4
+
 
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
@@ -128,8 +134,11 @@ class Client(ServerSender, ray.ClientData):
 
         # stock osc src_addr and src_path of respectively
         # start, open, save, save_tp, stop
-        self._osc_srcs = [(None, ''), (None, ''), (None, ''),
-                          (None, ''), (None, '')]
+        # self._osc_srcs = [(None, ''), (None, ''), (None, ''),
+        #                   (None, ''), (None, '')]
+        self._osc_srcs = dict[OscSrc, Optional[OscPack]]()
+        # for osc_src in OscSrc:
+        #     self._osc_srcs[osc_src] = None
 
         self._open_timer = QTimer()
         self._open_timer.setSingleShot(True)
@@ -177,7 +186,7 @@ class Client(ServerSender, ray.ClientData):
 
         self.session.send_monitor_event('started', self.client_id)
 
-        self._send_reply_to_caller(OSC_SRC_START, 'client started')
+        self._send_reply_to_caller(OscSrc.START, 'client started')
 
         if self.is_ray_hack():
             if self.noSaveLevel():
@@ -220,9 +229,9 @@ class Client(ServerSender, ray.ClientData):
             self.session.send_monitor_event(
                 'stopped_by_itself', self.client_id)
 
-        self._send_reply_to_caller(OSC_SRC_STOP, 'client stopped')
+        self._send_reply_to_caller(OscSrc.STOP, 'client stopped')
 
-        for osc_src in (OSC_SRC_OPEN, OSC_SRC_SAVE):
+        for osc_src in (OscSrc.OPEN, OscSrc.SAVE):
             self._send_error_to_caller(osc_src, ray.Err.GENERAL_ERROR,
                     _translate('GUIMSG', '%s died !' % self.gui_msg_style()))
 
@@ -263,7 +272,7 @@ class Client(ServerSender, ray.ClientData):
                     "/error", self.session.osc_path,
                     ray.Err.LAUNCH_FAILED, error_message)
 
-            for osc_slot in (OSC_SRC_START, OSC_SRC_OPEN):
+            for osc_slot in (OscSrc.START, OscSrc.OPEN):
                 self._send_error_to_caller(osc_slot, ray.Err.LAUNCH_FAILED,
                     _translate('GUIMSG', '%s failed to launch')
                         % self.gui_msg_style())
@@ -276,34 +285,34 @@ class Client(ServerSender, ray.ClientData):
         self._stopped_since_long_ = True
         self.send_gui('/ray/gui/client/still_running', self.client_id)
 
-    def _send_reply_to_caller(self, slot, message):
-        src_addr, src_path = self._osc_srcs[slot]
-        if src_addr:
-            self.send(src_addr, '/reply', src_path, message)
-            self._osc_srcs[slot] = (None, '')
+    def _send_reply_to_caller(self, slot: OscSrc, message: str):
+        osp = self._osc_srcs.get(slot)
+        if osp is not None:
+            self.send(*osp.reply(), message)
+            self._osc_srcs[slot] = None
 
             if (self.scripter.is_running()
                     and self.scripter.pending_command() == self.pending_command):
                 self._osc_srcs[slot] = self.scripter.initial_caller()
 
-        if slot == OSC_SRC_OPEN:
+        if slot is OscSrc.OPEN:
             self._open_timer.stop()
 
-    def _send_error_to_caller(self, slot, err, message):
-        src_addr, src_path = self._osc_srcs[slot]
-        if src_addr:
-            self.send(src_addr, '/error', src_path, err, message)
-            self._osc_srcs[slot] = (None, '')
+    def _send_error_to_caller(self, slot: OscSrc, err: int, message: str):
+        osp = self._osc_srcs.get(slot)
+        if osp is not None:
+            self.send(*osp.error(), err, message)
+            self._osc_srcs[slot] = None
 
             if (self.scripter.is_running()
                     and self.scripter.pending_command() == self.pending_command):
                 self._osc_srcs[slot] = self.scripter.initial_caller()
 
-        if slot == OSC_SRC_OPEN:
+        if slot is OscSrc.OPEN:
             self._open_timer.stop()
 
     def _open_timer_timeout(self):
-        self._send_error_to_caller(OSC_SRC_OPEN,
+        self._send_error_to_caller(OscSrc.OPEN,
             ray.Err.GENERAL_ERROR,
             _translate('GUIMSG', '%s is started but not active')
                 % self.gui_msg_style())
@@ -387,7 +396,7 @@ class Client(ServerSender, ray.ClientData):
                 _translate('GUIMSG', '  %s: saved')
                     % self.gui_msg_style())
 
-            self._send_reply_to_caller(OSC_SRC_SAVE, 'client saved.')
+            self._send_reply_to_caller(OscSrc.SAVE, 'client saved.')
 
         if self.session.wait_for == ray.WaitFor.REPLY:
             self.session.end_timer_if_last_expected(self)
@@ -734,7 +743,7 @@ class Client(ServerSender, ray.ClientData):
         if xml_file.exists():
             if not os.access(xml_file, os.W_OK):
                 self._send_error_to_caller(
-                    OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                    OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
                     _translate('GUIMSG', '%s is not writeable !') % xml_file)
                 return
 
@@ -746,7 +755,7 @@ class Client(ServerSender, ray.ClientData):
                     shutil.rmtree(xml_file)
                 except:
                     self._send_error_to_caller(
-                        OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                        OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
                         _translate('GUIMSG', 'Failed to remove %s directory !') % xml_file)
                     return
 
@@ -756,7 +765,7 @@ class Client(ServerSender, ray.ClientData):
             except BaseException as e:
                 _logger.error(str(e))
                 self._send_error_to_caller(
-                    OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                    OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
                     _translate('GUIMSG', 'Failed to create directories for %s')
                         % user_clients_path)
                 return
@@ -771,7 +780,7 @@ class Client(ServerSender, ray.ClientData):
                 _logger.error(
                     'Failed to create user client templates xml file')
                 self._send_error_to_caller(
-                    OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                    OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
                     _translate('GUIMSG', 'Failed to write xml file  %s')
                         % str(xml_file))
                 return
@@ -781,7 +790,7 @@ class Client(ServerSender, ray.ClientData):
         except BaseException as e:
             _logger.error(str(e))
             self._send_error_to_caller(
-                OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
                 _translate('GUIMSG', '%s seems to not be a valid XML file.')
                     % str(xml_file))
             return
@@ -790,7 +799,7 @@ class Client(ServerSender, ray.ClientData):
         
         if root.tag != 'RAY-CLIENT-TEMPLATES':
             self._send_error_to_caller(
-                OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
                 _translate('GUIMSG', '%s is not a client templates XML file.')
                     % str(xml_file))
             return
@@ -825,7 +834,7 @@ class Client(ServerSender, ray.ClientData):
         except Exception as e:
             _logger.error(str(e))
             self._send_error_to_caller(
-                OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
                 _translate('GUIMSG', 'Failed to write XML file %s.')
                     % str(xml_file))
             return
@@ -840,11 +849,11 @@ class Client(ServerSender, ray.ClientData):
             _translate('message', 'Client template %s created')
                 % template_name)
 
-        self._send_reply_to_caller(OSC_SRC_SAVE_TP, 'client template created')
+        self._send_reply_to_caller(OscSrc.SAVE_TP, 'client template created')
 
     def _save_as_template_aborted(self, template_name):
         self.set_status(self.status)
-        self._send_error_to_caller(OSC_SRC_SAVE_TP, ray.Err.COPY_ABORTED,
+        self._send_error_to_caller(OscSrc.SAVE_TP, ray.Err.COPY_ABORTED,
             _translate('GUIMSG', 'Copy has been aborted !'))
 
     def get_links_dirname(self) -> str:
@@ -1107,7 +1116,7 @@ class Client(ServerSender, ray.ClientData):
                                 % (self.name, message, errcode))
 
             if self.pending_command == ray.Command.SAVE:
-                self._send_error_to_caller(OSC_SRC_SAVE, ray.Err.GENERAL_ERROR,
+                self._send_error_to_caller(OscSrc.SAVE, ray.Err.GENERAL_ERROR,
                                     _translate('GUIMSG', '%s failed to save!')
                                             % self.gui_msg_style())
                 
@@ -1115,7 +1124,7 @@ class Client(ServerSender, ray.ClientData):
                     'save_error', self.client_id)
 
             elif self.pending_command == ray.Command.OPEN:
-                self._send_error_to_caller(OSC_SRC_OPEN, ray.Err.GENERAL_ERROR,
+                self._send_error_to_caller(OscSrc.OPEN, ray.Err.GENERAL_ERROR,
                                     _translate('GUIMSG', '%s failed to open!')
                                             % self.gui_msg_style())
                 
@@ -1131,7 +1140,7 @@ class Client(ServerSender, ray.ClientData):
                     _translate('GUIMSG', '  %s: saved')
                         % self.gui_msg_style())
 
-                self._send_reply_to_caller(OSC_SRC_SAVE, 'client saved.')
+                self._send_reply_to_caller(OscSrc.SAVE, 'client saved.')
                 self.session.send_monitor_event(
                     'saved', self.client_id)
 
@@ -1143,7 +1152,7 @@ class Client(ServerSender, ray.ClientData):
                 self.last_open_duration = \
                                         time.time() - self._last_announce_time
 
-                self._send_reply_to_caller(OSC_SRC_OPEN, 'client opened')
+                self._send_reply_to_caller(OscSrc.OPEN, 'client opened')
 
                 self.session.send_monitor_event(
                     'ready', self.client_id)
@@ -1276,9 +1285,9 @@ class Client(ServerSender, ray.ClientData):
                     self.ignored_extensions = \
                         self.ignored_extensions.replace(ext, '')
 
-    def start(self, src_addr=None, src_path='', wait_open_to_reply=False):
-        if src_addr and not wait_open_to_reply:
-            self._osc_srcs[OSC_SRC_START] = (src_addr, src_path)
+    def start(self, osp: Optional[OscPack]=None, wait_open_to_reply=False):
+        if osp is not None and not wait_open_to_reply:
+            self._osc_srcs[OscSrc.START] = osp
 
         self.session.set_renameable(False)
 
@@ -1288,20 +1297,20 @@ class Client(ServerSender, ray.ClientData):
         self.show_gui_ordered = False
 
         if self.is_dummy:
-            self._send_error_to_caller(OSC_SRC_START, ray.Err.GENERAL_ERROR,
+            self._send_error_to_caller(OscSrc.START, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', "can't start %s, it is a dummy client !")
                     % self.gui_msg_style())
             return
 
         if (self.protocol == ray.Protocol.RAY_NET
                 and not self.session.path.is_relative_to(self.session.root)):
-            self._send_error_to_caller(OSC_SRC_START, ray.Err.GENERAL_ERROR,
+            self._send_error_to_caller(OscSrc.START, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG',
                     "Impossible to run Ray-Net client when session is not in root folder"))
             return
 
-        if self.scripter.start(ray.Command.START, src_addr,
-                               self._osc_srcs[OSC_SRC_START]):
+        if self.scripter.start(ray.Command.START, osp,
+                               self._osc_srcs.get(OscSrc.START)):
             self.set_status(ray.ClientStatus.SCRIPT)
             return
 
@@ -1422,20 +1431,20 @@ class Client(ServerSender, ray.ClientData):
         prog, *other_args = terminal_args + [self.executable_path] + arguments        
         self._process.start(prog, other_args)
 
-    def load(self, src_addr=None, src_path=''):
-        if src_addr:
-            self._osc_srcs[OSC_SRC_OPEN] = (src_addr, src_path)
+    def load(self, osp: Optional[OscPack]=None):
+        if osp is not None:
+            self._osc_srcs[OscSrc.OPEN] = osp
 
         if self.nsm_active:
-            self._send_reply_to_caller(OSC_SRC_OPEN, 'client active')
+            self._send_reply_to_caller(OscSrc.OPEN, 'client active')
             return
 
         if self.pending_command == ray.Command.STOP:
-            self._send_error_to_caller(OSC_SRC_OPEN, ray.Err.GENERAL_ERROR,
+            self._send_error_to_caller(OscSrc.OPEN, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s is exiting.') % self.gui_msg_style())
 
         if self.is_running() and self.is_dumb_client():
-            self._send_error_to_caller(OSC_SRC_OPEN, ray.Err.GENERAL_ERROR,
+            self._send_error_to_caller(OscSrc.OPEN, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s seems to can not open')
                     % self.gui_msg_style())
 
@@ -1448,11 +1457,11 @@ class Client(ServerSender, ray.ClientData):
 
         if not self.is_running():
             if self.executable_path in RS.non_active_clients:
-                if src_addr:
-                    self._osc_srcs[OSC_SRC_START] = (src_addr, src_path)
-                    self._osc_srcs[OSC_SRC_OPEN] = (None, '')
+                if osp.src_addr:
+                    self._osc_srcs[OscSrc.START] = osp
+                    self._osc_srcs[OscSrc.OPEN] = None
 
-            self.start(src_addr, src_path, True)
+            self.start(osp, wait_open_to_reply=True)
             return
 
     def terminate(self):
@@ -1504,7 +1513,7 @@ class Client(ServerSender, ray.ClientData):
         self.nsm_active = False
         self.set_status(ray.ClientStatus.LOSE)
 
-    def script_finished(self, exit_code):
+    def script_finished(self, exit_code: int):
         if self.scripter.is_asked_for_terminate():
             if self.session.wait_for == ray.WaitFor.QUIT:
                 self.session.end_timer_if_last_expected(self)
@@ -1516,21 +1525,21 @@ class Client(ServerSender, ray.ClientData):
             error_text = "script %s ended with an error code" \
                             % self.scripter.get_path()
             if scripter_pending_command == ray.Command.SAVE:
-                self._send_error_to_caller(OSC_SRC_SAVE, - exit_code,
+                self._send_error_to_caller(OscSrc.SAVE, - exit_code,
                                         error_text)
             elif scripter_pending_command == ray.Command.START:
-                self._send_error_to_caller(OSC_SRC_START, - exit_code,
+                self._send_error_to_caller(OscSrc.START, - exit_code,
                                         error_text)
             elif scripter_pending_command == ray.Command.STOP:
-                self._send_error_to_caller(OSC_SRC_STOP, - exit_code,
+                self._send_error_to_caller(OscSrc.STOP, - exit_code,
                                         error_text)
         else:
             if scripter_pending_command == ray.Command.SAVE:
-                self._send_reply_to_caller(OSC_SRC_SAVE, 'saved')
+                self._send_reply_to_caller(OscSrc.SAVE, 'saved')
             elif scripter_pending_command == ray.Command.START:
-                self._send_reply_to_caller(OSC_SRC_START, 'started')
+                self._send_reply_to_caller(OscSrc.START, 'started')
             elif scripter_pending_command == ray.Command.STOP:
-                self._send_reply_to_caller(OSC_SRC_STOP, 'stopped')
+                self._send_reply_to_caller(OscSrc.STOP, 'stopped')
 
         if scripter_pending_command == self.pending_command:
             self.pending_command = ray.Command.NONE
@@ -1549,7 +1558,7 @@ class Client(ServerSender, ray.ClientData):
             _translate('GUIMSG', '  %s: project probably loaded')
                 % self.gui_msg_style())
 
-        self._send_reply_to_caller(OSC_SRC_OPEN, 'client opened')
+        self._send_reply_to_caller(OscSrc.OPEN, 'client opened')
         self.pending_command = ray.Command.NONE
         self.set_status(ray.ClientStatus.READY)
 
@@ -1562,7 +1571,7 @@ class Client(ServerSender, ray.ClientData):
     def tell_client_session_is_loaded(self):
         if self.nsm_active and not self.is_dumb_client():
             self.message("Telling client %s that session is loaded."
-                             % self.name)
+                         % self.name)
             self.send_to_self_address("/nsm/client/session_is_loaded")
 
     def can_save_now(self):
@@ -1575,25 +1584,25 @@ class Client(ServerSender, ray.ClientData):
 
         return bool(self.nsm_active and not self.no_save_level)
 
-    def save(self, src_addr=None, src_path=''):
+    def save(self, osp: Optional[OscPack]=None):
         if self.switch_state in (ray.SwitchState.RESERVED,
                                  ray.SwitchState.NEEDED):
-            if src_addr:
-                self.send(src_addr, '/error', src_path, ray.Err.NOT_NOW,
+            if osp is not None:
+                self.send(*osp.error(), ray.Err.NOT_NOW,
                 "Save cancelled because client has not switch yet !")
             return
 
-        if src_addr:
-            self._osc_srcs[OSC_SRC_SAVE] = (src_addr, src_path)
+        if osp is not None:
+            self._osc_srcs[OscSrc.SAVE] = osp
 
         if self.is_running():
-            if self.scripter.start(ray.Command.SAVE, src_addr,
-                                   self._osc_srcs[OSC_SRC_SAVE]):
+            if self.scripter.start(ray.Command.SAVE, osp,
+                                   self._osc_srcs.get(OscSrc.SAVE)):
                 self.set_status(ray.ClientStatus.SCRIPT)
                 return
 
         if self.pending_command == ray.Command.SAVE:
-            self._send_error_to_caller(OSC_SRC_SAVE, ray.Err.GENERAL_ERROR,
+            self._send_error_to_caller(OscSrc.SAVE, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s is already saving, please wait!')
                     % self.gui_msg_style())
 
@@ -1621,22 +1630,22 @@ class Client(ServerSender, ray.ClientData):
             if self.is_capable_of(':optional-gui:'):
                 self.start_gui_hidden = not bool(self.gui_visible)
 
-    def stop(self, src_addr=None, src_path=''):
+    def stop(self, osp: Optional[OscPack]=None):
         if self.switch_state == ray.SwitchState.NEEDED:
-            if src_addr:
-                self.send(src_addr, '/error', src_path, ray.Err.NOT_NOW,
+            if osp is not None:
+                self.send(*osp.error(), ray.Err.NOT_NOW,
                 "Stop cancelled because client is needed for opening session")
             return
 
-        if src_addr:
-            self._osc_srcs[OSC_SRC_STOP] = (src_addr, src_path)
+        if osp is not None:
+            self._osc_srcs[OscSrc.STOP] = osp
 
         self.send_gui_message(_translate('GUIMSG', "  %s: stopping")
                                 % self.gui_msg_style())
 
         if self.is_running():
-            if self.scripter.start(ray.Command.STOP, src_addr,
-                                   self._osc_srcs[OSC_SRC_STOP]):
+            if self.scripter.start(ray.Command.STOP, osp,
+                                   self._osc_srcs.get(OscSrc.STOP)):
                 self.set_status(ray.ClientStatus.SCRIPT)
                 return
 
@@ -1664,7 +1673,7 @@ class Client(ServerSender, ray.ClientData):
             else:
                 self._process.terminate()
         else:
-            self._send_reply_to_caller(OSC_SRC_STOP, 'client stopped.')
+            self._send_reply_to_caller(OscSrc.STOP, 'client stopped.')
 
     def quit(self):
         self.message("Commanding %s to quit" % self.name)
@@ -2027,9 +2036,9 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             else:
                 self.desktop_file = '//not_found'
 
-    def save_as_template(self, template_name: str, src_addr=None, src_path=''):
-        if src_addr:
-            self._osc_srcs[OSC_SRC_SAVE_TP] = (src_addr, src_path)
+    def save_as_template(self, template_name: str, osp: Optional[OscPack]=None):
+        if osp is not None:
+            self._osc_srcs[OscSrc.SAVE_TP] = osp
 
         #copy files
         client_files = self.get_project_files()
@@ -2040,7 +2049,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                 template_dir.rmdir()
             else:
                 self._send_error_to_caller(
-                    OSC_SRC_SAVE_TP, ray.Err.CREATE_FAILED,
+                    OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
                     _translate('GUIMSG', 'impossible to remove %s !')
                     % highlight_text(template_dir))
                 return
@@ -2246,8 +2255,9 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             old_client_id, new_client_id,
             old_client_links_dir, new_client_links_dir)
 
-    def server_announce(self, path, args, src_addr, is_new: bool):
-        client_name, capabilities, executable_path, major, minor, pid = args
+    def server_announce(self, osp: OscPack, is_new: bool):
+        client_name, capabilities, executable_path, \
+            major, minor, pid = osp.args
 
         if self.pending_command == ray.Command.STOP:
             # assume to not answer to a dying client.
@@ -2258,12 +2268,12 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             self.message(
                 "Client is using incompatible and more recent "
                 + "API version %i.%i" % (major, minor))
-            self.send(src_addr, "/error", path, ray.Err.INCOMPATIBLE_API,
+            self.send(*osp.error(), ray.Err.INCOMPATIBLE_API,
                       "Server is using an incompatible API version.")
             return
 
         self.capabilities = capabilities
-        self.addr = src_addr
+        self.addr = osp.src_addr
         self.name = client_name
         self.nsm_active = True
         self.did_announce = True
@@ -2298,7 +2308,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             server_capabilities += ":server-control"
         server_capabilities += ":broadcast:optional-gui:no-save-level:monitor:"
 
-        self.send(src_addr, "/reply", path,
+        self.send(*osp.reply(),
                   "Well hello, stranger. Welcome to the party."
                   if is_new else "Howdy, what took you so long?",
                   ray.APP_TITLE,
@@ -2318,7 +2328,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             self.session.send_initial_monitor(self.addr)
         self.session.send_monitor_client_update(self)
 
-        self.send(src_addr, "/nsm/client/open", client_project_path,
+        self.send(osp.src_addr, "/nsm/client/open", client_project_path,
                   self.session.name, self.jack_client_name)
 
         self.pending_command = ray.Command.OPEN

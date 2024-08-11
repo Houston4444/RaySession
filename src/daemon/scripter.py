@@ -1,12 +1,13 @@
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from PyQt5.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 
 import ray
 from daemon_tools import Terminal, highlight_text
 from server_sender import ServerSender
+from osc_pack import OscPack
 
 if TYPE_CHECKING:
     from session import OperatingSession
@@ -178,16 +179,17 @@ class ClientScripter(Scripter):
         Scripter.__init__(self)
         self._client = client
         self._pending_command = ray.Command.NONE
-        self._initial_caller = (None, '')
+        self._initial_caller: Optional[OscPack] = None
 
     def _process_finished(self, exit_code, exit_status):
         Scripter._process_finished(self, exit_code, exit_status)
         self._client.script_finished(exit_code)
         self._pending_command = ray.Command.NONE
-        self._initial_caller = (None, '')
+        self._initial_caller = None
         self._src_addr = None
 
-    def start(self, command, src_addr=None, previous_slot=(None, '')):
+    def start(self, command, osp: Optional[OscPack]=None,
+              previous_slot: Optional[OscPack]=None):
         if self.is_running():
             return False
 
@@ -213,13 +215,14 @@ class ClientScripter(Scripter):
 
         self._pending_command = command
 
-        if src_addr:
+        if osp is not None:
             # Remember the caller of the function calling the script
             # Then, when script is finished
             # We could reply to this (address, path)
             self._initial_caller = previous_slot
-
-        self._src_addr = src_addr
+            self._src_addr = osp.src_addr
+        else:
+            self._src_addr = None
 
         process_env = QProcessEnvironment.systemEnvironment()
         process_env.insert('RAY_CONTROL_PORT', str(self.get_server_port()))
@@ -240,5 +243,5 @@ class ClientScripter(Scripter):
     def pending_command(self):
         return self._pending_command
 
-    def initial_caller(self):
+    def initial_caller(self) -> Optional[OscPack]:
         return self._initial_caller
