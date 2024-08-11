@@ -1,5 +1,6 @@
 #!/usr/bin/python3 -u
 
+import enum
 import os
 import signal
 import sys
@@ -9,13 +10,16 @@ import warnings
 # import subprocess and osc_server (local file) conditionnally
 # in order to answer faster in many cases.
 
-OPERATION_TYPE_NULL = 0
-OPERATION_TYPE_CONTROL = 1
-OPERATION_TYPE_SERVER = 2
-OPERATION_TYPE_SESSION = 3
-OPERATION_TYPE_CLIENT = 4
-OPERATION_TYPE_TRASHED_CLIENT = 5
-OPERATION_TYPE_ALL = 6 # for help message
+
+class OperationType(enum.Enum):
+    NULL = 0
+    CONTROL = 1
+    SERVER = 2
+    SESSION = 3
+    CLIENT = 4
+    TRASHED_CLIENT = 5
+    ALL = 6
+    'used only for help-all message'
 
 
 class Daemon:
@@ -158,7 +162,7 @@ def get_daemon_list() -> list[Daemon]:
         l_daemon_list.append(l_daemon)
     return l_daemon_list
 
-def print_help(stdout=False, category=OPERATION_TYPE_NULL):
+def print_help(stdout=False, category=OperationType.NULL):
     script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     lang_file = "help_en_US"
 
@@ -177,7 +181,7 @@ def print_help(stdout=False, category=OPERATION_TYPE_NULL):
     message = ''
     stars = 0
 
-    if category == OPERATION_TYPE_ALL:
+    if category is OperationType.ALL:
         message = full_message
     else:
         for line in full_message.split('\n'):
@@ -185,10 +189,10 @@ def print_help(stdout=False, category=OPERATION_TYPE_NULL):
                 stars += 1
 
             if (stars == 0
-                    or (stars == 1 and category == OPERATION_TYPE_CONTROL)
-                    or (stars == 2 and category == OPERATION_TYPE_SERVER)
-                    or (stars == 3 and category == OPERATION_TYPE_SESSION)
-                    or (stars >= 4 and category == OPERATION_TYPE_CLIENT)):
+                    or (stars == 1 and category is OperationType.CONTROL)
+                    or (stars == 2 and category is OperationType.SERVER)
+                    or (stars == 3 and category is OperationType.SESSION)
+                    or (stars >= 4 and category is OperationType.CLIENT)):
                 message += "%s\n" % line
 
     if stdout:
@@ -214,7 +218,7 @@ if __name__ == '__main__':
         sys.exit(100)
 
     terminate = False
-    operation_type = OPERATION_TYPE_NULL
+    operation_type = OperationType.NULL
     client_id = ''
 
     args = sys.argv[1:]
@@ -231,17 +235,17 @@ if __name__ == '__main__':
 
         if option.startswith('--help'):
             if option == '--help':
-                print_help(True, OPERATION_TYPE_NULL)
+                print_help(True, OperationType.NULL)
             elif option == '--help-all':
-                print_help(True, OPERATION_TYPE_ALL)
+                print_help(True, OperationType.ALL)
             elif option == '--help-control':
-                print_help(True, OPERATION_TYPE_CONTROL)
+                print_help(True, OperationType.CONTROL)
             elif option == '--help-server':
-                print_help(True, OPERATION_TYPE_SERVER)
+                print_help(True, OperationType.SERVER)
             elif option == '--help-session':
-                print_help(True, OPERATION_TYPE_SESSION)
+                print_help(True, OperationType.SESSION)
             elif option in ('--help-client', '--help-clients'):
-                print_help(True, OPERATION_TYPE_CLIENT)
+                print_help(True, OperationType.CLIENT)
             else:
                 print_help()
                 sys.exit(100)
@@ -267,27 +271,27 @@ if __name__ == '__main__':
     operation = args.pop(0)
     if operation in ('client', 'trashed_client'):
         if len(args) < 2:
-            print_help(False, OPERATION_TYPE_CLIENT)
+            print_help(False, OperationType.CLIENT)
             sys.exit(100)
 
-        operation_type = OPERATION_TYPE_CLIENT
+        operation_type = OperationType.CLIENT
         if operation == 'trashed_client':
-            operation_type = OPERATION_TYPE_TRASHED_CLIENT
+            operation_type = OperationType.TRASHED_CLIENT
 
         client_id = args.pop(0)
         operation = args.pop(0)
 
-    if not operation_type:
+    if operation_type is OperationType.NULL:
         if operation in CONTROL_OPERATIONS:
-            operation_type = OPERATION_TYPE_CONTROL
+            operation_type = OperationType.CONTROL
         elif operation in SERVER_OPERATIONS:
-            operation_type = OPERATION_TYPE_SERVER
+            operation_type = OperationType.SERVER
         else:
-            operation_type = OPERATION_TYPE_SESSION
+            operation_type = OperationType.SESSION
 
     arg_list = [auto_type_string(s) for s in args]
-    if operation_type in (OPERATION_TYPE_CLIENT,
-                          OPERATION_TYPE_TRASHED_CLIENT):
+    if operation_type in (OperationType.CLIENT,
+                          OperationType.TRASHED_CLIENT):
         arg_list.insert(0, client_id)
 
     if operation in ('new_session', 'open_session', 'change_root',
@@ -314,7 +318,7 @@ if __name__ == '__main__':
     else:
         daemon_started = False
 
-    if operation_type == OPERATION_TYPE_CONTROL:
+    if operation_type is OperationType.CONTROL:
         if operation == 'start':
             if daemon_started:
                 sys.stderr.write('server already started.\n')
@@ -412,20 +416,20 @@ if __name__ == '__main__':
         if daemon_port:
             at_port = "at port %i" % daemon_port
 
-        if operation_type == OPERATION_TYPE_SERVER:
+        if operation_type is OperationType.SERVER:
             if operation == 'quit':
                 sys.stderr.write('No server %s to quit !\n' % at_port)
                 sys.exit(0)
 
-        elif operation_type == OPERATION_TYPE_SESSION:
+        elif operation_type is OperationType.SESSION:
             sys.stderr.write("No server started %s. So no session to %s\n"
                                  % (at_port, operation))
             sys.exit(100)
-        elif operation_type == OPERATION_TYPE_CLIENT:
+        elif operation_type is OperationType.CLIENT:
             sys.stderr.write("No server started %s. So no client to %s\n"
                                  % (at_port, operation))
             sys.exit(100)
-        elif operation_type == OPERATION_TYPE_CLIENT:
+        elif operation_type is OperationType.TRASHED_CLIENT:
             sys.stderr.write(
                 "No server started %s. So no trashed client to %s\n"
                                  % (at_port, operation))
@@ -435,18 +439,18 @@ if __name__ == '__main__':
             sys.exit(100)
 
     osc_order_path = '/ray/'
-    if operation_type == OPERATION_TYPE_CLIENT:
+    if operation_type is OperationType.CLIENT:
         osc_order_path += 'client/'
-    elif operation_type == OPERATION_TYPE_TRASHED_CLIENT:
+    elif operation_type is OperationType.TRASHED_CLIENT:
         osc_order_path += 'trashed_client/'
-    elif operation_type == OPERATION_TYPE_SERVER:
+    elif operation_type is OperationType.SERVER:
         osc_order_path += 'server/'
-    elif operation_type == OPERATION_TYPE_SESSION:
+    elif operation_type is OperationType.SESSION:
         osc_order_path += 'session/'
 
     osc_order_path += operation
 
-    if operation_type == OPERATION_TYPE_CONTROL and operation == 'stop':
+    if operation_type is OperationType.CONTROL and operation == 'stop':
         osc_order_path = '/ray/server/quit'
 
     import osc_server  # see top of the file    
@@ -455,11 +459,11 @@ if __name__ == '__main__':
     daemon_process = None
 
     if (daemon_started
-            and not (operation_type == OPERATION_TYPE_CONTROL
+            and not (operation_type is OperationType.CONTROL
                      and operation in ('start_new', 'start_new_hidden'))):
-        if (operation_type == OPERATION_TYPE_CONTROL
+        if (operation_type is OperationType.CONTROL
                 and operation == 'stop'):
-            daemon_port_list = []
+            daemon_port_list = list[int]()
 
             if wanted_port:
                 daemon_port_list.append(wanted_port)
@@ -498,7 +502,7 @@ if __name__ == '__main__':
             process_args.append('--osc-port')
             process_args.append(str(wanted_port))
 
-        if (operation_type == OPERATION_TYPE_CONTROL
+        if (operation_type is OperationType.CONTROL
                 and operation == 'start_new_hidden'):
             process_args.append('--hidden')
             process_args.append('--no-options')
@@ -509,7 +513,7 @@ if __name__ == '__main__':
 
         server.wait_for_start()
 
-        if (operation_type == OPERATION_TYPE_CONTROL
+        if (operation_type is OperationType.CONTROL
                 and operation in ('start', 'start_new', 'start_new_hidden')):
             server.wait_for_start_only()
 
@@ -538,7 +542,7 @@ if __name__ == '__main__':
             exit_code = 104
             break
 
-    if (operation_type == OPERATION_TYPE_CONTROL
+    if (operation_type is OperationType.CONTROL
             and operation in ('start_new', 'start_new_hidden')
             and exit_code == 0):
         daemon_port = server.get_daemon_port()
