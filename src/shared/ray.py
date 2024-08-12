@@ -214,7 +214,7 @@ class WindowManager(Enum):
     WAYLAND = 2
 
 
-class Systray:
+class Systray(Enum):
     OFF = 0
     SESSION_ONLY = 1
     ALWAYS = 2

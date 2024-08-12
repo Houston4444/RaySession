@@ -393,8 +393,9 @@ class MainWindow(QMainWindow):
         # systray icon and related
         self.wild_shutdown: bool = RS.settings.value(
             'wild_shutdown', False, type=bool)
-        self.systray_mode: int = RS.settings.value(
-            'systray_mode', ray.Systray.SESSION_ONLY, type=int)
+        self.systray_mode = ray.Systray(
+            RS.settings.value(
+                'systray_mode', ray.Systray.SESSION_ONLY.value, type=int))
         self.reversed_systray_menu: bool = RS.settings.value(
             'reversed_systray_menu', False, type=bool)
 
@@ -412,8 +413,8 @@ class MainWindow(QMainWindow):
         self._build_systray_menu()
 
         if (not CommandLineArgs.under_nsm
-            and (self.systray_mode == ray.Systray.ALWAYS
-                    or (self.systray_mode == ray.Systray.SESSION_ONLY
+            and (self.systray_mode is ray.Systray.ALWAYS
+                    or (self.systray_mode is ray.Systray.SESSION_ONLY
                         and self.session.server_status != ray.ServerStatus.OFF))):
             self._systray.show()
 
@@ -496,7 +497,7 @@ class MainWindow(QMainWindow):
         self.to_daemon('/ray/session/open_folder')
 
     def change_systray_options(
-            self, systray_mode: int, wild_shutdown: bool,
+            self, systray_mode: ray.Systray, wild_shutdown: bool,
             reversed_systray_menu: bool):        
         self.systray_mode = systray_mode
         self.wild_shutdown = wild_shutdown
@@ -505,19 +506,19 @@ class MainWindow(QMainWindow):
             self.reversed_systray_menu = reversed_systray_menu
             self._build_systray_menu()
 
-        RS.settings.setValue('systray_mode', self.systray_mode)
+        RS.settings.setValue('systray_mode', self.systray_mode.value)
         RS.settings.setValue('wild_shutdown', self.wild_shutdown)
         RS.settings.setValue('reversed_systray_menu',
                              self.reversed_systray_menu)
 
-        if self.systray_mode == ray.Systray.OFF:
+        if self.systray_mode is ray.Systray.OFF:
             self._systray.hide()
-        elif self.systray_mode == ray.Systray.SESSION_ONLY:
+        elif self.systray_mode is ray.Systray.SESSION_ONLY:
             if self.session.server_status == ray.ServerStatus.OFF:
                 self._systray.hide()
             else:
                 self._systray.show()
-        elif self.systray_mode == ray.Systray.ALWAYS:
+        elif self.systray_mode is ray.Systray.ALWAYS:
             self._systray.show()
 
     def _open_systray_options(self):
@@ -941,7 +942,7 @@ class MainWindow(QMainWindow):
         self.ui.frameCurrentSession.setEnabled(
             bool(server_status != ray.ServerStatus.OFF))
 
-        if self.systray_mode == ray.Systray.SESSION_ONLY:
+        if self.systray_mode is ray.Systray.SESSION_ONLY:
             if server_status == ray.ServerStatus.OFF:
                 self._systray.hide()
             else:
