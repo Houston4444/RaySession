@@ -20,7 +20,7 @@ def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         if session.daemon_manager.launched_before:
             if (CommandLineArgs.under_nsm
-                    and session.server_status != ray.ServerStatus.OFF):
+                    and session.server_status is not ray.ServerStatus.OFF):
                 session.main_win.terminate_request = True
 
                 l_server = GuiServerThread.instance()

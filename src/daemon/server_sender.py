@@ -56,7 +56,7 @@ class ServerSender(QObject):
         if server:
             server.send_controller_message(message)
 
-    def set_server_status(self, server_status:int):
+    def set_server_status(self, server_status:ray.ServerStatus):
         if self.is_dummy:
             return
 
@@ -66,13 +66,13 @@ class ServerSender(QObject):
 
         server.set_server_status(server_status)
 
-    def get_server_status(self):
+    def get_server_status(self) -> ray.ServerStatus:
         if self.is_dummy:
-            return -1
+            return ray.ServerStatus.OFF
 
         server = OscServerThread.get_instance()
         if not server:
-            return -1
+            return ray.ServerStatus.OFF
 
         return server.server_status
 

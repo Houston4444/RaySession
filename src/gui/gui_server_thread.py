@@ -188,7 +188,7 @@ class GuiServerThread(liblo.ServerThread):
         if self.daemon_manager.is_announced():
             return
 
-        version, server_status, options, session_root, is_net_free = args
+        version, server_status_int, options, session_root, is_net_free = args
 
         if (self.session is not None
                 and self.session.main_win is not None
@@ -197,7 +197,7 @@ class GuiServerThread(liblo.ServerThread):
             self.session.main_win.waiting_for_patchbay = False
 
         self.signaler.daemon_announce.emit(
-            src_addr, version, server_status,
+            src_addr, version, ray.ServerStatus(server_status_int),
             options, session_root, is_net_free)
 
     @ray_method('/ray/gui/server/root', 's')
@@ -208,8 +208,7 @@ class GuiServerThread(liblo.ServerThread):
 
     @ray_method('/ray/gui/server/status', 'i')
     def _server_status(self, path, args, types, src_addr):
-        server_status = args[0]
-        self.signaler.server_status_changed.emit(server_status)
+        self.signaler.server_status_changed.emit(ray.ServerStatus(args[0]))
 
     @ray_method('/ray/gui/server/copying', 'i')
     def _server_copying(self, path, args, types, src_addr):

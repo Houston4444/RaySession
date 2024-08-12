@@ -2,9 +2,13 @@ import enum
 from PyQt5.QtCore import QObject, pyqtSignal
 from liblo import Address
 
+import ray
+
+
 class Signaler(QObject):
     osc_receive = pyqtSignal(str, list)
-    daemon_announce = pyqtSignal(Address, str, int, int, str, int)
+    daemon_announce = pyqtSignal(
+        Address, str, ray.ServerStatus, int, str, int)
     daemon_announce_ok = pyqtSignal()
     daemon_nsm_locked = pyqtSignal(bool)
     server_copying = pyqtSignal(bool)
@@ -18,7 +22,7 @@ class Signaler(QObject):
     reply_auto_snapshot = pyqtSignal(bool)
     server_progress = pyqtSignal(float)
     client_progress = pyqtSignal(str, float)
-    server_status_changed = pyqtSignal(int)
+    server_status_changed = pyqtSignal(object)
 
     daemon_url_request = pyqtSignal(int, str)
     daemon_url_changed = pyqtSignal(str)

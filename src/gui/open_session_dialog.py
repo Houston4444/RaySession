@@ -205,7 +205,7 @@ class SaveSessionTemplateDialog(child_dialogs.SaveTemplateSessionDialog):
         child_dialogs.SaveTemplateSessionDialog.__init__(self, parent)
         self._server_will_accept = True
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         # server will always accept, whatever the status
         pass
     
@@ -222,7 +222,7 @@ class DuplicateDialog(child_dialogs.NewSessionDialog):
         self.ui.toolButtonFolder.setVisible(False)
         self._original_session_name = ''
     
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         # server will always accept, whatever the status
         pass
     
@@ -376,7 +376,7 @@ class OpenSessionDialog(ChildDialog):
         self._set_corner_group(CORNER_HIDDEN)
         
         self.ui.checkBoxSaveCurrentSession.setVisible(
-            self.session.server_status == ray.ServerStatus.READY)
+            self.session.server_status is ray.ServerStatus.READY)
         self.ui.listWidgetPreview.server_status_changed(
             self.session.server_status)
         
@@ -400,7 +400,7 @@ class OpenSessionDialog(ChildDialog):
         for folder in self.folders:
             folder.sort_childrens()
         
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         self.ui.toolButtonFolder.setEnabled(
             bool(server_status in (ray.ServerStatus.OFF,
                                    ray.ServerStatus.READY,
@@ -411,13 +411,13 @@ class OpenSessionDialog(ChildDialog):
                 ray.ServerStatus.OFF,
                 ray.ServerStatus.READY) and not self.server_copying)
 
-        if server_status != ray.ServerStatus.OFF:
+        if server_status is not ray.ServerStatus.OFF:
             if self._root_folder_file_dialog is not None:
                 self._root_folder_file_dialog.reject()
             self._root_folder_message_box.reject()
 
         self.ui.checkBoxSaveCurrentSession.setVisible(
-            server_status == ray.ServerStatus.READY)
+            server_status is ray.ServerStatus.READY)
         
         self.ui.listWidgetPreview.server_status_changed(server_status)
 

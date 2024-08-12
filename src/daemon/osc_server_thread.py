@@ -1023,7 +1023,7 @@ class OscServerThread(ClientCommunicating):
 
     @osp_method('/ray/session/skip_wait_user', '')
     def raySessionSkipWaitUser(self, osp: OscPack):
-        if self.server_status != ray.ServerStatus.WAIT_USER:
+        if self.server_status is not ray.ServerStatus.WAIT_USER:
             return False
 
     @osp_method('/ray/session/duplicate', 's')
@@ -1244,9 +1244,9 @@ class OscServerThread(ClientCommunicating):
         for gui_addr in self.gui_list:
             self.send(gui_addr, *args)
 
-    def set_server_status(self, server_status:int):
+    def set_server_status(self, server_status:ray.ServerStatus):
         self.server_status = server_status
-        self.send_gui('/ray/gui/server/status', server_status)
+        self.send_gui('/ray/gui/server/status', server_status.value)
 
     def send_renameable(self, renameable:bool):
         if not renameable:
@@ -1267,10 +1267,10 @@ class OscServerThread(ClientCommunicating):
         gui_addr.gui_pid = gui_pid
 
         self.send(gui_addr, "/ray/gui/server/announce", ray.VERSION,
-                  self.server_status, self.options, str(self.session.root),
+                  self.server_status.value, self.options, str(self.session.root),
                   int(is_net_free))
 
-        self.send(gui_addr, "/ray/gui/server/status", self.server_status)
+        self.send(gui_addr, "/ray/gui/server/status", self.server_status.value)
         if self.session.path is None:
             self.send(gui_addr, "/ray/gui/session/name", "")
         else:
@@ -1348,7 +1348,7 @@ class OscServerThread(ClientCommunicating):
         controller.addr = control_address
         self.controller_list.append(controller)
         self.send(control_address, "/ray/control/server/announce",
-                  ray.VERSION, self.server_status, self.options,
+                  ray.VERSION, self.server_status.value, self.options,
                   str(self.session.root), 1)
 
     def send_controller_message(self, message):

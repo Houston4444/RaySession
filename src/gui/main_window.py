@@ -415,7 +415,7 @@ class MainWindow(QMainWindow):
         if (not CommandLineArgs.under_nsm
             and (self.systray_mode is ray.Systray.ALWAYS
                     or (self.systray_mode is ray.Systray.SESSION_ONLY
-                        and self.session.server_status != ray.ServerStatus.OFF))):
+                        and self.session.server_status is not ray.ServerStatus.OFF))):
             self._systray.show()
 
         self.preferences_dialog: preferences_dialog.PreferencesDialog = None
@@ -514,7 +514,7 @@ class MainWindow(QMainWindow):
         if self.systray_mode is ray.Systray.OFF:
             self._systray.hide()
         elif self.systray_mode is ray.Systray.SESSION_ONLY:
-            if self.session.server_status == ray.ServerStatus.OFF:
+            if self.session.server_status is ray.ServerStatus.OFF:
                 self._systray.hide()
             else:
                 self._systray.show()
@@ -858,7 +858,7 @@ class MainWindow(QMainWindow):
                         ray.ServerStatus.OUT_SNAPSHOT):
             self._show_snapshot_progress_dialog()
 
-        elif status == ray.ServerStatus.WAIT_USER:
+        elif status is ray.ServerStatus.WAIT_USER:
             dialog = child_dialogs.WaitingCloseUserDialog(self)
             dialog.exec()
 
@@ -934,16 +934,16 @@ class MainWindow(QMainWindow):
         self.server_copying = copying
         self._server_status_changed(self.session.server_status)
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         self.session.update_server_status(server_status)
 
         self.ui.lineEditServerStatus.setText(
             server_status_string(server_status))
         self.ui.frameCurrentSession.setEnabled(
-            bool(server_status != ray.ServerStatus.OFF))
+            bool(server_status is not ray.ServerStatus.OFF))
 
         if self.systray_mode is ray.Systray.SESSION_ONLY:
-            if server_status == ray.ServerStatus.OFF:
+            if server_status is ray.ServerStatus.OFF:
                 self._systray.hide()
             else:
                 self._systray.show()
@@ -954,14 +954,14 @@ class MainWindow(QMainWindow):
         elif self._timer_snapshot.isActive():
             self._timer_snapshot.stop()
 
-        if server_status == ray.ServerStatus.COPY:
+        if server_status is ray.ServerStatus.COPY:
             self.ui.actionSaveSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(False)
             self.ui.actionReturnToAPreviousState.setEnabled(False)
             return
 
-        if server_status == ray.ServerStatus.PRECOPY:
+        if server_status is ray.ServerStatus.PRECOPY:
             self.ui.actionSaveSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(True)
@@ -983,7 +983,7 @@ class MainWindow(QMainWindow):
                 ray.ServerStatus.OUT_SAVE,
                 ray.ServerStatus.OUT_SNAPSHOT,
                 ray.ServerStatus.OFF))
-        ready = bool(server_status == ray.ServerStatus.READY)
+        ready = bool(server_status is ray.ServerStatus.READY)
 
         self.ui.actionSaveSession.setEnabled(ready)
         self.ui.actionCloseSession.setEnabled(ready)
@@ -1004,9 +1004,9 @@ class MainWindow(QMainWindow):
         self._favorites_menu.setEnabled(
             bool(self.session.favorite_list and not close_or_off))
         self.ui.actionOpenSessionFolder.setEnabled(
-            bool(server_status != ray.ServerStatus.OFF))
+            bool(server_status is not ray.ServerStatus.OFF))
         self.ui.actionSessionNotes.setEnabled(
-            bool(server_status != ray.ServerStatus.OFF))
+            bool(server_status is not ray.ServerStatus.OFF))
 
         self.ui.stackedWidgetSessionName.set_editable(
             ready and self.session.is_renameable)
@@ -1034,11 +1034,11 @@ class MainWindow(QMainWindow):
             self.ui.actionAbortSession.setEnabled(False)
             self.ui.menuRecentSessions.setEnabled(False)
 
-        if server_status == ray.ServerStatus.OFF:
+        if server_status is ray.ServerStatus.OFF:
             if self.terminate_request:
                 self.daemon_manager.stop()
 
-        if server_status == ray.ServerStatus.WAIT_USER:
+        if server_status is ray.ServerStatus.WAIT_USER:
             if not RS.is_hidden(RS.HD_WaitCloseUser):
                 dialog = child_dialogs.WaitingCloseUserDialog(self)
                 dialog.exec()
@@ -1418,7 +1418,7 @@ class MainWindow(QMainWindow):
         if (not RS.is_hidden(RS.HD_StartupRecentSessions)
                 and time.time() - self._startup_time < 5
                 and self.session.recent_sessions
-                and self.session.server_status == ray.ServerStatus.OFF):
+                and self.session.server_status is ray.ServerStatus.OFF):
             # ahah, dirty way to prevent a dialog once again
             self._startup_time -= 5
 

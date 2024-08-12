@@ -278,7 +278,7 @@ def basename(*args) -> str:
 def get_code_root() -> Path:
     return Path(__file__).parent.parent.parent
 
-def server_status_string(server_status: int) -> str:
+def server_status_string(server_status: ray.ServerStatus) -> str:
     server_status_strings = {
         ray.ServerStatus.OFF     : _translate('server status', "off"),
         ray.ServerStatus.NEW     : _translate('server status', "new"),
@@ -298,8 +298,8 @@ def server_status_string(server_status: int) -> str:
         ray.ServerStatus.OUT_SNAPSHOT: _translate('server_status', "snapshot"),
         ray.ServerStatus.SCRIPT  : _translate('server_status', "script")}
 
-    if not 0 <= server_status < len(server_status_strings):
-        return _translate('server status', "invalid")
+    # if not 0 <= server_status < len(server_status_strings):
+    #     return _translate('server status', "invalid")
 
     return server_status_strings[server_status]
 

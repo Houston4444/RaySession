@@ -2,7 +2,7 @@
 
 import argparse
 from dataclasses import dataclass
-from enum import Enum, Flag
+from enum import Enum, IntEnum, Flag
 from typing import Optional
 import os
 import shlex
@@ -87,7 +87,7 @@ class ClientStatus:
     LOSE = 14
 
 
-class ServerStatus:
+class ServerStatus(Enum):
     OFF = 0
     NEW = 1
     OPEN = 2

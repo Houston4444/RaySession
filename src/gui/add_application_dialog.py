@@ -548,7 +548,7 @@ class AddApplicationDialog(ChildDialog):
 
         self.remove_template(item.data(TEMPLATE_NAME_DATA), False)
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         self._server_will_accept = bool(
             server_status not in (
                 ray.ServerStatus.OFF,

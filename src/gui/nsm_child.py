@@ -41,8 +41,8 @@ class NsmChild:
             server_nsm.announce(_translate('child_session', 'Child Session'),
                                 ':switch:optional-gui:', 'raysession')
 
-    def _server_status_changed(self, server_status: int):
-        if server_status == ray.ServerStatus.READY:
+    def _server_status_changed(self, server_status: ray.ServerStatus):
+        if server_status is ray.ServerStatus.READY:
             server_nsm = NSMThread.instance()
             if not server_nsm:
                 return

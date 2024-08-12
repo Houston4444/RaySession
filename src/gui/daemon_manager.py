@@ -92,7 +92,7 @@ class DaemonManager(QObject):
             QApplication.quit()
 
     def _receive_announce(
-            self, src_addr: Address, version: str, server_status: int,
+            self, src_addr: Address, version: str, server_status: ray.ServerStatus,
             options: int, session_root: str, is_net_free: int):
         self._announce_timer.stop()
 
@@ -117,7 +117,7 @@ class DaemonManager(QObject):
             return
 
         if (CommandLineArgs.out_daemon
-                and server_status != ray.ServerStatus.OFF):
+                and server_status is not ray.ServerStatus.OFF):
             self.signaler.daemon_url_request.emit(ErrDaemon.NOT_OFF, self.url)
             self.disannounce(src_addr)
             return

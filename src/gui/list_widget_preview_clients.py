@@ -61,7 +61,7 @@ class ClientSlot(QFrame):
 
     def server_status_changed(self, server_status:int):
         self.ui.actionAddToTheCurrentSession.setEnabled(
-            server_status == ray.ServerStatus.READY)
+            server_status is ray.ServerStatus.READY)
 
     def get_client_id(self):
         return self.client.client_id

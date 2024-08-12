@@ -238,7 +238,7 @@ class SignaledSession(OperatingSession):
 
             server = self.get_server()
             if (server is not None
-                    and server.server_status == ray.ServerStatus.READY
+                    and server.server_status is ray.ServerStatus.READY
                     and server.options & ray.Option.DESKTOPS_MEMORY):
                 self.desktops_memory.replace()
         else:

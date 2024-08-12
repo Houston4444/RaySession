@@ -76,10 +76,10 @@ class Session:
         self.main_win.hide()
         del self.main_win
 
-    def is_running(self)->bool:
-        return bool(self.server_status != ray.ServerStatus.OFF)
+    def is_running(self) -> bool:
+        return self.server_status is not ray.ServerStatus.OFF
 
-    def update_server_status(self, server_status: int):
+    def update_server_status(self, server_status: ray.ServerStatus):
         self.server_status = server_status
 
     def _set_name(self, session_name: str):
@@ -229,7 +229,7 @@ class SignaledSession(Session):
         self.is_renameable = bool(args[0])
 
         bool_set_edit = bool(self.is_renameable
-                             and self.server_status == ray.ServerStatus.READY
+                             and self.server_status is ray.ServerStatus.READY
                              and not CommandLineArgs.out_daemon)
 
         self.main_win.set_session_name_editable(bool_set_edit)
