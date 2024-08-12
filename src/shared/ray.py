@@ -54,6 +54,7 @@ class JackNaming:
     SHORT = 0
     LONG = 1
 
+
 class ClientStatus:
     STOPPED = 0
     LAUNCH = 1
@@ -98,10 +99,25 @@ class NSMMode:
     NETWORK = 2
 
 
-class Protocol:
+class Protocol(Enum):
     NSM = 0
     RAY_HACK = 1
     RAY_NET = 2
+    
+    def to_string(self) -> str:
+        if self is self.RAY_HACK:
+            return "Ray-Hack"
+        if self is self.RAY_NET:
+            return "Ray-Net"
+        return "NSM"
+    
+    @staticmethod
+    def from_string(self, string: str) -> 'Protocol':
+        if string.lower() in ('ray_hack', 'ray-hack'):
+            return Protocol.RAY_HACK
+        if string.lower() in ('ray_net', 'ray-net'):
+            return Protocol.RAY_NET
+        return Protocol.NSM
 
 
 class Option:
@@ -475,14 +491,14 @@ def get_window_manager() -> WindowManager:
 
     return WindowManager.NONE
 
-def protocol_to_str(protocol: int) -> str:
-    if protocol == Protocol.RAY_HACK:
+def protocol_to_str(protocol: Protocol) -> str:
+    if protocol is Protocol.RAY_HACK:
         return "Ray-Hack"
-    if protocol == Protocol.RAY_NET:
+    if protocol is Protocol.RAY_NET:
         return "Ray-Net"
     return "NSM"
 
-def protocol_from_str(protocol_str: str) -> int:
+def protocol_from_str(protocol_str: str) -> Protocol:
     if protocol_str.lower() in ('ray_hack', 'ray-hack'):
         return Protocol.RAY_HACK
     elif protocol_str.lower() in ('ray_net', 'ray-net'):
@@ -635,7 +651,7 @@ class ClientData:
     def prettier_name(self) -> str:
         if self.label:
             return self.label
-        if (self.protocol != Protocol.RAY_HACK
+        if (self.protocol is not Protocol.RAY_HACK
                 and self.name):
             return self.name
         return self.executable_path

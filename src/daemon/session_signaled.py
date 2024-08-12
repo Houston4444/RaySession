@@ -387,12 +387,12 @@ class SignaledSession(OperatingSession):
                     int(factory), template_name, display_name,
                     *template_client.spread())
 
-                if template_client.protocol == ray.Protocol.RAY_HACK:
+                if template_client.protocol is ray.Protocol.RAY_HACK:
                     self.send_gui(
                         '/ray/gui/client_template_ray_hack_update',
                         int(factory), template_name,
                         *template_client.ray_hack.spread())
-                elif template_client.protocol == ray.Protocol.RAY_NET:
+                elif template_client.protocol is ray.Protocol.RAY_NET:
                     self.send_gui(
                         '/ray/gui/client_template_ray_net_update',
                         int(factory), template_name,
@@ -415,7 +415,7 @@ class SignaledSession(OperatingSession):
 
         if with_net:
             for client in self.clients:
-                if (client.protocol == ray.Protocol.RAY_NET
+                if (client.protocol is ray.Protocol.RAY_NET
                         and client.ray_net.daemon_url):
                     self.send(Address(client.ray_net.daemon_url),
                               '/ray/server/list_sessions', 1)
@@ -717,7 +717,7 @@ class SignaledSession(OperatingSession):
         net = False if len(osp.args) < 2 else osp.args[1]
 
         for client in self.clients:
-            if client.protocol == ray.Protocol.RAY_NET:
+            if client.protocol is ray.Protocol.RAY_NET:
                 client.ray_net.session_template = template_name
 
         self.steps_order = [self.save, self.snapshot,
@@ -988,14 +988,12 @@ class SignaledSession(OperatingSession):
             pass
 
         elif ray.are_they_all_strings(osp.args):
-            if TYPE_CHECKING:
-                assert isinstance(osp.args, list[str])
-            
             via_proxy = int(bool('via_proxy' in osp.args[1:]))
             start_it = int(bool('not_start' not in osp.args[1:]))
             if 'ray_hack' in osp.args[1:]:
                 protocol = ray.Protocol.RAY_HACK
 
+            arg: str
             for arg in osp.args[1:]:
                 if arg == 'prefix_mode:client_name':
                     prefix_mode = ray.PrefixMode.CLIENT_NAME
@@ -1065,7 +1063,7 @@ class SignaledSession(OperatingSession):
         client = Client(self)
 
         client.protocol = protocol
-        if client.protocol == ray.Protocol.NSM and via_proxy:
+        if client.protocol is ray.Protocol.NSM and via_proxy:
             client.executable_path = 'ray-proxy'
         else:
             client.executable_path = executable
@@ -1421,7 +1419,7 @@ class SignaledSession(OperatingSession):
 
     @client_action
     def _ray_client_update_ray_net_properties(self, osp: OscPack, client:Client):
-        if client.protocol == ray.Protocol.RAY_NET:
+        if client.protocol is ray.Protocol.RAY_NET:
             client.ray_net.update(*osp.args)
         self.send(*osp.reply(), 'ray_net updated')
 
@@ -1954,7 +1952,7 @@ class SignaledSession(OperatingSession):
     def _ray_net_daemon_duplicate_state(self, osp: OscPack):
         state = osp.args[0]
         for client in self.clients:
-            if (client.protocol == ray.Protocol.RAY_NET
+            if (client.protocol is ray.Protocol.RAY_NET
                     and client.ray_net.daemon_url
                     and ray.are_same_osc_port(client.ray_net.daemon_url,
                                               osp.src_addr.url)):

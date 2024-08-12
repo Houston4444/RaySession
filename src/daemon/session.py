@@ -1398,7 +1398,7 @@ for better organization.""")
                highlight_text(new_session_full_name)))
 
         for client in self.clients:
-            if client.protocol == ray.Protocol.RAY_NET:
+            if client.protocol is ray.Protocol.RAY_NET:
                 client.ray_net.duplicate_state = -1
                 if (client.ray_net.daemon_url
                         and ray.is_valid_osc_url(client.ray_net.daemon_url)):
@@ -1440,7 +1440,7 @@ for better organization.""")
         
         self.send_gui_message(_translate('GUIMSG', '...session copy finished.'))
         for client in self.clients:
-            if (client.protocol == ray.Protocol.RAY_NET
+            if (client.protocol is ray.Protocol.RAY_NET
                     and 0 <= client.ray_net.duplicate_state < 1):
                 self.expected_clients.append(client)
 
@@ -1521,7 +1521,7 @@ for better organization.""")
         # on the machine where is the master daemon, for example).
 
         for client in self.clients:
-            if (client.protocol == ray.Protocol.RAY_NET
+            if (client.protocol is ray.Protocol.RAY_NET
                     and client.ray_net.daemon_url):
                 self.send(Address(client.ray_net.daemon_url),
                           '/ray/server/save_session_template',
@@ -2475,12 +2475,12 @@ for better organization.""")
                 src_addr, '/ray/gui/preview/client/is_started',
                 client.client_id, int(client.auto_start))
             
-            if client.protocol == ray.Protocol.RAY_HACK:
+            if client.protocol is ray.Protocol.RAY_HACK:
                 self.send_even_dummy(
                     src_addr, '/ray/gui/preview/client/ray_hack_update',
                     client.client_id, *client.ray_hack.spread())
 
-            elif client.protocol == ray.Protocol.RAY_NET:
+            elif client.protocol is ray.Protocol.RAY_NET:
                 self.send_even_dummy(
                     src_addr, '/ray/gui/preview/client/ray_net_update',
                     client.client_id, *client.ray_net.spread())

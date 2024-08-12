@@ -865,7 +865,7 @@ class Client(ServerSender, ray.ClientData):
         return links_dir
 
     def is_ray_hack(self) -> bool:
-        return bool(self.protocol == ray.Protocol.RAY_HACK)
+        return self.protocol is ray.Protocol.RAY_HACK
 
     def send_to_self_address(self, *args):
         if not self.addr:
@@ -879,7 +879,7 @@ class Client(ServerSender, ray.ClientData):
         self.session.message(message)
 
     def get_jack_client_name(self):
-        if self.protocol == ray.Protocol.RAY_NET:
+        if self.protocol is ray.Protocol.RAY_NET:
             # ray-net will use jack_client_name for template
             # quite dirty, but this is the easier way
             return self.ray_net.session_template
@@ -956,9 +956,9 @@ class Client(ServerSender, ray.ClientData):
             if self.prefix_mode == ray.PrefixMode.CUSTOM:
                 self.custom_prefix = c.str('custom_prefix')
 
-        self.protocol = ray.protocol_from_str(c.str('protocol'))
+        self.protocol = ray.Protocol.from_string(c.str('protocol'))
 
-        if self.protocol == ray.Protocol.RAY_HACK:
+        if self.protocol is ray.Protocol.RAY_HACK:
             self.ray_hack.config_file = c.str('config_file')
             self.ray_hack.save_sig = c.int('save_signal')
             self.ray_hack.stop_sig = c.int('stop_signal')
@@ -968,7 +968,7 @@ class Client(ServerSender, ray.ClientData):
                 self.ray_hack.no_save_level = no_save_level
 
         # backward compatibility with network session
-        if (self.protocol == ray.Protocol.NSM
+        if (self.protocol is ray.Protocol.NSM
                 and basename(self.executable_path) == 'ray-network'):
             self.protocol = ray.Protocol.RAY_NET
 
@@ -995,7 +995,7 @@ class Client(ServerSender, ray.ClientData):
                         eat_root = False
             self.ray_net.session_template = c.str('net_session_template')
 
-        elif self.protocol == ray.Protocol.RAY_NET:
+        elif self.protocol is ray.Protocol.RAY_NET:
             self.ray_net.daemon_url = c.str('net_daemon_url')
             self.ray_net.session_root = c.str('net_session_root')
             self.ray_net.session_template = c.str('net_session_template')
@@ -1003,7 +1003,7 @@ class Client(ServerSender, ray.ClientData):
             self.ray_net.session_root = c.str('net_session_root')
             self.ray_net.session_template = c.str('net_session_template')
 
-        if self.protocol == ray.Protocol.RAY_NET:
+        if self.protocol is ray.Protocol.RAY_NET:
             # neeeded only to know if RAY_NET client is capable of switch
             self.executable_path = ray.RAYNET_BIN
             if self.ray_net.daemon_url and self.ray_net.session_root:
@@ -1022,7 +1022,7 @@ class Client(ServerSender, ray.ClientData):
                 self.custom_data = c.el.attrib.copy()
 
     def write_xml_properties(self, c: XmlElement):
-        if self.protocol != ray.Protocol.RAY_NET:
+        if self.protocol is not ray.Protocol.RAY_NET:
             c.set_str('executable', self.executable_path)
             if self.arguments:
                 c.set_str('arguments', self.arguments)
@@ -1059,17 +1059,17 @@ class Client(ServerSender, ray.ClientData):
         if self.template_origin:
             c.set_str('template_origin', self.template_origin)
 
-        if self.protocol != ray.Protocol.NSM:
-            c.set_str('protocol', ray.protocol_to_str(self.protocol))
+        if self.protocol is not ray.Protocol.NSM:
+            c.set_str('protocol', self.protocol.to_string())
 
-            if self.protocol == ray.Protocol.RAY_HACK:
+            if self.protocol is ray.Protocol.RAY_HACK:
                 c.set_str('config_file', self.ray_hack.config_file)
                 c.set_int('save_signal', self.ray_hack.save_sig)
                 c.set_int('stop_signal', self.ray_hack.stop_sig)
                 c.set_bool('wait_win', self.ray_hack.wait_win)
                 c.set_int('no_save_level', self.ray_hack.no_save_level)
 
-            elif self.protocol == ray.Protocol.RAY_NET:
+            elif self.protocol is ray.Protocol.RAY_NET:
                 c.set_str('net_daemon_url', self.ray_net.daemon_url)
                 c.set_str('net_session_root', self.ray_net.session_root)
                 c.set_str('net_session_template', self.ray_net.session_template)
@@ -1201,7 +1201,7 @@ class Client(ServerSender, ray.ClientData):
         return "%s (%s)" % (self.name, self.client_id)
 
     def set_network_properties(self, net_daemon_url, net_session_root):
-        if self.protocol != ray.Protocol.RAY_NET:
+        if self.protocol is not ray.Protocol.RAY_NET:
             return
 
         self.ray_net.daemon_url = net_daemon_url
@@ -1211,7 +1211,7 @@ class Client(ServerSender, ray.ClientData):
         self.send_gui_client_properties()
 
     def get_ray_net_arguments_line(self)->str:
-        if self.protocol != ray.Protocol.RAY_NET:
+        if self.protocol is not ray.Protocol.RAY_NET:
             return ''
         return '--daemon-url %s --net-session-root "%s"' % (
                 self.ray_net.daemon_url,
@@ -1245,7 +1245,7 @@ class Client(ServerSender, ray.ClientData):
         return ''
 
     def get_project_path(self) -> Path:
-        if self.protocol == ray.Protocol.RAY_NET:
+        if self.protocol is ray.Protocol.RAY_NET:
             return Path(self.session.get_short_path())
 
         spath = self.session.path
@@ -1302,7 +1302,7 @@ class Client(ServerSender, ray.ClientData):
                     % self.gui_msg_style())
             return
 
-        if (self.protocol == ray.Protocol.RAY_NET
+        if (self.protocol is ray.Protocol.RAY_NET
                 and not self.session.path.is_relative_to(self.session.root)):
             self._send_error_to_caller(OscSrc.START, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG',
@@ -1326,7 +1326,7 @@ class Client(ServerSender, ray.ClientData):
             if envvar:
                 process_env.insert(envvar, value)
 
-        if self.protocol != ray.Protocol.RAY_HACK:
+        if self.protocol is not ray.Protocol.RAY_HACK:
             process_env.insert('NSM_URL', self.get_server_url())
 
         arguments = list[str]()
@@ -1340,7 +1340,7 @@ class Client(ServerSender, ray.ClientData):
                               f"{self.client_id} {self.executable_path}")
                     for a in shlex.split(server.terminal_command)]
 
-        if self.protocol == ray.Protocol.RAY_NET:
+        if self.protocol is ray.Protocol.RAY_NET:
             server = self.get_server()
             if not server:
                 return
@@ -1729,17 +1729,17 @@ class Client(ServerSender, ray.ClientData):
                            self.client_id, int(self.gui_visible))
 
     def can_switch_with(self, other_client: 'Client')->bool:
-        if self.protocol == ray.Protocol.RAY_HACK:
+        if self.protocol is ray.Protocol.RAY_HACK:
             return False
 
-        if self.protocol != other_client.protocol:
+        if self.protocol is not other_client.protocol:
             return False
 
         if not ((self.nsm_active and self.is_capable_of(':switch:'))
                 or (self.is_dumb_client() and self.is_running())):
             return False
 
-        if self.protocol == ray.Protocol.RAY_NET:
+        if self.protocol is ray.Protocol.RAY_NET:
             return bool(self.ray_net.running_daemon_url
                             == other_client.ray_net.daemon_url
                         and self.ray_net.running_session_root
@@ -1760,11 +1760,11 @@ class Client(ServerSender, ray.ClientData):
 
         self.send_gui(ad, *ray.ClientData.spread_client(self))
 
-        if self.protocol == ray.Protocol.RAY_HACK:
+        if self.protocol is ray.Protocol.RAY_HACK:
             self.send_gui(
                 hack_ad, self.client_id, *self.ray_hack.spread())
 
-        elif self.protocol == ray.Protocol.RAY_NET:
+        elif self.protocol is ray.Protocol.RAY_NET:
             self.send_gui(
                 net_ad, self.client_id, *self.ray_net.spread())
 
@@ -1820,7 +1820,7 @@ class Client(ServerSender, ray.ClientData):
                 # do not change protocol value
                 continue
 
-            if self.protocol == ray.Protocol.RAY_HACK:
+            if self.protocol is ray.Protocol.RAY_HACK:
                 if prop == 'config_file':
                     self.ray_hack.config_file = value
                 elif prop == 'save_sig':
@@ -1842,7 +1842,7 @@ class Client(ServerSender, ray.ClientData):
                     if value.isdigit() and 0 <= int(value) <= 2:
                         self.ray_hack.no_save_level = int(value)
 
-            elif self.protocol == ray.Protocol.RAY_NET:
+            elif self.protocol is ray.Protocol.RAY_NET:
                 if prop == 'net_daemon_url':
                     self.ray_net.daemon_url = value
                 elif prop == 'net_session_root':
@@ -1868,7 +1868,7 @@ label:%s
 icon:%s
 check_last_save:%i
 ignored_extensions:%s""" % (self.client_id,
-                            ray.protocol_to_str(self.protocol),
+                            self.protocol.to_string(),
                             self.executable_path,
                             self.pre_env,
                             self.arguments,
@@ -1883,9 +1883,9 @@ ignored_extensions:%s""" % (self.client_id,
                             int(self.check_last_save),
                             self.ignored_extensions)
 
-        if self.protocol == ray.Protocol.NSM:
+        if self.protocol is ray.Protocol.NSM:
             message += "\ncapabilities:%s" % self.capabilities
-        elif self.protocol == ray.Protocol.RAY_HACK:
+        elif self.protocol is ray.Protocol.RAY_HACK:
             message += """\nconfig_file:%s
 save_sig:%i
 stop_sig:%i
@@ -1895,7 +1895,7 @@ no_save_level:%i""" % (self.ray_hack.config_file,
                        self.ray_hack.stop_sig,
                        int(self.ray_hack.wait_win),
                        self.ray_hack.no_save_level)
-        elif self.protocol == ray.Protocol.RAY_NET:
+        elif self.protocol is ray.Protocol.RAY_NET:
             message += """\nnet_daemon_url:%s
 net_session_root:%s
 net_session_template:%s""" % (self.ray_net.daemon_url,
@@ -2056,7 +2056,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         template_dir.mkdir(parents=True)
 
-        if self.protocol == ray.Protocol.RAY_NET:
+        if self.protocol is ray.Protocol.RAY_NET:
             if self.ray_net.daemon_url:
                 self.ray_net.session_template = template_name
                 net_session_root = self.ray_net.session_root
@@ -2317,7 +2317,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         client_project_path = str(self.get_project_path())
         self.jack_client_name = self.get_jack_client_name()
 
-        if self.protocol == ray.Protocol.RAY_NET:
+        if self.protocol is ray.Protocol.RAY_NET:
             client_project_path = self.session.get_short_path()
             self.jack_client_name = self.ray_net.session_template
 

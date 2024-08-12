@@ -1094,7 +1094,7 @@ class OscServerThread(ClientCommunicating):
                       "Cannot add to session because no session is loaded.")
             return False
 
-        if protocol == ray.Protocol.NSM and '/' in executable_path:
+        if protocol is ray.Protocol.NSM and '/' in executable_path:
             self.send(osp.src_addr, "/error", osp.path, ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False
@@ -1296,12 +1296,12 @@ class OscServerThread(ClientCommunicating):
                       '/ray/gui/client/new',
                       *client.spread())
 
-            if client.protocol == ray.Protocol.RAY_HACK:
+            if client.protocol is ray.Protocol.RAY_HACK:
                 self.send(gui_addr,
                           '/ray/gui/client/ray_hack_update',
                           client.client_id,
                           *client.ray_hack.spread())
-            elif client.protocol == ray.Protocol.RAY_NET:
+            elif client.protocol is ray.Protocol.RAY_NET:
                 self.send(gui_addr,
                           '/ray/gui/client/ray_net_update',
                           client.client_id,
@@ -1322,11 +1322,11 @@ class OscServerThread(ClientCommunicating):
             self.send(gui_addr, '/ray/gui/trash/add',
                       *trashed_client.spread())
 
-            if trashed_client.protocol == ray.Protocol.RAY_HACK:
+            if trashed_client.protocol is ray.Protocol.RAY_HACK:
                 self.send(gui_addr, '/ray/gui/trash/ray_hack_update',
                           trashed_client.client_id,
                           *trashed_client.ray_hack.spread())
-            elif trashed_client.protocol == ray.Protocol.RAY_NET:
+            elif trashed_client.protocol is ray.Protocol.RAY_NET:
                 self.send(gui_addr, '/ray/gui/trash/ray_net_update',
                           trashed_client.client_id,
                           *trashed_client.ray_net.spread())
