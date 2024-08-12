@@ -975,7 +975,6 @@ class SignaledSession(OperatingSession):
         self.send(*osp.reply())
 
     def _ray_session_add_executable(self, osp: OscPack):
-        protocol = ray.Protocol.NSM
         executable = osp.args[0]
         via_proxy = 0
         prefix_mode = ray.PrefixMode.SESSION_NAME
@@ -1033,10 +1032,12 @@ class SignaledSession(OperatingSession):
                         jack_naming = 1
 
         else:
-            executable, start_it, protocol, \
-                prefix_mode, custom_prefix, client_id, jack_naming = osp.args
+            executable, start_it, protocol_int, \
+                prefix_mode_int, custom_prefix, client_id, jack_naming = osp.args
 
-            if prefix_mode == ray.PrefixMode.CUSTOM and not custom_prefix:
+            prefix_mode = ray.PrefixMode(prefix_mode_int)
+
+            if prefix_mode is ray.PrefixMode.CUSTOM and not custom_prefix:
                 prefix_mode = ray.PrefixMode.SESSION_NAME
 
             client_id: str
@@ -1062,7 +1063,7 @@ class SignaledSession(OperatingSession):
 
         client = Client(self)
 
-        client.protocol = protocol
+        client.protocol = ray.Protocol(protocol_int)
         if client.protocol is ray.Protocol.NSM and via_proxy:
             client.executable_path = 'ray-proxy'
         else:
@@ -1673,17 +1674,10 @@ class SignaledSession(OperatingSession):
                       "impossible to change prefix while client is running")
             return
 
-        prefix_mode = osp.args[0]
+        prefix_mode = ray.PrefixMode(osp.args[0])
         custom_prefix = ''
 
-        if prefix_mode in (ray.PrefixMode.SESSION_NAME, 'session_name'):
-            prefix_mode = ray.PrefixMode.SESSION_NAME
-        elif prefix_mode in (ray.PrefixMode.CLIENT_NAME, 'client_name'):
-            prefix_mode = ray.PrefixMode.CLIENT_NAME
-        else:
-            prefix_mode = ray.PrefixMode.CUSTOM
-
-        if prefix_mode == ray.PrefixMode.CUSTOM:
+        if prefix_mode is ray.PrefixMode.CUSTOM:
             custom_prefix = osp.args[1]
             if not custom_prefix:
                 self.send(
@@ -1709,11 +1703,11 @@ class SignaledSession(OperatingSession):
             return
 
         new_client_id: str
-        prefix_mode: int
+        prefix_mode_int: int
         custom_prefix: str
         jack_naming: int
 
-        new_client_id, prefix_mode, custom_prefix, jack_naming = osp.args
+        new_client_id, prefix_mode_int, custom_prefix, jack_naming = osp.args
 
         if new_client_id != client.client_id:
             if new_client_id in [c.client_id for c in
@@ -1722,9 +1716,11 @@ class SignaledSession(OperatingSession):
                         f"client id '{new_client_id}' already exists in the session")
                 return
 
-        if prefix_mode == ray.PrefixMode.CUSTOM and not custom_prefix:
+        prefix_mode = ray.PrefixMode(prefix_mode_int)
+
+        if prefix_mode is ray.PrefixMode.CUSTOM and not custom_prefix:
             self.send(*osp.error(), ray.Err.BAD_PROJECT,
-                      "Custom prefix missing is missing !")
+                      "Custom prefix is missing !")
             return
 
         tmp_client = Client(self)

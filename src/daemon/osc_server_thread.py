@@ -37,9 +37,6 @@ _translate = QCoreApplication.translate
 _logger = logging.getLogger(__name__)
 
 
-
-        
-
 def _path_is_valid(path: str) -> bool:
     if path.startswith(('./', '../')):
         return False
@@ -71,7 +68,6 @@ def osp_method(path: str, types: str):
             return response
         return wrapper
     return decorated
-
 
 
 class Controller:
@@ -1155,7 +1151,7 @@ class OscServerThread(ClientCommunicating):
         if len(osp.args) < 2:
             invalid = True
 
-        elif osp.args[1] in (ray.PrefixMode.CUSTOM, 'custom'):
+        elif osp.args[1] in (ray.PrefixMode.CUSTOM.value, 'custom'):
             if len(osp.args) < 3:
                 invalid = True
 

@@ -732,7 +732,7 @@ class Client(ServerSender, ray.ClientData):
     def _save_as_template_substep1(self, template_name: str):
         self.set_status(self.status) # see set_status to see why
 
-        if self.prefix_mode != ray.PrefixMode.CUSTOM:
+        if self.prefix_mode is not ray.PrefixMode.CUSTOM:
             self.adjust_files_after_copy(template_name,
                                          ray.Template.CLIENT_SAVE)
 
@@ -953,7 +953,7 @@ class Client(ServerSender, ray.ClientData):
 
         if 0 <= prefix_mode <= 2:
             self.prefix_mode = int(prefix_mode)
-            if self.prefix_mode == ray.PrefixMode.CUSTOM:
+            if self.prefix_mode is ray.PrefixMode.CUSTOM:
                 self.custom_prefix = c.str('custom_prefix')
 
         self.protocol = ray.Protocol.from_string(c.str('protocol'))
@@ -1042,9 +1042,9 @@ class Client(ServerSender, ray.ClientData):
         if not self.check_last_save:
             c.set_bool('check_last_save', False)
 
-        if self.prefix_mode != ray.PrefixMode.SESSION_NAME:
+        if self.prefix_mode is not ray.PrefixMode.SESSION_NAME:
             c.set_int('prefix_mode', self.prefix_mode)
-            if self.prefix_mode == ray.PrefixMode.CUSTOM:
+            if self.prefix_mode is ray.PrefixMode.CUSTOM:
                 c.set_str('custom_prefix', self.custom_prefix)
 
         if self.is_capable_of(':optional-gui:'):
@@ -1233,13 +1233,13 @@ class Client(ServerSender, ray.ClientData):
                           ray.ClientStatus.COPY)
 
     def get_prefix_string(self) -> str:
-        if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
+        if self.prefix_mode is ray.PrefixMode.SESSION_NAME:
             return self.session.name
 
-        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+        if self.prefix_mode is ray.PrefixMode.CLIENT_NAME:
             return self.name
 
-        if self.prefix_mode == ray.PrefixMode.CUSTOM:
+        if self.prefix_mode is ray.PrefixMode.CUSTOM:
             return self.custom_prefix
 
         return ''
@@ -1250,13 +1250,13 @@ class Client(ServerSender, ray.ClientData):
 
         spath = self.session.path
 
-        if self.prefix_mode == ray.PrefixMode.SESSION_NAME:
+        if self.prefix_mode is ray.PrefixMode.SESSION_NAME:
             return spath / f'{self.session.name}.{self.client_id}'
 
-        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+        if self.prefix_mode is ray.PrefixMode.CLIENT_NAME:
             return spath / f'{self.name}.{self.client_id}'
 
-        if self.prefix_mode == ray.PrefixMode.CUSTOM:
+        if self.prefix_mode is ray.PrefixMode.CUSTOM:
             return spath / f'{self.custom_prefix}.{self.client_id}'
 
         # should not happens
@@ -2161,15 +2161,15 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             return
 
         old_prefix = self.session.name
-        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+        if self.prefix_mode is ray.PrefixMode.CLIENT_NAME:
             old_prefix = self.name
-        elif self.prefix_mode == ray.PrefixMode.CUSTOM:
+        elif self.prefix_mode is ray.PrefixMode.CUSTOM:
             old_prefix = self.custom_prefix
 
         new_prefix = self.session.name
-        if prefix_mode == ray.PrefixMode.CLIENT_NAME:
+        if prefix_mode is ray.PrefixMode.CLIENT_NAME:
             new_prefix = self.name
-        elif prefix_mode == ray.PrefixMode.CUSTOM:
+        elif prefix_mode is ray.PrefixMode.CUSTOM:
             new_prefix = custom_prefix
 
         links_dir = self.get_links_dirname()
@@ -2200,7 +2200,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         X_CLIENT_LINKS_DIR_X = "XXX_CLIENT_LINKS_DIR_XXX" # used for Carla links dir
 
         if template_save == ray.Template.NONE:
-            if self.prefix_mode != ray.PrefixMode.SESSION_NAME:
+            if self.prefix_mode is not ray.PrefixMode.SESSION_NAME:
                 return
 
             spath = self.session.root / new_session_full_name
@@ -2242,9 +2242,9 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         old_prefix = old_session_name
         new_prefix = new_session_name
-        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+        if self.prefix_mode is ray.PrefixMode.CLIENT_NAME:
             old_prefix = new_prefix = self.name
-        elif self.prefix_mode == ray.PrefixMode.CUSTOM:
+        elif self.prefix_mode is ray.PrefixMode.CUSTOM:
             old_prefix = new_prefix = self.custom_prefix
 
         self._rename_files(

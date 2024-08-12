@@ -429,7 +429,7 @@ class Snapshoter(QObject):
                 client = self.session.get_client(client_id)
                 if (client
                         and (client.prefix_mode
-                             == ray.PrefixMode.SESSION_NAME)):
+                             is ray.PrefixMode.SESSION_NAME)):
                     continue
 
             ss_name = ""

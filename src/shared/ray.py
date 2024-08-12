@@ -44,10 +44,21 @@ GIT_IGNORED_EXTENSIONS = ".wav .flac .ogg .mp3 .mp4 .avi .mkv .peak .m4a .pdf"
 
 
 
-class PrefixMode:
+class PrefixMode(Enum):
     CUSTOM = 0
     CLIENT_NAME = 1
     SESSION_NAME = 2
+    
+    @classmethod
+    def _missing_(cls, value: object) -> 'PrefixMode':
+        if isinstance(value, str):
+            if value.lower() == 'client_name':
+                return PrefixMode.CLIENT_NAME
+            if value.lower() == 'session_name':
+                return PrefixMode.SESSION_NAME
+            if value.lower() == 'custom':
+                return PrefixMode.CUSTOM
+        return PrefixMode.CLIENT_NAME
 
 
 class JackNaming:
@@ -91,12 +102,6 @@ class ServerStatus:
     OUT_SAVE = 14
     OUT_SNAPSHOT = 15
     SCRIPT = 16
-
-
-class NSMMode:
-    NO_NSM = 0
-    CHILD = 1
-    NETWORK = 2
 
 
 class Protocol(Enum):
@@ -569,7 +574,7 @@ class ClientData:
     def spread_client(client: 'ClientData') -> tuple:
         return (client.client_id, client.protocol.value,
                 client.executable_path, client.arguments, client.pre_env,
-                client.name, client.prefix_mode, client.custom_prefix,
+                client.name, client.prefix_mode.value, client.custom_prefix,
                 client.desktop_file, client.label, client.description,
                 client.icon,
                 client.capabilities, int(client.check_last_save),
@@ -578,10 +583,10 @@ class ClientData:
                 client.jack_client_name, client.jack_naming,
                 int(client.in_terminal))
 
-    def set_ray_hack(self, ray_hack):
+    def set_ray_hack(self, ray_hack: 'RayHack'):
         self.ray_hack = ray_hack
 
-    def set_ray_net(self, ray_net):
+    def set_ray_net(self, ray_net: 'RayNet'):
         self.ray_net = ray_net
 
     def update(self, client_id, protocol,
@@ -621,9 +626,9 @@ class ClientData:
             self.name = str(name)
         else:
             self.name = os.path.basename(self.executable_path)
-        self.prefix_mode = int(prefix_mode)
+        self.prefix_mode = PrefixMode(prefix_mode)
 
-        if self.prefix_mode == PrefixMode.CUSTOM:
+        if self.prefix_mode is PrefixMode.CUSTOM:
             if custom_prefix:
                 self.custom_prefix = str(custom_prefix)
             else:
