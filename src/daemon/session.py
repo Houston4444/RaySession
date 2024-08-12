@@ -669,7 +669,9 @@ class OperatingSession(Session):
         self.osc_path = ''
         self.osc_args.clear()
 
-    def _wait_and_go_to(self, duration: int, follow, wait_for: int, redondant=False):
+    def _wait_and_go_to(
+            self, duration: int, follow: Union[tuple, list, Callable],
+            wait_for: ray.WaitFor, redondant=False):
         self.timer.stop()
 
         # we need to delete timer to change the timeout connect
@@ -685,7 +687,7 @@ class OperatingSession(Session):
             else:
                 follow = functools.partial(follow[0], *follow[1:])
 
-        if wait_for == ray.WaitFor.SCRIPT_QUIT:
+        if wait_for is ray.WaitFor.SCRIPT_QUIT:
             if self.step_scripter.is_running():
                 self.wait_for = wait_for
                 self.timer.setSingleShot(True)
@@ -698,7 +700,7 @@ class OperatingSession(Session):
         if self.expected_clients:
             n_expected = len(self.expected_clients)
 
-            if wait_for == ray.WaitFor.ANNOUNCE:
+            if wait_for is ray.WaitFor.ANNOUNCE:
                 if n_expected == 1:
                     message = _translate('GUIMSG',
                         'waiting announce from %s...'
@@ -707,7 +709,7 @@ class OperatingSession(Session):
                     message = _translate('GUIMSG',
                         'waiting announce from %i clients...' % n_expected)
                 self.send_gui_message(message)
-            elif wait_for == ray.WaitFor.QUIT:
+            elif wait_for is ray.WaitFor.QUIT:
                 if n_expected == 1:
                     message = _translate('GUIMSG',
                         'waiting for %s to stop...'
@@ -727,7 +729,7 @@ class OperatingSession(Session):
             follow()
 
     def end_timer_if_last_expected(self, client):
-        if self.wait_for == ray.WaitFor.QUIT and client in self.clients:
+        if self.wait_for is ray.WaitFor.QUIT and client in self.clients:
             self._remove_client(client)
 
         if client in self.expected_clients:
@@ -753,12 +755,12 @@ class OperatingSession(Session):
             for client in self.expected_clients:
                 client_names.append(client.gui_msg_style())
 
-            if self.wait_for == ray.WaitFor.ANNOUNCE:
+            if self.wait_for is ray.WaitFor.ANNOUNCE:
                 self.send_gui_message(
                     _translate('GUIMSG', "%s didn't announce.")
                         % ', '.join(client_names))
 
-            elif self.wait_for == ray.WaitFor.QUIT:
+            elif self.wait_for is ray.WaitFor.QUIT:
                 self.send_gui_message(_translate('GUIMSG', "%s still alive !")
                                     % ', '.join(client_names))
 
@@ -920,7 +922,7 @@ class OperatingSession(Session):
                              self.osc_path, err, error_message)
 
     def step_scripter_finished(self):
-        if self.wait_for == ray.WaitFor.SCRIPT_QUIT:
+        if self.wait_for is ray.WaitFor.SCRIPT_QUIT:
             self.timer.setSingleShot(True)
             self.timer.stop()
             self.timer.start(0)

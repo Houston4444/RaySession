@@ -150,7 +150,7 @@ class Command(Enum):
     STOP = 4
 
 
-class WaitFor:
+class WaitFor(Enum):
     NONE = 0
     QUIT = 1
     STOP_ONE = 2
