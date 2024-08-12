@@ -110,7 +110,7 @@ class ClientCommunicating(liblo.ServerThread):
 
     @osp_method('/osc/ping', '')
     def oscPing(self, osp: OscPack):
-        self.send(osp.src_addr, "/reply", osp.path)
+        self.send(*osp.reply())
 
     @osp_method('/reply', None)
     def reply(self, osp: OscPack):
@@ -169,19 +169,19 @@ class ClientCommunicating(liblo.ServerThread):
         executable_path = osp.args[0]
 
         if self.session.path is None:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return False
 
         if '/' in executable_path:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.LAUNCH_FAILED,
+            self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False
 
     @osp_method('/nsm/server/save', '')
     def nsmServerSave(self, osp: OscPack):
         if self.session.path is None:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session to save.")
             return False
 
@@ -195,33 +195,33 @@ class ClientCommunicating(liblo.ServerThread):
             return False
 
         if not _path_is_valid(osp.args[0]):
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.CREATE_FAILED,
+            self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
 
     @osp_method('/nsm/server/duplicate', 's')
     def nsmServerDuplicate(self, osp: OscPack):
         if self.is_nsm_locked or self.session.path is None:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session to duplicate.")
             return False
 
         if not _path_is_valid(osp.args[0]):
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.CREATE_FAILED,
+            self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
 
     @osp_method('/nsm/server/close', '')
     def nsmServerClose(self, osp: OscPack):
         if self.session.path is None:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session to close.")
             return False
 
     @osp_method('/nsm/server/abort', '')
     def nsmServerAbort(self, osp: OscPack):
         if self.session.path is None:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session to abort.")
             return False
 
@@ -238,7 +238,7 @@ class ClientCommunicating(liblo.ServerThread):
     @osp_method('/nsm/server/announce', 'sssiii')
     def nsmServerAnnounce(self, osp: OscPack):
         if self.session.path is None:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "Sorry, but there's no session open "
                       "for this application to join.")
             return False
@@ -274,7 +274,7 @@ class ClientCommunicating(liblo.ServerThread):
 
     @osp_method('/nsm/server/monitor_reset', '')
     def nsmServerGetAllStates(self, osp: OscPack):
-        self.send(osp.src_addr, '/reply', osp.path, 'monitor reset')
+        self.send(*osp.reply(), 'monitor reset')
         self.session.send_initial_monitor(osp.src_addr, monitor_is_client=True)
 
     @osp_method('/nsm/client/progress', 'f')
@@ -600,7 +600,7 @@ class OscServerThread(ClientCommunicating):
         controller.addr = osp.src_addr
         controller.pid = osp.args[0]
         self.controller_list.append(controller)
-        self.send(osp.src_addr, '/reply', osp.path, 'announced')
+        self.send(*osp.reply(), 'announced')
 
     @osp_method('/ray/server/controller_disannounce', '')
     def rayServerControllerDisannounce(self, osp: OscPack):
@@ -611,14 +611,14 @@ class OscServerThread(ClientCommunicating):
             return
 
         self.controller_list.remove(controller)
-        self.send(osp.src_addr, '/reply', osp.path, 'disannounced')
+        self.send(*osp.reply(), 'disannounced')
 
     @osp_method('/ray/server/monitor_announce', '')
     def rayServerMonitorAnnounce(self, osp: OscPack):
         monitor_addr = osp.src_addr
         self.monitor_list.append(monitor_addr)
         self.session.send_initial_monitor(osp.src_addr, monitor_is_client=False)
-        self.send(osp.src_addr, '/reply', osp.path, 'announced')
+        self.send(*osp.reply(), 'announced')
     
     @osp_method('/ray/server/monitor_quit', '')
     def rayServerMonitorDisannounce(self, osp: OscPack):
@@ -629,7 +629,7 @@ class OscServerThread(ClientCommunicating):
             return
         
         self.monitor_list.remove(monitor_addr)
-        self.send(osp.src_addr, '/reply', osp.path, 'monitor exit')
+        self.send(*osp.reply(), 'monitor exit')
 
     @osp_method('/ray/server/set_nsm_locked', '')
     def rayServerSetNsmLocked(self, osp: OscPack):
@@ -644,12 +644,12 @@ class OscServerThread(ClientCommunicating):
     def rayServerChangeRoot(self, osp: OscPack):
         new_root: str = osp.args[0]
         if not(new_root.startswith('/') and _path_is_valid(new_root)):
-            self.send(osp.src_addr, '/error', osp.path, ray.Err.CREATE_FAILED,
+            self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "invalid session root !")
             return False
 
         if self._is_operation_pending(osp):
-            self.send(osp.src_addr, '/error', osp.path, ray.Err.OPERATION_PENDING,
+            self.send(*osp.error(), ray.Err.OPERATION_PENDING,
                       "Can't change session_root. Operation pending")
             return False
 
@@ -662,7 +662,7 @@ class OscServerThread(ClientCommunicating):
                     which_terminal(title='RAY_TERMINAL_TITLE'))
             self.send_gui('/ray/gui/server/terminal_command',
                           self.terminal_command)
-        self.send(osp.src_addr, '/reply', osp.path, 'terminal command set')
+        self.send(*osp.reply(), 'terminal command set')
 
     @osp_method('/ray/server/list_path', '')
     def rayServerListPath(self, osp: OscPack):
@@ -691,12 +691,12 @@ class OscServerThread(ClientCommunicating):
                             n = 0
 
         if tmp_exec_list:
-            self.send(osp.src_addr, '/reply', osp.path, *tmp_exec_list)
+            self.send(*osp.reply(), *tmp_exec_list)
 
     @osp_method('/ray/server/list_session_templates', '')
     def rayServerListSessionTemplates(self, osp: OscPack):
         if not TemplateRoots.user_sessions.is_dir():
-            self.send(osp.src_addr, '/reply', osp.path)
+            self.send(*osp.reply())
             return False
 
         template_list = list[str]()
@@ -706,13 +706,13 @@ class OscServerThread(ClientCommunicating):
                 template_list.append(file.name)
                 
                 if len(template_list) == 100:
-                    self.send(osp.src_addr, '/reply', osp.path, *template_list)
+                    self.send(*osp.reply(), *template_list)
                     template_list.clear()
 
         if template_list:
-            self.send(osp.src_addr, '/reply', osp.path, *template_list)
+            self.send(*osp.reply(), *template_list)
 
-        self.send(osp.src_addr, '/reply', osp.path)
+        self.send(*osp.reply())
 
     @osp_method('/ray/server/remove_client_template', 's')
     def rayServerRemoveClientTemplate(self, osp: OscPack):
@@ -721,12 +721,12 @@ class OscServerThread(ClientCommunicating):
         templates_file = templates_root / 'client_templates.xml'
 
         if not templates_file.is_file():
-            self.send(osp.src_addr, '/error', osp.path, ray.Err.NO_SUCH_FILE,
+            self.send(*osp.error(), ray.Err.NO_SUCH_FILE,
                       "file %s is missing !" % templates_file)
             return False
 
         if not os.access(templates_file, os.W_OK):
-            self.send(osp.src_addr, '/error', osp.path, ray.Err.NO_SUCH_FILE,
+            self.send(*osp.error(), ray.Err.NO_SUCH_FILE,
                       "file %s in unwriteable !" % templates_file)
             return False
 
@@ -734,7 +734,7 @@ class OscServerThread(ClientCommunicating):
         root = tree.getroot()
 
         if root.tag != 'RAY-CLIENT-TEMPLATES':
-            self.send(osp.src_addr, '/error', osp.path, ray.Err.BAD_PROJECT,
+            self.send(*osp.error(), ray.Err.BAD_PROJECT,
                       "file %s is not write correctly !" % templates_file)
             return False
 
@@ -747,7 +747,7 @@ class OscServerThread(ClientCommunicating):
             if c.str('template-name') == template_name:
                 break
         else:
-            self.send(osp.src_addr, '/error', osp.path, ray.Err.NO_SUCH_FILE,
+            self.send(*osp.error(), ray.Err.NO_SUCH_FILE,
                       "No template \"%s\" to remove !" % template_name)
             return False
         
@@ -757,7 +757,7 @@ class OscServerThread(ClientCommunicating):
             tree.write(templates_file)
         except BaseException as e:
             _logger.error(str(e))
-            self.send(osp.src_addr, '/error', osp.path, ray.Err.CREATE_FAILED,
+            self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Impossible to rewrite user client templates xml file")
             return False
         
@@ -767,11 +767,11 @@ class OscServerThread(ClientCommunicating):
                 shutil.rmtree(templates_dir)
             except BaseException as e:
                 _logger.error(str(e))
-                self.send(osp.src_addr, '/error', osp.path, ray.Err.CREATE_FAILED,
+                self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Failed to remove the folder %s" % str(templates_dir))
                 return False
 
-        self.send(osp.src_addr, '/reply', osp.path,
+        self.send(*osp.reply(),
                   f'template "{template_name}" removed.')
 
     @osp_method('/ray/server/list_sessions', '')
@@ -792,7 +792,7 @@ class OscServerThread(ClientCommunicating):
             return False
 
         if not _path_is_valid(osp.args[0]):
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.CREATE_FAILED,
+            self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
 
@@ -802,12 +802,12 @@ class OscServerThread(ClientCommunicating):
         session_name, template_name = osp.args
 
         if not _path_is_valid(session_name):
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.CREATE_FAILED,
+            self.send(*osp.error(), ray.Err.CREATE_FAILED,
                     "Invalid session name.")
             return False
 
         if '/' in template_name:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.CREATE_FAILED,
+            self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Invalid template name.")
             return False
 
@@ -816,12 +816,12 @@ class OscServerThread(ClientCommunicating):
         #save as template an not loaded session
         session_name, template_name, sess_root = osp.args
         if not _path_is_valid(session_name):
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.CREATE_FAILED,
+            self.send(*osp.error(), ray.Err.CREATE_FAILED,
                     "Invalid template name.")
             return False
 
         if '/' in template_name:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.CREATE_FAILED,
+            self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
 
@@ -832,17 +832,17 @@ class OscServerThread(ClientCommunicating):
     @osp_method('/ray/server/script_info', 's')
     def rayServerScriptInfo(self, osp: OscPack):
         self.send_gui('/ray/gui/script_info', osp.args[0])
-        self.send(osp.src_addr, "/reply", osp.path, "Info sent")
+        self.send(*osp.reply(), "Info sent")
 
     @osp_method('/ray/server/hide_script_info', '')
     def rayServerHideScriptInfo(self, osp: OscPack):
         self.send_gui('/ray/gui/hide_script_info')
-        self.send(osp.src_addr, "/reply", osp.path, "Info hidden")
+        self.send(*osp.reply(), "Info hidden")
 
     @osp_method('/ray/server/script_user_action', 's')
     def rayServerScriptUserAction(self, osp: OscPack):
         if not self.gui_list:
-            self.send(osp.src_addr, '/error', osp.path, ray.Err.LAUNCH_FAILED,
+            self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
                       "This server has no attached GUI")
             return
         self.send_gui('/ray/gui/script_user_action', osp.args[0])
@@ -897,35 +897,35 @@ class OscServerThread(ClientCommunicating):
             if not ray.are_same_osc_port(gui_addr.url, osp.src_addr.url):
                 self.send(gui_addr, '/ray/gui/server/options', self.options)
 
-        self.send(osp.src_addr, '/reply', osp.path, 'Options set')
+        self.send(*osp.reply(), 'Options set')
 
     @osp_method('/ray/server/has_option', 's')
     def rayServerHasOption(self, osp: OscPack):
         option_str = osp.args[0]
 
         if option_str not in self._OPTIONS_DICT:
-            self.send(osp.src_addr, '/error', osp.path, ray.Err.GENERAL_ERROR,
+            self.send(*osp.error(), ray.Err.GENERAL_ERROR,
                       "option \"%s\" doesn't exists" % option_str)
             return
 
         if self.options & self._OPTIONS_DICT[option_str]:
-            self.send(osp.src_addr, '/reply', osp.path, 'Has option')
+            self.send(*osp.reply(), 'Has option')
         else:
-            self.send(osp.src_addr, '/error', osp.path, ray.Err.GENERAL_ERROR,
+            self.send(*osp.error(), ray.Err.GENERAL_ERROR,
                       "Option %s is not currently used" % option_str)
 
     @osp_method('/ray/server/clear_client_templates_database', '')
     def rayServerClearClientTemplatesDatabase(self, osp: OscPack):
         self.client_templates_database['factory'].clear()
         self.client_templates_database['user'].clear()
-        self.send(osp.src_addr, '/reply', osp.path, 'database cleared')
+        self.send(*osp.reply(), 'database cleared')
 
     @osp_method('/ray/server/open_file_manager_at', 's')
     def rayServerOpenFileManagerAt(self, osp: OscPack):
         folder_path = osp.args[0]
         if os.path.isdir(folder_path):
             subprocess.Popen(['xdg-open', folder_path])
-        self.send(osp.src_addr, '/reply', osp.path, '')
+        self.send(*osp.reply(), '')
 
     @osp_method('/ray/server/exotic_action', 's')
     def rayServerExoticAction(self, osp: OscPack):
@@ -974,7 +974,7 @@ class OscServerThread(ClientCommunicating):
     @osp_method('/ray/session/save', '')
     def raySessionSave(self, osp: OscPack):
         if self.session.path is None:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session to save.")
             return False
 
@@ -982,46 +982,46 @@ class OscServerThread(ClientCommunicating):
     def raySessionSaveAsTemplate(self, osp: OscPack):
         template_name = osp.args[0]
         if '/' in template_name or template_name == '.':
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.CREATE_FAILED,
+            self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Invalid session template name.")
             return False
 
     @osp_method('/ray/session/get_session_name', '')
     def raySessionGetSessionName(self, osp: OscPack):
         if self.session.path is None:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session loaded.")
             return False
 
-        self.send(osp.src_addr, '/reply', osp.path, self.session.name)
-        self.send(osp.src_addr, '/reply', osp.path)
+        self.send(*osp.reply(), self.session.name)
+        self.send(*osp.reply())
         return False
 
     @osp_method('/ray/session/take_snapshot', 's')
     def raySessionTakeSnapshotOnly(self, osp: OscPack):
         if not self.options & ray.Option.HAS_GIT:
-            self.send(osp.src_addr, '/error', osp.path,
+            self.send(*osp.error(),
                       "snapshot impossible because git is not installed")
             return False
 
     @osp_method('/ray/session/take_snapshot', 'si')
     def raySessionTakeSnapshot(self, osp: OscPack):
         if not self.options & ray.Option.HAS_GIT:
-            self.send(osp.src_addr, '/error', osp.path,
+            self.send(*osp.error(),
                       "snapshot impossible because git is not installed")
             return False
 
     @osp_method('/ray/session/close', '')
     def raySessionClose(self, osp: OscPack):
         if self.session.path is None:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session to close.")
             return False
 
     @osp_method('/ray/session/cancel_close', '')
     def raySessionCancelClose(self, osp: OscPack):
         if self.session.path is None:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session to cancel close.")
             return False
 
@@ -1036,12 +1036,12 @@ class OscServerThread(ClientCommunicating):
             return False
 
         if self.session.path is None:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session to duplicate.")
             return False
 
         if not _path_is_valid(osp.args[0]):
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.CREATE_FAILED,
+            self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
 
@@ -1063,7 +1063,7 @@ class OscServerThread(ClientCommunicating):
                 return False
 
         if '/' in new_session_name:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.CREATE_FAILED,
+            self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
 
@@ -1071,7 +1071,7 @@ class OscServerThread(ClientCommunicating):
             return False
 
         if self.session.path is None:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session to rename.")
             return False
 
@@ -1090,12 +1090,12 @@ class OscServerThread(ClientCommunicating):
             prefix_mode, prefix_pattern, client_id, jack_naming = osp.args
 
         if self.session.path is None:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return False
 
         if protocol is ray.Protocol.NSM and '/' in executable_path:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.LAUNCH_FAILED,
+            self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False
 
@@ -1106,7 +1106,7 @@ class OscServerThread(ClientCommunicating):
             return False
 
         if self.session.path is None:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return False
 
@@ -1115,7 +1115,7 @@ class OscServerThread(ClientCommunicating):
         ray_hack = bool(len(osp.args) > 1 and 'ray_hack' in osp.args[1:])
 
         if '/' in executable_path and not (via_proxy or ray_hack):
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.LAUNCH_FAILED,
+            self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False
 
@@ -1123,29 +1123,29 @@ class OscServerThread(ClientCommunicating):
     def rayServerOpenFolder(self, osp: OscPack):
         if self.session.path:
             subprocess.Popen(['xdg-open', self.session.path])
-        self.send(osp.src_addr, '/reply', osp.path, '')
+        self.send(*osp.reply(), '')
 
     @osp_method('/ray/session/show_notes', '')
     def raySessionShowNotes(self, osp: OscPack):
         if self.session.path is None:
-            self.send(osp.src_addr, '/error', osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session to show notes")
             return False
 
         self.session.notes_shown = True
         self.send_gui('/ray/gui/session/notes_shown')
-        self.send(osp.src_addr, '/reply', osp.path, 'notes shown')
+        self.send(*osp.reply(), 'notes shown')
 
     @osp_method('/ray/session/hide_notes', '')
     def raySessionHideNotes(self, osp: OscPack):
         if self.session.path is None:
-            self.send(osp.src_addr, '/error', osp.path, ray.Err.NO_SESSION_OPEN,
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session to hide notes")
             return False
 
         self.session.notes_shown = False
         self.send_gui('/ray/gui/session/notes_hidden')
-        self.send(osp.src_addr, '/reply', osp.path, 'notes hidden')
+        self.send(*osp.reply(), 'notes hidden')
 
     @osp_method('/ray/client/change_prefix', None)
     def rayClientChangePrefix(self, osp: OscPack):
@@ -1218,14 +1218,14 @@ class OscServerThread(ClientCommunicating):
 
     def _is_operation_pending(self, osp: OscPack) -> bool:
         if self.session.file_copier.is_active():
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.COPY_RUNNING,
+            self.send(*osp.error(), ray.Err.COPY_RUNNING,
                       "ray-daemon is copying files. "
                       "Wait copy finish or abort copy, "
                       "and restart operation !")
             return True
 
         if self.session.steps_order:
-            self.send(osp.src_addr, "/error", osp.path, ray.Err.OPERATION_PENDING,
+            self.send(*osp.error(), ray.Err.OPERATION_PENDING,
                       "An operation pending.")
             return True
 
