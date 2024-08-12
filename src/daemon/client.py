@@ -949,12 +949,11 @@ class Client(ServerSender, ray.ClientData):
         if open_duration.replace('.', '', 1).isdigit():
             self.last_open_duration = float(open_duration)
 
-        prefix_mode = c.int('prefix_mode', ray.PrefixMode.SESSION_NAME)
+        self.prefix_mode = ray.PrefixMode(
+            c.int('prefix_mode', ray.PrefixMode.SESSION_NAME.value))
 
-        if 0 <= prefix_mode <= 2:
-            self.prefix_mode = int(prefix_mode)
-            if self.prefix_mode is ray.PrefixMode.CUSTOM:
-                self.custom_prefix = c.str('custom_prefix')
+        if self.prefix_mode is ray.PrefixMode.CUSTOM:
+            self.custom_prefix = c.str('custom_prefix')
 
         self.protocol = ray.Protocol.from_string(c.str('protocol'))
 
@@ -1043,7 +1042,7 @@ class Client(ServerSender, ray.ClientData):
             c.set_bool('check_last_save', False)
 
         if self.prefix_mode is not ray.PrefixMode.SESSION_NAME:
-            c.set_int('prefix_mode', self.prefix_mode)
+            c.set_int('prefix_mode', self.prefix_mode.value)
             if self.prefix_mode is ray.PrefixMode.CUSTOM:
                 c.set_str('custom_prefix', self.custom_prefix)
 

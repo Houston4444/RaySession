@@ -283,11 +283,11 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.client.pre_env = self.rhack.lineEditEnviron.text()
         ClientPropertiesDialog._save_changes(self)
 
-    def _get_work_dir_base(self)->str:
+    def _get_work_dir_base(self) -> str:
         prefix = self.session.name
-        if self.client.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+        if self.client.prefix_mode is ray.PrefixMode.CLIENT_NAME:
             prefix = self.client.name
-        elif self.client.prefix_mode == ray.PrefixMode.CUSTOM:
+        elif self.client.prefix_mode is ray.PrefixMode.CUSTOM:
             prefix = self.client.custom_prefix
 
         return "%s.%s" % (prefix, self.client.client_id)

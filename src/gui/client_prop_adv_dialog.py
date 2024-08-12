@@ -36,7 +36,7 @@ class AdvancedPropertiesDialog(ChildDialog):
         self.ui.lineEditClientId.setText(client.client_id)
         self.ui.comboBoxPrefixMode.setCurrentIndex(client.prefix_mode)
 
-        if client.prefix_mode == ray.PrefixMode.CUSTOM:
+        if client.prefix_mode is ray.PrefixMode.CUSTOM:
             self.ui.lineEditCustomPrefix.setText(client.custom_prefix)
         else:
             self.ui.lineEditCustomPrefix.setEnabled(False)
@@ -70,14 +70,14 @@ class AdvancedPropertiesDialog(ChildDialog):
         self._update_preview()
     
     def _update_preview(self, *args):
-        if self.ui.comboBoxPrefixMode.currentIndex() == ray.PrefixMode.SESSION_NAME:
+        if self.ui.comboBoxPrefixMode.currentIndex() == ray.PrefixMode.SESSION_NAME.value:
             if self._client_is_real:
                 if TYPE_CHECKING:
                     assert isinstance(self._client, (Client, TrashedClient))
                 prefix_str = self._client.session.name
             else:
                 prefix_str = "SESSION NAME"
-        elif self.ui.comboBoxPrefixMode.currentIndex() == ray.PrefixMode.CLIENT_NAME:
+        elif self.ui.comboBoxPrefixMode.currentIndex() == ray.PrefixMode.CLIENT_NAME.value:
             prefix_str = self._client.name
         else:
             prefix_str = self.ui.lineEditCustomPrefix.text()

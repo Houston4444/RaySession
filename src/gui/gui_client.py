@@ -162,18 +162,18 @@ class Client(QObject, ray.ClientData):
             self.set_gui_enabled()
 
     # method not used yet
-    def get_project_path(self)->str:
+    def get_project_path(self) -> str:
         if not self.session.path:
             return ''
 
         prefix = self.session.name
 
-        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+        if self.prefix_mode is ray.PrefixMode.CLIENT_NAME:
             prefix = self.name
-        elif self.prefix_mode == ray.PrefixMode.CUSTOM:
+        elif self.prefix_mode is ray.PrefixMode.CUSTOM:
             prefix = self.custom_prefix
 
-        return "%s/%s.%s" % (self.session.path, prefix, self.client_id)
+        return f'{self.session.path}/{prefix}.{self.client_id}'
 
     # method not used yet
     def get_icon_search_path(self) -> list[str]:
