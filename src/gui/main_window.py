@@ -1308,7 +1308,7 @@ class MainWindow(QMainWindow):
 
         if client.check_last_save:
             if (client.no_save_level
-                    or (client.protocol == ray.Protocol.RAY_HACK
+                    or (client.protocol is ray.Protocol.RAY_HACK
                         and not client.ray_hack.saveable())):
                 dialog = child_dialogs.StopClientNoSaveDialog(self, client_id)
                 dialog.exec()

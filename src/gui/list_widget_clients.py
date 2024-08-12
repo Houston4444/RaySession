@@ -41,7 +41,7 @@ class ClientSlot(QFrame):
         self._icon_off = QIcon()
 
         self.ui.toolButtonGUI.setVisible(False)
-        if client.protocol != ray.Protocol.RAY_HACK:
+        if client.protocol is not ray.Protocol.RAY_HACK:
             self.ui.toolButtonHack.setVisible(False)
 
         # connect buttons to functions
@@ -115,7 +115,7 @@ class ClientSlot(QFrame):
             self.to_daemon('/ray/client/show_optional_gui', self.get_client_id())
 
     def _order_hack_visibility(self, state):
-        if self.client.protocol != ray.Protocol.RAY_HACK:
+        if self.client.protocol is not ray.Protocol.RAY_HACK:
             return
 
         if state:
@@ -211,7 +211,7 @@ class ClientSlot(QFrame):
             self.ui.startButton.setVisible(True)
             self.ui.stopButton.setVisible(True)
             self.ui.toolButtonHack.setVisible(
-                self.client.protocol == ray.Protocol.RAY_HACK)
+                self.client.protocol is ray.Protocol.RAY_HACK)
 
     def _set_fat(self, yesno: bool, very_fat=False):
         if yesno:
@@ -302,7 +302,7 @@ class ClientSlot(QFrame):
         tool_tip += "<p></p>"
         tool_tip += "<p>%s : %s<br>" \
             % (_translate('client_slot', 'Protocol'),
-               ray.protocol_to_str(self.client.protocol))
+               self.client.protocol.to_string())
         tool_tip += "%s : %s<br>" \
             % (_translate('client_slot', 'Executable'),
                self.client.executable_path)
@@ -358,7 +358,7 @@ class ClientSlot(QFrame):
         self.ui.actionFindBoxesInPatchbay.setEnabled(
             status not in (ray.ClientStatus.STOPPED, ray.ClientStatus.PRECOPY)) 
 
-        ray_hack = bool(self.client.protocol == ray.Protocol.RAY_HACK)
+        ray_hack = bool(self.client.protocol is ray.Protocol.RAY_HACK)
 
         if status in (
                 ray.ClientStatus.LAUNCH,

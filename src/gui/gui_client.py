@@ -16,7 +16,7 @@ class Client(QObject, ray.ClientData):
     status_changed = pyqtSignal(int)
 
     def __init__(self, session: 'SignaledSession',
-                 client_id: str, protocol: int):
+                 client_id: str, protocol_int: int):
         QObject.__init__(self)
 
         self.session = session
@@ -24,7 +24,7 @@ class Client(QObject, ray.ClientData):
 
         # set ClientData attributes
         self.client_id = client_id
-        self.protocol = protocol
+        self.protocol = ray.Protocol(protocol_int)
         self.ray_hack = ray.RayHack()
         self.ray_net = ray.RayNet()
         
@@ -107,7 +107,7 @@ class Client(QObject, ray.ClientData):
                          *ray.ClientData.spread_client(self))
 
     def send_ray_hack(self):
-        if self.protocol != ray.Protocol.RAY_HACK:
+        if self.protocol is not ray.Protocol.RAY_HACK:
             return
 
         server = GuiServerThread.instance()
@@ -119,7 +119,7 @@ class Client(QObject, ray.ClientData):
                          *self.ray_hack.spread())
 
     def send_ray_net(self):
-        if self.protocol != ray.Protocol.RAY_NET:
+        if self.protocol is not ray.Protocol.RAY_NET:
             return
 
         server = GuiServerThread.instance()
@@ -138,7 +138,7 @@ class Client(QObject, ray.ClientData):
         self._properties_dialog.update_contents()
 
         if second_tab:
-            if self.protocol == ray.Protocol.RAY_HACK:
+            if self.protocol is ray.Protocol.RAY_HACK:
                 self._properties_dialog.enable_test_zone(True)
             self._properties_dialog.set_on_second_tab()
 

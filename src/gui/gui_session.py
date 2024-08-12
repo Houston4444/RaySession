@@ -160,7 +160,7 @@ class SignaledSession(Session):
 
                 for client in self.client_list:
                     if (client.client_id == client_id
-                            and client.protocol == ray.Protocol.RAY_HACK):
+                            and client.protocol is ray.Protocol.RAY_HACK):
                         client.show_properties_dialog(second_tab=True)
                         break
 
@@ -281,13 +281,13 @@ class SignaledSession(Session):
     def _ray_gui_client_ray_hack_update(self, path, args: list):
         client_id = args.pop(0)
         client = self.get_client(client_id)
-        if client and client.protocol == ray.Protocol.RAY_HACK:
+        if client and client.protocol is ray.Protocol.RAY_HACK:
             client.update_ray_hack(*args)
 
     def _ray_gui_client_ray_net_update(self, path, args: list):
         client_id = args.pop(0)
         client = self.get_client(client_id)
-        if client and client.protocol == ray.Protocol.RAY_NET:
+        if client and client.protocol is ray.Protocol.RAY_NET:
             client.update_ray_net(*args)
 
     def  _ray_gui_client_switch(self, path, args):

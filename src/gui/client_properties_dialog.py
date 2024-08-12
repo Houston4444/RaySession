@@ -105,11 +105,11 @@ class ClientPropertiesDialog(ChildDialog):
 
     @staticmethod
     def create(window, client: ray.ClientData) -> 'ClientPropertiesDialog':
-        if client.protocol == ray.Protocol.NSM:
+        if client.protocol is ray.Protocol.NSM:
             return NsmClientPropertiesDialog(window, client)
-        if client.protocol == ray.Protocol.RAY_HACK:
+        if client.protocol is ray.Protocol.RAY_HACK:
             return RayHackClientPropertiesDialog(window, client)
-        if client.protocol == ray.Protocol.RAY_NET:
+        if client.protocol is ray.Protocol.RAY_NET:
             return RayNetClientPropertiesDialog(window, client)
 
         return ClientPropertiesDialog(window, client)
@@ -139,7 +139,7 @@ class ClientPropertiesDialog(ChildDialog):
 
     def update_contents(self):
         self.ui.labelId.setText(self.client.client_id)
-        self.ui.labelProtocol.setText(ray.protocol_to_str(self.client.protocol))
+        self.ui.labelProtocol.setText(self.client.protocol.to_string())
         self.ui.lineEditIcon.setText(self.client.icon)
         self.ui.lineEditLabel.setText(self.client.label)
         self.ui.plainTextEditDescription.setPlainText(self.client.description)

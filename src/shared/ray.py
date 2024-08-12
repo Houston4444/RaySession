@@ -104,6 +104,10 @@ class Protocol(Enum):
     RAY_HACK = 1
     RAY_NET = 2
     
+    @classmethod
+    def _missing_(cls, value) -> 'Protocol':
+        return Protocol.NSM
+    
     def to_string(self) -> str:
         if self is self.RAY_HACK:
             return "Ray-Hack"
@@ -112,7 +116,7 @@ class Protocol(Enum):
         return "NSM"
     
     @staticmethod
-    def from_string(self, string: str) -> 'Protocol':
+    def from_string(string: str) -> 'Protocol':
         if string.lower() in ('ray_hack', 'ray-hack'):
             return Protocol.RAY_HACK
         if string.lower() in ('ray_net', 'ray-net'):
@@ -491,20 +495,6 @@ def get_window_manager() -> WindowManager:
 
     return WindowManager.NONE
 
-def protocol_to_str(protocol: Protocol) -> str:
-    if protocol is Protocol.RAY_HACK:
-        return "Ray-Hack"
-    if protocol is Protocol.RAY_NET:
-        return "Ray-Net"
-    return "NSM"
-
-def protocol_from_str(protocol_str: str) -> Protocol:
-    if protocol_str.lower() in ('ray_hack', 'ray-hack'):
-        return Protocol.RAY_HACK
-    elif protocol_str.lower() in ('ray_net', 'ray-net'):
-        return Protocol.RAY_NET
-    return Protocol.NSM
-
 
 class Machine192:
     ip = ''
@@ -577,7 +567,7 @@ class ClientData:
 
     @staticmethod
     def spread_client(client: 'ClientData') -> tuple:
-        return (client.client_id, client.protocol,
+        return (client.client_id, client.protocol.value,
                 client.executable_path, client.arguments, client.pre_env,
                 client.name, client.prefix_mode, client.custom_prefix,
                 client.desktop_file, client.label, client.description,
@@ -626,7 +616,7 @@ class ClientData:
         # Now, if message is 'unsecure' only.
         # change things that can't be changed normally
         self.client_id = str(client_id)
-        self.protocol = int(protocol)
+        self.protocol = Protocol(protocol)
         if name:
             self.name = str(name)
         else:

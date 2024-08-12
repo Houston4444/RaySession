@@ -123,7 +123,7 @@ class ClientSlot(QFrame):
         tool_tip += "<p></p>"
         tool_tip += "<p>%s : %s<br>" \
             % (_translate('client_slot', 'Protocol'),
-               ray.protocol_to_str(self.client.protocol))
+               self.client.protocol.to_string())
         tool_tip += "%s : %s<br>" \
             % (_translate('client_slot', 'Executable'),
                self.client.executable_path)

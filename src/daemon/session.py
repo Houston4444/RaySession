@@ -741,8 +741,6 @@ class OperatingSession(Session):
                     self.timer_wu_progress_n = 0
                     self.timer_waituser_progress.start()
 
-        print('endtimer from', client.client_id, self.wait_for.name, [c.client_id for c in self.expected_clients])
-
         if not self.expected_clients:
             self.timer.setSingleShot(True)
             self.timer.stop()
@@ -1139,7 +1137,6 @@ class OperatingSession(Session):
         self._send_reply("Snapshot taken.")
 
     def snapshot_error(self, err_snapshot, info_str=''):
-        print('snnpapapshot error', err_snapshot, info_str)
         m = _translate('Snapshot Error', "Unknown error")
         if err_snapshot == ray.Err.SUBPROCESS_UNTERMINATED:
             m = _translate('Snapshot Error',

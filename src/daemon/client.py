@@ -2212,7 +2212,6 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             spath = Path(new_session_full_name)
             if not spath.is_absolute():
                 spath = TemplateRoots.user_sessions / new_session_full_name
-            print('temmpllate save', new_session_full_name, spath)
             new_session_name = X_SESSION_X
 
         elif template_save == ray.Template.SESSION_SAVE_NET:
