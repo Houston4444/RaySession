@@ -1073,7 +1073,7 @@ class SignaledSession(OperatingSession):
         client.prefix_mode = prefix_mode
         client.custom_prefix = custom_prefix
         client.set_default_git_ignored(executable)
-        client.jack_naming = jack_naming
+        client.jack_naming = ray.JackNaming(jack_naming)
 
         if self._add_client(client):
             if start_it:
@@ -1728,7 +1728,7 @@ class SignaledSession(OperatingSession):
         tmp_client.client_id = new_client_id
         tmp_client.prefix_mode = prefix_mode
         tmp_client.custom_prefix = custom_prefix
-        tmp_client.jack_naming = jack_naming
+        tmp_client.jack_naming = ray.JackNaming(jack_naming)
         
         client.set_status(ray.ClientStatus.REMOVED)
         
@@ -1746,7 +1746,7 @@ class SignaledSession(OperatingSession):
         client.client_id = new_client_id
         client.prefix_mode = prefix_mode
         client.custom_prefix = custom_prefix
-        client.jack_naming = jack_naming
+        client.jack_naming = ray.JackNaming(jack_naming)
         self._update_forbidden_ids_set()
 
         if new_jack_name != ex_jack_name:

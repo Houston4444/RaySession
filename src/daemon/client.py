@@ -888,7 +888,7 @@ class Client(ServerSender, ray.ClientData):
         # if client seems to have been made by NSM itself
         # else, jack connections could be lose
         # at NSM session import
-        if self.jack_naming == ray.JackNaming.LONG:
+        if self.jack_naming is ray.JackNaming.LONG:
             return "%s.%s" % (self.name, self.client_id)
 
         jack_client_name = self.name
@@ -1049,7 +1049,7 @@ class Client(ServerSender, ray.ClientData):
         if self.is_capable_of(':optional-gui:'):
             c.set_bool('gui_visible', not self.start_gui_hidden)
 
-        if self.jack_naming == ray.JackNaming.LONG:
+        if self.jack_naming is ray.JackNaming.LONG:
             c.set_bool('jack_naming', True)
 
         if self.in_terminal:
@@ -1787,13 +1787,13 @@ class Client(ServerSender, ray.ClientData):
                 # It will be re-sent by client itself
                 continue
             elif prop == 'prefix_mode':
-                if value.isdigit() and 0 <= int(value) <= 2:
-                    self.prefix_mode = int(value)
+                if value.isdigit():
+                    self.prefix_mode = ray.PrefixMode(int(value))
             elif prop == 'custom_prefix':
                 self.custom_prefix = value
             elif prop == 'jack_naming':
-                if value.isdigit() and 0 <= int(value) <= 1:
-                    self.jack_naming = int(value)
+                if value.isdigit():
+                    self.jack_naming = ray.JackNaming(int(value))
             elif prop == 'jack_name':
                 # do not change jack name
                 # only allow to change jack_naming
@@ -1872,9 +1872,9 @@ ignored_extensions:%s""" % (self.client_id,
                             self.pre_env,
                             self.arguments,
                             self.name,
-                            self.prefix_mode,
+                            self.prefix_mode.value,
                             self.custom_prefix,
-                            self.jack_naming,
+                            self.jack_naming.value,
                             self.get_jack_client_name(),
                             self.desktop_file,
                             self.label,
@@ -2180,7 +2180,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             self.client_id, self.client_id,
             links_dir, links_dir)
 
-        self.prefix_mode = prefix_mode
+        self.prefix_mode = ray.PrefixMode(prefix_mode)
         self.custom_prefix = custom_prefix
         self.send_gui_client_properties()
 

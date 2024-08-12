@@ -61,9 +61,13 @@ class PrefixMode(Enum):
         return PrefixMode.CLIENT_NAME
 
 
-class JackNaming:
+class JackNaming(Enum):
     SHORT = 0
     LONG = 1
+    
+    @classmethod
+    def _missing_(cls, value: object) -> 'JackNaming':
+        return JackNaming.LONG
 
 
 class ClientStatus:
@@ -555,7 +559,7 @@ class ClientData:
     ignored_extensions = GIT_IGNORED_EXTENSIONS
     template_origin = ''
     jack_client_name = ''
-    jack_naming = 0
+    jack_naming = JackNaming.SHORT
     in_terminal = False
     ray_hack: 'RayHack' = None
     ray_net: 'RayNet' = None
@@ -580,7 +584,7 @@ class ClientData:
                 client.capabilities, int(client.check_last_save),
                 client.ignored_extensions,
                 client.template_origin,
-                client.jack_client_name, client.jack_naming,
+                client.jack_client_name, client.jack_naming.value,
                 int(client.in_terminal))
 
     def set_ray_hack(self, ray_hack: 'RayHack'):
@@ -612,7 +616,7 @@ class ClientData:
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)
         self.template_origin = template_origin
-        self.jack_naming = jack_naming
+        self.jack_naming = JackNaming(jack_naming)
         self.in_terminal = bool(in_terminal)
 
         if secure:
