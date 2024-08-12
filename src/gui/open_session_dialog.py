@@ -100,8 +100,8 @@ class SessionItem(QTreeWidgetItem):
     def set_notes_icon(self, icon):
         self.setIcon(COLUMN_NOTES, icon)
 
-    def set_scripted(self, script_flags:int, for_child=False):
-        if script_flags == ray.ScriptFile.PREVENT:
+    def set_scripted(self, script_flags: ray.ScriptFile, for_child=False):
+        if script_flags is ray.ScriptFile.PREVENT:
             self.setText(COLUMN_SCRIPTS, "")
         else:
             if for_child:
@@ -997,19 +997,19 @@ class OpenSessionDialog(ChildDialog):
                 session_item.set_locked(bool(locked))
                 break
 
-    def _scripted_dir(self, dir_name, script_flags):
+    def _scripted_dir(self, dir_name: str, script_flags: int):
         if dir_name == '':
             # means that all the session root directory is scripted
             for i in range(self.ui.sessionList.topLevelItemCount()):
                 item: SessionItem = self.ui.sessionList.topLevelItem(i)
-                item.set_scripted(script_flags)
+                item.set_scripted(ray.ScriptFile(script_flags))
             return
 
         for i in range(self.ui.sessionList.topLevelItemCount()):
             item = self.ui.sessionList.topLevelItem(i)
             scripted_item = item.find_item_with(dir_name)
             if scripted_item is not None:
-                scripted_item.set_scripted(script_flags)
+                scripted_item.set_scripted(ray.ScriptFile(script_flags))
 
     def _resize_session_names_column(self):
         self.ui.sessionList.setColumnWidth(COLUMN_NOTES, 20)

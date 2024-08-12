@@ -488,8 +488,9 @@ class SignaledSession(OperatingSession):
 
             if root == str(self.root):
                 if has_general_scripts:
-                    self.send(osp.src_addr, '/ray/gui/listed_session/scripted_dir',
-                              '', ray.ScriptFile.PARENT)
+                    self.send(
+                        osp.src_addr, '/ray/gui/listed_session/scripted_dir',
+                        '', ray.ScriptFile.PARENT.value)
                 continue
             
             basefolder = str(Path(root).relative_to(self.root))
@@ -501,10 +502,10 @@ class SignaledSession(OperatingSession):
                     if os.access(
                             Path(root) / ray.SCRIPTS_DIR / f'{action}.sh',
                             os.X_OK):
-                        script_files += ray.ScriptFile.by_string(action)
+                        script_files |= ray.ScriptFile[action.upper()]
 
                 self.send(osp.src_addr, '/ray/gui/listed_session/scripted_dir',
-                          basefolder, script_files)
+                          basefolder, script_files.value)
             
             if basefolder not in sessions_set:
                 continue

@@ -1,11 +1,9 @@
 
 
 import argparse
-from asyncio.log import logger
 from dataclasses import dataclass
-from enum import Enum, IntEnum
-from typing import TYPE_CHECKING, Optional
-import liblo
+from enum import Enum, Flag
+from typing import Optional
 import os
 import shlex
 import socket
@@ -13,6 +11,7 @@ import subprocess
 import sys
 import logging
 
+import liblo
 from liblo import Server, Address
 from PyQt5.QtCore import QT_VERSION_STR, QSettings
 
@@ -227,22 +226,13 @@ class Favorite:
     display_name: str
 
 
-class ScriptFile:
+class ScriptFile(Flag):
     PREVENT = 0x0
     PARENT = 0x1
     LOAD = 0x2
     SAVE = 0x4
     CLOSE = 0x8
 
-    @classmethod
-    def by_string(cls, action: str) -> int:
-        if action == 'load':
-            return cls.LOAD
-        if action == 'save':
-            return cls.SAVE
-        if action == 'close':
-            return cls.CLOSE
-        return cls.PREVENT
 
 debug = False
 
@@ -846,7 +836,7 @@ class GroupPosition:
     
     def set_layout_mode(self, port_mode: int, layout_mode: int):
         if not (1 <= port_mode <= 3 or 0 <= layout_mode <= 2):
-            logger.warning(
+            _logger.warning(
                 "group position set_layout_mode, wrong port mode or layout mode")
             return
 
