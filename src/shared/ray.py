@@ -3,7 +3,7 @@
 import argparse
 from asyncio.log import logger
 from dataclasses import dataclass
-from enum import IntEnum
+from enum import Enum, IntEnum
 from typing import TYPE_CHECKING, Optional
 import liblo
 import os
@@ -142,7 +142,7 @@ class Err:
     # check control/osc_server.py in case of changes !!!
 
 
-class Command:
+class Command(Enum):
     NONE = 0
     START = 1
     OPEN = 2

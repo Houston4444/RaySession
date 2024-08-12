@@ -16,6 +16,9 @@ if TYPE_CHECKING:
 _translate = QCoreApplication.translate
 
 class Scripter(ServerSender):
+    '''Abstract scripts manager,
+    inherited by StepScripter and ClientScripter.'''
+
     def __init__(self):
         ServerSender.__init__(self)
         self._src_addr = None
@@ -89,6 +92,10 @@ class Scripter(ServerSender):
 
 
 class StepScripter(Scripter):
+    '''Scripts manager for sessions operations.
+    Scripts are executable shell scripts in ray-scripts/
+    (load.sh, save.sh, close.sh).'''
+    
     def __init__(self, session: 'OperatingSession'):
         Scripter.__init__(self)
         self.session = session
@@ -175,6 +182,10 @@ class StepScripter(Scripter):
 
 
 class ClientScripter(Scripter):
+    '''Scripts manager for client operations.
+    Scripts are executable shell scripts in ray-scripts.CLIENT_ID/
+    (start.sh, save.sh, close.sh).'''
+    
     def __init__(self, client: 'Client'):
         Scripter.__init__(self)
         self._client = client
@@ -188,27 +199,21 @@ class ClientScripter(Scripter):
         self._initial_caller = None
         self._src_addr = None
 
-    def start(self, command, osp: Optional[OscPack]=None,
+    def start(self, command: ray.Command, osp: Optional[OscPack]=None,
               previous_slot: Optional[OscPack]=None):
         if self.is_running():
-            return False
-
-        command_string = ''
-        if command == ray.Command.START:
-            command_string = 'start'
-        elif command == ray.Command.SAVE:
-            command_string = 'save'
-        elif command == ray.Command.STOP:
-            command_string = 'stop'
-        else:
             return False
 
         if self._client.session.path is None:
             return False
 
+        if not command in (
+                ray.Command.START, ray.Command.SAVE, ray.Command.STOP):
+            return False
+        
         scripts_dir = (self._client.session.path
                        / f'{ray.SCRIPTS_DIR}.{self._client.client_id}')
-        script_path = scripts_dir / f'{command_string}.sh'
+        script_path = scripts_dir / f'{command.name.lower()}.sh'
 
         if not os.access(script_path, os.X_OK):
             return False

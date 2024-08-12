@@ -199,7 +199,7 @@ class Client(ServerSender, ray.ClientData):
 
     def _process_finished(self, exit_code: int, exit_status: QProcess.ExitStatus):
         if (self.launched_in_terminal
-                and self.pending_command == ray.Command.START
+                and self.pending_command is ray.Command.START
                 and not exit_code
                 and time.time() - self._process_start_time < 1.0):
             # when launched in terminal
@@ -214,7 +214,7 @@ class Client(ServerSender, ray.ClientData):
         self._stopped_timer.stop()
         self.is_external = False
 
-        if self.pending_command == ray.Command.STOP:
+        if self.pending_command is ray.Command.STOP:
             self.send_gui_message(_translate('GUIMSG',
                                   "  %s: terminated by server instruction")
                                   % self.gui_msg_style())
@@ -244,7 +244,7 @@ class Client(ServerSender, ray.ClientData):
 
         self.session.set_renameable(True)
 
-        if self.scripter.pending_command() == ray.Command.STOP:
+        if self.scripter.pending_command() is ray.Command.STOP:
             return
 
         if self.session.wait_for:
@@ -386,7 +386,7 @@ class Client(ServerSender, ray.ClientData):
         if not self.is_ray_hack():
             return
 
-        if self.pending_command == ray.Command.SAVE:
+        if self.pending_command is ray.Command.SAVE:
             self.pending_command = ray.Command.NONE
             self.set_status(ray.ClientStatus.READY)
 
@@ -1115,7 +1115,7 @@ class Client(ServerSender, ray.ClientData):
             self.message("Client \"%s\" replied with error: %s (%i)"
                                 % (self.name, message, errcode))
 
-            if self.pending_command == ray.Command.SAVE:
+            if self.pending_command is ray.Command.SAVE:
                 self._send_error_to_caller(OscSrc.SAVE, ray.Err.GENERAL_ERROR,
                                     _translate('GUIMSG', '%s failed to save!')
                                             % self.gui_msg_style())
@@ -1123,7 +1123,7 @@ class Client(ServerSender, ray.ClientData):
                 self.session.send_monitor_event(
                     'save_error', self.client_id)
 
-            elif self.pending_command == ray.Command.OPEN:
+            elif self.pending_command is ray.Command.OPEN:
                 self._send_error_to_caller(OscSrc.OPEN, ray.Err.GENERAL_ERROR,
                                     _translate('GUIMSG', '%s failed to open!')
                                             % self.gui_msg_style())
@@ -1133,7 +1133,7 @@ class Client(ServerSender, ray.ClientData):
 
             self.set_status(ray.ClientStatus.ERROR)
         else:
-            if self.pending_command == ray.Command.SAVE:
+            if self.pending_command is ray.Command.SAVE:
                 self.last_save_time = time.time()
 
                 self.send_gui_message(
@@ -1144,7 +1144,7 @@ class Client(ServerSender, ray.ClientData):
                 self.session.send_monitor_event(
                     'saved', self.client_id)
 
-            elif self.pending_command == ray.Command.OPEN:
+            elif self.pending_command is ray.Command.OPEN:
                 self.send_gui_message(
                     _translate('GUIMSG', '  %s: project loaded')
                         % self.gui_msg_style())
@@ -1439,7 +1439,7 @@ class Client(ServerSender, ray.ClientData):
             self._send_reply_to_caller(OscSrc.OPEN, 'client active')
             return
 
-        if self.pending_command == ray.Command.STOP:
+        if self.pending_command is ray.Command.STOP:
             self._send_error_to_caller(OscSrc.OPEN, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s is exiting.') % self.gui_msg_style())
 
@@ -1452,7 +1452,7 @@ class Client(ServerSender, ray.ClientData):
         self._open_timer.setInterval(duration)
         self._open_timer.start()
 
-        if self.pending_command == ray.Command.OPEN:
+        if self.pending_command is ray.Command.OPEN:
             return
 
         if not self.is_running():
@@ -1524,27 +1524,27 @@ class Client(ServerSender, ray.ClientData):
         if exit_code:
             error_text = "script %s ended with an error code" \
                             % self.scripter.get_path()
-            if scripter_pending_command == ray.Command.SAVE:
+            if scripter_pending_command is ray.Command.SAVE:
                 self._send_error_to_caller(OscSrc.SAVE, - exit_code,
                                         error_text)
-            elif scripter_pending_command == ray.Command.START:
+            elif scripter_pending_command is ray.Command.START:
                 self._send_error_to_caller(OscSrc.START, - exit_code,
                                         error_text)
-            elif scripter_pending_command == ray.Command.STOP:
+            elif scripter_pending_command is ray.Command.STOP:
                 self._send_error_to_caller(OscSrc.STOP, - exit_code,
                                         error_text)
         else:
-            if scripter_pending_command == ray.Command.SAVE:
+            if scripter_pending_command is ray.Command.SAVE:
                 self._send_reply_to_caller(OscSrc.SAVE, 'saved')
-            elif scripter_pending_command == ray.Command.START:
+            elif scripter_pending_command is ray.Command.START:
                 self._send_reply_to_caller(OscSrc.START, 'started')
-            elif scripter_pending_command == ray.Command.STOP:
+            elif scripter_pending_command is ray.Command.STOP:
                 self._send_reply_to_caller(OscSrc.STOP, 'stopped')
 
-        if scripter_pending_command == self.pending_command:
+        if scripter_pending_command is self.pending_command:
             self.pending_command = ray.Command.NONE
 
-        if (scripter_pending_command == ray.Command.STOP
+        if (scripter_pending_command is ray.Command.STOP
                 and self.is_running()):
             # if stop script ends with a not stopped client
             # We must stop it, else it would prevent session close
@@ -1580,7 +1580,7 @@ class Client(ServerSender, ray.ClientData):
                 return False
 
             return bool(self.is_running()
-                        and self.pending_command == ray.Command.NONE)
+                        and self.pending_command is ray.Command.NONE)
 
         return bool(self.nsm_active and not self.no_save_level)
 
@@ -1601,7 +1601,7 @@ class Client(ServerSender, ray.ClientData):
                 self.set_status(ray.ClientStatus.SCRIPT)
                 return
 
-        if self.pending_command == ray.Command.SAVE:
+        if self.pending_command is ray.Command.SAVE:
             self._send_error_to_caller(OscSrc.SAVE, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s is already saving, please wait!')
                     % self.gui_msg_style())
@@ -2259,7 +2259,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         client_name, capabilities, executable_path, \
             major, minor, pid = osp.args
 
-        if self.pending_command == ray.Command.STOP:
+        if self.pending_command is ray.Command.STOP:
             # assume to not answer to a dying client.
             # He will never know, or perhaps, it depends on beliefs.
             return
