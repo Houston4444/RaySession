@@ -181,7 +181,7 @@ class SignaledSession(OperatingSession):
     def _nsm_server_announce(self, osp: OscPack):
         client_name, capabilities, executable_path, major, minor, pid = osp.args
 
-        if self.wait_for == ray.WaitFor.QUIT:
+        if self.wait_for is ray.WaitFor.QUIT:
             if osp.path.startswith('/nsm/server/'):
                 # Error is wrong but compatible with NSM API
                 self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
@@ -224,11 +224,11 @@ class SignaledSession(OperatingSession):
                     self.send_monitor_event('joined', client.client_id)
                     client.server_announce(osp, True)
 
-        if self.wait_for == ray.WaitFor.ANNOUNCE:
+        if self.wait_for is ray.WaitFor.ANNOUNCE:
             self.end_timer_if_last_expected(client)
 
     def _reply(self, osp: OscPack):
-        if self.wait_for == ray.WaitFor.QUIT:
+        if self.wait_for is ray.WaitFor.QUIT:
             return
 
         message = osp.args[1]
@@ -251,7 +251,7 @@ class SignaledSession(OperatingSession):
         if client:
             client.set_reply(errcode, message)
 
-            if self.wait_for == ray.WaitFor.REPLY:
+            if self.wait_for is ray.WaitFor.REPLY:
                 self.end_timer_if_last_expected(client)
         else:
             self.message("error from unknown client")
@@ -1965,11 +1965,11 @@ class SignaledSession(OperatingSession):
             return
 
         if state == 1:
-            if self.wait_for == ray.WaitFor.DUPLICATE_FINISH:
+            if self.wait_for is ray.WaitFor.DUPLICATE_FINISH:
                 self.end_timer_if_last_expected(client)
             return
 
-        if (self.wait_for == ray.WaitFor.DUPLICATE_START and state == 0):
+        if (self.wait_for is ray.WaitFor.DUPLICATE_START and state == 0):
             self.end_timer_if_last_expected(client)
 
         client.net_daemon_copy_timer.start()

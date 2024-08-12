@@ -323,7 +323,7 @@ class Client(ServerSender, ray.ClientData):
     def _net_daemon_out_of_time(self):
         self.ray_net.duplicate_state = -1
 
-        if self.session.wait_for == ray.WaitFor.DUPLICATE_FINISH:
+        if self.session.wait_for is ray.WaitFor.DUPLICATE_FINISH:
             self.session.end_timer_if_last_expected(self)
 
     def _pretty_client_id(self):
@@ -398,7 +398,7 @@ class Client(ServerSender, ray.ClientData):
 
             self._send_reply_to_caller(OscSrc.SAVE, 'client saved.')
 
-        if self.session.wait_for == ray.WaitFor.REPLY:
+        if self.session.wait_for is ray.WaitFor.REPLY:
             self.session.end_timer_if_last_expected(self)
 
     def _set_infos_from_desktop_contents(self, contents: str):
@@ -1158,7 +1158,7 @@ class Client(ServerSender, ray.ClientData):
                     'ready', self.client_id)
 
                 if self.has_server_option(ray.Option.GUI_STATES):
-                    if (self.session.wait_for == ray.WaitFor.NONE
+                    if (self.session.wait_for is ray.WaitFor.NONE
                             and self.is_capable_of(':optional-gui:')
                             and not self.start_gui_hidden
                             and not self.gui_visible
@@ -1175,7 +1175,7 @@ class Client(ServerSender, ray.ClientData):
 
         self.pending_command = ray.Command.NONE
 
-        if self.session.wait_for == ray.WaitFor.REPLY:
+        if self.session.wait_for is ray.WaitFor.REPLY:
             self.session.end_timer_if_last_expected(self)
 
     def set_label(self, label:str):
@@ -1515,7 +1515,7 @@ class Client(ServerSender, ray.ClientData):
 
     def script_finished(self, exit_code: int):
         if self.scripter.is_asked_for_terminate():
-            if self.session.wait_for == ray.WaitFor.QUIT:
+            if self.session.wait_for is ray.WaitFor.QUIT:
                 self.session.end_timer_if_last_expected(self)
             return
 
@@ -1562,7 +1562,7 @@ class Client(ServerSender, ray.ClientData):
         self.pending_command = ray.Command.NONE
         self.set_status(ray.ClientStatus.READY)
 
-        if self.session.wait_for == ray.WaitFor.REPLY:
+        if self.session.wait_for is ray.WaitFor.REPLY:
             self.session.end_timer_if_last_expected(self)
 
     def terminate_scripts(self):
