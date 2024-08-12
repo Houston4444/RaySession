@@ -1918,7 +1918,7 @@ for better organization.""")
             if (open_off
                     or not client.is_running()
                     or (client.is_reply_pending() and not client.is_dumb_client())
-                    or client.switch_state != ray.SwitchState.RESERVED):
+                    or client.switch_state is not ray.SwitchState.RESERVED):
                 self.clients_to_quit.append(client)
                 self.expected_clients.append(client)
             else:
@@ -1980,14 +1980,14 @@ for better organization.""")
 
             if future_client.auto_start:
                 for client in self.clients:
-                    if (client.switch_state == ray.SwitchState.NEEDED
+                    if (client.switch_state is ray.SwitchState.NEEDED
                             and client.client_id == future_client.client_id
                             and client.can_switch_with(future_client)):
                         # we found the good existing client
                         break
                 else:
                     for client in self.clients:
-                        if (client.switch_state == ray.SwitchState.NEEDED
+                        if (client.switch_state is ray.SwitchState.NEEDED
                                 and client.can_switch_with(future_client)):
                             # we found a switchable client
                             break
@@ -2015,7 +2015,7 @@ for better organization.""")
             new_client_id_list.append(future_client.client_id)
 
         for client in self.clients:
-            if client.switch_state == ray.SwitchState.DONE:
+            if client.switch_state is ray.SwitchState.DONE:
                 client.switch()
 
         self._re_order_clients(new_client_id_list)

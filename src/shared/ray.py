@@ -172,7 +172,7 @@ class Template(IntEnum):
     CLIENT_LOAD = 7
 
 
-class SwitchState:
+class SwitchState(Enum):
     NONE = 0
     RESERVED = 1
     NEEDED = 2

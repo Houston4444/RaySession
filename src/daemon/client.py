@@ -1631,7 +1631,7 @@ class Client(ServerSender, ray.ClientData):
                 self.start_gui_hidden = not bool(self.gui_visible)
 
     def stop(self, osp: Optional[OscPack]=None):
-        if self.switch_state == ray.SwitchState.NEEDED:
+        if self.switch_state is ray.SwitchState.NEEDED:
             if osp is not None:
                 self.send(*osp.error(), ray.Err.NOT_NOW,
                 "Stop cancelled because client is needed for opening session")
