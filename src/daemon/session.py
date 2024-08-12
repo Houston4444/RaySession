@@ -728,7 +728,7 @@ class OperatingSession(Session):
         else:
             follow()
 
-    def end_timer_if_last_expected(self, client):
+    def end_timer_if_last_expected(self, client: Client):
         if self.wait_for is ray.WaitFor.QUIT and client in self.clients:
             self._remove_client(client)
 
@@ -740,6 +740,8 @@ class OperatingSession(Session):
                 if self.timer_waituser_progress.isActive():
                     self.timer_wu_progress_n = 0
                     self.timer_waituser_progress.start()
+
+        print('endtimer from', client.client_id, self.wait_for.name, [c.client_id for c in self.expected_clients])
 
         if not self.expected_clients:
             self.timer.setSingleShot(True)
@@ -1971,10 +1973,10 @@ for better organization.""")
             # This part needs care
             # we add future_clients to clients.
             # At this point,
-            # running clients waiting for switch have SwitchState NEEDED
-            # running clients already choosen for switch have SwitchState DONE
+            # running clients waiting for switch have SwitchState NEEDED,
+            # running clients already choosen for switch have SwitchState DONE,
             # clients just added from future clients without switch
-            #    have SwitchState NONE.
+            # have SwitchState NONE.
 
             if future_client.auto_start:
                 for client in self.clients:

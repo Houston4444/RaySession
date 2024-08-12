@@ -1150,7 +1150,7 @@ class Client(ServerSender, ray.ClientData):
                         % self.gui_msg_style())
 
                 self.last_open_duration = \
-                                        time.time() - self._last_announce_time
+                    time.time() - self._last_announce_time
 
                 self._send_reply_to_caller(OscSrc.OPEN, 'client opened')
 
@@ -1170,7 +1170,7 @@ class Client(ServerSender, ray.ClientData):
                             #% (client.name, message,
                                 #client.milliseconds_since_last_command()))
         if (self.scripter.is_running()
-                and self.scripter.pending_command() == self.pending_command):
+                and self.scripter.pending_command() is self.pending_command):
             return
 
         self.pending_command = ray.Command.NONE
@@ -1186,7 +1186,7 @@ class Client(ServerSender, ray.ClientData):
         return bool(self._reply_errcode)
 
     def is_reply_pending(self) -> bool:
-        return bool(self.pending_command)
+        return self.pending_command is not ray.Command.NONE
 
     def is_dumb_client(self) -> bool:
         if self.is_ray_hack():
