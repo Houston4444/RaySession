@@ -34,14 +34,15 @@ class AdvancedPropertiesDialog(ChildDialog):
             _translate('new_executable', 'Session Name'))
 
         self.ui.lineEditClientId.setText(client.client_id)
-        self.ui.comboBoxPrefixMode.setCurrentIndex(client.prefix_mode)
+        self.ui.comboBoxPrefixMode.setCurrentIndex(client.prefix_mode.value)
 
         if client.prefix_mode is ray.PrefixMode.CUSTOM:
             self.ui.lineEditCustomPrefix.setText(client.custom_prefix)
         else:
             self.ui.lineEditCustomPrefix.setEnabled(False)
         
-        self.ui.checkBoxLongJackNaming.setChecked(client.jack_naming == 1)
+        self.ui.checkBoxLongJackNaming.setChecked(
+            client.jack_naming is ray.JackNaming.LONG)
         
         self.ui.lineEditClientId.textEdited.connect(self._client_id_line_edited)
         self.ui.comboBoxPrefixMode.currentIndexChanged.connect(

@@ -181,13 +181,6 @@ class ClientSlot(QFrame):
                     '/ray/client/full_rename',
                     self.client.client_id,
                     label)
-                # self.to_daemon(
-                #     '/ray/client/change_advanced_properties',
-                #     self.client.client_id,
-                #     self.client.label.replace(' ', '_'),
-                #     int(self.client.prefix_mode),
-                #     self.client.custom_prefix,
-                #     int(ray.JackNaming.LONG))
                 return
 
             self.client.label = label
