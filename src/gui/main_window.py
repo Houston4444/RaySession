@@ -77,7 +77,7 @@ class MainWindow(QMainWindow):
 
         # do not enable keep focus option under Wayland
         # because activate a window from it self on Wayland not allowed
-        if ray.get_window_manager() == ray.WindowManager.WAYLAND:
+        if ray.get_window_manager() is ray.WindowManager.WAYLAND:
             self._keep_focus = False
             self.ui.actionKeepFocus.setEnabled(False)
 
@@ -1100,7 +1100,7 @@ class MainWindow(QMainWindow):
                           QSystemTrayIcon.DoubleClick):
             return
 
-        wayland = bool(ray.get_window_manager() == ray.WindowManager.WAYLAND)
+        wayland = bool(ray.get_window_manager() is ray.WindowManager.WAYLAND)
 
         if self.isMinimized():
             if self.hidden_maximized:

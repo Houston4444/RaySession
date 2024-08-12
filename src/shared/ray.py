@@ -179,7 +179,7 @@ class SwitchState:
     DONE = 3
 
 
-class WindowManager:
+class WindowManager(Enum):
     NONE = 0
     X = 1
     WAYLAND = 2

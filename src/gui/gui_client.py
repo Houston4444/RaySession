@@ -134,13 +134,17 @@ class Client(QObject, ray.ClientData):
         if self._properties_dialog is None:
             self._properties_dialog = ClientPropertiesDialog.create(
                 self.main_win, self)
+
         self._properties_dialog.update_contents()
+
         if second_tab:
             if self.protocol == ray.Protocol.RAY_HACK:
                 self._properties_dialog.enable_test_zone(True)
             self._properties_dialog.set_on_second_tab()
+
         self._properties_dialog.show()
-        if ray.get_window_manager() != ray.WindowManager.WAYLAND:
+
+        if ray.get_window_manager() is not ray.WindowManager.WAYLAND:
             self._properties_dialog.activateWindow()
 
     def close_properties_dialog(self):

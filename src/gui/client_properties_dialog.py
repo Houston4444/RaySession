@@ -132,7 +132,10 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.tabWidget.setCurrentIndex(1)
 
     def update_status(self, status):
-        pass
+        ...
+
+    def enable_test_zone(self, yesno: bool):
+        ...
 
     def update_contents(self):
         self.ui.labelId.setText(self.client.client_id)
@@ -472,7 +475,6 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
             bool(self.client.ray_hack.no_save_level >= 1))
         self.rhack.checkBoxCloseGracefully.setChecked(
             bool(self.client.ray_hack.no_save_level == 2))
-
 
     def enable_test_zone(self, yesno: bool):
         self.rhack.groupBoxTestZone.setChecked(yesno)
