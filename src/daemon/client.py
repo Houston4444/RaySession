@@ -2198,42 +2198,42 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         X_CLIENT_ID_X = "XXX_CLIENT_ID_XXX"
         X_CLIENT_LINKS_DIR_X = "XXX_CLIENT_LINKS_DIR_XXX" # used for Carla links dir
 
-        if template_save == ray.Template.NONE:
+        if template_save is ray.Template.NONE:
             if self.prefix_mode is not ray.PrefixMode.SESSION_NAME:
                 return
 
             spath = self.session.root / new_session_full_name
 
-        elif template_save == ray.Template.RENAME:
+        elif template_save is ray.Template.RENAME:
             pass
 
-        elif template_save == ray.Template.SESSION_SAVE:
+        elif template_save is ray.Template.SESSION_SAVE:
             spath = Path(new_session_full_name)
             if not spath.is_absolute():
                 spath = TemplateRoots.user_sessions / new_session_full_name
             new_session_name = X_SESSION_X
 
-        elif template_save == ray.Template.SESSION_SAVE_NET:
+        elif template_save is ray.Template.SESSION_SAVE_NET:
             spath = (self.session.root
                      / TemplateRoots.net_session_name
                      / new_session_full_name)
             new_session_name = X_SESSION_X
 
-        elif template_save == ray.Template.SESSION_LOAD:
+        elif template_save is ray.Template.SESSION_LOAD:
             spath = self.session.root / new_session_full_name
             old_session_name = X_SESSION_X
 
-        elif template_save == ray.Template.SESSION_LOAD_NET:
+        elif template_save is ray.Template.SESSION_LOAD_NET:
             spath = self.session.root / new_session_full_name
             old_session_name = X_SESSION_X
 
-        elif template_save == ray.Template.CLIENT_SAVE:
+        elif template_save is ray.Template.CLIENT_SAVE:
             spath = TemplateRoots.user_clients / new_session_full_name
             new_session_name = X_SESSION_X
             new_client_id = X_CLIENT_ID_X
             new_client_links_dir = X_CLIENT_LINKS_DIR_X
 
-        elif template_save == ray.Template.CLIENT_LOAD:
+        elif template_save is ray.Template.CLIENT_LOAD:
             spath = self.session.path
             old_session_name = X_SESSION_X
             old_client_id = X_CLIENT_ID_X

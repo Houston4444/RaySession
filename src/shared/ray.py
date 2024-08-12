@@ -190,7 +190,7 @@ class WaitFor(Enum):
     SCRIPT_QUIT = 7
 
 
-class Template(IntEnum):
+class Template(Enum):
     NONE = 0
     RENAME = 1
     SESSION_SAVE = 2
