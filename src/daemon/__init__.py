@@ -154,7 +154,7 @@ if __name__ == '__main__':
 
     RS.settings.setValue('daemon/recent_sessions', recent_sessions)
     if not CommandLineArgs.no_options:
-        RS.settings.setValue('daemon/options', server.options)
+        RS.settings.setValue('daemon/options', server.options.value)
 
     if server._terminal_command_is_default:
         RS.settings.setValue('daemon/terminal_command', '')

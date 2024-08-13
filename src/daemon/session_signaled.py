@@ -239,7 +239,7 @@ class SignaledSession(OperatingSession):
             server = self.get_server()
             if (server is not None
                     and server.server_status is ray.ServerStatus.READY
-                    and server.options & ray.Option.DESKTOPS_MEMORY):
+                    and ray.Option.DESKTOPS_MEMORY in server.options):
                 self.desktops_memory.replace()
         else:
             self.message("Reply from unknown client")
@@ -693,11 +693,11 @@ class SignaledSession(OperatingSession):
             osp, self._folder_sizes_and_dates)
 
     def _ray_server_set_option(self, osp: OscPack):
-        option = osp.args[0]
-
-        if abs(option) == ray.Option.BOOKMARK_SESSION:
+        option = ray.Option(abs(osp.args[0]))
+        
+        if option is ray.Option.BOOKMARK_SESSION:
             if self.path:
-                if option > 0:
+                if osp.args[0] > 0:
                     self.bookmarker.make_all(self.path)
                 else:
                     self.bookmarker.remove_all(self.path)

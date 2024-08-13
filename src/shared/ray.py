@@ -149,6 +149,7 @@ class Protocol(Enum):
 
 
 class Option(Flag):
+    NONE = 0x00
     NSM_LOCKED = 0x001
     SAVE_FROM_CLIENT = 0x002 #DEPRECATED
     BOOKMARK_SESSION = 0x004
@@ -158,6 +159,13 @@ class Option(Flag):
     SNAPSHOTS = 0x040
     SESSION_SCRIPTS = 0x080
     GUI_STATES = 0x100
+    
+    @classmethod
+    def _missing_(cls, value) -> 'Option':
+        try:
+            return super()._missing_(value)
+        except:
+            return Option.NONE 
 
 
 class Err:

@@ -115,12 +115,12 @@ class ServerSender(QObject):
         else:
             self.send(src_addr, '/error', src_path, err, message)
 
-    def has_server_option(self, option: int) -> bool:
+    def has_server_option(self, option: ray.Option) -> bool:
         server = self.get_server()
         if not server:
             return False
 
-        return bool(server.options & option)
+        return bool(option in server.options)
 
     def get_client_templates_database(self, base: str) -> list[AppTemplate]:
         server = OscServerThread.get_instance()

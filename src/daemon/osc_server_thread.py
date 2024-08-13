@@ -391,10 +391,13 @@ class OscServerThread(ClientCommunicating):
                            | ray.Option.SNAPSHOTS
                            | ray.Option.SESSION_SCRIPTS)
 
-        self.options = ray.Option(RS.settings.value(
-            'daemon/options',
-            default_options.value,
-            type=int))
+        try:
+            self.options = ray.Option(RS.settings.value(
+                'daemon/options',
+                default_options.value,
+                type=int))
+        except:
+            self.options = default_options
 
         if CommandLineArgs.no_options:
             self.options = ray.Option.NONE
