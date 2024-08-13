@@ -272,13 +272,15 @@ def version_to_tuple(version_str: str) -> tuple[int]:
 def add_self_bin_to_path():
     # Add RaySession/src/bin to $PATH to can use ray executables after make
     # Warning, will works only if link to this file is in RaySession/*/*/*.py
-    this_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
-    bin_path = "%s/bin" % os.path.dirname(this_path)
-    if not os.environ['PATH'].startswith("%s:" % bin_path):
-        os.environ['PATH'] = "%s:%s" % (bin_path, os.environ['PATH'])
-        
     bin_path = Path(__file__).parent.parent / 'bin'
-    print('bin path', bin_path, f'{bin_path}')
+    path_env = os.getenv('PATH')
+    if path_env is None:
+        # if it happens, very few chances that system works correctly
+        os.environ['PATH'] = f'{bin_path}'
+        return
+    
+    if str(bin_path) not in path_env.split(':'):
+        os.environ['PATH'] = f'{bin_path}:{path_env}'
 
 def get_list_in_settings(settings: QSettings, path: str) -> list:
     # getting a QSettings value of list type seems to not works the same way
@@ -480,14 +482,14 @@ def are_on_same_machine(url1: str, url2: str) -> bool:
 
     return False
 
-def get_net_url(port) -> str:
+def get_net_url(port: int) -> str:
     ip = Machine192.get()
     if not ip:
         return ''
 
     return "osc.udp://%s:%i/" % (ip, port)
 
-def shell_line_to_args(string:str) -> list:
+def shell_line_to_args(string: str) -> list:
     try:
         args = shlex.split(string)
     except BaseException:
@@ -495,15 +497,9 @@ def shell_line_to_args(string:str) -> list:
 
     return args
 
-def types_are_all_strings(types:str) -> bool:
+def types_are_all_strings(types: str) -> bool:
     for char in types:
         if char != 's':
-            return False
-    return True
-
-def are_they_all_strings(args:list) -> bool:
-    for arg in args:
-        if not isinstance(arg, str):
             return False
     return True
 
