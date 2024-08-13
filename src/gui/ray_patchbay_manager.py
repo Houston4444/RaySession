@@ -255,7 +255,7 @@ class RayPatchbayManager(PatchbayManager):
             jack_client_names = list[str]()
             
             for client in self.session.client_list:
-                if (client.status != ray.ClientStatus.STOPPED
+                if (client.status is not ray.ClientStatus.STOPPED
                         and client.client_id in client_ids):
                     jack_client_names.append(client.jack_client_name)
                     if not client.jack_client_name.endswith('.' + client.client_id):
@@ -321,7 +321,7 @@ class RayPatchbayManager(PatchbayManager):
     def get_corrected_a2j_group_name(self, group_name: str) -> str:
         # fix a2j wrongly substitute '.' with space
         for client in self.session.client_list:
-            if (client.status != ray.ClientStatus.STOPPED
+            if (client.status is not ray.ClientStatus.STOPPED
                     and '.' in client.jack_client_name
                     and (client.jack_client_name.replace('.', ' ', 1)
                             == group_name)):

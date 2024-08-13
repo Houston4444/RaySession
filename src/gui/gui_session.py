@@ -1,5 +1,6 @@
 
 import sys
+from typing import Optional
 from PyQt5.QtWidgets import QApplication
 
 import ray
@@ -95,7 +96,7 @@ class Session:
 
         return self.path
 
-    def get_client(self, client_id: str)->Client:
+    def get_client(self, client_id: str) -> Optional[Client]:
         for client in self.client_list:
             if client.client_id == client_id:
                 return client
@@ -298,16 +299,20 @@ class SignaledSession(Session):
                 break
 
     def _ray_gui_client_status(self, path, args):
-        client_id, status = args
+        client_id: str = args[0]
+        status = ray.ClientStatus(args[1])
+        
         client = self.get_client(client_id)
-        if client:
-            client.set_status(status)
+        if client is None:
+            return
+        
+        client.set_status(status)
 
-            if status == ray.ClientStatus.REMOVED:
-                self.main_win.remove_client(client_id)
-                client.close_properties_dialog()
-                self.client_list.remove(client)
-                del client
+        if client.status is ray.ClientStatus.REMOVED:
+            self.main_win.remove_client(client_id)
+            client.close_properties_dialog()
+            self.client_list.remove(client)
+            del client
 
         self.main_win.client_status_changed(client_id, status)
 

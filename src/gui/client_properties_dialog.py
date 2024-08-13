@@ -131,7 +131,7 @@ class ClientPropertiesDialog(ChildDialog):
     def set_on_second_tab(self):
         self.ui.tabWidget.setCurrentIndex(1)
 
-    def update_status(self, status):
+    def update_status(self, status: ray.ClientStatus):
         ...
 
     def enable_test_zone(self, yesno: bool):
@@ -348,7 +348,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
 
         self.rhack.pushButtonStart.setEnabled(
             bool(self._acceptable_arguments
-                 and self._current_status == ray.ClientStatus.STOPPED))
+                 and self._current_status is ray.ClientStatus.STOPPED))
         self.ui.pushButtonSaveChanges.setEnabled(self._is_allowed())
 
     def _line_edit_config_file_changed(self, text):
@@ -406,7 +406,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.rhack.labelWorkingDirTitle.setVisible(False)
         self.rhack.labelWorkingDir.setVisible(False)
 
-    def update_status(self, status):
+    def update_status(self, status: ray.ClientStatus):
         self._current_status = status
         self.rhack.lineEditClientStatus.setText(client_status_string(status))
 
@@ -417,16 +417,16 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
             self.rhack.pushButtonStart.setEnabled(False)
             self.rhack.pushButtonStop.setEnabled(True)
             self.rhack.pushButtonSave.setEnabled(False)
-        elif status == ray.ClientStatus.READY:
+        elif status is ray.ClientStatus.READY:
             self.rhack.pushButtonStart.setEnabled(False)
             self.rhack.pushButtonStop.setEnabled(True)
             self.rhack.pushButtonSave.setEnabled(
                 bool(self.rhack.comboSaveSig.currentData() != 0))
-        elif status == ray.ClientStatus.STOPPED:
+        elif status is ray.ClientStatus.STOPPED:
             self.rhack.pushButtonStart.setEnabled(self._is_allowed())
             self.rhack.pushButtonStop.setEnabled(False)
             self.rhack.pushButtonSave.setEnabled(False)
-        elif status == ray.ClientStatus.PRECOPY:
+        elif status is ray.ClientStatus.PRECOPY:
             self.rhack.pushButtonStart.setEnabled(False)
             self.rhack.pushButtonStart.setEnabled(False)
             self.rhack.pushButtonSave.setEnabled(False)

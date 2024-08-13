@@ -60,9 +60,9 @@ class AdvancedPropertiesDialog(ChildDialog):
         self._update_preview()
     
     # pyqtSlot(int)
-    def _client_status_changed(self, status: int):
+    def _client_status_changed(self, status: ray.ClientStatus):
         self.ui.buttonBox.button(QDialogButtonBox.Apply).setEnabled(
-            status == ray.ClientStatus.STOPPED)
+            status is ray.ClientStatus.STOPPED)
     
     @pyqtSlot()
     def _client_id_line_edited(self):

@@ -347,7 +347,7 @@ class ClientSlot(QFrame):
     def update_status(self, status: int):
         self.ui.lineEditClientStatus.setText(client_status_string(status))
         self.ui.lineEditClientStatus.setEnabled(
-            status != ray.ClientStatus.STOPPED)
+            status is not ray.ClientStatus.STOPPED)
         self.ui.actionFindBoxesInPatchbay.setEnabled(
             status not in (ray.ClientStatus.STOPPED, ray.ClientStatus.PRECOPY)) 
 
@@ -372,7 +372,7 @@ class ClientSlot(QFrame):
                 self.ui.startButton.setVisible(False)
                 self.ui.stopButton.setVisible(True)
 
-        elif status == ray.ClientStatus.READY:
+        elif status is ray.ClientStatus.READY:
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(True)
             self.ui.closeButton.setEnabled(False)
@@ -386,7 +386,7 @@ class ClientSlot(QFrame):
                 self.ui.startButton.setVisible(False)
                 self.ui.stopButton.setVisible(True)
 
-        elif status == ray.ClientStatus.STOPPED:
+        elif status is ray.ClientStatus.STOPPED:
             self.ui.startButton.setEnabled(True)
             self.ui.stopButton.setEnabled(False)
             self.ui.saveButton.setEnabled(False)
@@ -407,7 +407,7 @@ class ClientSlot(QFrame):
             if not ray_hack:
                 self.set_gui_state(False)
 
-        elif status == ray.ClientStatus.PRECOPY:
+        elif status is ray.ClientStatus.PRECOPY:
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(False)
             self.ui.saveButton.setEnabled(False)
@@ -425,7 +425,7 @@ class ClientSlot(QFrame):
             self.ui.stopButton.setIcon(self._stop_icon)
             self._stop_is_kill = False
 
-        elif status == ray.ClientStatus.COPY:
+        elif status is ray.ClientStatus.COPY:
             self.ui.saveButton.setEnabled(False)
 
     def allow_kill(self):
@@ -478,7 +478,7 @@ class ClientSlot(QFrame):
         
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if (event.button() == Qt.LeftButton
-                and self.client.status != ray.ClientStatus.STOPPED
+                and self.client.status is not ray.ClientStatus.STOPPED
                 and self.client.jack_client_name
                 and self.list_widget_item.isSelected()):
             self.client.session.patchbay_manager.select_client_box(
@@ -628,7 +628,7 @@ class ListWidgetClients(QListWidget):
         # parse patchbay boxes of the selected client 
         if event.key() in (Qt.Key_Left, Qt.Key_Right):
             client = self.currentItem().widget.client
-            if (client.status != ray.ClientStatus.STOPPED
+            if (client.status is not ray.ClientStatus.STOPPED
                     and client.jack_client_name
                     and self.currentItem().isSelected()
                     and self.session is not None):

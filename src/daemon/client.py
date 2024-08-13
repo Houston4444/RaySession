@@ -318,7 +318,7 @@ class Client(ServerSender, ray.ClientData):
                 % self.gui_msg_style())
 
     def _send_status_to_gui(self):
-        self.send_gui('/ray/gui/client/status', self.client_id, self.status)
+        self.send_gui('/ray/gui/client/status', self.client_id, self.status.value)
 
     def _net_daemon_out_of_time(self):
         self.ray_net.duplicate_state = -1
@@ -1216,20 +1216,20 @@ class Client(ServerSender, ray.ClientData):
                 self.ray_net.daemon_url,
                 self.ray_net.session_root.replace('"', '\\"'))
 
-    def set_status(self, status: int):
+    def set_status(self, status: ray.ClientStatus):
         # ray.ClientStatus.COPY is not a status as the other ones.
         # GUI needs to know if client is started/open/stopped while files are
         # copied, so self.status doesn't remember ray.ClientStatus.COPY,
         # although it is sent to GUI
 
-        if status != ray.ClientStatus.COPY:
+        if status is not ray.ClientStatus.COPY:
             self.status = status
             self._send_status_to_gui()
 
-        if (status == ray.ClientStatus.COPY
+        if (status is ray.ClientStatus.COPY
                 or self.session.file_copier.is_active(self.client_id)):
             self.send_gui("/ray/gui/client/status", self.client_id,
-                          ray.ClientStatus.COPY)
+                          ray.ClientStatus.COPY.value)
 
     def get_prefix_string(self) -> str:
         if self.prefix_mode is ray.PrefixMode.SESSION_NAME:

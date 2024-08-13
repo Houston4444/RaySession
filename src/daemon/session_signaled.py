@@ -1791,7 +1791,7 @@ class SignaledSession(OperatingSession):
             return
 
         if client.is_running():
-            if not client.status == ray.ClientStatus.READY:
+            if client.status is not ray.ClientStatus.READY:
                 self.send(*osp.error(), ray.Err.NOT_NOW,
                           f'client_id {new_client_id} is not ready')
                 return

@@ -913,7 +913,7 @@ class StopClientDialog(ChildDialog):
             self.reject()
             return
 
-        if status == ray.ClientStatus.READY and self._wait_for_save:
+        if status is ray.ClientStatus.READY and self._wait_for_save:
             self._wait_for_save = False
             self.accept()
 
@@ -973,7 +973,7 @@ class ClientRenameDialog(ChildDialog):
                 ray.ClientStatus.STOPPED, ray.ClientStatus.PRECOPY,
                 ray.ClientStatus.QUIT, ray.ClientStatus.LOSE):
             text = ''
-        elif status == ray.ClientStatus.READY and can_switch:
+        elif status is ray.ClientStatus.READY and can_switch:
             text = _translate(
                 'id_renaming', 'The client project will be reload')
         else:
@@ -987,7 +987,7 @@ class ClientRenameDialog(ChildDialog):
         self.ui.checkBoxIdRename.setText(full_text)    
 
     def _client_status_changed(self, status: int):
-        if status == ray.ClientStatus.REMOVED:
+        if status is ray.ClientStatus.REMOVED:
             self.reject()
             
         self._change_box_text_with_status(status)

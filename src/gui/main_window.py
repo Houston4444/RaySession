@@ -560,7 +560,7 @@ class MainWindow(QMainWindow):
 
     def _flash_open(self):
         for client in self.session.client_list:
-            if client.status == ray.ClientStatus.OPEN:
+            if client.status is ray.ClientStatus.OPEN:
                 client.widget.flash_if_open(self._flash_open_bool)
 
         self._flash_open_bool = not self._flash_open_bool
@@ -1316,7 +1316,7 @@ class MainWindow(QMainWindow):
                 if not dialog.result():
                     return
 
-            elif client.status == ray.ClientStatus.READY:
+            elif client.status is ray.ClientStatus.READY:
                 if client.has_dirty:
                     if client.dirty_state:
                         dialog = child_dialogs.StopClientDialog(self, client_id)
@@ -1353,10 +1353,10 @@ class MainWindow(QMainWindow):
 
         self.to_daemon('/ray/server/abort_copy')
 
-    def client_status_changed(self, client_id, status):
+    def client_status_changed(self, client_id: str, status: ray.ClientStatus):
         # launch/stop flashing status if 'open'
         for client in self.session.client_list:
-            if client.status == ray.ClientStatus.OPEN:
+            if client.status is ray.ClientStatus.OPEN:
                 if not self._timer_flicker_open.isActive():
                     self._timer_flicker_open.start()
                 break
@@ -1366,13 +1366,13 @@ class MainWindow(QMainWindow):
         # launch/stop timer_raisewin if keep focus
         if self._keep_focus:
             for client in self.session.client_list:
-                if client.status == ray.ClientStatus.OPEN:
+                if client.status is ray.ClientStatus.OPEN:
                     if not self._timer_raisewin.isActive():
                         self._timer_raisewin.start()
                     break
             else:
                 self._timer_raisewin.stop()
-                if status == ray.ClientStatus.READY:
+                if status is ray.ClientStatus.READY:
                     self._raise_window()
 
     def print_message(self, message):

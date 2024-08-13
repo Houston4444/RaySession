@@ -1304,7 +1304,7 @@ class OscServerThread(ClientCommunicating):
                           *client.ray_net.spread())
 
             self.send(gui_addr, "/ray/gui/client/status",
-                      client.client_id, client.status)
+                      client.client_id, client.status.value)
 
             if client.is_capable_of(':optional-gui:'):
                 self.send(gui_addr, '/ray/gui/client/gui_visible',

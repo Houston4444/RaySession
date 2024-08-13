@@ -69,7 +69,8 @@ class JackNaming(Enum):
         return JackNaming.LONG
 
 
-class ClientStatus:
+class ClientStatus(Enum):
+    INVALID = -1
     STOPPED = 0
     LAUNCH = 1
     OPEN = 2
@@ -88,6 +89,7 @@ class ClientStatus:
 
 
 class ServerStatus(Enum):
+    INVALID = -1
     OFF = 0
     NEW = 1
     OPEN = 2
@@ -105,6 +107,10 @@ class ServerStatus(Enum):
     OUT_SAVE = 14
     OUT_SNAPSHOT = 15
     SCRIPT = 16
+    
+    @classmethod
+    def _missing_(cls, value) -> 'ServerStatus':
+        return ServerStatus.INVALID
 
 
 class Protocol(Enum):

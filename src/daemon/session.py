@@ -868,7 +868,7 @@ class OperatingSession(Session):
             
             elif (client.is_running()
                     and client.launched_in_terminal
-                    and client.status != ray.ClientStatus.LOSE):
+                    and client.status is not ray.ClientStatus.LOSE):
                 has_alives = True
                 if (client.nsm_active
                         and not os.path.exists('/proc/%i' % client.pid_from_nsm)):

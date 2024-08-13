@@ -279,7 +279,8 @@ def get_code_root() -> Path:
     return Path(__file__).parent.parent.parent
 
 def server_status_string(server_status: ray.ServerStatus) -> str:
-    server_status_strings = {
+    SERVER_STATUS_STRINGS = {
+        ray.ServerStatus.INVALID : _translate('server status', "invalid"),
         ray.ServerStatus.OFF     : _translate('server status', "off"),
         ray.ServerStatus.NEW     : _translate('server status', "new"),
         ray.ServerStatus.OPEN    : _translate('server status', "open"),
@@ -298,13 +299,11 @@ def server_status_string(server_status: ray.ServerStatus) -> str:
         ray.ServerStatus.OUT_SNAPSHOT: _translate('server_status', "snapshot"),
         ray.ServerStatus.SCRIPT  : _translate('server_status', "script")}
 
-    # if not 0 <= server_status < len(server_status_strings):
-    #     return _translate('server status', "invalid")
+    return SERVER_STATUS_STRINGS[server_status]
 
-    return server_status_strings[server_status]
-
-def client_status_string(client_status: int) -> str:
-    client_status_strings = {
+def client_status_string(client_status: ray.ClientStatus) -> str:
+    CLIENT_STATUS_STRINGS = {
+        ray.ClientStatus.INVALID: _translate('client_status', "invalid"),
         ray.ClientStatus.STOPPED: _translate('client status', "stopped"),
         ray.ClientStatus.LAUNCH : _translate('client status', "launch"),
         ray.ClientStatus.OPEN   : _translate('client status', "open"),
@@ -321,19 +320,16 @@ def client_status_string(client_status: int) -> str:
         ray.ClientStatus.SCRIPT : _translate('client_status', 'script'),
         ray.ClientStatus.LOSE   : _translate('client_status', "lose")}
 
-    if not 0 <= client_status < len(client_status_strings):
-        return _translate('client_status', 'invalid')
+    return CLIENT_STATUS_STRINGS[client_status]
 
-    return client_status_strings[client_status]
-
-def error_text(error:int)->str:
+def error_text(error: int) -> str:
     text = ''
     
     if error == ray.Err.SESSION_IN_SESSION_DIR:
         text = _translate(
             'guimsg', 
-            """Can't create session in a dir containing a session
-for better organization.""")
+            "Can't create session in a dir containing a session "
+            "for better organization.")
     
     return text
 

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class Client(QObject, ray.ClientData):
-    status_changed = pyqtSignal(int)
+    status_changed = pyqtSignal(ray.ClientStatus)
 
     def __init__(self, session: 'SignaledSession',
                  client_id: str, protocol_int: int):
@@ -40,13 +40,13 @@ class Client(QObject, ray.ClientData):
         self.widget = self.main_win.create_client_widget(self)
         self._properties_dialog: ClientPropertiesDialog = None
 
-    def set_status(self, status: int):
+    def set_status(self, status: ray.ClientStatus):
         self._previous_status = self.status
         self.status = status
         self.status_changed.emit(status)
 
         if (not self.has_dirty
-                and self.status == ray.ClientStatus.READY
+                and self.status is ray.ClientStatus.READY
                 and self._previous_status in (
                     ray.ClientStatus.OPEN, ray.ClientStatus.SAVE)):
             self.last_save = time.time()
