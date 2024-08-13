@@ -396,7 +396,8 @@ class OscServerThread(ClientCommunicating):
                 'daemon/options',
                 default_options.value,
                 type=int))
-        except:
+        except BaseException as e:
+            _logger.warning(f'Unable to find config daemon options\n{str(e)}')
             self.options = default_options
 
         if CommandLineArgs.no_options:
