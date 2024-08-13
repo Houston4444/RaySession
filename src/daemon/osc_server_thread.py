@@ -899,7 +899,7 @@ class OscServerThread(ClientCommunicating):
 
         for gui_addr in self.gui_list:
             if not ray.are_same_osc_port(gui_addr.url, osp.src_addr.url):
-                self.send(gui_addr, '/ray/gui/server/options', self.options)
+                self.send(gui_addr, '/ray/gui/server/options', self.options.value)
 
         self.send(*osp.reply(), 'Options set')
 
@@ -1269,7 +1269,7 @@ class OscServerThread(ClientCommunicating):
         gui_addr.gui_pid = gui_pid
 
         self.send(gui_addr, "/ray/gui/server/announce", ray.VERSION,
-                  self.server_status.value, self.options, str(self.session.root),
+                  self.server_status.value, self.options.value, str(self.session.root),
                   int(is_net_free))
 
         self.send(gui_addr, "/ray/gui/server/status", self.server_status.value)
@@ -1350,7 +1350,7 @@ class OscServerThread(ClientCommunicating):
         controller.addr = control_address
         self.controller_list.append(controller)
         self.send(control_address, "/ray/control/server/announce",
-                  ray.VERSION, self.server_status.value, self.options,
+                  ray.VERSION, self.server_status.value, self.options.value,
                   str(self.session.root), 1)
 
     def send_controller_message(self, message):
