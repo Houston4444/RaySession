@@ -128,7 +128,7 @@ class Session:
                 return True
         return False
 
-    def set_daemon_options(self, options):
+    def set_daemon_options(self, options: ray.Option):
         self.main_win.set_daemon_options(options)
         for client in self.client_list:
             client.widget.set_daemon_options(options)
@@ -210,8 +210,7 @@ class SignaledSession(Session):
                 self.terminal_command)
 
     def _ray_gui_server_options(self, path, args):
-        options = args[0]
-        self.set_daemon_options(options)
+        self.set_daemon_options(ray.Option(args[0]))
 
     def _ray_gui_server_recent_sessions(self, path, args):
         self.recent_sessions: list[str] = args

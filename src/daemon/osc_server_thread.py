@@ -387,16 +387,17 @@ class OscServerThread(ClientCommunicating):
             'session_scripts': ray.Option.SESSION_SCRIPTS,
             'gui_states': ray.Option.GUI_STATES}
 
-        self.options = RS.settings.value(
+        default_options = (ray.Option.BOOKMARK_SESSION
+                           | ray.Option.SNAPSHOTS
+                           | ray.Option.SESSION_SCRIPTS)
+
+        self.options = ray.Option(RS.settings.value(
             'daemon/options',
-            ray.Option.BOOKMARK_SESSION
-            + ray.Option.SNAPSHOTS
-            + ray.Option.SESSION_SCRIPTS,
-            type=int
-        )
+            default_options.value,
+            type=int))
 
         if CommandLineArgs.no_options:
-            self.options = 0
+            self.options = ray.Option.NONE
 
         if shutil.which('wmctrl'):
             self.options |= ray.Option.HAS_WMCTRL
@@ -846,12 +847,17 @@ class OscServerThread(ClientCommunicating):
     # set option from GUI
     @osp_method('/ray/server/set_option', 'i')
     def rayServerSetOption(self, osp: OscPack):
-        option = osp.args[0]
-        self._set_option(option)
+        option = ray.Option(abs(osp.args[0]))
+
+        if osp.args[0] >= 0:
+            self.options |= option
+        else:
+            self.options &= ~option        
 
         for gui_addr in self.gui_list:
             if not ray.are_same_osc_port(gui_addr.url, osp.src_addr.url):
-                self.send(gui_addr, '/ray/gui/server/options', self.options)
+                self.send(gui_addr, '/ray/gui/server/options',
+                          self.options.value)
 
     # set options from ray_control
     @osp_method('/ray/server/set_options', None)
@@ -872,22 +878,24 @@ class OscServerThread(ClientCommunicating):
             if option_str in self._OPTIONS_DICT:
                 option = self._OPTIONS_DICT[option_str]
                 if option_value:
-                    if (option == ray.Option.DESKTOPS_MEMORY
-                            and not self.options & ray.Option.HAS_WMCTRL):
+                    if (option is ray.Option.DESKTOPS_MEMORY
+                            and ray.Option.HAS_WMCTRL not in self.options):
                         self.send(osp.src_addr, '/minor_error', osp.path,
                             "wmctrl is not present. "
                             "Impossible to activate 'desktops_memory' option")
                         continue
-                    if (option == ray.Option.SNAPSHOTS
-                            and not self.options & ray.Option.HAS_GIT):
+
+                    if (option is ray.Option.SNAPSHOTS
+                            and ray.Option.HAS_GIT not in self.options):
                         self.send(osp.src_addr, '/minor_error', osp.path,
                             "git is not present. "
                             "Impossible to activate 'snapshots' option")
                         continue
 
-                if not option_value:
-                    option = -option
-                self._set_option(option)
+                if option_value:
+                    self.options |= option
+                else:
+                    self.options &= ~option
 
         for gui_addr in self.gui_list:
             if not ray.are_same_osc_port(gui_addr.url, osp.src_addr.url):
@@ -995,14 +1003,14 @@ class OscServerThread(ClientCommunicating):
 
     @osp_method('/ray/session/take_snapshot', 's')
     def raySessionTakeSnapshotOnly(self, osp: OscPack):
-        if not self.options & ray.Option.HAS_GIT:
+        if ray.Option.HAS_GIT not in self.options:
             self.send(*osp.error(),
                       "snapshot impossible because git is not installed")
             return False
 
     @osp_method('/ray/session/take_snapshot', 'si')
     def raySessionTakeSnapshot(self, osp: OscPack):
-        if not self.options & ray.Option.HAS_GIT:
+        if ray.Option.HAS_GIT not in self.options:
             self.send(*osp.error(),
                       "snapshot impossible because git is not installed")
             return False
@@ -1226,12 +1234,6 @@ class OscServerThread(ClientCommunicating):
             return True
 
         return False
-
-    def _set_option(self, option: int):
-        if option >= 0:
-            self.options |= option
-        else:
-            self.options &= ~abs(option)
 
     def send(self, *args):
         if CommandLineArgs.debug:

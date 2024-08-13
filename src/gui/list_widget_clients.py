@@ -465,9 +465,9 @@ class ClientSlot(QFrame):
     def set_progress(self, progress: float):
         self.ui.lineEditClientStatus.set_progress(progress)
 
-    def set_daemon_options(self, options):
-        has_git = bool(options & ray.Option.HAS_GIT)
-        self.ui.actionReturnToAPreviousState.setVisible(has_git)
+    def set_daemon_options(self, options: ray.Option):
+        self.ui.actionReturnToAPreviousState.setVisible(
+            ray.Option.HAS_GIT in options)
 
     def patchbay_is_shown(self, yesno: bool):
         self.ui.actionFindBoxesInPatchbay.setVisible(yesno)

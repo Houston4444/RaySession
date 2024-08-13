@@ -538,24 +538,25 @@ class MainWindow(QMainWindow):
         if not keep_focus:
             self._timer_raisewin.stop()
 
-    def _set_option(self, option: int, state: bool):
+    def _set_option(self, option: ray.Option, state: bool):
+        option_int = option.value
         if not state:
-            option = -option
-        self.to_daemon('/ray/server/set_option', option)
+            option_int = - option_int
+        self.to_daemon('/ray/server/set_option', option_int)
 
-    def _bookmark_session_folder_toggled(self, state):
+    def _bookmark_session_folder_toggled(self, state: bool):
         self._set_option(ray.Option.BOOKMARK_SESSION, state)
 
-    def _desktops_memory_toggled(self, state):
+    def _desktops_memory_toggled(self, state: bool):
         self._set_option(ray.Option.DESKTOPS_MEMORY, state)
 
-    def _auto_snapshot_toggled(self, state):
+    def _auto_snapshot_toggled(self, state: bool):
         self._set_option(ray.Option.SNAPSHOTS, state)
 
-    def _session_scripts_toggled(self, state):
+    def _session_scripts_toggled(self, state: bool):
         self._set_option(ray.Option.SESSION_SCRIPTS, state)
 
-    def _remember_optional_gui_states_toggled(self, state):
+    def _remember_optional_gui_states_toggled(self, state: bool):
         self._set_option(ray.Option.GUI_STATES, state)
 
     def _flash_open(self):
@@ -1249,25 +1250,25 @@ class MainWindow(QMainWindow):
         self.session.patchbay_manager.select_client_box(
             current.widget.client.jack_client_name)
 
-    def set_daemon_options(self, options):
+    def set_daemon_options(self, options: ray.Option):
         self.ui.actionBookmarkSessionFolder.setChecked(
-            bool(options & ray.Option.BOOKMARK_SESSION))
+            ray.Option.BOOKMARK_SESSION in options)
         self.ui.actionDesktopsMemory.setChecked(
-            bool(options & ray.Option.DESKTOPS_MEMORY))
+            ray.Option.DESKTOPS_MEMORY in options)
         self.ui.actionAutoSnapshot.setChecked(
-            bool(options & ray.Option.SNAPSHOTS))
+            ray.Option.SNAPSHOTS in options)
         self.ui.actionSessionScripts.setChecked(
-            bool(options & ray.Option.SESSION_SCRIPTS))
+            ray.Option.SESSION_SCRIPTS in options)
         self.ui.actionRememberOptionalGuiStates.setChecked(
-            bool(options & ray.Option.GUI_STATES))
+            ray.Option.GUI_STATES in options)
 
-        has_wmctrl = bool(options & ray.Option.HAS_WMCTRL)
+        has_wmctrl = ray.Option.HAS_WMCTRL in options
         self.ui.actionDesktopsMemory.setEnabled(has_wmctrl)
         if has_wmctrl:
             self.ui.actionDesktopsMemory.setText(
                 _translate('actions', 'Desktops Memory'))
 
-        has_git = bool(options & ray.Option.HAS_GIT)
+        has_git = ray.Option.HAS_GIT in options
         self.ui.actionAutoSnapshot.setEnabled(has_git)
         self.ui.actionReturnToAPreviousState.setVisible(has_git)
         self.ui.toolButtonSnapshots.setVisible(has_git)

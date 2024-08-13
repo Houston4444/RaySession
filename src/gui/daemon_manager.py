@@ -93,7 +93,7 @@ class DaemonManager(QObject):
 
     def _receive_announce(
             self, src_addr: Address, version: str, server_status: ray.ServerStatus,
-            options: int, session_root: str, is_net_free: int):
+            options: ray.Option, session_root: str, is_net_free: int):
         self._announce_timer.stop()
 
         if version.split('.')[:2] != ray.VERSION.split('.')[:2]:
@@ -129,7 +129,7 @@ class DaemonManager(QObject):
         self.session_root = session_root
         CommandLineArgs.change_session_root(self.session_root)
 
-        self._is_nsm_locked = options & ray.Option.NSM_LOCKED
+        self._is_nsm_locked = ray.Option.NSM_LOCKED in options
 
         if self._is_nsm_locked:
             if self.main_win is not None:

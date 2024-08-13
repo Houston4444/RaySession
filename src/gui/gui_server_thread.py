@@ -198,7 +198,7 @@ class GuiServerThread(liblo.ServerThread):
 
         self.signaler.daemon_announce.emit(
             src_addr, version, ray.ServerStatus(server_status_int),
-            options, session_root, is_net_free)
+            ray.Option(options), session_root, is_net_free)
 
     @ray_method('/ray/gui/server/root', 's')
     def _server_root(self, path, args, types, src_addr):

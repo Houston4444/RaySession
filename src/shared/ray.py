@@ -148,7 +148,7 @@ class Protocol(Enum):
         return Protocol.NSM
 
 
-class Option:
+class Option(Flag):
     NSM_LOCKED = 0x001
     SAVE_FROM_CLIENT = 0x002 #DEPRECATED
     BOOKMARK_SESSION = 0x004

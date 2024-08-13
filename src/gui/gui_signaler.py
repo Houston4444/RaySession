@@ -8,7 +8,7 @@ import ray
 class Signaler(QObject):
     osc_receive = pyqtSignal(str, list)
     daemon_announce = pyqtSignal(
-        Address, str, ray.ServerStatus, int, str, int)
+        Address, str, ray.ServerStatus, ray.Option, str, int)
     daemon_announce_ok = pyqtSignal()
     daemon_nsm_locked = pyqtSignal(bool)
     server_copying = pyqtSignal(bool)
