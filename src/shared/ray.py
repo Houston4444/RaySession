@@ -10,6 +10,7 @@ import socket
 import subprocess
 import sys
 import logging
+from pathlib import Path
 
 import liblo
 from liblo import Server, Address
@@ -168,7 +169,7 @@ class Option(Flag):
             return Option.NONE 
 
 
-class Err:
+class Err(IntEnum):
     OK = 0
     GENERAL_ERROR = -1
     INCOMPATIBLE_API = -2
@@ -242,6 +243,15 @@ class Systray(Enum):
     SESSION_ONLY = 1
     ALWAYS = 2
 
+
+class ScriptFile(Flag):
+    PREVENT = 0x0
+    PARENT = 0x1
+    LOAD = 0x2
+    SAVE = 0x4
+    CLOSE = 0x8
+    
+
 @dataclass
 class Favorite:
     name: str
@@ -250,22 +260,7 @@ class Favorite:
     display_name: str
 
 
-class ScriptFile(Flag):
-    PREVENT = 0x0
-    PARENT = 0x1
-    LOAD = 0x2
-    SAVE = 0x4
-    CLOSE = 0x8
-
-
-debug = False
-
-
-def ifDebug(string):
-    if debug:
-        sys.stderr.write("%s\n" % string)
-
-def version_to_tuple(version_str: str):
+def version_to_tuple(version_str: str) -> tuple[int]:
     version_list = []
     for c in version_str.split('.'):
         if not c.isdigit():
@@ -281,6 +276,9 @@ def add_self_bin_to_path():
     bin_path = "%s/bin" % os.path.dirname(this_path)
     if not os.environ['PATH'].startswith("%s:" % bin_path):
         os.environ['PATH'] = "%s:%s" % (bin_path, os.environ['PATH'])
+        
+    bin_path = Path(__file__).parent.parent / 'bin'
+    print('bin path', bin_path, f'{bin_path}')
 
 def get_list_in_settings(settings: QSettings, path: str) -> list:
     # getting a QSettings value of list type seems to not works the same way
@@ -342,9 +340,8 @@ def is_osc_port_free(port: int) -> bool:
     del testport
     return True
 
-
 def get_free_osc_port(default=16187):
-    ''' get a free OSC port for daemon, start from default '''
+    '''get a free OSC port for daemon, start from default'''
 
     if default >= 65536:
         default = 16187
@@ -414,9 +411,10 @@ def get_liblo_address_from_port(port:int) -> Optional[liblo.Address]:
             msg = "%i is an unknown osc port" % port
             raise argparse.ArgumentTypeError(msg)
 
-def are_same_osc_port(url1, url2):
+def are_same_osc_port(url1: str, url2: str) -> bool:
     if url1 == url2:
         return True
+
     try:
         address1 = Address(url1)
         address2 = Address(url2)
@@ -431,7 +429,7 @@ def are_same_osc_port(url1, url2):
 
     return False
 
-def are_on_same_machine(url1, url2):
+def are_on_same_machine(url1: str, url2: str) -> bool:
     if url1 == url2:
         return True
 

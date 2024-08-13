@@ -987,7 +987,7 @@ class SignaledSession(OperatingSession):
         if len(osp.args) == 1:
             pass
 
-        elif ray.are_they_all_strings(osp.args):
+        elif ray.types_are_all_strings(osp.types):
             via_proxy = int(bool('via_proxy' in osp.args[1:]))
             start_it = int(bool('not_start' not in osp.args[1:]))
             if 'ray_hack' in osp.args[1:]:
