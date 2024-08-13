@@ -69,8 +69,11 @@ class JackNaming(Enum):
         return JackNaming.LONG
 
 
-class ClientStatus(Enum):
+class ClientStatus(Enum):    
     INVALID = -1
+    '''This status should never appears. It is the defaut value
+    from an int non existing in other values.'''
+    
     STOPPED = 0
     LAUNCH = 1
     OPEN = 2
@@ -87,9 +90,16 @@ class ClientStatus(Enum):
     SCRIPT = 13
     LOSE = 14
 
+    @classmethod
+    def _missing_(cls, value) -> 'ClientStatus':
+        return ClientStatus.INVALID
+        
 
 class ServerStatus(Enum):
     INVALID = -1
+    '''This status should never appears. It is the defaut value
+    from an int non existing in other values.'''
+    
     OFF = 0
     NEW = 1
     OPEN = 2
