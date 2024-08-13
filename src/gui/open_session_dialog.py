@@ -977,7 +977,6 @@ class OpenSessionDialog(ChildDialog):
             item = snapshot.make_item(GROUP_MAIN)
             self.ui.treeWidgetSnapshots.addTopLevelItem(item)
 
-        #self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.treeWidgetSnapshots.clearSelection()
 
     def _update_session_details(self, session_name: str,
