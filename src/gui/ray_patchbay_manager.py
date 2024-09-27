@@ -141,7 +141,9 @@ class RayPatchbayCallbacker(Callbacker):
                 break                
 
 
-class RayPatchbayManager(PatchbayManager):    
+class RayPatchbayManager(PatchbayManager):
+    main_win: 'MainWindow'
+    
     def __init__(self, session: 'Session'):
         super().__init__(RS.settings)
         self.session = session
@@ -197,7 +199,8 @@ class RayPatchbayManager(PatchbayManager):
         
         app_title = ray.APP_TITLE.lower()
         
-        theme_paths.append(xdg.xdg_data_home() / app_title / SUBMODULE / 'themes')
+        theme_paths.append(
+            xdg.xdg_data_home() / app_title / SUBMODULE / 'themes')
 
         if source_theme_path.exists():
             theme_paths.append(source_theme_path)
