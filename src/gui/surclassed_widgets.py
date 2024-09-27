@@ -9,7 +9,7 @@ from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QKeyEvent, QMouseEvent)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
-from patchbay import filter_frame, PatchGraphicsView
+from patchbay import filter_frame, tool_bar, PatchGraphicsView
 
 if TYPE_CHECKING:
     from gui_session import Session
@@ -416,5 +416,10 @@ class PreviewFrame(QFrame):
 
 
 class CanvasGroupFilterFrame(filter_frame.FilterFrame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        
+
+class RayToolBar(tool_bar.PatchbayToolBar):
     def __init__(self, parent):
         super().__init__(parent)

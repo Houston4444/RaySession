@@ -68,7 +68,8 @@ class MainWindow(QMainWindow):
         self._timer_snapshot = QTimer()
         self._timer_snapshot.setSingleShot(True)
         self._timer_snapshot.setInterval(2000)
-        self._timer_snapshot.timeout.connect(self._show_snapshot_progress_dialog)
+        self._timer_snapshot.timeout.connect(
+            self._show_snapshot_progress_dialog)
 
         self.server_copying = False
 
@@ -87,12 +88,13 @@ class MainWindow(QMainWindow):
                        self.ui.actionControlMenu):
             button : QToolButton = self.ui.toolBar.widgetForAction(action)
             self._tool_bar_main_actions_width += button.iconSize().width()
-            self._tool_bar_main_actions_width += QFontMetrics(button.font()).width(button.text())
+            self._tool_bar_main_actions_width += \
+                QFontMetrics(button.font()).width(button.text())
             self._tool_bar_main_actions_width += 6
 
-        self.ui.toolBar.set_patchbay_manager(self.session.patchbay_manager)
-
         # manage geometry depending of use of embedded jack patchbay
+        self._patchbay_tools : PatchbayToolsWidget = None
+        
         show_patchbay = RS.settings.value(
             'MainWindow/show_patchbay', True, type=bool)
         self.ui.actionShowJackPatchbay.setChecked(show_patchbay)
@@ -255,18 +257,14 @@ class MainWindow(QMainWindow):
         self._control_menu.addSeparator()
         self._control_menu.addAction(self.ui.actionPreferences)
 
-        self._control_tool_button = self.ui.toolBar.widgetForAction(
-            self.ui.actionControlMenu)
-        
-        if TYPE_CHECKING:
-            assert isinstance(self._control_tool_button, QToolButton)
+        self._control_tool_button: QToolButton = \
+            self.ui.toolBar.widgetForAction(self.ui.actionControlMenu)
         
         self._control_tool_button.setPopupMode(QToolButton.InstantPopup)
         self._control_tool_button.setMenu(self._control_menu)
 
         self.ui.toolButtonControl2.setPopupMode(QToolButton.InstantPopup)
         self.ui.toolButtonControl2.setMenu(self._control_menu)
-
 
         # set favorites menu
         self._favorites_menu = QMenu(_translate('menu', 'Favorites'))
@@ -291,7 +289,7 @@ class MainWindow(QMainWindow):
         sg.canvas_callback.connect(
             self.session.patchbay_manager.callbacker.receive)
 
-        # set spare icons if system icons not avalaible
+        # set spare icons if system icons not available
         dark = is_dark_theme(self)
 
         if self.ui.actionNewSession.icon().isNull():
@@ -341,7 +339,8 @@ class MainWindow(QMainWindow):
         self.ui.actionSessionNotes.setIcon(RayIcon('notes', dark))
         self.ui.toolButtonNotes.setIcon(RayIcon('notes', dark))
         self.ui.actionDesktopsMemory.setIcon(RayIcon('view-list-icons', dark))
-        self.ui.toolButtonSessionMenu.setIcon(RayIcon('application-menu', dark))
+        self.ui.toolButtonSessionMenu.setIcon(
+            RayIcon('application-menu', dark))
         self.ui.listWidget.set_session(self.session)
         self.ui.listWidget.currentItemChanged.connect(
             self._list_widget_item_changed)
@@ -352,20 +351,22 @@ class MainWindow(QMainWindow):
         self.ui.framePatchbayFilters.setVisible(False)
         filter_bar_shortcut = QShortcut('Ctrl+F', self)
         filter_bar_shortcut.setContext(Qt.ApplicationShortcut)
-        filter_bar_shortcut.activated.connect(self.toggle_patchbay_filters_bar)
+        filter_bar_shortcut.activated.connect(
+            self.toggle_patchbay_filters_bar)
         refresh_shortcut = QShortcut('Ctrl+R', self)
         refresh_shortcut.setContext(Qt.ApplicationShortcut)
-        refresh_shortcut.activated.connect(self.session.patchbay_manager.refresh)
+        refresh_shortcut.activated.connect(
+            self.session.patchbay_manager.refresh)
         refresh_shortcut_alt = QShortcut('F5', self)
         refresh_shortcut_alt.setContext(Qt.ApplicationShortcut)
-        refresh_shortcut_alt.activated.connect(self.session.patchbay_manager.refresh)
+        refresh_shortcut_alt.activated.connect(
+            self.session.patchbay_manager.refresh)
 
         # prevent to hide the session frame with session/messages splitter
         self.ui.splitterSessionVsMessages.setCollapsible(0, False)
         self.ui.splitterSessionVsMessages.splitterMoved.connect(
             self._splitter_session_vs_messages_moved)
 
-        self._canvas_tools_action = None
         self._canvas_menu = None
 
         self.set_nsm_locked(CommandLineArgs.under_nsm)
@@ -790,8 +791,6 @@ class MainWindow(QMainWindow):
         self.save_window_settings(
             UI_PATCHBAY_HIDDEN if yesno else UI_PATCHBAY_SHOWN)
 
-        if self._canvas_tools_action is not None:
-            self._canvas_tools_action.setVisible(yesno)
         if self._canvas_menu is not None:
             self._canvas_menu.setVisible(yesno)
 
@@ -1129,7 +1128,10 @@ class MainWindow(QMainWindow):
         VISIBLE_MENUBAR = 0x2
 
         if self._fullscreen_patchbay:
-            self.ui.toolBar.setVisible(True)
+            for toolbar in (self.ui.toolBar, self.ui.toolBarTransport,
+                            self.ui.toolBarJack, self.ui.toolBarCanvas):
+                toolbar.setVisible(True)
+            
             if self._were_visible_before_fullscreen & VISIBLE_MENUBAR:
                 self.ui.menuBar.setVisible(True)
 
@@ -1153,33 +1155,41 @@ class MainWindow(QMainWindow):
             self._geom_before_fullscreen = self.geometry()
 
             self.ui.menuBar.setVisible(False)
-            self.ui.toolBar.setVisible(False)
+
+            for toolbar in (self.ui.toolBar, self.ui.toolBarTransport,
+                            self.ui.toolBarJack, self.ui.toolBarCanvas):
+                toolbar.setVisible(False)
+
             self._splitter_pos_before_fullscreen = \
                 self.ui.splitterMainVsCanvas.sizes()
             self.ui.splitterMainVsCanvas.setSizes([0, 100])
             self._fullscreen_patchbay = True
             self.showFullScreen()
 
-    def add_patchbay_tools(self, tools_widget: PatchbayToolsWidget, canvas_menu):
-        if self._canvas_tools_action is None:
-            self._canvas_tools_action = self.ui.toolBar.addWidget(tools_widget)
-            default_disp_wdg = (
-                ToolDisplayed.ZOOM_SLIDER
-                | ToolDisplayed.TRANSPORT_PLAY_STOP
-                | ToolDisplayed.BUFFER_SIZE
-                | ToolDisplayed.SAMPLERATE
-                | ToolDisplayed.XRUNS
-                | ToolDisplayed.DSP_LOAD)
-            
-            default_disp_wdg = default_disp_wdg.filtered_by_string(
-                RS.settings.value('tool_bar/jack_elements', '', type=str))
-            
-            self.ui.toolBar.set_default_displayed_widgets(default_disp_wdg)
-            
-            if not default_disp_wdg & ToolDisplayed.PORT_TYPES_VIEW:
-                RS.settings.setValue(
-                    'Canvas/default_port_types_view',
-                    PortTypesViewFlag.ALL.value)
+    def add_patchbay_tools(
+            self, tools_widget: PatchbayToolsWidget, canvas_menu):
+        self._patchbay_tools = tools_widget
+        self._patchbay_tools.set_tool_bars(
+            self.ui.toolBar, self.ui.toolBarTransport,
+            self.ui.toolBarJack, self.ui.toolBarCanvas)
+        
+        default_disp_wdg = (
+            ToolDisplayed.ZOOM_SLIDER
+            | ToolDisplayed.TRANSPORT_PLAY_STOP
+            | ToolDisplayed.BUFFER_SIZE
+            | ToolDisplayed.SAMPLERATE
+            | ToolDisplayed.XRUNS
+            | ToolDisplayed.DSP_LOAD)
+        
+        default_disp_wdg = default_disp_wdg.filtered_by_string(
+            RS.settings.value('tool_bar/jack_elements', '', type=str))
+        
+        if not default_disp_wdg & ToolDisplayed.PORT_TYPES_VIEW:
+            RS.settings.setValue(
+                'Canvas/default_port_types_view',
+                PortTypesViewFlag.ALL.value)
+
+        tools_widget.change_tools_displayed(default_disp_wdg)
 
         self._canvas_menu = self.ui.menuBar.addMenu(canvas_menu)
 
@@ -1610,15 +1620,13 @@ class MainWindow(QMainWindow):
                              self.ui.actionShowJackPatchbay.isChecked())
         RS.settings.setValue('MainWindow/splitter_messages',
                              self.ui.splitterSessionVsMessages.sizes())
-        RS.settings.setValue(
-            'tool_bar/jack_elements',
-            self.ui.toolBar.get_displayed_widgets().to_save_string())
-        RS.settings.setValue(
-            'tool_bar/icons_only',
-            self.ui.toolBar.force_main_actions_icons_only)
-        RS.settings.setValue(
-            'Canvas/default_port_types_view',
-            self.session.patchbay_manager.port_types_view.value)
+        if self._patchbay_tools is not None:
+            RS.settings.setValue(
+                'tool_bar/jack_elements',
+                self._patchbay_tools._tools_displayed.to_save_string())
+            RS.settings.setValue(
+                'Canvas/default_port_types_view',
+                self.session.patchbay_manager.port_types_view.value)
         RS.settings.sync()
 
     # Reimplemented Qt Functions
@@ -1675,23 +1683,23 @@ class MainWindow(QMainWindow):
         if self._fullscreen_patchbay and not self.isFullScreen():
             self.toggle_scene_full_screen()
 
-        QMainWindow.resizeEvent(self, event)
+        super().resizeEvent(event)
+        
+        if self._patchbay_tools is not None:
+            self._patchbay_tools.main_win_resize(self)
 
-        if self.ui.toolBar.force_main_actions_icons_only:
-            return
+        # new_button = self.ui.toolBar.widgetForAction(self.ui.actionNewSession)
+        # open_button = self.ui.toolBar.widgetForAction(self.ui.actionOpenSession)
+        # if TYPE_CHECKING:
+        #     assert isinstance(new_button, QToolButton)
+        #     assert isinstance(open_button, QToolButton)
 
-        new_button = self.ui.toolBar.widgetForAction(self.ui.actionNewSession)
-        open_button = self.ui.toolBar.widgetForAction(self.ui.actionOpenSession)
-        if TYPE_CHECKING:
-            assert isinstance(new_button, QToolButton)
-            assert isinstance(open_button, QToolButton)
-
-        if self.width() > 410:
-            new_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            open_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        elif self.width() > 310:
-            new_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
-            open_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        else:
-            new_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
-            open_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        # if self.width() > 410:
+        #     new_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        #     open_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        # elif self.width() > 310:
+        #     new_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        #     open_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        # else:
+        #     new_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        #     open_button.setToolButtonStyle(Qt.ToolButtonIconOnly)

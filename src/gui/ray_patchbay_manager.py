@@ -11,9 +11,12 @@ from gui_server_thread import GuiServerThread
 from gui_tools import RS, get_code_root
 
 from jack_renaming_tools import group_belongs_to_client
-from patchbay.base_elements import (Group, GroupPos, PortgroupMem,
-                                    PortMode, BoxLayoutMode, PortType, ToolDisplayed,
-                                    PortTypesViewFlag)
+
+from patchbay.base_elements import (
+    GroupPos, PortgroupMem,
+    PortMode, BoxLayoutMode, PortType, ToolDisplayed,
+    PortTypesViewFlag)
+from patchbay.base_group import Group
 from patchbay import (
     PatchbayManager,
     Callbacker,
@@ -33,17 +36,14 @@ def convert_group_pos_from_ray_to_patchbay(
     gpos = GroupPos()
     gpos.port_types_view = PortTypesViewFlag(ray_gpos.port_types_view)
     gpos.group_name = ray_gpos.group_name
-    gpos.null_zone = ray_gpos.null_zone
-    gpos.in_zone = ray_gpos.in_zone
-    gpos.out_zone = ray_gpos.out_zone
-    gpos.null_xy = ray_gpos.null_xy
-    gpos.in_xy = ray_gpos.in_xy
-    gpos.out_xy = ray_gpos.out_xy
+    gpos.boxes[PortMode.BOTH].pos = ray_gpos.null_xy
+    gpos.boxes[PortMode.INPUT].pos = ray_gpos.in_xy
+    gpos.boxes[PortMode.OUTPUT].pos = ray_gpos.out_xy
     gpos.flags = ray_gpos.flags
     
-    for port_mode in (PortMode.INPUT, PortMode.OUTPUT, PortMode.BOTH):
+    for port_mode in PortMode.in_out_both():    
         layout_mode = ray_gpos.get_layout_mode(port_mode.value)
-        gpos.set_layout_mode(port_mode, BoxLayoutMode(layout_mode))
+        gpos.boxes[port_mode].layout_mode = BoxLayoutMode(layout_mode)
 
     gpos.fully_set = ray_gpos.fully_set
     return gpos
@@ -52,12 +52,16 @@ def convert_group_pos_from_patchbay_to_ray(
         gpos: GroupPos) -> ray.GroupPosition:
     ray_gpos = ray.GroupPosition.new_from(
         int(gpos.port_types_view), gpos.group_name,
-        gpos.null_zone, gpos.in_zone, gpos.out_zone,
-        *gpos.null_xy, *gpos.in_xy, *gpos.out_xy,
+        '', '', '',
+        *gpos.boxes[PortMode.BOTH].pos,
+        *gpos.boxes[PortMode.INPUT].pos,
+        *gpos.boxes[PortMode.OUTPUT].pos,
         int(gpos.flags), 0)
     
-    for port_mode, box_layout_mode in gpos.layout_modes.items():
-        ray_gpos.set_layout_mode(port_mode.value, box_layout_mode.value)
+    for port_mode in PortMode.in_out_both():
+        ray_gpos.set_layout_mode(
+            port_mode.value, gpos.boxes[port_mode].layout_mode.value)
+    
     ray_gpos.fully_set = gpos.fully_set
 
     return ray_gpos
@@ -151,6 +155,7 @@ class RayPatchbayManager(PatchbayManager):
         
         self._last_selected_client_name = ''
         self._last_selected_box_n = 1
+        self.views[self.view_number] = {}
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
@@ -474,6 +479,8 @@ class RayPatchbayManager(PatchbayManager):
         self.set_main_win(self.session.main_win)
         self._setup_canvas()
         self.set_canvas_menu(CanvasMenu(self))
+        if self.main_win._patchbay_tools is not None:
+            self.set_tools_widget(self.main_win._patchbay_tools)
         self.set_options_dialog(
             CanvasOptionsDialog(self.main_win, self, RS.settings))
         
@@ -588,7 +595,7 @@ class RayPatchbayManager(PatchbayManager):
         self._tools_widget.set_jack_running(jack_running)
 
         if self.main_win is not None:
-            if TYPE_CHECKING and not isinstance(self.main_win, MainWindow):
-                return
             self.main_win.add_patchbay_tools(
                 self._tools_widget, self.canvas_menu)
+
+        self._tools_widget.set_patchbay_manager(self)
