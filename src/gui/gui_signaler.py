@@ -1,6 +1,9 @@
 import enum
 from PyQt5.QtCore import QObject, pyqtSignal
-from liblo import Address
+try:
+    from liblo import Address
+except ImportError:
+    from pyliblo3 import Address
 
 class Signaler(QObject):
     osc_receive = pyqtSignal(str, list)

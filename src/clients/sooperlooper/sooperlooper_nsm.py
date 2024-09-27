@@ -5,7 +5,10 @@ import os
 import signal
 import sys
 
-from liblo import Address, make_method
+try:
+    from liblo import Address, make_method
+except ImportError:
+    from pyliblo3 import Address, make_method
 from PyQt5.QtCore import (QCoreApplication, pyqtSignal, QObject, QTimer,
                           QProcess)
 from PyQt5.QtXml import QDomDocument

@@ -7,7 +7,10 @@ import subprocess
 import time
 
 try:
-    import liblo
+    try:
+        import liblo
+    except ImportError:
+        import pyliblo3 as liblo
     import xml.etree.ElementTree as ET
     from signal import signal, SIGINT, SIGTERM, SIGUSR1, SIGUSR2
 except:
