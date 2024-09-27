@@ -825,6 +825,12 @@ class MainWindow(QMainWindow):
             else:
                 self.setGeometry(x, y, 460, height)
             self.ui.splitterMainVsCanvas.setSizes([100, 0])
+            
+            self._patchbay_tools = None
+
+        self.ui.toolBarTransport.setVisible(yesno)
+        self.ui.toolBarJack.setVisible(yesno)
+        self.ui.toolBarCanvas.setVisible(yesno)
 
         self.ui.graphicsView.setVisible(yesno)
         self.ui.framePatchbayFilters.setVisible(False)
@@ -1175,6 +1181,7 @@ class MainWindow(QMainWindow):
         
         default_disp_wdg = (
             ToolDisplayed.ZOOM_SLIDER
+            | ToolDisplayed.HIDDENS_BOX
             | ToolDisplayed.TRANSPORT_PLAY_STOP
             | ToolDisplayed.BUFFER_SIZE
             | ToolDisplayed.SAMPLERATE
@@ -1620,13 +1627,15 @@ class MainWindow(QMainWindow):
                              self.ui.actionShowJackPatchbay.isChecked())
         RS.settings.setValue('MainWindow/splitter_messages',
                              self.ui.splitterSessionVsMessages.sizes())
-        if self._patchbay_tools is not None:
+
+        if with_patchbay:
             RS.settings.setValue(
                 'tool_bar/jack_elements',
                 self._patchbay_tools._tools_displayed.to_save_string())
             RS.settings.setValue(
                 'Canvas/default_port_types_view',
                 self.session.patchbay_manager.port_types_view.value)
+
         RS.settings.sync()
 
     # Reimplemented Qt Functions
@@ -1685,7 +1694,8 @@ class MainWindow(QMainWindow):
 
         super().resizeEvent(event)
         
-        if self._patchbay_tools is not None:
+        if (self.ui.actionShowJackPatchbay.isChecked()
+                and self._patchbay_tools is not None):
             self._patchbay_tools.main_win_resize(self)
 
         # new_button = self.ui.toolBar.widgetForAction(self.ui.actionNewSession)

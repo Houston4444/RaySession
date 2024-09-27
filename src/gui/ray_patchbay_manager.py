@@ -590,12 +590,11 @@ class RayPatchbayManager(PatchbayManager):
         if self._tools_widget is None:
             return
         
-        self._tools_widget.set_samplerate(samplerate)
-        self._tools_widget.set_buffer_size(buffer_size)
-        self._tools_widget.set_jack_running(jack_running)
-
         if self.main_win is not None:
             self.main_win.add_patchbay_tools(
                 self._tools_widget, self.canvas_menu)
 
+        self._tools_widget.set_samplerate(samplerate)
+        self._tools_widget.set_buffer_size(buffer_size)
+        self._tools_widget.set_jack_running(jack_running)
         self._tools_widget.set_patchbay_manager(self)
