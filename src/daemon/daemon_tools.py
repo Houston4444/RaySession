@@ -7,7 +7,10 @@ from pathlib import Path
 
 from PyQt5.QtCore import (QCoreApplication, QStandardPaths, QSettings,
                           QDateTime, QLocale)
-import liblo
+try:
+    import liblo
+except ImportError:
+    import pyliblo3 as liblo
 
 
 import ray

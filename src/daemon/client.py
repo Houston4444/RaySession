@@ -5,7 +5,10 @@ import shutil
 import signal
 import time
 from pathlib import Path
-from liblo import Address
+try:
+    from liblo import Address
+except ImportError:
+    from pyliblo3 import Address
 from PyQt5.QtCore import (QCoreApplication, QProcess,
                           QProcessEnvironment, QTimer)
 from PyQt5.QtXml import QDomDocument
