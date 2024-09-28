@@ -55,11 +55,6 @@ class PreferencesDialog(ChildDialog):
             action.changed.connect(self._action_changed)
 
         # connect other widgets
-        self.ui.checkBoxTextBesideIcons.setCheckState(
-            TextWithIcons.by_name(RS.settings.value(
-                'tool_bar/text_with_icons', 'AUTO')).value)
-        self.ui.checkBoxTextBesideIcons.stateChanged.connect(
-            self._text_beside_icon_changed)
         self.ui.pushButtonPatchbayPreferences.clicked.connect(
             self._main_win.session.patchbay_manager.show_options_dialog)
         self.ui.pushButtonReappear.clicked.connect(
@@ -127,14 +122,6 @@ class PreferencesDialog(ChildDialog):
             self.ui.checkBoxShutdown.isChecked(),
             self.ui.checkBoxReversedMenu.isChecked()
         )
-    
-    @pyqtSlot(int)
-    def _text_beside_icon_changed(self, state: int):
-        text_with_icons = TextWithIcons(state)
-        if self._main_win._patchbay_tools is not None:
-            self._main_win._patchbay_tools.change_text_with_icons(
-                text_with_icons)
-        RS.settings.setValue('tool_bar/text_with_icons', text_with_icons.name)
     
     def _get_systray_mode(self) -> ray.Systray:
         if self.ui.groupBoxSystray.isChecked():

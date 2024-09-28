@@ -189,22 +189,6 @@
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="checkBoxTextBesideIcons">
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, text are always displayed beside icons except if window is not large enough.&lt;br&gt;If semi-checked, text are displayed if there is no advantage to hide them.&lt;br/&gt;If unchecked, text is never displayed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="text">
-          <string>Display text beside icons in the tool bar</string>
-         </property>
-         <property name="icon">
-          <iconset theme="format-text-direction-symbolic"/>
-         </property>
-         <property name="tristate">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QCheckBox" name="checkBoxJackPatchbay">
          <property name="text">
           <string/>

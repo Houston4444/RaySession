@@ -1637,6 +1637,9 @@ class MainWindow(QMainWindow):
                 'tool_bar/jack_elements',
                 self._patchbay_tools._tools_displayed.to_save_string())
             RS.settings.setValue(
+                'tool_bar/text_with_icons',
+                self._patchbay_tools._text_with_icons.name)
+            RS.settings.setValue(
                 'Canvas/default_port_types_view',
                 self.session.patchbay_manager.port_types_view.value)
 
