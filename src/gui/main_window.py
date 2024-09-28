@@ -1701,7 +1701,6 @@ class MainWindow(QMainWindow):
         if self.ui.actionShowJackPatchbay.isChecked():
             if self._patchbay_tools is not None:
                 self._patchbay_tools.main_win_resize(self)
-        
         else:
             text_with_icons = TextWithIcons.by_name(
                 RS.settings.value('tool_bar/text_with_icons', 'AUTO'))
