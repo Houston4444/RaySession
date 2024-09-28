@@ -1,3 +1,4 @@
+from json import tool
 from typing import TYPE_CHECKING
 import time
 import subprocess
@@ -24,7 +25,7 @@ from gui_client import TrashedClient
 from gui_server_thread import GuiServerThread
 from utility_scripts import UtilityScriptLauncher
 from patchbay.base_elements import ToolDisplayed, PortTypesViewFlag
-from patchbay.tools_widgets import PatchbayToolsWidget
+from patchbay.tools_widgets import PatchbayToolsWidget, TextWithIcons
 
 if TYPE_CHECKING:
     from .gui_session import SignaledSession
@@ -1175,6 +1176,9 @@ class MainWindow(QMainWindow):
     def add_patchbay_tools(
             self, tools_widget: PatchbayToolsWidget, canvas_menu):
         self._patchbay_tools = tools_widget
+        self._patchbay_tools.change_text_with_icons(
+            TextWithIcons.by_name(
+                RS.settings.value('tool_bar/text_with_icons', 'AUTO')))
         self._patchbay_tools.set_tool_bars(
             self.ui.toolBar, self.ui.toolBarTransport,
             self.ui.toolBarJack, self.ui.toolBarCanvas)
@@ -1694,9 +1698,26 @@ class MainWindow(QMainWindow):
 
         super().resizeEvent(event)
         
-        if (self.ui.actionShowJackPatchbay.isChecked()
-                and self._patchbay_tools is not None):
-            self._patchbay_tools.main_win_resize(self)
+        if self.ui.actionShowJackPatchbay.isChecked():
+            if self._patchbay_tools is not None:
+                self._patchbay_tools.main_win_resize(self)
+        # else:
+        #     tool_button_style = self.ui.toolBar.toolButtonStyle()
+        #     print('fozoz', self.ui.toolBar.sizeHint().width() > self.width(),
+        #           tool_button_style == Qt.ToolButtonTextBesideIcon)
+            
+        #     if tool_button_style == Qt.ToolButtonTextBesideIcon:
+        #         if self.ui.toolBar.sizeHint().width() > self.width():
+        #             self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        #     else:
+                
+            
+        #     if self.ui.toolBar.sizeHint().width() > self.width():
+        #         if tool_button_style == Qt.ToolButtonTextBesideIcon:
+        #         self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        #     else:
+        #         self.ui.toolBar.setToolButtonStyle(
+        #             Qt.ToolButtonTextBesideIcon)
 
         # new_button = self.ui.toolBar.widgetForAction(self.ui.actionNewSession)
         # open_button = self.ui.toolBar.widgetForAction(self.ui.actionOpenSession)
