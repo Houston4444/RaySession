@@ -1,7 +1,6 @@
-
-from re import A
-from PyQt5.QtCore import QObject
 from typing import TYPE_CHECKING
+
+from PyQt5.QtCore import QObject
 
 import ray
 from osc_server_thread import OscServerThread
@@ -12,6 +11,8 @@ if TYPE_CHECKING:
 
 
 class ServerSender(QObject):
+    '''Abstract class giving some quick access to OSC server'''
+    
     def __init__(self):
         QObject.__init__(self)
         self.is_dummy = False

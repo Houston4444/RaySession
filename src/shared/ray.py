@@ -761,7 +761,7 @@ class GroupPosition:
         return 'issssiiiiiiii'
     
     @staticmethod
-    def new_from(*args):
+    def new_from(*args) -> 'GroupPosition':
         group_position = GroupPosition()
         group_position.update(*args)
         return group_position
