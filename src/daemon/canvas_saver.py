@@ -12,7 +12,7 @@ from daemon_tools import RS, Terminal
 from server_sender import ServerSender
 from jack_renaming_tools import group_belongs_to_client
 from patchcanvas_enums import (
-    PortTypesViewFlag, GroupPos, ViewData)
+    from_json_to_str, PortTypesViewFlag, GroupPos, ViewData)
 
 if TYPE_CHECKING:
     from session_signaled import SignaledSession
@@ -534,7 +534,7 @@ class CanvasSaver(ServerSender):
         json_contents['version'] = ray.VERSION
 
         with open(session_json_path, 'w+') as f:
-            json.dump(json_contents, f, indent=2)
+            f.write(from_json_to_str(json_contents))
 
     # def save_json_session_canvas(self, session_path: Path):
     #     session_json_path = session_path / f'.{JSON_PATH}'
@@ -558,7 +558,7 @@ class CanvasSaver(ServerSender):
         json_contents['version'] = ray.VERSION
 
         with open(self._config_json_path, 'w+') as f:
-            json.dump(json_contents, f, indent=2)
+            f.write(from_json_to_str(json_contents))
 
     # def save_config_file(self):
     #     if not self.group_positions_config:
