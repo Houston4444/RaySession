@@ -12,7 +12,7 @@ from gui_tools import RS, get_code_root
 from jack_renaming_tools import group_belongs_to_client
 from patchbay.base_elements import (
     GroupPos, PortgroupMem,
-    PortMode, BoxLayoutMode, PortType, ToolDisplayed,
+    PortMode, PortType, ToolDisplayed,
     PortTypesViewFlag, ViewData)
 from patchbay.base_group import Group
 from patchbay import (
@@ -28,41 +28,6 @@ if TYPE_CHECKING:
     from gui_session import Session
     from main_window import MainWindow
 
-
-def convert_group_pos_from_ray_to_patchbay(
-        ray_gpos: ray.GroupPosition) -> GroupPos:
-    gpos = GroupPos()
-    gpos.port_types_view = PortTypesViewFlag(ray_gpos.port_types_view)
-    gpos.group_name = ray_gpos.group_name
-    gpos.boxes[PortMode.BOTH].pos = ray_gpos.null_xy
-    gpos.boxes[PortMode.INPUT].pos = ray_gpos.in_xy
-    gpos.boxes[PortMode.OUTPUT].pos = ray_gpos.out_xy
-    gpos.flags = ray_gpos.flags
-    
-    for port_mode in PortMode.in_out_both():    
-        layout_mode = ray_gpos.get_layout_mode(port_mode.value)
-        gpos.boxes[port_mode].layout_mode = BoxLayoutMode(layout_mode)
-
-    gpos.fully_set = ray_gpos.fully_set
-    return gpos
-
-def convert_group_pos_from_patchbay_to_ray(
-        gpos: GroupPos) -> ray.GroupPosition:
-    ray_gpos = ray.GroupPosition.new_from(
-        int(gpos.port_types_view), gpos.group_name,
-        '', '', '',
-        *gpos.boxes[PortMode.BOTH].pos,
-        *gpos.boxes[PortMode.INPUT].pos,
-        *gpos.boxes[PortMode.OUTPUT].pos,
-        int(gpos.flags), 0)
-    
-    for port_mode in PortMode.in_out_both():
-        ray_gpos.set_layout_mode(
-            port_mode.value, gpos.boxes[port_mode].layout_mode.value)
-    
-    ray_gpos.fully_set = gpos.fully_set
-
-    return ray_gpos
 
 def convert_portgrp_mem_from_ray_to_patchbay(
         ray_pgmem: ray.PortGroupMemory) -> PortgroupMem:
@@ -533,12 +498,6 @@ class RayPatchbayManager(PatchbayManager):
                             group_pos = GroupPos.from_new_dict(
                                 ptv, group_name, gpos_dict)
                             run_ptv_dict[group_name] = group_pos
-            
-            elif key == 'group_positions':
-                for gpos_dict in canvas_data[key]:
-                    gpos = ray.GroupPosition()
-                    gpos.write_from_dict(gpos_dict)
-                    self.update_group_position(*gpos.spread())
 
             elif key == 'portgroups':
                 for pg_dict in canvas_data[key]:

@@ -18,12 +18,8 @@ from PyQt5.QtCore import QT_VERSION_STR, QSettings
 
 _logger = logging.getLogger(__name__)
 
-# get qt version in list of ints
-QT_VERSION = []
-for strdigit in QT_VERSION_STR.split('.'):
-    QT_VERSION.append(int(strdigit))
-
-QT_VERSION = tuple(QT_VERSION)
+# get qt version in tuple of ints
+QT_VERSION = tuple([int(s) for s in QT_VERSION_STR.split('.')])
 
 if QT_VERSION < (5, 6):
     sys.stderr.write(
