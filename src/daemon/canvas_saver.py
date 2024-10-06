@@ -129,23 +129,22 @@ class CanvasSaver(ServerSender):
                 PortTypesViewFlag, dict[str, GroupPos]]()
             data_dict[view_num] = ViewData('', PortTypesViewFlag.NONE, False)
 
+            view_name = view_dict.get('name')
+            if not isinstance(view_name, str):
+                view_name = ''
+            default_ptv = PortTypesViewFlag.from_config_str(
+                view_dict.get('default_port_types', 'ALL'))
+            is_white_list = view_dict.get('is_white_list')
+            if not isinstance(is_white_list, bool):
+                is_white_list = False
+            
+            data_dict[view_num].name = view_name
+            data_dict[view_num].default_port_types_view = default_ptv
+            data_dict[view_num].is_white_list = is_white_list
+            
             ptv_str: str
+
             for ptv_str, ptv_dict in view_dict.items():
-                if ptv_str == 'name':
-                    data_dict[view_num].name = ptv_dict
-                    continue
-                
-                if ptv_str == 'default_port_types_view':
-                    data_dict[view_num].default_port_types_view = ptv_dict
-                    continue
-                    
-                if ptv_str == 'is_white_list':
-                    data_dict[view_num].is_white_list = bool(ptv_dict)
-                    continue
-                
-                if not isinstance(ptv_dict, dict):
-                    continue
-                
                 ptv = PortTypesViewFlag.from_config_str(ptv_str)
                 if ptv is PortTypesViewFlag.NONE:
                     continue
@@ -153,13 +152,13 @@ class CanvasSaver(ServerSender):
                 views_dict[view_num][ptv] = dict[str, GroupPos]()
                 
                 group_name: str
+                ptv_dict: dict
                 for group_name, gpos_dict in ptv_dict.items():
                     if not isinstance(gpos_dict, dict):
                         continue
                     
                     gpos = GroupPos.from_new_dict(ptv, group_name, gpos_dict)
-                    
-                views_dict[view_num][ptv][group_name] = gpos
+                    views_dict[view_num][ptv][group_name] = gpos
 
     def send_session_group_positions(self):
         server = self.get_server()
