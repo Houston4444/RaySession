@@ -231,10 +231,7 @@ class CanvasSaver(ServerSender):
     def get_json_view_list(self, config=False) -> list[dict]:
         if config:
             views_dict = self.views_config
-            data_dict = self.view_datas_config
-            
-            print('chamoi', self.views_config)
-            
+            data_dict = self.view_datas_config            
         else:
             views_dict = self.views_session
             data_dict = self.view_datas_session
@@ -256,9 +253,6 @@ class CanvasSaver(ServerSender):
                     view[ptv.name][group_name] = group_pos.as_new_dict()
             
             out_list.append(view)
-        
-        if config:
-            print('rateai', out_list)
         
         return out_list
 
