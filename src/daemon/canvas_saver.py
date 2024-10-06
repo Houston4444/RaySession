@@ -157,11 +157,11 @@ class CanvasSaver(ServerSender):
                     if not isinstance(gpos_dict, dict):
                         continue
                     
-                    gpos = GroupPos.from_new_dict(ptv, group_name)
+                    gpos = GroupPos.from_new_dict(ptv, group_name, gpos_dict)
                     
                 views_dict[view_num][ptv][group_name] = gpos
 
-    def send_session_group_positions_new(self):
+    def send_session_group_positions(self):
         server = self.get_server()
         if not server:
             return
@@ -196,43 +196,46 @@ class CanvasSaver(ServerSender):
                                 '/ray/gui/patchbay/update_group_position',
                                 view_number, *group_pos.to_arg_list())
 
-    def send_session_group_positions(self):
-        server = self.get_server()
-        if not server:
-            return
+    # def send_session_group_positions(self):
+    #     server = self.get_server()
+    #     if not server:
+    #         return
 
-        local_guis = list['Address']()
-        distant_guis = list['Address']()
-        for gui_addr in server.gui_list:
-            if ray.are_on_same_machine(server.url, gui_addr.url):
-                local_guis.append(gui_addr)
-            else:
-                distant_guis.append(gui_addr)
+    #     local_guis = list['Address']()
+    #     distant_guis = list['Address']()
+    #     for gui_addr in server.gui_list:
+    #         if ray.are_on_same_machine(server.url, gui_addr.url):
+    #             local_guis.append(gui_addr)
+    #         else:
+    #             distant_guis.append(gui_addr)
 
-        if local_guis:
-            session_gpos_dict = {'group_positions': list[dict]()}
-            for gpos in self.group_positions_session:
-                session_gpos_dict['group_positions'].append(gpos.to_dict())
+    #     if local_guis:
+    #         session_gpos_dict = {'group_positions': list[dict]()}
+    #         for gpos in self.group_positions_session:
+    #             session_gpos_dict['group_positions'].append(gpos.to_dict())
 
-            for gui_addr in local_guis:
-                file = tempfile.NamedTemporaryFile(delete=False, mode='w+')
-                json.dump(session_gpos_dict, file)
+    #         for gui_addr in local_guis:
+    #             file = tempfile.NamedTemporaryFile(delete=False, mode='w+')
+    #             json.dump(session_gpos_dict, file)
 
-                self.send(gui_addr,
-                          '/ray/gui/patchbay/fast_temp_file_memory',
-                          file.name)
+    #             self.send(gui_addr,
+    #                       '/ray/gui/patchbay/fast_temp_file_memory',
+    #                       file.name)
 
-        if distant_guis:
-            for gui_addr in distant_guis:
-                for gpos in self.group_positions_session:
-                    self.send(gui_addr,
-                              '/ray/gui/patchbay/update_group_position',
-                              *gpos.spread())
+    #     if distant_guis:
+    #         for gui_addr in distant_guis:
+    #             for gpos in self.group_positions_session:
+    #                 self.send(gui_addr,
+    #                           '/ray/gui/patchbay/update_group_position',
+    #                           *gpos.spread())
 
     def get_json_view_list(self, config=False) -> list[dict]:
         if config:
             views_dict = self.views_config
             data_dict = self.view_datas_config
+            
+            print('chamoi', self.views_config)
+            
         else:
             views_dict = self.views_session
             data_dict = self.view_datas_session
@@ -252,10 +255,15 @@ class CanvasSaver(ServerSender):
                 view[ptv.name] = {}
                 for group_name, group_pos in ptv_dict.items():
                     view[ptv.name][group_name] = group_pos.as_new_dict()
-                    
+            
+            out_list.append(view)
+        
+        if config:
+            print('rateai', out_list)
+        
         return out_list
 
-    def send_all_group_positions_new(self, src_addr: Address):
+    def send_all_group_positions(self, src_addr: Address):
         if ray.are_on_same_machine(self.get_server_url(), src_addr.url):
             canvas_dict = dict[str, list]()
             canvas_dict['portgroups'] = list[dict]()
@@ -270,7 +278,7 @@ class CanvasSaver(ServerSender):
                         break
                 config_list.append(view_dict)
             
-            canvas_dict['views'] = canvas_dict
+            canvas_dict['views'] = config_list
             
             for portgroup in self.portgroups:
                 canvas_dict['portgroups'].append(portgroup.to_dict())
@@ -329,70 +337,70 @@ class CanvasSaver(ServerSender):
             if i == 50:
                 time.sleep(0.020)
 
-    def send_all_group_positions(self, src_addr: Address):
-        if ray.are_on_same_machine(self.get_server_url(), src_addr.url):
-            # GUI is on the same machine than the daemon
-            # send group positions via a tmp file because they can be many
-            # it can be faster, it also prevents to lose packets
-            canvas_dict = {'group_positions': [], 'portgroups': []}
-            for gpos in self.group_positions_session:
-                canvas_dict['group_positions'].append(gpos.to_dict())
+    # def send_all_group_positions(self, src_addr: Address):
+    #     if ray.are_on_same_machine(self.get_server_url(), src_addr.url):
+    #         # GUI is on the same machine than the daemon
+    #         # send group positions via a tmp file because they can be many
+    #         # it can be faster, it also prevents to lose packets
+    #         canvas_dict = {'group_positions': [], 'portgroups': []}
+    #         for gpos in self.group_positions_session:
+    #             canvas_dict['group_positions'].append(gpos.to_dict())
 
-            for gpos_cf in self.group_positions_config:
-                for gpos_ss in self.group_positions_session:
-                    if (gpos_ss.port_types_view == gpos_cf.port_types_view
-                            and gpos_ss.group_name == gpos_cf.group_name):
-                        break
-                else:
-                    canvas_dict['group_positions'].append(gpos_cf.to_dict())
+    #         for gpos_cf in self.group_positions_config:
+    #             for gpos_ss in self.group_positions_session:
+    #                 if (gpos_ss.port_types_view == gpos_cf.port_types_view
+    #                         and gpos_ss.group_name == gpos_cf.group_name):
+    #                     break
+    #             else:
+    #                 canvas_dict['group_positions'].append(gpos_cf.to_dict())
 
-            for portgroup in self.portgroups:
-                canvas_dict['portgroups'].append(portgroup.to_dict())
+    #         for portgroup in self.portgroups:
+    #             canvas_dict['portgroups'].append(portgroup.to_dict())
 
-            file = tempfile.NamedTemporaryFile(delete=False, mode='w+')
-            json.dump(canvas_dict, file)
-            file.close()
-            self.send(src_addr,
-                      '/ray/gui/patchbay/fast_temp_file_memory',
-                      file.name)
-            return
+    #         file = tempfile.NamedTemporaryFile(delete=False, mode='w+')
+    #         json.dump(canvas_dict, file)
+    #         file.close()
+    #         self.send(src_addr,
+    #                   '/ray/gui/patchbay/fast_temp_file_memory',
+    #                   file.name)
+    #         return
 
-        i = 0
+    #     i = 0
 
-        for gpos in self.group_positions_session:
-            self.send(src_addr, '/ray/gui/patchbay/update_group_position',
-                      *gpos.spread())
-            i += 1
-            if i == 50:
-                # we need to slow big process of canvas memory
-                # to prevent loss OSC packets
-                time.sleep(0.020)
-                i = 0
+    #     for gpos in self.group_positions_session:
+    #         self.send(src_addr, '/ray/gui/patchbay/update_group_position',
+    #                   *gpos.spread())
+    #         i += 1
+    #         if i == 50:
+    #             # we need to slow big process of canvas memory
+    #             # to prevent loss OSC packets
+    #             time.sleep(0.020)
+    #             i = 0
 
-        for gpos_cf in self.group_positions_config:
-            for gpos_ss in self.group_positions_session:
-                if (gpos_ss.port_types_view == gpos_cf.port_types_view
-                        and gpos_ss.group_name == gpos_cf.group_name):
-                    break
-            else:
-                self.send(src_addr, '/ray/gui/patchbay/update_group_position',
-                          *gpos_cf.spread())
+    #     for gpos_cf in self.group_positions_config:
+    #         for gpos_ss in self.group_positions_session:
+    #             if (gpos_ss.port_types_view == gpos_cf.port_types_view
+    #                     and gpos_ss.group_name == gpos_cf.group_name):
+    #                 break
+    #         else:
+    #             self.send(src_addr, '/ray/gui/patchbay/update_group_position',
+    #                       *gpos_cf.spread())
 
-                i += 1
-                if i == 50:
-                    time.sleep(0.020)
-                    i = 0
+    #             i += 1
+    #             if i == 50:
+    #                 time.sleep(0.020)
+    #                 i = 0
 
-        for portgroup in self.portgroups:
-            self.send(src_addr, '/ray/gui/patchbay/update_portgroup',
-                      *portgroup.spread())
+    #     for portgroup in self.portgroups:
+    #         self.send(src_addr, '/ray/gui/patchbay/update_portgroup',
+    #                   *portgroup.spread())
 
-            i += 1
-            if i == 50:
-                time.sleep(0.020)
+    #         i += 1
+    #         if i == 50:
+    #             time.sleep(0.020)
 
-    def save_group_position_new(self, *args):
-        view_num, ptv_int, group_name, rest = args
+    def save_group_position(self, *args):
+        view_num, ptv_int, group_name, *rest = args
         ptv = PortTypesViewFlag(ptv_int)
         
         ptvs_dict = self.views_session.get(view_num)
@@ -404,8 +412,7 @@ class CanvasSaver(ServerSender):
         if ptv_dict is None:
             ptv_dict = ptvs_dict[ptv] = dict[str, GroupPos]()
             
-        ptv_dict[group_name] = GroupPos.from_arg_list(
-            ptv, group_name, *rest)
+        ptv_dict[group_name] = GroupPos.from_arg_list(args[1:])
         
         ptvs_dict_cf = self.views_config.get(view_num)
         if ptvs_dict_cf is None:
@@ -416,21 +423,20 @@ class CanvasSaver(ServerSender):
         if ptv_dict_cf is None:
             ptv_dict_cf = ptvs_dict_cf[ptv] = dict[str, GroupPos]()
             
-        ptv_dict_cf[group_name] = GroupPos.from_arg_list(
-            ptv, group_name, *rest)
+        ptv_dict_cf[group_name] = GroupPos.from_arg_list(args[1:])
 
-    def save_group_position(self, *args):
-        gp = ray.GroupPosition.new_from(*args)
-        for group_positions in (self.group_positions_session,
-                                self.group_positions_config):
-            for gpos in group_positions:
-                if gpos.is_same(gp):
-                    gpos.update(*args)
-                    break
-            else:
-                group_positions.append(gp)
+    # def save_group_position(self, *args):
+    #     gp = ray.GroupPosition.new_from(*args)
+    #     for group_positions in (self.group_positions_session,
+    #                             self.group_positions_config):
+    #         for gpos in group_positions:
+    #             if gpos.is_same(gp):
+    #                 gpos.update(*args)
+    #                 break
+    #         else:
+    #             group_positions.append(gp)
 
-    def load_json_session_canvas_new(self, session_path: Path):
+    def load_json_session_canvas(self, session_path: Path):
         self.views_session.clear()
         self.view_datas_session.clear()
 
@@ -489,45 +495,45 @@ class CanvasSaver(ServerSender):
                                 dict[str, GroupPos]()
                         ptv_dict[gpos.group_name] = gpos
 
-    def load_json_session_canvas(self, session_path: Path):
-        self.group_positions_session.clear()
+    # def load_json_session_canvas(self, session_path: Path):
+    #     self.group_positions_session.clear()
 
-        session_canvas_file = session_path / f'.{JSON_PATH}'
-        if not session_canvas_file.exists():
-            return
+    #     session_canvas_file = session_path / f'.{JSON_PATH}'
+    #     if not session_canvas_file.exists():
+    #         return
 
-        with open(session_canvas_file, 'r') as f:
-            json_contents = {}
-            gpos_list = list[dict]()
+    #     with open(session_canvas_file, 'r') as f:
+    #         json_contents = {}
+    #         gpos_list = list[dict]()
 
-            try:
-                json_contents = json.load(f)
-            except json.JSONDecodeError:
-                Terminal.message("Failed to load session canvas file %s" % f)
+    #         try:
+    #             json_contents = json.load(f)
+    #         except json.JSONDecodeError:
+    #             Terminal.message("Failed to load session canvas file %s" % f)
 
-            session_version = (0, 14, 0)
+    #         session_version = (0, 14, 0)
 
-            if isinstance(json_contents, dict):
-                if 'group_positions' in json_contents.keys():
-                    gpos_list : list[dict]() = json_contents['group_positions']
-                session_version = _get_version_tuple_json_dict(json_contents)
+    #         if isinstance(json_contents, dict):
+    #             if 'group_positions' in json_contents.keys():
+    #                 gpos_list : list[dict]() = json_contents['group_positions']
+    #             session_version = _get_version_tuple_json_dict(json_contents)
 
-            for gpos_dict in gpos_list:
-                gpos = ray.GroupPosition()
-                gpos.write_from_dict(gpos_dict)
-                if session_version < (0, 13, 0):
-                    if gpos.port_types_view == 3:
-                        gpos.port_types_view = 15
+    #         for gpos_dict in gpos_list:
+    #             gpos = ray.GroupPosition()
+    #             gpos.write_from_dict(gpos_dict)
+    #             if session_version < (0, 13, 0):
+    #                 if gpos.port_types_view == 3:
+    #                     gpos.port_types_view = 15
                 
-                elif session_version < (0, 14, 0):
-                    if gpos.port_types_view == 15:
-                        gpos.port_types_view = 31
+    #             elif session_version < (0, 14, 0):
+    #                 if gpos.port_types_view == 15:
+    #                     gpos.port_types_view = 31
                 
-                if not [g for g in self.group_positions_session
-                        if g.is_same(gpos)]:
-                    self.group_positions_session.append(gpos)
+    #             if not [g for g in self.group_positions_session
+    #                     if g.is_same(gpos)]:
+    #                 self.group_positions_session.append(gpos)
 
-    def save_json_session_canvas_new(self, session_path: Path):
+    def save_json_session_canvas(self, session_path: Path):
         session_json_path = session_path / f'.{JSON_PATH}'
 
         json_contents = {}
@@ -537,21 +543,21 @@ class CanvasSaver(ServerSender):
         with open(session_json_path, 'w+') as f:
             json.dump(json_contents, f, indent=2)
 
-    def save_json_session_canvas(self, session_path: Path):
-        session_json_path = session_path / f'.{JSON_PATH}'
+    # def save_json_session_canvas(self, session_path: Path):
+    #     session_json_path = session_path / f'.{JSON_PATH}'
 
-        if not self.group_positions_session:
-            return
+    #     if not self.group_positions_session:
+    #         return
 
-        json_contents = {}
-        json_contents['group_positions'] = [
-            gpos.to_dict() for gpos in self.group_positions_session]
-        json_contents['version'] = ray.VERSION
+    #     json_contents = {}
+    #     json_contents['group_positions'] = [
+    #         gpos.to_dict() for gpos in self.group_positions_session]
+    #     json_contents['version'] = ray.VERSION
 
-        with open(session_json_path, 'w+') as f:
-            json.dump(json_contents, f, indent=2)
+    #     with open(session_json_path, 'w+') as f:
+    #         json.dump(json_contents, f, indent=2)
 
-    def save_config_file_new(self):
+    def save_config_file(self):
         json_contents = {}
         json_contents['views'] = self.get_json_view_list(config=True)
         json_contents['portgroups'] = [
@@ -561,19 +567,19 @@ class CanvasSaver(ServerSender):
         with open(self._config_json_path, 'w+') as f:
             json.dump(json_contents, f, indent=2)
 
-    def save_config_file(self):
-        if not self.group_positions_config:
-            return
+    # def save_config_file(self):
+    #     if not self.group_positions_config:
+    #         return
 
-        json_contents = {}
-        json_contents['group_positions'] = [
-            gpos.to_dict() for gpos in self.group_positions_config]
-        json_contents['portgroups'] = [
-            portgroup.to_dict() for portgroup in self.portgroups]
-        json_contents['version'] = ray.VERSION
+    #     json_contents = {}
+    #     json_contents['group_positions'] = [
+    #         gpos.to_dict() for gpos in self.group_positions_config]
+    #     json_contents['portgroups'] = [
+    #         portgroup.to_dict() for portgroup in self.portgroups]
+    #     json_contents['version'] = ray.VERSION
 
-        with open(self._config_json_path, 'w+') as f:
-            json.dump(json_contents, f, indent=2)
+    #     with open(self._config_json_path, 'w+') as f:
+    #         json.dump(json_contents, f, indent=2)
 
     def save_portgroup(self, *args):
         new_portgroup = ray.PortGroupMemory.new_from(*args)
@@ -590,7 +596,7 @@ class CanvasSaver(ServerSender):
 
         self.portgroups.append(new_portgroup)
 
-    def client_jack_name_changed_new(
+    def client_jack_name_changed(
             self, old_jack_name: str, new_jack_name: str):
         server = self.session.get_server()
         
@@ -612,16 +618,16 @@ class CanvasSaver(ServerSender):
                         '/ray/gui/patchbay/update_group_position',
                         view_num, *ptv_dict[new].to_arg_list())                    
 
-    def client_jack_name_changed(
-            self, old_jack_name: str, new_jack_name: str):
-        server = self.session.get_server()
+    # def client_jack_name_changed(
+    #         self, old_jack_name: str, new_jack_name: str):
+    #     server = self.session.get_server()
         
-        for gpos in self.group_positions_session:
-            if group_belongs_to_client(gpos.group_name, old_jack_name):
-                gpos.group_name = gpos.group_name.replace(
-                    old_jack_name, new_jack_name, 1)
+    #     for gpos in self.group_positions_session:
+    #         if group_belongs_to_client(gpos.group_name, old_jack_name):
+    #             gpos.group_name = gpos.group_name.replace(
+    #                 old_jack_name, new_jack_name, 1)
 
-                if server is not None:
-                    server.send_gui(
-                        '/ray/gui/patchbay/update_group_position',
-                        *gpos.spread())
+    #             if server is not None:
+    #                 server.send_gui(
+    #                     '/ray/gui/patchbay/update_group_position',
+    #                     *gpos.spread())

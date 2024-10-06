@@ -9,13 +9,11 @@ import ray
 import xdg
 from gui_server_thread import GuiServerThread
 from gui_tools import RS, get_code_root
-
 from jack_renaming_tools import group_belongs_to_client
-
 from patchbay.base_elements import (
     GroupPos, PortgroupMem,
     PortMode, BoxLayoutMode, PortType, ToolDisplayed,
-    PortTypesViewFlag)
+    PortTypesViewFlag, ViewData)
 from patchbay.base_group import Group
 from patchbay import (
     PatchbayManager,
@@ -236,9 +234,9 @@ class RayPatchbayManager(PatchbayManager):
     
     def save_group_position(self, gpos: GroupPos):
         super().save_group_position(gpos)
-        ray_gpos = convert_group_pos_from_patchbay_to_ray(gpos)
         self.send_to_daemon(
-            '/ray/server/patchbay/save_group_position', *ray_gpos.spread())
+            '/ray/server/patchbay/save_group_position',
+            self.view_number, *gpos.to_arg_list())
 
     def save_portgroup_memory(self, portgrp_mem: PortgroupMem):
         super().save_portgroup_memory(portgrp_mem)
@@ -435,20 +433,22 @@ class RayPatchbayManager(PatchbayManager):
             self._last_selected_box_n = 0
 
     def update_group_position(self, *args):
-        # arguments are these ones delivered from ray.GroupPosition.spread()
-        # Not define them allows easier code modifications.
-        gpos = convert_group_pos_from_ray_to_patchbay(
-            ray.GroupPosition.new_from(*args))
+        view_number = args[0]        
+        gpos = GroupPos.from_arg_list(*args[1:])
+        view_dict = self.views.get(view_number)
+        if view_dict is None:
+            view_dict = self.views[view_number] = \
+                dict[PortTypesViewFlag, dict[str, GroupPos]]()
         
-        for gposition in self.group_positions:
-            if (gposition.group_name == gpos.group_name
-                    and gposition.port_types_view == gpos.port_types_view):
-                gposition.eat(gpos)
-                break
-        else:
-            self.group_positions.append(gpos)
-        
-        if gpos.port_types_view == self.port_types_view:
+        ptv_dict = view_dict.get(gpos.port_types_view)
+        if ptv_dict is None:
+            ptv_dict = view_dict[gpos.port_types_view] = \
+                dict[str, GroupPos]()
+                
+        ptv_dict[gpos.group_name] = gpos
+
+        if (view_number is self.view_number
+                and gpos.port_types_view is self.port_types_view):
             group = self.get_group_from_name(gpos.group_name)
             if group is not None:
                 group.set_group_position(gpos)
@@ -484,9 +484,10 @@ class RayPatchbayManager(PatchbayManager):
         self.set_options_dialog(
             CanvasOptionsDialog(self.main_win, self, RS.settings))
         
-    def fast_temp_file_memory(self, temp_path):
-        '''receives a .json file path from daemon with groups positions
-           and portgroups remembered from user.'''
+    def fast_temp_file_memory(self, temp_path: str):
+        '''receive a .json file path from daemon with groups positions
+        and portgroups remembered from user.'''
+
         canvas_data = self._get_json_contents_from_path(temp_path)
         if not canvas_data:
             sys.stderr.write(
@@ -495,7 +496,45 @@ class RayPatchbayManager(PatchbayManager):
             return
 
         for key in canvas_data.keys():
-            if key == 'group_positions':
+            if key == 'views':
+                view_dict: dict
+                for view_dict in canvas_data[key]:
+                    view_num = view_dict.get('index', 1)
+                    view_name = view_dict.get('name', '')
+                    default_ptv = PortTypesViewFlag.from_config_str(
+                        view_dict.get('default_port_types', 'ALL'))
+                    is_white_list = view_dict.get('is_white_list', False)
+                    
+                    view_data = self.views_datas.get(view_num)
+                    if view_data is None:
+                        view_data = self.views_datas[view_num] = ViewData(
+                            '', default_ptv, is_white_list)
+                    else:
+                        view_data.name = view_name
+                        view_data.default_port_types_view = default_ptv
+                        view_data.is_white_list = is_white_list
+                    
+                    view = self.views.get(view_num)
+                    if view is None:
+                        view = self.views[view_num] = \
+                            dict[PortTypesViewFlag, dict[str, GroupPos]]()
+                    
+                    for ptv_str, ptv_dict in view_dict.items():
+                        ptv = PortTypesViewFlag.from_config_str(ptv_str)
+                        if ptv is PortTypesViewFlag.NONE:
+                            continue
+                        
+                        run_ptv_dict = view.get(ptv)
+                        if run_ptv_dict is None:
+                            run_ptv_dict = view[ptv] = dict[str, GroupPos]()
+                        
+                        ptv_dict: dict
+                        for group_name, gpos_dict in ptv_dict.items():
+                            group_pos = GroupPos.from_new_dict(
+                                ptv, group_name, gpos_dict)
+                            run_ptv_dict[group_name] = group_pos
+            
+            elif key == 'group_positions':
                 for gpos_dict in canvas_data[key]:
                     gpos = ray.GroupPosition()
                     gpos.write_from_dict(gpos_dict)

@@ -5,6 +5,8 @@ import liblo
 
 import ray
 from gui_tools import CommandLineArgs
+from patchbay.patchcanvas.base_enums import GroupPos
+
 if TYPE_CHECKING:
     from gui_session import SignaledSession
 
@@ -121,7 +123,8 @@ class GuiServerThread(liblo.ServerThread):
             ('/ray/gui/patchbay/connection_added', 'ss'),
             ('/ray/gui/patchbay/connection_removed', 'ss'),
             ('/ray/gui/patchbay/server_stopped', ''),
-            ('/ray/gui/patchbay/update_group_position', ray.GroupPosition.sisi()),
+            ('/ray/gui/patchbay/update_group_position',
+             'i' + GroupPos.args_types()),
             ('/ray/gui/patchbay/metadata_updated', 'hss'),
             ('/ray/gui/patchbay/dsp_load', 'i'),
             ('/ray/gui/patchbay/add_xrun', ''),

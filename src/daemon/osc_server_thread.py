@@ -26,6 +26,7 @@ from daemon_tools import (
     get_code_root)
 from xml_tools import XmlElement
 from terminal_starter import which_terminal
+from patchcanvas_enums import GroupPos
 
 if TYPE_CHECKING:
     from session_signaled import SignaledSession
@@ -956,7 +957,7 @@ class OscServerThread(ClientCommunicating):
             dest_full_path.unlink(missing_ok=True)
 
     @osp_method('/ray/server/patchbay/save_group_position',
-                ray.GroupPosition.sisi())
+                'i' + GroupPos.args_types())
     def rayServerPatchbaySaveCoordinates(self, osp: OscPack):
         # here send to others GUI the new group position
         for gui_addr in self.gui_list:
