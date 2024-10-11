@@ -12,7 +12,7 @@ from gui_tools import RS, get_code_root
 from jack_renaming_tools import group_belongs_to_client
 from patchbay.base_elements import (
     GroupPos, PortgroupMem,
-    PortMode, PortType, ToolDisplayed,
+    PortMode, ToolDisplayed,
     PortTypesViewFlag, ViewData)
 from patchbay.base_group import Group
 from patchbay import (
@@ -28,32 +28,6 @@ from patchbay.patchcanvas.base_enums import portgroups_mem_from_json
 if TYPE_CHECKING:
     from gui_session import Session
     from main_window import MainWindow
-
-
-def convert_portgrp_mem_from_ray_to_patchbay(
-        ray_pgmem: ray.PortGroupMemory) -> PortgroupMem:
-    pgmem = PortgroupMem()
-    pgmem.group_name = ray_pgmem.group_name
-    try:
-        pgmem.port_mode = PortMode(ray_pgmem.port_mode)
-    except ValueError:
-        pgmem.port_mode = PortMode.NULL
-
-    try:
-        pgmem.port_type = PortType(ray_pgmem.port_type)
-    except ValueError:
-        pgmem.port_type = PortType.NULL
-    
-    pgmem.above_metadatas = bool(ray_pgmem.above_metadatas) 
-    # TODO, see if copy is required, probably not
-    pgmem.port_names = ray_pgmem.port_names
-    return pgmem
-
-def convert_portgrp_mem_from_patchbay_to_ray(
-        pgmem: PortgroupMem) -> ray.PortGroupMemory:
-    return ray.PortGroupMemory.new_from(
-        pgmem.group_name, pgmem.port_type.value, pgmem.port_mode.value,
-        int(pgmem.above_metadatas), *pgmem.port_names)
 
 
 class RayPatchbayCallbacker(Callbacker):
