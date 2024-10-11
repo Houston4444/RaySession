@@ -8,14 +8,15 @@ import time
 from typing import TYPE_CHECKING
 
 from liblo import Address
-from HoustonPatchbay.patchbay.patchcanvas.base_enums import PortMode, PortType, PortgroupMem, portgroups_mem_from_json, portgroups_memory_to_json
 
 import ray
 from daemon_tools import RS, Terminal
 from server_sender import ServerSender
 from jack_renaming_tools import group_belongs_to_client
 from patchcanvas_enums import (
-    from_json_to_str, PortTypesViewFlag, GroupPos, ViewData)
+    from_json_to_str, PortTypesViewFlag, GroupPos, ViewData,
+    portgroups_mem_from_json, portgroups_memory_to_json,
+    PortType, PortMode, PortgroupMem)
 
 if TYPE_CHECKING:
     from session_signaled import SignaledSession
@@ -58,7 +59,6 @@ class CanvasSaver(ServerSender):
 
         with open(self._config_json_path, 'r') as f:
             json_contents = {}
-            pg_list = list[ray.PortGroupMemory]()
 
             try:
                 json_contents = json.load(f)
@@ -384,7 +384,7 @@ class CanvasSaver(ServerSender):
             f.write(from_json_to_str(json_contents))
 
     def save_portgroup(self, *args):
-        nw_pg_mem = PortgroupMem.from_arg_list(*args)
+        nw_pg_mem = PortgroupMem.from_arg_list(args)
 
         ptype_dict = self.portgroups.get(nw_pg_mem.port_type)
         if ptype_dict is None:

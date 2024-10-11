@@ -23,6 +23,7 @@ from patchbay import (
     CanvasMenu,
     patchcanvas
 )
+from patchbay.patchcanvas.base_enums import portgroups_mem_from_json
 
 if TYPE_CHECKING:
     from gui_session import Session
@@ -203,12 +204,11 @@ class RayPatchbayManager(PatchbayManager):
             '/ray/server/patchbay/save_group_position',
             self.view_number, *gpos.to_arg_list())
 
-    def save_portgroup_memory(self, portgrp_mem: PortgroupMem):
-        super().save_portgroup_memory(portgrp_mem)
-        ray_pgmem = convert_portgrp_mem_from_patchbay_to_ray(portgrp_mem)
+    def save_portgroup_memory(self, pg_mem: PortgroupMem):
+        super().save_portgroup_memory(pg_mem)
         self.send_to_daemon(
             '/ray/server/patchbay/save_portgroup',
-            *ray_pgmem.spread())
+            *pg_mem.to_arg_list())
 
     def change_buffersize(self, buffer_size: int):
         super().change_buffersize(buffer_size)
@@ -419,8 +419,7 @@ class RayPatchbayManager(PatchbayManager):
                 group.set_group_position(gpos)
 
     def update_portgroup(self, *args):
-        ray_pgmem = ray.PortGroupMemory.new_from(*args)
-        pg_mem = convert_portgrp_mem_from_ray_to_patchbay(ray_pgmem)
+        pg_mem = PortgroupMem.from_arg_list(args)
         self.add_portgroup_memory(pg_mem)
 
         group = self.get_group_from_name(pg_mem.group_name)
@@ -500,10 +499,8 @@ class RayPatchbayManager(PatchbayManager):
                             run_ptv_dict[group_name] = group_pos
 
             elif key == 'portgroups':
-                for pg_dict in canvas_data[key]:
-                    portgroup_mem = ray.PortGroupMemory()
-                    portgroup_mem.write_from_dict(pg_dict)
-                    self.update_portgroup(*portgroup_mem.spread())
+                self.portgroups_memory = portgroups_mem_from_json(
+                    canvas_data[key])
 
         try:
             os.remove(temp_path)
