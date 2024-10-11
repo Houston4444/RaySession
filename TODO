@@ -26,9 +26,6 @@ favoriser le démon unique
 
 
 # NEW PATCHBAY
-Enregistrer les vues
-Enregister le statut caché pour les boîtes
 Default port types view : Qu'en faire ?
-
-réécrire les lignes de pos json
-réorganiser les portgroups json
+la liste des vues proposées dans config
+sauver dans session toutes boites présentes

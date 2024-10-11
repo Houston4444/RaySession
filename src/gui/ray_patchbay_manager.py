@@ -121,17 +121,14 @@ class RayPatchbayManager(PatchbayManager):
             return {}
 
         try:
-            file = open(file_path, 'r')
+            with open(file_path, 'r') as file:
+                new_dict = json.load(file)
+                assert isinstance(new_dict, dict)
         except IOError:
             return {}
-
-        try:
-            new_dict = json.load(file)
-            assert isinstance(new_dict, dict)
         except ImportError:
             return {}
 
-        file.close()
         return new_dict
     
     def _setup_canvas(self):
@@ -409,53 +406,55 @@ class RayPatchbayManager(PatchbayManager):
                 % temp_path)
             return
 
-        for key in canvas_data.keys():
-            if key == 'views':
-                view_dict: dict
-                for view_dict in canvas_data[key]:
-                    view_num = view_dict.get('index', 1)
-                    view_name = view_dict.get('name', '')
-                    default_ptv = PortTypesViewFlag.from_config_str(
-                        view_dict.get('default_port_types', 'ALL'))
-                    is_white_list = view_dict.get('is_white_list', False)
-                    
-                    view_data = self.views_datas.get(view_num)
-                    if view_data is None:
-                        view_data = self.views_datas[view_num] = ViewData(
-                            '', default_ptv, is_white_list)
-                    else:
-                        view_data.name = view_name
-                        view_data.default_port_types_view = default_ptv
-                        view_data.is_white_list = is_white_list
-                    
-                    view = self.views.get(view_num)
-                    if view is None:
-                        view = self.views[view_num] = \
-                            dict[PortTypesViewFlag, dict[str, GroupPos]]()
-                    
-                    for ptv_str, ptv_dict in view_dict.items():
-                        ptv = PortTypesViewFlag.from_config_str(ptv_str)
-                        if ptv is PortTypesViewFlag.NONE:
-                            continue
-                        
-                        run_ptv_dict = view.get(ptv)
-                        if run_ptv_dict is None:
-                            run_ptv_dict = view[ptv] = dict[str, GroupPos]()
-                        
-                        ptv_dict: dict
-                        for group_name, gpos_dict in ptv_dict.items():
-                            group_pos = GroupPos.from_new_dict(
-                                ptv, group_name, gpos_dict)
-                            run_ptv_dict[group_name] = group_pos
+        views_list: list[dict] = canvas_data.get('views', [])
+        pg_memory = canvas_data.get('portgroups', {})
 
-            elif key == 'portgroups':
-                self.portgroups_memory = portgroups_mem_from_json(
-                    canvas_data[key])
+        for view_dict in views_list:
+            view_num = view_dict.get('index', 1)
+            view_name = view_dict.get('name', '')
+            default_ptv = PortTypesViewFlag.from_config_str(
+                view_dict.get('default_port_types', 'ALL'))
+            is_white_list = view_dict.get('is_white_list', False)
+            
+            view_data = self.views_datas.get(view_num)
+            if view_data is None:
+                view_data = self.views_datas[view_num] = ViewData(
+                    '', default_ptv, is_white_list)
+            else:
+                view_data.name = view_name
+                view_data.default_port_types_view = default_ptv
+                view_data.is_white_list = is_white_list
+            
+            view = self.views.get(view_num)
+            if view is None:
+                view = self.views[view_num] = \
+                    dict[PortTypesViewFlag, dict[str, GroupPos]]()
+            
+            for ptv_str, ptv_dict in view_dict.items():
+                ptv = PortTypesViewFlag.from_config_str(ptv_str)
+                if ptv is PortTypesViewFlag.NONE:
+                    continue
+                
+                run_ptv_dict = view.get(ptv)
+                if run_ptv_dict is None:
+                    run_ptv_dict = view[ptv] = dict[str, GroupPos]()
+                
+                ptv_dict: dict
+                for group_name, gpos_dict in ptv_dict.items():
+                    group_pos = GroupPos.from_new_dict(
+                        ptv, group_name, gpos_dict)
+                    run_ptv_dict[group_name] = group_pos
+
+        self.portgroups_memory = portgroups_mem_from_json(pg_memory)
 
         try:
             os.remove(temp_path)
         except:
             pass
+        
+        self.change_view(self.view_number)
+        # for group in self.groups:
+        #     self.save_group_position(group.current_position)
 
     def fast_temp_file_running(self, temp_path: str):
         '''receives a .json file path from patchbay daemon with all ports, connections

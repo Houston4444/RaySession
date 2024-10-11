@@ -503,8 +503,6 @@ class Snapshoter(QObject):
             self.has_changes()
 
         self._changes_counted = False
-        
-        print('manikal', self._n_file_changed)
 
         if self._n_file_changed:
             all_args = self._get_git_command_list('add', '-A', '-v')
