@@ -166,7 +166,7 @@ class CanvasSaver(ServerSender):
                 distant_guis.append(gui_addr)
 
         if local_guis:
-            views_dict = self.get_json_view_list()
+            views_dict = {'views': self.get_json_view_list()}
 
             for gui_addr in local_guis:
                 with (tempfile.NamedTemporaryFile(delete=False, mode='w+')
