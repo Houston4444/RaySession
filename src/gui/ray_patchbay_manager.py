@@ -217,8 +217,6 @@ class RayPatchbayManager(PatchbayManager):
                 else:
                     opac = True
                     opac_grp_ids.add(group.group_id)
-                
-                group.semi_hide(opac)
 
         else:
             for group in self.groups:
@@ -226,35 +224,13 @@ class RayPatchbayManager(PatchbayManager):
                             and text.lower() not in group.display_name.lower())
                 if opac:
                     opac_grp_ids.add(group.group_id)
-
-                group.semi_hide(opac)
         
-        for conn in self.connections:
-            opac_conn = bool(
-                conn.port_out.group_id in opac_grp_ids
-                and conn.port_in.group_id in opac_grp_ids)
-            
-            conn.semi_hide(opac_conn)
-            if opac_conn:
-                opac_conn_ids.add(conn.connection_id)
-            
-        for group in self.groups:
-            if group.group_id in opac_grp_ids:
-                group.set_in_front()
-        
-        for conn in self.connections:
-            if conn.connection_id in opac_conn_ids:
-                conn.set_in_front()
-        
-        for conn in self.connections:
-            if conn.connection_id not in opac_conn_ids:
-                conn.set_in_front()
+        patchcanvas.semi_hide_groups(opac_grp_ids)
         
         n_boxes = 0
         
         for group in self.groups:
             if group.group_id not in opac_grp_ids:
-                group.set_in_front()
                 n_grp_boxes = group.get_number_of_boxes()
 
                 if n_select > n_boxes and n_select <= n_boxes + n_grp_boxes:
