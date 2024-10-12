@@ -46,6 +46,11 @@ class GeneralObject(QObject):
         self.sl_process.finished.connect(self.slProcessFinished)
 
         self.sl_port = ray.get_free_osc_port(9951)
+        if len(sys.argv) > 1 and '--port' in sys.argv[1:]:
+            port_index = sys.argv.index('--port')
+            if len(sys.argv) > port_index + 1 and sys.argv[port_index + 1].isdigit():
+                self.sl_port = int(sys.argv[port_index + 1])
+
         self.sl_url = Address(self.sl_port)
 
         self.gui_process = QProcess()
