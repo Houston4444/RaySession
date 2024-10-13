@@ -169,6 +169,27 @@ class RayPatchbayManager(PatchbayManager):
         self.send_to_patchbay_daemon('/ray/patchbay/gui_disannounce')
         super().disannounce()
     
+    def set_views_changed(self):
+        super().set_views_changed()
+        json_list = list[dict]()
+        for view_num, view_data in self.views_datas.items():            
+            json_dict = {}
+            json_dict['index'] = view_num
+            
+            if view_data.name:
+                json_dict['name'] = view_data.name
+            
+            if view_data.default_port_types_view is not PortTypesViewFlag.ALL:
+                json_dict['default_ptv'] = \
+                    view_data.default_port_types_view.name
+            
+            if view_data.is_white_list:
+                json_dict['is_white_list'] = True
+            json_list.append(json_dict)
+            
+        out_str = json.dumps(json_list)
+        print(out_str)
+    
     def save_group_position(self, gpos: GroupPos):
         super().save_group_position(gpos)
         self.send_to_daemon(
@@ -445,6 +466,7 @@ class RayPatchbayManager(PatchbayManager):
                         ptv, group_name, gpos_dict)
                     run_ptv_dict[group_name] = group_pos
 
+        self.sort_views_by_index()
         self.portgroups_memory = portgroups_mem_from_json(pg_memory)
 
         try:
