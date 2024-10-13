@@ -39,13 +39,17 @@ class GeneralObject(QObject):
     sl_ready = pyqtSignal()
 
     def __init__(self):
-        QObject.__init__(self)
+        QObject.__init__(self, sl_port=None)
 
         self.sl_process = QProcess()
         self.sl_process.setProcessChannelMode(QProcess.ForwardedChannels)
         self.sl_process.finished.connect(self.slProcessFinished)
 
-        self.sl_port = ray.get_free_osc_port(9951)
+        if sl_port is not None:
+            self.sl_port = sl_port
+        else:
+            self.sl_port = ray.get_free_osc_port(9951)
+
         self.sl_url = Address(self.sl_port)
 
         self.gui_process = QProcess()
@@ -354,7 +358,13 @@ if __name__ == '__main__':
     else:
         jack_client = None
 
-    general_object = GeneralObject()
+    sl_port = None
+    if len(sys.argv) > 1 and '--osc-port' in sys.argv[1:]:
+        port_index = sys.argv.index('--osc-port')
+        if len(sys.argv) > port_index + 1 and sys.argv[port_index + 1].isdigit():
+            sl_port = int(sys.argv[port_index + 1])
+
+    general_object = GeneralObject(sl_port=sl_port)
     if "--follow-jack-naming" in sys.argv[1:]:
         general_object.jack_follow_naming = True
 
