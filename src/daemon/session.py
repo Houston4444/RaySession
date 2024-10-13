@@ -9,10 +9,16 @@ import subprocess
 import sys
 import time
 from typing import Callable, Optional, Any, Union
-from liblo import Address
+try:
+    from liblo import Address
+except ImportError:
+    from pyliblo3 import Address
 from PyQt5.QtCore import QCoreApplication, QTimer
 from PyQt5.QtXml  import QDomDocument
-import liblo
+try:
+    import liblo
+except ImportError:
+    import pyliblo3 as liblo
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from io import BytesIO

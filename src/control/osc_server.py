@@ -3,7 +3,10 @@ import os
 import sys
 import time
 
-import liblo
+try:
+    import liblo
+except ImportError:
+    import pyliblo3 as liblo
 
 # !!! we don't load ray.py to win import duration
 # if change in ray.Err numbers, this has to be changed too !!!

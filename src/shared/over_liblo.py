@@ -1,6 +1,10 @@
 
-import liblo
-from liblo import Message
+try:
+    import liblo
+    from liblo import Message
+except ImportError:
+    import pyliblo3 as liblo
+    from pyliblo3 import Message
 
 def make_method(*args, **kwargs):
     return liblo.make_method(*args, **kwargs)

@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import QSettings, QSize, QFile, QObject, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtGui import QIcon, QPixmap, QPalette
-from liblo import Address
+try:
+    from liblo import Address
+except ImportError:
+    from pyliblo3 import Address
 
 import ray
 

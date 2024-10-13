@@ -5,7 +5,10 @@ from asyncio.log import logger
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import TYPE_CHECKING, Optional
-import liblo
+try:
+    import liblo
+except ImportError:
+    import pyliblo3 as liblo
 import os
 import shlex
 import socket
@@ -13,7 +16,10 @@ import subprocess
 import sys
 import logging
 
-from liblo import Server, Address
+try:
+    from liblo import Server, Address
+except ImportError:
+    from pyliblo3 import Server, Address
 from PyQt5.QtCore import QT_VERSION_STR, QSettings
 
 _logger = logging.getLogger(__name__)

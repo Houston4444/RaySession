@@ -4,7 +4,10 @@ import os
 import tempfile
 import time
 from typing import TYPE_CHECKING
-from liblo import Address
+try:
+    from liblo import Address
+except ImportError:
+    from pyliblo3 import Address
 
 import ray
 

@@ -1,7 +1,10 @@
 import os
 import sys
 from typing import TYPE_CHECKING
-import liblo
+try:
+    import liblo
+except ImportError:
+    import pyliblo3 as liblo
 
 import ray
 from gui_tools import CommandLineArgs

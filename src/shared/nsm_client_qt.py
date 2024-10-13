@@ -3,7 +3,10 @@
 import os
 import sys
 from PyQt5.QtCore import QObject, pyqtSignal
-from liblo import ServerThread, make_method, Address
+try:
+    from liblo import ServerThread, make_method, Address
+except ImportError:
+    from pyliblo3 import ServerThread, make_method, Address
 from typing import Optional
 
 

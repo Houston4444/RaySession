@@ -19,7 +19,10 @@
 import os
 import signal
 import sys
-import liblo
+try:
+    import liblo
+except ImportError:
+    import pyliblo3 as liblo
 import logging
 import xml.etree.ElementTree as ET
 
