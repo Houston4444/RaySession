@@ -439,8 +439,9 @@ class RayPatchbayManager(PatchbayManager):
             
             view_data = self.views_datas.get(view_num)
             if view_data is None:
-                view_data = self.views_datas[view_num] = ViewData(
-                    '', default_ptv, is_white_list)
+                view_data = self.views_datas[view_num] = ViewData(default_ptv)
+                if is_white_list is True:
+                    view_data.is_white_list = True
             else:
                 view_data.name = view_name
                 view_data.default_port_types_view = default_ptv

@@ -77,8 +77,7 @@ class CanvasSaver(ServerSender):
                     gpos_version = _get_version_tuple_json_dict(json_contents)
                     self.views_config[1] = \
                         dict[PortTypesViewFlag, dict[str, GroupPos]]()
-                    self.view_datas_config[1] = ViewData(
-                        '', PortTypesViewFlag.ALL, False)
+                    self.view_datas_config[1] = ViewData(PortTypesViewFlag.ALL)
 
                     for gpos_dict in gpos_list:
                         gpos = GroupPos.from_serialized_dict(
@@ -119,7 +118,7 @@ class CanvasSaver(ServerSender):
             
             views_dict[view_num] = dict[
                 PortTypesViewFlag, dict[str, GroupPos]]()
-            data_dict[view_num] = ViewData('', PortTypesViewFlag.NONE, False)
+            data_dict[view_num] = ViewData(PortTypesViewFlag.ALL)
 
             view_name = view_dict.get('name')
             if not isinstance(view_name, str):
@@ -348,8 +347,7 @@ class CanvasSaver(ServerSender):
                     # affect all existing group positions to view 1
                     self.views_session[1] = \
                         dict[PortTypesViewFlag, dict[str, GroupPos]]()
-                    self.view_datas_session[1] = ViewData(
-                        '', PortTypesViewFlag.ALL, False)
+                    self.view_datas_session[1] = ViewData(PortTypesViewFlag.ALL)
 
                     for gpos_dict in gpos_list:
                         gpos = GroupPos.from_serialized_dict(
