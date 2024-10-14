@@ -5,7 +5,7 @@ from pathlib import Path
 import pty
 import tempfile
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from liblo import Address
 
@@ -72,6 +72,7 @@ class CanvasSaver(ServerSender):
                         json_contents['views'], config=True)
 
                 elif 'group_positions' in json_contents.keys():
+                    # config file older than 0.15.0
                     gpos_list: list[GroupPos] = \
                         json_contents['group_positions']
                     gpos_version = _get_version_tuple_json_dict(json_contents)
@@ -168,13 +169,11 @@ class CanvasSaver(ServerSender):
             views_dict = {'views': self.get_json_view_list()}
 
             for gui_addr in local_guis:
-                with (tempfile.NamedTemporaryFile(delete=False, mode='w+')
-                        as f):
+                with (tempfile.NamedTemporaryFile(delete=False, mode='w+') as f):
                     json.dump(views_dict, f)
-
                     self.send(gui_addr,
-                            '/ray/gui/patchbay/fast_temp_file_memory',
-                            f.name)
+                             '/ray/gui/patchbay/fast_temp_file_memory',
+                             f.name)
 
         if distant_guis:
             for gui_addr in distant_guis:
@@ -199,11 +198,12 @@ class CanvasSaver(ServerSender):
         for view_index, view_dict in views_dict.items():
             view = {}
             view['index'] = view_index
-            view_data = data_dict.get('index')
+            view_data = data_dict.get(view_index)
             if view_data is not None:
                 view['default_port_types_view'] = \
                     view_data.default_port_types_view.name
                 view['is_white_list'] = view_data.is_white_list
+                view['name'] = view_data.name
             
             for ptv, ptv_dict in view_dict.items():
                 view[ptv.name] = {}
@@ -222,15 +222,30 @@ class CanvasSaver(ServerSender):
 
             config_list = self.get_json_view_list(config=True)
             session_list = self.get_json_view_list(config=False)
-
-            for view_dict in session_list:
-                for cf_view_dict in config_list:
-                    if cf_view_dict['index'] == view_dict['index']:
-                        config_list.remove(cf_view_dict)
-                        break
-                config_list.append(view_dict)
             
-            canvas_dict['views'] = config_list
+            mixed_dict = dict[int, dict]()
+            
+            for cf_view_dict in config_list:
+                cf_index = cf_view_dict.get('index')
+                if cf_index is None:
+                    continue
+                
+                mixed_dict[cf_index] = cf_view_dict
+                
+            for ss_view_dict in session_list:
+                ss_index = ss_view_dict.get('index')
+                if ss_index is None:
+                    continue
+                
+                mixed_view_dict = mixed_dict.get(ss_index)
+                
+                if mixed_view_dict is None:
+                    mixed_dict[ss_index] = ss_view_dict
+                    continue
+                
+                mixed_view_dict |= ss_view_dict
+            
+            canvas_dict['views'] = [d for d in mixed_dict.values()]
             
             with tempfile.NamedTemporaryFile(delete=False, mode='w+') as f:
                 json.dump(canvas_dict, f)
@@ -238,7 +253,25 @@ class CanvasSaver(ServerSender):
                           '/ray/gui/patchbay/fast_temp_file_memory',
                           f.name)
             return
-        
+
+        # send view datas
+        view_data_mixed = self.view_datas_config.copy()
+        view_data_mixed |= self.view_datas_session
+        view_data_list = list[dict[str, Any]]()
+        for index, view_data in view_data_mixed.items():
+            vd_dict = {'index': index}
+            if view_data.default_port_types_view is not PortTypesViewFlag.ALL:
+                vd_dict['default_ptv'] = view_data.default_port_types_view
+            if view_data.name:
+                vd_dict['name'] = view_data.name
+            if view_data.is_white_list:
+                vd_dict['is_white_list'] = True
+            view_data_list.append(vd_dict)
+            
+        self.send(src_addr,
+                  '/ray/gui/patchbay/views_changed',
+                  json.dumps(view_data_list))
+
         i = 0
 
         for view_index, ptvs_dict in self.views_session.items():
@@ -333,39 +366,39 @@ class CanvasSaver(ServerSender):
             except json.JSONDecodeError:
                 Terminal.message("Failed to load session canvas file %s" % f)
 
-            session_version = (0, 15, 0)
+        session_version = (0, 15, 0)
 
-            if isinstance(json_contents, dict):
-                if 'views' in json_contents.keys():
-                    self.write_view_from_json(json_contents['views'])
-                
-                elif 'group_positions' in json_contents.keys():
-                    gpos_list : list[dict] = json_contents['group_positions']
-                    session_version = _get_version_tuple_json_dict(
-                        json_contents)
+        if isinstance(json_contents, dict):
+            if 'views' in json_contents.keys():
+                self.write_view_from_json(json_contents['views'])
+            
+            elif 'group_positions' in json_contents.keys():
+                gpos_list : list[dict] = json_contents['group_positions']
+                session_version = _get_version_tuple_json_dict(
+                    json_contents)
 
-                    # affect all existing group positions to view 1
-                    self.views_session[1] = \
-                        dict[PortTypesViewFlag, dict[str, GroupPos]]()
-                    self.view_datas_session[1] = ViewData(PortTypesViewFlag.ALL)
+                # affect all existing group positions to view 1
+                self.views_session[1] = \
+                    dict[PortTypesViewFlag, dict[str, GroupPos]]()
+                self.view_datas_session[1] = ViewData(PortTypesViewFlag.ALL)
 
-                    for gpos_dict in gpos_list:
-                        gpos = GroupPos.from_serialized_dict(
-                            gpos_dict, version=session_version)
-                        gpos_list.append(gpos)
-                        
-                        self.views_session[1]
-                        ptv_dict = self.views_session[1].get(gpos.port_types_view)
-                        if ptv_dict is None:
-                            ptv_dict = self.views_session[1][gpos.port_types_view] = \
-                                dict[str, GroupPos]()
-                        ptv_dict[gpos.group_name] = gpos
+                for gpos_dict in gpos_list:
+                    gpos = GroupPos.from_serialized_dict(
+                        gpos_dict, version=session_version)
+                    gpos_list.append(gpos)
+                    
+                    self.views_session[1]
+                    ptv_dict = self.views_session[1].get(gpos.port_types_view)
+                    if ptv_dict is None:
+                        ptv_dict = self.views_session[1][gpos.port_types_view] = \
+                            dict[str, GroupPos]()
+                    ptv_dict[gpos.group_name] = gpos
 
     def save_json_session_canvas(self, session_path: Path):
         session_json_path = session_path / f'.{JSON_PATH}'
 
         json_contents = {}
-        json_contents['views'] = self.get_json_view_list()        
+        json_contents['views'] = self.get_json_view_list()
         json_contents['version'] = ray.VERSION
 
         with open(session_json_path, 'w+') as f:
@@ -411,15 +444,57 @@ class CanvasSaver(ServerSender):
         
         pg_list.append(nw_pg_mem)
 
+    def views_changed(self, *args):
+        json_views_list = args[0]
+        views_list: list[dict] = json.loads(json_views_list)
+        
+        # remove from all dicts removed views
+        indexes = [v.get('index') for v in views_list
+                   if v.get('index') is not None]
+        
+        rm_indexes = set[int]()
+        all_keys = set([k for k in self.views_session.keys()]
+                       + [k for k in self.views_config.keys()]) 
+        for view_num in all_keys:
+            if view_num not in indexes:
+                rm_indexes.add(view_num)
+        
+        for rm_index in rm_indexes:
+            for vdict in (self.views_config, self.views_session,
+                          self.view_datas_config, self.view_datas_session):
+                if vdict.get(rm_index) is not None:
+                    vdict.pop(rm_index)
+        
+        # update views datas 
+        for view_dict in views_list:
+            index = view_dict.get('index')
+            name = view_dict.get('name')
+            default_ptv = view_dict.get('default_ptv')
+            is_white_list = view_dict.get('is_white_list')
+            vds = [vd for vd in [self.view_datas_config.get(index),
+                                 self.view_datas_session.get(index)]
+                   if vd is not None]
+            
+            for vd in vds:
+                if name is not None:
+                    vd.name = name
+                
+                if default_ptv is not None:
+                    vd.default_port_types_view = \
+                        PortTypesViewFlag.from_config_str(default_ptv)
+                        
+                if is_white_list is not None:
+                    vd.is_white_list = is_white_list
+
     def client_jack_name_changed(
             self, old_jack_name: str, new_jack_name: str):
         server = self.session.get_server()
         
         for view_num, view_dict in self.views_session.items():
-            for ptv, ptv_dict in view_dict.items():
+            for ptv_dict in view_dict.values():
                 group_name_change_list = list[tuple(str, str)]()
                 
-                for group_name, group_pos in ptv_dict.items():
+                for group_name in ptv_dict.keys():
                     if group_belongs_to_client(group_name, old_jack_name):
                         new_group_name = group_name.replace(
                             old_jack_name, new_jack_name, 1)

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 import os
 import sys
+import logging
 
 import ray
 import xdg
@@ -29,6 +30,8 @@ if TYPE_CHECKING:
     from gui_session import Session
     from main_window import MainWindow
 
+
+_logger = logging.getLogger(__name__)
 
 class RayPatchbayCallbacker(Callbacker):
     def __init__(self, manager: 'RayPatchbayManager'):
@@ -188,7 +191,7 @@ class RayPatchbayManager(PatchbayManager):
             json_list.append(json_dict)
             
         out_str = json.dumps(json_list)
-        print(out_str)
+        self.send_to_daemon('/ray/server/patchbay/views_changed', out_str)
     
     def save_group_position(self, gpos: GroupPos):
         super().save_group_position(gpos)
@@ -422,9 +425,8 @@ class RayPatchbayManager(PatchbayManager):
 
         canvas_data = self._get_json_contents_from_path(temp_path)
         if not canvas_data:
-            sys.stderr.write(
-                "RaySession::Failed to load tmp file %s to get canvas positions\n"
-                % temp_path)
+            _logger.error(
+                f"Failed to load tmp file {temp_path} to get canvas positions")
             return
 
         views_list: list[dict] = canvas_data.get('views', [])
@@ -440,12 +442,9 @@ class RayPatchbayManager(PatchbayManager):
             view_data = self.views_datas.get(view_num)
             if view_data is None:
                 view_data = self.views_datas[view_num] = ViewData(default_ptv)
-                if is_white_list is True:
-                    view_data.is_white_list = True
-            else:
-                view_data.name = view_name
-                view_data.default_port_types_view = default_ptv
-                view_data.is_white_list = is_white_list
+            view_data.name = view_name
+            view_data.default_port_types_view = default_ptv
+            view_data.is_white_list = is_white_list
             
             view = self.views.get(view_num)
             if view is None:
@@ -475,6 +474,10 @@ class RayPatchbayManager(PatchbayManager):
         except:
             pass
         
+        # do not use self.set_views_changed(), we don't need to send
+        # views to daemon, just update widgets
+        self.sg.views_changed.emit()
+
         self.change_view(self.view_number)
         # for group in self.groups:
         #     self.save_group_position(group.current_position)

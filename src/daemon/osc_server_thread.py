@@ -439,6 +439,7 @@ class OscServerThread(ClientCommunicating):
             ('/ray/server/open_session_off', 's'),
             ('/ray/server/open_session_off', 'si'),
             ('/ray/server/rename_session', 'ss'),
+            ('/ray/server/patchbay/views_changed', 's'),
             ('/ray/session/abort', ''),
             ('/ray/session/open_snapshot', 's'),
             ('/ray/session/get_notes', ''),

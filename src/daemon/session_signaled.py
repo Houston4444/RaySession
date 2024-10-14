@@ -708,6 +708,9 @@ class SignaledSession(OperatingSession):
     def _ray_server_patchbay_save_portgroup(self, osp: OscPack):
         self.canvas_saver.save_portgroup(*osp.args)
 
+    def _ray_server_patchbay_views_changed(self, osp: OscPack):
+        self.canvas_saver.views_changed(*osp.args)
+
     @session_operation
     def _ray_session_save(self, osp: OscPack):        
         self.steps_order = [self.save, self.snapshot, self.save_done]
