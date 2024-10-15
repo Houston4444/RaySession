@@ -475,7 +475,7 @@ class RayPatchbayManager(PatchbayManager):
             return
 
         views_list: list[dict] = canvas_data.get('views', [])
-        pg_memory = canvas_data.get('portgroups', {})
+        pg_memory = canvas_data.get('portgroups')
 
         for view_dict in views_list:
             view_num = view_dict.get('index', 1)
@@ -512,7 +512,9 @@ class RayPatchbayManager(PatchbayManager):
                     run_ptv_dict[group_name] = group_pos
 
         self.sort_views_by_index()
-        self.portgroups_memory = portgroups_mem_from_json(pg_memory)
+        
+        if pg_memory is not None:
+            self.portgroups_memory = portgroups_mem_from_json(pg_memory)
 
         try:
             os.remove(temp_path)

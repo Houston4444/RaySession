@@ -444,14 +444,15 @@ class CanvasSaver(ServerSender):
             pg_list = gp_dict[nw_pg_mem.port_mode] = list[PortgroupMem]()        
 
         # remove any portgroup with a commmon port with the new one
-        remove_list = list[PortgroupMem]()
+        rm_pg = list[PortgroupMem]()
 
         for pg_mem in pg_list:
             for port_name in pg_mem.port_names:
                 if port_name in nw_pg_mem.port_names:
-                    remove_list.append(pg_mem)
+                    rm_pg.append(pg_mem)
+                    break
                     
-        for pg_mem in remove_list:
+        for pg_mem in rm_pg:
             pg_list.remove(pg_mem)
         
         pg_list.append(nw_pg_mem)
