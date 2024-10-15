@@ -510,6 +510,9 @@ class SignaledSession(Session):
     def _ray_gui_patchbay_update_portgroup(self, path, args):
         self.patchbay_manager.update_portgroup(*args)
 
+    def _ray_gui_patchbay_views_changed(self, path, args):
+        self.patchbay_manager.views_changed(*args)
+
     def _ray_gui_patchbay_server_started(self, path, args):
         self.patchbay_manager.server_started(*args)
 

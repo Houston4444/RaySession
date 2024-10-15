@@ -5,7 +5,7 @@ from pathlib import Path
 import pty
 import tempfile
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
 
 from liblo import Address
 
@@ -214,7 +214,21 @@ class CanvasSaver(ServerSender):
         
         return out_list
 
+    def _views_data_as_json_list(self, views_data: dict[int, ViewData]):
+        out_list = list[dict[str, Union[str, int]]]()
+        for index, view_data in views_data.items():
+            vd_dict = {'index': index}        
+            if view_data.default_port_types_view is not PortTypesViewFlag.ALL:
+                vd_dict['default_ptv'] = view_data.default_port_types_view
+            if view_data.name:
+                vd_dict['name'] = view_data.name
+            if view_data.is_white_list:
+                vd_dict['is_white_list'] = True
+            out_list.append(vd_dict)
+        return out_list
+
     def send_all_group_positions(self, src_addr: Address):
+        '''Used when a GUI is connected to the daemon.'''
         if ray.are_on_same_machine(self.get_server_url(), src_addr.url):
             canvas_dict = dict[str, list]()
             canvas_dict['portgroups'] = portgroups_memory_to_json(
@@ -257,20 +271,9 @@ class CanvasSaver(ServerSender):
         # send view datas
         view_data_mixed = self.view_datas_config.copy()
         view_data_mixed |= self.view_datas_session
-        view_data_list = list[dict[str, Any]]()
-        for index, view_data in view_data_mixed.items():
-            vd_dict = {'index': index}
-            if view_data.default_port_types_view is not PortTypesViewFlag.ALL:
-                vd_dict['default_ptv'] = view_data.default_port_types_view
-            if view_data.name:
-                vd_dict['name'] = view_data.name
-            if view_data.is_white_list:
-                vd_dict['is_white_list'] = True
-            view_data_list.append(vd_dict)
-            
         self.send(src_addr,
                   '/ray/gui/patchbay/views_changed',
-                  json.dumps(view_data_list))
+                  json.dumps(self._views_data_as_json_list(view_data_mixed)))
 
         i = 0
 
@@ -324,6 +327,7 @@ class CanvasSaver(ServerSender):
                 time.sleep(0.020)
 
     def save_group_position(self, *args):
+        '''Save a group position sent by GUI'''
         view_num, ptv_int, group_name, *rest = args
         ptv = PortTypesViewFlag(ptv_int)
         
@@ -403,6 +407,14 @@ class CanvasSaver(ServerSender):
 
         with open(session_json_path, 'w+') as f:
             f.write(from_json_to_str(json_contents))
+
+    def unload_session(self):
+        self.view_datas_session.clear()
+        self.views_session.clear()
+        
+        self.send_gui(
+            '/ray/gui/patchbay/views_changed',
+            json.dumps(self._views_data_as_json_list(self.view_datas_config)))
 
     def save_config_file(self):
         json_contents = {}

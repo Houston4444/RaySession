@@ -1295,6 +1295,8 @@ class OperatingSession(Session):
 
         if clear_all_clients:
             self._set_path(None)
+            
+        self.canvas_saver.unload_session()
         self.next_function()
 
     def close_done(self):

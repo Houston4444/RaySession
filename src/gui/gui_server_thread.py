@@ -125,6 +125,7 @@ class GuiServerThread(liblo.ServerThread):
             ('/ray/gui/patchbay/server_stopped', ''),
             ('/ray/gui/patchbay/update_group_position',
              'i' + GroupPos.args_types()),
+            ('/ray/gui/patchbay/views_changed', 's'),
             ('/ray/gui/patchbay/metadata_updated', 'hss'),
             ('/ray/gui/patchbay/dsp_load', 'i'),
             ('/ray/gui/patchbay/add_xrun', ''),

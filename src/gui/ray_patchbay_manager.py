@@ -1,7 +1,7 @@
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
 import os
 import sys
 import logging
@@ -396,6 +396,51 @@ class RayPatchbayManager(PatchbayManager):
         group = self.get_group_from_name(pg_mem.group_name)
         if group is not None:
             group.portgroup_memory_added(pg_mem)
+    
+    def views_changed(self, *args):
+        views_data_json = args[0]
+        views_data_list: list[dict[str, Union[str, int, bool]]] = \
+            json.loads(views_data_json)
+
+        as_dict = dict[int, dict[str, Union[str, int, bool]]]()
+        rm_datas = set[int]()
+        
+        for view_data_dict in views_data_list:
+            index = view_data_dict.get('index')
+            if not isinstance(index, int):
+                continue
+            as_dict[index] = view_data_dict
+            
+        for vd_index, view_data in self.views_datas.items():
+            if vd_index not in as_dict.keys():
+                rm_datas.add(vd_index)
+                continue
+            
+            name = as_dict[vd_index].get('name')
+            ptv_str = as_dict[vd_index].get('default_ptv')
+            is_white_list = as_dict[vd_index].get('is_white_list')
+            
+            if name is not None:
+                view_data.name = name
+            if ptv_str is not None:
+                view_data.default_port_types_view = \
+                    PortTypesViewFlag.from_config_str(ptv_str)
+            if isinstance(is_white_list, bool):
+                view_data.is_white_list = is_white_list
+        
+        for vd_index in rm_datas:
+            self.views_datas.pop(vd_index)
+        
+        rm_views = set[int]()
+        
+        for v_index in self.views.keys():
+            if v_index not in as_dict.keys():
+                rm_views.add(v_index)
+                
+        for v_index in rm_views:
+            self.views.pop(v_index)
+
+        self.sg.views_changed.emit()
     
     def optional_gui_state_changed(self, client_id: str, visible: bool):
         for client in self.session.client_list:
