@@ -440,6 +440,15 @@ class RayPatchbayManager(PatchbayManager):
         for v_index in rm_views:
             self.views.pop(v_index)
 
+        if not self.views:
+            self.view_number = 1
+            self.views[1] = dict[PortTypesViewFlag, dict[str, GroupPos]]()
+
+        if self.view_number not in self.views.keys():
+            for key in self.views.keys():
+                self.view_number = key
+                break
+
         self.sg.views_changed.emit()
     
     def optional_gui_state_changed(self, client_id: str, visible: bool):
