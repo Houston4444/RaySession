@@ -1,8 +1,7 @@
 
 import json
-from os import remove
+import logging
 from pathlib import Path
-import pty
 import tempfile
 import time
 from typing import TYPE_CHECKING, Any, Union
@@ -20,6 +19,9 @@ from patchcanvas_enums import (
 
 if TYPE_CHECKING:
     from session_signaled import SignaledSession
+
+
+_logger = logging.getLogger(__name__)
 
 
 JSON_PATH = 'ray_canvas.json'
@@ -352,6 +354,36 @@ class CanvasSaver(ServerSender):
             ptv_dict_cf = ptvs_dict_cf[ptv] = dict[str, GroupPos]()
             
         ptv_dict_cf[group_name] = GroupPos.from_arg_list(args[1:])
+
+    def clear_absents_in_view(self, *args):
+        try:
+            json_dict: dict[str, Union[int, str, list[str]]] = \
+                json.loads(args[0])
+            view_num = json_dict['view_num']
+            ptv = PortTypesViewFlag.from_config_str(json_dict['ptv'])
+            presents = set(json_dict['presents'])
+        except BaseException as e:
+            _logger.warning(
+                f'failed to clear absents in canvas view\n{str(e)}')
+            return
+        
+        view_cf = self.views_config.get(view_num)
+        if view_cf is not None:    
+            ptv_dict_cf = view_cf.get(ptv)
+            if ptv_dict_cf is not None:
+                ptv_dict_cf_keys = [k for k in ptv_dict_cf.keys()]
+                for group_name in ptv_dict_cf_keys:
+                    if group_name not in presents:
+                        ptv_dict_cf.pop(group_name)
+                
+        view_ss = self.views_session.get(view_num)
+        if view_ss is not None:
+            ptv_dict_ss = view_ss.get(ptv)
+            if ptv_dict_ss is not None:
+                ptv_dict_ss_keys = [k for k in ptv_dict_ss.keys()]
+                for group_name in ptv_dict_ss_keys:
+                    if group_name not in presents:
+                        ptv_dict_ss.pop(group_name)
 
     def load_json_session_canvas(self, session_path: Path):
         self.views_session.clear()

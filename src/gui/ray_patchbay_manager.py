@@ -260,6 +260,30 @@ class RayPatchbayManager(PatchbayManager):
 
         return n_boxes
 
+    def clear_absents_in_view(self):
+        for ptv, work_dict in self.views[self.view_number].items():
+            to_rm_keys = set[str]()
+            valid_keys = set[str]()
+
+            for group in self.groups:
+                if group.is_in_port_types_view(ptv):
+                    valid_keys.add(group.current_position.group_name)
+
+            for group_name in work_dict.keys():
+                if group_name not in valid_keys:
+                    to_rm_keys.add(group_name)
+
+            for to_rm_key in to_rm_keys:
+                work_dict.pop(to_rm_key)
+
+            out_dict = {'view_num': self.view_number,
+                        'ptv': ptv.name,
+                        'presents': [g for g in valid_keys]}
+
+            self.send_to_daemon(
+                '/ray/server/patchbay/clear_absents_in_view',
+                json.dumps(out_dict))
+
     def get_corrected_a2j_group_name(self, group_name: str) -> str:
         # fix a2j wrongly substitute '.' with space
         for client in self.session.client_list:

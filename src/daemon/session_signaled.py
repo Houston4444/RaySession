@@ -711,6 +711,9 @@ class SignaledSession(OperatingSession):
     def _ray_server_patchbay_views_changed(self, osp: OscPack):
         self.canvas_saver.views_changed(*osp.args)
 
+    def _ray_server_patchbay_clear_absents_in_view(self, osp: OscPack):
+        self.canvas_saver.clear_absents_in_view(*osp.args)
+
     @session_operation
     def _ray_session_save(self, osp: OscPack):        
         self.steps_order = [self.save, self.snapshot, self.save_done]
