@@ -1296,10 +1296,10 @@ class OperatingSession(Session):
         if clear_all_clients:
             self._set_path(None)
             
-        self.canvas_saver.unload_session()
         self.next_function()
 
     def close_done(self):
+        self.canvas_saver.unload_session()
         self._clean_expected()
         self.clients.clear()
         self._set_path(None)
@@ -1849,7 +1849,8 @@ for better organization.""")
             nsm_file.close()
             self.send_gui('/ray/gui/session/is_nsm')
 
-        self.canvas_saver.load_json_session_canvas(spath)
+        if not self.is_dummy:
+            self.canvas_saver.load_json_session_canvas(spath)
 
         full_notes_path = spath / ray.NOTES_PATH
 

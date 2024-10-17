@@ -284,6 +284,12 @@ class RayPatchbayManager(PatchbayManager):
                 '/ray/server/patchbay/clear_absents_in_view',
                 json.dumps(out_dict))
 
+    def change_view_number(self, new_num: int):
+        ex_view_num = self.view_number
+        super().change_view_number(new_num)
+        self.send_to_daemon(
+            '/ray/server/patchbay/view_number_changed', ex_view_num, new_num)
+
     def get_corrected_a2j_group_name(self, group_name: str) -> str:
         # fix a2j wrongly substitute '.' with space
         for client in self.session.client_list:
@@ -510,6 +516,8 @@ class RayPatchbayManager(PatchbayManager):
         views_list: list[dict] = canvas_data.get('views', [])
         pg_memory = canvas_data.get('portgroups')
 
+        print('fast tmp views_list', views_list)
+
         for view_dict in views_list:
             view_num = view_dict.get('index', 1)
             view_name = view_dict.get('name', '')
@@ -559,12 +567,10 @@ class RayPatchbayManager(PatchbayManager):
         self.sg.views_changed.emit()
 
         self.change_view(self.view_number)
-        # for group in self.groups:
-        #     self.save_group_position(group.current_position)
 
     def fast_temp_file_running(self, temp_path: str):
-        '''receives a .json file path from patchbay daemon with all ports, connections
-           and jack metadatas'''
+        '''receives a .json file path from patchbay daemon with all ports,
+        connections and jack metadatas'''
             
         patchbay_data = self._get_json_contents_from_path(temp_path)
         if not patchbay_data:

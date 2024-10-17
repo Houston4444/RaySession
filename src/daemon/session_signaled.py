@@ -713,6 +713,9 @@ class SignaledSession(OperatingSession):
 
     def _ray_server_patchbay_clear_absents_in_view(self, osp: OscPack):
         self.canvas_saver.clear_absents_in_view(*osp.args)
+        
+    def _ray_server_patchbay_view_number_changed(self, osp: OscPack):
+        self.canvas_saver.change_view_number(*osp.args)
 
     @session_operation
     def _ray_session_save(self, osp: OscPack):        

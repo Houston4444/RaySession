@@ -155,6 +155,9 @@ class CanvasSaver(ServerSender):
                     views_dict[view_num][ptv][group_name] = gpos
 
     def send_session_group_positions(self):
+        if self.is_dummy:
+            return
+        
         server = self.get_server()
         if not server:
             return
@@ -174,8 +177,8 @@ class CanvasSaver(ServerSender):
                 with (tempfile.NamedTemporaryFile(delete=False, mode='w+') as f):
                     json.dump(views_dict, f)
                     self.send(gui_addr,
-                             '/ray/gui/patchbay/fast_temp_file_memory',
-                             f.name)
+                              '/ray/gui/patchbay/fast_temp_file_memory',
+                              f.name)
 
         if distant_guis:
             for gui_addr in distant_guis:
@@ -385,6 +388,24 @@ class CanvasSaver(ServerSender):
                     if group_name not in presents:
                         ptv_dict_ss.pop(group_name)
 
+    def change_view_number(self, *args):
+        ex_view_num, new_view_num = args
+        
+        for vdict in (self.views_config, self.views_session,
+                      self.view_datas_config, self.view_datas_session):
+            if vdict.get(ex_view_num) is None:
+                # _logger.warning(
+                #     f'Changing view number for a non '
+                #     f'existing view n°{ex_view_num}')
+                continue
+            
+            if vdict.get(new_view_num) is not None:
+                vdict[ex_view_num], vdict[new_view_num] = \
+                    vdict[new_view_num], vdict[ex_view_num]
+            
+            else:
+                vdict[new_view_num] = vdict.pop(ex_view_num)
+
     def load_json_session_canvas(self, session_path: Path):
         self.views_session.clear()
         self.view_datas_session.clear()
@@ -395,7 +416,6 @@ class CanvasSaver(ServerSender):
 
         with open(session_canvas_file, 'r') as f:
             json_contents = {}
-            gpos_list = list[dict]()
 
             try:
                 json_contents = json.load(f)
@@ -421,7 +441,6 @@ class CanvasSaver(ServerSender):
                 for gpos_dict in gpos_list:
                     gpos = GroupPos.from_serialized_dict(
                         gpos_dict, version=session_version)
-                    gpos_list.append(gpos)
                     
                     self.views_session[1]
                     ptv_dict = self.views_session[1].get(gpos.port_types_view)
@@ -429,7 +448,7 @@ class CanvasSaver(ServerSender):
                         ptv_dict = self.views_session[1][gpos.port_types_view] = \
                             dict[str, GroupPos]()
                     ptv_dict[gpos.group_name] = gpos
-
+                    
     def save_json_session_canvas(self, session_path: Path):
         session_json_path = session_path / f'.{JSON_PATH}'
 
