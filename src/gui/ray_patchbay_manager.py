@@ -516,8 +516,6 @@ class RayPatchbayManager(PatchbayManager):
         views_list: list[dict] = canvas_data.get('views', [])
         pg_memory = canvas_data.get('portgroups')
 
-        print('fast tmp views_list', views_list)
-
         for view_dict in views_list:
             view_num = view_dict.get('index', 1)
             view_name = view_dict.get('name', '')
