@@ -14,8 +14,7 @@ from server_sender import ServerSender
 from jack_renaming_tools import group_belongs_to_client
 from patchcanvas_enums import (
     PortgroupsDict, from_json_to_str, PortTypesViewFlag, GroupPos,
-    portgroups_mem_from_json, portgroups_memory_to_json,
-    PortType, PortMode, PortgroupMem, ViewsDict)
+    PortgroupMem, ViewsDict)
 
 if TYPE_CHECKING:
     from session_signaled import SignaledSession
@@ -202,7 +201,7 @@ class CanvasSaver(ServerSender):
                         time.sleep(0.020)
                         i = 0
 
-        for pg_mem in self.portgroups.iter_portgroups():
+        for pg_mem in self.portgroups.iter_all_portgroups():
             self.send(src_addr, '/ray/gui/patchbay/update_portgroup',
                       *pg_mem.to_arg_list())
 
@@ -299,7 +298,7 @@ class CanvasSaver(ServerSender):
     def save_config_file(self):
         json_contents = {
             'views': self.views_config.to_json_list(),
-            'portgroups': portgroups_memory_to_json(self.portgroups),
+            'portgroups': self.portgroups.to_json(),
             'version': ray.VERSION
         }
 

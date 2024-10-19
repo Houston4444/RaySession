@@ -14,7 +14,7 @@ from jack_renaming_tools import group_belongs_to_client
 from patchbay.base_elements import (
     GroupPos, PortgroupMem,
     PortMode, ToolDisplayed,
-    PortTypesViewFlag, ViewData)
+    PortTypesViewFlag)
 from patchbay.base_group import Group
 from patchbay import (
     PatchbayManager,
@@ -24,7 +24,6 @@ from patchbay import (
     CanvasMenu,
     patchcanvas
 )
-from patchbay.patchcanvas.base_enums import portgroups_mem_from_json
 
 if TYPE_CHECKING:
     from gui_session import Session
@@ -455,7 +454,7 @@ class RayPatchbayManager(PatchbayManager):
         starting = pg_memory is not None
 
         if pg_memory is not None:
-            self.portgroups_memory = portgroups_mem_from_json(pg_memory)        
+            self.portgroups_memory.eat_json(pg_memory)
 
         self.views.eat_json_list(canvas_data.get('views'), clear=starting)
 
