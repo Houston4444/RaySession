@@ -96,7 +96,7 @@ class RayPatchbayManager(PatchbayManager):
         
         self._last_selected_client_name = ''
         self._last_selected_box_n = 1
-        self.views[self.view_number] = {}
+        self.views.add_view(1)
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
@@ -174,24 +174,8 @@ class RayPatchbayManager(PatchbayManager):
     
     def set_views_changed(self):
         super().set_views_changed()
-        json_list = list[dict]()
-        for view_num, view_data in self.views_datas.items():            
-            json_dict = {}
-            json_dict['index'] = view_num
-            
-            if view_data.name:
-                json_dict['name'] = view_data.name
-            
-            if view_data.default_port_types_view is not PortTypesViewFlag.ALL:
-                json_dict['default_ptv'] = \
-                    view_data.default_port_types_view.name
-            
-            if view_data.is_white_list:
-                json_dict['is_white_list'] = True
-            json_list.append(json_dict)
-            
-        out_str = json.dumps(json_list)
-        self.send_to_daemon('/ray/server/patchbay/views_changed', out_str)
+        self.send_to_daemon('/ray/server/patchbay/views_changed',
+                            json.dumps(self.views.short_data_states()))
     
     def save_group_position(self, gpos: GroupPos):
         super().save_group_position(gpos)
@@ -429,50 +413,10 @@ class RayPatchbayManager(PatchbayManager):
     
     def views_changed(self, *args):
         views_data_json = args[0]
-        views_data_list: list[dict[str, Union[str, int, bool]]] = \
-            json.loads(views_data_json)
-
-        as_dict = dict[int, dict[str, Union[str, int, bool]]]()
-        rm_datas = set[int]()
-        
-        for view_data_dict in views_data_list:
-            index = view_data_dict.get('index')
-            if not isinstance(index, int):
-                continue
-            as_dict[index] = view_data_dict
-            
-        for vd_index, view_data in self.views_datas.items():
-            if vd_index not in as_dict.keys():
-                rm_datas.add(vd_index)
-                continue
-            
-            name = as_dict[vd_index].get('name')
-            ptv_str = as_dict[vd_index].get('default_ptv')
-            is_white_list = as_dict[vd_index].get('is_white_list')
-            
-            if name is not None:
-                view_data.name = name
-            if ptv_str is not None:
-                view_data.default_port_types_view = \
-                    PortTypesViewFlag.from_config_str(ptv_str)
-            if isinstance(is_white_list, bool):
-                view_data.is_white_list = is_white_list
-        
-        for vd_index in rm_datas:
-            self.views_datas.pop(vd_index)
-        
-        rm_views = set[int]()
-        
-        for v_index in self.views.keys():
-            if v_index not in as_dict.keys():
-                rm_views.add(v_index)
-                
-        for v_index in rm_views:
-            self.views.pop(v_index)
+        self.views.update_from_short_data_states(json.loads(views_data_json))
 
         if not self.views:
-            self.view_number = 1
-            self.views[1] = dict[PortTypesViewFlag, dict[str, GroupPos]]()
+            self.views.add_view(1)
 
         if self.view_number not in self.views.keys():
             for key in self.views.keys():
@@ -513,44 +457,9 @@ class RayPatchbayManager(PatchbayManager):
                 f"Failed to load tmp file {temp_path} to get canvas positions")
             return
 
-        views_list: list[dict] = canvas_data.get('views', [])
+        self.views.eat_json_list(canvas_data.get('views'))
+        print('fats temp', self.views)
         pg_memory = canvas_data.get('portgroups')
-
-        for view_dict in views_list:
-            view_num = view_dict.get('index', 1)
-            view_name = view_dict.get('name', '')
-            default_ptv = PortTypesViewFlag.from_config_str(
-                view_dict.get('default_port_types', 'ALL'))
-            is_white_list = view_dict.get('is_white_list', False)
-            
-            view_data = self.views_datas.get(view_num)
-            if view_data is None:
-                view_data = self.views_datas[view_num] = ViewData(default_ptv)
-            view_data.name = view_name
-            view_data.default_port_types_view = default_ptv
-            view_data.is_white_list = is_white_list
-            
-            view = self.views.get(view_num)
-            if view is None:
-                view = self.views[view_num] = \
-                    dict[PortTypesViewFlag, dict[str, GroupPos]]()
-            
-            for ptv_str, ptv_dict in view_dict.items():
-                ptv = PortTypesViewFlag.from_config_str(ptv_str)
-                if ptv is PortTypesViewFlag.NONE:
-                    continue
-                
-                run_ptv_dict = view.get(ptv)
-                if run_ptv_dict is None:
-                    run_ptv_dict = view[ptv] = dict[str, GroupPos]()
-                
-                ptv_dict: dict
-                for group_name, gpos_dict in ptv_dict.items():
-                    group_pos = GroupPos.from_new_dict(
-                        ptv, group_name, gpos_dict)
-                    run_ptv_dict[group_name] = group_pos
-
-        self.sort_views_by_index()
         
         if pg_memory is not None:
             self.portgroups_memory = portgroups_mem_from_json(pg_memory)
