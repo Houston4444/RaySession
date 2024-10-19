@@ -96,7 +96,6 @@ class RayPatchbayManager(PatchbayManager):
         
         self._last_selected_client_name = ''
         self._last_selected_box_n = 1
-        self.views.add_view(1)
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
@@ -245,24 +244,18 @@ class RayPatchbayManager(PatchbayManager):
         return n_boxes
 
     def clear_absents_in_view(self):
-        for ptv, work_dict in self.views[self.view_number].items():
-            to_rm_keys = set[str]()
-            valid_keys = set[str]()
+        for ptv in self.views[self.view_number].ptvs.keys():
+            presents = set[str]()
 
             for group in self.groups:
                 if group.is_in_port_types_view(ptv):
-                    valid_keys.add(group.current_position.group_name)
+                    presents.add(group.current_position.group_name)
 
-            for group_name in work_dict.keys():
-                if group_name not in valid_keys:
-                    to_rm_keys.add(group_name)
-
-            for to_rm_key in to_rm_keys:
-                work_dict.pop(to_rm_key)
+            self.views.clear_absents(self.view_number, ptv, presents)
 
             out_dict = {'view_num': self.view_number,
                         'ptv': ptv.name,
-                        'presents': [g for g in valid_keys]}
+                        'presents': [g for g in presents]}
 
             self.send_to_daemon(
                 '/ray/server/patchbay/clear_absents_in_view',
@@ -457,12 +450,14 @@ class RayPatchbayManager(PatchbayManager):
                 f"Failed to load tmp file {temp_path} to get canvas positions")
             return
 
-        self.views.eat_json_list(canvas_data.get('views'))
-        print('fats temp', self.views)
+
         pg_memory = canvas_data.get('portgroups')
-        
+        starting = pg_memory is not None
+
         if pg_memory is not None:
-            self.portgroups_memory = portgroups_mem_from_json(pg_memory)
+            self.portgroups_memory = portgroups_mem_from_json(pg_memory)        
+
+        self.views.eat_json_list(canvas_data.get('views'), clear=starting)
 
         try:
             os.remove(temp_path)
@@ -472,7 +467,9 @@ class RayPatchbayManager(PatchbayManager):
         # do not use self.set_views_changed(), we don't need to send
         # views to daemon, just update widgets
         self.sg.views_changed.emit()
-
+            
+        if starting or self.view_number not in self.views.keys():
+            self.view_number = self.views.first_view_num()
         self.change_view(self.view_number)
 
     def fast_temp_file_running(self, temp_path: str):
@@ -495,7 +492,12 @@ class RayPatchbayManager(PatchbayManager):
         
         # very fast operation means that nothing is done in the patchcanvas
         # everything stays here in this file.
-        if self.group_positions:
+        has_group_positions = False
+        for gpos in self.views.iter_group_poses():
+            has_group_positions = True
+            break
+        
+        if has_group_positions:
             self.optimize_operation(True)
             self._set_very_fast_operation(True)
 

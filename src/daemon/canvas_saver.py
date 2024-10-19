@@ -44,8 +44,8 @@ class CanvasSaver(ServerSender):
         ServerSender.__init__(self)
         self.session = session
 
-        self.views_session = ViewsDict()
-        self.views_config = ViewsDict()
+        self.views_session = ViewsDict(ensure_one_view=False)
+        self.views_config = ViewsDict(ensure_one_view=False)
 
         self.portgroups = dict[
             PortType, dict[str, dict[PortMode, list[PortgroupMem]]]]()
@@ -259,8 +259,6 @@ class CanvasSaver(ServerSender):
                 vdict[new_view_num] = vdict.pop(ex_view_num)
 
     def load_json_session_canvas(self, session_path: Path):
-        self.views_session.clear()
-
         session_canvas_file = session_path / f'.{JSON_PATH}'
         if not session_canvas_file.exists():
             return
