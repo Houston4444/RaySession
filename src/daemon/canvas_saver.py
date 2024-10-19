@@ -12,7 +12,7 @@ import ray
 from daemon_tools import RS, Terminal
 from server_sender import ServerSender
 from jack_renaming_tools import group_belongs_to_client
-from patchcanvas_enums import (
+from patshared import (
     PortgroupsDict, from_json_to_str, PortTypesViewFlag, GroupPos,
     PortgroupMem, ViewsDict)
 

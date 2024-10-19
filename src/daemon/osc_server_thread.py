@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 import logging
 import os
 import shlex
@@ -26,7 +25,7 @@ from daemon_tools import (
     get_code_root)
 from xml_tools import XmlElement
 from terminal_starter import which_terminal
-from patchcanvas_enums import GroupPos
+from patshared import GroupPos
 
 if TYPE_CHECKING:
     from session_signaled import SignaledSession

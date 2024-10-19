@@ -1,7 +1,7 @@
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 import os
 import sys
 import logging
@@ -11,10 +11,9 @@ import xdg
 from gui_server_thread import GuiServerThread
 from gui_tools import RS, get_code_root
 from jack_renaming_tools import group_belongs_to_client
-from patchbay.base_elements import (
-    GroupPos, PortgroupMem,
-    PortMode, ToolDisplayed,
-    PortTypesViewFlag)
+from patchbay.patchcanvas.patshared import (
+    GroupPos, PortgroupMem, PortMode)
+from patchbay.base_elements import ToolDisplayed, PortTypesViewFlag
 from patchbay.base_group import Group
 from patchbay import (
     PatchbayManager,

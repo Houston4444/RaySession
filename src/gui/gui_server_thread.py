@@ -5,7 +5,7 @@ import liblo
 
 import ray
 from gui_tools import CommandLineArgs
-from patchbay.patchcanvas.base_enums import GroupPos
+from patchbay.patchcanvas.patshared import GroupPos
 
 if TYPE_CHECKING:
     from gui_session import SignaledSession
