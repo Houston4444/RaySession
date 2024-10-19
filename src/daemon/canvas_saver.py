@@ -13,7 +13,7 @@ from daemon_tools import RS, Terminal
 from server_sender import ServerSender
 from jack_renaming_tools import group_belongs_to_client
 from patchcanvas_enums import (
-    from_json_to_str, PortTypesViewFlag, GroupPos,
+    PortgroupsDict, from_json_to_str, PortTypesViewFlag, GroupPos,
     portgroups_mem_from_json, portgroups_memory_to_json,
     PortType, PortMode, PortgroupMem, ViewsDict)
 
@@ -47,8 +47,7 @@ class CanvasSaver(ServerSender):
         self.views_session = ViewsDict(ensure_one_view=False)
         self.views_config = ViewsDict(ensure_one_view=False)
 
-        self.portgroups = dict[
-            PortType, dict[str, dict[PortMode, list[PortgroupMem]]]]()
+        self.portgroups = PortgroupsDict()
         self._config_json_path = \
             Path(RS.settings.fileName()).parent / JSON_PATH
 
@@ -79,8 +78,7 @@ class CanvasSaver(ServerSender):
                             gpos_dict, gpos_version)
 
                 if 'portgroups' in json_contents.keys():
-                    self.portgroups = portgroups_mem_from_json(
-                        json_contents['portgroups'])
+                    self.portgroups.eat_json(json_contents['portgroups'])
 
     def send_session_group_positions(self):
         if self.is_dummy:
@@ -122,8 +120,7 @@ class CanvasSaver(ServerSender):
         '''Used when a GUI is connected to the daemon.'''
         if ray.are_on_same_machine(self.get_server_url(), src_addr.url):
             canvas_dict = dict[str, list]()
-            canvas_dict['portgroups'] = portgroups_memory_to_json(
-                self.portgroups)
+            canvas_dict['portgroups'] = self.portgroups.to_json()
 
             config_list = self.views_config.to_json_list()
             session_list = self.views_session.to_json_list()
@@ -205,13 +202,9 @@ class CanvasSaver(ServerSender):
                         time.sleep(0.020)
                         i = 0
 
-        for ptype_dict in self.portgroups.values():
-            for gp_dict in ptype_dict.values():
-                for pmode_list in gp_dict.values():
-                    for pg_mem in pmode_list:
-                        self.send(
-                            src_addr, '/ray/gui/patchbay/update_portgroup',
-                            *pg_mem.to_arg_list())
+        for pg_mem in self.portgroups.iter_portgroups():
+            self.send(src_addr, '/ray/gui/patchbay/update_portgroup',
+                      *pg_mem.to_arg_list())
 
             i += 1
             if i == 50:
@@ -304,45 +297,17 @@ class CanvasSaver(ServerSender):
             json.dumps(self.views_config.short_data_states()))
 
     def save_config_file(self):
-        json_contents = {}
-        json_contents['views'] = self.views_config.to_json_list()
-        json_contents['portgroups'] = portgroups_memory_to_json(
-            self.portgroups)
-        json_contents['version'] = ray.VERSION
+        json_contents = {
+            'views': self.views_config.to_json_list(),
+            'portgroups': portgroups_memory_to_json(self.portgroups),
+            'version': ray.VERSION
+        }
 
         with open(self._config_json_path, 'w+') as f:
             f.write(from_json_to_str(json_contents))
 
     def save_portgroup(self, *args):
-        nw_pg_mem = PortgroupMem.from_arg_list(args)
-
-        ptype_dict = self.portgroups.get(nw_pg_mem.port_type)
-        if ptype_dict is None:
-            ptype_dict = self.portgroups[nw_pg_mem.port_type] = \
-                dict[str, dict[PortMode, list[PortgroupMem]]]()
-        
-        gp_dict = ptype_dict.get(nw_pg_mem.group_name)
-        if gp_dict is None:
-            gp_dict = ptype_dict[nw_pg_mem.group_name] = \
-                dict[PortMode, list[PortgroupMem]]()
-                
-        pg_list = gp_dict.get(nw_pg_mem.port_mode)
-        if pg_list is None:
-            pg_list = gp_dict[nw_pg_mem.port_mode] = list[PortgroupMem]()        
-
-        # remove any portgroup with a commmon port with the new one
-        rm_pg = list[PortgroupMem]()
-
-        for pg_mem in pg_list:
-            for port_name in pg_mem.port_names:
-                if port_name in nw_pg_mem.port_names:
-                    rm_pg.append(pg_mem)
-                    break
-                    
-        for pg_mem in rm_pg:
-            pg_list.remove(pg_mem)
-        
-        pg_list.append(nw_pg_mem)
+        self.portgroups.save_portgroup(PortgroupMem.from_arg_list(args))
 
     def views_changed(self, *args):
         json_views_list = args[0]
