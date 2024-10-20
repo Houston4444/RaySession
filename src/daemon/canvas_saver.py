@@ -45,6 +45,8 @@ class CanvasSaver(ServerSender):
 
         self.views_session = ViewsDict(ensure_one_view=False)
         self.views_config = ViewsDict(ensure_one_view=False)
+        self.views_session_at_load = ViewsDict(ensure_one_view=False)
+        self.views_config_at_load = ViewsDict(ensure_one_view=False)
 
         self.portgroups = PortgroupsDict()
         self._config_json_path = \
@@ -78,6 +80,41 @@ class CanvasSaver(ServerSender):
 
                 if 'portgroups' in json_contents.keys():
                     self.portgroups.eat_json(json_contents['portgroups'])
+            
+            self.views_config_at_load = self.views_config.copy()
+
+    def _clear_config_from_unused_views(self):
+        no_change_indexes = set[int]()
+        
+        for ls_index, ls_view_data in self.views_session_at_load.items():
+            s_view_data = self.views_session.get(ls_index)
+            if s_view_data is None:
+                continue
+            
+            if ls_view_data == s_view_data:
+                no_change_indexes.add(ls_index)
+        
+        rm_indexes = set[int]()
+        replace_indexes = set[int]()
+            
+        for c_index, c_view_data in self.views_config.items():
+            if c_index not in no_change_indexes:
+                continue
+            
+            lc_view_data = self.views_config_at_load.get(c_index)
+            if lc_view_data is None:
+                rm_indexes.add(c_index)
+                continue
+            
+            if lc_view_data != c_view_data:
+                replace_indexes.add(c_index)
+                
+        for rm_index in rm_indexes:
+            self.views_config.pop(rm_index)
+            
+        for replace_index in replace_indexes:
+            self.views_config[replace_index] = \
+                self.views_config_at_load[replace_index]
 
     def send_session_group_positions(self):
         if self.is_dummy:
@@ -89,6 +126,10 @@ class CanvasSaver(ServerSender):
 
         local_guis = list['Address']()
         distant_guis = list['Address']()
+        
+        mixed_views = (self.views_config.short_data_states()
+                       | self.views_session.short_data_states())
+        
         for gui_addr in server.gui_list:
             if ray.are_on_same_machine(server.url, gui_addr.url):
                 local_guis.append(gui_addr)
@@ -104,6 +145,10 @@ class CanvasSaver(ServerSender):
                     self.send(gui_addr,
                               '/ray/gui/patchbay/fast_temp_file_memory',
                               f.name)
+                
+                self.send(gui_addr,
+                          '/ray/gui/patchbay/views_changed',
+                          json.dumps(mixed_views))
 
         if distant_guis:
             for gui_addr in distant_guis:
@@ -158,6 +203,7 @@ class CanvasSaver(ServerSender):
         # send view datas
         view_data_mixed = (self.views_config.short_data_states()
                            |self.views_session.short_data_states())
+
         self.send(src_addr,
                   '/ray/gui/patchbay/views_changed',
                   json.dumps(view_data_mixed))
@@ -264,6 +310,7 @@ class CanvasSaver(ServerSender):
                 Terminal.message("Failed to load session canvas file %s" % f)
 
         session_version = (0, 15, 0)
+        self.views_session.clear()
 
         if isinstance(json_contents, dict):
             if 'views' in json_contents.keys():
@@ -277,6 +324,9 @@ class CanvasSaver(ServerSender):
                 for gpos_dict in gpos_list:
                     self.views_session.add_old_json_gpos(
                         gpos_dict, session_version)
+        
+        self.views_session_at_load = self.views_session.copy()
+        self.views_config_at_load = self.views_config.copy()
                     
     def save_json_session_canvas(self, session_path: Path):
         session_json_path = session_path / f'.{JSON_PATH}'
@@ -289,11 +339,13 @@ class CanvasSaver(ServerSender):
             f.write(from_json_to_str(json_contents))
 
     def unload_session(self):
+        self._clear_config_from_unused_views()
         self.views_session.clear()
         
-        self.send_gui(
-            '/ray/gui/patchbay/views_changed',
-            json.dumps(self.views_config.short_data_states()))
+        server = self.get_server()
+        if server is not None:
+            for gui_addr in server.gui_list:
+                self.send_all_group_positions(gui_addr)
 
     def save_config_file(self):
         json_contents = {
@@ -310,7 +362,10 @@ class CanvasSaver(ServerSender):
 
     def views_changed(self, *args):
         json_views_list = args[0]
-        views_list: list[dict] = json.loads(json_views_list)
+        try:
+            views_list: dict[str, dict] = json.loads(json_views_list)
+        except:
+            return
         
         self.views_config.update_from_short_data_states(views_list)
         self.views_session.update_from_short_data_states(views_list)
