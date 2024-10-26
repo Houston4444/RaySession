@@ -1195,10 +1195,10 @@ class MainWindow(QMainWindow):
         default_disp_wdg = default_disp_wdg.filtered_by_string(
             RS.settings.value('tool_bar/jack_elements', '', type=str))
         
-        if not default_disp_wdg & ToolDisplayed.PORT_TYPES_VIEW:
-            RS.settings.setValue(
-                'Canvas/default_port_types_view',
-                PortTypesViewFlag.ALL.value)
+        # if not default_disp_wdg & ToolDisplayed.PORT_TYPES_VIEW:
+        #     RS.settings.setValue(
+        #         'Canvas/default_port_types_view',
+        #         PortTypesViewFlag.ALL.value)
 
         tools_widget.change_tools_displayed(default_disp_wdg)
 
@@ -1639,9 +1639,9 @@ class MainWindow(QMainWindow):
             RS.settings.setValue(
                 'tool_bar/text_with_icons',
                 self._patchbay_tools._text_with_icons.name)
-            RS.settings.setValue(
-                'Canvas/default_port_types_view',
-                self.session.patchbay_manager.port_types_view.value)
+            # RS.settings.setValue(
+            #     'Canvas/default_port_types_view',
+            #     self.session.patchbay_manager.port_types_view.value)
 
         RS.settings.sync()
 

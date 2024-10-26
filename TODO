@@ -29,3 +29,35 @@ favoriser le démon unique
 Default port types view : Qu'en faire ?
 la liste des vues proposées dans config
 clear absents à gérer
+
+vues et sessions
+    si vue modifiée (nom, ptv, white_list):
+        change dans config
+    sinon:
+        si inexistante dans config:
+            suppr de la conf
+        sinon:
+            retour à la conf
+
+Plan de fonctionnement:
+    côté démon:
+        Connexion de l'IGU:
+            envoi de tout du démon à l'IGU
+                pas de retour
+        chargement de session:
+            envoi des positions + vues mixées
+                oublier tout, recharger
+                pas de retour
+        décharge de session:
+            envoie des vues config  
+                pas de retour
+
+    côté IGU:
+        Modification d'une/des vues
+            envoi vues
+                pas de retour du démon
+        changement vue et/ou ptv
+            envoi vue+ptv
+                pas de retour
+    
+

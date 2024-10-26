@@ -82,6 +82,9 @@ class CanvasSaver(ServerSender):
                     self.portgroups.eat_json(json_contents['portgroups'])
             
             self.views_config_at_load = self.views_config.copy()
+        
+        self.current_view_num = 1
+        self.current_ptv = PortTypesViewFlag.ALL
 
     def _clear_config_from_unused_views(self):
         no_change_indexes = set[int]()
@@ -340,12 +343,8 @@ class CanvasSaver(ServerSender):
 
     def unload_session(self):
         self._clear_config_from_unused_views()
-        self.views_session.clear()
-        
-        server = self.get_server()
-        if server is not None:
-            for gui_addr in server.gui_list:
-                self.send_all_group_positions(gui_addr)
+        self.views_session.clear()        
+        self.send_session_group_positions()
 
     def save_config_file(self):
         json_contents = {
@@ -369,6 +368,18 @@ class CanvasSaver(ServerSender):
         
         self.views_config.update_from_short_data_states(views_list)
         self.views_session.update_from_short_data_states(views_list)
+
+    def view_ptv_changed(self, view_num: int, ptv_int: int):
+        self.current_view_num = view_num
+        self.current_ptv = PortTypesViewFlag(ptv_int)
+        
+        for views in (self.views_config, self.views_session):
+            view = views.get(view_num)
+            if view is None:
+                views.add_view(
+                    view_num=view_num, default_ptv=self.current_ptv)
+            else:
+                view.default_port_types_view = self.current_ptv
 
     def client_jack_name_changed(
             self, old_jack_name: str, new_jack_name: str):

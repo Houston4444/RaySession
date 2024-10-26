@@ -174,6 +174,12 @@ class RayPatchbayManager(PatchbayManager):
         self.send_to_daemon('/ray/server/patchbay/views_changed',
                             json.dumps(self.views.short_data_states()))
     
+    def save_view_and_port_types_view(self):
+        self.send_to_daemon(
+            '/ray/server/patchbay/view_ptv_changed',
+            self.view_number,
+            self.port_types_view.value)
+    
     def save_group_position(self, gpos: GroupPos):
         super().save_group_position(gpos)
         self.send_to_daemon(
@@ -410,11 +416,12 @@ class RayPatchbayManager(PatchbayManager):
             self.views.add_view(1)
 
         if self.view_number not in self.views.keys():
-            for key in self.views.keys():
-                self.view_number = key
-                break
+            self.view_number = self.views.first_view_num()
 
         self.sg.views_changed.emit()
+        
+        # in the case the port types view or is_white_list is not the same
+        self.change_view(self.view_number)
     
     def optional_gui_state_changed(self, client_id: str, visible: bool):
         for client in self.session.client_list:
@@ -437,7 +444,7 @@ class RayPatchbayManager(PatchbayManager):
             self.set_tools_widget(self.main_win._patchbay_tools)
         self.set_options_dialog(
             CanvasOptionsDialog(self.main_win, self, RS.settings))
-        
+
     def fast_temp_file_memory(self, temp_path: str):
         '''receive a .json file path from daemon with groups positions
         and portgroups remembered from user.'''
@@ -465,7 +472,7 @@ class RayPatchbayManager(PatchbayManager):
         # do not use self.set_views_changed(), we don't need to send
         # views to daemon, just update widgets
         self.sg.views_changed.emit()
-            
+    
         if starting or self.view_number not in self.views.keys():
             self.view_number = self.views.first_view_num()
         self.change_view(self.view_number)

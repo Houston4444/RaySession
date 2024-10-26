@@ -441,6 +441,7 @@ class OscServerThread(ClientCommunicating):
             ('/ray/server/patchbay/views_changed', 's'),
             ('/ray/server/patchbay/clear_absents_in_view', 's'),
             ('/ray/server/patchbay/view_number_changed', 'ii'),
+            ('/ray/server/patchbay/view_ptv_changed', 'ii'),
             ('/ray/session/abort', ''),
             ('/ray/session/open_snapshot', 's'),
             ('/ray/session/get_notes', ''),
