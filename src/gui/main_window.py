@@ -7,7 +7,8 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QMenu, QDialog,
     QMessageBox, QToolButton, QAbstractItemView,
     QBoxLayout, QSystemTrayIcon, QShortcut)
-from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics, QCloseEvent
+from PyQt5.QtGui import (QIcon, QDesktopServices, QFontMetrics,
+                         QCloseEvent, QKeyEvent)
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
 import ray
@@ -1716,3 +1717,10 @@ class MainWindow(QMainWindow):
                  if self.ui.toolBar.sizeHint().width() > self.width():
                      self.ui.toolBar.setToolButtonStyle(
                          Qt.ToolButtonIconOnly)
+                     
+    def keyPressEvent(self, event: QKeyEvent):
+        super().keyPressEvent(event)
+
+        if (event.text().isdigit()
+                and event.modifiers() & Qt.KeyboardModifier.AltModifier):
+            self.session.patchbay_manager.change_view(int(event.text()))
