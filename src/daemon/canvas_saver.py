@@ -132,6 +132,7 @@ class CanvasSaver(ServerSender):
         
         mixed_views = (self.views_config.short_data_states()
                        | self.views_session.short_data_states())
+        mixed_views_str = json.dumps(mixed_views)
         
         for gui_addr in server.gui_list:
             if ray.are_on_same_machine(server.url, gui_addr.url):
@@ -151,17 +152,28 @@ class CanvasSaver(ServerSender):
                 
                 self.send(gui_addr,
                           '/ray/gui/patchbay/views_changed',
-                          json.dumps(mixed_views))
+                          mixed_views_str)
 
         if distant_guis:
             for gui_addr in distant_guis:
-                for view_number, view_dict in self.views_session.items():
-                    for ptv, gps_dict in view_dict.ptvs.items():
-                        for group_name, group_pos in gps_dict.items():
-                            self.send(
-                                gui_addr,
-                                '/ray/gui/patchbay/update_group_position',
-                                view_number, *group_pos.to_arg_list())
+                i = 0
+                
+                for view_number in self.views_session.keys():
+                    for gpos in self.views_session.iter_group_poses(
+                            view_num=view_number):
+                        self.send(
+                            gui_addr,
+                            '/ray/gui/patchbay/update_group_position',
+                            view_number, *gpos.to_arg_list())
+                        i += 1
+                        
+                        if i == 50:
+                            time.sleep(0.020)
+                            i = 0
+            
+                self.send(gui_addr,
+                          '/ray/gui/patchbay/views_changed',
+                          mixed_views_str)
 
     def send_all_group_positions(self, src_addr: Address):
         '''Used when a GUI is connected to the daemon.'''
@@ -203,52 +215,35 @@ class CanvasSaver(ServerSender):
                           f.name)
             return
 
-        # send view datas
-        view_data_mixed = (self.views_config.short_data_states()
-                           |self.views_session.short_data_states())
-
-        self.send(src_addr,
-                  '/ray/gui/patchbay/views_changed',
-                  json.dumps(view_data_mixed))
-
         i = 0
 
-        for view_index, ptvs_dict in self.views_session.items():
-            for ptv, gps_dict in ptvs_dict.items():
-                for group_name, gpos in gps_dict.items():
-                    self.send(
-                        src_addr, '/ray/gui/patchbay/update_group_position',
-                        view_index, *gpos.to_arg_list())
-                    
-                    i += 1
-                    if i == 50:
-                        # we need to slow big process of canvas memory
-                        # to prevent loss OSC packets
-                        time.sleep(0.020)
-                        i = 0
-
-        for view_index, ptvs_dict in self.views_config.items():
-            ptvs_dict_sess = self.views_session.get(view_index)
-            for ptv, gps_dict in ptvs_dict.items():
-                gps_dict_sess = None
-                if ptvs_dict_sess is not None:
-                    gps_dict_sess = ptvs_dict_sess.get(ptv)
+        for view_index in self.views_config.keys():
+            for gpos in self.views_config.iter_group_poses(
+                    view_num=view_index):
+                self.send(
+                    src_addr, '/ray/gui/patchbay/update_group_position',
+                    view_index, *gpos.to_arg_list())
                 
-                for group_name, gpos in gps_dict.items():
-                    if (gps_dict_sess is not None
-                            and gps_dict_sess.get(group_name) is not None):
-                        continue
-                    
-                    self.send(
-                        src_addr, '/ray/gui/patchbay/update_group_position',
-                        view_index, *gpos.to_arg_list())
-                    
-                    i += 1
-                    if i == 50:
-                        # we need to slow big process of canvas memory
-                        # to prevent loss OSC packets
-                        time.sleep(0.020)
-                        i = 0
+                i += 1
+                if i == 50:
+                    # we need to slow big process of canvas memory
+                    # to prevent loss OSC packets
+                    time.sleep(0.020)
+                    i = 0
+
+        for view_index in self.views_session.keys():
+            for gpos in self.views_session.iter_group_poses(
+                    view_num=view_index):
+                self.send(
+                    src_addr, '/ray/gui/patchbay/update_group_position',
+                    view_index, *gpos.to_arg_list())
+                
+                i += 1
+                if i == 50:
+                    # we need to slow big process of canvas memory
+                    # to prevent loss OSC packets
+                    time.sleep(0.020)
+                    i = 0
 
         for pg_mem in self.portgroups.iter_all_portgroups():
             self.send(src_addr, '/ray/gui/patchbay/update_portgroup',
@@ -257,6 +252,15 @@ class CanvasSaver(ServerSender):
             i += 1
             if i == 50:
                 time.sleep(0.020)
+                i = 0
+                
+        # send view datas
+        view_data_mixed = (self.views_config.short_data_states()
+                           |self.views_session.short_data_states())
+
+        self.send(src_addr,
+                  '/ray/gui/patchbay/views_changed',
+                  json.dumps(view_data_mixed))
 
     def save_group_position(self, *args):
         '''Save a group position sent by GUI'''
