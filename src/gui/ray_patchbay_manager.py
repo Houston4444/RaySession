@@ -12,8 +12,8 @@ from gui_server_thread import GuiServerThread
 from gui_tools import RS, get_code_root
 from jack_renaming_tools import group_belongs_to_client
 from patchbay.patchcanvas.patshared import (
-    GroupPos, PortgroupMem, PortMode)
-from patchbay.base_elements import ToolDisplayed, PortTypesViewFlag
+    GroupPos, PortgroupMem, PortMode, PortTypesViewFlag)
+from patchbay.base_elements import ToolDisplayed
 from patchbay.base_group import Group
 from patchbay import (
     PatchbayManager,
@@ -247,7 +247,26 @@ class RayPatchbayManager(PatchbayManager):
 
         return n_boxes
 
-    def clear_absents_in_view(self):
+    def clear_absents_in_view(self, only_current_ptv=False):
+        if only_current_ptv:
+            presents = set[str]()
+
+            for group in self.groups:
+                if group.is_in_port_types_view(self.port_types_view):
+                    presents.add(group.current_position.group_name)
+
+            self.views.clear_absents(
+                self.view_number, self.port_types_view, presents)
+
+            out_dict = {'view_num': self.view_number,
+                        'ptv': self.port_types_view.name,
+                        'presents': [g for g in presents]}
+
+            self.send_to_daemon(
+                '/ray/server/patchbay/clear_absents_in_view',
+                json.dumps(out_dict))
+            return
+        
         for ptv in self.views[self.view_number].ptvs.keys():
             presents = set[str]()
 

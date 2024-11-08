@@ -25,7 +25,7 @@ from gui_tools import (
 from gui_client import TrashedClient
 from gui_server_thread import GuiServerThread
 from utility_scripts import UtilityScriptLauncher
-from patchbay.base_elements import ToolDisplayed, PortTypesViewFlag
+from patchbay.base_elements import ToolDisplayed
 from patchbay.tools_widgets import PatchbayToolsWidget, TextWithIcons
 
 if TYPE_CHECKING:
