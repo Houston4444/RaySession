@@ -1,3 +1,16 @@
+0.14.4 / 2024-11-11
+    Bug fix release.
+
+    Bug Fixes:
+        Support pyliblo3 as well as pyliblo (Done by AdamWill)
+        ray_control open_session_off fixed (very important for some scripts)
+        execute chmod +w on session files after their copy from template (needed for NixOs)
+        save_via_windows script is now POSIX compliant (Done by Dennis Braun)
+
+    Improvments:
+        add --osc-port argument to sooperloooper_nsm executable (Done by Jean-Emmanuel)
+
+
 0.14.3 / 2023-12-02
     Bug fix release.
 
