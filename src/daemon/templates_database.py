@@ -4,7 +4,7 @@ import shutil
 from typing import TYPE_CHECKING, Iterator, TypedDict
 import logging
 import xml.etree.ElementTree as ET
-from PyQt5.QtCore import QProcess, QCoreApplication
+from qtpy.QtCore import QProcess, QCoreApplication
 
 import xdg
 import ray

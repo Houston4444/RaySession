@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import QObject
+from qtpy.QtCore import QObject
 
 import ray
 from osc_server_thread import OscServerThread

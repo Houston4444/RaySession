@@ -1,10 +1,10 @@
 
 from typing import TYPE_CHECKING
-from PyQt5.QtWidgets import (QListWidget, QListWidgetItem,
+from qtpy.QtWidgets import (QListWidget, QListWidgetItem,
                              QFrame, QMenu, QBoxLayout)
-from PyQt5.QtGui import (QIcon, QPixmap, QFontMetrics, QContextMenuEvent,
+from qtpy.QtGui import (QIcon, QPixmap, QFontMetrics, QContextMenuEvent,
                          QMouseEvent, QKeyEvent)
-from PyQt5.QtCore import pyqtSlot, QSize, Qt, pyqtSignal
+from qtpy.QtCore import Slot, QSize, Qt, Signal
 
 import ray
 import child_dialogs
@@ -22,7 +22,7 @@ import ui.client_slot
 
 
 class ClientSlot(QFrame):
-    clicked = pyqtSignal(str)
+    clicked = Signal(str)
     
     def __init__(self, list_widget: 'ListWidgetClients',
                  list_widget_item: 'ClientItem', client: 'Client'):
@@ -517,7 +517,7 @@ class ListWidgetClients(QListWidget):
         if server:
             server.to_daemon(*args)
 
-    @pyqtSlot()
+    @Slot()
     def _launch_favorite(self):
         template_name, factory = self.sender().data()
         self.to_daemon(

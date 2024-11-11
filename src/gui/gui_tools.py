@@ -3,9 +3,9 @@ import os
 from pathlib import Path
 import sys
 from typing import TYPE_CHECKING
-from PyQt5.QtCore import QSettings, QSize, QFile, QObject, pyqtSignal
-from PyQt5.QtWidgets import QApplication, QWidget
-from PyQt5.QtGui import QIcon, QPixmap, QPalette
+from qtpy.QtCore import QSettings, QSize, QFile, QObject, Signal
+from qtpy.QtWidgets import QApplication, QWidget
+from qtpy.QtGui import QIcon, QPixmap, QPalette
 try:
     from liblo import Address
 except ImportError:

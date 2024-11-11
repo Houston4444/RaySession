@@ -1,7 +1,7 @@
 
 from typing import TYPE_CHECKING, Union
-from PyQt5.QtWidgets import QApplication, QAbstractButton, QDialogButtonBox
-from PyQt5.QtCore import pyqtSlot
+from qtpy.QtWidgets import QApplication, QAbstractButton, QDialogButtonBox
+from qtpy.QtCore import Slot
 
 import ray
 from child_dialogs import ChildDialog
@@ -59,12 +59,12 @@ class AdvancedPropertiesDialog(ChildDialog):
         
         self._update_preview()
     
-    # pyqtSlot(int)
+    # Slot(int)
     def _client_status_changed(self, status: ray.ClientStatus):
         self.ui.buttonBox.button(QDialogButtonBox.Apply).setEnabled(
             status is ray.ClientStatus.STOPPED)
     
-    @pyqtSlot()
+    @Slot()
     def _client_id_line_edited(self):
         self.ui.lineEditClientId.setText(
             self.ui.lineEditClientId.text().replace(' ', '_'))
@@ -94,7 +94,7 @@ class AdvancedPropertiesDialog(ChildDialog):
         else:
             self.ui.labelJackNamePreview.setText(self._client.name)
     
-    @pyqtSlot(int)
+    @Slot(int)
     def _prefix_mode_changed(self, index: int):
         if index == 0 and not self.ui.lineEditCustomPrefix.text():
             self.ui.lineEditCustomPrefix.setText('CustomString')

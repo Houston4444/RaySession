@@ -4,11 +4,11 @@ import time
 import subprocess
 from typing import TYPE_CHECKING
 
-from PyQt5.QtWidgets import (
+from qtpy.QtWidgets import (
     QDialog, QDialogButtonBox, QCompleter, QMessageBox,
     QFileDialog, QApplication, QListWidgetItem)
-from PyQt5.QtGui import QIcon, QPixmap, QGuiApplication, QKeyEvent
-from PyQt5.QtCore import Qt, QTimer
+from qtpy.QtGui import QIcon, QPixmap, QGuiApplication, QKeyEvent
+from qtpy.QtCore import Qt, QTimer
 
 import ray
 import client_properties_dialog

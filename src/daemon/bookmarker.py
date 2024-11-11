@@ -5,8 +5,8 @@ from pathlib import Path
 import sys
 from typing import Optional
 
-from PyQt5.QtCore import QSettings, QDataStream, QIODevice, QUrl, QByteArray
-from PyQt5.QtXml  import QDomDocument, QDomNode
+from qtpy.QtCore import QSettings, QDataStream, QIODevice, QUrl, QByteArray
+from qtpy.QtXml  import QDomDocument, QDomNode
 
 import ray
 from daemon_tools import get_app_config_path

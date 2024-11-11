@@ -14,7 +14,7 @@ try:
     import liblo
 except ImportError:
     import pyliblo3 as liblo
-from PyQt5.QtCore import QCoreApplication
+from qtpy.QtCore import QCoreApplication
 
 import ray
 from osc_pack import OscPack

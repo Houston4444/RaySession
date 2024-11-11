@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtWidgets import (QDialogButtonBox, QListWidget, QListWidgetItem,
+from qtpy.QtCore import Qt, QSize
+from qtpy.QtWidgets import (QDialogButtonBox, QListWidget, QListWidgetItem,
                              QFrame, QMenu, QAction, QShortcut)
-from PyQt5.QtGui import QIcon
+from qtpy.QtGui import QIcon
 
 if TYPE_CHECKING:
     from gui_session import SignaledSession

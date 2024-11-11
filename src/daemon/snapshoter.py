@@ -4,8 +4,8 @@ import socket
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
-from PyQt5.QtCore import QProcess, QObject, QDateTime
-from PyQt5.QtXml import QDomDocument, QDomElement
+from qtpy.QtCore import QProcess, QObject, QDateTime
+from qtpy.QtXml import QDomDocument, QDomElement
 import xml.etree.ElementTree as ET
 
 import ray

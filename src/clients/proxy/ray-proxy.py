@@ -6,11 +6,11 @@ import sys
 import time
 import signal
 import subprocess
-from PyQt5.QtCore import (QObject, QTimer, QProcess, QSettings,
+from qtpy.QtCore import (QObject, QTimer, QProcess, QSettings,
                           QLocale, QTranslator, QFile)
-from PyQt5.QtWidgets import (QApplication, QDialog, QFileDialog,
+from qtpy.QtWidgets import (QApplication, QDialog, QFileDialog,
                              QMainWindow)
-from PyQt5.QtXml import QDomDocument
+from qtpy.QtXml import QDomDocument
 
 import ray
 from nsm_client_qt import NSMThread, NSMSignaler

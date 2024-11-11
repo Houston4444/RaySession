@@ -10,8 +10,8 @@ try:
     from liblo import Address
 except ImportError:
     from pyliblo3 import Address
-from PyQt5.QtCore import QCoreApplication, QProcess
-from PyQt5.QtXml  import QDomDocument
+from qtpy.QtCore import QCoreApplication, QProcess
+from qtpy.QtXml  import QDomDocument
 
 import ray
 

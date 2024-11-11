@@ -1,7 +1,7 @@
 
 import sys
 from typing import Optional
-from PyQt5.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication
 
 import ray
 from client_properties_dialog import NsmClientPropertiesDialog

@@ -20,7 +20,9 @@ try:
     from liblo import Server, Address
 except ImportError:
     from pyliblo3 import Server, Address
-from PyQt5.QtCore import QT_VERSION_STR, QSettings
+
+from qtpy.QtCore import __version__ as QT_VERSION_STR
+from qtpy.QtCore import QSettings
 
 _logger = logging.getLogger(__name__)
 

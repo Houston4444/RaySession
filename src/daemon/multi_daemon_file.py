@@ -1,7 +1,7 @@
 import logging
 import os
 from typing import TYPE_CHECKING, Union
-from PyQt5.QtXml import QDomDocument, QDomElement
+from qtpy.QtXml import QDomDocument, QDomElement
 from pathlib import Path
 
 import ray

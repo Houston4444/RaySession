@@ -1,7 +1,7 @@
 from enum import IntEnum
 from typing import TYPE_CHECKING
-from PyQt5.QtWidgets import QApplication, QMessageBox
-from PyQt5.QtCore import pyqtSlot
+from qtpy.QtWidgets import QApplication, QMessageBox
+from qtpy.QtCore import Slot
 
 from child_dialogs import ChildDialog
 from gui_server_thread import GuiServerThread
@@ -99,7 +99,7 @@ class PreferencesDialog(ChildDialog):
         self.ui.lineEditTerminalCommand.setText(
             self._main_win.session.terminal_command)
 
-    @pyqtSlot()
+    @Slot()
     def _check_box_state_changed(self):
         sender = self.sender()
         for check_box, action in self._check_box_actions.items():
@@ -107,7 +107,7 @@ class PreferencesDialog(ChildDialog):
                 action.setChecked(check_box.isChecked())
                 break
     
-    @pyqtSlot()
+    @Slot()
     def _action_changed(self):
         sender = self.sender()
         for checkbox, action in self._check_box_actions.items():
@@ -115,7 +115,7 @@ class PreferencesDialog(ChildDialog):
                 checkbox.setChecked(action.isChecked())
                 break
     
-    @pyqtSlot()
+    @Slot()
     def _systray_changed(self):
         self._main_win.change_systray_options(
             self._get_systray_mode(),

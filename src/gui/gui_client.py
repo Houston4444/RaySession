@@ -1,8 +1,8 @@
 import time
 import sys
 from typing import TYPE_CHECKING, Optional
-from PyQt5.QtCore import QObject, pyqtSignal
-from PyQt5.QtWidgets import QAction
+from qtpy.QtCore import QObject, Signal
+from qtpy.QtWidgets import QAction
 
 import ray
 from gui_server_thread import GuiServerThread
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class Client(QObject, ray.ClientData):
-    status_changed = pyqtSignal(ray.ClientStatus)
+    status_changed = Signal(ray.ClientStatus)
 
     def __init__(self, session: 'SignaledSession',
                  client_id: str, protocol_int: int):

@@ -1,6 +1,6 @@
 
-from PyQt5.QtCore import Qt, QDateTime, QDate
-from PyQt5.QtWidgets import QDialogButtonBox, QTreeWidgetItem
+from qtpy.QtCore import Qt, QDateTime, QDate
+from qtpy.QtWidgets import QDialogButtonBox, QTreeWidgetItem
 
 from child_dialogs import ChildDialog
 from gui_tools import _translate, RS

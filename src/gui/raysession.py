@@ -5,9 +5,9 @@ import signal
 import sys
 import time
 
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtGui import QIcon, QFontDatabase
-from PyQt5.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo
+from qtpy.QtWidgets import QApplication
+from qtpy.QtGui import QIcon, QFontDatabase
+from qtpy.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo
 
 #local imports
 from gui_tools import ArgParser, CommandLineArgs, init_gui_tools, get_code_root

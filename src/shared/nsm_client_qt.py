@@ -2,7 +2,7 @@
 
 import os
 import sys
-from PyQt5.QtCore import QObject, pyqtSignal
+from qtpy.QtCore import QObject, Signal
 try:
     from liblo import ServerThread, make_method, Address
 except ImportError:
@@ -11,11 +11,11 @@ from typing import Optional
 
 
 class NSMSignaler(QObject):
-    server_sends_open = pyqtSignal(str, str, str)
-    server_sends_save = pyqtSignal()
-    session_is_loaded = pyqtSignal()
-    show_optional_gui = pyqtSignal()
-    hide_optional_gui = pyqtSignal()
+    server_sends_open = Signal(str, str, str)
+    server_sends_save = Signal()
+    session_is_loaded = Signal()
+    show_optional_gui = Signal()
+    hide_optional_gui = Signal()
 
 instance = None
 

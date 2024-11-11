@@ -4,7 +4,7 @@ import subprocess
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 from pathlib import Path
 
-from PyQt5.QtCore import QProcess, QTimer
+from qtpy.QtCore import QProcess, QTimer
 import liblo
 
 from server_sender import ServerSender

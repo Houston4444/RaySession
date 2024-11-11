@@ -1,5 +1,5 @@
 import enum
-from PyQt5.QtCore import QObject, pyqtSignal
+from qtpy.QtCore import QObject, Signal
 try:
     from liblo import Address
 except ImportError:
@@ -9,53 +9,53 @@ import ray
 
 
 class Signaler(QObject):
-    osc_receive = pyqtSignal(str, list)
-    daemon_announce = pyqtSignal(
+    osc_receive = Signal(str, list)
+    daemon_announce = Signal(
         Address, str, ray.ServerStatus, ray.Option, str, int)
-    daemon_announce_ok = pyqtSignal()
-    daemon_nsm_locked = pyqtSignal(bool)
-    server_copying = pyqtSignal(bool)
+    daemon_announce_ok = Signal()
+    daemon_nsm_locked = Signal(bool)
+    server_copying = Signal(bool)
 
-    add_sessions_to_list = pyqtSignal(list)
-    new_executable = pyqtSignal(list)
-    session_template_found = pyqtSignal(list)
-    user_client_template_found = pyqtSignal(list)
-    factory_client_template_found = pyqtSignal(list)
-    snapshots_found = pyqtSignal(list)
-    reply_auto_snapshot = pyqtSignal(bool)
-    server_progress = pyqtSignal(float)
-    client_progress = pyqtSignal(str, float)
-    server_status_changed = pyqtSignal(object)
+    add_sessions_to_list = Signal(list)
+    new_executable = Signal(list)
+    session_template_found = Signal(list)
+    user_client_template_found = Signal(list)
+    factory_client_template_found = Signal(list)
+    snapshots_found = Signal(list)
+    reply_auto_snapshot = Signal(bool)
+    server_progress = Signal(float)
+    client_progress = Signal(str, float)
+    server_status_changed = Signal(object)
 
-    daemon_url_request = pyqtSignal(int, str)
-    daemon_url_changed = pyqtSignal(str)
+    daemon_url_request = Signal(int, str)
+    daemon_url_changed = Signal(str)
 
-    client_template_update = pyqtSignal(list)
-    client_template_ray_hack_update = pyqtSignal(list)
-    client_template_ray_net_update = pyqtSignal(list)
+    client_template_update = Signal(list)
+    client_template_ray_hack_update = Signal(list)
+    client_template_ray_net_update = Signal(list)
 
-    root_changed = pyqtSignal(str)
+    root_changed = Signal(str)
 
-    session_preview_update = pyqtSignal()
-    session_details = pyqtSignal(str, int, int, int)
-    scripted_dir = pyqtSignal(str, int)
-    parrallel_copy_state = pyqtSignal(int, int)
-    parrallel_copy_progress = pyqtSignal(int, float)
-    parrallel_copy_aborted = pyqtSignal()
-    other_session_renamed = pyqtSignal()
-    other_session_duplicated = pyqtSignal()
-    other_session_templated = pyqtSignal()
+    session_preview_update = Signal()
+    session_details = Signal(str, int, int, int)
+    scripted_dir = Signal(str, int)
+    parrallel_copy_state = Signal(int, int)
+    parrallel_copy_progress = Signal(int, float)
+    parrallel_copy_aborted = Signal()
+    other_session_renamed = Signal()
+    other_session_duplicated = Signal()
+    other_session_templated = Signal()
 
-    client_added_reply = pyqtSignal(str)
+    client_added_reply = Signal(str)
 
-    client_properties_state_changed = pyqtSignal(str, bool)
+    client_properties_state_changed = Signal(str, bool)
 
-    favorite_added = pyqtSignal(str, str, bool, str)
-    favorite_removed = pyqtSignal(str, bool)
+    favorite_added = Signal(str, str, bool, str)
+    favorite_removed = Signal(str, bool)
 
-    hiddens_changed = pyqtSignal(int)
+    hiddens_changed = Signal(int)
 
-    canvas_callback = pyqtSignal(enum.IntEnum, tuple)
+    canvas_callback = Signal(enum.IntEnum, tuple)
 
     def __init__(self):
         QObject.__init__(self)

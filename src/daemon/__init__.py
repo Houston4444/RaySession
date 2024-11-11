@@ -5,7 +5,7 @@ from pathlib import Path
 import signal
 import sys
 import logging
-from PyQt5.QtCore import (QCoreApplication, QTimer,
+from qtpy.QtCore import (QCoreApplication, QTimer,
                           QLocale, QTranslator)
 
 

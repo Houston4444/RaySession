@@ -3,10 +3,10 @@ import os
 import shutil
 from typing import TYPE_CHECKING
 
-from PyQt5.QtWidgets import (QApplication, QFileDialog, QMessageBox,
+from qtpy.QtWidgets import (QApplication, QFileDialog, QMessageBox,
                              QDialogButtonBox)
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QProcess, QProcessEnvironment, Qt
+from qtpy.QtGui import QIcon
+from qtpy.QtCore import QProcess, QProcessEnvironment, Qt
 
 import ray
 from gui_tools import CommandLineArgs, RS

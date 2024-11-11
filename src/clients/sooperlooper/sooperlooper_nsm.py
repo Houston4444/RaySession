@@ -9,9 +9,9 @@ try:
     from liblo import Address, make_method
 except ImportError:
     from pyliblo3 import Address, make_method
-from PyQt5.QtCore import (QCoreApplication, pyqtSignal, QObject, QTimer,
+from qtpy.QtCore import (QCoreApplication, Signal, QObject, QTimer,
                           QProcess)
-from PyQt5.QtXml import QDomDocument
+from qtpy.QtXml import QDomDocument
 
 import ray
 from nsm_client_qt import NSMThread, NSMSignaler
@@ -39,7 +39,7 @@ class SlOSCThread(NSMThread):
 
 
 class GeneralObject(QObject):
-    sl_ready = pyqtSignal()
+    sl_ready = Signal()
 
     def __init__(self):
         QObject.__init__(self, sl_port=None)

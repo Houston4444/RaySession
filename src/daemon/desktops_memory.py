@@ -5,7 +5,7 @@ import subprocess
 from typing import TYPE_CHECKING
 import warnings
 
-from PyQt5.QtCore import QProcess
+from qtpy.QtCore import QProcess
 
 from xml_tools import XmlElement
 from daemon_tools import is_pid_child_of

@@ -72,7 +72,7 @@
         Changes:
             "Gui states" option is now disabled by default, because it can be very confusing for NSM apps devs.
             Add new client status (lose) when the client is closed but its terminal is still running.
-            Use xml.etree everywhere instead of PyQt5.QtXml to read/write xml files, now attributes order is always the same at each save.
+            Use xml.etree everywhere instead of qtpy.QtXml to read/write xml files, now attributes order is always the same at each save.
             Take systray icon from system if it exists
 
         Fixes:

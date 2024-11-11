@@ -3,10 +3,10 @@ import os
 import shutil
 import time
 
-from PyQt5.QtWidgets import (QApplication, QTreeWidget, QTreeWidgetItem,
+from qtpy.QtWidgets import (QApplication, QTreeWidget, QTreeWidgetItem,
                              QDialogButtonBox, QMenu, QMessageBox)
-from PyQt5.QtGui import QIcon, QCursor
-from PyQt5.QtCore import Qt, QTimer, QDateTime, QLocale, QPoint
+from qtpy.QtGui import QIcon, QCursor
+from qtpy.QtCore import Qt, QTimer, QDateTime, QLocale, QPoint
 from typing import Optional
 
 import ray

@@ -3,13 +3,13 @@ from typing import TYPE_CHECKING
 import time
 import subprocess
 
-from PyQt5.QtWidgets import (
+from qtpy.QtWidgets import (
     QApplication, QMainWindow, QMenu, QDialog,
     QMessageBox, QToolButton, QAbstractItemView,
     QBoxLayout, QSystemTrayIcon, QShortcut)
-from PyQt5.QtGui import (QIcon, QDesktopServices, QFontMetrics,
+from qtpy.QtGui import (QIcon, QDesktopServices, QFontMetrics,
                          QCloseEvent, QKeyEvent)
-from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
+from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt
 
 import ray
 import add_application_dialog
@@ -1495,7 +1495,7 @@ class MainWindow(QMainWindow):
         self._trash_menu.clear()
         self.ui.trashButton.setEnabled(False)
 
-    @pyqtSlot()
+    @Slot()
     def launch_recent_session(self):
         try:
             session_name = str(self.sender().data())
@@ -1504,7 +1504,7 @@ class MainWindow(QMainWindow):
 
         self.to_daemon('/ray/server/open_session', session_name)
 
-    @pyqtSlot()
+    @Slot()
     def show_client_trash_dialog(self):
         try:
             client_id = str(self.sender().data())
@@ -1524,7 +1524,7 @@ class MainWindow(QMainWindow):
 
         self.to_daemon('/ray/trashed_client/restore', client_id)
 
-    @pyqtSlot()
+    @Slot()
     def launch_favorite(self):
         template_name, factory = self.sender().data()
         self.to_daemon('/ray/session/add_client_template',

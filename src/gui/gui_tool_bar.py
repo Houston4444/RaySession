@@ -1,6 +1,6 @@
-from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtGui import QMouseEvent, QIcon
-from PyQt5.QtWidgets import QLabel, QApplication, QAction, QToolBar, QToolButton
+from qtpy.QtCore import Qt, QPoint
+from qtpy.QtGui import QMouseEvent, QIcon
+from qtpy.QtWidgets import QLabel, QApplication, QAction, QToolBar, QToolButton
 
 from gui_tools import RS
 from patchbay.tools_widgets import PatchbayToolsWidget

@@ -1,14 +1,14 @@
-from PyQt5.QtCore import QObject, pyqtSignal
+from qtpy.QtCore import QObject, Signal
 
 instance = None
 
 class Signaler(QObject):
-    osc_recv = pyqtSignal(object)
+    osc_recv = Signal(object)
     '''Emitted when OSC message is received.
     Then, the function associated with the OSC path in session_signaled
     will be executed in the main thread.'''
     
-    dummy_load_and_template = pyqtSignal(str, str, str)
+    dummy_load_and_template = Signal(str, str, str)
 
     @staticmethod
     def instance():

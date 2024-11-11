@@ -2,9 +2,9 @@ import os
 import signal
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import QTimer, QFile
-from PyQt5.QtGui import QShowEvent
-from PyQt5.QtWidgets import QFileDialog, QFrame
+from qtpy.QtCore import QTimer, QFile
+from qtpy.QtGui import QShowEvent
+from qtpy.QtWidgets import QFileDialog, QFrame
 
 import ray
 

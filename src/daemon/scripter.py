@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
-from PyQt5.QtCore import QProcess, QProcessEnvironment, QCoreApplication
+from qtpy.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 
 import ray
 from daemon_tools import Terminal, highlight_text

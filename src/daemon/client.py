@@ -11,9 +11,9 @@ try:
     from liblo import Address
 except ImportError:
     from pyliblo3 import Address
-from PyQt5.QtCore import (QCoreApplication, QProcess,
+from qtpy.QtCore import (QCoreApplication, QProcess,
                           QProcessEnvironment, QTimer)
-from PyQt5.QtXml import QDomDocument
+from qtpy.QtXml import QDomDocument
 import xml.etree.ElementTree as ET
 
 import xdg

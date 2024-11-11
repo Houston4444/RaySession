@@ -4,8 +4,8 @@ import socket
 import sys
 import time
 from typing import TYPE_CHECKING
-from PyQt5.QtCore import QObject, QProcess, QTimer
-from PyQt5.QtWidgets import QApplication
+from qtpy.QtCore import QObject, QProcess, QTimer
+from qtpy.QtWidgets import QApplication
 try:
     from liblo import Address
 except ImportError:

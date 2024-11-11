@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Union
 from pathlib import Path
 
-from PyQt5.QtCore import (QCoreApplication, QStandardPaths, QSettings,
+from qtpy.QtCore import (QCoreApplication, QStandardPaths, QSettings,
                           QDateTime, QLocale)
 try:
     import liblo

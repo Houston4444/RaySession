@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QBoxLayout
-from PyQt5.QtGui import QIcon, QFontMetrics, QContextMenuEvent, QMouseEvent
-from PyQt5.QtCore import QSize, pyqtSignal
+from qtpy.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QBoxLayout
+from qtpy.QtGui import QIcon, QFontMetrics, QContextMenuEvent, QMouseEvent
+from qtpy.QtCore import QSize, Signal
 
 import ray
 from gui_server_thread import GuiServerThread
@@ -164,8 +164,8 @@ class ClientItem(QListWidgetItem):
 
 
 class ListWidgetPreviewClients(QListWidget):
-    properties_request = pyqtSignal(str)
-    add_to_session_request = pyqtSignal(str)
+    properties_request = Signal(str)
+    add_to_session_request = Signal(str)
 
     def __init__(self, parent):
         QListWidget.__init__(self, parent)

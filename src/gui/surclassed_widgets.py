@@ -1,13 +1,13 @@
 
 import time
 from typing import TYPE_CHECKING
-from PyQt5.QtWidgets import (
+from qtpy.QtWidgets import (
     QLineEdit, QStackedWidget, QLabel, QToolButton, QFrame,
     QSplitter, QSplitterHandle, QDialogButtonBox, QPushButton,
     QDialog, QApplication, QWidget)
-from PyQt5.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
+from qtpy.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QKeyEvent, QMouseEvent)
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+from qtpy.QtCore import Qt, QTimer, Signal
 
 from patchbay import filter_frame, tool_bar, PatchGraphicsView
 
@@ -18,7 +18,7 @@ _translate = QApplication.translate
 
 
 class RayHackButton(QToolButton):
-    order_hack_visibility = pyqtSignal(bool)
+    order_hack_visibility = Signal(bool)
 
     def __init__(self, parent):
         QToolButton.__init__(self, parent)
@@ -65,8 +65,8 @@ class RayHackButton(QToolButton):
 
 
 class OpenSessionFilterBar(QLineEdit):
-    up_down_pressed = pyqtSignal(int)
-    key_event = pyqtSignal(object)
+    up_down_pressed = Signal(int)
+    key_event = Signal(object)
 
     def __init__(self, parent):
         QLineEdit.__init__(self)
@@ -96,7 +96,7 @@ class CustomLineEdit(QLineEdit):
 
 
 class SessionFrame(QFrame):
-    frame_resized = pyqtSignal()
+    frame_resized = Signal()
 
     def __init__(self, parent):
         QFrame.__init__(self)
@@ -107,7 +107,7 @@ class SessionFrame(QFrame):
 
 
 class StackedSessionName(QStackedWidget):
-    name_changed = pyqtSignal(str)
+    name_changed = Signal(str)
 
     def __init__(self, parent):
         QStackedWidget.__init__(self)
@@ -170,7 +170,7 @@ class StackedSessionName(QStackedWidget):
 
 
 class StatusBar(QLineEdit):
-    status_pressed = pyqtSignal()
+    status_pressed = Signal()
 
     def __init__(self, parent):
         QLineEdit.__init__(self)
@@ -364,7 +364,7 @@ class CanvasSplitter(QSplitter):
 
 
 class StartupDialogButtonBox(QDialogButtonBox):
-    key_event = pyqtSignal(object)
+    key_event = Signal(object)
 
     def __init__(self, parent):
         QDialogButtonBox.__init__(self, parent)
@@ -378,8 +378,8 @@ class StartupDialogButtonBox(QDialogButtonBox):
 
 
 class StartupDialogPushButtonNew(QPushButton):
-    focus_on_list = pyqtSignal()
-    focus_on_open = pyqtSignal()
+    focus_on_list = Signal()
+    focus_on_open = Signal()
 
     def __init__(self, parent):
         QPushButton.__init__(self, parent)
@@ -397,7 +397,7 @@ class StartupDialogPushButtonNew(QPushButton):
 
 
 class StartupDialogPushButtonOpen(StartupDialogPushButtonNew):
-    focus_on_new = pyqtSignal()
+    focus_on_new = Signal()
 
     def __init__(self, parent):
         StartupDialogPushButtonNew.__init__(self, parent)
