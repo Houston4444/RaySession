@@ -6,6 +6,7 @@ from PyQt5.QtCore import pyqtSlot
 from child_dialogs import ChildDialog
 from gui_server_thread import GuiServerThread
 from gui_tools import RS
+from patchbay.tools_widgets import TextWithIcons
 import ray
 
 import ui.settings
@@ -71,9 +72,9 @@ class PreferencesDialog(ChildDialog):
 
         # fill systray checkboxes
         self.ui.groupBoxSystray.setChecked(
-            self._main_win.systray_mode != ray.Systray.OFF)
+            self._main_win.systray_mode is not ray.Systray.OFF)
         self.ui.checkBoxOnlySessionRunning.setChecked(
-            self._main_win.systray_mode == ray.Systray.SESSION_ONLY)
+            self._main_win.systray_mode is ray.Systray.SESSION_ONLY)
         self.ui.checkBoxReversedMenu.setChecked(
             self._main_win.reversed_systray_menu)
         self.ui.checkBoxShutdown.setChecked(
@@ -122,7 +123,7 @@ class PreferencesDialog(ChildDialog):
             self.ui.checkBoxReversedMenu.isChecked()
         )
     
-    def _get_systray_mode(self) -> int:
+    def _get_systray_mode(self) -> ray.Systray:
         if self.ui.groupBoxSystray.isChecked():
             if self.ui.checkBoxOnlySessionRunning.isChecked():
                 return ray.Systray.SESSION_ONLY

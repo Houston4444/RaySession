@@ -55,7 +55,8 @@ def which_terminal(title='', hold=True) -> list[str]:
 
         if terminal == 'mate-terminal':
             if title:
-                return [terminal, '--hide-menubar', '--disable-factory', '--title', title, '--']
+                return [terminal, '--hide-menubar', '--disable-factory',
+                        '--title', title, '--']
 
             return [terminal, '--hide-menubar', '--disable-factory', '--']
 

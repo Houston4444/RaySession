@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 from pathlib import Path
 
 from PyQt5.QtCore import (QCoreApplication, QStandardPaths, QSettings,
@@ -25,17 +25,10 @@ settings = QSettings()
 # key: executable, value: desktop_file name
 exec_and_desktops = dict[str, str]()
 
-
-def dirname(*args) -> str:
-    return os.path.dirname(*args)
-
-def basename(*args) -> str:
-    return os.path.basename(*args)
-
-def get_app_config_path() -> str:
-    return "%s/%s" % (
-            QStandardPaths.writableLocation(QStandardPaths.ConfigLocation),
-            QCoreApplication.organizationName())
+def get_app_config_path() -> Path:
+    return (Path(
+        QStandardPaths.writableLocation(QStandardPaths.ConfigLocation))
+        / QCoreApplication.organizationName())
 
 def get_code_root() -> Path:
     return Path(__file__).parent.parent.parent
@@ -74,10 +67,12 @@ def is_pid_child_of(child_pid, parent_pid) -> bool:
 
     return False
 
-def highlight_text(string) -> str:
+def highlight_text(string: Union[str, Path]) -> str:
+    string = str(string)
+
     if "'" in string:
-        return '"%s"' % string
-    return "'%s'" % string
+        return f'"{string}"'
+    return f"'{string}'"
 
 def init_daemon_tools():
     if CommandLineArgs.config_dir:
@@ -110,7 +105,7 @@ class AppTemplate:
     template_name: str
     template_client: 'Client'
     display_name: str
-    templates_root: str
+    templates_root: Path
 
 
 class RS:
@@ -158,12 +153,12 @@ class TemplateRoots:
     @classmethod
     def init_config(cls):
         if CommandLineArgs.config_dir:
-            app_config_path = CommandLineArgs.config_dir
+            app_config_path = Path(CommandLineArgs.config_dir)
         else:
             app_config_path = get_app_config_path()
 
-        cls.user_sessions = Path(app_config_path) / 'session_templates'
-        cls.user_clients = Path(app_config_path) / 'client_templates'
+        cls.user_sessions = app_config_path / 'session_templates'
+        cls.user_clients = app_config_path / 'client_templates'
 
 
 class Terminal:
@@ -177,22 +172,22 @@ class Terminal:
         sys.stderr.write('[\033[90mray-daemon\033[0m]\033[92m%s\033[0m\n'
                             % string)
 
-        log_dir = "%s/logs" % get_app_config_path()
+        log_dir = get_app_config_path() / 'logs'
+        
         if server_port:
-            log_file_path = "%s/%i" % (log_dir, server_port)
+            log_file_path = log_dir / str(server_port)
         else:
-            log_file_path = "%s/dummy" % log_dir
+            log_file_path = log_dir / 'dummy'
 
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
 
-        log_file = open(log_file_path, 'a')
+        with open(log_file_path, 'a') as log_file:
+            date_time = QDateTime.currentDateTime()
+            locale = QLocale(QLocale.English)
+            date_format = locale.toString(date_time, "ddd MMM d hh:mm:ss yyyy")
 
-        date_time = QDateTime.currentDateTime()
-        locale = QLocale(QLocale.English)
-        date_format = locale.toString(date_time, "ddd MMM d hh:mm:ss yyyy")
-
-        log_file.write("%s: %s\n" % (date_format, string))
+            log_file.write("%s: %s\n" % (date_format, string))
 
         cls._last_client_name = 'daemon'
 

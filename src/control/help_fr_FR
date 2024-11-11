@@ -84,7 +84,6 @@ contrôle les démons de RaySession
     set_options OPTION1 [OPTION2] [OPTION3]...
         Configure les options du démon.
         Les options disponibles sont:
-            save_from_client
             bookmark_session_folder
             desktops_memory
             snapshots

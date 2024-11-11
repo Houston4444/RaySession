@@ -13,10 +13,10 @@ if TYPE_CHECKING:
 
 
 class Client(QObject, ray.ClientData):
-    status_changed = pyqtSignal(int)
+    status_changed = pyqtSignal(ray.ClientStatus)
 
     def __init__(self, session: 'SignaledSession',
-                 client_id: str, protocol: int):
+                 client_id: str, protocol_int: int):
         QObject.__init__(self)
 
         self.session = session
@@ -24,7 +24,7 @@ class Client(QObject, ray.ClientData):
 
         # set ClientData attributes
         self.client_id = client_id
-        self.protocol = protocol
+        self.protocol = ray.Protocol(protocol_int)
         self.ray_hack = ray.RayHack()
         self.ray_net = ray.RayNet()
         
@@ -40,13 +40,13 @@ class Client(QObject, ray.ClientData):
         self.widget = self.main_win.create_client_widget(self)
         self._properties_dialog: ClientPropertiesDialog = None
 
-    def set_status(self, status: int):
+    def set_status(self, status: ray.ClientStatus):
         self._previous_status = self.status
         self.status = status
         self.status_changed.emit(status)
 
         if (not self.has_dirty
-                and self.status == ray.ClientStatus.READY
+                and self.status is ray.ClientStatus.READY
                 and self._previous_status in (
                     ray.ClientStatus.OPEN, ray.ClientStatus.SAVE)):
             self.last_save = time.time()
@@ -107,7 +107,7 @@ class Client(QObject, ray.ClientData):
                          *ray.ClientData.spread_client(self))
 
     def send_ray_hack(self):
-        if self.protocol != ray.Protocol.RAY_HACK:
+        if self.protocol is not ray.Protocol.RAY_HACK:
             return
 
         server = GuiServerThread.instance()
@@ -119,7 +119,7 @@ class Client(QObject, ray.ClientData):
                          *self.ray_hack.spread())
 
     def send_ray_net(self):
-        if self.protocol != ray.Protocol.RAY_NET:
+        if self.protocol is not ray.Protocol.RAY_NET:
             return
 
         server = GuiServerThread.instance()
@@ -134,13 +134,17 @@ class Client(QObject, ray.ClientData):
         if self._properties_dialog is None:
             self._properties_dialog = ClientPropertiesDialog.create(
                 self.main_win, self)
+
         self._properties_dialog.update_contents()
+
         if second_tab:
-            if self.protocol == ray.Protocol.RAY_HACK:
+            if self.protocol is ray.Protocol.RAY_HACK:
                 self._properties_dialog.enable_test_zone(True)
             self._properties_dialog.set_on_second_tab()
+
         self._properties_dialog.show()
-        if ray.get_window_manager() != ray.WindowManager.WAYLAND:
+
+        if ray.get_window_manager() is not ray.WindowManager.WAYLAND:
             self._properties_dialog.activateWindow()
 
     def close_properties_dialog(self):
@@ -158,18 +162,18 @@ class Client(QObject, ray.ClientData):
             self.set_gui_enabled()
 
     # method not used yet
-    def get_project_path(self)->str:
+    def get_project_path(self) -> str:
         if not self.session.path:
             return ''
 
         prefix = self.session.name
 
-        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+        if self.prefix_mode is ray.PrefixMode.CLIENT_NAME:
             prefix = self.name
-        elif self.prefix_mode == ray.PrefixMode.CUSTOM:
+        elif self.prefix_mode is ray.PrefixMode.CUSTOM:
             prefix = self.custom_prefix
 
-        return "%s/%s.%s" % (self.session.path, prefix, self.client_id)
+        return f'{self.session.path}/{prefix}.{self.client_id}'
 
     # method not used yet
     def get_icon_search_path(self) -> list[str]:

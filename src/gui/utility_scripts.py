@@ -48,7 +48,7 @@ class HydrogenRhNsmDialog(ChildDialog):
         for check_box in self._check_boxes:
             check_box.stateChanged.connect(self._one_state_changed)
 
-        if self.session.server_status != ray.ServerStatus.READY:
+        if self.session.server_status is not ray.ServerStatus.READY:
             self.ui.checkBoxCurrentSession.setEnabled(False)
 
     def _current_session_check(self, state:bool):

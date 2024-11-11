@@ -61,7 +61,7 @@ class ClientSlot(QFrame):
 
     def server_status_changed(self, server_status:int):
         self.ui.actionAddToTheCurrentSession.setEnabled(
-            server_status == ray.ServerStatus.READY)
+            server_status is ray.ServerStatus.READY)
 
     def get_client_id(self):
         return self.client.client_id
@@ -123,7 +123,7 @@ class ClientSlot(QFrame):
         tool_tip += "<p></p>"
         tool_tip += "<p>%s : %s<br>" \
             % (_translate('client_slot', 'Protocol'),
-               ray.protocol_to_str(self.client.protocol))
+               self.client.protocol.to_string())
         tool_tip += "%s : %s<br>" \
             % (_translate('client_slot', 'Executable'),
                self.client.executable_path)

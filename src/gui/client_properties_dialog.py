@@ -105,11 +105,11 @@ class ClientPropertiesDialog(ChildDialog):
 
     @staticmethod
     def create(window, client: ray.ClientData) -> 'ClientPropertiesDialog':
-        if client.protocol == ray.Protocol.NSM:
+        if client.protocol is ray.Protocol.NSM:
             return NsmClientPropertiesDialog(window, client)
-        if client.protocol == ray.Protocol.RAY_HACK:
+        if client.protocol is ray.Protocol.RAY_HACK:
             return RayHackClientPropertiesDialog(window, client)
-        if client.protocol == ray.Protocol.RAY_NET:
+        if client.protocol is ray.Protocol.RAY_NET:
             return RayNetClientPropertiesDialog(window, client)
 
         return ClientPropertiesDialog(window, client)
@@ -131,12 +131,15 @@ class ClientPropertiesDialog(ChildDialog):
     def set_on_second_tab(self):
         self.ui.tabWidget.setCurrentIndex(1)
 
-    def update_status(self, status):
-        pass
+    def update_status(self, status: ray.ClientStatus):
+        ...
+
+    def enable_test_zone(self, yesno: bool):
+        ...
 
     def update_contents(self):
         self.ui.labelId.setText(self.client.client_id)
-        self.ui.labelProtocol.setText(ray.protocol_to_str(self.client.protocol))
+        self.ui.labelProtocol.setText(self.client.protocol.to_string())
         self.ui.lineEditIcon.setText(self.client.icon)
         self.ui.lineEditLabel.setText(self.client.label)
         self.ui.plainTextEditDescription.setPlainText(self.client.description)
@@ -280,11 +283,11 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.client.pre_env = self.rhack.lineEditEnviron.text()
         ClientPropertiesDialog._save_changes(self)
 
-    def _get_work_dir_base(self)->str:
+    def _get_work_dir_base(self) -> str:
         prefix = self.session.name
-        if self.client.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+        if self.client.prefix_mode is ray.PrefixMode.CLIENT_NAME:
             prefix = self.client.name
-        elif self.client.prefix_mode == ray.PrefixMode.CUSTOM:
+        elif self.client.prefix_mode is ray.PrefixMode.CUSTOM:
             prefix = self.client.custom_prefix
 
         return "%s.%s" % (prefix, self.client.client_id)
@@ -345,7 +348,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
 
         self.rhack.pushButtonStart.setEnabled(
             bool(self._acceptable_arguments
-                 and self._current_status == ray.ClientStatus.STOPPED))
+                 and self._current_status is ray.ClientStatus.STOPPED))
         self.ui.pushButtonSaveChanges.setEnabled(self._is_allowed())
 
     def _line_edit_config_file_changed(self, text):
@@ -403,7 +406,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.rhack.labelWorkingDirTitle.setVisible(False)
         self.rhack.labelWorkingDir.setVisible(False)
 
-    def update_status(self, status):
+    def update_status(self, status: ray.ClientStatus):
         self._current_status = status
         self.rhack.lineEditClientStatus.setText(client_status_string(status))
 
@@ -414,16 +417,16 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
             self.rhack.pushButtonStart.setEnabled(False)
             self.rhack.pushButtonStop.setEnabled(True)
             self.rhack.pushButtonSave.setEnabled(False)
-        elif status == ray.ClientStatus.READY:
+        elif status is ray.ClientStatus.READY:
             self.rhack.pushButtonStart.setEnabled(False)
             self.rhack.pushButtonStop.setEnabled(True)
             self.rhack.pushButtonSave.setEnabled(
                 bool(self.rhack.comboSaveSig.currentData() != 0))
-        elif status == ray.ClientStatus.STOPPED:
+        elif status is ray.ClientStatus.STOPPED:
             self.rhack.pushButtonStart.setEnabled(self._is_allowed())
             self.rhack.pushButtonStop.setEnabled(False)
             self.rhack.pushButtonSave.setEnabled(False)
-        elif status == ray.ClientStatus.PRECOPY:
+        elif status is ray.ClientStatus.PRECOPY:
             self.rhack.pushButtonStart.setEnabled(False)
             self.rhack.pushButtonStart.setEnabled(False)
             self.rhack.pushButtonSave.setEnabled(False)
@@ -472,7 +475,6 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
             bool(self.client.ray_hack.no_save_level >= 1))
         self.rhack.checkBoxCloseGracefully.setChecked(
             bool(self.client.ray_hack.no_save_level == 2))
-
 
     def enable_test_zone(self, yesno: bool):
         self.rhack.groupBoxTestZone.setChecked(yesno)

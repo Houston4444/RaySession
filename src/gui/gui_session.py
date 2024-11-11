@@ -1,5 +1,6 @@
 
 import sys
+from typing import Optional
 from PyQt5.QtWidgets import QApplication
 
 import ray
@@ -76,10 +77,10 @@ class Session:
         self.main_win.hide()
         del self.main_win
 
-    def is_running(self)->bool:
-        return bool(self.server_status != ray.ServerStatus.OFF)
+    def is_running(self) -> bool:
+        return self.server_status is not ray.ServerStatus.OFF
 
-    def update_server_status(self, server_status: int):
+    def update_server_status(self, server_status: ray.ServerStatus):
         self.server_status = server_status
 
     def _set_name(self, session_name: str):
@@ -95,7 +96,7 @@ class Session:
 
         return self.path
 
-    def get_client(self, client_id: str)->Client:
+    def get_client(self, client_id: str) -> Optional[Client]:
         for client in self.client_list:
             if client.client_id == client_id:
                 return client
@@ -127,7 +128,7 @@ class Session:
                 return True
         return False
 
-    def set_daemon_options(self, options):
+    def set_daemon_options(self, options: ray.Option):
         self.main_win.set_daemon_options(options)
         for client in self.client_list:
             client.widget.set_daemon_options(options)
@@ -160,7 +161,7 @@ class SignaledSession(Session):
 
                 for client in self.client_list:
                     if (client.client_id == client_id
-                            and client.protocol == ray.Protocol.RAY_HACK):
+                            and client.protocol is ray.Protocol.RAY_HACK):
                         client.show_properties_dialog(second_tab=True)
                         break
 
@@ -209,8 +210,7 @@ class SignaledSession(Session):
                 self.terminal_command)
 
     def _ray_gui_server_options(self, path, args):
-        options = args[0]
-        self.set_daemon_options(options)
+        self.set_daemon_options(ray.Option(args[0]))
 
     def _ray_gui_server_recent_sessions(self, path, args):
         self.recent_sessions: list[str] = args
@@ -229,7 +229,7 @@ class SignaledSession(Session):
         self.is_renameable = bool(args[0])
 
         bool_set_edit = bool(self.is_renameable
-                             and self.server_status == ray.ServerStatus.READY
+                             and self.server_status is ray.ServerStatus.READY
                              and not CommandLineArgs.out_daemon)
 
         self.main_win.set_session_name_editable(bool_set_edit)
@@ -281,13 +281,13 @@ class SignaledSession(Session):
     def _ray_gui_client_ray_hack_update(self, path, args: list):
         client_id = args.pop(0)
         client = self.get_client(client_id)
-        if client and client.protocol == ray.Protocol.RAY_HACK:
+        if client and client.protocol is ray.Protocol.RAY_HACK:
             client.update_ray_hack(*args)
 
     def _ray_gui_client_ray_net_update(self, path, args: list):
         client_id = args.pop(0)
         client = self.get_client(client_id)
-        if client and client.protocol == ray.Protocol.RAY_NET:
+        if client and client.protocol is ray.Protocol.RAY_NET:
             client.update_ray_net(*args)
 
     def  _ray_gui_client_switch(self, path, args):
@@ -298,16 +298,20 @@ class SignaledSession(Session):
                 break
 
     def _ray_gui_client_status(self, path, args):
-        client_id, status = args
+        client_id: str = args[0]
+        status = ray.ClientStatus(args[1])
+        
         client = self.get_client(client_id)
-        if client:
-            client.set_status(status)
+        if client is None:
+            return
+        
+        client.set_status(status)
 
-            if status == ray.ClientStatus.REMOVED:
-                self.main_win.remove_client(client_id)
-                client.close_properties_dialog()
-                self.client_list.remove(client)
-                del client
+        if client.status is ray.ClientStatus.REMOVED:
+            self.main_win.remove_client(client_id)
+            client.close_properties_dialog()
+            self.client_list.remove(client)
+            del client
 
         self.main_win.client_status_changed(client_id, status)
 
@@ -505,6 +509,9 @@ class SignaledSession(Session):
 
     def _ray_gui_patchbay_update_portgroup(self, path, args):
         self.patchbay_manager.update_portgroup(*args)
+
+    def _ray_gui_patchbay_views_changed(self, path, args):
+        self.patchbay_manager.views_changed(*args)
 
     def _ray_gui_patchbay_server_started(self, path, args):
         self.patchbay_manager.server_started(*args)

@@ -1,3 +1,4 @@
+from json import tool
 from typing import TYPE_CHECKING
 import time
 import subprocess
@@ -6,7 +7,8 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QMenu, QDialog,
     QMessageBox, QToolButton, QAbstractItemView,
     QBoxLayout, QSystemTrayIcon, QShortcut)
-from PyQt5.QtGui import QIcon, QDesktopServices, QFontMetrics, QCloseEvent
+from PyQt5.QtGui import (QIcon, QDesktopServices, QFontMetrics,
+                         QCloseEvent, QKeyEvent)
 from PyQt5.QtCore import QTimer, pyqtSlot, QUrl, QLocale, Qt
 
 import ray
@@ -23,8 +25,8 @@ from gui_tools import (
 from gui_client import TrashedClient
 from gui_server_thread import GuiServerThread
 from utility_scripts import UtilityScriptLauncher
-from patchbay.base_elements import ToolDisplayed, PortTypesViewFlag
-from patchbay.tools_widgets import PatchbayToolsWidget
+from patchbay.base_elements import ToolDisplayed
+from patchbay.tools_widgets import PatchbayToolsWidget, TextWithIcons
 
 if TYPE_CHECKING:
     from .gui_session import SignaledSession
@@ -68,7 +70,8 @@ class MainWindow(QMainWindow):
         self._timer_snapshot = QTimer()
         self._timer_snapshot.setSingleShot(True)
         self._timer_snapshot.setInterval(2000)
-        self._timer_snapshot.timeout.connect(self._show_snapshot_progress_dialog)
+        self._timer_snapshot.timeout.connect(
+            self._show_snapshot_progress_dialog)
 
         self.server_copying = False
 
@@ -77,7 +80,7 @@ class MainWindow(QMainWindow):
 
         # do not enable keep focus option under Wayland
         # because activate a window from it self on Wayland not allowed
-        if ray.get_window_manager() == ray.WindowManager.WAYLAND:
+        if ray.get_window_manager() is ray.WindowManager.WAYLAND:
             self._keep_focus = False
             self.ui.actionKeepFocus.setEnabled(False)
 
@@ -87,12 +90,13 @@ class MainWindow(QMainWindow):
                        self.ui.actionControlMenu):
             button : QToolButton = self.ui.toolBar.widgetForAction(action)
             self._tool_bar_main_actions_width += button.iconSize().width()
-            self._tool_bar_main_actions_width += QFontMetrics(button.font()).width(button.text())
+            self._tool_bar_main_actions_width += \
+                QFontMetrics(button.font()).width(button.text())
             self._tool_bar_main_actions_width += 6
 
-        self.ui.toolBar.set_patchbay_manager(self.session.patchbay_manager)
-
         # manage geometry depending of use of embedded jack patchbay
+        self._patchbay_tools : PatchbayToolsWidget = None
+        
         show_patchbay = RS.settings.value(
             'MainWindow/show_patchbay', True, type=bool)
         self.ui.actionShowJackPatchbay.setChecked(show_patchbay)
@@ -255,18 +259,14 @@ class MainWindow(QMainWindow):
         self._control_menu.addSeparator()
         self._control_menu.addAction(self.ui.actionPreferences)
 
-        self._control_tool_button = self.ui.toolBar.widgetForAction(
-            self.ui.actionControlMenu)
-        
-        if TYPE_CHECKING:
-            assert isinstance(self._control_tool_button, QToolButton)
+        self._control_tool_button: QToolButton = \
+            self.ui.toolBar.widgetForAction(self.ui.actionControlMenu)
         
         self._control_tool_button.setPopupMode(QToolButton.InstantPopup)
         self._control_tool_button.setMenu(self._control_menu)
 
         self.ui.toolButtonControl2.setPopupMode(QToolButton.InstantPopup)
         self.ui.toolButtonControl2.setMenu(self._control_menu)
-
 
         # set favorites menu
         self._favorites_menu = QMenu(_translate('menu', 'Favorites'))
@@ -291,7 +291,7 @@ class MainWindow(QMainWindow):
         sg.canvas_callback.connect(
             self.session.patchbay_manager.callbacker.receive)
 
-        # set spare icons if system icons not avalaible
+        # set spare icons if system icons not available
         dark = is_dark_theme(self)
 
         if self.ui.actionNewSession.icon().isNull():
@@ -341,7 +341,8 @@ class MainWindow(QMainWindow):
         self.ui.actionSessionNotes.setIcon(RayIcon('notes', dark))
         self.ui.toolButtonNotes.setIcon(RayIcon('notes', dark))
         self.ui.actionDesktopsMemory.setIcon(RayIcon('view-list-icons', dark))
-        self.ui.toolButtonSessionMenu.setIcon(RayIcon('application-menu', dark))
+        self.ui.toolButtonSessionMenu.setIcon(
+            RayIcon('application-menu', dark))
         self.ui.listWidget.set_session(self.session)
         self.ui.listWidget.currentItemChanged.connect(
             self._list_widget_item_changed)
@@ -352,20 +353,22 @@ class MainWindow(QMainWindow):
         self.ui.framePatchbayFilters.setVisible(False)
         filter_bar_shortcut = QShortcut('Ctrl+F', self)
         filter_bar_shortcut.setContext(Qt.ApplicationShortcut)
-        filter_bar_shortcut.activated.connect(self.toggle_patchbay_filters_bar)
+        filter_bar_shortcut.activated.connect(
+            self.toggle_patchbay_filters_bar)
         refresh_shortcut = QShortcut('Ctrl+R', self)
         refresh_shortcut.setContext(Qt.ApplicationShortcut)
-        refresh_shortcut.activated.connect(self.session.patchbay_manager.refresh)
+        refresh_shortcut.activated.connect(
+            self.session.patchbay_manager.refresh)
         refresh_shortcut_alt = QShortcut('F5', self)
         refresh_shortcut_alt.setContext(Qt.ApplicationShortcut)
-        refresh_shortcut_alt.activated.connect(self.session.patchbay_manager.refresh)
+        refresh_shortcut_alt.activated.connect(
+            self.session.patchbay_manager.refresh)
 
         # prevent to hide the session frame with session/messages splitter
         self.ui.splitterSessionVsMessages.setCollapsible(0, False)
         self.ui.splitterSessionVsMessages.splitterMoved.connect(
             self._splitter_session_vs_messages_moved)
 
-        self._canvas_tools_action = None
         self._canvas_menu = None
 
         self.set_nsm_locked(CommandLineArgs.under_nsm)
@@ -393,8 +396,9 @@ class MainWindow(QMainWindow):
         # systray icon and related
         self.wild_shutdown: bool = RS.settings.value(
             'wild_shutdown', False, type=bool)
-        self.systray_mode: int = RS.settings.value(
-            'systray_mode', ray.Systray.SESSION_ONLY, type=int)
+        self.systray_mode = ray.Systray(
+            RS.settings.value(
+                'systray_mode', ray.Systray.SESSION_ONLY.value, type=int))
         self.reversed_systray_menu: bool = RS.settings.value(
             'reversed_systray_menu', False, type=bool)
 
@@ -412,9 +416,9 @@ class MainWindow(QMainWindow):
         self._build_systray_menu()
 
         if (not CommandLineArgs.under_nsm
-            and (self.systray_mode == ray.Systray.ALWAYS
-                    or (self.systray_mode == ray.Systray.SESSION_ONLY
-                        and self.session.server_status != ray.ServerStatus.OFF))):
+            and (self.systray_mode is ray.Systray.ALWAYS
+                    or (self.systray_mode is ray.Systray.SESSION_ONLY
+                        and self.session.server_status is not ray.ServerStatus.OFF))):
             self._systray.show()
 
         self.preferences_dialog: preferences_dialog.PreferencesDialog = None
@@ -496,7 +500,7 @@ class MainWindow(QMainWindow):
         self.to_daemon('/ray/session/open_folder')
 
     def change_systray_options(
-            self, systray_mode: int, wild_shutdown: bool,
+            self, systray_mode: ray.Systray, wild_shutdown: bool,
             reversed_systray_menu: bool):        
         self.systray_mode = systray_mode
         self.wild_shutdown = wild_shutdown
@@ -505,19 +509,19 @@ class MainWindow(QMainWindow):
             self.reversed_systray_menu = reversed_systray_menu
             self._build_systray_menu()
 
-        RS.settings.setValue('systray_mode', self.systray_mode)
+        RS.settings.setValue('systray_mode', self.systray_mode.value)
         RS.settings.setValue('wild_shutdown', self.wild_shutdown)
         RS.settings.setValue('reversed_systray_menu',
                              self.reversed_systray_menu)
 
-        if self.systray_mode == ray.Systray.OFF:
+        if self.systray_mode is ray.Systray.OFF:
             self._systray.hide()
-        elif self.systray_mode == ray.Systray.SESSION_ONLY:
-            if self.session.server_status == ray.ServerStatus.OFF:
+        elif self.systray_mode is ray.Systray.SESSION_ONLY:
+            if self.session.server_status is ray.ServerStatus.OFF:
                 self._systray.hide()
             else:
                 self._systray.show()
-        elif self.systray_mode == ray.Systray.ALWAYS:
+        elif self.systray_mode is ray.Systray.ALWAYS:
             self._systray.show()
 
     def _open_systray_options(self):
@@ -537,29 +541,30 @@ class MainWindow(QMainWindow):
         if not keep_focus:
             self._timer_raisewin.stop()
 
-    def _set_option(self, option: int, state: bool):
+    def _set_option(self, option: ray.Option, state: bool):
+        option_int = option.value
         if not state:
-            option = -option
-        self.to_daemon('/ray/server/set_option', option)
+            option_int = - option_int
+        self.to_daemon('/ray/server/set_option', option_int)
 
-    def _bookmark_session_folder_toggled(self, state):
+    def _bookmark_session_folder_toggled(self, state: bool):
         self._set_option(ray.Option.BOOKMARK_SESSION, state)
 
-    def _desktops_memory_toggled(self, state):
+    def _desktops_memory_toggled(self, state: bool):
         self._set_option(ray.Option.DESKTOPS_MEMORY, state)
 
-    def _auto_snapshot_toggled(self, state):
+    def _auto_snapshot_toggled(self, state: bool):
         self._set_option(ray.Option.SNAPSHOTS, state)
 
-    def _session_scripts_toggled(self, state):
+    def _session_scripts_toggled(self, state: bool):
         self._set_option(ray.Option.SESSION_SCRIPTS, state)
 
-    def _remember_optional_gui_states_toggled(self, state):
+    def _remember_optional_gui_states_toggled(self, state: bool):
         self._set_option(ray.Option.GUI_STATES, state)
 
     def _flash_open(self):
         for client in self.session.client_list:
-            if client.status == ray.ClientStatus.OPEN:
+            if client.status is ray.ClientStatus.OPEN:
                 client.widget.flash_if_open(self._flash_open_bool)
 
         self._flash_open_bool = not self._flash_open_bool
@@ -788,8 +793,6 @@ class MainWindow(QMainWindow):
         self.save_window_settings(
             UI_PATCHBAY_HIDDEN if yesno else UI_PATCHBAY_SHOWN)
 
-        if self._canvas_tools_action is not None:
-            self._canvas_tools_action.setVisible(yesno)
         if self._canvas_menu is not None:
             self._canvas_menu.setVisible(yesno)
 
@@ -824,6 +827,12 @@ class MainWindow(QMainWindow):
             else:
                 self.setGeometry(x, y, 460, height)
             self.ui.splitterMainVsCanvas.setSizes([100, 0])
+            
+            self._patchbay_tools = None
+
+        self.ui.toolBarTransport.setVisible(yesno)
+        self.ui.toolBarJack.setVisible(yesno)
+        self.ui.toolBarCanvas.setVisible(yesno)
 
         self.ui.graphicsView.setVisible(yesno)
         self.ui.framePatchbayFilters.setVisible(False)
@@ -857,7 +866,7 @@ class MainWindow(QMainWindow):
                         ray.ServerStatus.OUT_SNAPSHOT):
             self._show_snapshot_progress_dialog()
 
-        elif status == ray.ServerStatus.WAIT_USER:
+        elif status is ray.ServerStatus.WAIT_USER:
             dialog = child_dialogs.WaitingCloseUserDialog(self)
             dialog.exec()
 
@@ -933,16 +942,16 @@ class MainWindow(QMainWindow):
         self.server_copying = copying
         self._server_status_changed(self.session.server_status)
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         self.session.update_server_status(server_status)
 
         self.ui.lineEditServerStatus.setText(
             server_status_string(server_status))
         self.ui.frameCurrentSession.setEnabled(
-            bool(server_status != ray.ServerStatus.OFF))
+            bool(server_status is not ray.ServerStatus.OFF))
 
-        if self.systray_mode == ray.Systray.SESSION_ONLY:
-            if server_status == ray.ServerStatus.OFF:
+        if self.systray_mode is ray.Systray.SESSION_ONLY:
+            if server_status is ray.ServerStatus.OFF:
                 self._systray.hide()
             else:
                 self._systray.show()
@@ -953,14 +962,14 @@ class MainWindow(QMainWindow):
         elif self._timer_snapshot.isActive():
             self._timer_snapshot.stop()
 
-        if server_status == ray.ServerStatus.COPY:
+        if server_status is ray.ServerStatus.COPY:
             self.ui.actionSaveSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(False)
             self.ui.actionReturnToAPreviousState.setEnabled(False)
             return
 
-        if server_status == ray.ServerStatus.PRECOPY:
+        if server_status is ray.ServerStatus.PRECOPY:
             self.ui.actionSaveSession.setEnabled(False)
             self.ui.actionCloseSession.setEnabled(False)
             self.ui.actionAbortSession.setEnabled(True)
@@ -982,7 +991,7 @@ class MainWindow(QMainWindow):
                 ray.ServerStatus.OUT_SAVE,
                 ray.ServerStatus.OUT_SNAPSHOT,
                 ray.ServerStatus.OFF))
-        ready = bool(server_status == ray.ServerStatus.READY)
+        ready = bool(server_status is ray.ServerStatus.READY)
 
         self.ui.actionSaveSession.setEnabled(ready)
         self.ui.actionCloseSession.setEnabled(ready)
@@ -1003,9 +1012,9 @@ class MainWindow(QMainWindow):
         self._favorites_menu.setEnabled(
             bool(self.session.favorite_list and not close_or_off))
         self.ui.actionOpenSessionFolder.setEnabled(
-            bool(server_status != ray.ServerStatus.OFF))
+            bool(server_status is not ray.ServerStatus.OFF))
         self.ui.actionSessionNotes.setEnabled(
-            bool(server_status != ray.ServerStatus.OFF))
+            bool(server_status is not ray.ServerStatus.OFF))
 
         self.ui.stackedWidgetSessionName.set_editable(
             ready and self.session.is_renameable)
@@ -1033,11 +1042,11 @@ class MainWindow(QMainWindow):
             self.ui.actionAbortSession.setEnabled(False)
             self.ui.menuRecentSessions.setEnabled(False)
 
-        if server_status == ray.ServerStatus.OFF:
+        if server_status is ray.ServerStatus.OFF:
             if self.terminate_request:
                 self.daemon_manager.stop()
 
-        if server_status == ray.ServerStatus.WAIT_USER:
+        if server_status is ray.ServerStatus.WAIT_USER:
             if not RS.is_hidden(RS.HD_WaitCloseUser):
                 dialog = child_dialogs.WaitingCloseUserDialog(self)
                 dialog.exec()
@@ -1100,7 +1109,7 @@ class MainWindow(QMainWindow):
                           QSystemTrayIcon.DoubleClick):
             return
 
-        wayland = bool(ray.get_window_manager() == ray.WindowManager.WAYLAND)
+        wayland = bool(ray.get_window_manager() is ray.WindowManager.WAYLAND)
 
         if self.isMinimized():
             if self.hidden_maximized:
@@ -1127,7 +1136,10 @@ class MainWindow(QMainWindow):
         VISIBLE_MENUBAR = 0x2
 
         if self._fullscreen_patchbay:
-            self.ui.toolBar.setVisible(True)
+            for toolbar in (self.ui.toolBar, self.ui.toolBarTransport,
+                            self.ui.toolBarJack, self.ui.toolBarCanvas):
+                toolbar.setVisible(True)
+            
             if self._were_visible_before_fullscreen & VISIBLE_MENUBAR:
                 self.ui.menuBar.setVisible(True)
 
@@ -1151,33 +1163,45 @@ class MainWindow(QMainWindow):
             self._geom_before_fullscreen = self.geometry()
 
             self.ui.menuBar.setVisible(False)
-            self.ui.toolBar.setVisible(False)
+
+            for toolbar in (self.ui.toolBar, self.ui.toolBarTransport,
+                            self.ui.toolBarJack, self.ui.toolBarCanvas):
+                toolbar.setVisible(False)
+
             self._splitter_pos_before_fullscreen = \
                 self.ui.splitterMainVsCanvas.sizes()
             self.ui.splitterMainVsCanvas.setSizes([0, 100])
             self._fullscreen_patchbay = True
             self.showFullScreen()
 
-    def add_patchbay_tools(self, tools_widget: PatchbayToolsWidget, canvas_menu):
-        if self._canvas_tools_action is None:
-            self._canvas_tools_action = self.ui.toolBar.addWidget(tools_widget)
-            default_disp_wdg = (
-                ToolDisplayed.ZOOM_SLIDER
-                | ToolDisplayed.TRANSPORT_PLAY_STOP
-                | ToolDisplayed.BUFFER_SIZE
-                | ToolDisplayed.SAMPLERATE
-                | ToolDisplayed.XRUNS
-                | ToolDisplayed.DSP_LOAD)
-            
-            default_disp_wdg = default_disp_wdg.filtered_by_string(
-                RS.settings.value('tool_bar/jack_elements', '', type=str))
-            
-            self.ui.toolBar.set_default_displayed_widgets(default_disp_wdg)
-            
-            if not default_disp_wdg & ToolDisplayed.PORT_TYPES_VIEW:
-                RS.settings.setValue(
-                    'Canvas/default_port_types_view',
-                    PortTypesViewFlag.ALL.value)
+    def add_patchbay_tools(
+            self, tools_widget: PatchbayToolsWidget, canvas_menu):
+        self._patchbay_tools = tools_widget
+        self._patchbay_tools.change_text_with_icons(
+            TextWithIcons.by_name(
+                RS.settings.value('tool_bar/text_with_icons', 'AUTO')))
+        self._patchbay_tools.set_tool_bars(
+            self.ui.toolBar, self.ui.toolBarTransport,
+            self.ui.toolBarJack, self.ui.toolBarCanvas)
+        
+        default_disp_wdg = (
+            ToolDisplayed.ZOOM_SLIDER
+            | ToolDisplayed.HIDDENS_BOX
+            | ToolDisplayed.TRANSPORT_PLAY_STOP
+            | ToolDisplayed.BUFFER_SIZE
+            | ToolDisplayed.SAMPLERATE
+            | ToolDisplayed.XRUNS
+            | ToolDisplayed.DSP_LOAD)
+        
+        default_disp_wdg = default_disp_wdg.filtered_by_string(
+            RS.settings.value('tool_bar/jack_elements', '', type=str))
+        
+        # if not default_disp_wdg & ToolDisplayed.PORT_TYPES_VIEW:
+        #     RS.settings.setValue(
+        #         'Canvas/default_port_types_view',
+        #         PortTypesViewFlag.ALL.value)
+
+        tools_widget.change_tools_displayed(default_disp_wdg)
 
         self._canvas_menu = self.ui.menuBar.addMenu(canvas_menu)
 
@@ -1248,25 +1272,25 @@ class MainWindow(QMainWindow):
         self.session.patchbay_manager.select_client_box(
             current.widget.client.jack_client_name)
 
-    def set_daemon_options(self, options):
+    def set_daemon_options(self, options: ray.Option):
         self.ui.actionBookmarkSessionFolder.setChecked(
-            bool(options & ray.Option.BOOKMARK_SESSION))
+            ray.Option.BOOKMARK_SESSION in options)
         self.ui.actionDesktopsMemory.setChecked(
-            bool(options & ray.Option.DESKTOPS_MEMORY))
+            ray.Option.DESKTOPS_MEMORY in options)
         self.ui.actionAutoSnapshot.setChecked(
-            bool(options & ray.Option.SNAPSHOTS))
+            ray.Option.SNAPSHOTS in options)
         self.ui.actionSessionScripts.setChecked(
-            bool(options & ray.Option.SESSION_SCRIPTS))
+            ray.Option.SESSION_SCRIPTS in options)
         self.ui.actionRememberOptionalGuiStates.setChecked(
-            bool(options & ray.Option.GUI_STATES))
+            ray.Option.GUI_STATES in options)
 
-        has_wmctrl = bool(options & ray.Option.HAS_WMCTRL)
+        has_wmctrl = ray.Option.HAS_WMCTRL in options
         self.ui.actionDesktopsMemory.setEnabled(has_wmctrl)
         if has_wmctrl:
             self.ui.actionDesktopsMemory.setText(
                 _translate('actions', 'Desktops Memory'))
 
-        has_git = bool(options & ray.Option.HAS_GIT)
+        has_git = ray.Option.HAS_GIT in options
         self.ui.actionAutoSnapshot.setEnabled(has_git)
         self.ui.actionReturnToAPreviousState.setVisible(has_git)
         self.ui.toolButtonSnapshots.setVisible(has_git)
@@ -1308,14 +1332,14 @@ class MainWindow(QMainWindow):
 
         if client.check_last_save:
             if (client.no_save_level
-                    or (client.protocol == ray.Protocol.RAY_HACK
+                    or (client.protocol is ray.Protocol.RAY_HACK
                         and not client.ray_hack.saveable())):
                 dialog = child_dialogs.StopClientNoSaveDialog(self, client_id)
                 dialog.exec()
                 if not dialog.result():
                     return
 
-            elif client.status == ray.ClientStatus.READY:
+            elif client.status is ray.ClientStatus.READY:
                 if client.has_dirty:
                     if client.dirty_state:
                         dialog = child_dialogs.StopClientDialog(self, client_id)
@@ -1352,10 +1376,10 @@ class MainWindow(QMainWindow):
 
         self.to_daemon('/ray/server/abort_copy')
 
-    def client_status_changed(self, client_id, status):
+    def client_status_changed(self, client_id: str, status: ray.ClientStatus):
         # launch/stop flashing status if 'open'
         for client in self.session.client_list:
-            if client.status == ray.ClientStatus.OPEN:
+            if client.status is ray.ClientStatus.OPEN:
                 if not self._timer_flicker_open.isActive():
                     self._timer_flicker_open.start()
                 break
@@ -1365,13 +1389,13 @@ class MainWindow(QMainWindow):
         # launch/stop timer_raisewin if keep focus
         if self._keep_focus:
             for client in self.session.client_list:
-                if client.status == ray.ClientStatus.OPEN:
+                if client.status is ray.ClientStatus.OPEN:
                     if not self._timer_raisewin.isActive():
                         self._timer_raisewin.start()
                     break
             else:
                 self._timer_raisewin.stop()
-                if status == ray.ClientStatus.READY:
+                if status is ray.ClientStatus.READY:
                     self._raise_window()
 
     def print_message(self, message):
@@ -1417,7 +1441,7 @@ class MainWindow(QMainWindow):
         if (not RS.is_hidden(RS.HD_StartupRecentSessions)
                 and time.time() - self._startup_time < 5
                 and self.session.recent_sessions
-                and self.session.server_status == ray.ServerStatus.OFF):
+                and self.session.server_status is ray.ServerStatus.OFF):
             # ahah, dirty way to prevent a dialog once again
             self._startup_time -= 5
 
@@ -1608,15 +1632,18 @@ class MainWindow(QMainWindow):
                              self.ui.actionShowJackPatchbay.isChecked())
         RS.settings.setValue('MainWindow/splitter_messages',
                              self.ui.splitterSessionVsMessages.sizes())
-        RS.settings.setValue(
-            'tool_bar/jack_elements',
-            self.ui.toolBar.get_displayed_widgets().to_save_string())
-        RS.settings.setValue(
-            'tool_bar/icons_only',
-            self.ui.toolBar.force_main_actions_icons_only)
-        RS.settings.setValue(
-            'Canvas/default_port_types_view',
-            self.session.patchbay_manager.port_types_view.value)
+
+        if with_patchbay:
+            RS.settings.setValue(
+                'tool_bar/jack_elements',
+                self._patchbay_tools._tools_displayed.to_save_string())
+            RS.settings.setValue(
+                'tool_bar/text_with_icons',
+                self._patchbay_tools._text_with_icons.name)
+            # RS.settings.setValue(
+            #     'Canvas/default_port_types_view',
+            #     self.session.patchbay_manager.port_types_view.value)
+
         RS.settings.sync()
 
     # Reimplemented Qt Functions
@@ -1673,23 +1700,24 @@ class MainWindow(QMainWindow):
         if self._fullscreen_patchbay and not self.isFullScreen():
             self.toggle_scene_full_screen()
 
-        QMainWindow.resizeEvent(self, event)
-
-        if self.ui.toolBar.force_main_actions_icons_only:
-            return
-
-        new_button = self.ui.toolBar.widgetForAction(self.ui.actionNewSession)
-        open_button = self.ui.toolBar.widgetForAction(self.ui.actionOpenSession)
-        if TYPE_CHECKING:
-            assert isinstance(new_button, QToolButton)
-            assert isinstance(open_button, QToolButton)
-
-        if self.width() > 410:
-            new_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            open_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        elif self.width() > 310:
-            new_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
-            open_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        super().resizeEvent(event)
+        
+        if self.ui.actionShowJackPatchbay.isChecked():
+            if self._patchbay_tools is not None:
+                self._patchbay_tools.main_win_resize(self)
         else:
-            new_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
-            open_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            text_with_icons = TextWithIcons.by_name(
+                RS.settings.value('tool_bar/text_with_icons', 'AUTO'))
+            
+            if text_with_icons is TextWithIcons.NO:
+                self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            else:
+                 self.ui.toolBar.setToolButtonStyle(
+                     Qt.ToolButtonTextBesideIcon)
+                 if self.ui.toolBar.sizeHint().width() > self.width():
+                     self.ui.toolBar.setToolButtonStyle(
+                         Qt.ToolButtonIconOnly)
+                     
+    def keyPressEvent(self, event: QKeyEvent):
+        super().keyPressEvent(event)
+        self.session.patchbay_manager.key_press_event(event)

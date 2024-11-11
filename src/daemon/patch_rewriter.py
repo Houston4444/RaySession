@@ -1,4 +1,5 @@
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 import xml.etree.ElementTree as ET
 import os
@@ -18,11 +19,12 @@ def rewrite_jack_patch_files(
         old_client_id: str, new_client_id: str,
         old_jack_name: str, new_jack_name: str):
     for client in session.clients + session.trashed_clients:
-        if client.protocol != ray.Protocol.NSM:
+        if client.protocol is not ray.Protocol.NSM:
             continue
 
-        patch_path = client.get_project_path() + '.xml'
-        if not os.path.exists(patch_path):
+        patch_path = Path(str(client.get_project_path()) + '.xml')
+        
+        if not patch_path.exists():
             continue
         
         if not os.access(patch_path, os.W_OK):
@@ -64,7 +66,7 @@ def rewrite_jack_patch_files(
         tree = ET.ElementTree(root)
 
         try:
-            tree.write(patch_path, encoding="utf8")
+            tree.write(str(patch_path), encoding="utf8")
         except:
             logging.error(f"Unable to rewrite the patch file {patch_path}")
 

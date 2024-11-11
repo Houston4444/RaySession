@@ -251,7 +251,7 @@ def rebuild_templates_database(session: 'Session', base: str):
             continue
 
         executable = c.str('executable')
-        protocol = ray.protocol_from_str(c.str('protocol'))
+        protocol = ray.Protocol.from_string(c.str('protocol'))
 
         # check if we wan't this template to be erased by a .desktop file
         # with X-NSM-Capable=true
@@ -288,7 +288,7 @@ def rebuild_templates_database(session: 'Session', base: str):
             continue
 
         # check if needed executables are present
-        if protocol != ray.Protocol.RAY_NET:
+        if protocol is not ray.Protocol.RAY_NET:
             if not executable:
                 continue
             
@@ -437,6 +437,6 @@ def rebuild_templates_database(session: 'Session', base: str):
         
         template_names.add(template_name)
         templates_database.append(AppTemplate(
-            template_name, template_client, fde['name'], ''))
+            template_name, template_client, fde['name'], Path()))
 
 

@@ -197,9 +197,9 @@ class NewSessionDialog(ChildDialog):
         
         self._text_was_empty = True
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         self.ui.toolButtonFolder.setEnabled(
-            bool(server_status == ray.ServerStatus.OFF))
+            bool(server_status is ray.ServerStatus.OFF))
 
         self._server_will_accept = bool(
             server_status in (
@@ -207,9 +207,9 @@ class NewSessionDialog(ChildDialog):
                 ray.ServerStatus.READY) and not self.server_copying)
         if self._is_duplicate:
             self._server_will_accept = bool(
-                server_status == ray.ServerStatus.READY and not self.server_copying)
+                server_status is ray.ServerStatus.READY and not self.server_copying)
 
-        if server_status != ray.ServerStatus.OFF:
+        if server_status is not ray.ServerStatus.OFF:
             if self._root_folder_file_dialog is not None:
                 self._root_folder_file_dialog.reject()
             self._root_folder_message_box.reject()
@@ -436,10 +436,10 @@ class SaveTemplateSessionDialog(AbstractSaveTemplateDialog):
 
         self._server_status_changed(self.session.server_status)
 
-    def _server_status_changed(self, server_status):
-        self._server_will_accept = bool(server_status == ray.ServerStatus.READY)
+    def _server_status_changed(self, server_status: ray.ServerStatus):
+        self._server_will_accept = bool(server_status is ray.ServerStatus.READY)
 
-        if server_status == ray.ServerStatus.OFF:
+        if server_status is ray.ServerStatus.OFF:
             self._overwrite_message_box.reject()
             self.reject()
 
@@ -470,7 +470,7 @@ class SaveTemplateClientDialog(AbstractSaveTemplateDialog):
         self.ui.lineEdit.setFocus()
         self._server_status_changed(self.session.server_status)
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         self._server_will_accept = bool(
             server_status not in (
                 ray.ServerStatus.OFF,
@@ -511,7 +511,7 @@ class ClientTrashDialog(ChildDialog):
             )
         self._remove_client_message_box.setDefaultButton(QMessageBox.Cancel)
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         if server_status in (ray.ServerStatus.CLOSE,
                              ray.ServerStatus.OFF,
                              ray.ServerStatus.OUT_SAVE,
@@ -552,7 +552,7 @@ class AbortSessionDialog(ChildDialog):
 
         self._server_status_changed(self.session.server_status)
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         self.ui.pushButtonAbort.setEnabled(
             not bool(
                 server_status in (
@@ -573,7 +573,7 @@ class AbortServerCopyDialog(ChildDialog):
 
         self._server_status_changed(self.session.server_status)
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         if server_status not in (
                 ray.ServerStatus.PRECOPY,
                 ray.ServerStatus.COPY):
@@ -599,7 +599,7 @@ class AbortClientCopyDialog(ChildDialog):
 
         self.ui.progressBar.setValue(progress * 100)
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         if not self.server_copying:
             self.reject()
 
@@ -631,8 +631,8 @@ class SessionNotesDialog(ChildDialog):
         self._anti_timer = False
         self.notes_updated()
 
-    def _server_status_changed(self, server_status):
-        if server_status == ray.ServerStatus.OFF:
+    def _server_status_changed(self, server_status: ray.ServerStatus):
+        if server_status is ray.ServerStatus.OFF:
             self.server_off = True
             if self._message_box is not None:
                 self._message_box.close()
@@ -711,15 +711,15 @@ class QuitAppDialog(ChildDialog):
             self.ui.pushButtonDaemon.setVisible(False)
         self._server_status_changed(self.session.server_status)
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         if server_status == ray.ServerStatus.OFF:
             self.accept()
             return
 
         self.ui.pushButtonSaveQuit.setEnabled(
-            bool(server_status == ray.ServerStatus.READY))
+            bool(server_status is ray.ServerStatus.READY))
         self.ui.pushButtonQuitNoSave.setEnabled(
-            bool(server_status != ray.ServerStatus.CLOSE))
+            bool(server_status is not ray.ServerStatus.CLOSE))
 
     def _close_session(self):
         self.to_daemon('/ray/session/close')
@@ -826,7 +826,7 @@ class NewExecutableDialog(ChildDialog):
 
         self._server_status_changed(self.session.server_status)
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         if server_status in (ray.ServerStatus.OUT_SAVE,
                              ray.ServerStatus.OUT_SNAPSHOT,
                              ray.ServerStatus.WAIT_USER,
@@ -913,7 +913,7 @@ class StopClientDialog(ChildDialog):
             self.reject()
             return
 
-        if status == ray.ClientStatus.READY and self._wait_for_save:
+        if status is ray.ClientStatus.READY and self._wait_for_save:
             self._wait_for_save = False
             self.accept()
 
@@ -973,7 +973,7 @@ class ClientRenameDialog(ChildDialog):
                 ray.ClientStatus.STOPPED, ray.ClientStatus.PRECOPY,
                 ray.ClientStatus.QUIT, ray.ClientStatus.LOSE):
             text = ''
-        elif status == ray.ClientStatus.READY and can_switch:
+        elif status is ray.ClientStatus.READY and can_switch:
             text = _translate(
                 'id_renaming', 'The client project will be reload')
         else:
@@ -987,7 +987,7 @@ class ClientRenameDialog(ChildDialog):
         self.ui.checkBoxIdRename.setText(full_text)    
 
     def _client_status_changed(self, status: int):
-        if status == ray.ClientStatus.REMOVED:
+        if status is ray.ClientStatus.REMOVED:
             self.reject()
             
         self._change_box_text_with_status(status)
@@ -1032,11 +1032,11 @@ class SnapShotProgressDialog(ChildDialog):
         self.ui.setupUi(self)
         self.signaler.server_progress.connect(self.server_progress)
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         self.close()
 
-    def server_progress(self, value):
-        self.ui.progressBar.setValue(value * 100)
+    def server_progress(self, value: float):
+        self.ui.progressBar.setValue(int(value * 100))
 
 
 class ScriptInfoDialog(ChildDialog):
@@ -1212,8 +1212,8 @@ class WaitingCloseUserDialog(ChildDialog):
         self.ui.checkBox.setChecked(not RS.is_hidden(RS.HD_WaitCloseUser))
         self.ui.checkBox.clicked.connect(self._check_box_clicked)
 
-    def _server_status_changed(self, server_status):
-        if server_status != ray.ServerStatus.WAIT_USER:
+    def _server_status_changed(self, server_status: ray.ServerStatus):
+        if server_status is not ray.ServerStatus.WAIT_USER:
             self.accept()
 
     def _undo_close(self):
@@ -1289,8 +1289,8 @@ class StartupDialog(ChildDialog):
 
         self.ui.listWidgetRecentSessions.setFocus(Qt.OtherFocusReason)
 
-    def _server_status_changed(self, server_status):
-        if server_status != ray.ServerStatus.OFF:
+    def _server_status_changed(self, server_status: ray.ServerStatus):
+        if server_status is not ray.ServerStatus.OFF:
             self.reject()
 
     def _new_session_clicked(self):

@@ -1,9 +1,8 @@
 
 
 import argparse
-from asyncio.log import logger
 from dataclasses import dataclass
-from enum import IntEnum
+from enum import Enum, IntEnum, Flag
 from typing import TYPE_CHECKING, Optional
 try:
     import liblo
@@ -15,6 +14,7 @@ import socket
 import subprocess
 import sys
 import logging
+from pathlib import Path
 
 try:
     from liblo import Server, Address
@@ -24,19 +24,15 @@ from PyQt5.QtCore import QT_VERSION_STR, QSettings
 
 _logger = logging.getLogger(__name__)
 
-# get qt version in list of ints
-QT_VERSION = []
-for strdigit in QT_VERSION_STR.split('.'):
-    QT_VERSION.append(int(strdigit))
-
-QT_VERSION = tuple(QT_VERSION)
+# get qt version in tuple of ints
+QT_VERSION = tuple([int(s) for s in QT_VERSION_STR.split('.')])
 
 if QT_VERSION < (5, 6):
     sys.stderr.write(
         "WARNING: You are using a version of QT older than 5.6.\n"
         + "You won't be warned if a process can't be launch.\n")
 
-VERSION = "0.14.4"
+VERSION = "0.15.0"
 
 APP_TITLE = 'RaySession'
 DEFAULT_SESSION_ROOT = "%s/Ray Sessions" % os.getenv('HOME')
@@ -50,17 +46,37 @@ GIT_IGNORED_EXTENSIONS = ".wav .flac .ogg .mp3 .mp4 .avi .mkv .peak .m4a .pdf"
 
 
 
-class PrefixMode:
+class PrefixMode(Enum):
     CUSTOM = 0
     CLIENT_NAME = 1
     SESSION_NAME = 2
+    
+    @classmethod
+    def _missing_(cls, value: object) -> 'PrefixMode':
+        if isinstance(value, str):
+            if value.lower() == 'client_name':
+                return PrefixMode.CLIENT_NAME
+            if value.lower() == 'session_name':
+                return PrefixMode.SESSION_NAME
+            if value.lower() == 'custom':
+                return PrefixMode.CUSTOM
+        return PrefixMode.CLIENT_NAME
 
 
-class JackNaming:
+class JackNaming(Enum):
     SHORT = 0
     LONG = 1
+    
+    @classmethod
+    def _missing_(cls, value: object) -> 'JackNaming':
+        return JackNaming.LONG
 
-class ClientStatus:
+
+class ClientStatus(Enum):    
+    INVALID = -1
+    '''This status should never appears. It is the defaut value
+    from an int non existing in other values.'''
+    
     STOPPED = 0
     LAUNCH = 1
     OPEN = 2
@@ -77,8 +93,16 @@ class ClientStatus:
     SCRIPT = 13
     LOSE = 14
 
+    @classmethod
+    def _missing_(cls, value) -> 'ClientStatus':
+        return ClientStatus.INVALID
+        
 
-class ServerStatus:
+class ServerStatus(Enum):
+    INVALID = -1
+    '''This status should never appears. It is the defaut value
+    from an int non existing in other values.'''
+    
     OFF = 0
     NEW = 1
     OPEN = 2
@@ -96,21 +120,39 @@ class ServerStatus:
     OUT_SAVE = 14
     OUT_SNAPSHOT = 15
     SCRIPT = 16
+    
+    @classmethod
+    def _missing_(cls, value) -> 'ServerStatus':
+        return ServerStatus.INVALID
 
 
-class NSMMode:
-    NO_NSM = 0
-    CHILD = 1
-    NETWORK = 2
-
-
-class Protocol:
+class Protocol(Enum):
     NSM = 0
     RAY_HACK = 1
     RAY_NET = 2
+    
+    @classmethod
+    def _missing_(cls, value) -> 'Protocol':
+        return Protocol.NSM
+    
+    def to_string(self) -> str:
+        if self is self.RAY_HACK:
+            return "Ray-Hack"
+        if self is self.RAY_NET:
+            return "Ray-Net"
+        return "NSM"
+    
+    @staticmethod
+    def from_string(string: str) -> 'Protocol':
+        if string.lower() in ('ray_hack', 'ray-hack'):
+            return Protocol.RAY_HACK
+        if string.lower() in ('ray_net', 'ray-net'):
+            return Protocol.RAY_NET
+        return Protocol.NSM
 
 
-class Option:
+class Option(Flag):
+    NONE = 0x00
     NSM_LOCKED = 0x001
     SAVE_FROM_CLIENT = 0x002 #DEPRECATED
     BOOKMARK_SESSION = 0x004
@@ -120,9 +162,16 @@ class Option:
     SNAPSHOTS = 0x040
     SESSION_SCRIPTS = 0x080
     GUI_STATES = 0x100
+    
+    @classmethod
+    def _missing_(cls, value) -> 'Option':
+        try:
+            return super()._missing_(value)
+        except:
+            return Option.NONE 
 
 
-class Err:
+class Err(IntEnum):
     OK = 0
     GENERAL_ERROR = -1
     INCOMPATIBLE_API = -2
@@ -148,7 +197,7 @@ class Err:
     # check control/osc_server.py in case of changes !!!
 
 
-class Command:
+class Command(Enum):
     NONE = 0
     START = 1
     OPEN = 2
@@ -156,7 +205,7 @@ class Command:
     STOP = 4
 
 
-class WaitFor:
+class WaitFor(Enum):
     NONE = 0
     QUIT = 1
     STOP_ONE = 2
@@ -167,7 +216,7 @@ class WaitFor:
     SCRIPT_QUIT = 7
 
 
-class Template(IntEnum):
+class Template(Enum):
     NONE = 0
     RENAME = 1
     SESSION_SAVE = 2
@@ -178,23 +227,32 @@ class Template(IntEnum):
     CLIENT_LOAD = 7
 
 
-class SwitchState:
+class SwitchState(Enum):
     NONE = 0
     RESERVED = 1
     NEEDED = 2
     DONE = 3
 
 
-class WindowManager:
+class WindowManager(Enum):
     NONE = 0
     X = 1
     WAYLAND = 2
 
 
-class Systray:
+class Systray(Enum):
     OFF = 0
     SESSION_ONLY = 1
     ALWAYS = 2
+
+
+class ScriptFile(Flag):
+    PREVENT = 0x0
+    PARENT = 0x1
+    LOAD = 0x2
+    SAVE = 0x4
+    CLOSE = 0x8
+    
 
 @dataclass
 class Favorite:
@@ -204,31 +262,7 @@ class Favorite:
     display_name: str
 
 
-class ScriptFile:
-    PREVENT = 0x0
-    PARENT = 0x1
-    LOAD = 0x2
-    SAVE = 0x4
-    CLOSE = 0x8
-
-    @classmethod
-    def by_string(cls, action: str) -> int:
-        if action == 'load':
-            return cls.LOAD
-        if action == 'save':
-            return cls.SAVE
-        if action == 'close':
-            return cls.CLOSE
-        return cls.PREVENT
-
-debug = False
-
-
-def ifDebug(string):
-    if debug:
-        sys.stderr.write("%s\n" % string)
-
-def version_to_tuple(version_str: str):
+def version_to_tuple(version_str: str) -> tuple[int]:
     version_list = []
     for c in version_str.split('.'):
         if not c.isdigit():
@@ -240,10 +274,15 @@ def version_to_tuple(version_str: str):
 def add_self_bin_to_path():
     # Add RaySession/src/bin to $PATH to can use ray executables after make
     # Warning, will works only if link to this file is in RaySession/*/*/*.py
-    this_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
-    bin_path = "%s/bin" % os.path.dirname(this_path)
-    if not os.environ['PATH'].startswith("%s:" % bin_path):
-        os.environ['PATH'] = "%s:%s" % (bin_path, os.environ['PATH'])
+    bin_path = Path(__file__).parent.parent / 'bin'
+    path_env = os.getenv('PATH')
+    if path_env is None:
+        # if it happens, very few chances that system works correctly
+        os.environ['PATH'] = f'{bin_path}'
+        return
+    
+    if str(bin_path) not in path_env.split(':'):
+        os.environ['PATH'] = f'{bin_path}:{path_env}'
 
 def get_list_in_settings(settings: QSettings, path: str) -> list:
     # getting a QSettings value of list type seems to not works the same way
@@ -305,9 +344,8 @@ def is_osc_port_free(port: int) -> bool:
     del testport
     return True
 
-
 def get_free_osc_port(default=16187):
-    ''' get a free OSC port for daemon, start from default '''
+    '''get a free OSC port for daemon, start from default'''
 
     if default >= 65536:
         default = 16187
@@ -377,9 +415,10 @@ def get_liblo_address_from_port(port:int) -> Optional[liblo.Address]:
             msg = "%i is an unknown osc port" % port
             raise argparse.ArgumentTypeError(msg)
 
-def are_same_osc_port(url1, url2):
+def are_same_osc_port(url1: str, url2: str) -> bool:
     if url1 == url2:
         return True
+
     try:
         address1 = Address(url1)
         address2 = Address(url2)
@@ -394,7 +433,7 @@ def are_same_osc_port(url1, url2):
 
     return False
 
-def are_on_same_machine(url1, url2):
+def are_on_same_machine(url1: str, url2: str) -> bool:
     if url1 == url2:
         return True
 
@@ -445,14 +484,14 @@ def are_on_same_machine(url1, url2):
 
     return False
 
-def get_net_url(port) -> str:
+def get_net_url(port: int) -> str:
     ip = Machine192.get()
     if not ip:
         return ''
 
     return "osc.udp://%s:%i/" % (ip, port)
 
-def shell_line_to_args(string:str) -> list:
+def shell_line_to_args(string: str) -> list:
     try:
         args = shlex.split(string)
     except BaseException:
@@ -460,15 +499,9 @@ def shell_line_to_args(string:str) -> list:
 
     return args
 
-def types_are_all_strings(types:str) -> bool:
+def types_are_all_strings(types: str) -> bool:
     for char in types:
         if char != 's':
-            return False
-    return True
-
-def are_they_all_strings(args:list) -> bool:
-    for arg in args:
-        if not isinstance(arg, str):
             return False
     return True
 
@@ -480,20 +513,6 @@ def get_window_manager() -> WindowManager:
         return WindowManager.X
 
     return WindowManager.NONE
-
-def protocol_to_str(protocol: int) -> str:
-    if protocol == Protocol.RAY_HACK:
-        return "Ray-Hack"
-    if protocol == Protocol.RAY_NET:
-        return "Ray-Net"
-    return "NSM"
-
-def protocol_from_str(protocol_str: str) -> int:
-    if protocol_str.lower() in ('ray_hack', 'ray-hack'):
-        return Protocol.RAY_HACK
-    elif protocol_str.lower() in ('ray_net', 'ray-net'):
-        return Protocol.RAY_NET
-    return Protocol.NSM
 
 
 class Machine192:
@@ -550,7 +569,7 @@ class ClientData:
     ignored_extensions = GIT_IGNORED_EXTENSIONS
     template_origin = ''
     jack_client_name = ''
-    jack_naming = 0
+    jack_naming = JackNaming.SHORT
     in_terminal = False
     ray_hack: 'RayHack' = None
     ray_net: 'RayNet' = None
@@ -567,21 +586,21 @@ class ClientData:
 
     @staticmethod
     def spread_client(client: 'ClientData') -> tuple:
-        return (client.client_id, client.protocol,
+        return (client.client_id, client.protocol.value,
                 client.executable_path, client.arguments, client.pre_env,
-                client.name, client.prefix_mode, client.custom_prefix,
+                client.name, client.prefix_mode.value, client.custom_prefix,
                 client.desktop_file, client.label, client.description,
                 client.icon,
                 client.capabilities, int(client.check_last_save),
                 client.ignored_extensions,
                 client.template_origin,
-                client.jack_client_name, client.jack_naming,
+                client.jack_client_name, client.jack_naming.value,
                 int(client.in_terminal))
 
-    def set_ray_hack(self, ray_hack):
+    def set_ray_hack(self, ray_hack: 'RayHack'):
         self.ray_hack = ray_hack
 
-    def set_ray_net(self, ray_net):
+    def set_ray_net(self, ray_net: 'RayNet'):
         self.ray_net = ray_net
 
     def update(self, client_id, protocol,
@@ -607,7 +626,7 @@ class ClientData:
         self.check_last_save = bool(check_last_save)
         self.ignored_extensions = str(ignored_extensions)
         self.template_origin = template_origin
-        self.jack_naming = jack_naming
+        self.jack_naming = JackNaming(jack_naming)
         self.in_terminal = bool(in_terminal)
 
         if secure:
@@ -616,14 +635,14 @@ class ClientData:
         # Now, if message is 'unsecure' only.
         # change things that can't be changed normally
         self.client_id = str(client_id)
-        self.protocol = int(protocol)
+        self.protocol = Protocol(protocol)
         if name:
             self.name = str(name)
         else:
             self.name = os.path.basename(self.executable_path)
-        self.prefix_mode = int(prefix_mode)
+        self.prefix_mode = PrefixMode(prefix_mode)
 
-        if self.prefix_mode == PrefixMode.CUSTOM:
+        if self.prefix_mode is PrefixMode.CUSTOM:
             if custom_prefix:
                 self.custom_prefix = str(custom_prefix)
             else:
@@ -641,7 +660,7 @@ class ClientData:
     def prettier_name(self) -> str:
         if self.label:
             return self.label
-        if (self.protocol != Protocol.RAY_HACK
+        if (self.protocol is not Protocol.RAY_HACK
                 and self.name):
             return self.name
         return self.executable_path
@@ -718,214 +737,3 @@ class RayNet:
     def spread(self)->tuple:
         return (self.daemon_url, self.session_root, self.session_template)
 
-
-class GroupPosition:
-    port_types_view = 3
-    group_name = ''
-    null_zone = ''
-    in_zone = ''
-    out_zone = ''
-    null_xy = (0, 0)
-    in_xy = (0, 0)
-    out_xy = (0, 0)
-    flags = 0
-    layout_mode = 0
-    fully_set = True
-    
-    @staticmethod
-    def get_attributes():
-        return ('port_types_view', 'group_name',
-                'null_zone', 'in_zone', 'out_zone',
-                'null_xy', 'in_xy', 'out_xy', 'flags',
-                'layout_mode')
-    
-    @staticmethod
-    def sisi():
-        return 'issssiiiiiiii'
-    
-    @staticmethod
-    def new_from(*args):
-        group_position = GroupPosition()
-        group_position.update(*args)
-        return group_position
-    
-    def write_from_dict(self, input_dict: dict):
-        for attr in input_dict:
-            if not attr in self.get_attributes():
-                sys.stderr.write(
-                    'group position has no attribute %s\n' % attr)
-                continue
-            
-            value = input_dict[attr]
-            attr_type = type(value)
-            if attr in ('port_types_view', 'flags'):
-                if attr_type != int:
-                    continue
-            elif attr in ('group_name', 'null_zone', 'in_zone', 'out_zone'):
-                if attr_type != str:
-                    continue
-            elif attr in ('null_xy', 'in_xy', 'out_xy'):
-                if attr_type not in (list, tuple):
-                    continue
-                value = tuple(value)
-            
-            self.__setattr__(attr, value)
-    
-    def is_same(self, other: 'GroupPosition') -> bool:
-        if (self.port_types_view == other.port_types_view
-                and self.group_name == other.group_name):
-            return True
-        
-        return False
-    
-    def update(self, port_types_view: int, group_name: str,
-               null_zone: str, in_zone: str, out_zone: str,
-               null_x: int, null_y: int, in_x: int, in_y: int,
-               out_x: int, out_y: int, flags: int, layout_mode: int):
-        
-        for string in (group_name, null_zone, in_zone, out_zone):
-            if not isinstance(string, str):
-                return 
-        
-        for digit in (port_types_view, null_x, null_y, in_x, in_y,
-                      out_x, out_y, flags, layout_mode):
-            if isinstance(digit, int):
-                continue
-
-            if not isinstance(digit, str):
-                return
-            
-            if (digit.isdigit()
-                    or (digit.startswith('-')
-                        and digit.replace('-', '', 1).isdigit())):
-                continue
-            else:
-                return
-
-        self.port_types_view = port_types_view
-        self.group_name = group_name
-        self.null_zone = null_zone
-        self.in_zone = in_zone
-        self.out_zone = out_zone
-        self.null_xy = (int(null_x), int(null_y))
-        self.in_xy = (int(in_x), int(in_y))
-        self.out_xy = (int(out_x), int(out_y))
-        self.flags = int(flags)
-        self.layout_mode = int(layout_mode)
-        
-    def spread(self) -> tuple:
-        return (self.port_types_view, self.group_name,
-                self.null_zone, self.in_zone, self.out_zone,
-                self.null_xy[0], self.null_xy[1], self.in_xy[0], self.in_xy[1],
-                self.out_xy[0], self.out_xy[1], self.flags,
-                self.layout_mode)
-    
-    def to_dict(self) -> dict:
-        new_dict = {}
-        
-        for attr in self.__dir__():
-            if attr in self.get_attributes():
-                new_dict[attr] = self.__getattribute__(attr)
-        
-        return new_dict
-    
-    def get_str_value(self, attr: str)->str:
-        if attr not in self.get_attributes():
-            return ''
-        
-        return str(self.__getattribute__(attr))
-    
-    def set_layout_mode(self, port_mode: int, layout_mode: int):
-        if not (1 <= port_mode <= 3 or 0 <= layout_mode <= 2):
-            logger.warning(
-                "group position set_layout_mode, wrong port mode or layout mode")
-            return
-
-        layout_mode_str = "%03d" % self.layout_mode
-        new_string = ''
-        for i in range(len(layout_mode_str)):
-            if i == 3 - port_mode:
-                new_string += str(layout_mode)
-            else:
-                new_string += layout_mode_str[i]
-        
-        self.layout_mode = int(new_string)
-        
-    def get_layout_mode(self, port_mode: int) -> int:
-        if not(1 <= port_mode <= 3):
-            return 0
-        
-        layout_mode_str = "%03d" % self.layout_mode
-        return int(layout_mode_str[3 - port_mode])
-
-
-class PortGroupMemory:
-    group_name = ''
-    port_type = 0
-    port_mode = 0
-    port_names = list[str]()
-    above_metadatas = False
-    
-    @staticmethod
-    def get_attributes():
-        return ('group_name', 'port_type', 'port_mode',
-                'above_metadatas', 'port_names')
-    
-    @staticmethod
-    def new_from(*args):
-        portgrp_memory = PortGroupMemory()
-        portgrp_memory.update(*args)
-        return portgrp_memory
-    
-    def write_from_dict(self, input_dict: dict):
-        for attr in input_dict:
-            if not attr in self.get_attributes():
-                sys.stderr.write(
-                    'PortGroupMemory has no attribute %s\n' % attr)
-                continue
-
-            value = input_dict[attr]
-            attr_type = type(value)
-            if value == 'group_name' and attr_type != str:
-                continue
-            if value in ('port_type', 'port_mode') and attr_type != int:
-                continue
-            if value == 'above_metadatas' and attr_type != bool:
-                continue
-            if value == 'port_names' and attr_type not in (tuple, list):
-                continue
-
-            self.__setattr__(attr, value)
-    
-    def update(self, group_name: str, port_type: int, port_mode: int,
-               above_metadatas: int, *port_names):
-        self.group_name = group_name
-        self.port_type = port_type
-        self.port_mode = port_mode
-        self.above_metadatas = bool(above_metadatas)
-        self.port_names = port_names
-    
-    def spread(self)->tuple:
-        return (self.group_name, self.port_type, self.port_mode,
-                int(self.above_metadatas), *self.port_names)
-    
-    def to_dict(self)->dict:
-        new_dict = {}
-        
-        for attr in self.__dir__():
-            if attr in self.get_attributes():
-                new_dict[attr] = self.__getattribute__(attr)
-        
-        return new_dict
-    
-    def has_a_common_port_with(self, other: 'PortGroupMemory') -> bool:
-        if (self.port_type != other.port_type
-                or self.port_mode != other.port_mode
-                or self.group_name != other.group_name):
-            return False
-        
-        for port_name in self.port_names:
-            if port_name in other.port_names:
-                return True
-        
-        return False

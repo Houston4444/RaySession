@@ -36,8 +36,7 @@ from client import Client
 from scripter import StepScripter
 from canvas_saver import CanvasSaver
 from daemon_tools import (
-    TemplateRoots, RS, Terminal,
-    dirname, basename, highlight_text)
+    TemplateRoots, RS, Terminal, highlight_text)
 import ardour_templates
 import templates_database
 from xml_tools import XmlElement
@@ -50,7 +49,7 @@ signaler = Signaler.instance()
 
 
 class Session(ServerSender):
-    def __init__(self, root: str, session_id=0):
+    def __init__(self, root: Path, session_id=0):
         ServerSender.__init__(self)
         self.root = root
         self.is_dummy = False
@@ -60,11 +59,11 @@ class Session(ServerSender):
         self.future_clients = list[Client]()
         self.trashed_clients = list[Client]()
         self.future_trashed_clients = list[Client]()
-        self.recent_sessions = dict[str, list[str]]()
+        self.recent_sessions = dict[Path, list[str]]()
 
         self.name = ""
-        self.path = ""
-        self.future_session_path = ""
+        self.path: Optional[Path] = None
+        self.future_session_path = Path()
         self.future_session_name = ""
         self.notes = ""
         self.future_notes = ""
@@ -122,20 +121,20 @@ class Session(ServerSender):
         else:
             Terminal.message(string)
 
-    def _set_name(self, session_name: str):
-        self.name = session_name
-
-    def _set_path(self, session_path: str, session_name=''):
+    def _set_path(self, session_path: Optional[Path], session_name=''):
         if not self.is_dummy:
             if self.path:
                 self.bookmarker.remove_all(self.path)
 
-        self.path = session_path
-
-        if session_name:
-            self._set_name(session_name)
+        if session_path is None:
+            self.path = None
+            self.name = ''
         else:
-            self._set_name(session_path.rpartition('/')[2])
+            self.path = session_path
+            if session_name:
+                self.name = session_name
+            else:
+                self.name = session_path.name
 
         if self.is_dummy:
             return
@@ -145,39 +144,34 @@ class Session(ServerSender):
             multi_daemon_file.update()
 
         if self.path:
-            if (self.has_server_option(ray.Option.BOOKMARK_SESSION)):
+            if self.has_server_option(ray.Option.BOOKMARK_SESSION):
                 self.bookmarker.set_daemon_port(self.get_server_port())
                 self.bookmarker.make_all(self.path)
 
     def _no_future(self):
         self.future_clients.clear()
-        self.future_session_path = ''
+        self.future_session_path = Path()
         self.future_session_name = ''
         self.future_trashed_clients.clear()
         self.future_notes = ""
         self.future_notes_shown = False
 
-    def get_short_path(self):
-        if self.path.startswith("%s/" % self.root):
-            return self.path.replace("%s/" % self.root, '', 1)
-
+    def get_short_path(self) -> str:
+        if self.path is None:
+            return ''
+        
+        if self.path.is_relative_to(self.root):
+            return str(self.path.relative_to(self.root))
+        
         return self.name
 
-    def get_full_path(self, session_name: str) -> str:
-        spath = "%s%s%s" % (self.root, os.sep, session_name)
-
-        if session_name.startswith(os.sep):
-            spath = session_name
-
-        if spath.endswith(os.sep):
-            spath = spath[:-1]
-
-        return spath
-
     def remember_as_recent(self):
-        # put loaded session (if exists) in recent sessions
+        'put loaded session (if exists) in recent sessions'
+        if self.path is None:
+            return
+        
         if self.name and not self.is_dummy:
-            long_name = self.path.replace(self.root + '/', '', 1)
+            long_name = str(self.path.relative_to(self.root))
 
             if not self.root in self.recent_sessions.keys():
                 self.recent_sessions[self.root] = []
@@ -207,7 +201,7 @@ class Session(ServerSender):
     def _new_client(self, executable: str, client_id=None)->Client:
         client = Client(self)
         client.executable_path = executable
-        client.name = basename(executable)
+        client.name = Path(executable).name
         client.client_id = client_id
         if not client_id:
             client.client_id = self.generate_client_id(executable)
@@ -275,18 +269,18 @@ class Session(ServerSender):
         return False
 
     def _update_forbidden_ids_set(self):
-        if not self.path:
+        if self.path is None:
             return
 
         self.forbidden_ids_set.clear()
 
-        for file in os.listdir(self.path):
-            if os.path.isdir("%s/%s" % (self.path, file)) and '.' in file:
-                client_id = file.rpartition('.')[2]
+        for file in self.path.iterdir():
+            if file.is_dir() and '.' in file.name:
+                client_id = file.name.rpartition('.')[2]
                 self.forbidden_ids_set.add(client_id)
-
-            elif os.path.isfile("%s/%s" % (self.path, file)) and '.' in file:
-                for string in file.split('.')[1:]:
+                
+            elif file.is_file() and '.' in file.name:
+                for string in file.name.split('.')[1:]:
                     self.forbidden_ids_set.add(string)
 
         for client in self.clients + self.trashed_clients:
@@ -300,21 +294,17 @@ class Session(ServerSender):
         return client_id
 
     def _save_session_file(self) -> int:
-        session_path = Path(self.path)
-        # session_file = self.path + '/raysession.xml'
+        if self.path is None:
+            return
+        
+        session_path = self.path
         session_file = session_path / 'raysession.xml'
 
         if self.is_nsm_locked() and os.getenv('NSM_URL'):
-            # session_file = self.path + '/raysubsession.xml'
             session_file = session_path / 'raysubsession.xml'
 
         if session_file.is_file() and not os.access(session_file, os.W_OK):
             return ray.Err.CREATE_FAILED
-
-        # if (os.path.isfile(session_file)
-        #         and not os.access(session_file, os.W_OK)):
-        #     return ray.Err.CREATE_FAILED
-
 
         root = ET.Element('RAYSESSION')
         xroot = XmlElement(root)
@@ -422,7 +412,7 @@ class Session(ServerSender):
 
     def generate_client_id(self, wanted_id="", abstract=False) -> str:
         self._update_forbidden_ids_set()
-        wanted_id = basename(wanted_id)
+        wanted_id = Path(wanted_id).name
 
         if wanted_id:
             wanted_id = self.generate_abstract_client_id(wanted_id)
@@ -456,14 +446,14 @@ class Session(ServerSender):
         return client_id
 
     def _add_client(self, client: Client) -> bool:
-        if self.load_locked or not self.path:
+        if self.load_locked or self.path is None:
             return False
 
         if client.is_ray_hack():
             project_path = client.get_project_path()
-            if not os.path.isdir(project_path):
+            if not project_path.is_dir():
                 try:
-                    os.makedirs(project_path)
+                    project_path.mkdir(parents=True)
                 except:
                     return False
 
@@ -502,16 +492,17 @@ class Session(ServerSender):
         self.send_gui('/ray/gui/session/sort_clients',
                       *[c.client_id for c in self.clients])
 
-    def _is_path_in_a_session_dir(self, spath: str):
+    def _is_path_in_a_session_dir(self, spath: Path):
         if self.is_nsm_locked() and os.getenv('NSM_URL'):
             return False
 
         base_path = spath
-        while not base_path in ('/', ''):
-            base_path = dirname(base_path)
-            if os.path.isfile("%s/raysession.xml" % base_path):
+        
+        while base_path.parent != base_path:
+            base_path = base_path.parent
+            if Path(base_path / 'raysession.xml').is_file():
                 return True
-
+            
         return False
 
     def export_user_client_template(self, src_addr, template_name:str,
@@ -626,7 +617,7 @@ class Session(ServerSender):
 
 
 class OperatingSession(Session):
-    def __init__(self, root, session_id=0):
+    def __init__(self, root: Path, session_id=0):
         Session.__init__(self, root, session_id)
         self.wait_for = ray.WaitFor.NONE
 
@@ -684,7 +675,9 @@ class OperatingSession(Session):
         self.osc_path = ''
         self.osc_args.clear()
 
-    def _wait_and_go_to(self, duration: int, follow, wait_for: int, redondant=False):
+    def _wait_and_go_to(
+            self, duration: int, follow: Union[tuple, list, Callable],
+            wait_for: ray.WaitFor, redondant=False):
         self.timer.stop()
 
         # we need to delete timer to change the timeout connect
@@ -700,7 +693,7 @@ class OperatingSession(Session):
             else:
                 follow = functools.partial(follow[0], *follow[1:])
 
-        if wait_for == ray.WaitFor.SCRIPT_QUIT:
+        if wait_for is ray.WaitFor.SCRIPT_QUIT:
             if self.step_scripter.is_running():
                 self.wait_for = wait_for
                 self.timer.setSingleShot(True)
@@ -713,7 +706,7 @@ class OperatingSession(Session):
         if self.expected_clients:
             n_expected = len(self.expected_clients)
 
-            if wait_for == ray.WaitFor.ANNOUNCE:
+            if wait_for is ray.WaitFor.ANNOUNCE:
                 if n_expected == 1:
                     message = _translate('GUIMSG',
                         'waiting announce from %s...'
@@ -722,7 +715,7 @@ class OperatingSession(Session):
                     message = _translate('GUIMSG',
                         'waiting announce from %i clients...' % n_expected)
                 self.send_gui_message(message)
-            elif wait_for == ray.WaitFor.QUIT:
+            elif wait_for is ray.WaitFor.QUIT:
                 if n_expected == 1:
                     message = _translate('GUIMSG',
                         'waiting for %s to stop...'
@@ -741,8 +734,8 @@ class OperatingSession(Session):
         else:
             follow()
 
-    def end_timer_if_last_expected(self, client):
-        if self.wait_for == ray.WaitFor.QUIT and client in self.clients:
+    def end_timer_if_last_expected(self, client: Client):
+        if self.wait_for is ray.WaitFor.QUIT and client in self.clients:
             self._remove_client(client)
 
         if client in self.expected_clients:
@@ -768,12 +761,12 @@ class OperatingSession(Session):
             for client in self.expected_clients:
                 client_names.append(client.gui_msg_style())
 
-            if self.wait_for == ray.WaitFor.ANNOUNCE:
+            if self.wait_for is ray.WaitFor.ANNOUNCE:
                 self.send_gui_message(
                     _translate('GUIMSG', "%s didn't announce.")
                         % ', '.join(client_names))
 
-            elif self.wait_for == ray.WaitFor.QUIT:
+            elif self.wait_for is ray.WaitFor.QUIT:
                 self.send_gui_message(_translate('GUIMSG', "%s still alive !")
                                     % ', '.join(client_names))
 
@@ -805,7 +798,7 @@ class OperatingSession(Session):
 
         if (self.has_server_option(ray.Option.SESSION_SCRIPTS)
                 and not self.step_scripter.is_running()
-                and self.path and not from_run_step):
+                and self.path is not None and not from_run_step):
             for step_string in ('load', 'save', 'close'):
                 if next_function == self.__getattribute__(step_string):
                     if (step_string == 'load'
@@ -881,7 +874,7 @@ class OperatingSession(Session):
             
             elif (client.is_running()
                     and client.launched_in_terminal
-                    and client.status != ray.ClientStatus.LOSE):
+                    and client.status is not ray.ClientStatus.LOSE):
                 has_alives = True
                 if (client.nsm_active
                         and not os.path.exists('/proc/%i' % client.pid_from_nsm)):
@@ -935,7 +928,7 @@ class OperatingSession(Session):
                              self.osc_path, err, error_message)
 
     def step_scripter_finished(self):
-        if self.wait_for == ray.WaitFor.SCRIPT_QUIT:
+        if self.wait_for is ray.WaitFor.SCRIPT_QUIT:
             self.timer.setSingleShot(True)
             self.timer.stop()
             self.timer.start(0)
@@ -967,7 +960,7 @@ class OperatingSession(Session):
         if new_session_short_path.is_absolute():
             spath = new_session_short_path
         else:
-            spath = Path(self.root) / new_session_short_path
+            spath = self.root / new_session_short_path
 
         # create tmp clients from raysession.xml to adjust files after copy
         session_file = spath / 'raysession.xml'
@@ -1024,7 +1017,7 @@ class OperatingSession(Session):
     # save_substep1 is launched.
 
     def save(self, outing=False, save_clients=True):
-        if not self.path:
+        if self.path is None:
             self.next_function()
             return
 
@@ -1066,7 +1059,7 @@ class OperatingSession(Session):
                         "Some clients could not save")
                     break
 
-        if not self.path:
+        if self.path is None:
             self.next_function()
             return
 
@@ -1077,19 +1070,18 @@ class OperatingSession(Session):
 
         self.canvas_saver.save_json_session_canvas(self.path)
 
-        full_notes_path = "%s/%s" % (self.path, ray.NOTES_PATH)
+        full_notes_path = self.path / ray.NOTES_PATH
 
         if self.notes:
             try:
-                notes_file = open(full_notes_path, 'w')
-                notes_file.write(self.notes)
-                notes_file.close()
+                with open(full_notes_path, 'w') as notes_file:
+                    notes_file.write(self.notes)
             except:
-                self.message("unable to save notes in %s"
-                                 % full_notes_path)
-        elif os.path.isfile(full_notes_path):
+                self.message("unable to save notes in %s" % full_notes_path)
+
+        elif full_notes_path.is_file():
             try:
-                os.remove(full_notes_path)
+                full_notes_path.unlink()
             except:
                 self.message("unable to remove %s" % full_notes_path)
 
@@ -1225,7 +1217,7 @@ class OperatingSession(Session):
     def close(self, clear_all_clients=False):
         self.expected_clients.clear()
 
-        if not self.path:
+        if self.path is None:
             self.next_function()
             return
 
@@ -1308,13 +1300,15 @@ class OperatingSession(Session):
             self.remember_as_recent()
 
         if clear_all_clients:
-            self._set_path('')
+            self._set_path(None)
+            
         self.next_function()
 
     def close_done(self):
+        self.canvas_saver.unload_session()
         self._clean_expected()
         self.clients.clear()
-        self._set_path('')
+        self._set_path(None)
         self.send_gui('/ray/gui/session/name', '', '')
         self.send_gui('/ray/gui/session/notes', '')
         self.send_gui('/ray/gui/session/notes_hidden')
@@ -1327,7 +1321,7 @@ class OperatingSession(Session):
     def abort_done(self):
         self._clean_expected()
         self.clients.clear()
-        self._set_path('')
+        self._set_path(None)
         self.send_gui('/ray/gui/session/name', '', '')
         self.send_gui('/ray/gui/notes', '')
         self.send_gui('/ray/gui/session/notes_hidden')
@@ -1337,11 +1331,11 @@ class OperatingSession(Session):
         self.set_server_status(ray.ServerStatus.OFF)
         self._forget_osc_args()
 
-    def new(self, new_session_name):
+    def new(self, new_session_name: str):
         self.send_gui_message(
             _translate('GUIMSG', "Creating new session \"%s\"")
             % new_session_name)
-        spath = self.get_full_path(new_session_name)
+        spath = self.root / new_session_name
 
         if self._is_path_in_a_session_dir(spath):
             self._send_error(
@@ -1351,7 +1345,7 @@ for better organization.""")
             return
 
         try:
-            os.makedirs(spath)
+            spath.mkdir(parents=True)
         except:
             self._send_error(ray.Err.CREATE_FAILED,
                              "Could not create the session directory")
@@ -1360,7 +1354,7 @@ for better organization.""")
         self.set_server_status(ray.ServerStatus.NEW)
         self._set_path(spath)
         self.send_gui("/ray/gui/session/name",
-                      self.name, self.path)
+                      self.name, str(self.path))
         self.next_function()
 
     def new_done(self):
@@ -1369,7 +1363,7 @@ for better organization.""")
         self.set_server_status(ray.ServerStatus.READY)
         self._forget_osc_args()
 
-    def init_snapshot(self, spath, snapshot):
+    def init_snapshot(self, spath: Path, snapshot: str):
         self.set_server_status(ray.ServerStatus.REWIND)
         if self.snapshoter.load(spath, snapshot, self.init_snapshot_error):
             self.next_function()
@@ -1409,7 +1403,7 @@ for better organization.""")
                highlight_text(new_session_full_name)))
 
         for client in self.clients:
-            if client.protocol == ray.Protocol.RAY_NET:
+            if client.protocol is ray.Protocol.RAY_NET:
                 client.ray_net.duplicate_state = -1
                 if (client.ray_net.daemon_url
                         and ray.is_valid_osc_url(client.ray_net.daemon_url)):
@@ -1432,9 +1426,8 @@ for better organization.""")
             ray.WaitFor.DUPLICATE_START)
 
     def duplicate_substep1(self, new_session_full_name: str):
-        spath = self.get_full_path(new_session_full_name)
+        spath = self.root / new_session_full_name
         self.set_server_status(ray.ServerStatus.COPY)
-
         self.send_gui_message(_translate('GUIMSG', 'start session copy...'))
 
         # lock the directory of the new session created
@@ -1452,7 +1445,7 @@ for better organization.""")
         
         self.send_gui_message(_translate('GUIMSG', '...session copy finished.'))
         for client in self.clients:
-            if (client.protocol == ray.Protocol.RAY_NET
+            if (client.protocol is ray.Protocol.RAY_NET
                     and 0 <= client.ray_net.duplicate_state < 1):
                 self.expected_clients.append(client)
 
@@ -1473,18 +1466,18 @@ for better organization.""")
         multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
             multi_daemon_file.unlock_path(
-                self.get_full_path(new_session_full_name))
+                self.root / new_session_full_name)
         
         self.next_function()
 
-    def duplicate_aborted(self, new_session_full_name):
+    def duplicate_aborted(self, new_session_full_name: str):
         self.steps_order.clear()
 
         # unlock the directory of the aborted session
         multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
             multi_daemon_file.unlock_path(
-                self.get_full_path(new_session_full_name))
+                self.root / new_session_full_name)
 
         if self.osc_path == '/nsm/server/duplicate':
             # for nsm server control API compatibility
@@ -1502,13 +1495,12 @@ for better organization.""")
         template_root = TemplateRoots.user_sessions
 
         if net:
-            template_root = "%s/%s" \
-                            % (self.root, TemplateRoots.net_session_name)
+            template_root = self.root / TemplateRoots.net_session_name
 
-        spath = "%s/%s" % (template_root, template_name)
+        spath = template_root / template_name
 
         #overwrite existing template
-        if os.path.isdir(spath):
+        if spath.is_dir():            
             if not os.access(spath, os.W_OK):
                 self._send_error(
                     ray.Err.GENERAL_ERROR,
@@ -1519,10 +1511,10 @@ for better organization.""")
                 self.set_server_status(ray.ServerStatus.READY)
                 return
 
-            shutil.rmtree(spath)
+            spath.rmdir()
 
-        if not os.path.exists(template_root):
-            os.makedirs(template_root)
+        if not template_root.exists():
+            template_root.mkdir(parents=True)
 
         # For network sessions,
         # save as template the network session only
@@ -1534,7 +1526,7 @@ for better organization.""")
         # on the machine where is the master daemon, for example).
 
         for client in self.clients:
-            if (client.protocol == ray.Protocol.RAY_NET
+            if (client.protocol is ray.Protocol.RAY_NET
                     and client.ray_net.daemon_url):
                 self.send(Address(client.ray_net.daemon_url),
                           '/ray/server/save_session_template',
@@ -1579,7 +1571,7 @@ for better organization.""")
         template_root = TemplateRoots.user_sessions
 
         if net:
-            template_root = Path(self.root) / TemplateRoots.net_session_name
+            template_root = self.root / TemplateRoots.net_session_name
 
         template_path = template_root / template_name
         is_factory = template_name.startswith('///')
@@ -1595,9 +1587,9 @@ for better organization.""")
             self.next_function()
             return
 
-        spath = self.get_full_path(new_session_full_name)
+        spath = self.root / new_session_full_name
 
-        if os.path.exists(spath):
+        if spath.exists():
             self._send_error(
                 ray.Err.CREATE_FAILED,
                 _translate("error", "Folder\n%s\nalready exists")
@@ -1622,7 +1614,7 @@ for better organization.""")
                        'start copy from template to session folder'))
 
         self.file_copier.start_session_copy(
-            str(template_path), spath,
+            template_path, spath,
             self.prepare_template_substep1,
             self.prepare_template_aborted,
             [new_session_full_name],
@@ -1640,12 +1632,12 @@ for better organization.""")
         else:
             self.set_server_status(ray.ServerStatus.OFF)
 
-            self._set_path('')
+            self._set_path(None)
             self.send_gui('/ray/gui/session/name', '', '')
 
-    def rename(self, new_session_name:str):
-        spath = "%s/%s" % (dirname(self.path), new_session_name)
-        if os.path.exists(spath):
+    def rename(self, new_session_name: str):
+        spath = self.path.parent / new_session_name
+        if spath.exists():        
             self._send_error(
                 ray.Err.CREATE_FAILED,
                 _translate('rename', "Folder %s already exists,")
@@ -1690,9 +1682,9 @@ for better organization.""")
         if session_short_path.is_absolute():
             spath = session_short_path
         else:
-            spath = Path(self.root) / session_short_path
+            spath = self.root / session_short_path
 
-        if spath == Path(self.path):
+        if spath == self.path:
             self.load_error(ray.Err.SESSION_LOCKED)
             return
 
@@ -1731,7 +1723,7 @@ for better organization.""")
             # session directory doesn't exists,
             # create this session.            
             
-            if self._is_path_in_a_session_dir(str(spath)):
+            if self._is_path_in_a_session_dir(spath):
                 # prevent to create a session in a session directory
                 # for better user organization
                 self.load_error(ray.Err.SESSION_IN_SESSION_DIR)
@@ -1863,7 +1855,8 @@ for better organization.""")
             nsm_file.close()
             self.send_gui('/ray/gui/session/is_nsm')
 
-        self.canvas_saver.load_json_session_canvas(spath)
+        if not self.is_dummy:
+            self.canvas_saver.load_json_session_canvas(spath)
 
         full_notes_path = spath / ray.NOTES_PATH
 
@@ -1874,20 +1867,21 @@ for better organization.""")
             self.future_notes = notes_file.read(65000)
             notes_file.close()
 
-        self.future_session_path = str(spath)
+        self.future_session_path = spath
         self.future_session_name = sess_name
-        self.switching_session = bool(self.path)
+        self.switching_session = bool(self.path is not None)
 
         self.next_function()
 
     def take_place(self):
-        self._set_path(self.future_session_path, self.future_session_name)
+        self._set_path(self.future_session_path,
+                       self.future_session_name)
 
-        if (self.name and self.name != basename(self.path)):
+        if self.name and self.name != self.path.name:
             # session folder has been renamed
             # so rename session to it
             for client in self.future_clients + self.future_trashed_clients:
-                client.adjust_files_after_copy(self.path, ray.Template.RENAME)
+                client.adjust_files_after_copy(str(self.path), ray.Template.RENAME)
             self._set_path(self.future_session_path)
             
             # session has been renamed and client files have been moved
@@ -1895,7 +1889,7 @@ for better organization.""")
             # find their files at reload (after session abort).
             self._save_session_file()
 
-        self.send_gui("/ray/gui/session/name", self.name, self.path)
+        self.send_gui("/ray/gui/session/name", self.name, str(self.path))
         self.trashed_clients.clear()
 
         self.notes = self.future_notes
@@ -1930,7 +1924,7 @@ for better organization.""")
             if (open_off
                     or not client.is_running()
                     or (client.is_reply_pending() and not client.is_dumb_client())
-                    or client.switch_state != ray.SwitchState.RESERVED):
+                    or client.switch_state is not ray.SwitchState.RESERVED):
                 self.clients_to_quit.append(client)
                 self.expected_clients.append(client)
             else:
@@ -1985,21 +1979,21 @@ for better organization.""")
             # This part needs care
             # we add future_clients to clients.
             # At this point,
-            # running clients waiting for switch have SwitchState NEEDED
-            # running clients already choosen for switch have SwitchState DONE
+            # running clients waiting for switch have SwitchState NEEDED,
+            # running clients already choosen for switch have SwitchState DONE,
             # clients just added from future clients without switch
-            #    have SwitchState NONE.
+            # have SwitchState NONE.
 
             if future_client.auto_start:
                 for client in self.clients:
-                    if (client.switch_state == ray.SwitchState.NEEDED
+                    if (client.switch_state is ray.SwitchState.NEEDED
                             and client.client_id == future_client.client_id
                             and client.can_switch_with(future_client)):
                         # we found the good existing client
                         break
                 else:
                     for client in self.clients:
-                        if (client.switch_state == ray.SwitchState.NEEDED
+                        if (client.switch_state is ray.SwitchState.NEEDED
                                 and client.can_switch_with(future_client)):
                             # we found a switchable client
                             break
@@ -2027,7 +2021,7 @@ for better organization.""")
             new_client_id_list.append(future_client.client_id)
 
         for client in self.clients:
-            if client.switch_state == ray.SwitchState.DONE:
+            if client.switch_state is ray.SwitchState.DONE:
                 client.switch()
 
         self._re_order_clients(new_client_id_list)
@@ -2120,7 +2114,7 @@ for better organization.""")
         self.send_gui_message(
             _translate('GUIMSG', 'session %s is loaded.')
             % highlight_text(self.get_short_path()))
-        self.send_gui("/ray/gui/session/name", self.name, self.path)
+        self.send_gui("/ray/gui/session/name", self.name, str(self.path))
 
         self.switching_session = False
 
@@ -2181,15 +2175,18 @@ for better organization.""")
 
     def exit_now(self):
         self.set_server_status(ray.ServerStatus.OFF)
-        self._set_path('')
+        self._set_path(None)
         self.message("Bye Bye...")
         self._send_reply("Bye Bye...")
         self.send_gui('/ray/gui/server/disannounce')
         QCoreApplication.quit()
 
     def add_client_template(self, src_addr, src_path,
-                            template_name, factory=False, auto_start=True,
+                            template_name: str, factory=False, auto_start=True,
                             unique_id=''):
+        if self.path is None:
+            return
+        
         base = 'factory' if factory else 'user'
         templates_database = self.get_client_templates_database(base)
 
@@ -2200,13 +2197,12 @@ for better organization.""")
 
         for t in templates_database:
             if t.template_name == template_name:
-                full_name_files = list[str]()
-                template_path = os.path.join(t.templates_root, template_name)
+                file_paths = list[Path]()
+                template_path = t.templates_root / template_name
 
-                if t.templates_root and os.path.isdir(template_path):
-                    for file in os.listdir(template_path):
-                        full_name_files.append(
-                            os.path.join(template_path, file))
+                if t.templates_root.name and template_path.is_dir():
+                    for file_path in template_path.iterdir():
+                        file_paths.append(file_path)
 
                 template_client = t.template_client
                 client = Client(self)
@@ -2239,7 +2235,7 @@ for better organization.""")
                     
                     ard_tp_copyed = ardour_templates.copy_template_to_session(
                         ard_tp_path,
-                        Path(self.path),
+                        self.path,
                         client.get_prefix_string(),
                         client.client_id
                     )
@@ -2254,10 +2250,10 @@ for better organization.""")
                                 ray.Err.NOT_NOW)
                     return
                 
-                if full_name_files:
+                if file_paths:
                     client.set_status(ray.ClientStatus.PRECOPY)
                     self.file_copier.start_client_copy(
-                        client.client_id, full_name_files, self.path,
+                        client.client_id, file_paths, self.path,
                         self.add_client_template_step_1,
                         self.add_client_template_aborted,
                         [src_addr, src_path, client],
@@ -2316,11 +2312,11 @@ for better organization.""")
         client.set_status(ray.ClientStatus.REMOVED)
         
         client._rename_files(
-            Path(self.path),
+            self.path,
             self.name, self.name,
             client.get_prefix_string(), tmp_client.get_prefix_string(),
             client.client_id, tmp_client.client_id,
-            client.get_links_dir(), tmp_client.get_links_dir())
+            client.get_links_dirname(), tmp_client.get_links_dirname())
 
         ex_jack_name = client.get_jack_client_name()
         ex_client_id = client.client_id
@@ -2464,7 +2460,10 @@ for better organization.""")
     def clear_clients_substep3(self, src_addr, src_path):
         self.answer(src_addr, src_path, 'Clients cleared')
         
-    def send_preview(self, src_addr, folder_sizes:list):
+    def send_preview(self, src_addr, folder_sizes: list):
+        if self.path is None:
+            return
+        
         # prevent long list of OSC sends if preview order already changed
         server = self.get_server_even_dummy()
         if server and server.session_to_preview != self.get_short_path():
@@ -2482,12 +2481,12 @@ for better organization.""")
                 src_addr, '/ray/gui/preview/client/is_started',
                 client.client_id, int(client.auto_start))
             
-            if client.protocol == ray.Protocol.RAY_HACK:
+            if client.protocol is ray.Protocol.RAY_HACK:
                 self.send_even_dummy(
                     src_addr, '/ray/gui/preview/client/ray_hack_update',
                     client.client_id, *client.ray_hack.spread())
 
-            elif client.protocol == ray.Protocol.RAY_NET:
+            elif client.protocol is ray.Protocol.RAY_NET:
                 self.send_even_dummy(
                     src_addr, '/ray/gui/preview/client/ray_net_update',
                     client.client_id, *client.ray_net.spread())
@@ -2519,7 +2518,7 @@ for better organization.""")
 
         # check if size is already in memory
         for folder_size in folder_sizes:
-            if folder_size['path'] == self.path:
+            if folder_size['path'] == str(self.path):
                 if folder_size['modified'] == modified:
                     total_size = folder_size['size']
                 break
@@ -2558,13 +2557,13 @@ for better organization.""")
                     break
         
         for folder_size in folder_sizes:
-            if folder_size['path'] == self.path:
+            if folder_size['path'] == str(self.path):
                 folder_size['modified'] = modified
                 folder_size['size'] = total_size
                 break
         else:
             folder_sizes.append(
-                {'path': self.path, 'modified': modified, 'size': total_size})
+                {'path': str(self.path), 'modified': modified, 'size': total_size})
 
         self.send_even_dummy(
             src_addr, '/ray/gui/preview/session_size', total_size)

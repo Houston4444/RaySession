@@ -100,8 +100,8 @@ class SessionItem(QTreeWidgetItem):
     def set_notes_icon(self, icon):
         self.setIcon(COLUMN_NOTES, icon)
 
-    def set_scripted(self, script_flags:int, for_child=False):
-        if script_flags == ray.ScriptFile.PREVENT:
+    def set_scripted(self, script_flags: ray.ScriptFile, for_child=False):
+        if script_flags is ray.ScriptFile.PREVENT:
             self.setText(COLUMN_SCRIPTS, "")
         else:
             if for_child:
@@ -205,7 +205,7 @@ class SaveSessionTemplateDialog(child_dialogs.SaveTemplateSessionDialog):
         child_dialogs.SaveTemplateSessionDialog.__init__(self, parent)
         self._server_will_accept = True
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         # server will always accept, whatever the status
         pass
     
@@ -222,7 +222,7 @@ class DuplicateDialog(child_dialogs.NewSessionDialog):
         self.ui.toolButtonFolder.setVisible(False)
         self._original_session_name = ''
     
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         # server will always accept, whatever the status
         pass
     
@@ -376,7 +376,7 @@ class OpenSessionDialog(ChildDialog):
         self._set_corner_group(CORNER_HIDDEN)
         
         self.ui.checkBoxSaveCurrentSession.setVisible(
-            self.session.server_status == ray.ServerStatus.READY)
+            self.session.server_status is ray.ServerStatus.READY)
         self.ui.listWidgetPreview.server_status_changed(
             self.session.server_status)
         
@@ -400,7 +400,7 @@ class OpenSessionDialog(ChildDialog):
         for folder in self.folders:
             folder.sort_childrens()
         
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         self.ui.toolButtonFolder.setEnabled(
             bool(server_status in (ray.ServerStatus.OFF,
                                    ray.ServerStatus.READY,
@@ -411,13 +411,13 @@ class OpenSessionDialog(ChildDialog):
                 ray.ServerStatus.OFF,
                 ray.ServerStatus.READY) and not self.server_copying)
 
-        if server_status != ray.ServerStatus.OFF:
+        if server_status is not ray.ServerStatus.OFF:
             if self._root_folder_file_dialog is not None:
                 self._root_folder_file_dialog.reject()
             self._root_folder_message_box.reject()
 
         self.ui.checkBoxSaveCurrentSession.setVisible(
-            server_status == ray.ServerStatus.READY)
+            server_status is ray.ServerStatus.READY)
         
         self.ui.listWidgetPreview.server_status_changed(server_status)
 
@@ -977,7 +977,6 @@ class OpenSessionDialog(ChildDialog):
             item = snapshot.make_item(GROUP_MAIN)
             self.ui.treeWidgetSnapshots.addTopLevelItem(item)
 
-        #self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
         self.ui.treeWidgetSnapshots.clearSelection()
 
     def _update_session_details(self, session_name: str,
@@ -997,19 +996,19 @@ class OpenSessionDialog(ChildDialog):
                 session_item.set_locked(bool(locked))
                 break
 
-    def _scripted_dir(self, dir_name, script_flags):
+    def _scripted_dir(self, dir_name: str, script_flags: int):
         if dir_name == '':
             # means that all the session root directory is scripted
             for i in range(self.ui.sessionList.topLevelItemCount()):
                 item: SessionItem = self.ui.sessionList.topLevelItem(i)
-                item.set_scripted(script_flags)
+                item.set_scripted(ray.ScriptFile(script_flags))
             return
 
         for i in range(self.ui.sessionList.topLevelItemCount()):
             item = self.ui.sessionList.topLevelItem(i)
             scripted_item = item.find_item_with(dir_name)
             if scripted_item is not None:
-                scripted_item.set_scripted(script_flags)
+                scripted_item.set_scripted(ray.ScriptFile(script_flags))
 
     def _resize_session_names_column(self):
         self.ui.sessionList.setColumnWidth(COLUMN_NOTES, 20)

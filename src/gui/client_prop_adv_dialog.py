@@ -34,14 +34,15 @@ class AdvancedPropertiesDialog(ChildDialog):
             _translate('new_executable', 'Session Name'))
 
         self.ui.lineEditClientId.setText(client.client_id)
-        self.ui.comboBoxPrefixMode.setCurrentIndex(client.prefix_mode)
+        self.ui.comboBoxPrefixMode.setCurrentIndex(client.prefix_mode.value)
 
-        if client.prefix_mode == ray.PrefixMode.CUSTOM:
+        if client.prefix_mode is ray.PrefixMode.CUSTOM:
             self.ui.lineEditCustomPrefix.setText(client.custom_prefix)
         else:
             self.ui.lineEditCustomPrefix.setEnabled(False)
         
-        self.ui.checkBoxLongJackNaming.setChecked(client.jack_naming == 1)
+        self.ui.checkBoxLongJackNaming.setChecked(
+            client.jack_naming is ray.JackNaming.LONG)
         
         self.ui.lineEditClientId.textEdited.connect(self._client_id_line_edited)
         self.ui.comboBoxPrefixMode.currentIndexChanged.connect(
@@ -59,9 +60,9 @@ class AdvancedPropertiesDialog(ChildDialog):
         self._update_preview()
     
     # pyqtSlot(int)
-    def _client_status_changed(self, status: int):
+    def _client_status_changed(self, status: ray.ClientStatus):
         self.ui.buttonBox.button(QDialogButtonBox.Apply).setEnabled(
-            status == ray.ClientStatus.STOPPED)
+            status is ray.ClientStatus.STOPPED)
     
     @pyqtSlot()
     def _client_id_line_edited(self):
@@ -70,14 +71,14 @@ class AdvancedPropertiesDialog(ChildDialog):
         self._update_preview()
     
     def _update_preview(self, *args):
-        if self.ui.comboBoxPrefixMode.currentIndex() == ray.PrefixMode.SESSION_NAME:
+        if self.ui.comboBoxPrefixMode.currentIndex() == ray.PrefixMode.SESSION_NAME.value:
             if self._client_is_real:
                 if TYPE_CHECKING:
                     assert isinstance(self._client, (Client, TrashedClient))
                 prefix_str = self._client.session.name
             else:
                 prefix_str = "SESSION NAME"
-        elif self.ui.comboBoxPrefixMode.currentIndex() == ray.PrefixMode.CLIENT_NAME:
+        elif self.ui.comboBoxPrefixMode.currentIndex() == ray.PrefixMode.CLIENT_NAME.value:
             prefix_str = self._client.name
         else:
             prefix_str = self.ui.lineEditCustomPrefix.text()

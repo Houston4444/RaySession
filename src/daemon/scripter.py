@@ -1,10 +1,13 @@
 import os
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional
+
 from PyQt5.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 
 import ray
-from daemon_tools import Terminal, dirname, highlight_text
+from daemon_tools import Terminal, highlight_text
 from server_sender import ServerSender
+from osc_pack import OscPack
 
 if TYPE_CHECKING:
     from session import OperatingSession
@@ -13,6 +16,9 @@ if TYPE_CHECKING:
 _translate = QCoreApplication.translate
 
 class Scripter(ServerSender):
+    '''Abstract scripts manager,
+    inherited by StepScripter and ClientScripter.'''
+
     def __init__(self):
         ServerSender.__init__(self)
         self._src_addr = None
@@ -86,6 +92,10 @@ class Scripter(ServerSender):
 
 
 class StepScripter(Scripter):
+    '''Scripts manager for sessions operations.
+    Scripts are executable shell scripts in ray-scripts/
+    (load.sh, save.sh, close.sh).'''
+    
     def __init__(self, session: 'OperatingSession'):
         Scripter.__init__(self)
         self.session = session
@@ -93,22 +103,22 @@ class StepScripter(Scripter):
         self._step_str = ''
         self._stepper_has_call = False
 
-    def _get_script_dirs(self, spath):
+    def _get_script_dirs(self, spath: Path) -> tuple[Path, Path]:
         base_path = spath
-        scripts_dir = ''
-        parent_scripts_dir = ''
+        scripts_dir = Path()
+        parent_scripts_dir = Path()
 
-        while base_path not in ('/', ''):
-            tmp_scripts_dir = "%s/%s" % (base_path, ray.SCRIPTS_DIR)
-            if os.path.isdir(tmp_scripts_dir):
-                if not scripts_dir:
+        while base_path.name:
+            tmp_scripts_dir = base_path / ray.SCRIPTS_DIR
+            if tmp_scripts_dir.is_dir():
+                if not scripts_dir.name:
                     scripts_dir = tmp_scripts_dir
                 else:
                     parent_scripts_dir = tmp_scripts_dir
                     break
-
-            base_path = dirname(base_path)
-
+            
+            base_path = base_path.parent
+            
         return (scripts_dir, parent_scripts_dir)
 
     def _process_started(self):
@@ -119,19 +129,20 @@ class StepScripter(Scripter):
         self.session.step_scripter_finished()
         self._stepper_has_call = False
 
-    def start(self, step_str, arguments, src_addr=None, src_path=''):
+    def start(self, step_str: str, arguments, src_addr=None, src_path=''):
         if self.is_running():
             return False
 
-        if not self.session.path:
+        if self.session.path is None:
             return False
 
-        scripts_dir, parent_scripts_dir = self._get_script_dirs(
-                                                            self.session.path)
-        future_scripts_dir, future_parent_scripts_dir = self._get_script_dirs(
-                                            self.session.future_session_path)
+        scripts_dir, parent_scripts_dir = \
+            self._get_script_dirs(self.session.path)
+        future_scripts_dir, future_parent_scripts_dir = \
+            self._get_script_dirs(self.session.future_session_path)
 
-        script_path = "%s/%s.sh" % (scripts_dir, step_str)
+        script_path = scripts_dir / f'{step_str}.sh'
+        
         if not os.access(script_path, os.X_OK):
             return False
 
@@ -147,17 +158,17 @@ class StepScripter(Scripter):
 
         process_env = QProcessEnvironment.systemEnvironment()
         process_env.insert('RAY_CONTROL_PORT', str(self.get_server_port()))
-        process_env.insert('RAY_SCRIPTS_DIR', scripts_dir)
-        process_env.insert('RAY_PARENT_SCRIPTS_DIR', parent_scripts_dir)
+        process_env.insert('RAY_SCRIPTS_DIR', str(scripts_dir))
+        process_env.insert('RAY_PARENT_SCRIPTS_DIR', str(parent_scripts_dir))
         process_env.insert('RAY_FUTURE_SESSION_PATH',
-                           self.session.future_session_path)
-        process_env.insert('RAY_FUTURE_SCRIPTS_DIR', future_scripts_dir)
+                           str(self.session.future_session_path))
+        process_env.insert('RAY_FUTURE_SCRIPTS_DIR', str(future_scripts_dir))
         process_env.insert('RAY_SWITCHING_SESSION',
                            str(self.session.switching_session).lower())
-        process_env.insert('RAY_SESSION_PATH', self.session.path)
+        process_env.insert('RAY_SESSION_PATH', str(self.session.path))
 
         self._process.setProcessEnvironment(process_env)
-        self._process.start(script_path, [str(a) for a in arguments])
+        self._process.start(str(script_path), [str(a) for a in arguments])
         return True
 
     def get_step(self):
@@ -171,53 +182,56 @@ class StepScripter(Scripter):
 
 
 class ClientScripter(Scripter):
+    '''Scripts manager for client operations.
+    Scripts are executable shell scripts in ray-scripts.CLIENT_ID/
+    (start.sh, save.sh, close.sh).'''
+    
     def __init__(self, client: 'Client'):
         Scripter.__init__(self)
         self._client = client
         self._pending_command = ray.Command.NONE
-        self._initial_caller = (None, '')
+        self._initial_caller: Optional[OscPack] = None
 
     def _process_finished(self, exit_code, exit_status):
         Scripter._process_finished(self, exit_code, exit_status)
         self._client.script_finished(exit_code)
         self._pending_command = ray.Command.NONE
-        self._initial_caller = (None, '')
+        self._initial_caller = None
         self._src_addr = None
 
-    def start(self, command, src_addr=None, previous_slot=(None, '')):
+    def start(self, command: ray.Command, osp: Optional[OscPack]=None,
+              previous_slot: Optional[OscPack]=None):
         if self.is_running():
             return False
 
-        command_string = ''
-        if command == ray.Command.START:
-            command_string = 'start'
-        elif command == ray.Command.SAVE:
-            command_string = 'save'
-        elif command == ray.Command.STOP:
-            command_string = 'stop'
-        else:
+        if self._client.session.path is None:
             return False
 
-        scripts_dir = "%s/%s.%s" % \
-            (self._client.session.path, ray.SCRIPTS_DIR, self._client.client_id)
-        script_path = "%s/%s.sh" % (scripts_dir, command_string)
+        if not command in (
+                ray.Command.START, ray.Command.SAVE, ray.Command.STOP):
+            return False
+        
+        scripts_dir = (self._client.session.path
+                       / f'{ray.SCRIPTS_DIR}.{self._client.client_id}')
+        script_path = scripts_dir / f'{command.name.lower()}.sh'
 
         if not os.access(script_path, os.X_OK):
             return False
 
         self._pending_command = command
 
-        if src_addr:
+        if osp is not None:
             # Remember the caller of the function calling the script
             # Then, when script is finished
             # We could reply to this (address, path)
             self._initial_caller = previous_slot
-
-        self._src_addr = src_addr
+            self._src_addr = osp.src_addr
+        else:
+            self._src_addr = None
 
         process_env = QProcessEnvironment.systemEnvironment()
         process_env.insert('RAY_CONTROL_PORT', str(self.get_server_port()))
-        process_env.insert('RAY_CLIENT_SCRIPTS_DIR', scripts_dir)
+        process_env.insert('RAY_CLIENT_SCRIPTS_DIR', str(scripts_dir))
         process_env.insert('RAY_CLIENT_ID', self._client.client_id)
         process_env.insert('RAY_CLIENT_EXECUTABLE',
                            self._client.executable_path)
@@ -228,11 +242,11 @@ class ClientScripter(Scripter):
             _translate('GUIMSG', '--- Custom script %s started...%s')
                     % (highlight_text(script_path), self._client.client_id))
 
-        self._process.start(script_path, [])
+        self._process.start(str(script_path), [])
         return True
 
     def pending_command(self):
         return self._pending_command
 
-    def initial_caller(self):
+    def initial_caller(self) -> Optional[OscPack]:
         return self._initial_caller

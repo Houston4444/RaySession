@@ -414,11 +414,11 @@ class AddApplicationDialog(ChildDialog):
                 item.setHidden(True)
 
             if item.client_data is not None:
-                if (item.client_data.protocol == ray.Protocol.RAY_HACK
+                if (item.client_data.protocol is ray.Protocol.RAY_HACK
                         and not self.ui.checkBoxRayHack.isChecked()):
                     item.setHidden(True)
 
-                if (item.client_data.protocol != ray.Protocol.RAY_HACK
+                if (item.client_data.protocol is not ray.Protocol.RAY_HACK
                         and not self.ui.checkBoxNsm.isChecked()):
                     item.setHidden(True)
 
@@ -479,7 +479,7 @@ class AddApplicationDialog(ChildDialog):
         self.ui.labelTemplateName.setText(item.get_display_name())
         #self.ui.labelTemplateName.setText(template_name)
         self.ui.labelDescription.setText(cdata.description)
-        self.ui.labelProtocol.setText(ray.protocol_to_str(cdata.protocol))
+        self.ui.labelProtocol.setText(cdata.protocol.to_string())
         self.ui.labelExecutable.setText(cdata.executable_path)
         self.ui.labelLabel.setText(cdata.label)
         self.ui.labelName.setText(cdata.name)
@@ -487,7 +487,7 @@ class AddApplicationDialog(ChildDialog):
         for widget in (self.ui.labelProtocolTitle,
                        self.ui.labelProtocolColon,
                        self.ui.labelProtocol):
-            widget.setVisible(bool(cdata.protocol != ray.Protocol.NSM))
+            widget.setVisible(bool(cdata.protocol is not ray.Protocol.NSM))
 
         for widget in (self.ui.labelLabelTitle,
                        self.ui.labelLabelColon,
@@ -497,7 +497,7 @@ class AddApplicationDialog(ChildDialog):
         for widget in (self.ui.labelNameTitle,
                        self.ui.labelNameColon,
                        self.ui.labelName):
-            widget.setVisible(bool(cdata.protocol == ray.Protocol.NSM))
+            widget.setVisible(bool(cdata.protocol is ray.Protocol.NSM))
 
         self.ui.toolButtonUser.setVisible(not item.is_factory)
         self.ui.toolButtonFavorite.set_template(
@@ -508,14 +508,14 @@ class AddApplicationDialog(ChildDialog):
 
         self.ui.widgetNonSaveable.setVisible(bool(
             cdata.ray_hack is not None
-            and cdata.protocol == ray.Protocol.RAY_HACK
+            and cdata.protocol is ray.Protocol.RAY_HACK
             and cdata.ray_hack.no_save_level > 0))
 
         # little security
         # client_properties_dialog could crash if ray_hack has not been updated yet
         # (never seen this appears, but it could with slow systems)
         self.ui.toolButtonAdvanced.setEnabled(
-            bool(cdata.protocol != ray.Protocol.RAY_HACK
+            bool(cdata.protocol is not ray.Protocol.RAY_HACK
                  or cdata.ray_hack is not None))
 
     def _current_item_changed(self, item, previous_item):
@@ -548,7 +548,7 @@ class AddApplicationDialog(ChildDialog):
 
         self.remove_template(item.data(TEMPLATE_NAME_DATA), False)
 
-    def _server_status_changed(self, server_status):
+    def _server_status_changed(self, server_status: ray.ServerStatus):
         self._server_will_accept = bool(
             server_status not in (
                 ray.ServerStatus.OFF,

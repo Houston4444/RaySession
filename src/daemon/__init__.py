@@ -1,6 +1,7 @@
 #!/usr/bin/python3 -u
 
 import os
+from pathlib import Path
 import signal
 import sys
 import logging
@@ -56,28 +57,28 @@ if __name__ == '__main__':
     # manage session_root
     session_root = CommandLineArgs.session_root
     if not session_root:
-        session_root = "%s/%s" % (os.getenv('HOME'),
-                                  _translate('daemon',
-                                             'Ray Network Sessions'))
+        session_root = str(Path(os.getenv('HOME'))
+                           / _translate('daemon', 'Ray Network Sessions'))
 
+    session_root_path = Path(session_root)
     # make session_root folder if needed
-    if not os.path.isdir(session_root):
-        if os.path.exists(session_root):
+    if not session_root_path.is_dir():
+        if session_root_path.exists():
             sys.stderr.write(
                 "%s exists and is not a dir, please choose another path !\n"
-                % session_root)
+                % session_root_path)
             sys.exit(1)
 
         try:
-            os.makedirs(session_root)
+            session_root_path.mkdir(parents=True)
         except:
             sys.stderr.write("impossible to make dir %s , aborted !\n"
-                             % session_root)
+                             % session_root_path)
             sys.exit(1)
 
 
     # create session
-    session = SignaledSession(session_root)
+    session = SignaledSession(session_root_path)
 
     # create and start server
     if CommandLineArgs.findfreeport:
@@ -146,9 +147,14 @@ if __name__ == '__main__':
     # save RS.settings
     RS.settings.setValue('daemon/non_active_list', RS.non_active_clients)
     RS.settings.setValue('daemon/favorites', RS.favorites)
-    RS.settings.setValue('daemon/recent_sessions', session.recent_sessions)
+
+    recent_sessions = dict[str, list[str]]()
+    for root_path, sessions in session.recent_sessions.items():
+        recent_sessions[str(root_path)] = sessions
+
+    RS.settings.setValue('daemon/recent_sessions', recent_sessions)
     if not CommandLineArgs.no_options:
-        RS.settings.setValue('daemon/options', server.options)
+        RS.settings.setValue('daemon/options', server.options.value)
 
     if server._terminal_command_is_default:
         RS.settings.setValue('daemon/terminal_command', '')

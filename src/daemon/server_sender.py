@@ -1,7 +1,6 @@
-
-from re import A
-from PyQt5.QtCore import QObject
 from typing import TYPE_CHECKING
+
+from PyQt5.QtCore import QObject
 
 import ray
 from osc_server_thread import OscServerThread
@@ -12,6 +11,8 @@ if TYPE_CHECKING:
 
 
 class ServerSender(QObject):
+    '''Abstract class giving some quick access to OSC server'''
+    
     def __init__(self):
         QObject.__init__(self)
         self.is_dummy = False
@@ -56,7 +57,7 @@ class ServerSender(QObject):
         if server:
             server.send_controller_message(message)
 
-    def set_server_status(self, server_status:int):
+    def set_server_status(self, server_status:ray.ServerStatus):
         if self.is_dummy:
             return
 
@@ -66,13 +67,13 @@ class ServerSender(QObject):
 
         server.set_server_status(server_status)
 
-    def get_server_status(self):
+    def get_server_status(self) -> ray.ServerStatus:
         if self.is_dummy:
-            return -1
+            return ray.ServerStatus.OFF
 
         server = OscServerThread.get_instance()
         if not server:
-            return -1
+            return ray.ServerStatus.OFF
 
         return server.server_status
 
@@ -115,12 +116,12 @@ class ServerSender(QObject):
         else:
             self.send(src_addr, '/error', src_path, err, message)
 
-    def has_server_option(self, option: int) -> bool:
+    def has_server_option(self, option: ray.Option) -> bool:
         server = self.get_server()
         if not server:
             return False
 
-        return bool(server.options & option)
+        return bool(option in server.options)
 
     def get_client_templates_database(self, base: str) -> list[AppTemplate]:
         server = OscServerThread.get_instance()

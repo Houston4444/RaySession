@@ -1,11 +1,12 @@
 from enum import Enum
 import logging
-import os
-import shutil
 import subprocess
-from typing import TYPE_CHECKING, Callable, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from pathlib import Path
 
 from PyQt5.QtCore import QProcess, QTimer
+import liblo
+
 from server_sender import ServerSender
 import ray
 
@@ -22,8 +23,8 @@ class CopyState(Enum):
 
 
 class CopyFile:
-    orig_path = ""
-    dest_path = ""
+    orig_path = Path()
+    dest_path = Path()
     state = CopyState.OFF
     size = 0
 
@@ -35,9 +36,9 @@ class FileCopier(ServerSender):
 
         self._client_id = ''
         self._src_is_factory = False
-        self._next_function = None
-        self._abort_function = None
-        self._next_args = []
+        self._next_function: Optional[Callable] = None
+        self._abort_function: Optional[Callable] = None
+        self._next_args = list[Any]()
         self._copy_files = list[CopyFile]()
         self._copy_size = 0
         self._aborted = False
@@ -53,11 +54,11 @@ class FileCopier(ServerSender):
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._check_progress_size)
 
-        self._abort_src_addr = None
+        self._abort_src_addr: Optional[liblo.Address] = None
         self._abort_src_path = ''
 
-    def _get_file_size(self, filepath) -> int:
-        if not os.path.exists(filepath):
+    def _get_file_size(self, filepath: Path) -> int:
+        if not filepath.exists():
             return 0
 
         try:
@@ -72,10 +73,10 @@ class FileCopier(ServerSender):
             return 0
 
         du_str = du_full.split('\t')[0]
-        if not du_str.isdigit():
+        try:
+            return int(du_str)
+        except:
             return 0
-
-        return int(du_str)
 
     def _check_progress_size(self):
         current_size = 0
@@ -126,12 +127,12 @@ class FileCopier(ServerSender):
                 if copy_file.state is not CopyState.OFF:
                     file_to_remove = copy_file.dest_path
 
-                    if os.path.exists(file_to_remove):
+                    if file_to_remove.exists():
                         try:
-                            if os.path.isfile(file_to_remove):
-                                os.remove(file_to_remove)
-                            elif os.path.isdir(file_to_remove):
-                                shutil.rmtree(file_to_remove)
+                            if file_to_remove.is_file():
+                                file_to_remove.unlink()
+                            elif file_to_remove.is_dir():
+                                file_to_remove.rmdir()
                         except:
                             if self._abort_src_addr and self._abort_src_path:
                                 self.send(self._abort_src_addr,
@@ -173,12 +174,12 @@ class FileCopier(ServerSender):
                 self._process.start(
                     'nice',
                     ['-n', '+15', 'cp', '-R',
-                     copy_file.orig_path, copy_file.dest_path])
+                     str(copy_file.orig_path), str(copy_file.dest_path)])
                 break
 
         self._timer.start()
 
-    def _start(self, src_list: Union[str, list[str]], dest_dir: str,
+    def _start(self, src_list: Union[Path, list[Path]], dest_dir: Path,
                next_function: Callable, abort_function: Callable,
                next_args=[]):
         self._abort_function = abort_function
@@ -189,37 +190,36 @@ class FileCopier(ServerSender):
         self._copy_size = 0
         self._copy_files.clear()
 
-        dest_path_exists = bool(os.path.exists(dest_dir))
+        dest_path_exists = dest_dir.exists()
         if dest_path_exists:
-            if not os.path.isdir(dest_dir):
+            if not dest_dir.is_dir():
                 #TODO send error, but it should not append
                 self._abort_function(*self._next_args)
                 return
 
-        if isinstance(src_list, str):
+        if isinstance(src_list, Path):
             src_dir = src_list
-            src_list = list[str]()
+            src_list = list[Path]()
 
-            if not os.path.isdir(src_dir):
+            if not src_dir.is_dir():
                 self._abort_function(*self._next_args)
                 return
 
             try:
-                tmp_list = os.listdir(src_dir)
+                tmp_list = src_dir.iterdir()            
             except:
                 self._abort_function(*self._next_args)
                 return
 
             for path in tmp_list:
-                if path == '.ray-snapshots':
+                if path.name == '.ray-snapshots':
                     continue
 
-                full_path = "%s/%s" % (src_dir, path)
-                src_list.append(full_path)
+                src_list.append(path)
 
             if not dest_path_exists:
                 try:
-                    os.makedirs(dest_dir)
+                    dest_dir.mkdir(parents=True)
                 except:
                     self._abort_function(*self._next_args)
                     return
@@ -233,10 +233,9 @@ class FileCopier(ServerSender):
             self._copy_size += copy_file.size
 
             if dest_path_exists:
-                copy_file.dest_path = "%s/%s" % (dest_dir,
-                                                 os.path.basename(orig_path))
+                copy_file.dest_path = dest_dir / orig_path.name
             else:
-                #WARNING works only with one file !!!
+                # WARNING works only with one file !!!
                 copy_file.dest_path = dest_dir
 
             self._copy_files.append(copy_file)
@@ -247,7 +246,7 @@ class FileCopier(ServerSender):
         else:
             self._next_function(*self._next_args)
 
-    def _send_copy_state_to_gui(self, state:int):
+    def _send_copy_state_to_gui(self, state: int):
         if self.session.session_id:
             self.send_gui('/ray/gui/server/parrallel_copy_state',
                           self.session.session_id, state)
@@ -255,7 +254,7 @@ class FileCopier(ServerSender):
             self.send_gui('/ray/gui/server/copying', state)
 
     def start_client_copy(
-            self, client_id: str, src_list: list[str], dest_dir: str,
+            self, client_id: str, src_list: list[Path], dest_dir: Path,
             next_function: Callable, abort_function: Callable,
             next_args=[], src_is_factory=False):
         self._client_id = client_id
@@ -264,15 +263,15 @@ class FileCopier(ServerSender):
                     abort_function, next_args)
 
     def start_session_copy(
-            self, src_dir: str, dest_dir: str,
+            self, src_dir: Path, dest_dir: Path,
             next_function: Callable, abort_function: Callable, next_args=[],
             src_is_factory=False):
         self._client_id = ''
         self._src_is_factory = src_is_factory
         self._start(src_dir, dest_dir, next_function,
-                     abort_function, next_args)
+                    abort_function, next_args)
 
-    def abort(self, abort_function=None, next_args=[]):
+    def abort(self, abort_function: Callable =None, next_args=[]):
         if abort_function:
             self._abort_function = abort_function
             self._next_args = next_args

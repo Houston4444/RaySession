@@ -41,7 +41,7 @@ class ClientSlot(QFrame):
         self._icon_off = QIcon()
 
         self.ui.toolButtonGUI.setVisible(False)
-        if client.protocol != ray.Protocol.RAY_HACK:
+        if client.protocol is not ray.Protocol.RAY_HACK:
             self.ui.toolButtonHack.setVisible(False)
 
         # connect buttons to functions
@@ -115,7 +115,7 @@ class ClientSlot(QFrame):
             self.to_daemon('/ray/client/show_optional_gui', self.get_client_id())
 
     def _order_hack_visibility(self, state):
-        if self.client.protocol != ray.Protocol.RAY_HACK:
+        if self.client.protocol is not ray.Protocol.RAY_HACK:
             return
 
         if state:
@@ -181,13 +181,6 @@ class ClientSlot(QFrame):
                     '/ray/client/full_rename',
                     self.client.client_id,
                     label)
-                # self.to_daemon(
-                #     '/ray/client/change_advanced_properties',
-                #     self.client.client_id,
-                #     self.client.label.replace(' ', '_'),
-                #     int(self.client.prefix_mode),
-                #     self.client.custom_prefix,
-                #     int(ray.JackNaming.LONG))
                 return
 
             self.client.label = label
@@ -211,7 +204,7 @@ class ClientSlot(QFrame):
             self.ui.startButton.setVisible(True)
             self.ui.stopButton.setVisible(True)
             self.ui.toolButtonHack.setVisible(
-                self.client.protocol == ray.Protocol.RAY_HACK)
+                self.client.protocol is ray.Protocol.RAY_HACK)
 
     def _set_fat(self, yesno: bool, very_fat=False):
         if yesno:
@@ -302,7 +295,7 @@ class ClientSlot(QFrame):
         tool_tip += "<p></p>"
         tool_tip += "<p>%s : %s<br>" \
             % (_translate('client_slot', 'Protocol'),
-               ray.protocol_to_str(self.client.protocol))
+               self.client.protocol.to_string())
         tool_tip += "%s : %s<br>" \
             % (_translate('client_slot', 'Executable'),
                self.client.executable_path)
@@ -354,11 +347,11 @@ class ClientSlot(QFrame):
     def update_status(self, status: int):
         self.ui.lineEditClientStatus.setText(client_status_string(status))
         self.ui.lineEditClientStatus.setEnabled(
-            status != ray.ClientStatus.STOPPED)
+            status is not ray.ClientStatus.STOPPED)
         self.ui.actionFindBoxesInPatchbay.setEnabled(
             status not in (ray.ClientStatus.STOPPED, ray.ClientStatus.PRECOPY)) 
 
-        ray_hack = bool(self.client.protocol == ray.Protocol.RAY_HACK)
+        ray_hack = bool(self.client.protocol is ray.Protocol.RAY_HACK)
 
         if status in (
                 ray.ClientStatus.LAUNCH,
@@ -379,7 +372,7 @@ class ClientSlot(QFrame):
                 self.ui.startButton.setVisible(False)
                 self.ui.stopButton.setVisible(True)
 
-        elif status == ray.ClientStatus.READY:
+        elif status is ray.ClientStatus.READY:
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(True)
             self.ui.closeButton.setEnabled(False)
@@ -393,7 +386,7 @@ class ClientSlot(QFrame):
                 self.ui.startButton.setVisible(False)
                 self.ui.stopButton.setVisible(True)
 
-        elif status == ray.ClientStatus.STOPPED:
+        elif status is ray.ClientStatus.STOPPED:
             self.ui.startButton.setEnabled(True)
             self.ui.stopButton.setEnabled(False)
             self.ui.saveButton.setEnabled(False)
@@ -414,7 +407,7 @@ class ClientSlot(QFrame):
             if not ray_hack:
                 self.set_gui_state(False)
 
-        elif status == ray.ClientStatus.PRECOPY:
+        elif status is ray.ClientStatus.PRECOPY:
             self.ui.startButton.setEnabled(False)
             self.ui.stopButton.setEnabled(False)
             self.ui.saveButton.setEnabled(False)
@@ -432,7 +425,7 @@ class ClientSlot(QFrame):
             self.ui.stopButton.setIcon(self._stop_icon)
             self._stop_is_kill = False
 
-        elif status == ray.ClientStatus.COPY:
+        elif status is ray.ClientStatus.COPY:
             self.ui.saveButton.setEnabled(False)
 
     def allow_kill(self):
@@ -472,9 +465,9 @@ class ClientSlot(QFrame):
     def set_progress(self, progress: float):
         self.ui.lineEditClientStatus.set_progress(progress)
 
-    def set_daemon_options(self, options):
-        has_git = bool(options & ray.Option.HAS_GIT)
-        self.ui.actionReturnToAPreviousState.setVisible(has_git)
+    def set_daemon_options(self, options: ray.Option):
+        self.ui.actionReturnToAPreviousState.setVisible(
+            ray.Option.HAS_GIT in options)
 
     def patchbay_is_shown(self, yesno: bool):
         self.ui.actionFindBoxesInPatchbay.setVisible(yesno)
@@ -485,7 +478,7 @@ class ClientSlot(QFrame):
         
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if (event.button() == Qt.LeftButton
-                and self.client.status != ray.ClientStatus.STOPPED
+                and self.client.status is not ray.ClientStatus.STOPPED
                 and self.client.jack_client_name
                 and self.list_widget_item.isSelected()):
             self.client.session.patchbay_manager.select_client_box(
@@ -635,7 +628,7 @@ class ListWidgetClients(QListWidget):
         # parse patchbay boxes of the selected client 
         if event.key() in (Qt.Key_Left, Qt.Key_Right):
             client = self.currentItem().widget.client
-            if (client.status != ray.ClientStatus.STOPPED
+            if (client.status is not ray.ClientStatus.STOPPED
                     and client.jack_client_name
                     and self.currentItem().isSelected()
                     and self.session is not None):
