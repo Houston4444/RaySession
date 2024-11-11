@@ -2,7 +2,10 @@
 
 from enum import IntEnum
 import os
-from liblo import Server, make_method, Address
+try:
+    from liblo import Server, make_method, Address
+except ImportError:
+    from pyliblo3 import Server, make_method, Address
 from typing import Callable, Optional
 
 

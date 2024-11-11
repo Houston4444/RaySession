@@ -10,7 +10,10 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
-import liblo
+try:
+    import liblo
+except ImportError:
+    import pyliblo3 as liblo
 from PyQt5.QtCore import QCoreApplication
 
 import ray

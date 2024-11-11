@@ -5,7 +5,10 @@ from pathlib import Path
 import subprocess
 import time
 from typing import TYPE_CHECKING
-from liblo import Address
+try:
+    from liblo import Address
+except ImportError:
+    from pyliblo3 import Address
 from PyQt5.QtCore import QCoreApplication, QProcess
 from PyQt5.QtXml  import QDomDocument
 

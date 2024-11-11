@@ -6,7 +6,10 @@ import time
 from typing import TYPE_CHECKING
 from PyQt5.QtCore import QObject, QProcess, QTimer
 from PyQt5.QtWidgets import QApplication
-from liblo import Address
+try:
+    from liblo import Address
+except ImportError:
+    from pyliblo3 import Address
 
 import ray
 from gui_server_thread import GuiServerThread
