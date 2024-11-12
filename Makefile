@@ -217,6 +217,8 @@ pure_install:
 	cp -r src $(DEST_RAY)/
 	rm $(DEST_RAY)/src/gui/patchbay
 	cp -r $(PATCHBAY_DIR)/patchbay $(DEST_RAY)/src/gui/
+	rm $(DEST_RAY)/src/daemon/patshared
+	cp -r $(PATCHBAY_DIR)/patchbay/patchcanvas/patshared $(DEST_RAY)/src/daemon/
 	rm $(DEST_RAY)/src/clients/jackpatch/jacklib
 	cp -r pyjacklib/jacklib $(DEST_RAY)/src/clients/jackpatch/
 	rm $(DEST_RAY)/src/jack_patchbay_to_osc/jacklib
