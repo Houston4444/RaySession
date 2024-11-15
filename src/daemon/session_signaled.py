@@ -1605,7 +1605,7 @@ class SignaledSession(OperatingSession):
                 "client is not running, impossible to get its pid")
 
     def _ray_client_list_snapshots(self, osp: OscPack):
-        self._ray_session_list_snapshots(osp.path, [], osp.src_addr, osp.args[0])
+        self._ray_session_list_snapshots(osp, osp.args[0])
 
     @session_operation
     def _ray_client_open_snapshot(self, osp: OscPack):
@@ -2017,6 +2017,7 @@ class SignaledSession(OperatingSession):
         self.terminated_yet = True
         self.steps_order = [self.terminate_step_scripter,
                             self.close, self.exit_now]
+        print('ok finissons', self.steps_order)
         self.next_function()
 
 

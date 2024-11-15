@@ -4,6 +4,7 @@ import shutil
 from typing import TYPE_CHECKING, Iterator, TypedDict
 import logging
 import xml.etree.ElementTree as ET
+
 from qtpy.QtCore import QProcess, QCoreApplication
 
 import xdg
@@ -337,7 +338,7 @@ def rebuild_templates_database(session: 'Session', base: str):
                 version_process.waitForFinished(500)
 
                 # do not allow program --version to be longer than 500ms
-                if version_process.state():
+                if version_process.state() != QProcess.ProcessState.NotRunning:
                     version_process.terminate()
                     version_process.waitForFinished(500)
                     continue

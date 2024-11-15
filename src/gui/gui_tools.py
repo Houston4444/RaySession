@@ -3,9 +3,11 @@ import os
 from pathlib import Path
 import sys
 from typing import TYPE_CHECKING
-from qtpy.QtCore import QSettings, QSize, QFile, QObject, Signal
+
+from qtpy.QtCore import QSettings, QSize, QFile
 from qtpy.QtWidgets import QApplication, QWidget
 from qtpy.QtGui import QIcon, QPixmap, QPalette
+
 try:
     from liblo import Address
 except ImportError:
@@ -213,7 +215,6 @@ class ArgParser(argparse.ArgumentParser):
         parsed_args = argparse.ArgumentParser.parse_args(self)
         CommandLineArgs.eat_attributes(parsed_args)
 
-
 def init_gui_tools():
     if CommandLineArgs.under_nsm:
         settings = QSettings('%s/child_sessions'
@@ -339,7 +340,8 @@ def error_text(error: int) -> str:
 def get_app_icon(icon_name: str, widget: QWidget) -> QIcon:
     dark = bool(
         widget.palette().brush(
-            2, QPalette.WindowText).color().lightness() > 128)
+            QPalette.ColorGroup.Inactive,
+            QPalette.ColorRole.WindowText).color().lightness() > 128)
     
     if dark and icon_name in _APP_ICONS_CACHE_DARK.keys():
         return _APP_ICONS_CACHE_DARK[icon_name]

@@ -278,7 +278,7 @@ class FileCopier(ServerSender):
 
         self._timer.stop()
 
-        if self._process.state() == QProcess.Running:
+        if self._process.state() == QProcess.ProcessState.Running:
             self._aborted = True
             self._process.terminate()
 

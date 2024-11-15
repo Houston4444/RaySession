@@ -5,9 +5,12 @@ from pathlib import Path
 import signal
 import sys
 import logging
-from qtpy.QtCore import (QCoreApplication, QTimer,
-                          QLocale, QTranslator)
 
+from qt_api import QT_API
+os.environ['QT_API'] = QT_API
+
+from qtpy.QtCore import (
+    QCoreApplication, QTimer, QLocale, QTranslator)
 
 import ray
 from daemon_tools import (get_code_root, init_daemon_tools, RS,

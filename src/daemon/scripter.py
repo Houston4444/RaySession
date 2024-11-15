@@ -67,7 +67,8 @@ class Scripter(ServerSender):
         Terminal.scripter_message(standard_output, self._get_command_name())
 
     def is_running(self):
-        return bool(self._process.state())
+        return not bool(
+            self._process.state() == QProcess.ProcessState.NotRunning)
 
     def terminate(self):
         self._asked_for_terminate = True
@@ -84,11 +85,6 @@ class Scripter(ServerSender):
 
     def _get_command_name(self):
         return self.get_path().rpartition('/')[2]
-
-    def get_pid(self):
-        if self._process.state():
-            return self._process.pid()
-        return 0
 
 
 class StepScripter(Scripter):

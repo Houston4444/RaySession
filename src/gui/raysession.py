@@ -4,17 +4,24 @@
 import signal
 import sys
 import time
+import os
+
+from qt_api import QT_API
+os.environ['QT_API'] = QT_API
 
 from qtpy.QtWidgets import QApplication
 from qtpy.QtGui import QIcon, QFontDatabase
 from qtpy.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo
 
 #local imports
-from gui_tools import ArgParser, CommandLineArgs, init_gui_tools, get_code_root
+from gui_tools import (ArgParser, CommandLineArgs,
+                       init_gui_tools, get_code_root)
 from gui_server_thread import GuiServerThread
 from gui_session import SignaledSession
 import ray
 
+# prevent to not find icon at startup
+import resources_rc
 
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):

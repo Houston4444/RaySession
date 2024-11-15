@@ -7,18 +7,37 @@ PREFIX ?= /usr/local
 DESTDIR =
 DEST_RAY := $(DESTDIR)$(PREFIX)/share/raysession
 
-LINK = ln -s -f
-PYUIC := pyuic5
-PYRCC := pyrcc5
+LINK = ln -s
+LRELEASE ?= lrelease
+QT_VERSION ?= 5
 
-LRELEASE := lrelease
-ifeq (, $(shell which $(LRELEASE)))
- LRELEASE := lrelease-qt5
+# if you set QT_VERSION environment variable to 6 at the make command
+# it will choose the other commands QT_API, pyuic6, pylupdate6.
+# You will can run raysession directly in source without install
+# typing: QT_API=PyQt6 python3 src/bin/raysession
+
+ifeq ($(QT_VERSION), 6)
+	QT_API ?= PyQt6
+	PYUIC ?= pyuic6
+	PYLUPDATE ?= pylupdate6
+	ifeq (, $(shell which $(LRELEASE)))
+		LRELEASE := lrelease-qt6
+	endif
+else
+    QT_API ?= PyQt5
+	PYUIC ?= pyuic5
+	PYLUPDATE ?= pylupdate5
+	ifeq (, $(shell which $(LRELEASE)))
+		LRELEASE := lrelease-qt5
+	endif
 endif
 
-ifeq (, $(shell which $(LRELEASE)))
- LRELEASE := lrelease-qt4
-endif
+# neeeded for make install
+BUILD_CFG_FILE := src/shared/qt_api.py
+QT_API_INST := $(shell grep ^QT_API= $(BUILD_CFG_FILE) 2>/dev/null| cut -d'=' -f2| cut -d"'" -f2)
+QT_API_INST ?= PyQt5
+
+ICON_SIZES := 16 24 32 48 64 96 128 256
 
 PYTHON := python3
 ifeq (, $(shell which $(PYTHON)))
@@ -29,10 +48,21 @@ PATCHBAY_DIR=HoustonPatchbay
 
 # ---------------------
 
-all: PATCHBAY RES UI LOCALE
+all: PATCHBAY QT_PREPARE RES UI LOCALE
 
 PATCHBAY:
 	@(cd $(PATCHBAY_DIR) && $(MAKE))
+
+QT_PREPARE:
+	$(info compiling for Qt$(QT_VERSION) using $(QT_API))
+	$(file > $(BUILD_CFG_FILE),QT_API='$(QT_API)')
+
+    ifeq ($(QT_API), $(QT_API_INST))
+    else
+		rm -f *~ src/*~ src/*.pyc src/frontend/ui/*.py \
+		    resources/locale/*.qm src/resources_rc.py
+    endif
+	install -d src/gui/ui
 
 # ---------------------
 # Resources
@@ -40,60 +70,15 @@ PATCHBAY:
 RES: src/gui/resources_rc.py
 
 src/gui/resources_rc.py: resources/resources.qrc
-	$(PYRCC) $< -o $@
+	rcc -g python $< |sed 's/ PySide. / qtpy /' > $@
 
 # ---------------------
 # UI code
 
-UI: mkdir_ui raysession ray_proxy
+UI: raysession ray_proxy
 
-mkdir_ui:
-	@if ! [ -e src/gui/ui ];then mkdir -p src/gui/ui; fi
-
-raysession: src/gui/ui/abort_copy.py \
-	    src/gui/ui/abort_session.py \
-	    src/gui/ui/about_raysession.py \
-	    src/gui/ui/add_application.py \
-	    src/gui/ui/ardour_convert.py \
-		src/gui/ui/client_advanced_properties.py \
-	    src/gui/ui/client_properties.py \
-	    src/gui/ui/client_rename.py \
-	    src/gui/ui/client_slot.py \
-	    src/gui/ui/client_trash.py \
-	    src/gui/ui/donations.py \
-	    src/gui/ui/daemon_url.py \
-	    src/gui/ui/error_dialog.py \
-	    src/gui/ui/hydro_rh_nsm.py \
-	    src/gui/ui/jack_config_info.py \
-	    src/gui/ui/list_snapshots.py \
-	    src/gui/ui/new_executable.py \
-	    src/gui/ui/new_session.py \
-	    src/gui/ui/nsm_properties.py \
-	    src/gui/ui/ray_hack_copy.py \
-	    src/gui/ui/nsm_open_info.py \
-	    src/gui/ui/open_session.py \
-	    src/gui/ui/preview_client_slot.py \
-	    src/gui/ui/quit_app.py \
-	    src/gui/ui/ray_hack_properties.py \
-	    src/gui/ui/ray_net_properties.py \
-	    src/gui/ui/ray_to_nsm.py \
-	    src/gui/ui/raysession.py \
-	    src/gui/ui/remove_template.py \
-	    src/gui/ui/save_template_session.py \
-	    src/gui/ui/session_scripts_info.py \
-	    src/gui/ui/script_info.py \
-	    src/gui/ui/script_user_action.py \
-	    src/gui/ui/session_notes.py \
-		src/gui/ui/settings.py \
-	    src/gui/ui/snapshot_name.py \
-	    src/gui/ui/snapshots_info.py \
-	    src/gui/ui/snapshot_progress.py \
-	    src/gui/ui/startup_dialog.py \
-	    src/gui/ui/systray_close.py \
-	    src/gui/ui/stop_client.py \
-	    src/gui/ui/stop_client_no_save.py \
-	    src/gui/ui/template_slot.py \
-	    src/gui/ui/waiting_close_user.py
+raysession: $(shell \
+	ls resources/ui/*.ui| sed 's|\.ui$$|.py|'| sed 's|^resources/|src/gui/|')
 
 src/gui/ui/%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
@@ -103,9 +88,6 @@ ray_proxy: src/clients/proxy/ui_proxy_copy.py \
 	
 src/clients/proxy/ui_%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
-	
-PY_CACHE:
-	$(PYTHON) -m compileall src/
 	
 # ------------------------
 # # Translations Files
@@ -127,6 +109,7 @@ clean:
 	rm -f -R src/gui/ui
 	rm -f -R src/__pycache__ src/*/__pycache__ src/*/*/__pycache__ \
 		  src/*/*/*/__pycache__
+	rm src/shared/qt_api.py
 
 # -------------------------
 
@@ -158,14 +141,6 @@ pure_install:
 	# Create directories
 	install -d $(DESTDIR)$(PREFIX)/bin/
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
-	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
-	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/24x24/apps/
-	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/32x32/apps/
-	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
-	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/64x64/apps/
-	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/96x96/apps/
-	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
-	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 	install -d $(DEST_RAY)/
 	install -d $(DEST_RAY)/locale/
@@ -175,6 +150,13 @@ pure_install:
 	install -d $(DESTDIR)/etc/xdg/raysession/
 	install -d $(DESTDIR)/etc/xdg/raysession/client_templates/
 	
+	# Install icons
+	for sz in $(ICON_SIZES);do \
+		install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/$${sz}x$${sz}/apps/ ;\
+		install -m 644 resources/main_icon/$${sz}x$${sz}/$(APP_NAME_LC).png \
+			$(DESTDIR)$(PREFIX)/share/icons/hicolor/$${sz}x$${sz}/apps/ ;\
+	done
+
 	# Copy Templates Factory
 	cp -r client_templates/40_ray_nsm  $(DESTDIR)/etc/xdg/raysession/client_templates/
 	cp -r client_templates/60_ray_lash $(DESTDIR)/etc/xdg/raysession/client_templates/
@@ -190,24 +172,6 @@ pure_install:
 	# Copy Desktop Files
 	install -m 644 data/share/applications/*.desktop \
 		$(DESTDIR)$(PREFIX)/share/applications/
-
-	# Install icons
-	install -m 644 resources/main_icon/16x16/raysession.png   \
-		$(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
-	install -m 644 resources/main_icon/24x24/raysession.png   \
-		$(DESTDIR)$(PREFIX)/share/icons/hicolor/24x24/apps/
-	install -m 644 resources/main_icon/32x32/raysession.png   \
-		$(DESTDIR)$(PREFIX)/share/icons/hicolor/32x32/apps/
-	install -m 644 resources/main_icon/48x48/raysession.png   \
-		$(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
-	install -m 644 resources/main_icon/64x64/raysession.png   \
-		$(DESTDIR)$(PREFIX)/share/icons/hicolor/64x64/apps/
-	install -m 644 resources/main_icon/96x96/raysession.png   \
-		$(DESTDIR)$(PREFIX)/share/icons/hicolor/96x96/apps/
-	install -m 644 resources/main_icon/128x128/raysession.png \
-		$(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
-	install -m 644 resources/main_icon/256x256/raysession.png \
-		$(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
 
 	# Install icons, scalable
 	install -m 644 resources/main_icon/scalable/raysession.svg \

@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 
-import liblo
+try:
+    import liblo
+except:
+    import pyliblo3 as liblo
 
 
 @dataclass()

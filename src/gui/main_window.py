@@ -6,7 +6,7 @@ import subprocess
 from qtpy.QtWidgets import (
     QApplication, QMainWindow, QMenu, QDialog,
     QMessageBox, QToolButton, QAbstractItemView,
-    QBoxLayout, QSystemTrayIcon, QShortcut)
+    QBoxLayout, QSystemTrayIcon, QShortcut, QAction)
 from qtpy.QtGui import (QIcon, QDesktopServices, QFontMetrics,
                          QCloseEvent, QKeyEvent)
 from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt
@@ -140,8 +140,10 @@ class MainWindow(QMainWindow):
 
         if RS.settings.value('MainWindow/WindowState'):
             self.restoreState(RS.settings.value('MainWindow/WindowState'))
-        self.ui.actionShowMenuBar.activate(RS.settings.value(
-            'MainWindow/ShowMenuBar', False, type=bool))
+        show_menu_bar = RS.settings.value(
+            'MainWindow/ShowMenuBar', False, type=bool)
+        if show_menu_bar:
+            self.ui.actionShowMenuBar.activate(QAction.Trigger)
         self.ui.actionToggleShowMessages.toggled.connect(
             self._show_messages_widget)
 

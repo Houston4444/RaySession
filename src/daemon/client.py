@@ -6,15 +6,18 @@ import signal
 import time
 from pathlib import Path
 from enum import Enum
+import xml.etree.ElementTree as ET
+
+from qtpy.QtCore import (QCoreApplication, QProcess,
+                          QProcessEnvironment, QTimer)
+from qtpy.QtXml import QDomDocument
+
 
 try:
     from liblo import Address
 except ImportError:
     from pyliblo3 import Address
-from qtpy.QtCore import (QCoreApplication, QProcess,
-                          QProcessEnvironment, QTimer)
-from qtpy.QtXml import QDomDocument
-import xml.etree.ElementTree as ET
+    
 
 import xdg
 import ray
@@ -116,8 +119,7 @@ class Client(ServerSender, ray.ClientData):
 
         self._process = QProcess()
         self._process.started.connect(self._process_started)
-        if ray.QT_VERSION >= (5, 6):
-            self._process.errorOccurred.connect(self._error_in_process)
+        self._process.errorOccurred.connect(self._error_in_process)
         self._process.finished.connect(self._process_finished)
         self._process.readyReadStandardError.connect(self._standard_error)
         self._process.readyReadStandardOutput.connect(self._standard_output)
@@ -181,7 +183,9 @@ class Client(ServerSender, ray.ClientData):
         self._stopped_since_long_ = False
         self.process_drowned = False
         self._process_start_time = time.time()
-        self.pid = self._process.pid()
+
+        self.pid = self._process.processId()
+
         self.set_status(ray.ClientStatus.LAUNCH)
 
         self.send_gui_message(_translate("GUIMSG", "  %s: launched")
@@ -1503,7 +1507,8 @@ class Client(ServerSender, ray.ClientData):
     def is_running(self):
         if self.is_external:
             return True
-        return bool(self._process.state() == 2)
+        
+        return self._process.state() == QProcess.ProcessState.Running
 
     def external_finished(self):
         self._process_finished(0, 0)

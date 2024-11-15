@@ -9,6 +9,8 @@ try:
     from liblo import Address, make_method
 except ImportError:
     from pyliblo3 import Address, make_method
+
+from qtpy import QT5
 from qtpy.QtCore import (QCoreApplication, Signal, QObject, QTimer,
                           QProcess)
 from qtpy.QtXml import QDomDocument
@@ -41,8 +43,8 @@ class SlOSCThread(NSMThread):
 class GeneralObject(QObject):
     sl_ready = Signal()
 
-    def __init__(self):
-        QObject.__init__(self, sl_port=None)
+    def __init__(self, sl_port=None):
+        QObject.__init__(self)
 
         self.sl_process = QProcess()
         self.sl_process.setProcessChannelMode(QProcess.ForwardedChannels)
@@ -144,17 +146,27 @@ class GeneralObject(QObject):
 
     def leave(self):
         self.leaving = True
-
-        if self.gui_process.state():
-            self.gui_process.terminate()
-        else:
-            if self.sl_process.state():
-                server.send(self.sl_url, '/quit')
+        
+        if QT5:
+            if self.gui_process.state():
+                self.gui_process.terminate()
             else:
+                if self.sl_process.state():
+                    server.send(self.sl_url, '/quit')
+                else:
+                    app.quit()
+            return
+
+        if self.gui_process.state() is QProcess.ProcessState.NotRunning:
+            if self.sl_process.state() is QProcess.ProcessState.NotRunning:
                 app.quit()
+            else:
+                server.send(self.sl_url, '/quit')
+        else:
+            self.gui_process.terminate()
 
     def isGuiShown(self):
-        return bool(self.sl_process.state() == QProcess.Running)
+        return bool(self.sl_process.state() == QProcess.ProcessState.Running)
 
     def slProcessFinished(self, exit_code):
         if not self._switching:
@@ -322,12 +334,22 @@ class GeneralObject(QObject):
         self.startFileChecker()
 
     def showOptionalGui(self):
-        if not self.gui_process.state():
-            self.gui_process.start('slgui', ['-P', str(self.sl_port)])
+        if QT5:
+            if not self.gui_process.state():
+                self.gui_process.start('slgui', ['-P', str(self.sl_port)])
+        else:
+            if self.gui_process.state() is QProcess.ProcessState.NotRunning:
+                self.gui_process.start('slgui', ['-P', str(self.sl_port)]) 
 
     def hideOptionalGui(self):
-        if self.gui_process.state():
-            self.gui_process.terminate()
+        if QT5:
+            if self.gui_process.state():
+                self.gui_process.terminate()
+        else:
+            if (self.gui_process.state()
+                    is not QProcess.ProcessState.NotRunning):
+                self.gui_process.terminate()
+
 
 if __name__ == '__main__':
     NSM_URL = os.getenv('NSM_URL')

@@ -4,9 +4,10 @@ import socket
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
+import xml.etree.ElementTree as ET
+
 from qtpy.QtCore import QProcess, QObject, QDateTime
 from qtpy.QtXml import QDomDocument, QDomElement
-import xml.etree.ElementTree as ET
 
 import ray
 from daemon_tools import Terminal
@@ -93,10 +94,10 @@ class Snapshoter(QObject):
         standard_output = self._git_process.readAllStandardOutput().data()
         Terminal.snapshoter_message(standard_output, self._git_command)
 
-    def _run_git_process(self, *all_args) -> int:
+    def _run_git_process(self, *all_args) -> bool:
         return self._run_git_process_at(str(self.session.path), *all_args)
 
-    def _run_git_process_at(self, spath: str, *all_args) -> int:
+    def _run_git_process_at(self, spath: str, *all_args) -> bool:
         self._git_command = ''
         for arg in all_args:
             self._git_command += ' %s' % arg
@@ -109,7 +110,7 @@ class Snapshoter(QObject):
             self._git_process.kill()
             err = ray.Err.SUBPROCESS_UNTERMINATED
         else:
-            if self._git_process.exitStatus():
+            if self._git_process.exitStatus() == QProcess.ExitStatus.CrashExit:
                 err = ray.Err.SUBPROCESS_CRASH
             elif self._git_process.exitCode():
                 err = ray.Err.SUBPROCESS_EXITCODE
@@ -383,9 +384,12 @@ class Snapshoter(QObject):
                     self._error_function(err)
 
             # not really a reply, not strong.
-            self.session.send_gui('/reply', '/ray/session/list_snapshots',
-                                  full_ref_for_gui(ref, self._next_snapshot_name,
-                                                   self._rw_snapshot))
+            self.session.send_gui(
+                '/reply',
+                '/ray/session/list_snapshots',
+                full_ref_for_gui(ref, self._next_snapshot_name,
+                                 self._rw_snapshot))
+
         self._error_function = None
         self._next_snapshot_name = ''
         self._rw_snapshot = ''
@@ -467,7 +471,7 @@ class Snapshoter(QObject):
         if not self._is_init():
             return True
 
-        if self._changes_checker.state():
+        if self._changes_checker.state() != QProcess.ProcessState.NotRunning:
             self._changes_checker.kill()
 
         self._n_file_changed = 0
@@ -572,7 +576,7 @@ class Snapshoter(QObject):
         return True
 
     def abort(self):
-        if not self._adder_process.state():
+        if self._adder_process.state() == QProcess.ProcessState.NotRunning:
             return
 
         self.set_auto_snapshot(False)
