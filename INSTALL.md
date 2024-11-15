@@ -20,9 +20,11 @@ On Debian and Ubuntu, use these commands as root to install all build
 dependencies:
 
 - for Qt5 build:
+
 `$ [sudo] apt-get install python3-qtpy python3-pyqt5 pyqt5-dev-tools qtchooser qttools5-dev-tools`
 
 - for Qt6 build:
+
 `$ [sudo] apt-get install python3-qtpy python3-pyqt6 pyqt6-dev-tools qtchooser`
 
 To build RaySession, simply run as usual:
@@ -30,6 +32,7 @@ To build RaySession, simply run as usual:
 `$ make`
 
 if you prefer to build it with Qt6:
+
 `$ QT_VERSION=6 make`
 
 Depending of the distribution you might need to use the LRELEASE variable
