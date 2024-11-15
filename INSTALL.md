@@ -3,7 +3,7 @@
 If you just cloned the git repository, make sure you also
 cloned the submodules, which you can do using:
 
-    $ git submodule update --init
+`$ git submodule update --init`
 
 # Building
 
@@ -11,58 +11,60 @@ cloned the submodules, which you can do using:
 
 The required build dependencies are: (devel packages of these)
 
- - PyQt5
- - Qt5 dev tools
+ - qtpy
+ - PyQt5 or PyQt6
+ - Qt5 dev tools or Qt6 dev tools
  - qtchooser
 
 On Debian and Ubuntu, use these commands as root to install all build
 dependencies:
 
-    apt-get install \
-      python3-pyqt5 pyqt5-dev-tools \
-      qtchooser qttools5-dev-tools
+- for Qt5 build:
+`$ [sudo] apt-get install python3-qtpy python3-pyqt5 pyqt5-dev-tools qtchooser qttools5-dev-tools`
 
+- for Qt6 build:
+`$ [sudo] apt-get install python3-qtpy python3-pyqt6 pyqt6-dev-tools qtchooser`
 
 To build RaySession, simply run as usual:
 
-    make
+`$ make`
+
+if you prefer to build it with Qt6:
+`$ QT_VERSION=6 make`
 
 Depending of the distribution you might need to use the LRELEASE variable
 to build.  If you don't have 'lrelease' executable but 'lrelease-qt5' use:
 
-    make LRELEASE=lrelease-qt5
+`$ make LRELEASE=lrelease-qt5`
 
 # Installing
 
 To install RaySession, simply run as usual:
 
-    make install
+`$ [sudo] make install`
 
 Packagers can make use of the 'PREFIX' and 'DESTDIR' variable during install,
 like this:
 
-    make install PREFIX=/usr DESTDIR=./test-dir
+`$ [sudo] make install PREFIX=/usr DESTDIR=./test-dir`
 
 # Uninstalling
 
 To uninstall RaySession, run:
 
-    make uninstall
+`$ [sudo] make uninstall`
 
 # Running
 
 You can run RaySession without install, by using:
 
-    ./src/bin/raysession
+`$ ./src/bin/raysession`
 
 To run it, you'll additionally need:
 
    - python3-liblo
-   - python3-pyqt5.qtsvg
+   - python3-pyqt5.qtsvg or python3-pyqt6.qtsvg
 
-On a debian-based operating system you can install them all using:
-
-    sudo apt install python3-liblo python3-pyqt5.qtsvg
 
 IMPORTANT: since python 3.11, because pyliblo has been totally abandonned
 by Dominic Sacre, for liblo you need to use the following fork:
@@ -71,4 +73,4 @@ by Dominic Sacre, for liblo you need to use the following fork:
 
 Simply install it with:
 
-    python3 -m pip install pyliblo3
+`$ python3 -m pip install pyliblo3`
