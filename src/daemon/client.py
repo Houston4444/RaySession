@@ -1113,6 +1113,69 @@ class Client(ServerSender, ray.ClientData):
                 sub_child[data] = self.custom_data[data]
             ET.dump(c.el)
 
+    def transform_from_proxy_to_hack(
+            self, spath: Path, sess_name: str) -> bool:
+        '''before to load a session, if a client has for executable_path
+        'ray-proxy', transform it directly to RayHack client.
+        'ray-proxy' is a very old tool, replaced with RayHack,
+        and I don't want to maintain it anymore.
+        
+        spath: the session Path of the future session.
+        sess_name: the future session name'''
+
+        if self.executable_path != 'ray-proxy':
+            return
+        
+        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+            project_path = spath / f'{self.name}.{self.client_id}'
+        elif self.prefix_mode == ray.PrefixMode.SESSION_NAME:
+            project_path = spath / f'{sess_name}.{self.client_id}'
+        else:
+            project_path = spath / f'{self.custom_prefix}.{self.client_id}'
+        
+        proxy_file = project_path / 'ray-proxy.xml'
+
+        try:
+            proxy_tree = ET.parse(proxy_file)
+        except:
+            _logger.warning(
+                f'Failed to find {proxy_file} for client {self.client_id}')
+            return
+        
+        root = proxy_tree.getroot()
+        if root.tag != 'RAY-PROXY':
+            _logger.warning(f'wrong RAY-PROXY xml document: {proxy_file}')
+            return
+
+        xroot = XmlElement(root)
+        executable = xroot.str('executable')
+        arguments = xroot.str('arguments')
+        config_file = xroot.str('config_file')
+        save_signal = xroot.int('save_signal')
+        stop_signal = xroot.int('stop_signal')
+        wait_window = xroot.bool('wait_window')
+        no_save_level = xroot.int('no_save_level')
+        
+        if not executable:
+            return False
+
+        self.protocol = ray.Protocol.RAY_HACK
+        self.executable_path = executable
+        self.arguments = arguments
+        self.ray_hack.config_file = config_file
+        self.ray_hack.no_save_level = no_save_level
+        if signal.Signals(save_signal):
+            self.ray_hack.save_sig = save_signal
+        if signal.Signals(stop_signal):
+            self.ray_hack.stop_sig = stop_signal
+        self.ray_hack.wait_win = wait_window
+                
+        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+            self.prefix_mode = ray.PrefixMode.CUSTOM
+            self.custom_prefix = self.name
+
+        return True
+
     def set_reply(self, errcode: int, message: str):
         self._reply_message = message
         self._reply_errcode = errcode
@@ -1172,9 +1235,7 @@ class Client(ServerSender, ray.ClientData):
                         self.send_to_self_address('/nsm/client/show_optional_gui')
 
             self.set_status(ray.ClientStatus.READY)
-            #self.message( "Client \"%s\" replied with: %s in %fms"
-                            #% (client.name, message,
-                                #client.milliseconds_since_last_command()))
+
         if (self.scripter.is_running()
                 and self.scripter.pending_command() is self.pending_command):
             return

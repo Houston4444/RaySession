@@ -1814,6 +1814,9 @@ for better organization.""")
                         if not client.executable_path:
                             continue
 
+                        if client.executable_path == 'ray-proxy':
+                            client.transform_from_proxy_to_hack(spath, sess_name)
+
                         if client.client_id in client_ids:
                             # prevent double same id
                             continue
