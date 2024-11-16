@@ -125,7 +125,6 @@ control RaySession daemons
         Adds a client to the current session
         Available options are 
             ray_hack    runs the executable with Ray-Hack protocol (not NSM)
-            via_proxy   runs the executable into ray-proxy
             not_start   prepare the client but not start it
             prefix_mode:client_name
                         Set the prefix mode to client_name
@@ -203,12 +202,6 @@ control RaySession daemons
         Set client properties.
         PROPERTY must contains property:value
         example: ray_control client carla set_properties icon:carla "label:My Carla Rack"
-    get_proxy_properties
-        Get client proxy properties only if client executable is ray-proxy
-    set_proxy_properties PROPERTY1 [PROPERTY2] [PROPERTY3]...
-        Set client proxy properties only if client executable is ray-proxy
-        PROPERTY must contains property:value
-        example: ray_control client lmms set_properties executable:lmms no_save_level:2
     set_custom_data PROPERTY VALUE
         set a custom data to the client.
         This will not be used by the daemon.

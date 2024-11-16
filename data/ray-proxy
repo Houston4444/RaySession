@@ -1,4 +1,0 @@
-#!/bin/bash
-
-INSTALL_PREFIX="X-PREFIX-X"
-exec "$INSTALL_PREFIX/share/raysession/src/bin/ray-proxy" "$@"

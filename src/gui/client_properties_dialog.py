@@ -273,9 +273,6 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
             no_save_level = 1
 
         self.client.ray_hack.no_save_level = no_save_level
-        #self.client.ray_hack.close_gracefully = \
-            #self.rhack.checkBoxCloseGracefully.isChecked()
-
         self.client.send_ray_hack()
 
         self.client.executable_path = self.rhack.lineEditExecutable.text()

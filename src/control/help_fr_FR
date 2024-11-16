@@ -131,7 +131,6 @@ contrôle les démons de RaySession
         Ajoute EXÉCUTABLE à la session en cours.
         Les options disponibles sont
             ray_hack    lancer l'exécutable avec le protocole Ray-Hack (pas NSM) 
-            via_proxy   lancer l'exécutable via un proxy
             not_start   preparer le client mais ne pas le démarrer
             prefix_mode:client_name
                         Mettre le mode de préfixe sur "Nom du client"
@@ -209,12 +208,6 @@ contrôle les démons de RaySession
         Le client doit être Ray Proxy et non démarré.
         PROPRIÉTÉ doit contenir propriété:valeur
         exemple: client carla set_properties icon:carla "label:Mon rack Carla"
-    get_proxy_properties
-        Renvoie les propriétés du proxy du client si son exécutable est ray-proxy
-    set_proxy_properties PROPRIÉTÉ1 [PROPRIÉTÉ2] [PROPRIÉTÉ3]...
-        Définit les les propriétés du proxy du client si son exécutable est ray-proxy.
-        PROPRIÉTÉ doit contenir propriété:valeur
-        example: ray_control client lmms set_properties executable:lmms no_save_level:2
     set_custom_data PROPERTY VALUE
         Définir une propriété personnalisée pour le client.
         Elle ne sera pas utilisée par le démon.

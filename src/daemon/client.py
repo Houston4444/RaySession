@@ -1,3 +1,4 @@
+from curses.ascii import isdigit
 import logging
 import os
 import shlex
@@ -333,48 +334,6 @@ class Client(ServerSender, ray.ClientData):
         if self.session.wait_for is ray.WaitFor.DUPLICATE_FINISH:
             self.session.end_timer_if_last_expected(self)
 
-    def _pretty_client_id(self):
-        wanted = self.client_id
-
-        if self.executable_path == 'ray-proxy':
-            proxy_file = self.get_project_path() / 'ray-proxy.xml'
-
-            if proxy_file.exists():
-                file = open(proxy_file, 'r')
-                xml = QDomDocument()
-                xml.setContent(file.read())
-                file.close()
-
-                content = xml.documentElement()
-                if content.tagName() == 'RAY-PROXY':
-                    executable = content.attribute('executable')
-                    if executable:
-                        wanted = executable
-
-        return self.short_client_id(wanted)
-
-    def _get_proxy_executable(self):
-        if os.path.basename(self.executable_path) != 'ray-proxy':
-            return ""
-        
-        xml_file = self.get_project_path() / 'ray-proxy.xml'
-        xml = QDomDocument()
-
-        try:
-            file = open(xml_file, 'r')
-            xml.setContent(file.read())
-        except:
-            return ""
-
-        content = xml.documentElement()
-        if content.tagName() != "RAY-PROXY":
-            file.close()
-            return ""
-
-        executable = content.attribute('executable')
-        file.close()
-        return executable
-
     def _ray_hack_near_ready(self):
         if not self.is_ray_hack():
             return
@@ -626,56 +585,6 @@ class Client(ServerSender, ray.ClientData):
                             files_to_rename.append((old_veeone_file,
                                                     new_veeone_file))
 
-                    # for ray-proxy, change config_file name
-                    proxy_file = project_path / "ray-proxy.xml"
-                    if proxy_file.is_file():
-                        try:
-                            file = open(proxy_file, 'r')
-                            xml = QDomDocument()
-                            xml.setContent(file.read())
-                            file.close()
-                            content = xml.documentElement()
-
-                            if content.tagName() == "RAY-PROXY":
-                                cte = content.toElement()
-                                config_file = cte.attribute('config_file')
-
-                                if (('$RAY_SESSION_NAME' or '${RAY_SESSION_NAME}')
-                                        in config_file):
-                                    for env in ('"$RAY_SESSION_NAME"',
-                                                '"${RAY_SESSION_NAME}"',
-                                                "$RAY_SESSION_NAME",
-                                                "${RAY_SESSION_NAME}"):
-                                        config_file = \
-                                            config_file.replace(env,
-                                                                old_session_name)
-
-                                    if (config_file
-                                            and (config_file.split('.')[0]
-                                                    == old_session_name)):
-                                        config_file_path = project_path / config_file
-                                        new_config_file_path = (
-                                            project_path / config_file.replace(
-                                                old_session_name, new_session_name))
-
-                                        if new_config_file_path.exists():
-                                            # replace config_file attribute
-                                            # with variable replaced
-                                            cte.setAttribute('config_file',
-                                                             config_file)
-                                            try:
-                                                file = open(proxy_file, 'w')
-                                                file.write(xml.toString())
-                                            except:
-                                                False
-                                        elif (config_file_path.exists()
-                                                and os.access(config_file_path, os.W_OK)):
-                                            files_to_rename.append(
-                                                (config_file_path,
-                                                new_config_file_path))
-                        except:
-                            False
-
                     files_to_rename.append((spath / file_path, next_path))                    
 
                 elif file_path.name == old_client_links_dir:
@@ -828,7 +737,7 @@ class Client(ServerSender, ray.ClientData):
         c = XmlElement(ET.SubElement(root, 'Client-Template'))
         self.write_xml_properties(c)
         c.set_str('template-name', template_name)
-        c.set_str('client_id', self._pretty_client_id())
+        c.set_str('client_id', self.short_client_id())
         
         if not self.is_running():
             c.set_bool('launched', False)
@@ -1332,13 +1241,15 @@ class Client(ServerSender, ray.ClientData):
     def set_default_git_ignored(self, executable=""):
         executable = executable if executable else self.executable_path
         executable = os.path.basename(executable)
-        if executable == 'ray-proxy':
-            executable = self._get_proxy_executable()
 
-        if executable in (
-                'ardour', 'ardour4', 'ardour5', 'ardour6',
-                'Ardour', 'Ardour4', 'Ardour5', 'Ardour6',
-                'qtractor'):
+        if executable.startswith(('ardour', 'Ardour')):
+            if len(executable) == 6:
+                self.ignored_extensions += " .mid"
+            elif len(executable) <= 8:
+                rest = executable[6:]
+                if isdigit(rest):
+                    self.ignored_extensions += " .mid"
+        elif executable == 'qtractor':
             self.ignored_extensions += " .mid"
 
         elif executable in ('luppp', 'sooperlooper', 'sooperlooper_nsm'):

@@ -356,10 +356,6 @@ class ClientCommunicating(liblo.ServerThread):
     def nsmClientNetworkProperties(self, osp: OscPack):
         pass
 
-    @osp_method('/nsm/client/no_save_level', 'i')
-    def nsmClientNoSaveLevel(self, osp: OscPack):
-        pass
-
     def _unknown_message(self, osp: OscPack):
         self.send(osp.src_addr, '/minor_error', osp.path,
                   ray.Err.UNKNOWN_MESSAGE,
@@ -467,7 +463,6 @@ class OscServerThread(ClientCommunicating):
             ('/ray/client/update_ray_hack_properties', 's' + ray.RayHack.sisi()),
             ('/ray/client/update_ray_net_properties', 's' + ray.RayNet.sisi()),
             ('/ray/client/get_properties', 's'),
-            ('/ray/client/get_proxy_properties', 's'),
             ('/ray/client/change_advanced_properties', 'ssisi'),
             ('/ray/client/full_rename', 'ss'),
             ('/ray/client/change_id', 'ss'),
@@ -499,7 +494,6 @@ class OscServerThread(ClientCommunicating):
             '/ray/session/clear_clients': 0,
             '/ray/session/list_clients': 0,
             '/ray/client/set_properties': 2,
-            '/ray/client/set_proxy_properties': 2
         }
 
         global instance
@@ -1126,10 +1120,9 @@ class OscServerThread(ClientCommunicating):
             return False
 
         executable_path = osp.args[0]
-        via_proxy = bool(len(osp.args) > 1 and 'via_proxy' in osp.args[1:])
         ray_hack = bool(len(osp.args) > 1 and 'ray_hack' in osp.args[1:])
 
-        if '/' in executable_path and not (via_proxy or ray_hack):
+        if '/' in executable_path and not ray_hack:
             self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False

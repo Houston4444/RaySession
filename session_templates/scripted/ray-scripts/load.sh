@@ -8,7 +8,7 @@
 #           some clients may be still alive                            #
 #           if they are NSM compatible and capable of switch,          #
 #           or if they are not NSM compatible at all                   #
-#           but launched with NSM protocol and not via proxy           #
+#           but launched with NSM protocol.                            #
 #                                                                      #
 #  You have access the following environment variables                 #
 #  RAY_SESSION_PATH : Folder of the current session                    #

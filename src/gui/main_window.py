@@ -784,12 +784,12 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
 
-        command, auto_start, via_proxy, \
+        command, auto_start, bool_ray_hack, \
             prefix_mode, prefix, client_id, jack_naming = dialog.get_selection()
 
         self.to_daemon(
             '/ray/session/add_executable', command, int(auto_start),
-            int(via_proxy), prefix_mode, prefix, client_id, int(jack_naming))
+            int(bool_ray_hack), prefix_mode, prefix, client_id, int(jack_naming))
 
     def _show_jack_patchbay(self, yesno: bool):
         self.save_window_settings(

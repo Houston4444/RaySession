@@ -75,18 +75,10 @@ src/gui/resources_rc.py: resources/resources.qrc
 # ---------------------
 # UI code
 
-UI: raysession ray_proxy
-
-raysession: $(shell \
+UI: $(shell \
 	ls resources/ui/*.ui| sed 's|\.ui$$|.py|'| sed 's|^resources/|src/gui/|')
 
 src/gui/ui/%.py: resources/ui/%.ui
-	$(PYUIC) $< -o $@
-
-ray_proxy: src/clients/proxy/ui_proxy_copy.py \
-	   src/clients/proxy/ui_proxy_gui.py
-	
-src/clients/proxy/ui_%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
 	
 # ------------------------
@@ -104,8 +96,7 @@ locale/%.qm: locale/%.ts
 
 clean:
 	@(cd $(PATCHBAY_DIR) && $(MAKE) $@)
-	rm -f *~ src/*~ src/*.pyc  src/clients/proxy/ui_*.py \
-	      src/gui/resources_rc.py  locale/*.qm
+	rm -f *~ src/*~ src/*.pyc src/gui/resources_rc.py locale/*.qm
 	rm -f -R src/gui/ui
 	rm -f -R src/__pycache__ src/*/__pycache__ src/*/*/__pycache__ \
 		  src/*/*/*/__pycache__
@@ -206,14 +197,12 @@ pure_install:
 	install -m 755 data/raysession  $(DESTDIR)$(PREFIX)/bin/
 	install -m 755 data/ray-daemon  $(DESTDIR)$(PREFIX)/bin/
 	install -m 755 data/ray_control $(DESTDIR)$(PREFIX)/bin/
-	install -m 755 data/ray-proxy   $(DESTDIR)$(PREFIX)/bin/
 	
 	# modify PREFIX in main bash scripts
 	sed -i "s?X-PREFIX-X?$(PREFIX)?" \
 		$(DESTDIR)$(PREFIX)/bin/raysession \
 		$(DESTDIR)$(PREFIX)/bin/ray-daemon \
-		$(DESTDIR)$(PREFIX)/bin/ray_control \
-		$(DESTDIR)$(PREFIX)/bin/ray-proxy
+		$(DESTDIR)$(PREFIX)/bin/ray_control
 	
 	# Install Translations
 	install -m 644 locale/*.qm $(DEST_RAY)/locale/

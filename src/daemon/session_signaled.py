@@ -271,14 +271,6 @@ class SignaledSession(OperatingSession):
             net_daemon_url, net_session_root = osp.args
             client.set_network_properties(net_daemon_url, net_session_root)
 
-    def _nsm_client_no_save_level(self, osp: OscPack):
-        client = self.get_client_by_address(osp.src_addr)
-        if client and client.is_capable_of(':warning-no-save:'):
-            client.no_save_level = osp.args[0]
-
-            self.send_gui('/ray/gui/client/no_save_level',
-                           client.client_id, client.no_save_level)
-
     def _ray_server_ask_for_patchbay(self, osp: OscPack):
         # if we are here, this means we need a patchbay to osc to run
         server = self.get_server()
@@ -993,7 +985,6 @@ class SignaledSession(OperatingSession):
 
     def _ray_session_add_executable(self, osp: OscPack):
         executable = osp.args[0]
-        via_proxy = 0
         prefix_mode = ray.PrefixMode.SESSION_NAME
         custom_prefix = ''
         client_id = ""
@@ -1004,7 +995,6 @@ class SignaledSession(OperatingSession):
             pass
 
         elif ray.types_are_all_strings(osp.types):
-            via_proxy = int(bool('via_proxy' in osp.args[1:]))
             start_it = int(bool('not_start' not in osp.args[1:]))
             if 'ray_hack' in osp.args[1:]:
                 protocol = ray.Protocol.RAY_HACK
@@ -1081,10 +1071,7 @@ class SignaledSession(OperatingSession):
         client = Client(self)
 
         client.protocol = ray.Protocol(protocol_int)
-        if client.protocol is ray.Protocol.NSM and via_proxy:
-            client.executable_path = 'ray-proxy'
-        else:
-            client.executable_path = executable
+        client.executable_path = executable
         client.name = os.path.basename(executable)
         client.client_id = client_id
         client.prefix_mode = prefix_mode
@@ -1454,128 +1441,6 @@ class SignaledSession(OperatingSession):
     @client_action
     def _ray_client_get_properties(self, osp: OscPack, client:Client):
         message = client.get_properties_message()
-        self.send(*osp.reply(), message)
-        self.send(*osp.reply())
-
-    @client_action
-    def _ray_client_get_proxy_properties(self, osp: OscPack,
-                                         client:Client):
-        proxy_file = client.get_project_path() / 'ray-proxy.xml'
-
-        if not proxy_file.is_file():
-            self.send(*osp.error(), ray.Err.GENERAL_ERROR,
-                _translate('GUIMSG', '%s seems to not be a proxy client !')
-                    % client.gui_msg_style())
-            return
-
-        try:
-            file = open(proxy_file, 'r')
-            xml = QDomDocument()
-            xml.setContent(file.read())
-            content = xml.documentElement()
-            file.close()
-        except:
-            self.send(*osp.error(), ray.Err.BAD_PROJECT,
-                _translate('GUIMSG', "impossible to read %s correctly !")
-                    % proxy_file)
-            return
-
-        if content.tagName() != "RAY-PROXY":
-            self.send(*osp.error(), ray.Err.BAD_PROJECT,
-                _translate('GUIMSG', "impossible to read %s correctly !")
-                    % proxy_file)
-            return
-
-        cte = content.toElement()
-        message = ""
-        for prop in ('executable', 'arguments', 'config_file',
-                     'save_signal', 'stop_signal',
-                     'no_save_level', 'wait_window',
-                     'VERSION'):
-            message += "%s:%s\n" % (prop, cte.attribute(prop))
-
-        # remove last empty line
-        message = message.rpartition('\n')[0]
-
-        self.send(*osp.reply(), message)
-        self.send(*osp.reply())
-
-    @client_action
-    def _ray_client_set_proxy_properties(self, osp: OscPack,
-                                         client:Client):
-        message = ''
-        for arg in osp.args:
-            message += "%s\n" % arg
-
-        if client.is_running():
-            self.send(*osp.error(), ray.Err.GENERAL_ERROR,
-              _translate('GUIMSG',
-               'Impossible to set proxy properties while client is running.'))
-            return
-
-        proxy_file = client.get_project_path() / 'ray-proxy.xml'
-
-        if (not proxy_file.is_file()
-                and client.executable_path != 'ray-proxy'):
-            self.send(*osp.error(), ray.Err.GENERAL_ERROR,
-                _translate('GUIMSG', '%s seems to not be a proxy client !')
-                    % client.gui_msg_style())
-            return
-
-        if proxy_file.is_file():
-            try:
-                file = open(proxy_file, 'r')
-                xml = QDomDocument()
-                xml.setContent(file.read())
-                content = xml.documentElement()
-                file.close()
-            except:
-                self.send(*osp.error(), ray.Err.BAD_PROJECT,
-                    _translate('GUIMSG', "impossible to read %s correctly !")
-                        % proxy_file)
-                return
-        else:
-            xml = QDomDocument()
-            p = xml.createElement('RAY-PROXY')
-            p.setAttribute('VERSION', ray.VERSION)
-            xml.appendChild(p)
-            content = xml.documentElement()
-
-            client_project_path = client.get_project_path()
-            if not client_project_path.is_dir():
-                try:
-                    client_project_path.mkdir(parents=True)
-                except:
-                    self.send(*osp.error(), ray.Err.CREATE_FAILED,
-                              "Impossible to create proxy directory")
-                    return
-
-        if content.tagName() != "RAY-PROXY":
-            self.send(*osp.error(), ray.Err.BAD_PROJECT,
-                _translate('GUIMSG', "impossible to read %s correctly !")
-                    % proxy_file)
-            return
-
-        cte = content.toElement()
-
-        for line in message.split('\n'):
-            prop, colon, value = line.partition(':')
-            if prop in (
-                    'executable', 'arguments',
-                    'config_file', 'save_signal', 'stop_signal',
-                    'no_save_level', 'wait_window', 'VERSION'):
-                cte.setAttribute(prop, value)
-
-        try:
-            file = open(proxy_file, 'w')
-            file.write(xml.toString())
-            file.close()
-        except:
-            self.send(*osp.error(), ray.Err.BAD_PROJECT,
-                _translate('GUIMSG', "%s is not writeable")
-                    % proxy_file)
-            return
-
         self.send(*osp.reply(), message)
         self.send(*osp.reply())
 

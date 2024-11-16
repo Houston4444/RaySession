@@ -319,31 +319,6 @@ class ClientSlot(QFrame):
                 bool(':optional-gui:' in self.client.capabilities))
             self.set_gui_state(self.client.gui_state)
 
-        if self.client.executable_path in ('ray-proxy', 'nsm-proxy'):
-            if is_dark_theme(self):
-                self._icon_visible = QIcon()
-                self._icon_visible.addPixmap(
-                    QPixmap(':scalable/breeze-dark/emblem-symbolic-link'),
-                    QIcon.Normal, QIcon.Off)
-                self._icon_invisible = QIcon()
-                self._icon_invisible.addPixmap(
-                    QPixmap(':scalable/breeze-dark/link'),
-                    QIcon.Normal, QIcon.Off)
-                self._icon_invisible.addPixmap(
-                    QPixmap(':scalable/breeze-dark/disabled/link'),
-                    QIcon.Disabled, QIcon.Off)
-            else:
-                self._icon_visible = QIcon()
-                self._icon_visible.addPixmap(
-                    QPixmap(':scalable/breeze/emblem-symbolic-link'),
-                    QIcon.Normal, QIcon.Off)
-                self._icon_invisible = QIcon()
-                self._icon_invisible.addPixmap(
-                    QPixmap(':scalable/breeze/link'), QIcon.Normal, QIcon.Off)
-                self._icon_invisible.addPixmap(
-                    QPixmap(':scalable/breeze/disabled/link'),
-                    QIcon.Disabled, QIcon.Off)
-
     def update_status(self, status: int):
         self.ui.lineEditClientStatus.setText(client_status_string(status))
         self.ui.lineEditClientStatus.setEnabled(

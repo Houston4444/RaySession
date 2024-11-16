@@ -688,10 +688,10 @@ class RayHack:
         ray_hack.update(*args)
         return ray_hack
 
-    def saveable(self)->bool:
+    def saveable(self) -> bool:
         return bool(self.config_file and self.save_sig)
 
-    def noSaveLevel(self)->int:
+    def noSaveLevel(self) -> int:
         if self.config_file and self.save_sig == 0:
             return self.no_save_level
 
@@ -707,7 +707,7 @@ class RayHack:
         self.wait_win = bool(wait_win)
         self.no_save_level = int(no_save_level)
 
-    def spread(self)->tuple:
+    def spread(self) -> tuple:
         return (self.config_file, self.save_sig, self.stop_sig,
                 int(self.wait_win), self.no_save_level,
                 self.useless_str, self.useless_int)

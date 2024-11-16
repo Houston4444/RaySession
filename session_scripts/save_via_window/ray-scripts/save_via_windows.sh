@@ -12,7 +12,7 @@ start_win=$(xdotool getactivewindow)
 focus_changed=false
 
 for client_id in $(ray_control list_clients no_save_level); do
-    executable_line=$(ray_control client "$client_id" get_proxy_properties | grep ^executable:)
+    executable_line=$(ray_control client "$client_id" get_properties | grep ^executable:)
     executable=$(basename "${executable_line#*:}")
 
     [ -n "$executable" ] || continue
