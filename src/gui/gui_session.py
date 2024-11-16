@@ -343,13 +343,6 @@ class SignaledSession(Session):
         if client:
             client.allow_kill()
 
-    def _ray_gui_client_no_save_level(self, path, args):
-        client_id, no_save_level = args
-
-        client = self.get_client(client_id)
-        if client:
-            client.set_no_save_level(no_save_level)
-
     def _ray_gui_trash_add(self, path, args):
         trashed_client = TrashedClient(self)
         trashed_client.update(*args)

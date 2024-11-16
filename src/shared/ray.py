@@ -691,10 +691,9 @@ class RayHack:
     def saveable(self) -> bool:
         return bool(self.config_file and self.save_sig)
 
-    def noSaveLevel(self) -> int:
+    def relevant_no_save_level(self) -> int:
         if self.config_file and self.save_sig == 0:
             return self.no_save_level
-
         return 0
 
     def update(self, config_file,

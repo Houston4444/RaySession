@@ -1174,14 +1174,14 @@ class OperatingSession(Session):
         if self.has_server_option(ray.Option.HAS_WMCTRL):
             has_nosave_clients = False
             for client in self.clients:
-                if client.is_running() and client.noSaveLevel() == 2:
+                if client.is_running() and client.relevant_no_save_level() == 2:
                     has_nosave_clients = True
                     break
 
             if has_nosave_clients:
                 self.desktops_memory.set_active_window_list()
                 for client in self.clients:
-                    if client.is_running() and client.noSaveLevel() == 2:
+                    if client.is_running() and client.relevant_no_save_level() == 2:
                         self.expected_clients.append(client)
                         self.desktops_memory.find_and_close(client.pid)
 
@@ -1200,7 +1200,7 @@ class OperatingSession(Session):
         has_nosave_clients = False
 
         for client in self.clients:
-            if (client.is_running() and client.noSaveLevel()):
+            if (client.is_running() and client.relevant_no_save_level()):
                 self.expected_clients.append(client)
                 has_nosave_clients = True
 

@@ -88,7 +88,6 @@ class Client(ServerSender, ray.ClientData):
 
     auto_start = True
     start_gui_hidden = False
-    no_save_level = 0
     is_external = False
     sent_to_gui = False
     switch_state = ray.SwitchState.NONE
@@ -197,9 +196,6 @@ class Client(ServerSender, ray.ClientData):
         self._send_reply_to_caller(OscSrc.START, 'client started')
 
         if self.is_ray_hack():
-            if self.noSaveLevel():
-                self.send_gui('/ray/gui/client/no_save_level',
-                              self.client_id, self.noSaveLevel())
             if self.ray_hack.config_file:
                 self.pending_command = ray.Command.OPEN
                 self.set_status(ray.ClientStatus.OPEN)
@@ -1561,7 +1557,7 @@ class Client(ServerSender, ray.ClientData):
             return bool(self.is_running()
                         and self.pending_command is ray.Command.NONE)
 
-        return bool(self.nsm_active and not self.no_save_level)
+        return self.nsm_active
 
     def save(self, osp: Optional[OscPack]=None):
         if self.switch_state in (ray.SwitchState.RESERVED,
@@ -1882,14 +1878,14 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                               self.ray_net.session_template)
         return message
 
-    def noSaveLevel(self)->int:
+    def relevant_no_save_level(self) -> int:
         '''This method will be renamed or deleted later
         no_save_level will be deprecated for NSM client
         it will applies only on Ray-Hack clients'''
         if self.is_ray_hack():
-            return self.ray_hack.noSaveLevel()
+            return self.ray_hack.relevant_no_save_level()
 
-        return self.no_save_level
+        return 0
 
     def get_project_files(self) -> list[Path]:
         client_files = list[Path]()

@@ -6,12 +6,12 @@ import subprocess
 import time
 from typing import TYPE_CHECKING, Callable
 
+from qtpy.QtCore import QCoreApplication, QProcess
+
 try:
     from liblo import Address
 except ImportError:
     from pyliblo3 import Address
-from qtpy.QtCore import QCoreApplication, QProcess
-from qtpy.QtXml  import QDomDocument
 
 import ray
 
@@ -1254,7 +1254,7 @@ class SignaledSession(OperatingSession):
                 and (f_active < 0 or f_active == client.nsm_active)
                 and (f_auto_start < 0 or f_auto_start == client.auto_start)
                 and (f_no_save_level < 0
-                     or f_no_save_level == int(bool(client.noSaveLevel())))):
+                     or f_no_save_level == int(bool(client.relevant_no_save_level())))):
                 if search_properties:
                     message = client.get_properties_message()
 
@@ -1409,16 +1409,8 @@ class SignaledSession(OperatingSession):
 
     @client_action
     def _ray_client_update_ray_hack_properties(self, osp: OscPack, client:Client):
-        ex_no_save_level = client.noSaveLevel()
-
         if client.is_ray_hack():
             client.ray_hack.update(*osp.args)
-
-        no_save_level = client.noSaveLevel()
-
-        if no_save_level != ex_no_save_level:
-            self.send_gui('/ray/gui/client/no_save_level',
-                           client.client_id, no_save_level)
 
         self.send(*osp.reply(), 'ray_hack updated')
 

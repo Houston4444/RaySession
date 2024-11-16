@@ -97,7 +97,7 @@ class RayAbstractIcon(QIcon):
         self.addPixmap(
             QPixmap(
                 ':scalable/%s/disabled/%s' %
-                (breeze, icon_name)), QIcon.Disabled, QIcon.Off)
+                (breeze, icon_name)), QIcon.Mode.Disabled, QIcon.State.Off)
 
 
 def RayIcon(icon_name: str, dark=False) -> RayAbstractIcon:

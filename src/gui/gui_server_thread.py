@@ -100,7 +100,6 @@ class GuiServerThread(liblo.ServerThread):
             ('/ray/gui/client/has_optional_gui', 's'),
             ('/ray/gui/client/gui_visible', 'si'),
             ('/ray/gui/client/still_running', 's'),
-            ('/ray/gui/client/no_save_level', 'si'),
             ('/ray/gui/trash/add', ray.ClientData.sisi()),
             ('/ray/gui/trash/ray_hack_update', 's' + ray.RayHack.sisi()),
             ('/ray/gui/trash/ray_net_update', 's' + ray.RayNet.sisi()),

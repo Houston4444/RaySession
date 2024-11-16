@@ -266,11 +266,10 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
             self.rhack.checkBoxWaitWindow.isChecked()
 
         no_save_level = 0
-
-        if self.rhack.checkBoxCloseGracefully.isChecked():
-            no_save_level = 2
-        elif self.rhack.checkBoxTellUser.isChecked():
+        if self.rhack.checkBoxTellUser.isChecked():
             no_save_level = 1
+            if self.rhack.checkBoxCloseGracefully.isChecked():
+                no_save_level = 2
 
         self.client.ray_hack.no_save_level = no_save_level
         self.client.send_ray_hack()

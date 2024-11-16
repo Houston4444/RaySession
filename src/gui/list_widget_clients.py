@@ -283,31 +283,39 @@ class ClientSlot(QFrame):
         self.ui.ClientName.setText('\n'.join((top, bottom)))
 
     def update_client_data(self):
-        # set main label and main disposition
+        # set main label and main layout
         self.update_layout()
 
         # set tool tip
-        tool_tip = "<html><head/><body>"
-        tool_tip += "<p><span style=\" font-weight:600;\">%s<br></span>" \
-            % self.client.name
-        tool_tip += "<span style=\" font-style:italic;\">%s</span></p>" \
-            % self.client.description
-        tool_tip += "<p></p>"
-        tool_tip += "<p>%s : %s<br>" \
-            % (_translate('client_slot', 'Protocol'),
-               self.client.protocol.to_string())
-        tool_tip += "%s : %s<br>" \
-            % (_translate('client_slot', 'Executable'),
-               self.client.executable_path)
-        tool_tip += "%s : %s</p>" \
-            % (_translate('client_slot', 'client id'), self.client.client_id)
-        tool_tip += "</body></html>"
+        tool_tip = (
+            '<html><head/><body>'
+            '<p>'
+                '<span style="font-weight:600;">'
+                    f'{self.client.name}<br>'
+                '</span>'
+                '<span style="font-style:italic;">'
+                    f'{self.client.description}'
+                '</span>'
+            '</p>'
+            '<p></p>'
+            '<p>'
+                f"{_translate('client_slot', 'Protocol')} : "
+                f'{self.client.protocol.to_string()}'
+                '<br>'
+                f"{_translate('client_slot', 'Executable')} : "
+                f"{self.client.executable_path}"
+                '<br>'
+                f"{_translate('client_slot', 'client id')} : "
+                f'{self.client.client_id}'
+            '</p>'
+            '</body></html>'
+        )
 
         self.ui.ClientName.setToolTip(tool_tip)
 
         # set icon
         self._icon_on = get_app_icon(self.client.icon, self)
-        self._icon_off = QIcon(self._icon_on.pixmap(32, 32, QIcon.Disabled))
+        self._icon_off = QIcon(self._icon_on.pixmap(32, 32, QIcon.Mode.Disabled))
 
         self._gray_icon(
             bool(self.client.status in (
@@ -318,6 +326,12 @@ class ClientSlot(QFrame):
             self.ui.toolButtonGUI.setVisible(
                 bool(':optional-gui:' in self.client.capabilities))
             self.set_gui_state(self.client.gui_state)
+        
+        if self.client.protocol is ray.Protocol.RAY_HACK:
+            if self.client.ray_hack.relevant_no_save_level():
+                self.ui.saveButton.setIcon(self._no_save_icon)
+            else:
+                self.ui.saveButton.setIcon(self._save_icon)
 
     def update_status(self, status: int):
         self.ui.lineEditClientStatus.setText(client_status_string(status))
@@ -433,10 +447,6 @@ class ClientSlot(QFrame):
         self.ui.saveButton.setIcon(
             self._unsaved_icon if dirty else self._saved_icon)
 
-    def set_no_save_level(self, no_save_level: int):
-        self.ui.saveButton.setIcon(
-            self._no_save_icon if no_save_level else self._save_icon)
-
     def set_progress(self, progress: float):
         self.ui.lineEditClientStatus.set_progress(progress)
 
@@ -452,7 +462,7 @@ class ClientSlot(QFrame):
         event.accept()
         
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        if (event.button() == Qt.LeftButton
+        if (event.button() == Qt.MouseButton.LeftButton
                 and self.client.status is not ray.ClientStatus.STOPPED
                 and self.client.jack_client_name
                 and self.list_widget_item.isSelected()):

@@ -135,7 +135,7 @@ class ClientSlot(QFrame):
 
         # set icon
         self._icon_on = get_app_icon(self.client.icon, self)
-        self._icon_off = QIcon(self._icon_on.pixmap(32, 32, QIcon.Disabled))
+        self._icon_off = QIcon(self._icon_on.pixmap(32, 32, QIcon.Mode.Disabled))
         self._gray_icon(False)
 
     def contextMenuEvent(self, event: QContextMenuEvent):

@@ -70,10 +70,6 @@ class Client(QObject, ray.ClientData):
         self.dirty_state = dirty
         self.widget.set_dirty_state(dirty)
 
-    def set_no_save_level(self, no_save_level: int):
-        self.no_save_level = no_save_level
-        self.widget.set_no_save_level(no_save_level)
-
     def set_progress(self, progress: float):
         self.widget.set_progress(progress)
 

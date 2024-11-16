@@ -1,4 +1,3 @@
-from json import tool
 from typing import TYPE_CHECKING
 import time
 import subprocess
@@ -1333,9 +1332,8 @@ class MainWindow(QMainWindow):
             return
 
         if client.check_last_save:
-            if (client.no_save_level
-                    or (client.protocol is ray.Protocol.RAY_HACK
-                        and not client.ray_hack.saveable())):
+            if (client.protocol is ray.Protocol.RAY_HACK
+                    and client.ray_hack.relevant_no_save_level()):
                 dialog = child_dialogs.StopClientNoSaveDialog(self, client_id)
                 dialog.exec()
                 if not dialog.result():
