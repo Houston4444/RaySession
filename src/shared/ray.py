@@ -3,36 +3,29 @@
 import argparse
 from dataclasses import dataclass
 from enum import Enum, IntEnum, Flag
-from typing import TYPE_CHECKING, Optional
-try:
-    import liblo
-except ImportError:
-    import pyliblo3 as liblo
+from typing import Optional
 import os
 import shlex
 import socket
 import subprocess
-import sys
-import logging
 from pathlib import Path
+
+from qtpy.QtCore import __version__ as QT_VERSION_STR
+from qtpy.QtCore import QSettings
+
+try:
+    import liblo
+except:
+    import pyliblo3 as liblo
 
 try:
     from liblo import Server, Address
 except ImportError:
     from pyliblo3 import Server, Address
 
-from qtpy.QtCore import __version__ as QT_VERSION_STR
-from qtpy.QtCore import QSettings
-
-_logger = logging.getLogger(__name__)
 
 # get qt version in tuple of ints
 QT_VERSION = tuple([int(s) for s in QT_VERSION_STR.split('.')])
-
-if QT_VERSION < (5, 6):
-    sys.stderr.write(
-        "WARNING: You are using a version of QT older than 5.6.\n"
-        + "You won't be warned if a process can't be launch.\n")
 
 VERSION = "0.15.0"
 

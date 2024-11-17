@@ -70,7 +70,8 @@ if __name__ == '__main__':
         app.installTranslator(patchbay_translator)
 
     sys_translator = QTranslator()
-    path_sys_translations = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
+    path_sys_translations = QLibraryInfo.location(
+        QLibraryInfo.TranslationsPath)
     if sys_translator.load(QLocale(), 'qt', '_', path_sys_translations):
         app.installTranslator(sys_translator)
 

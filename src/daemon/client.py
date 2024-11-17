@@ -12,14 +12,11 @@ import xml.etree.ElementTree as ET
 from qtpy.QtCore import (QCoreApplication, QProcess,
                           QProcessEnvironment, QTimer)
 from qtpy.QtXml import QDomDocument
-
-
 try:
     from liblo import Address
 except ImportError:
     from pyliblo3 import Address
     
-
 import xdg
 import ray
 from server_sender import ServerSender
@@ -255,7 +252,7 @@ class Client(ServerSender, ray.ClientData):
             self.session.end_timer_if_last_expected(self)
 
     def _error_in_process(self, error: int):
-        if error == QProcess.FailedToStart:
+        if error == QProcess.ProcessError.FailedToStart:
             self.send_gui_message(
                 _translate('GUIMSG', "  %s: Failed to start !")
                     % self.gui_msg_style())

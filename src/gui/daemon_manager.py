@@ -2,7 +2,6 @@
 import os
 import socket
 import sys
-import time
 from typing import TYPE_CHECKING
 from qtpy.QtCore import QObject, QProcess, QTimer
 from qtpy.QtWidgets import QApplication
@@ -28,9 +27,9 @@ class DaemonManager(QObject):
 
         self._process = QProcess()
 
-        if ray.QT_VERSION >= (5, 6):
-            self._process.errorOccurred.connect(self._error_in_process)
-        self._process.setProcessChannelMode(QProcess.ForwardedChannels)
+        self._process.errorOccurred.connect(self._error_in_process)
+        self._process.setProcessChannelMode(
+            QProcess.ProcessChannelMode.ForwardedChannels)
 
         self._announce_timer = QTimer()
         self._announce_timer.setInterval(2000)

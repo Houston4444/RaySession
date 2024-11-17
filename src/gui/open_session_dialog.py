@@ -2,12 +2,12 @@
 import os
 import shutil
 import time
+from typing import Optional
 
 from qtpy.QtWidgets import (QApplication, QTreeWidget, QTreeWidgetItem,
                              QDialogButtonBox, QMenu, QMessageBox)
 from qtpy.QtGui import QIcon, QCursor
 from qtpy.QtCore import Qt, QTimer, QDateTime, QLocale, QPoint
-from typing import Optional
 
 import ray
 import child_dialogs
@@ -36,14 +36,15 @@ CORNER_LISTING = 1
 CORNER_COPY = 2
 CORNER_NOTIFICATION = 3
 
-DATA_SIZE = Qt.UserRole + 1
+DATA_SIZE = Qt.ItemDataRole.UserRole + 1
 
 
 class SessionItem(QTreeWidgetItem):
     def __init__(self, l_list, is_session=False):
         QTreeWidgetItem.__init__(self, l_list)
         self.is_session = is_session
-        self.setTextAlignment(3, Qt.AlignRight | Qt.AlignVCenter)
+        self.setTextAlignment(
+            3, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
     def __lt__(self, other: 'SessionItem'):
         if self.childCount() and not other.childCount():
@@ -53,8 +54,8 @@ class SessionItem(QTreeWidgetItem):
             return False
 
         if OpenSessionDialog.sort_by_date:
-            self_date_int = self.data(COLUMN_DATE, Qt.UserRole)
-            other_date_int = other.data(COLUMN_DATE, Qt.UserRole)
+            self_date_int = self.data(COLUMN_DATE, Qt.ItemDataRole.UserRole)
+            other_date_int = other.data(COLUMN_DATE, Qt.ItemDataRole.UserRole)
             if self_date_int is None:
                 if other_date_int is None:
                     return bool(self.text(COLUMN_NAME).lower()
@@ -71,7 +72,7 @@ class SessionItem(QTreeWidgetItem):
 
     def show_conditionnaly(self, string: str) -> bool:
         show = bool(
-            string.lower() in self.data(COLUMN_NAME, Qt.UserRole).lower())
+            string.lower() in self.data(COLUMN_NAME, Qt.ItemDataRole.UserRole).lower())
 
         n = 0
         for i in range(self.childCount()):
@@ -85,7 +86,7 @@ class SessionItem(QTreeWidgetItem):
         return show
 
     def find_item_with(self, string: str) -> 'Optional[SessionItem]':
-        if self.data(COLUMN_NAME, Qt.UserRole) == string:
+        if self.data(COLUMN_NAME, Qt.ItemDataRole.UserRole) == string:
             return self
 
         item = None
@@ -114,17 +115,17 @@ class SessionItem(QTreeWidgetItem):
             item.set_scripted(script_flags, for_child=True)
     
     def set_modified_date(self, date_int:int):
-        self.setData(COLUMN_DATE, Qt.UserRole, date_int)
+        self.setData(COLUMN_DATE, Qt.ItemDataRole.UserRole, date_int)
 
         date = QDateTime.fromSecsSinceEpoch(date_int)
         date_string =  date.toString("dd/MM/yy hh:mm")
-        if QLocale.system().country() == QLocale.UnitedStates:
+        if QLocale.system().country() == QLocale.Country.UnitedStates:
             date_string = date.toString("MM/dd/yy hh:mm")
 
         self.setText(COLUMN_DATE, date_string)
             
     def add_modified_date(self, path:str, date_int:int):
-        self_path = self.data(COLUMN_NAME, Qt.UserRole)
+        self_path = self.data(COLUMN_NAME, Qt.ItemDataRole.UserRole)
         if not self_path:
             return
         
@@ -133,7 +134,7 @@ class SessionItem(QTreeWidgetItem):
             return
         
         if path.startswith(self_path + '/'):
-            current_data_date = self.data(COLUMN_DATE, Qt.UserRole)
+            current_data_date = self.data(COLUMN_DATE, Qt.ItemDataRole.UserRole)
             if current_data_date is None:
                 current_data_date = 0
             
@@ -146,9 +147,9 @@ class SessionItem(QTreeWidgetItem):
 
     def set_locked(self, locked:bool):
         if locked:
-            self.setFlags(self.flags() & ~Qt.ItemIsEnabled)
+            self.setFlags(self.flags() & ~Qt.ItemFlag.ItemIsEnabled)
         else:
-            self.setFlags(self.flags() | Qt.ItemIsEnabled)
+            self.setFlags(self.flags() | Qt.ItemFlag.ItemIsEnabled)
 
     # Re-implemented protected Qt function
     def child(self, index: int) -> 'SessionItem':
@@ -170,13 +171,13 @@ class SessionFolder:
 
     def make_item(self):
         self.item = SessionItem([self.name, "", "", ""], self.is_session)
-        self.item.setData(COLUMN_NAME, Qt.UserRole, self.path)
+        self.item.setData(COLUMN_NAME, Qt.ItemDataRole.UserRole, self.path)
 
         if self.subfolders:
             self.item.setIcon(COLUMN_NAME, QIcon.fromTheme('folder'))
 
         if not self.is_session:
-            self.item.setFlags(self.item.flags() & ~Qt.ItemIsSelectable)
+            self.item.setFlags(self.item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
 
         for folder in self.subfolders:
             sub_item = folder.make_item()
@@ -188,7 +189,7 @@ class SessionFolder:
         if self.item is None:
             return
         
-        self.item.sortChildren(COLUMN_NAME, Qt.AscendingOrder)
+        self.item.sortChildren(COLUMN_NAME, Qt.SortOrder.AscendingOrder)
         
         for folder in self.subfolders:
             folder.sort_childrens()
@@ -303,7 +304,7 @@ class OpenSessionDialog(ChildDialog):
             self._session_name_changed)
         self.ui.sessionList.currentItemChanged.connect(
             self._current_item_changed)
-        self.ui.sessionList.setFocus(Qt.OtherFocusReason)
+        self.ui.sessionList.setFocus(Qt.FocusReason.OtherFocusReason)
         self.ui.sessionList.itemDoubleClicked.connect(self._go_if_any)
         self.ui.sessionList.itemClicked.connect(self._deploy_item)
         self.ui.sessionList.customContextMenuRequested.connect(
@@ -314,7 +315,7 @@ class OpenSessionDialog(ChildDialog):
             self._show_client_properties)
         self.ui.listWidgetPreview.add_to_session_request.connect(
             self._add_client_to_current_session)
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
         self.ui.currentSessionsFolder.setText(CommandLineArgs.session_root)
         self.ui.checkBoxShowDates.stateChanged.connect(
             self._set_full_sessions_view)
@@ -363,7 +364,7 @@ class OpenSessionDialog(ChildDialog):
         self.folders = list[SessionFolder]()
         self.all_items = []
 
-        self.ui.filterBar.setFocus(Qt.OtherFocusReason)
+        self.ui.filterBar.setFocus(Qt.FocusReason.OtherFocusReason)
         
         # snapshots related
         self.main_snap_group = SnapGroup()
@@ -396,7 +397,7 @@ class OpenSessionDialog(ChildDialog):
         
         OpenSessionDialog.set_sort_by_date(full_view)
         root_item = self.ui.sessionList.invisibleRootItem()
-        root_item.sortChildren(COLUMN_NAME, Qt.AscendingOrder)
+        root_item.sortChildren(COLUMN_NAME, Qt.SortOrder.AscendingOrder)
         for folder in self.folders:
             folder.sort_childrens()
         
@@ -451,7 +452,8 @@ class OpenSessionDialog(ChildDialog):
             # Check which one is selected and clear all of them. 
             item = self.ui.sessionList.currentItem()
             if item is not None:
-                self._last_selected_session = item.data(COLUMN_NAME, Qt.UserRole)
+                self._last_selected_session = item.data(
+                    COLUMN_NAME, Qt.ItemDataRole.UserRole)
             
             self.folders.clear()
             self.ui.sessionList.clear()
@@ -469,7 +471,8 @@ class OpenSessionDialog(ChildDialog):
             
             if self._last_selected_session:
                 for folder in self.folders:
-                    item = folder.find_item_with(self._last_selected_session)
+                    item = folder.find_item_with(
+                        self._last_selected_session)
                     if item is not None:
                         self.ui.sessionList.setCurrentItem(item)
                         self.ui.sessionList.scrollToItem(item)
@@ -529,7 +532,8 @@ class OpenSessionDialog(ChildDialog):
             item = folder.make_item()
             self.ui.sessionList.addTopLevelItem(item)
 
-        self.ui.sessionList.sortByColumn(COLUMN_NAME, Qt.AscendingOrder)
+        self.ui.sessionList.sortByColumn(
+            COLUMN_NAME, Qt.SortOrder.AscendingOrder)
 
     def _update_filtered_list(self, filt):
         filter_text = self.ui.filterBar.displayText()
@@ -570,7 +574,7 @@ class OpenSessionDialog(ChildDialog):
 
         ex_item = current_item
 
-        while not current_item.flags() & Qt.ItemIsSelectable:
+        while not current_item.flags() & Qt.ItemFlag.ItemIsSelectable:
             ex_item = current_item
             QTreeWidget.keyPressEvent(self.ui.sessionList, event)
             current_item = self.ui.sessionList.currentItem()
@@ -578,19 +582,24 @@ class OpenSessionDialog(ChildDialog):
                 self.ui.sessionList.setCurrentItem(start_item)
                 return
 
-    def _current_item_changed(self, item: SessionItem, previous_item: SessionItem):
-        self._has_selection = bool(item and item.data(COLUMN_NAME, Qt.UserRole))
+    def _current_item_changed(
+            self, item: SessionItem, previous_item: SessionItem):
+        self._has_selection = bool(
+            item and item.data(COLUMN_NAME, Qt.ItemDataRole.UserRole))
         
         self.ui.listWidgetPreview.clear()
         self.ui.treeWidgetSnapshots.clear()
         self.ui.labelSessionSize.setText('')
         
         if item is not None and item.is_session:
-            session_full_name = item.data(COLUMN_NAME, Qt.UserRole)
-            self.ui.stackedWidgetSessionName.set_text(basename(session_full_name))
+            session_full_name = item.data(
+                COLUMN_NAME, Qt.ItemDataRole.UserRole)
+            self.ui.stackedWidgetSessionName.set_text(
+                basename(session_full_name))
             self.ui.previewFrame.setEnabled(True)
             if session_full_name:
-                self.to_daemon('/ray/server/get_session_preview', session_full_name)
+                self.to_daemon(
+                    '/ray/server/get_session_preview', session_full_name)
 
             if item.text(COLUMN_SCRIPTS):
                 self._set_preview_scripted(True)
@@ -619,7 +628,7 @@ class OpenSessionDialog(ChildDialog):
             self.ui.labelPreviewScript.setStyleSheet('')
 
     def _prevent_ok(self):
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(
             bool(self._server_will_accept and self._has_selection))
 
     def _show_context_menu(self):
@@ -645,14 +654,16 @@ class OpenSessionDialog(ChildDialog):
         if item is None:
             return
         
-        session_name = item.data(COLUMN_NAME, Qt.UserRole)
-        self.to_daemon('/ray/server/open_file_manager_at',
-                       os.path.join(CommandLineArgs.session_root, session_name))
+        session_name = item.data(COLUMN_NAME, Qt.ItemDataRole.UserRole)
+        self.to_daemon(
+            '/ray/server/open_file_manager_at',
+            os.path.join(CommandLineArgs.session_root, session_name))
 
     def _set_corner_group(self, corner_mode:int):
         self._corner_mode = corner_mode
         self.ui.groupBoxProgress.setVisible(corner_mode != CORNER_HIDDEN)
-        self.ui.pushButtonCancelProgress.setVisible(corner_mode != CORNER_LISTING)
+        self.ui.pushButtonCancelProgress.setVisible(
+            corner_mode != CORNER_LISTING)
 
         if corner_mode == CORNER_LISTING:
             self.ui.labelProgress.setText(
@@ -681,7 +692,7 @@ class OpenSessionDialog(ChildDialog):
         if item is None:
             return
         
-        old_session_name = item.data(COLUMN_NAME, Qt.UserRole)
+        old_session_name = item.data(COLUMN_NAME, Qt.ItemDataRole.UserRole)
         
         if self._pending_action:
             return
@@ -707,7 +718,7 @@ class OpenSessionDialog(ChildDialog):
         if self._pending_action:
             return
 
-        session_name = item.data(COLUMN_NAME, Qt.UserRole)
+        session_name = item.data(COLUMN_NAME, Qt.ItemDataRole.UserRole)
 
         dialog = SaveSessionTemplateDialog(self)
         dialog.set_original_session_name(session_name)
@@ -738,7 +749,7 @@ class OpenSessionDialog(ChildDialog):
         if item is None:
             return
         
-        session_name = item.data(COLUMN_NAME, Qt.UserRole)
+        session_name = item.data(COLUMN_NAME, Qt.ItemDataRole.UserRole)
         full_path = os.path.join(CommandLineArgs.session_root, session_name)
 
         if not os.path.isdir(full_path):
@@ -747,15 +758,17 @@ class OpenSessionDialog(ChildDialog):
         ret = QMessageBox.critical(
             self,
             _translate('open_session', 'Remove session'),
-            _translate('open_session',
-                       '<p>Are you really sure to want to remove the  following session:</p>'
-                       + '<p><strong>%s</strong></p>'
-                       + '<p>This action is irreversible.')
+            _translate(
+                'open_session',
+                '<p>Are you really sure to want to remove '
+                'the following session:</p>'
+                '<p><strong>%s</strong></p>'
+                '<p>This action is irreversible.')
             % session_name,
-            QMessageBox.No | QMessageBox.Yes,
-            QMessageBox.No)
+            QMessageBox.StandardButton.No | QMessageBox.StandardButton.Yes,
+            QMessageBox.StandardButton.No)
         
-        if ret != QMessageBox.Yes:
+        if ret != QMessageBox.StandardButton.Yes:
             return
             
         try:
@@ -774,7 +787,7 @@ class OpenSessionDialog(ChildDialog):
         if item is None:
             return
 
-        old_name = item.data(COLUMN_NAME, Qt.UserRole)
+        old_name = item.data(COLUMN_NAME, Qt.ItemDataRole.UserRole)
 
         # prevent accidental renaming to same name
         if basename(old_name) == new_name:
@@ -823,7 +836,7 @@ class OpenSessionDialog(ChildDialog):
 
         item = self.ui.sessionList.currentItem()
         if item is not None:
-            current_name = item.data(COLUMN_NAME, Qt.UserRole)
+            current_name = item.data(COLUMN_NAME, Qt.ItemDataRole.UserRole)
 
         new_long_name = new_name
         if '/' in old_name:
@@ -836,7 +849,8 @@ class OpenSessionDialog(ChildDialog):
                 item: SessionItem = self.ui.sessionList.topLevelItem(i)
                 session_item = item.find_item_with(old_name)
                 if session_item is not None:
-                    session_item.setData(COLUMN_NAME, Qt.UserRole, new_long_name)
+                    session_item.setData(
+                        COLUMN_NAME, Qt.ItemDataRole.UserRole, new_long_name)
                     session_item.setText(COLUMN_DATE, new_name)
                     break
             return
@@ -844,7 +858,7 @@ class OpenSessionDialog(ChildDialog):
         if item is None:
             return
 
-        item.setData(COLUMN_NAME, Qt.UserRole, new_long_name)
+        item.setData(COLUMN_NAME, Qt.ItemDataRole.UserRole, new_long_name)
         item.setText(COLUMN_NAME, new_name)
         self.ui.stackedWidgetSessionName.set_text(new_name)
         self._set_pending_action(PENDING_ACTION_NONE)
@@ -902,7 +916,7 @@ class OpenSessionDialog(ChildDialog):
 
         if (self._server_will_accept and self._has_selection
                 and self.ui.sessionList.currentItem().data(
-                    COLUMN_NAME, Qt.UserRole)):
+                    COLUMN_NAME, Qt.ItemDataRole.UserRole)):
             self.accept()
 
     def _session_preview_update(self):
@@ -1049,7 +1063,7 @@ class OpenSessionDialog(ChildDialog):
         if item is None:
             return
         
-        session_name = item.data(COLUMN_NAME, Qt.UserRole)
+        session_name = item.data(COLUMN_NAME, Qt.ItemDataRole.UserRole)
         self.to_daemon('/ray/session/add_other_session_client',
                        session_name, client_id)
         self.reject()
@@ -1068,7 +1082,7 @@ class OpenSessionDialog(ChildDialog):
     def get_selected_session(self)->str:
         if self.ui.sessionList.currentItem():
             return self.ui.sessionList.currentItem().data(
-                COLUMN_NAME, Qt.UserRole)
+                COLUMN_NAME, Qt.ItemDataRole.UserRole)
 
     def want_to_save_previous(self)->bool:
         if self.ui.checkBoxSaveCurrentSession.isHidden():

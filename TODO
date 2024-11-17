@@ -61,3 +61,8 @@ Plan de fonctionnement:
                 pas de retour
     
 
+Qt6:
+    Bookmark file picker Qt6
+    Enums dans add_application/open_session/snapshots
+    QFontMetrics.width ?
+    suppr refs à PyXml dans le démon

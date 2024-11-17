@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Union
 from pathlib import Path
 
-from qtpy.QtCore import (QCoreApplication, QStandardPaths, QSettings,
-                          QDateTime, QLocale)
+from qtpy.QtCore import (
+    QCoreApplication, QStandardPaths, QSettings, QDateTime, QLocale)
 try:
     import liblo
 except ImportError:
@@ -27,7 +27,8 @@ exec_and_desktops = dict[str, str]()
 
 def get_app_config_path() -> Path:
     return (Path(
-        QStandardPaths.writableLocation(QStandardPaths.ConfigLocation))
+        QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.ConfigLocation))
         / QCoreApplication.organizationName())
 
 def get_code_root() -> Path:
@@ -55,13 +56,6 @@ def is_pid_child_of(child_pid, parent_pid) -> bool:
         else:
             return False
 
-    #while ppid != parent_pid and ppid > 1 and ppid != this_pid:
-        #try:
-            #ppid = int(subprocess.check_output(
-                #['ps', '-o', 'ppid=', '-p', str(ppid)]))
-        #except BaseException:
-            #return False
-
     if ppid == parent_pid:
         return True
 
@@ -84,10 +78,12 @@ def init_daemon_tools():
 
     RS.set_non_active_clients(
         ray.get_list_in_settings(l_settings, 'daemon/non_active_list'))
-    RS.set_favorites(ray.get_list_in_settings(l_settings, 'daemon/favorites'))
+    RS.set_favorites(ray.get_list_in_settings(
+        l_settings, 'daemon/favorites'))
     TemplateRoots.init_config()
 
-def get_git_default_un_and_ignored(executable:str) -> tuple[list[str], list[str]]:
+def get_git_default_un_and_ignored(
+        executable:str) -> tuple[list[str], list[str]]:
     ignored = list[str]()
     unignored = list[str]()
 

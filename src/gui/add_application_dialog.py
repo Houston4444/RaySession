@@ -18,8 +18,8 @@ import ui.remove_template
 import ui.add_application
 
 
-TEMPLATE_NAME_DATA = Qt.UserRole
-DISPLAY_NAME_DATA = Qt.UserRole + 1
+TEMPLATE_NAME_DATA = Qt.ItemDataRole.UserRole
+DISPLAY_NAME_DATA = Qt.ItemDataRole.UserRole + 1
 
 
 class TemplateSlot(QFrame):
@@ -102,7 +102,7 @@ class TemplateSlot(QFrame):
 class TemplateItem(QListWidgetItem):
     def __init__(self, parent: QListWidget, session: 'SignaledSession',
                  name: str, factory: bool):
-        QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
+        QListWidgetItem.__init__(self, parent, QListWidgetItem.ItemType.UserType + 1)
 
         self.client_data = ray.ClientData()
         self._widget = TemplateSlot(parent, session,
@@ -196,11 +196,11 @@ class AddApplicationDialog(ChildDialog):
 
         self.ui.templateList.currentItemChanged.connect(
             self._current_item_changed)
-        self.ui.templateList.setFocus(Qt.OtherFocusReason)
+        self.ui.templateList.setFocus(Qt.FocusReason.OtherFocusReason)
         self.ui.filterBar.textEdited.connect(self._update_filtered_list)
         self.ui.filterBar.up_down_pressed.connect(self._up_down_pressed)
 
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
         self.user_menu = QMenu()
         act_remove_template = QAction(QIcon.fromTheme('edit-delete-remove'),
@@ -443,7 +443,7 @@ class AddApplicationDialog(ChildDialog):
     def _up_down_pressed(self, key):
         row = self.ui.templateList.currentRow()
 
-        if key == Qt.Key_Up:
+        if key == Qt.Key.Key_Up:
             if row == 0:
                 return
             row -= 1
@@ -452,7 +452,7 @@ class AddApplicationDialog(ChildDialog):
                     return
                 row -= 1
 
-        elif key == Qt.Key_Down:
+        elif key == Qt.Key.Key_Down:
             if row == self.ui.templateList.count() - 1:
                 return
             row += 1
@@ -538,7 +538,7 @@ class AddApplicationDialog(ChildDialog):
         self.ui.lineEditUniqueId.setText(text.replace(' ', '_'))
 
     def _prevent_ok(self):
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(
             bool(self._server_will_accept and self.has_selection))
 
     def _remove_current_template(self):

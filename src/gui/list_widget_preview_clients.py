@@ -145,7 +145,7 @@ class ClientSlot(QFrame):
 
 class ClientItem(QListWidgetItem):
     def __init__(self, parent: 'ListWidgetPreviewClients', client_data):
-        QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
+        QListWidgetItem.__init__(self, parent, QListWidgetItem.ItemType.UserType + 1)
 
         self.sort_number = 0
         self.widget = ClientSlot(parent, self, client_data)

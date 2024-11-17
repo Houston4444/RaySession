@@ -61,7 +61,7 @@ class AdvancedPropertiesDialog(ChildDialog):
     
     # Slot(int)
     def _client_status_changed(self, status: ray.ClientStatus):
-        self.ui.buttonBox.button(QDialogButtonBox.Apply).setEnabled(
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply).setEnabled(
             status is ray.ClientStatus.STOPPED)
     
     @Slot()
@@ -102,7 +102,7 @@ class AdvancedPropertiesDialog(ChildDialog):
         self._update_preview()
 
     def _button_box_clicked(self, button: QAbstractButton):
-        if button is self.ui.buttonBox.button(QDialogButtonBox.Apply):
+        if button is self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply):
             server = GuiServerThread.instance()
             if server is not None:
                 server.to_daemon(
@@ -120,4 +120,4 @@ class AdvancedPropertiesDialog(ChildDialog):
         self.ui.comboBoxPrefixMode.setEnabled(False)
         self.ui.lineEditCustomPrefix.setReadOnly(True)
         self.ui.checkBoxLongJackNaming.setEnabled(False)
-        self.ui.buttonBox.button(QDialogButtonBox.Apply).setEnabled(False)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply).setEnabled(False)

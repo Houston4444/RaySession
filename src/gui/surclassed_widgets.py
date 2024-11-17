@@ -14,8 +14,6 @@ from patchbay import filter_frame, tool_bar, PatchGraphicsView
 if TYPE_CHECKING:
     from gui_session import Session
 
-_translate = QApplication.translate
-
 
 class RayHackButton(QToolButton):
     order_hack_visibility = Signal(bool)
@@ -26,7 +24,8 @@ class RayHackButton(QToolButton):
         basecolor = self.palette().base().color().name()
         textcolor = self.palette().buttonText().color().name()
         textdbcolor = self.palette().brush(
-            QPalette.Disabled, QPalette.WindowText).color().name()
+            QPalette.ColorGroup.Disabled,
+            QPalette.ColorRole.WindowText).color().name()
 
         style = "QToolButton{border-radius: 2px ;border-left: 1px solid " \
             + "qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 " \
@@ -72,7 +71,7 @@ class OpenSessionFilterBar(QLineEdit):
         QLineEdit.__init__(self)
 
     def keyPressEvent(self, event: QKeyEvent):
-        if event.key() in (Qt.Key_Up, Qt.Key_Down):
+        if event.key() in (Qt.Key.Key_Up, Qt.Key.Key_Down):
             self.up_down_pressed.emit(event.key())
             self.key_event.emit(event)
         QLineEdit.keyPressEvent(self, event)
@@ -87,7 +86,7 @@ class CustomLineEdit(QLineEdit):
         self._parent.mouseDoubleClickEvent(event)
 
     def keyPressEvent(self, event: QKeyEvent):
-        if event.key() in (Qt.Key_Enter, Qt.Key_Return):
+        if event.key() in (Qt.Key.Key_Enter, Qt.Key.Key_Return):
             self._parent.name_changed.emit(self.text())
             self._parent.setCurrentIndex(0)
             return
@@ -114,11 +113,12 @@ class StackedSessionName(QStackedWidget):
         self._is_editable = True
 
         self._label_widget = QLabel()
-        self._label_widget.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self._label_widget.setAlignment(
+            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
         self._label_widget.setStyleSheet("QLabel {font-weight : bold}")
 
         self._line_edit_widget = CustomLineEdit(self)
-        self._line_edit_widget.setAlignment(Qt.AlignHCenter)
+        self._line_edit_widget.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         self.addWidget(self._label_widget)
         self.addWidget(self._line_edit_widget)
@@ -158,7 +158,7 @@ class StackedSessionName(QStackedWidget):
 
         if self.currentIndex() == 0:
             self.setCurrentIndex(1)
-            self._line_edit_widget.setFocus(Qt.OtherFocusReason)
+            self._line_edit_widget.setFocus(Qt.FocusReason.OtherFocusReason)
         else:
             self.setCurrentIndex(0)
 
@@ -327,7 +327,7 @@ class FavoriteToolButton(QToolButton):
 
 class CanvasSplitterHandle(QSplitterHandle):
     def __init__(self, parent):
-        QSplitterHandle.__init__(self, Qt.Horizontal, parent)
+        QSplitterHandle.__init__(self, Qt.Orientation.Horizontal, parent)
         self._default_cursor = self.cursor()
         self._active = True
 
@@ -370,7 +370,7 @@ class StartupDialogButtonBox(QDialogButtonBox):
         QDialogButtonBox.__init__(self, parent)
 
     def keyPressEvent(self, event: QKeyEvent):
-        if event.key in (Qt.Key_Up, Qt.Key_Down):
+        if event.key in (Qt.Key.Key_Up, Qt.Key.Key_Down):
             self.key_event.emit(event)
             return
 
@@ -385,11 +385,11 @@ class StartupDialogPushButtonNew(QPushButton):
         QPushButton.__init__(self, parent)
 
     def keyPressEvent(self, event: QKeyEvent):
-        if event.key() in (Qt.Key_Down, Qt.Key_Up):
+        if event.key() in (Qt.Key.Key_Down, Qt.Key.Key_Up):
             self.focus_on_open.emit()
             return
 
-        if event.key() in (Qt.Key_Left, Qt.Key_Right):
+        if event.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right):
             self.focus_on_list.emit()
             return
 
@@ -403,7 +403,7 @@ class StartupDialogPushButtonOpen(StartupDialogPushButtonNew):
         StartupDialogPushButtonNew.__init__(self, parent)
 
     def keyPressEvent(self, event):
-        if event.key() in (Qt.Key_Down, Qt.Key_Up):
+        if event.key() in (Qt.Key.Key_Down, Qt.Key.Key_Up):
             self.focus_on_new.emit()
             return
 

@@ -9,11 +9,13 @@ import ui.snapshot_name
 import ui.list_snapshots
 import ui.snapshots_info
 
+
 GROUP_ELEMENT = 0
 GROUP_DAY = 1
 GROUP_MONTH = 2
 GROUP_YEAR = 3
 GROUP_MAIN = 4
+
 
 class Snapshot:
     valid = False
@@ -53,8 +55,8 @@ class Snapshot:
         utc_date_time = QDateTime.fromString(time_str, 'yyyy_M_d_h_m_s')
         utc_rw_date_time = QDateTime.fromString(rw_time_str,
                                                 'yyyy_M_d_h_m_s')
-        utc_date_time.setTimeSpec(Qt.OffsetFromUTC)
-        utc_rw_date_time.setTimeSpec(Qt.OffsetFromUTC)
+        utc_date_time.setTimeSpec(Qt.TimeSpec.OffsetFromUTC)
+        utc_rw_date_time.setTimeSpec(Qt.TimeSpec.OffsetFromUTC)
 
         date_time = None
         rw_date_time = None
@@ -175,7 +177,7 @@ class Snapshot:
             display_text += "\n%s" % self.label
 
         item = QTreeWidgetItem([display_text])
-        item.setData(0, Qt.UserRole, self.text)
+        item.setData(0, Qt.ItemDataRole.UserRole, self.text)
 
         return item
 
@@ -338,7 +340,7 @@ class SnapGroup(Snapshot):
             item.addChild(sub_item)
 
         # set this group item not selectable
-        item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
+        item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
 
         return item
 
@@ -389,11 +391,11 @@ class SnapshotsDialog(ChildDialog):
         self.ui.snapshotsList.currentItemChanged.connect(
             self._current_item_changed)
 
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
     def _current_item_changed(self, current, previous):
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
-           bool(current and current.data(0, Qt.UserRole)))
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(
+           bool(current and current.data(0, Qt.ItemDataRole.UserRole)))
 
     def _add_snapshots(self, snaptexts):
         if not snaptexts and not self.main_snap_group.snapshots:
@@ -416,7 +418,7 @@ class SnapshotsDialog(ChildDialog):
             item = snapshot.make_item(GROUP_MAIN)
             self.ui.snapshotsList.addTopLevelItem(item)
 
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
         self.ui.snapshotsList.clearSelection()
 
     def _no_snapshot_found(self):
@@ -424,7 +426,7 @@ class SnapshotsDialog(ChildDialog):
 
     def get_selected_snapshot(self):
         item = self.ui.snapshotsList.currentItem()
-        full_str: str = item.data(0, Qt.UserRole)
+        full_str: str = item.data(0, Qt.ItemDataRole.UserRole)
         snapshot_ref = full_str.partition('\n')[0].partition(':')[0]
 
         return snapshot_ref

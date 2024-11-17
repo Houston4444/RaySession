@@ -47,7 +47,7 @@ class GeneralObject(QObject):
         QObject.__init__(self)
 
         self.sl_process = QProcess()
-        self.sl_process.setProcessChannelMode(QProcess.ForwardedChannels)
+        self.sl_process.setProcessChannelMode(QProcess.ProcessChannelMode.ForwardedChannels)
         self.sl_process.finished.connect(self.slProcessFinished)
 
         if sl_port is not None:
@@ -58,7 +58,7 @@ class GeneralObject(QObject):
         self.sl_url = Address(self.sl_port)
 
         self.gui_process = QProcess()
-        self.gui_process.setProcessChannelMode(QProcess.ForwardedChannels)
+        self.gui_process.setProcessChannelMode(QProcess.ProcessChannelMode.ForwardedChannels)
         self.gui_process.started.connect(self.guiProcessStarted)
         self.gui_process.finished.connect(self.guiProcessFinished)
 

@@ -2,7 +2,7 @@
 from typing import TYPE_CHECKING
 from qtpy.QtWidgets import (QListWidget, QListWidgetItem,
                              QFrame, QMenu, QBoxLayout)
-from qtpy.QtGui import (QIcon, QPixmap, QFontMetrics, QContextMenuEvent,
+from qtpy.QtGui import (QIcon, QFontMetrics, QContextMenuEvent,
                          QMouseEvent, QKeyEvent)
 from qtpy.QtCore import Slot, QSize, Qt, Signal
 
@@ -208,13 +208,13 @@ class ClientSlot(QFrame):
 
     def _set_fat(self, yesno: bool, very_fat=False):
         if yesno:
-            self.ui.mainLayout.setDirection(QBoxLayout.TopToBottom)
+            self.ui.mainLayout.setDirection(QBoxLayout.Direction.TopToBottom)
             self.ui.spacerLeftOfDown.setVisible(True)
             self.list_widget_item.setSizeHint(
                 QSize(100, 80 if very_fat else 70))
         else:
             self.ui.spacerLeftOfDown.setVisible(False)
-            self.ui.mainLayout.setDirection(QBoxLayout.LeftToRight)
+            self.ui.mainLayout.setDirection(QBoxLayout.Direction.LeftToRight)
             self.list_widget_item.setSizeHint(QSize(100, 45))
 
     def _gray_icon(self, gray: bool):
@@ -473,7 +473,7 @@ class ClientSlot(QFrame):
 
 class ClientItem(QListWidgetItem):
     def __init__(self, parent: 'ListWidgetClients', client_data):
-        QListWidgetItem.__init__(self, parent, QListWidgetItem.UserType + 1)
+        QListWidgetItem.__init__(self, parent, QListWidgetItem.ItemType.UserType + 1)
 
         self.sort_number = 0
         self.widget = ClientSlot(parent, self, client_data)
@@ -611,7 +611,7 @@ class ListWidgetClients(QListWidget):
         super().keyPressEvent(event)
         
         # parse patchbay boxes of the selected client 
-        if event.key() in (Qt.Key_Left, Qt.Key_Right):
+        if event.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right):
             client = self.currentItem().widget.client
             if (client.status is not ray.ClientStatus.STOPPED
                     and client.jack_client_name
@@ -619,4 +619,4 @@ class ListWidgetClients(QListWidget):
                     and self.session is not None):
                 self.session.patchbay_manager.select_client_box(
                     client.jack_client_name,
-                    previous=bool(event.key() == Qt.Key_Left))
+                    previous=bool(event.key() == Qt.Key.Key_Left))

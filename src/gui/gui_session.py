@@ -1,10 +1,10 @@
 
 import sys
 from typing import Optional
+
 from qtpy.QtWidgets import QApplication
 
 import ray
-from client_properties_dialog import NsmClientPropertiesDialog
 from patchbay.base_elements import TransportPosition
 from daemon_manager import DaemonManager
 from gui_client import Client, TrashedClient

@@ -26,9 +26,6 @@ _translate = QCoreApplication.translate
 _logger = logging.getLogger(__name__)
 
 
-
-
-
 class NsmDesktopExec(TypedDict):
     executable: str
     name: str

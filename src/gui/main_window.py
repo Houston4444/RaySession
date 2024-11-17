@@ -241,7 +241,8 @@ class MainWindow(QMainWindow):
         self._session_menu.addAction(self.ui.actionSaveTemplateSession_2)
         self._session_menu.addAction(self.ui.actionDuplicateSession_2)
         self._session_menu.addAction(self.ui.actionRenameSession_2)
-        self.ui.toolButtonSessionMenu.setPopupMode(QToolButton.InstantPopup)
+        self.ui.toolButtonSessionMenu.setPopupMode(
+            QToolButton.ToolButtonPopupMode.InstantPopup)
         self.ui.toolButtonSessionMenu.setMenu(self._session_menu)
 
         # set control menu
@@ -263,22 +264,26 @@ class MainWindow(QMainWindow):
         self._control_tool_button: QToolButton = \
             self.ui.toolBar.widgetForAction(self.ui.actionControlMenu)
         
-        self._control_tool_button.setPopupMode(QToolButton.InstantPopup)
+        self._control_tool_button.setPopupMode(
+            QToolButton.ToolButtonPopupMode.InstantPopup)
         self._control_tool_button.setMenu(self._control_menu)
 
-        self.ui.toolButtonControl2.setPopupMode(QToolButton.InstantPopup)
+        self.ui.toolButtonControl2.setPopupMode(
+            QToolButton.ToolButtonPopupMode.InstantPopup)
         self.ui.toolButtonControl2.setMenu(self._control_menu)
 
         # set favorites menu
         self._favorites_menu = QMenu(_translate('menu', 'Favorites'))
         self._favorites_menu.setIcon(QIcon(':scalable/breeze/star-yellow'))
-        self.ui.toolButtonFavorites.setPopupMode(QToolButton.InstantPopup)
+        self.ui.toolButtonFavorites.setPopupMode(
+            QToolButton.ToolButtonPopupMode.InstantPopup)
         self.ui.toolButtonFavorites.setMenu(self._favorites_menu)
         self.ui.menuAdd.addMenu(self._favorites_menu)
 
         # set trash menu
         self._trash_menu = QMenu()
-        self.ui.trashButton.setPopupMode(QToolButton.InstantPopup)
+        self.ui.trashButton.setPopupMode(
+            QToolButton.ToolButtonPopupMode.InstantPopup)
         self.ui.trashButton.setMenu(self._trash_menu)
 
         # connect OSC signals from daemon
@@ -435,7 +440,7 @@ class MainWindow(QMainWindow):
 
         if width <= 283:
             # reorganize the window because session frame is not large
-            self.ui.layoutSessionDown.setDirection(QBoxLayout.TopToBottom)
+            self.ui.layoutSessionDown.setDirection(QBoxLayout.Direction.TopToBottom)
 
             # move down the session name label
             self.ui.layoutTopSession.removeWidget(
@@ -454,7 +459,7 @@ class MainWindow(QMainWindow):
             # and snapshots buttons
             self.ui.widgetPreRewindSpacer.setVisible(True)
         else:
-            self.ui.layoutSessionDown.setDirection(QBoxLayout.LeftToRight)
+            self.ui.layoutSessionDown.setDirection(QBoxLayout.Direction.LeftToRight)
             self.ui.layoutSessionDown.removeWidget(
                 self.ui.stackedWidgetSessionName)
             self.ui.layoutTopSession.insertWidget(
@@ -469,20 +474,20 @@ class MainWindow(QMainWindow):
         add_exe = self.ui.toolButtonAddExecutable
 
         if width >= 419:
-            add_app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            add_exe.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            add_app.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+            add_exe.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         elif width >= 350:
-            add_app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            add_exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            add_app.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+            add_exe.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
         elif width > 283:
-            add_app.setToolButtonStyle(Qt.ToolButtonIconOnly)
-            add_exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            add_app.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+            add_exe.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
         elif width > 260:
-            add_app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            add_exe.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            add_app.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+            add_exe.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         else:
-            add_app.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-            add_exe.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            add_app.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+            add_exe.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
 
     @classmethod
     def to_daemon(cls, *args):
@@ -1106,8 +1111,8 @@ class MainWindow(QMainWindow):
             self._systray.show()
 
     def _systray_activated(self, reason: QSystemTrayIcon.ActivationReason):
-        if reason not in (QSystemTrayIcon.Trigger,
-                          QSystemTrayIcon.DoubleClick):
+        if reason not in (QSystemTrayIcon.ActivationReason.Trigger,
+                          QSystemTrayIcon.ActivationReason.DoubleClick):
             return
 
         wayland = bool(ray.get_window_manager() is ray.WindowManager.WAYLAND)
@@ -1224,8 +1229,10 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.setAcceptDrops(True)
         self.ui.listWidget.setStyleSheet("QFrame{border:none}")
         self.ui.listWidget.setDragEnabled(True)
-        self.ui.listWidget.setDragDropMode(QAbstractItemView.InternalMove)
-        self.ui.listWidget.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.ui.listWidget.setDragDropMode(
+            QAbstractItemView.DragDropMode.InternalMove)
+        self.ui.listWidget.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection)
         self.ui.listWidget.setUniformItemSizes(False)
         self.ui.listWidget.setBatchSize(80)
         self.ui.listWidget.setObjectName("listWidget")
@@ -1265,8 +1272,8 @@ class MainWindow(QMainWindow):
 
         self.ui.frameCurrentSession.setStyleSheet(frame_style_sheet)
 
-    def _list_widget_item_changed(self, current: list_widget_clients.ClientItem,
-                                  previous):
+    def _list_widget_item_changed(
+            self, current: list_widget_clients.ClientItem, previous):
         if current is None:
             return
 
@@ -1324,7 +1331,8 @@ class MainWindow(QMainWindow):
             self.notes_dialog.show()
             icon_str = 'notes-editing'
 
-        self.ui.actionSessionNotes.setIcon(RayIcon(icon_str, is_dark_theme(self)))
+        self.ui.actionSessionNotes.setIcon(
+            RayIcon(icon_str, is_dark_theme(self)))
 
     def stop_client(self, client_id):
         client = self.session.get_client(client_id)
@@ -1710,13 +1718,13 @@ class MainWindow(QMainWindow):
                 RS.settings.value('tool_bar/text_with_icons', 'AUTO'))
             
             if text_with_icons is TextWithIcons.NO:
-                self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonIconOnly)
+                self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
             else:
                  self.ui.toolBar.setToolButtonStyle(
-                     Qt.ToolButtonTextBesideIcon)
+                     Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
                  if self.ui.toolBar.sizeHint().width() > self.width():
                      self.ui.toolBar.setToolButtonStyle(
-                         Qt.ToolButtonIconOnly)
+                         Qt.ToolButtonStyle.ToolButtonIconOnly)
                      
     def keyPressEvent(self, event: QKeyEvent):
         super().keyPressEvent(event)

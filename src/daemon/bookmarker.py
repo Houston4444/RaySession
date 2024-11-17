@@ -5,7 +5,12 @@ from pathlib import Path
 import sys
 from typing import Optional
 
-from qtpy.QtCore import QSettings, QDataStream, QIODevice, QUrl, QByteArray
+from qtpy import QT5
+from qtpy.QtCore import (
+    QSettings, QDataStream, QIODevice, QUrl, QByteArray)
+if not QT5:
+    from qtpy.QtCore import QIODeviceBase
+
 from qtpy.QtXml  import QDomDocument, QDomNode
 
 import ray
@@ -192,12 +197,16 @@ class PickerTypeQt4(PickerType):
 
         url = spath.as_uri()
 
-        settings_qt4 = QSettings(str(self._config_path), QSettings.IniFormat)
+        settings_qt4 = QSettings(str(self._config_path),
+                                 QSettings.Format.IniFormat)
         if not settings_qt4.isWritable():
             return
 
         data = settings_qt4.value('Qt/filedialog')
-        stream = QDataStream(data, QIODevice.ReadOnly)
+        if QT5:
+            stream = QDataStream(data, QIODevice.ReadOnly)
+        else:
+            stream = QDataStream(data, QIODeviceBase.OpenModeFlag.ReadOnly)
 
         magic = stream.readUInt32()
         version = stream.readUInt32()
@@ -227,7 +236,12 @@ class PickerTypeQt4(PickerType):
         #now rewrite bytes
 
         new_data = QByteArray()
-        new_stream = QDataStream(new_data, QIODevice.WriteOnly)
+        
+        if QT5:
+            new_stream = QDataStream(new_data, QIODevice.WriteOnly)
+        else:
+            new_stream = QDataStream(
+                new_data, QIODeviceBase.OpenModeFlag.WriteOnly)
 
         new_stream.writeUInt32(magic)
         new_stream.writeUInt32(3)
@@ -259,13 +273,17 @@ class PickerTypeQt4(PickerType):
 
         url = spath.as_uri()
 
-        settings_qt4 = QSettings(str(self._config_path), QSettings.IniFormat)
+        settings_qt4 = QSettings(
+            str(self._config_path), QSettings.Format.IniFormat)
         if not settings_qt4.isWritable():
             self.written = False
             return
 
         data = settings_qt4.value('Qt/filedialog')
-        stream = QDataStream(data, QIODevice.ReadOnly)
+        if QT5:
+            stream = QDataStream(data, QIODevice.ReadOnly)
+        else:
+            stream = QDataStream(data, QIODeviceBase.OpenModeFlag.ReadOnly)
 
         magic = stream.readUInt32()
         version = stream.readUInt32()
@@ -304,7 +322,12 @@ class PickerTypeQt4(PickerType):
         #now rewrite bytes
 
         new_data = QByteArray()
-        new_stream = QDataStream(new_data, QIODevice.WriteOnly)
+        
+        if QT5:
+            new_stream = QDataStream(new_data, QIODevice.WriteOnly)
+        else:
+            new_stream = QDataStream(
+                new_data, QIODeviceBase.OpenModeFlag.WriteOnly)
 
         new_stream.writeUInt32(magic)
         new_stream.writeUInt32(3)
@@ -337,7 +360,8 @@ class PickerTypeQt5(PickerType):
 
         url = spath.as_uri()
 
-        settings_qt5 = QSettings(str(self._config_path), QSettings.IniFormat)
+        settings_qt5 = QSettings(
+            str(self._config_path), QSettings.Format.IniFormat)
         if not settings_qt5.isWritable():
             return
 
@@ -363,7 +387,8 @@ class PickerTypeQt5(PickerType):
             self.written = False
             return
 
-        settings_qt5 = QSettings(str(self._config_path), QSettings.IniFormat)
+        settings_qt5 = QSettings(
+            str(self._config_path), QSettings.Format.IniFormat)
         shortcuts = ray.get_list_in_settings(
             settings_qt5, 'FileDialog/shortcuts')
 

@@ -3,10 +3,10 @@ import os
 import shutil
 from typing import TYPE_CHECKING
 
-from qtpy.QtWidgets import (QApplication, QFileDialog, QMessageBox,
-                             QDialogButtonBox)
+from qtpy.QtWidgets import (
+    QApplication, QFileDialog, QMessageBox, QDialogButtonBox)
 from qtpy.QtGui import QIcon
-from qtpy.QtCore import QProcess, QProcessEnvironment, Qt
+from qtpy.QtCore import QProcess, QProcessEnvironment
 
 import ray
 from gui_tools import CommandLineArgs, RS
@@ -90,12 +90,12 @@ class RayToNsmDialog(ChildDialog):
         #self.choose_session
         choose_button = self.ui.buttonBox.addButton(
             _translate('utilities', 'Choose a session'),
-            QDialogButtonBox.AcceptRole)
+            QDialogButtonBox.ButtonRole.AcceptRole)
         choose_button.setIcon(QIcon.fromTheme('folder-open'))
 
         this_session_button = self.ui.buttonBox.addButton(
             _translate('utilities', 'Convert the current session'),
-            QDialogButtonBox.AcceptRole)
+            QDialogButtonBox.ButtonRole.AcceptRole)
         
         if not self.session.path:
             this_session_button.setVisible(False)

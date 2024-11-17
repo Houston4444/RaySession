@@ -234,7 +234,9 @@ def init_gui_tools():
 
 def is_dark_theme(widget: QWidget) -> bool:
     return bool(
-        widget.palette().brush(QPalette.Active, QPalette.WindowText).color().lightness()
+        widget.palette().brush(
+            QPalette.ColorGroup.Active,
+            QPalette.ColorRole.WindowText).color().lightness()
         > 128)
 
 def split_in_two(string: str) -> tuple[str, str]:

@@ -57,9 +57,9 @@ class ChildDialog(QDialog):
 
         self._root_folder_file_dialog = None
         self._root_folder_message_box = QMessageBox(
-            QMessageBox.Critical,
+            QMessageBox.Icon.Critical,
             _translate('root_folder_dialogs', 'unwritable dir'),
-            '', QMessageBox.NoButton, self)
+            '', QMessageBox.StandardButton.NoButton, self)
 
         self.server_copying = parent.server_copying
 
@@ -87,8 +87,8 @@ class ChildDialog(QDialog):
                 _translate("root_folder_dialogs",
                         "Choose root folder for sessions"),
                 CommandLineArgs.session_root)
-            self._root_folder_file_dialog.setFileMode(QFileDialog.Directory)
-            self._root_folder_file_dialog.setOption(QFileDialog.ShowDirsOnly)
+            self._root_folder_file_dialog.setFileMode(QFileDialog.FileMode.Directory)
+            self._root_folder_file_dialog.setOption(QFileDialog.Option.ShowDirsOnly)
         else:
             self._root_folder_file_dialog.setDirectory(CommandLineArgs.session_root)
 
@@ -153,8 +153,8 @@ class NewSessionDialog(ChildDialog):
 
         self.ui.currentSessionsFolder.setText(CommandLineArgs.session_root)
         self.ui.toolButtonFolder.clicked.connect(self._change_root_folder)
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
-        self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        self.ui.lineEdit.setFocus(Qt.FocusReason.OtherFocusReason)
         self.ui.lineEdit.textChanged.connect(self._text_changed)
 
         self.session_list = []
@@ -318,7 +318,8 @@ class NewSessionDialog(ChildDialog):
 
         if self._text_was_empty:
             if text:
-                self._completer.setCompletionMode(QCompleter.PopupCompletion)
+                self._completer.setCompletionMode(
+                    QCompleter.CompletionMode.PopupCompletion)
                 self._completer.complete()
                 self._text_was_empty = False
         
@@ -329,7 +330,8 @@ class NewSessionDialog(ChildDialog):
     def _set_completer_for_empty_text(self):
         del self._completer
         self._completer = QCompleter([f + '/' for f in self.sub_folders])
-        self._completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
+        self._completer.setCompletionMode(
+            QCompleter.CompletionMode.UnfilteredPopupCompletion)
         self.ui.lineEdit.setCompleter(self._completer)
         QTimer.singleShot(50, self._completer.complete)
 
@@ -341,7 +343,7 @@ class NewSessionDialog(ChildDialog):
         QTimer.singleShot(800, self._show_completer_at_start)
 
     def _prevent_ok(self):
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(
             bool(self._server_will_accept and self._text_is_valid))
 
     def get_session_short_path(self)->str:
@@ -375,7 +377,7 @@ class AbstractSaveTemplateDialog(ChildDialog):
                     'session template',
                     'Overwrite Template ?'),
             '',
-            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             self)
 
         self.template_list = []
@@ -409,7 +411,7 @@ class AbstractSaveTemplateDialog(ChildDialog):
             self._overwrite_message_box.exec()
 
             if (self._overwrite_message_box.clickedButton()
-                    == self._overwrite_message_box.button(QMessageBox.No)):
+                    == self._overwrite_message_box.button(QMessageBox.StandardButton.No)):
                 return
         self.accept()
 
@@ -548,7 +550,7 @@ class AbortSessionDialog(ChildDialog):
 
         self.ui.pushButtonAbort.clicked.connect(self.accept)
         self.ui.pushButtonCancel.clicked.connect(self.reject)
-        self.ui.pushButtonCancel.setFocus(Qt.OtherFocusReason)
+        self.ui.pushButtonCancel.setFocus(Qt.FocusReason.OtherFocusReason)
 
         self._server_status_changed(self.session.server_status)
 
@@ -649,12 +651,12 @@ class SessionNotesDialog(ChildDialog):
         notes = self.ui.plainTextEdit.toPlainText()
         if len(notes) >= 65000:
             self._message_box = QMessageBox(
-                QMessageBox.Critical,
+                QMessageBox.Icon.Critical,
                 _translate('session_notes', 'Too long notes'),
                 _translate('session_notes',
                            "<p>Because notes are spread to the OSC server,<br>"
                            "they can't be longer than 65000 characters.<br>Sorry !</p>"),
-                QMessageBox.Cancel,
+                QMessageBox.StandardButton.Cancel,
                 self)
             self._message_box.exec()
             self.ui.plainTextEdit.setPlainText(notes[:64999])
@@ -696,7 +698,7 @@ class QuitAppDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui.quit_app.Ui_DialogQuitApp()
         self.ui.setupUi(self)
-        self.ui.pushButtonCancel.setFocus(Qt.OtherFocusReason)
+        self.ui.pushButtonCancel.setFocus(Qt.FocusReason.OtherFocusReason)
         self.ui.pushButtonSaveQuit.clicked.connect(self._close_session)
         self.ui.pushButtonQuitNoSave.clicked.connect(self._abort_session)
         self.ui.pushButtonDaemon.clicked.connect(self._leave_daemon_running)
@@ -745,11 +747,6 @@ class WrongVersionLocalDialog(ChildDialog):
         self.ui.pushButtonQuitNoSave.clicked.connect(self._abort_session)
         self.ui.pushButtonDaemon.clicked.connect(self._leave_daemon_running)
 
-        #original_text = self.ui.labelMainText.text()
-        #self.ui.labelMainText.setText(
-            #original_text %
-            #('<strong>%s</strong>' %
-             #self.session.name))
         self.ui.labelMainText.setText(
             _translate(
                 'wrong_version',
@@ -794,9 +791,9 @@ class NewExecutableDialog(ChildDialog):
             self.ui.comboBoxPrefixMode.toolTip())
         self.ui.labelClientId.setToolTip(self.ui.lineEditClientId.toolTip())
 
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
-        self.ui.lineEdit.setFocus(Qt.OtherFocusReason)
+        self.ui.lineEdit.setFocus(Qt.FocusReason.OtherFocusReason)
         self.ui.lineEdit.textChanged.connect(self._check_allow)
         self.ui.checkBoxNsm.stateChanged.connect(self._check_allow)
 
@@ -856,7 +853,7 @@ class NewExecutableDialog(ChildDialog):
 
     def _check_allow(self):
         allow = self._is_allowed()
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(allow)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(allow)
 
     def _close_now(self):
         if self._is_allowed():
@@ -1013,10 +1010,10 @@ class ClientRenameDialog(ChildDialog):
             cl: Client
             if cl.client_id == out_id:
                 self.ui.buttonBox.button(
-                    QDialogButtonBox.Ok).setEnabled(False)
+                    QDialogButtonBox.StandardButton.Ok).setEnabled(False)
                 return
         
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(True)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
     
     def is_identifiant_renamed(self) -> bool:
         return self.ui.checkBoxIdRename.isChecked()
@@ -1077,9 +1074,11 @@ class ScriptUserActionDialog(ChildDialog):
         self.accept()
 
     def _button_box_clicked(self, button):
-        if button == self.ui.buttonBox.button(QDialogButtonBox.Yes):
+        if button == self.ui.buttonBox.button(
+                QDialogButtonBox.StandardButton.Yes):
             self._validate()
-        elif button == self.ui.buttonBox.button(QDialogButtonBox.Ignore):
+        elif button == self.ui.buttonBox.button(
+                QDialogButtonBox.StandardButton.Ignore):
             self._abort()
 
     def set_main_text(self, text: str):
@@ -1163,7 +1162,7 @@ class DaemonUrlWindow(ChildDialog):
             error_text = _translate("url window", "<p align=\"left\">To run a network session,<br>open a terminal on another computer of this network.<br>Launch ray-daemon on port 1234 (for example)<br>by typing the command :</p><p align=\"left\"><code>ray-daemon -p 1234</code></p><p align=\"left\">Then paste below the first url<br>that ray-daemon gives you at startup.</p><p></p>")
 
         self.ui.labelError.setText(error_text)
-        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
         self.tried_urls = ray.get_list_in_settings(RS.settings, 'network/tried_urls')
         last_tried_url = RS.settings.value('network/last_tried_url', '', type=str)
@@ -1179,18 +1178,18 @@ class DaemonUrlWindow(ChildDialog):
     def _allow_url(self, text: str):
         if not text:
             self.ui.lineEdit.completer().complete()
-            self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+            self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
             return
 
         if not text.startswith('osc.udp://'):
-            self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+            self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
             return
 
         try:
             addr = ray.get_liblo_address(text)
-            self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(True)
+            self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
         except BaseException:
-            self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
+            self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
     def get_url(self):
         return self.ui.lineEdit.text()
@@ -1267,7 +1266,7 @@ class StartupDialog(ChildDialog):
         for recent_session in self.session.recent_sessions:
             session_item = QListWidgetItem(recent_session.replace('/', ' / '),
                                            self.ui.listWidgetRecentSessions)
-            session_item.setData(Qt.UserRole, recent_session)
+            session_item.setData(Qt.ItemDataRole.UserRole, recent_session)
             self.ui.listWidgetRecentSessions.addItem(session_item)
 
         self.ui.listWidgetRecentSessions.setMinimumHeight(
@@ -1287,7 +1286,7 @@ class StartupDialog(ChildDialog):
         self.ui.pushButtonOpenSession.focus_on_new.connect(
             self._focus_on_new)
 
-        self.ui.listWidgetRecentSessions.setFocus(Qt.OtherFocusReason)
+        self.ui.listWidgetRecentSessions.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def _server_status_changed(self, server_status: ray.ServerStatus):
         if server_status is not ray.ServerStatus.OFF:
@@ -1302,13 +1301,13 @@ class StartupDialog(ChildDialog):
         self.reject()
 
     def _focus_on_list(self):
-        self.ui.listWidgetRecentSessions.setFocus(Qt.OtherFocusReason)
+        self.ui.listWidgetRecentSessions.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def _focus_on_new(self):
-        self.ui.pushButtonNewSession.setFocus(Qt.OtherFocusReason)
+        self.ui.pushButtonNewSession.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def _focus_on_open(self):
-        self.ui.pushButtonOpenSession.setFocus(Qt.OtherFocusReason)
+        self.ui.pushButtonOpenSession.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def not_again_value(self)->bool:
         return not self.ui.checkBox.isChecked()
@@ -1316,24 +1315,24 @@ class StartupDialog(ChildDialog):
     def get_selected_session(self)->str:
         current_item = self.ui.listWidgetRecentSessions.currentItem()
         if current_item:
-            return current_item.data(Qt.UserRole)
+            return current_item.data(Qt.ItemDataRole.UserRole)
         return ''
 
     def get_clicked_action(self)->int:
         return self._clicked_action
 
     def keyPressEvent(self, event: QKeyEvent):
-        if event.key() == Qt.Key_Left:
-            self.ui.pushButtonNewSession.setFocus(Qt.OtherFocusReason)
-        elif event.key() == Qt.Key_Right:
-            self.ui.pushButtonOpenSession.setFocus(Qt.OtherFocusReason)
-        elif event.key() in (Qt.Key_Up, Qt.Key_Down):
-            self.ui.listWidgetRecentSessions.setFocus(Qt.OtherFocusReason)
+        if event.key() == Qt.Key.Key_Left:
+            self.ui.pushButtonNewSession.setFocus(Qt.FocusReason.OtherFocusReason)
+        elif event.key() == Qt.Key.Key_Right:
+            self.ui.pushButtonOpenSession.setFocus(Qt.FocusReason.OtherFocusReason)
+        elif event.key() in (Qt.Key.Key_Up, Qt.Key.Key_Down):
+            self.ui.listWidgetRecentSessions.setFocus(Qt.FocusReason.OtherFocusReason)
 
-        if QApplication.keyboardModifiers() & Qt.ControlModifier:
-            if event.key() == Qt.Key_N:
+        if QApplication.keyboardModifiers() & Qt.KeyboardModifier.ControlModifier:
+            if event.key() == Qt.Key.Key_N:
                 self._new_session_clicked()
-            elif event.key() == Qt.Key_O:
+            elif event.key() == Qt.Key.Key_O:
                 self._open_session_clicked()
 
         ChildDialog.keyPressEvent(self, event)

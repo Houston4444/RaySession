@@ -1,12 +1,12 @@
 from enum import IntEnum
 from typing import TYPE_CHECKING
+
 from qtpy.QtWidgets import QApplication, QMessageBox
 from qtpy.QtCore import Slot
 
 from child_dialogs import ChildDialog
 from gui_server_thread import GuiServerThread
 from gui_tools import RS
-from patchbay.tools_widgets import TextWithIcons
 import ray
 
 import ui.settings
@@ -137,7 +137,7 @@ class PreferencesDialog(ChildDialog):
             _translate('hidden_dialogs',
                        'Do you want to make reappear all dialogs you wanted to hide ?'))
         
-        if button == QMessageBox.Yes:
+        if button == QMessageBox.StandardButton.Yes:
             RS.reset_hiddens()
     
     def _show_startup_dialog(self, yesno: int):
