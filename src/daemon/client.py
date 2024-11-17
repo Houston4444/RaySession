@@ -11,7 +11,7 @@ import xml.etree.ElementTree as ET
 
 from qtpy.QtCore import (QCoreApplication, QProcess,
                           QProcessEnvironment, QTimer)
-from qtpy.QtXml import QDomDocument
+
 try:
     from liblo import Address
 except ImportError:
@@ -527,20 +527,19 @@ class Client(ServerSender, ray.ClientData):
 
                             # change ardour session name
                             try:
-                                file = open(ardour_file, 'r')
-                                xml = QDomDocument()
-                                xml.setContent(file.read())
-                                file.close()
-                                root = xml.documentElement()
+                                tree = ET.parse(ardour_file)
+                                root = tree.getroot()
+                                if root.tag == 'Session':
+                                    root.attrib['name'] = new_prefix
 
-                                if root.tagName() == 'Session':
-                                    root.setAttribute('name', new_prefix)
-                                    file = open(ardour_file, 'w')
-                                    file.write(xml.toString())
+                                # write the file
+                                ET.indent(tree, level=0)
+                                tree.write(ardour_file)
 
                             except:
                                 _logger.warning(
-                                    f'Failed to change ardour session name to "{new_prefix}"')
+                                    'Failed to change ardour session '
+                                    f'name to "{new_prefix}"')
 
                     if ardour_bak.is_file() and os.access(ardour_bak, os.W_OK):
                         new_ardour_bak = project_path / f"{new_prefix}.ardour.bak"
@@ -613,26 +612,21 @@ class Client(ServerSender, ray.ClientData):
         instant_file = project_path / 'instant.xml'
         if instant_file.is_file() and os.access(instant_file, os.W_OK):
             try:
-                file = open(instant_file, 'r')
-                xml = QDomDocument()
-                xml.setContent(file.read())
-                file.close()
-                content = xml.documentElement()
-
-                if content.tagName() == 'instant':
-                    node = content.firstChild()
-                    while not node.isNull():
-                        tag = node.toElement()
-                        if tag.tagName() == 'LastUsedSnapshot':
-                            if tag.attribute('name') == old_prefix:
-                                tag.setAttribute('name', new_prefix)
-                                file = open(instant_file, 'w')
-                                file.write(xml.toString())
+                tree = ET.parse(instant_file)
+                root = tree.getroot()
+                if root.tag == 'instant':
+                    for child in root:
+                        if child.tag == 'LastUsedSnapshot':
+                            if child.attrib.get('name') == old_prefix:
+                                child.attrib['name'] = new_prefix
                             break
-
-                        node = node.nextSibling()
+                
+                ET.indent(tree, level=0)
+                tree.write(instant_file)
+                
             except:
-                False
+                _logger.warning(
+                    f'Failed to change Ardour LastUsedSnapshot in {instant_file}')
 
         for now_path, next_path in files_to_rename:
             _logger.info(f'renaming\n\tfile: {now_path}\n\tto:   {next_path}')

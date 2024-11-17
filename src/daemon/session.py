@@ -13,7 +13,6 @@ import xml.etree.ElementTree as ET
 from io import BytesIO
 
 from qtpy.QtCore import QCoreApplication, QTimer
-from qtpy.QtXml  import QDomDocument
 
 try:
     import liblo
@@ -505,45 +504,6 @@ class Session(ServerSender):
                 return True
             
         return False
-
-    def export_user_client_template(self, src_addr, template_name:str,
-                                    export_path:str)->bool:
-        # still work in progress and not used function
-        # will see later if it is really useful
-        templates_file = TemplateRoots.user_clients / 'client_templates.xml'
-
-        if not os.path.isfile(templates_file):
-            return False
-
-        if not os.access(templates_file, os.R_OK):
-            return False
-
-        file = open(templates_file, 'r')
-        xml = QDomDocument()
-        xml.setContent(file.read())
-        file.close()
-
-        new_xml = QDomDocument()
-
-        content = xml.documentElement()
-
-        if content.tagName() != "RAY-CLIENT-TEMPLATES":
-            return False
-
-        nodes = content.childNodes()
-
-        for i in range(nodes.count()):
-            node = nodes.at(i)
-            ct = node.toElement()
-            tag_name = ct.tagName()
-            if tag_name != 'Client-Template':
-                continue
-
-            if ct.attribute('template-name') == template_name:
-
-                break
-        else:
-            return False
         
     def send_initial_monitor(self, monitor_addr: Address, monitor_is_client=True):
         '''send clients states to a new monitor'''
