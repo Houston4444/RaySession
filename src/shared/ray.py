@@ -10,7 +10,6 @@ import socket
 import subprocess
 from pathlib import Path
 
-from qtpy.QtCore import __version__ as QT_VERSION_STR
 from qtpy.QtCore import QSettings
 
 try:
@@ -24,9 +23,6 @@ except ImportError:
     from pyliblo3 import Server, Address
 
 
-# get qt version in tuple of ints
-QT_VERSION = tuple([int(s) for s in QT_VERSION_STR.split('.')])
-
 VERSION = "0.15.0"
 
 APP_TITLE = 'RaySession'
@@ -38,7 +34,6 @@ FACTORY_SESSION_TEMPLATES = (
 RAYNET_BIN = 'ray-network'
 
 GIT_IGNORED_EXTENSIONS = ".wav .flac .ogg .mp3 .mp4 .avi .mkv .peak .m4a .pdf"
-
 
 
 class PrefixMode(Enum):

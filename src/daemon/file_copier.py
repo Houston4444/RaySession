@@ -46,8 +46,7 @@ class FileCopier(ServerSender):
 
         self._process = QProcess()
         self._process.finished.connect(self._process_finished)
-        if ray.QT_VERSION >= (5, 6):
-            self._process.errorOccurred.connect(self._error_occurred)
+        self._process.errorOccurred.connect(self._error_occurred)
 
         self._timer = QTimer()
         self._timer.setInterval(250)
