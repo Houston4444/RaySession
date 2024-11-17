@@ -23,7 +23,7 @@ except ImportError:
     from pyliblo3 import Server, Address
 
 
-VERSION = "0.15.0"
+VERSION = "0.16.0"
 
 APP_TITLE = 'RaySession'
 DEFAULT_SESSION_ROOT = "%s/Ray Sessions" % os.getenv('HOME')
