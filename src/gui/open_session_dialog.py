@@ -15,7 +15,7 @@ from gui_tools import CommandLineArgs, RayIcon, is_dark_theme, basename
 from child_dialogs import ChildDialog
 from client_properties_dialog import ClientPropertiesDialog
 from snapshots_dialog import (
-    Snapshot, SnapGroup, GROUP_MAIN)
+    Snapshot, SnapGroup, SnGroup)
 
 import ui.open_session
 
@@ -988,7 +988,7 @@ class OpenSessionDialog(ChildDialog):
         self.ui.treeWidgetSnapshots.clear()
 
         for snapshot in self.main_snap_group.snapshots:
-            item = snapshot.make_item(GROUP_MAIN)
+            item = snapshot.make_item(SnGroup.MAIN)
             self.ui.treeWidgetSnapshots.addTopLevelItem(item)
 
         self.ui.treeWidgetSnapshots.clearSelection()

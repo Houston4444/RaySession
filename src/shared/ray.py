@@ -290,7 +290,7 @@ def get_list_in_settings(settings: QSettings, path: str) -> list:
     return []
 
 def is_git_taggable(string: str) -> bool:
-    ''' know if a string can be a git tag, not used currently '''
+    '''Know if a string can be a git tag, not used currently'''
     if not string:
         return False
 

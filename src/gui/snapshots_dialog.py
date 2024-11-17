@@ -1,4 +1,6 @@
 
+from enum import IntEnum
+
 from qtpy.QtCore import Qt, QDateTime, QDate
 from qtpy.QtWidgets import QDialogButtonBox, QTreeWidgetItem
 
@@ -10,17 +12,18 @@ import ui.list_snapshots
 import ui.snapshots_info
 
 
-GROUP_ELEMENT = 0
-GROUP_DAY = 1
-GROUP_MONTH = 2
-GROUP_YEAR = 3
-GROUP_MAIN = 4
+class SnGroup(IntEnum):
+    ELEMENT = 0
+    DAY = 1
+    MONTH = 2
+    YEAR = 3
+    MAIN = 4
 
 
 class Snapshot:
     valid = False
     text = ''
-    sub_type = GROUP_ELEMENT
+    sub_type = SnGroup.ELEMENT
     item = None
     before_rewind_to = ''
     date_time: QDateTime = None
@@ -111,18 +114,18 @@ class Snapshot:
     def add(self, other):
         pass
 
-    def common_group(self, other: 'Snapshot'):
+    def common_group(self, other: 'Snapshot') -> SnGroup:
         if not (self.is_valid() and other.is_valid()):
-            return GROUP_MAIN
+            return SnGroup.MAIN
 
-        common_group = GROUP_MAIN
+        common_group = SnGroup.MAIN
 
         if self.year() == other.year():
-            common_group = GROUP_YEAR
+            common_group = SnGroup.YEAR
             if self.month() == other.month():
-                common_group = GROUP_MONTH
+                common_group = SnGroup.MONTH
                 if self.day() == other.day():
-                    common_group = GROUP_DAY
+                    common_group = SnGroup.DAY
 
         if common_group <= self.sub_type:
             return self.sub_type + 1
@@ -144,7 +147,7 @@ class Snapshot:
                             day_string,
                             self.date_time.toString('HH:mm'))
 
-            if sub_type in (GROUP_YEAR, GROUP_MONTH):
+            if sub_type in (SnGroup.YEAR, SnGroup.MONTH):
                 if not self.is_today() or self.is_yesterday():
                     day_string = self.date_time.toString('dddd d MMMM')
 
@@ -152,7 +155,7 @@ class Snapshot:
                                     day_string,
                                     self.date_time.toString('HH:mm'))
 
-            elif sub_type == GROUP_DAY:
+            elif sub_type is SnGroup.DAY:
                 display_text = _translate('snapshots', "at %s") \
                                  % self.date_time.toString('HH:mm')
 
@@ -183,7 +186,7 @@ class Snapshot:
 
 
 class SnapGroup(Snapshot):
-    def __init__(self, date_time=None, sub_type=GROUP_MAIN):
+    def __init__(self, date_time=None, sub_type=SnGroup.MAIN):
         Snapshot.__init__(self, date_time)
         self.sub_type = sub_type
         self.valid = True
@@ -193,19 +196,19 @@ class SnapGroup(Snapshot):
         if self.sub_type <= other.sub_type:
             return False
 
-        if self.sub_type == GROUP_MAIN:
+        if self.sub_type is SnGroup.MAIN:
             return True
 
         if self.year() != other.year():
             return False
 
-        if self.sub_type == GROUP_YEAR:
+        if self.sub_type is SnGroup.YEAR:
             return True
 
         if self.month() != other.month():
             return False
 
-        if self.sub_type == GROUP_MONTH:
+        if self.sub_type is SnGroup.MONTH:
             return True
 
         if self.day() != other.day():
@@ -218,7 +221,7 @@ class SnapGroup(Snapshot):
             self.snapshots.append(new_snapshot)
             return
 
-        if self.sub_type <= 1:
+        if self.sub_type in (SnGroup.ELEMENT, SnGroup.DAY):
             # If this group (self) is a day group, just add this snapshot
             self.snapshots.append(new_snapshot)
             return
@@ -250,7 +253,7 @@ class SnapGroup(Snapshot):
             cg_final = 0
             compare_snap = Snapshot(None)
 
-            for cg in (GROUP_DAY, GROUP_MONTH, GROUP_YEAR):
+            for cg in (SnGroup.DAY, SnGroup.MONTH, SnGroup.YEAR):
                 if cg_final:
                     break
 
@@ -314,19 +317,19 @@ class SnapGroup(Snapshot):
         self.snapshots.sort()
         self.snapshots.reverse()
 
-    def make_item(self, sub_type=GROUP_MAIN):
+    def make_item(self, sub_type=SnGroup.MAIN):
         display_text = ''
 
-        if self.sub_type == GROUP_MAIN:
+        if self.sub_type is SnGroup.MAIN:
             return None
 
         if not self.date_time:
             display_text = self.text
-        elif self.sub_type == GROUP_YEAR:
+        elif self.sub_type is SnGroup.YEAR:
             display_text = self.date_time.toString('yyyy')
-        elif self.sub_type == GROUP_MONTH:
+        elif self.sub_type is SnGroup.MONTH:
             display_text = self.date_time.toString('MMMM yyyy')
-        elif self.sub_type == GROUP_DAY:
+        elif self.sub_type is SnGroup.DAY:
             display_text = self.date_time.toString('dddd d MMMM yyyy')
             if self.is_today():
                 display_text = _translate('snapshots', 'Today')
@@ -415,7 +418,7 @@ class SnapshotsDialog(ChildDialog):
         self.ui.snapshotsList.clear()
 
         for snapshot in self.main_snap_group.snapshots:
-            item = snapshot.make_item(GROUP_MAIN)
+            item = snapshot.make_item(SnGroup.MAIN)
             self.ui.snapshotsList.addTopLevelItem(item)
 
         self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
