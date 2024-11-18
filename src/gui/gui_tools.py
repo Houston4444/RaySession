@@ -8,11 +8,7 @@ from qtpy.QtCore import QSettings, QSize, QFile
 from qtpy.QtWidgets import QApplication, QWidget
 from qtpy.QtGui import QIcon, QPixmap, QPalette
 
-try:
-    from liblo import Address
-except ImportError:
-    from pyliblo3 import Address
-
+from osclib import Address
 import ray
 
 if TYPE_CHECKING:

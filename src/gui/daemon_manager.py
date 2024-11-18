@@ -5,11 +5,8 @@ import sys
 from typing import TYPE_CHECKING
 from qtpy.QtCore import QObject, QProcess, QTimer
 from qtpy.QtWidgets import QApplication
-try:
-    from liblo import Address
-except ImportError:
-    from pyliblo3 import Address
 
+from osclib import Address
 import ray
 from gui_server_thread import GuiServerThread
 from gui_tools import CommandLineArgs, ErrDaemon, _translate

@@ -1,9 +1,6 @@
 import enum
 from qtpy.QtCore import QObject, Signal
-try:
-    from liblo import Address
-except ImportError:
-    from pyliblo3 import Address
+from osclib import Address
 
 import ray
 

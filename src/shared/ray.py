@@ -334,7 +334,7 @@ def is_osc_port_free(port: int) -> bool:
     del testport
     return True
 
-def get_free_osc_port(default=16187):
+def get_free_osc_port(default=16187) -> int:
     '''get a free OSC port for daemon, start from default'''
 
     if default >= 65536:

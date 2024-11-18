@@ -1,11 +1,8 @@
 import os
 import sys
 from typing import TYPE_CHECKING
-try:
-    import liblo
-except ImportError:
-    import pyliblo3 as liblo
 
+from osclib import ServerThread, make_method
 import ray
 from gui_tools import CommandLineArgs
 from patchbay.patchcanvas.patshared import GroupPos
@@ -17,7 +14,7 @@ _instance = None
 
 def ray_method(path, types):
     def decorated(func):
-        @liblo.make_method(path, types)
+        @make_method(path, types)
         def wrapper(*args, **kwargs):
             t_thread, t_path, t_args, t_types, src_addr, rest = args
             if TYPE_CHECKING:
@@ -41,9 +38,9 @@ def ray_method(path, types):
     return decorated
 
 
-class GuiServerThread(liblo.ServerThread):
+class GuiServerThread(ServerThread):
     def __init__(self):
-        liblo.ServerThread.__init__(self)
+        ServerThread.__init__(self)
 
         global _instance
         _instance = self
@@ -63,7 +60,7 @@ class GuiServerThread(liblo.ServerThread):
         if self.patchbay_addr:
             self.send(self.patchbay_addr, '/ray/patchbay/gui_disannounce')
 
-        liblo.ServerThread.stop(self)
+        super().stop()
 
     def finish_init(self, session: 'SignaledSession'):
         self.session = session
@@ -313,7 +310,7 @@ class GuiServerThread(liblo.ServerThread):
             sys.stderr.write(
                 '\033[95mOSC::gui sends\033[0m %s\n' % str(args[1:]))
 
-        liblo.ServerThread.send(self, *args)
+        super().send(self, *args)
 
     def to_daemon(self, *args):
         self.send(self.daemon_manager.address, *args)
