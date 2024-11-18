@@ -310,7 +310,7 @@ class GuiServerThread(ServerThread):
             sys.stderr.write(
                 '\033[95mOSC::gui sends\033[0m %s\n' % str(args[1:]))
 
-        super().send(self, *args)
+        super().send(*args)
 
     def to_daemon(self, *args):
         self.send(self.daemon_manager.address, *args)

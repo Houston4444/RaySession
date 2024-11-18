@@ -5,11 +5,8 @@ import socket
 import json
 import subprocess
 from typing import TYPE_CHECKING
-
-try:
-    from liblo import Server, Address
-except ImportError:
-    from pyliblo3 import Server, Address
+    
+from osclib import Server, Address
 
 if TYPE_CHECKING:
     from ray_jackpatch_to_osc import MainObject, TransportPosition

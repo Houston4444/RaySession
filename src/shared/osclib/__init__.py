@@ -37,20 +37,20 @@ class OscPack:
 def get_free_osc_port(default=16187) -> int:
     '''get a free OSC port for daemon, start from default'''
 
-    if default >= 65536:
+    if default > 0x9999 or default < 0x400:
         default = 16187
 
-    daemon_port = default
-    used_port = True
+    port_num = default
     testport = None
 
-    while used_port:
+    while True:
         try:
-            testport = Server(daemon_port)
-            used_port = False
+            testport = Server(port_num)
+            break
         except BaseException:
-            daemon_port += 1
-            used_port = True
+            port_num += 1
+            if port_num > 0x9999:
+                port_num = 0x400
 
     del testport
-    return daemon_port
+    return port_num

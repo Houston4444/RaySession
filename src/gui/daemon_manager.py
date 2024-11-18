@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QObject, QProcess, QTimer
 from qtpy.QtWidgets import QApplication
 
-from osclib import Address
+from osclib import Address, get_free_osc_port
 import ray
 from gui_server_thread import GuiServerThread
 from gui_tools import CommandLineArgs, ErrDaemon, _translate
@@ -181,12 +181,14 @@ class DaemonManager(QObject):
         if not CommandLineArgs.force_new_daemon:
             ray_control_process = QProcess()
             ray_control_process.start(
-                "ray_control", ['get_port_gui_free', CommandLineArgs.session_root])
+                "ray_control",
+                ['get_port_gui_free', CommandLineArgs.session_root])
             ray_control_process.waitForFinished(2000)
 
             if ray_control_process.exitCode() == 0:
                 port_str_lines = \
-                    ray_control_process.readAllStandardOutput().data().decode('utf-8')
+                    ray_control_process.readAllStandardOutput().\
+                        data().decode('utf-8')
                 port_str = port_str_lines.partition('\n')[0]
 
                 if port_str and port_str.isdigit():
@@ -250,7 +252,7 @@ class DaemonManager(QObject):
 
     def set_new_osc_address(self):
         if not (self.address or self._port):
-            self._port = ray.get_free_osc_port()
+            self._port = get_free_osc_port()
             self.address = Address(self._port)
 
     def is_announced(self):
