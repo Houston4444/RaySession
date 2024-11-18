@@ -6,10 +6,7 @@ import tempfile
 import time
 from typing import TYPE_CHECKING, Union
 
-try:
-    from liblo import Address
-except ImportError:
-    from pyliblo3 import Address
+from osclib import Address
 
 import ray
 from daemon_tools import RS, Terminal

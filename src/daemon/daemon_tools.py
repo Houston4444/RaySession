@@ -7,12 +7,8 @@ from pathlib import Path
 
 from qtpy.QtCore import (
     QCoreApplication, QStandardPaths, QSettings, QDateTime, QLocale)
-try:
-    import liblo
-except ImportError:
-    import pyliblo3 as liblo
 
-
+from osclib import Address
 import ray
 
 if TYPE_CHECKING:
@@ -180,7 +176,10 @@ class Terminal:
 
         with open(log_file_path, 'a') as log_file:
             date_time = QDateTime.currentDateTime()
-            locale = QLocale(QLocale.English)
+
+            locale = QLocale(
+                QLocale.Language.English, QLocale.Country.UnitedStates)
+
             date_format = locale.toString(date_time, "ddd MMM d hh:mm:ss yyyy")
 
             log_file.write("%s: %s\n" % (date_format, string))
@@ -233,9 +232,9 @@ class CommandLineArgs(argparse.Namespace):
     hidden = False
     osc_port = 0
     findfreeport = True
-    control_url: liblo.Address = None
-    gui_url: liblo.Address = None
-    gui_port: liblo.Address = 0
+    control_url: Address = None
+    gui_url: Address = None
+    gui_port: Address = 0
     gui_pid = 0
     config_dir = ''
     debug = False

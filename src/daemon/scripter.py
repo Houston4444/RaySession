@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Optional
 
 from qtpy.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 
+from osclib import OscPack
 import ray
 from daemon_tools import Terminal, highlight_text
 from server_sender import ServerSender
-from osc_pack import OscPack
 
 if TYPE_CHECKING:
     from session import OperatingSession

@@ -14,16 +14,7 @@ from io import BytesIO
 
 from qtpy.QtCore import QCoreApplication, QTimer
 
-try:
-    import liblo
-except ImportError:
-    import pyliblo3 as liblo
-
-try:
-    from liblo import Address
-except ImportError:
-    from pyliblo3 import Address
-
+from osclib import Address
 import ray
 from bookmarker import BookMarker
 from desktops_memory import DesktopsMemory
@@ -81,7 +72,7 @@ class Session(ServerSender):
         self.step_scripter = StepScripter(self)
         self.canvas_saver = CanvasSaver(self)
         
-        self.osc_src_addr: liblo.Address = None
+        self.osc_src_addr: Address = None
         
         self._time_at_open = 0
 
@@ -190,7 +181,7 @@ class Session(ServerSender):
 
         sys.stderr.write("client_id %s is not in ray-daemon session\n")
 
-    def get_client_by_address(self, addr: liblo.Address) -> Client:
+    def get_client_by_address(self, addr: Address) -> Client:
         if not addr:
             return None
 

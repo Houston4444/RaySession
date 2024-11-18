@@ -12,6 +12,7 @@ os.environ['QT_API'] = QT_API
 from qtpy.QtCore import (
     QCoreApplication, QTimer, QLocale, QTranslator)
 
+from osclib import get_free_osc_port
 import ray
 from daemon_tools import (get_code_root, init_daemon_tools, RS,
                           CommandLineArgs, ArgParser, Terminal)
@@ -86,7 +87,7 @@ if __name__ == '__main__':
     # create and start server
     if CommandLineArgs.findfreeport:
         server = OscServerThread(session,
-                                 ray.get_free_osc_port(
+                                 get_free_osc_port(
                                      CommandLineArgs.osc_port))
     else:
         if ray.is_osc_port_free(CommandLineArgs.osc_port):

@@ -7,8 +7,9 @@ import logging
 import sys
 
 import ray
-from jack_renaming_tools import (port_belongs_to_client,
-                                 port_name_client_replaced)
+from jack_renaming_tools import (
+    port_belongs_to_client, port_name_client_replaced)
+
 if TYPE_CHECKING:
     from session import OperatingSession
 

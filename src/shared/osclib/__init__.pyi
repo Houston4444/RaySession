@@ -1,6 +1,5 @@
-
-
 from typing import Callable, Union, overload
+from dataclasses import dataclass
 
 UDP: int
 UNIX: int
@@ -10,14 +9,14 @@ TCP: int
 class Message:
     def __init__(self, path: str, *args: tuple) -> None: ...
     def add(self, *args: tuple): ...
-    
+
 
 class Bundle:
     @overload
     def __init__(self, timetag: float, *messages: tuple[Message]) -> None: ...
     @overload
     def __init__(self, *messages: tuple[Message]): ...
-    
+
     @overload
     def add(self, path: str, *messages: tuple[Message]): ...
     @overload
@@ -48,7 +47,8 @@ class __AbstractServer:
     def add_method(self, path: str, typespec: str, func: Callable, user_data=None): ...
     def del_method(self, path: str, typespec: str): ...
     def register_methods(self, obj=None): ...
-    def add_bundle_handlers(self, start_handler: Callable, end_handler: Callable, user_data=None): ...
+    def add_bundle_handlers(
+        self, start_handler: Callable, end_handler: Callable, user_data=None): ...
     
     @overload
     def send(self, address: Address, path: str, *args: tuple): ...
@@ -84,3 +84,22 @@ def send(target: Union[Address, int, tuple[str, int], str],
 
 def time() -> float: ...
 def make_method(path: str, typespec: str, user_data=None): ...
+
+# Custom ADD ons
+
+@dataclass()
+class OscPack:
+    path: str
+    args: list[Union[str, int, float, bytes]]
+    types: str
+    src_addr: Address
+    
+    def reply(self) -> tuple[Address, str, str]:
+        ...
+    
+    def error(self) -> tuple[Address, str, str]:
+        ...
+
+def get_free_osc_port(default=16187) -> int:
+    '''get a free OSC port for daemon, start from default'''
+    ...

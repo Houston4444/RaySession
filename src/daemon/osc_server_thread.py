@@ -10,14 +10,10 @@ from typing import TYPE_CHECKING, Callable
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
-try:
-    import liblo
-except ImportError:
-    import pyliblo3 as liblo
 from qtpy.QtCore import QCoreApplication
 
+from osclib import Address, ServerThread, make_method, Message, OscPack
 import ray
-from osc_pack import OscPack
 from signaler import Signaler
 from multi_daemon_file import MultiDaemonFile
 from daemon_tools import (
@@ -54,7 +50,7 @@ def _path_is_valid(path: str) -> bool:
 
 def osp_method(path: str, types: str):
     def decorated(func: Callable):
-        @liblo.make_method(path, types)
+        @make_method(path, types)
         def wrapper(*args, **kwargs):
             t_thread, t_path, t_args, t_types, src_addr, rest = args
             if CommandLineArgs.debug:
@@ -74,23 +70,23 @@ def osp_method(path: str, types: str):
 
 
 class Controller:
-    addr: liblo.Address = None
+    addr: Address = None
     pid = 0
 
 
-class GuiAdress(liblo.Address):
+class GuiAdress(Address):
     gui_pid = 0
 
 
 # Osc server thread separated in many classes for confort.
 
 
-class ClientCommunicating(liblo.ServerThread):
+class ClientCommunicating(ServerThread):
     '''Contains NSM protocol.
     OSC paths have to be never changed.'''
     
     def __init__(self, session: 'SignaledSession', osc_num=0):
-        liblo.ServerThread.__init__(self, osc_num)
+        ServerThread.__init__(self, osc_num)
         self.session = session
 
         self._nsm_locker_url = ''
@@ -99,7 +95,7 @@ class ClientCommunicating(liblo.ServerThread):
 
         self.gui_list = list[GuiAdress]()
         self.controller_list = list[Controller]()
-        self.monitor_list = list[liblo.Address]()
+        self.monitor_list = list[Address]()
         self.server_status = ray.ServerStatus.OFF
         self.is_nsm_locked = False
         self.not_default = False
@@ -262,7 +258,7 @@ class ClientCommunicating(liblo.ServerThread):
                 continue
 
             if not ray.are_same_osc_port(client.addr.url, osp.src_addr.url):
-                self.send(client.addr, liblo.Message(*osp.args))
+                self.send(client.addr, Message(*osp.args))
 
             # TODO broadcast to slave daemons
             #for gui_addr in self.gui_list:
@@ -580,7 +576,7 @@ class OscServerThread(ClientCommunicating):
                     good_port = False
 
                     try:
-                        patchbay_addr = liblo.Address(int(port_str))
+                        patchbay_addr = Address(int(port_str))
                         good_port = True
                     except:
                         patchbay_addr = None
@@ -1383,7 +1379,7 @@ class OscServerThread(ClientCommunicating):
                 pid_list.append(str(gui_addr.gui_pid))
         return ':'.join(pid_list)
 
-    def is_gui_address(self, addr: liblo.Address) -> bool:
+    def is_gui_address(self, addr: Address) -> bool:
         for gui_addr in self.gui_list:
             if ray.are_same_osc_port(gui_addr.url, addr.url):
                 return True

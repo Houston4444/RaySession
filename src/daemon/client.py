@@ -1,4 +1,3 @@
-from curses.ascii import isdigit
 import logging
 import os
 import shlex
@@ -10,23 +9,18 @@ from enum import Enum
 import xml.etree.ElementTree as ET
 
 from qtpy.QtCore import (QCoreApplication, QProcess,
-                          QProcessEnvironment, QTimer)
+                         QProcessEnvironment, QTimer)
 
-try:
-    from liblo import Address
-except ImportError:
-    from pyliblo3 import Address
-    
+from osclib import Address, OscPack    
 import xdg
 import ray
 from server_sender import ServerSender
-from daemon_tools  import (TemplateRoots, Terminal, RS,
-                           get_code_root, highlight_text,
-                           exec_and_desktops)
+from daemon_tools  import (
+    TemplateRoots, Terminal, RS, get_code_root,
+    highlight_text, exec_and_desktops)
 from signaler import Signaler
 from scripter import ClientScripter
 from xml_tools import XmlElement
-from osc_pack import OscPack
 
 
 # only used to identify session functions in the IDE
@@ -1234,7 +1228,7 @@ class Client(ServerSender, ray.ClientData):
                 self.ignored_extensions += " .mid"
             elif len(executable) <= 8:
                 rest = executable[6:]
-                if isdigit(rest):
+                if rest.isdigit():
                     self.ignored_extensions += " .mid"
         elif executable == 'qtractor':
             self.ignored_extensions += " .mid"

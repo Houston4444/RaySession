@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 from pathlib import Path
 
 from qtpy.QtCore import QProcess, QTimer
-import liblo
+from osclib import Address
 
 from server_sender import ServerSender
 import ray
@@ -53,7 +53,7 @@ class FileCopier(ServerSender):
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._check_progress_size)
 
-        self._abort_src_addr: Optional[liblo.Address] = None
+        self._abort_src_addr: Optional[Address] = None
         self._abort_src_path = ''
 
     def _get_file_size(self, filepath: Path) -> int:

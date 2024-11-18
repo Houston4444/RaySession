@@ -8,14 +8,8 @@ from typing import TYPE_CHECKING, Callable
 
 from qtpy.QtCore import QCoreApplication, QProcess
 
-try:
-    from liblo import Address
-except ImportError:
-    from pyliblo3 import Address
-
+from osclib import Address, OscPack
 import ray
-
-from osc_pack import OscPack
 from client import Client
 from multi_daemon_file import MultiDaemonFile
 from signaler import Signaler
