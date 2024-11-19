@@ -1,9 +1,12 @@
 #!/usr/bin/python3 -u
 
 
+import logging
 import os
 import signal
 import sys
+import xml.etree.ElementTree as ET
+from pathlib import Path
 
 try:
     from liblo import Address, make_method
@@ -11,13 +14,17 @@ except ImportError:
     from pyliblo3 import Address, make_method
 
 from qtpy import QT5
-from qtpy.QtCore import (QCoreApplication, Signal, QObject, QTimer,
-                          QProcess)
-from qtpy.QtXml import QDomDocument
+from qtpy.QtCore import (
+    QCoreApplication, Signal, QObject, QTimer, QProcess)
 
 import ray
+from xml_tools import XmlElement
 from nsm_client_qt import NSMThread, NSMSignaler
 import jacklib
+
+
+_logger = logging.getLogger(__name__)
+
 
 def signalHandler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -47,7 +54,8 @@ class GeneralObject(QObject):
         QObject.__init__(self)
 
         self.sl_process = QProcess()
-        self.sl_process.setProcessChannelMode(QProcess.ProcessChannelMode.ForwardedChannels)
+        self.sl_process.setProcessChannelMode(
+            QProcess.ProcessChannelMode.ForwardedChannels)
         self.sl_process.finished.connect(self.slProcessFinished)
 
         if sl_port is not None:
@@ -58,17 +66,17 @@ class GeneralObject(QObject):
         self.sl_url = Address(self.sl_port)
 
         self.gui_process = QProcess()
-        self.gui_process.setProcessChannelMode(QProcess.ProcessChannelMode.ForwardedChannels)
+        self.gui_process.setProcessChannelMode(
+            QProcess.ProcessChannelMode.ForwardedChannels)
         self.gui_process.started.connect(self.guiProcessStarted)
         self.gui_process.finished.connect(self.guiProcessFinished)
 
-        self.project_path = ''
+        self.project_path = Path()
         self.session_path = ''
-        self.session_name = ''
         self.full_client_id = ''
-        self.session_file = ''
-        self.session_bak = ''
-        self.midi_bindings_file = ''
+        self.session_file = Path()
+        self.session_bak = Path()
+        self.midi_bindings_file = Path()
 
         self.file_timer = QTimer()
         self.file_timer.setInterval(100)
@@ -187,7 +195,7 @@ class GeneralObject(QObject):
     def startFileChecker(self):
         self.n_file_timer = 0
 
-        if os.path.exists(self.session_file):
+        if self.session_file.exists():
             self.stopFileChecker()
             return
 
@@ -197,7 +205,7 @@ class GeneralObject(QObject):
         self.n_file_timer = 0
         self.file_timer.stop()
 
-        self.xmlCorrection()
+        self.xml_correction()
 
         server.saveReply()
 
@@ -206,65 +214,50 @@ class GeneralObject(QObject):
             self.stopFileChecker()
             return
 
-        if os.path.exists(self.session_file):
+        if self.session_file.exists():
             self.stopFileChecker()
             return
 
         self.n_file_timer += 1
 
-    def xmlCorrection(self):
+    def xml_correction(self):
         try:
-            sl_file = open(self.session_file)
-            xml = QDomDocument()
-            xml.setContent(sl_file.read())
-            sl_file.close()
+            tree = ET.parse(self.session_file)
+            root = tree.getroot()
         except:
+            _logger.warning(f'Failed to modify XML file {self.session_file}')
             return
-
-        content = xml.documentElement()
-
-        if content.tagName() != 'SLSession':
+        
+        if root.tag != 'SLSession':
             return
-
-        nodes = content.childNodes()
-
-        for i in range(nodes.count()):
-            node = nodes.at(i)
-
-            if node.toElement().tagName() != 'Loopers':
+        
+        for child in root:
+            if child.tag != 'Loopers':
                 continue
-
-            sub_nodes = node.childNodes()
-
-            for j in range(sub_nodes.count()):
-                sub_node = sub_nodes.at(j)
-                element = sub_node.toElement()
-
-                if element.tagName() != 'Looper':
+            
+            for c_child in child:
+                if c_child.tag != 'Looper':
                     continue
-
-                audio_file_name = str(element.attribute('loop_audio'))
-
-                if audio_file_name.startswith("%s/" % self.project_path):
-                    element.setAttribute('loop_audio',
-                                         os.path.relpath(audio_file_name))
-
+                
+                xc_child = XmlElement(c_child)
+                audio_file_name = Path(xc_child.str('loop_audio'))
+                if audio_file_name.is_relative_to(self.project_path):
+                    xc_child.set_str(
+                        'loop_audio',
+                        audio_file_name.relative_to(self.project_path))
+                    
         try:
-            sl_file = open(self.session_file, 'w')
+            tree.write(self.session_file)
         except:
-            return
+            _logger.warning(
+                f'Failed to save audio files in {self.session_file}')
 
-        sl_file.write(xml.toString())
-        sl_file.close()
-
-
-    def initialize(self, project_path, session_name, full_client_id):
-        self.project_path = project_path
-        self.session_name = session_name
-        self.session_file = "%s/session.slsess" % self.project_path
-        self.session_bak = "%s/session.slsess.bak" % self.project_path
-        self.midi_bindings_file = "%s/session.slb" % self.project_path
-        #self.midi_bindings_bak = "%s/session.slb.bak" % self.project_path
+    def initialize(
+            self, project_path: str, session_name: str, full_client_id: str):
+        self.project_path = Path(project_path)
+        self.session_file = self.project_path / 'session.slsess'
+        self.session_bak = self.project_path / 'session.slsess.bak'
+        self.midi_bindings_file = self.project_path / 'session.slb'
 
         if not self.jack_follow_naming:
             full_client_id = 'sooperlooper'
@@ -290,8 +283,7 @@ class GeneralObject(QObject):
                 'sooperlooper',
                 ['-p', str(self.sl_port), '-j', self.full_client_id])
 
-        if not os.path.exists(self.project_path):
-            os.makedirs(self.project_path)
+        self.project_path.mkdir(parents=True, exist_ok=True)
 
         os.chdir(self.project_path)
 
@@ -307,10 +299,12 @@ class GeneralObject(QObject):
     def loadSession(self):
         #self.sl_process.start('sooperlooper', ['-p', str(self.sl_port)])
         self.wait_for_load = False
-        server.send(self.sl_url, '/load_session', self.session_file,
-                    server.url, '/re-load')
-        server.send(self.sl_url, '/load_midi_bindings',
-                    self.midi_bindings_file, '')
+        server.send(
+            self.sl_url, '/load_session', str(self.session_file),
+            server.url, '/re-load')
+        server.send(
+            self.sl_url, '/load_midi_bindings',
+            str(self.midi_bindings_file), '')
 
         if jack_client is not None:
             server.send(self.sl_url, '/set', 'sync_source', -1.0)
@@ -319,17 +313,16 @@ class GeneralObject(QObject):
         server.openReply()
 
     def saveSlSession(self):
-        if os.path.exists(self.session_bak):
-            os.remove(self.session_bak)
+        self.session_bak.unlink(missing_ok=True)
 
-        if os.path.exists(self.session_file):
-            os.rename(self.session_file, self.session_bak)
+        if self.session_file.exists():
+            self.session_file.rename(self.session_bak)
 
-        server.send(self.sl_url, '/save_session', self.session_file,
+        server.send(self.sl_url, '/save_session', str(self.session_file),
                     server.url, '/re-save', 1)
 
         server.send(self.sl_url, '/save_midi_bindings',
-                    self.midi_bindings_file, '')
+                    str(self.midi_bindings_file), '')
 
         self.startFileChecker()
 
