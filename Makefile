@@ -144,7 +144,7 @@ pure_install:
 	# Install icons
 	for sz in $(ICON_SIZES);do \
 		install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/$${sz}x$${sz}/apps/ ;\
-		install -m 644 resources/main_icon/$${sz}x$${sz}/$(APP_NAME_LC).png \
+		install -m 644 resources/main_icon/$${sz}x$${sz}/raysession.png \
 			$(DESTDIR)$(PREFIX)/share/icons/hicolor/$${sz}x$${sz}/apps/ ;\
 	done
 
