@@ -67,6 +67,7 @@ class SlServer(NsmServer):
     def send_sl(self, *args):
         self.send(self.sl_addr, *args)
 
+
 class MainObject:
     def __init__(self):
         self.project_path = Path()
@@ -75,7 +76,7 @@ class MainObject:
         self.session_bak = Path()
         self.midi_bindings_file = Path()
         
-        self.jack_follow_naming = False
+        self.follow_jack_naming = False
         self.wanted_osc_port: Optional[int] = None
         
         # self.gui_process = QProcess()
@@ -185,8 +186,8 @@ def open_file(
     main.session_bak = main.project_path / 'session.slsess.bak'
     main.midi_bindings_file = main.project_path / 'session.slb'
 
-    # if not main.jack_follow_naming:
-    #     full_client_id = 'sooperlooper'
+    if not main.follow_jack_naming:
+        full_client_id = 'sooperlooper'
 
     main.full_client_id = full_client_id
 
@@ -360,6 +361,10 @@ def run():
 
             elif arg == '--transport_workaround':
                 transport_wk = True
+                arg_read = ArgRead.NONE
+
+            elif arg == '--follow-jack-naming':
+                main.follow_jack_naming = True
                 arg_read = ArgRead.NONE
 
             else:
