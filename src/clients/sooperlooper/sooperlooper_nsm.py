@@ -1,406 +1,470 @@
 #!/usr/bin/python3 -u
 
 
+import logging
 import os
 import signal
 import sys
+from typing import TYPE_CHECKING, Optional
+import xml.etree.ElementTree as ET
+from pathlib import Path
+from enum import Enum, auto
+import time
+import subprocess
+import shutil
 
-try:
-    from liblo import Address, make_method
-except ImportError:
-    from pyliblo3 import Address, make_method
+from nsm_client.osclib import Address, get_free_osc_port, is_osc_port_free
+from nsm_client import NsmServer, NsmCallback, Err
+from xml_tools import XmlElement
 
-from qtpy import QT5
-from qtpy.QtCore import (QCoreApplication, Signal, QObject, QTimer,
-                          QProcess)
-from qtpy.QtXml import QDomDocument
+if TYPE_CHECKING:
+    import jacklib
 
-import ray
-from nsm_client_qt import NSMThread, NSMSignaler
-import jacklib
 
-def signalHandler(sig, frame):
+_logger = logging.getLogger(__name__)
+
+
+def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
-        general_object.leave()
+        print('I receive sig', main.full_client_id, nsm_server.sl_addr.port)
+        main.leaving = True
 
 
-class SlOSCThread(NSMThread):
-    def __init__(self, name, signaler, daemon_address, debug):
-        NSMThread.__init__(self, name, signaler,
-                                      daemon_address, debug)
-        self.sl_is_ready = False
-        self.number_of_loops = 0
-
-    @make_method('/pongSL', 'ssi')
-    def pong(self, path, args):
-        self.sl_is_ready = True
-        self.number_of_loops = args[2]
-
-        if general_object.wait_for_load:
-            general_object.sl_ready.emit()
+class ArgRead(Enum):
+    NONE = auto()
+    LOG = auto()
+    OSC_PORT = auto()
 
 
-class GeneralObject(QObject):
-    sl_ready = Signal()
+class SlServer(NsmServer):
+    def __init__(self, daemon_address: Address):
+        super().__init__(daemon_address)
+        
+        self.wait_pong = False
+        self.save_error = False
+        self.load_error = False
+        
+        self.sl_addr = Address(9951)
 
-    def __init__(self, sl_port=None):
-        QObject.__init__(self)
+        self.add_method('/sl_pong', 'ssi', self.sl_pong)
+        self.add_method('/sl_save_error', None, self.sl_save_error)
+        self.add_method('/sl_load_error', None, self.sl_load_error)
 
-        self.sl_process = QProcess()
-        self.sl_process.setProcessChannelMode(QProcess.ProcessChannelMode.ForwardedChannels)
-        self.sl_process.finished.connect(self.slProcessFinished)
+    def sl_pong(self, path: str, args: list, types: str, src_adrr: Address):
+        self.wait_pong = False
 
-        if sl_port is not None:
-            self.sl_port = sl_port
-        else:
-            self.sl_port = ray.get_free_osc_port(9951)
+    def sl_save_error(
+            self, path: str, args: list, types: str, src_adrr: Address):
+        self.save_error = True
+        
+    def sl_load_error(
+            self, path: str, args: list, types: str, src_adrr: Address):
+        self.load_error = True
 
-        self.sl_url = Address(self.sl_port)
+    def set_sl_port(self, port: int):
+        self.sl_addr = Address(port)
+        
+    def send_sl(self, *args):
+        self.send(self.sl_addr, *args)
 
-        self.gui_process = QProcess()
-        self.gui_process.setProcessChannelMode(QProcess.ProcessChannelMode.ForwardedChannels)
-        self.gui_process.started.connect(self.guiProcessStarted)
-        self.gui_process.finished.connect(self.guiProcessFinished)
 
-        self.project_path = ''
-        self.session_path = ''
-        self.session_name = ''
-        self.full_client_id = ''
-        self.session_file = ''
-        self.session_bak = ''
-        self.midi_bindings_file = ''
+class MainObject:
+    def __init__(self):
+        self.project_path = Path()
+        self.full_client_id = 'SooperLooper'
+        self.session_file = Path()
+        self.session_bak = Path()
+        self.midi_bindings_file = Path()
+        
+        self.follow_jack_naming = False
+        self.wanted_osc_port: Optional[int] = None
+        
+        # self.gui_process = QProcess()
+        self.gui_process: Optional[subprocess.Popen] = None
 
-        self.file_timer = QTimer()
-        self.file_timer.setInterval(100)
-        self.file_timer.timeout.connect(self.checkFile)
-        self.n_file_timer = 0
-
-        signaler.server_sends_open.connect(self.initialize)
-        signaler.server_sends_save.connect(self.saveSlSession)
-        signaler.show_optional_gui.connect(self.showOptionalGui)
-        signaler.hide_optional_gui.connect(self.hideOptionalGui)
-
-        self.sl_ready.connect(self.loadSession)
-
-        self._switching = False
+        self.sl_process: Optional[subprocess.Popen] = None
+        self.sl_port = 9951
+        self.not_started_yet = True
+        
+        self.last_gui_state = False
         self.leaving = False
-        self.wait_for_load = False
-
-        self.ping_timer = QTimer()
-        self.ping_timer.setInterval(100)
-        self.ping_timer.timeout.connect(self.pingSL)
-        self.ping_timer.start()
-
-        self.transport_timer = QTimer()
-        self.transport_timer.setInterval(2)
-        self.transport_timer.timeout.connect(self.checkTransport)
-
+        
+        # for transport workaroung
         self.transport_playing = False
         self.will_trig = False
         
-        self.jack_follow_naming = False
-
-    def JackShutdownCallback(self, arg=None):
-        self.transport_timer.stop()
-        return 0
-
-    def checkTransport(self):
-        pos = jacklib.jack_position_t()
-        pos.valid = 0
-
-        state = jacklib.transport_query(jack_client, jacklib.pointer(pos))
-
-        if self.will_trig:
-            if pos.beat == pos.beats_per_bar:
-                if (pos.ticks_per_beat - pos.tick) <= 4:
-                    # we are at 4 ticks or less from next bar (arbitrary)
-                    # so we send a trig message to sooperlooper.
-                    server.send(self.sl_url, '/sl/-1/hit', 'trigger')
-                    self.will_trig = False
-                    return
-
-        if (self.transport_playing
-                and state == jacklib.JackTransportStopped):
-            if self.will_trig:
-                self.will_trig = False
-            else:
-                server.send(self.sl_url, '/sl/-1/hit', 'pause_on')
-
-            self.transport_playing = False
-
-        elif (not self.transport_playing
-              and state == jacklib.JackTransportRolling):
-            if pos.beat == 1 and pos.tick == 0:
-                server.send(self.sl_url, '/sl/-1/hit', 'trigger')
-
-            else:
-                self.will_trig = True
-
-            self.transport_playing = True
-
-    def pingSL(self):
-        if server.sl_is_ready:
-            self.ping_timer.stop()
-        else:
-            server.send(self.sl_url, '/ping', server.url, '/pongSL')
-
-    def leave(self):
-        self.leaving = True
+    def sl_running(self) -> bool:
+        'return True if sooperlooper process is running, else False'
+        if self.sl_process is None:
+            return False
         
-        if QT5:
-            if self.gui_process.state():
-                self.gui_process.terminate()
-            else:
-                if self.sl_process.state():
-                    server.send(self.sl_url, '/quit')
-                else:
-                    app.quit()
-            return
+        return self.sl_process.poll() is None
 
-        if self.gui_process.state() is QProcess.ProcessState.NotRunning:
-            if self.sl_process.state() is QProcess.ProcessState.NotRunning:
-                app.quit()
-            else:
-                server.send(self.sl_url, '/quit')
+    def gui_running(self) -> bool:
+        'return True if slgui process is running, else False'
+        if self.gui_process is None:
+            return False
+        
+        return self.gui_process.poll() is None
+
+
+main = MainObject()
+jack_client = None
+
+
+def check_transport():
+    pos = jacklib.jack_position_t()
+    pos.valid = 0
+
+    state = jacklib.transport_query(jack_client, jacklib.pointer(pos))
+
+    if main.will_trig:
+        if pos.beat == pos.beats_per_bar:
+            if (pos.ticks_per_beat - pos.tick) <= 4:
+                # we are at 4 ticks or less from next bar (arbitrary)
+                # so we send a trig message to sooperlooper.
+                nsm_server.send_sl('/sl/-1/hit', 'trigger')
+                main.will_trig = False
+                return
+
+    if (main.transport_playing
+            and state == jacklib.JackTransportState.STOPPED):
+        if main.will_trig:
+            main.will_trig = False
         else:
-            self.gui_process.terminate()
+            nsm_server.send_sl('/sl/-1/hit', 'pause_on')
 
-    def isGuiShown(self):
-        return bool(self.sl_process.state() == QProcess.ProcessState.Running)
+        main.transport_playing = False
 
-    def slProcessFinished(self, exit_code):
-        if not self._switching:
-            app.quit()
+    elif (not main.transport_playing
+            and state == jacklib.JackTransportState.ROLLING):
+        if pos.beat == 1 and pos.tick == 0:
+            nsm_server.send_sl('/sl/-1/hit', 'trigger')
 
-    def guiProcessStarted(self):
-        server.sendGuiState(True)
+        else:
+            main.will_trig = True
 
-    def guiProcessFinished(self, exit_code):
-        if self.leaving:
-            if self.sl_process.state():
-                server.send(self.sl_url, '/quit')
-            else:
-                app.quit()
+        main.transport_playing = True
 
-        server.sendGuiState(False)
-
-    def startFileChecker(self):
-        self.n_file_timer = 0
-
-        if os.path.exists(self.session_file):
-            self.stopFileChecker()
-            return
-
-        self.file_timer.start()
-
-    def stopFileChecker(self):
-        self.n_file_timer = 0
-        self.file_timer.stop()
-
-        self.xmlCorrection()
-
-        server.saveReply()
-
-    def checkFile(self):
-        if self.n_file_timer > 200: #more than 20 second
-            self.stopFileChecker()
-            return
-
-        if os.path.exists(self.session_file):
-            self.stopFileChecker()
-            return
-
-        self.n_file_timer += 1
-
-    def xmlCorrection(self):
-        try:
-            sl_file = open(self.session_file)
-            xml = QDomDocument()
-            xml.setContent(sl_file.read())
-            sl_file.close()
-        except:
-            return
-
-        content = xml.documentElement()
-
-        if content.tagName() != 'SLSession':
-            return
-
-        nodes = content.childNodes()
-
-        for i in range(nodes.count()):
-            node = nodes.at(i)
-
-            if node.toElement().tagName() != 'Loopers':
+def xml_correction():
+    try:
+        tree = ET.parse(main.session_file)
+        root = tree.getroot()
+    except:
+        _logger.warning(f'Failed to modify XML file {main.session_file}')
+        return
+    
+    if root.tag != 'SLSession':
+        return
+    
+    for child in root:
+        if child.tag != 'Loopers':
+            continue
+        
+        for c_child in child:
+            if c_child.tag != 'Looper':
                 continue
+            
+            xc_child = XmlElement(c_child)
+            audio_file_name = Path(xc_child.str('loop_audio'))
+            if main.project_path in audio_file_name.parents:
+                xc_child.set_str(
+                    'loop_audio',
+                    audio_file_name.relative_to(main.project_path))
+                
+    try:
+        tree.write(main.session_file)
+    except:
+        _logger.warning(
+            f'Failed to save audio files in {main.session_file}')
 
-            sub_nodes = node.childNodes()
+def open_file(
+        project_path: str, session_name: str,
+        full_client_id: str) -> tuple[Err, str]:
+    main.project_path = Path(project_path)
+    main.session_file = main.project_path / 'session.slsess'
+    main.session_bak = main.project_path / 'session.slsess.bak'
+    main.midi_bindings_file = main.project_path / 'session.slb'
 
-            for j in range(sub_nodes.count()):
-                sub_node = sub_nodes.at(j)
-                element = sub_node.toElement()
+    if not main.follow_jack_naming:
+        full_client_id = 'sooperlooper'
 
-                if element.tagName() != 'Looper':
-                    continue
+    main.full_client_id = full_client_id
 
-                audio_file_name = str(element.attribute('loop_audio'))
+    # STOP GUI
+    if main.gui_running():
+        main.gui_process.terminate()
+    
+    # STOP sooperlooper
+    if main.sl_running():
+        nsm_server.send_sl('/quit')
+        
+        for i in range(100):
+            time.sleep(0.050)
+            if main.sl_process.poll() is not None:
+                break
+            
+            if main.leaving:
+                break
+            
+        if main.sl_process.poll() is None:
+            main.sl_process.terminate()
+            for i in range(100):
+                time.sleep(0.050)
+                if main.sl_process.poll() is not None:
+                    break
+                
+                if main.leaving:
+                    break
+    
+    # create project folder and go inside
+    # it is required to save audio files correctly
+    try:
+        main.project_path.mkdir(parents=True, exist_ok=True)
+        os.chdir(main.project_path)
+    except:
+        return Err.CREATE_FAILED, f'Impossible to create {main.project_path}'
+    
+    if main.wanted_osc_port is not None:
+        if is_osc_port_free(main.wanted_osc_port):
+            nsm_server.set_sl_port(main.wanted_osc_port)
+        else:
+            main.leaving = True
+            return (Err.LAUNCH_FAILED,
+                    f'Wanted OSC port {main.wanted_osc_port} is busy')
 
-                if audio_file_name.startswith("%s/" % self.project_path):
-                    element.setAttribute('loop_audio',
-                                         os.path.relpath(audio_file_name))
+    else:
+        nsm_server.set_sl_port(get_free_osc_port(main.sl_port))
+    
+    # START sooperlooper
+    try:
+        main.sl_process = subprocess.Popen(
+            ['sooperlooper',
+             '-p', str(nsm_server.sl_addr.port), '-j', main.full_client_id])
+    except BaseException as e:
+        return Err.LAUNCH_FAILED, 'failed to start sooperlooper'
+    
+    # PING sooperlooper until it is ready to communicate
+    pong_ok = False
+    nsm_server.wait_pong = True
 
-        try:
-            sl_file = open(self.session_file, 'w')
-        except:
-            return
+    for i in range(1000):
+        nsm_server.send_sl('/ping', nsm_server.url, '/sl_pong')
+        nsm_server.recv(10)
+        
+        if not nsm_server.wait_pong:
+            pong_ok = True
+            break
+        
+        if not main.sl_running():
+            break
+        
+        if main.leaving:
+            break
 
-        sl_file.write(xml.toString())
-        sl_file.close()
+    if not pong_ok:
+        return (
+            Err.LAUNCH_FAILED,
+            'Failed to launch sooperlooper, or fail to communicate with it')
 
+    # LOAD midi bindings
+    if main.midi_bindings_file.exists():
+        nsm_server.send_sl(
+            '/load_midi_bindings', str(main.midi_bindings_file), '')
 
-    def initialize(self, project_path, session_name, full_client_id):
-        self.project_path = project_path
-        self.session_name = session_name
-        self.session_file = "%s/session.slsess" % self.project_path
-        self.session_bak = "%s/session.slsess.bak" % self.project_path
-        self.midi_bindings_file = "%s/session.slb" % self.project_path
-        #self.midi_bindings_bak = "%s/session.slb.bak" % self.project_path
+    # LOAD project
+    if main.session_file.exists():
+        nsm_server.load_error = False
+        nsm_server.send_sl(
+            '/load_session', str(main.session_file),
+            nsm_server.url, '/sl_load_error')
+        
+        # Wait 500ms for an error loading project
+        # Unfortunately, sooperlooper replies only if there is an error.
+        for i in range(10):
+            nsm_server.recv(50)
+            if nsm_server.load_error:
+                return Err.BAD_PROJECT, 'Session Failed to load'
+            
+            if main.leaving:
+                return Err.LAUNCH_FAILED, 'leaving process'
 
-        if not self.jack_follow_naming:
-            full_client_id = 'sooperlooper'
+    # if jack_client:
+    #     self.transport_timer.start()
+    main.not_started_yet = False
+        
+    return Err.OK, f'Session {main.session_file} loaded'
 
-        if full_client_id != self.full_client_id:
-            self.full_client_id = full_client_id
+def save_file():
+    main.session_bak.unlink(missing_ok=True)
 
-            if self.gui_process.state():
-                self.gui_process.terminate()
-                self.gui_process.waitForFinished(500)
+    if main.session_file.exists():
+        main.session_file.rename(main.session_bak)
+
+    nsm_server.send_sl('/save_midi_bindings', str(main.midi_bindings_file), '')
+
+    nsm_server.save_error = False
+    nsm_server.send_sl(
+        '/save_session', str(main.session_file),
+        nsm_server.url, '/sl_save_error', 1)
+    
+    for i in range(200):
+        nsm_server.recv(50)
+        if nsm_server.save_error:
+            return Err.BAD_PROJECT, f'Failed to save {main.session_file}'
+        
+        if main.session_file.exists():
+            break
+        
+        if main.leaving:
+            return Err.CREATE_FAILED, 'Quitting program'
+
+    if not main.session_file.exists():
+        return Err.BAD_PROJECT, f'{main.session_file} has not been saved'
+
+    xml_correction()
+
+    return (Err.OK, f'Session {main.session_file} saved')
+
+def show_optional_gui():
+    if not main.gui_running():
+        main.gui_process = subprocess.Popen(
+            ['slgui', '-P', str(nsm_server.sl_addr.port)])
+    nsm_server.send_gui_state(True)
+    
+def hide_optional_gui():
+    if main.gui_running():
+        main.gui_process.terminate()
+    nsm_server.send_gui_state(False)
+
+def run():
+    global nsm_server, jack_client
+
+    if not shutil.which('sooperlooper'):
+        _logger.critical('SooperLooper is not installed.')
+        sys.exit(1)
+
+    transport_wk = False
+
+    # set log level and other parameters with exec arguments
+    if len(sys.argv) > 1:
+        arg_read = ArgRead.NONE
+        log_level = logging.WARNING
+
+        for arg in sys.argv[1:]:
+            if arg in ('-log', '--log'):
+                arg_read = ArgRead.LOG
+                log_level = logging.DEBUG
+
+            elif arg in ('-osc-port', '--osc-port'):
+                arg_read = ArgRead.OSC_PORT
+
+            elif arg == '--transport_workaround':
+                transport_wk = True
+                arg_read = ArgRead.NONE
+
+            elif arg == '--follow-jack-naming':
+                main.follow_jack_naming = True
+                arg_read = ArgRead.NONE
+
             else:
-                server.sendGuiState(False)
-            
-            self._switching = True
-            
-            if self.sl_process.state():
-                self.sl_process.terminate()
-                self.sl_process.waitForFinished(500)
-            
-            self._switching = False
-            
-            self.sl_process.start(
-                'sooperlooper',
-                ['-p', str(self.sl_port), '-j', self.full_client_id])
+                if arg_read is ArgRead.LOG:
+                    if arg.isdigit():
+                        log_level = int(uarg)
+                    else:
+                        uarg = arg.upper()
+                        if (uarg in logging.__dict__.keys()
+                                and isinstance(logging.__dict__[uarg], int)):
+                            log_level = logging.__dict__[uarg]
+                
+                elif arg_read is ArgRead.OSC_PORT:
+                    if arg.isdigit():
+                        main.wanted_osc_port = int(arg)
 
-        if not os.path.exists(self.project_path):
-            os.makedirs(self.project_path)
+                arg_read = ArgRead.NONE
 
-        os.chdir(self.project_path)
+        _logger.setLevel(log_level)
+    
+    nsm_url = os.getenv('NSM_URL')
+    if not nsm_url:
+        _logger.error('Could not register as NSM client.')
+        sys.exit(1)
+    
+    try:
+        daemon_address = Address(nsm_url)
+    except:
+        _logger.error('NSM_URL seems to be invalid.')
+        sys.exit(1)
+        
+    nsm_server = SlServer(daemon_address)
+    nsm_server.set_callback(NsmCallback.OPEN, open_file)
+    nsm_server.set_callback(NsmCallback.SAVE, save_file)
+    nsm_server.set_callback(NsmCallback.SHOW_OPTIONAL_GUI, show_optional_gui)
+    nsm_server.set_callback(NsmCallback.HIDE_OPTIONAL_GUI, hide_optional_gui)
+    nsm_server.announce(
+        'SooperLooper', ':optional-gui:switch:', Path(sys.argv[0]).name)
+    
+    # connect program interruption signals
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
-        if server.sl_is_ready:
-            self.loadSession()
-            
-        else:
-            self.wait_for_load = True
+    if transport_wk:
+        global jacklib
+        import jacklib
+        jack_client = jacklib.client_open(
+            "sooper_ray_wk",
+            jacklib.JackOptions.NO_START_SERVER
+            | jacklib.JackOptions.SESSION_ID,
+            None)
 
-        if jack_client:
-            self.transport_timer.start()
+    loop_time = 50
+    if transport_wk:
+        loop_time = 2
 
-    def loadSession(self):
-        #self.sl_process.start('sooperlooper', ['-p', str(self.sl_port)])
-        self.wait_for_load = False
-        server.send(self.sl_url, '/load_session', self.session_file,
-                    server.url, '/re-load')
-        server.send(self.sl_url, '/load_midi_bindings',
-                    self.midi_bindings_file, '')
+    # main loop
+    while True:
+        if main.leaving:
+            break
 
-        if jack_client is not None:
-            server.send(self.sl_url, '/set', 'sync_source', -1.0)
-            server.send(self.sl_url, '/set', 'eighth_per_cycle', 8.0)
-            server.send(self.sl_url, '/sl/0/set,' 'quantize', 1.0)
-        server.openReply()
+        nsm_server.recv(loop_time)
+        
+        if transport_wk:
+            check_transport()
+        
+        if main.last_gui_state is not main.gui_running():
+            main.last_gui_state = main.gui_running()
+            nsm_server.send_gui_state(main.last_gui_state)
 
-    def saveSlSession(self):
-        if os.path.exists(self.session_bak):
-            os.remove(self.session_bak)
+        if not main.not_started_yet:
+            if not main.sl_running():
+                break
 
-        if os.path.exists(self.session_file):
-            os.rename(self.session_file, self.session_bak)
+    # QUIT
+    
+    # stop GUI
+    if main.gui_running():
+        main.gui_process.terminate()
 
-        server.send(self.sl_url, '/save_session', self.session_file,
-                    server.url, '/re-save', 1)
+    # stop sooperlooper
+    if main.sl_running():
+        nsm_server.send_sl('/quit')  
+        for i in range(1000):
+            time.sleep(0.0010)
+            if not main.sl_running():
+                break
+        
+        if main.sl_running():
+            main.sl_process.terminate()
+            for i in range(1000):
+                time.sleep(0.0010)
+                if not main.sl_running():
+                    break
 
-        server.send(self.sl_url, '/save_midi_bindings',
-                    self.midi_bindings_file, '')
+            if main.sl_running():
+                main.sl_process.kill()
 
-        self.startFileChecker()
-
-    def showOptionalGui(self):
-        if QT5:
-            if not self.gui_process.state():
-                self.gui_process.start('slgui', ['-P', str(self.sl_port)])
-        else:
-            if self.gui_process.state() is QProcess.ProcessState.NotRunning:
-                self.gui_process.start('slgui', ['-P', str(self.sl_port)]) 
-
-    def hideOptionalGui(self):
-        if QT5:
-            if self.gui_process.state():
-                self.gui_process.terminate()
-        else:
-            if (self.gui_process.state()
-                    is not QProcess.ProcessState.NotRunning):
-                self.gui_process.terminate()
+    sys.exit(0)
 
 
 if __name__ == '__main__':
-    NSM_URL = os.getenv('NSM_URL')
-    if not NSM_URL:
-        sys.stderr.write('Could not register as NSM client.\n')
-        sys.exit()
-
-    daemon_address = ray.get_liblo_address(NSM_URL)
-
-    signal.signal(signal.SIGINT, signalHandler)
-    signal.signal(signal.SIGTERM, signalHandler)
-
-    app = QCoreApplication(sys.argv)
-    app.setApplicationName("SooperLooperNSM")
-    app.setOrganizationName("SooperLooperNSM")
-
-    timer = QTimer()
-    timer.setInterval(200)
-    timer.timeout.connect(lambda: None)
-    timer.start()
-
-    signaler = NSMSignaler()
-
-    server = SlOSCThread('sooperlooper_nsm', signaler, daemon_address, False)
-
-    if len(sys.argv) > 1 and '--transport_workaround' in sys.argv[1:]:
-        jack_client = jacklib.client_open(
-            "sooper_ray_wk",
-            jacklib.JackNoStartServer | jacklib.JackSessionID,
-            None)
-    else:
-        jack_client = None
-
-    sl_port = None
-    if len(sys.argv) > 1 and '--osc-port' in sys.argv[1:]:
-        port_index = sys.argv.index('--osc-port')
-        if len(sys.argv) > port_index + 1 and sys.argv[port_index + 1].isdigit():
-            sl_port = int(sys.argv[port_index + 1])
-
-    general_object = GeneralObject(sl_port=sl_port)
-    if "--follow-jack-naming" in sys.argv[1:]:
-        general_object.jack_follow_naming = True
-
-    server.start()
-    
-    capabilities = ':optional-gui:switch:'
-    server.announce('SooperLooper', capabilities, 'sooperlooper_nsm')
-
-    app.exec()
-
-    server.stop()
-
-    del server
-    del app
+    run()

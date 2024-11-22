@@ -169,15 +169,7 @@ pure_install:
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 
 	# Install main code
-	cp -r src $(DEST_RAY)/
-	rm $(DEST_RAY)/src/gui/patchbay
-	cp -r $(PATCHBAY_DIR)/patchbay $(DEST_RAY)/src/gui/
-	rm $(DEST_RAY)/src/daemon/patshared
-	cp -r $(PATCHBAY_DIR)/patchbay/patchcanvas/patshared $(DEST_RAY)/src/daemon/
-	rm $(DEST_RAY)/src/clients/jackpatch/jacklib
-	cp -r pyjacklib/jacklib $(DEST_RAY)/src/clients/jackpatch/
-	rm $(DEST_RAY)/src/jack_patchbay_to_osc/jacklib
-	cp -r pyjacklib/jacklib $(DEST_RAY)/src/jack_patchbay_to_osc/
+	cp -r -L src $(DEST_RAY)/
 	
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_checker_daemon $(DESTDIR)$(PREFIX)/bin/
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_config_script  $(DESTDIR)$(PREFIX)/bin/

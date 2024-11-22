@@ -19,14 +19,10 @@
 import os
 import signal
 import sys
-try:
-    import liblo
-except ImportError:
-    import pyliblo3 as liblo
 import logging
 import xml.etree.ElementTree as ET
 
-from nsm_client import NsmServer, NsmCallback, Err
+from nsm_client import NsmServer, NsmCallback, Err, Address
 from bases import (EventHandler, MonitorStates, PortMode, PortType,
                    Event, JackPort, Timer, Glob, debug_conn_str)
 from jack_renaming_tools import (
@@ -459,7 +455,7 @@ def run():
         sys.exit(1)
 
     try:
-        daemon_address = liblo.Address(nsm_url)
+        daemon_address = Address(nsm_url)
     except:
         _logger.error('NSM_URL seems to be invalid.')
         sys.exit(1)

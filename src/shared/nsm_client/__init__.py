@@ -2,11 +2,9 @@
 
 from enum import IntEnum
 import os
-try:
-    from liblo import Server, make_method, Address
-except ImportError:
-    from pyliblo3 import Server, make_method, Address
 from typing import Callable, Optional
+
+from .osclib import Server, make_method, Address
 
 
 class Err(IntEnum):

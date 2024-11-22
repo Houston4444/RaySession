@@ -34,6 +34,15 @@ class OscPack:
         return (self.src_addr, '/error', self.path)
 
 
+def is_osc_port_free(port: int) -> bool:
+    try:
+        testport = Server(port)
+    except BaseException:
+        return False
+
+    del testport
+    return True
+
 def get_free_osc_port(default=16187) -> int:
     '''get a free OSC port for daemon, start from default'''
 
