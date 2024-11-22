@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QObject, QProcess, QTimer
 from qtpy.QtWidgets import QApplication
 
-from osclib import Address, get_free_osc_port
+from osclib import Address, get_free_osc_port, verified_address
 import ray
 from gui_server_thread import GuiServerThread
 from gui_tools import CommandLineArgs, ErrDaemon, _translate
@@ -53,9 +53,10 @@ class DaemonManager(QObject):
         self.main_win.daemon_crash()
 
     def _change_url(self, new_url: str):
-        try:
-            self.set_osc_address(ray.get_liblo_address(new_url))
-        except BaseException:
+        addr = verified_address(new_url)
+        if isinstance(addr, Address):
+            self.set_osc_address(addr)
+        else:
             return
 
         self._call_daemon()

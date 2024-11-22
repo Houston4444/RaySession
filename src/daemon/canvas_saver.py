@@ -6,7 +6,7 @@ import tempfile
 import time
 from typing import TYPE_CHECKING, Union
 
-from osclib import Address
+from osclib import Address, are_on_same_machine
 
 import ray
 from daemon_tools import RS, Terminal
@@ -135,7 +135,7 @@ class CanvasSaver(ServerSender):
         mixed_views_str = json.dumps(mixed_views)
         
         for gui_addr in server.gui_list:
-            if ray.are_on_same_machine(server.url, gui_addr.url):
+            if are_on_same_machine(server.url, gui_addr.url):
                 local_guis.append(gui_addr)
             else:
                 distant_guis.append(gui_addr)
@@ -177,7 +177,7 @@ class CanvasSaver(ServerSender):
 
     def send_all_group_positions(self, src_addr: Address):
         '''Used when a GUI is connected to the daemon.'''
-        if ray.are_on_same_machine(self.get_server_url(), src_addr.url):
+        if are_on_same_machine(self.get_server_url(), src_addr.url):
             canvas_dict = dict[str, list]()
             canvas_dict['portgroups'] = self.portgroups.to_json()
 

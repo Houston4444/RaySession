@@ -10,6 +10,7 @@ from qtpy.QtGui import (QIcon, QDesktopServices, QFontMetrics,
                          QCloseEvent, QKeyEvent)
 from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt
 
+from osclib import are_on_same_machine
 import ray
 import add_application_dialog
 import open_session_dialog
@@ -898,7 +899,7 @@ class MainWindow(QMainWindow):
     def _show_daemon_url_window(self, err_code, ex_url=''):
         if not CommandLineArgs.under_nsm:
             server = GuiServerThread.instance()
-            if server and ray.are_on_same_machine(server.url, ex_url):
+            if server and are_on_same_machine(server.url, ex_url):
                 # here we are in the case daemon and GUI have not the same VERSION
                 # If a session is running, inform user
                 # else, just stop the daemon and quit

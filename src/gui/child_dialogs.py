@@ -10,6 +10,7 @@ from qtpy.QtWidgets import (
 from qtpy.QtGui import QIcon, QPixmap, QGuiApplication, QKeyEvent
 from qtpy.QtCore import Qt, QTimer
 
+from osclib import Address, verified_address
 import ray
 import client_properties_dialog
 from gui_server_thread import GuiServerThread
@@ -1178,18 +1179,19 @@ class DaemonUrlWindow(ChildDialog):
     def _allow_url(self, text: str):
         if not text:
             self.ui.lineEdit.completer().complete()
-            self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+            self.ui.buttonBox.button(
+                QDialogButtonBox.StandardButton.Ok).setEnabled(False)
             return
 
         if not text.startswith('osc.udp://'):
-            self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+            self.ui.buttonBox.button(
+                QDialogButtonBox.StandardButton.Ok).setEnabled(False)
             return
 
-        try:
-            addr = ray.get_liblo_address(text)
-            self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
-        except BaseException:
-            self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        addr = verified_address(text)
+        self.ui.buttonBox.button(
+                QDialogButtonBox.StandardButton.Ok).setEnabled(
+                    isinstance(addr, Address))
 
     def get_url(self):
         return self.ui.lineEdit.text()

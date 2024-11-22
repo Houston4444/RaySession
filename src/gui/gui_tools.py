@@ -8,7 +8,7 @@ from qtpy.QtCore import QSettings, QSize, QFile
 from qtpy.QtWidgets import QApplication, QWidget
 from qtpy.QtGui import QIcon, QPixmap, QPalette
 
-from osclib import Address
+from osclib import Address, verified_address, verified_address_from_port
 import ray
 
 if TYPE_CHECKING:
@@ -45,7 +45,7 @@ class RS:
         cls.settings = settings
 
     @classmethod
-    def is_hidden(cls, hideable_dialog: int)->bool:
+    def is_hidden(cls, hideable_dialog: int) -> bool:
         hidden_dialogs = cls.settings.value('hidden_dialogs', 0, type=int)
         return bool(hidden_dialogs & hideable_dialog)
 
@@ -65,7 +65,7 @@ class RS:
 
     @classmethod
     def reset_hiddens(cls):
-        cls.settings.setValue('hidden_dialogs', 0)
+        cls.settings.setValue('hidden_dialogs', 0x00)
         if cls._signaler is not None:
             cls._signaler.hiddens_changed.emit(0)
         
@@ -111,6 +111,19 @@ def RayIcon(icon_name: str, dark=False) -> RayAbstractIcon:
     return icon
 
 
+def verified_address_arg(arg: str) -> Address:
+    addr_or_msg = verified_address(arg)
+    if isinstance(addr_or_msg, Address):
+        return addr_or_msg
+    raise argparse.ArgumentTypeError(addr_or_msg)
+
+def verified_address_from_port_arg(arg: str) -> Address:
+    addr_or_msg = verified_address_from_port(arg)
+    if isinstance(addr_or_msg, Address):
+        return addr_or_msg
+    raise argparse.ArgumentTypeError(addr_or_msg)
+
+
 class CommandLineArgs(argparse.Namespace):
     daemon_url: Address = None
     daemon_port: Address = None
@@ -148,7 +161,7 @@ class CommandLineArgs(argparse.Namespace):
 
         if os.getenv('NSM_URL'):
             try:
-                cls.NSM_URL = ray.get_liblo_address(os.getenv('NSM_URL'))
+                cls.NSM_URL = verified_address_arg(os.getenv('NSM_URL'))
             except BaseException:
                 sys.stderr.write('%s is not a valid NSM_URL\n'
                                  % os.getenv('NSM_URL'))
@@ -173,11 +186,11 @@ class ArgParser(argparse.ArgumentParser):
                 'help',
                 'A session manager based on the Non-Session-Manager API '
                 + 'for sound applications.'))
-        self.add_argument('--daemon-url', '-u', type=ray.get_liblo_address,
+        self.add_argument('--daemon-url', '-u', type=verified_address_arg,
                           help=_translate('help',
                                           'connect to this daemon url'))
         self.add_argument('--daemon-port', '-p',
-                          type=ray.get_liblo_address_from_port,
+                          type=verified_address_from_port_arg,
                           help=_translate('help',
                                           'connect to this daemon port'))
         self.add_argument('--out-daemon', action='store_true',
@@ -200,7 +213,8 @@ class ArgParser(argparse.ArgumentParser):
                                           'do not print client messages'))
         self.add_argument(
             '--force-new-daemon', '-fnd', action='store_true',
-            help=_translate('help', 'prevent to attach to an already running daemon'))
+            help=_translate(
+                'help', 'prevent to attach to an already running daemon'))
         self.add_argument('--net-session-root', type=str, default='',
                           help=argparse.SUPPRESS)
         self.add_argument('--net-daemon-id', type=int, default=0,

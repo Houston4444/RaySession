@@ -1,26 +1,12 @@
 
 
-import argparse
 from dataclasses import dataclass
 from enum import Enum, IntEnum, Flag
-from typing import Optional
 import os
 import shlex
-import socket
-import subprocess
 from pathlib import Path
 
 from qtpy.QtCore import QSettings
-
-try:
-    import liblo
-except:
-    import pyliblo3 as liblo
-
-try:
-    from liblo import Server, Address
-except ImportError:
-    from pyliblo3 import Server, Address
 
 
 VERSION = "0.16.0"
@@ -275,8 +261,9 @@ def add_self_bin_to_path():
         os.environ['PATH'] = f'{bin_path}:{path_env}'
 
 def get_list_in_settings(settings: QSettings, path: str) -> list:
-    # getting a QSettings value of list type seems to not works the same way
-    # on all machines
+    '''getting a QSettings value of list type seems to not works
+    the same way on all machines'''
+
     try:
         settings_list = settings.value(path, [], type=list)
     except BaseException:
@@ -325,162 +312,6 @@ def is_valid_full_path(path: str) -> bool:
         return False
     return True
 
-def is_osc_port_free(port: int) -> bool:
-    try:
-        testport = Server(port)
-    except BaseException:
-        return False
-
-    del testport
-    return True
-
-def get_free_osc_port(default=16187) -> int:
-    '''get a free OSC port for daemon, start from default'''
-
-    if default >= 65536:
-        default = 16187
-
-    daemon_port = default
-    used_port = True
-    testport = None
-
-    while used_port:
-        try:
-            testport = Server(daemon_port)
-            used_port = False
-        except BaseException:
-            daemon_port += 1
-            used_port = True
-
-    del testport
-    return daemon_port
-
-def is_valid_osc_url(url: str) -> bool:
-    try:
-        address = liblo.Address(url)
-        return True
-    except BaseException:
-        return False
-
-def get_liblo_address(url: str) -> Optional[liblo.Address]:
-    valid_url = False
-    try:
-        address = liblo.Address(url)
-        valid_url = True
-    except BaseException:
-        valid_url = False
-        msg = "%r is not a valid osc url" % url
-        raise argparse.ArgumentTypeError(msg)
-
-    if valid_url:
-        try:
-            liblo.send(address, '/ping')
-            return address
-        except BaseException:
-            msg = "%r is an unknown osc url" % url
-            raise argparse.ArgumentTypeError(msg)
-
-def get_liblo_address_from_port(port:int) -> Optional[liblo.Address]:
-    try:
-        port = int(port)
-    except:
-        msg = "%r port must be an int" % port
-        raise argparse.ArgumentTypeError(msg)
-
-    valid_port = False
-
-    try:
-        address = liblo.Address(port)
-        valid_port = True
-    except BaseException:
-        valid_port = False
-        msg = "%i is not a valid osc port" % port
-        raise argparse.ArgumentTypeError(msg)
-
-    if valid_port:
-        try:
-            liblo.send(address, '/ping')
-            return address
-        except BaseException:
-            msg = "%i is an unknown osc port" % port
-            raise argparse.ArgumentTypeError(msg)
-
-def are_same_osc_port(url1: str, url2: str) -> bool:
-    if url1 == url2:
-        return True
-
-    try:
-        address1 = Address(url1)
-        address2 = Address(url2)
-    except BaseException:
-        return False
-
-    if address1.port != address2.port:
-        return False
-
-    if are_on_same_machine(url1, url2):
-        return True
-
-    return False
-
-def are_on_same_machine(url1: str, url2: str) -> bool:
-    if url1 == url2:
-        return True
-
-    try:
-        address1 = Address(url1)
-        address2 = Address(url2)
-    except BaseException:
-        return False
-
-    if address1.hostname == address2.hostname:
-        return True
-
-    try:
-        if (socket.gethostbyname(address1.hostname)
-                    in ('127.0.0.1', '127.0.1.1')
-                and socket.gethostbyname(address2.hostname)
-                    in ('127.0.0.1', '127.0.1.1')):
-            return True
-
-        if socket.gethostbyaddr(
-                address1.hostname) == socket.gethostbyaddr(
-                address2.hostname):
-            return True
-
-        ip = Machine192.get()
-
-        if ip not in (address1.hostname, address2.hostname):
-            return False
-
-        if (ip == socket.gethostbyname(address1.hostname)
-                == socket.gethostbyname(address2.hostname)):
-            # on some systems (as fedora),
-            # socket.gethostbyname returns a 192.168.. url
-            return True
-
-        if (socket.gethostbyname(address1.hostname)
-                in ('127.0.0.1', '127.0.1.1')):
-            if address2.hostname == ip:
-                return True
-
-        if (socket.gethostbyname(address2.hostname)
-                in ('127.0.0.1', '127.0.1.1')):
-            if address1.hostname == ip:
-                return True
-
-    except BaseException:
-        return False
-
-    return False
-
-def get_net_url(port: int) -> str:
-    ip = Machine192.get()
-    if not ip:
-        return ''
-
-    return "osc.udp://%s:%i/" % (ip, port)
-
 def shell_line_to_args(string: str) -> list:
     try:
         args = shlex.split(string)
@@ -503,42 +334,6 @@ def get_window_manager() -> WindowManager:
         return WindowManager.X
 
     return WindowManager.NONE
-
-
-class Machine192:
-    ip = ''
-    read_done = False
-    
-    @staticmethod
-    def read() -> str:
-        try:
-            ips = subprocess.check_output(
-                ['ip', 'route', 'get', '1']).decode()
-            ip_line = ips.partition('\n')[0]
-            ip_end = ip_line.rpartition('src ')[2]
-            ip = ip_end.partition(' ')[0]
-
-        except BaseException:
-            try:
-                ips = subprocess.check_output(['hostname', '-I']).decode()
-                ip = ips.split(' ')[0]
-            except BaseException:
-                return ''
-
-        if ip.count('.') != 3:
-            return ''
-        
-        return ip
-    
-    @classmethod
-    def get(cls)->str:
-        if cls.read_done:
-            return cls.ip
-        
-        cls.ip = cls.read()
-        cls.read_done = True
-
-        return cls.ip
 
 
 class ClientData:

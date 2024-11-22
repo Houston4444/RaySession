@@ -8,6 +8,7 @@ from qtpy.QtWidgets import QFileDialog, QFrame
 
 import ray
 
+from osclib import is_valid_osc_url
 from gui_tools import _translate, client_status_string, get_app_icon
 from child_dialogs import ChildDialog
 from client_prop_adv_dialog import AdvancedPropertiesDialog
@@ -518,7 +519,7 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
         new_root = self.rnet.lineEditSessionRoot.text()
         new_template = self.rnet.lineEditTemplate.text()
 
-        if ray.is_valid_osc_url(new_url):
+        if is_valid_osc_url(new_url):
             self.client.ray_net.daemon_url = new_url
         if ray.is_valid_full_path(new_root):
             self.client.ray_net.session_root = new_root

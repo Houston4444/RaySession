@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Union
 import logging
+import socket
+import subprocess
 
 _logger = logging.getLogger(__name__)
     
@@ -8,12 +10,12 @@ _logger = logging.getLogger(__name__)
 try:
     from liblo import (
         UDP, UNIX, TCP, Message, Bundle, Address, Server, ServerThread,
-        ServerError, AddressError, time, make_method)
+        ServerError, AddressError, time, make_method, send)
 except ImportError:
     try:
         from pyliblo3 import (
             UDP, UNIX, TCP, Message, Bundle, Address, Server, ServerThread,
-            ServerError, AddressError, time, make_method)
+            ServerError, AddressError, time, make_method, send)
     except BaseException as e:
         _logger.error(
             'Failed to find a liblo lib for OSC (liblo or pyliblo3)')
@@ -32,6 +34,42 @@ class OscPack:
     
     def error(self) -> tuple[Address, str, str]:
         return (self.src_addr, '/error', self.path)
+
+
+class Machine192:
+    ip = ''
+    read_done = False
+    
+    @staticmethod
+    def read() -> str:
+        try:
+            ips = subprocess.check_output(
+                ['ip', 'route', 'get', '1']).decode()
+            ip_line = ips.partition('\n')[0]
+            ip_end = ip_line.rpartition('src ')[2]
+            ip = ip_end.partition(' ')[0]
+
+        except BaseException:
+            try:
+                ips = subprocess.check_output(['hostname', '-I']).decode()
+                ip = ips.split(' ')[0]
+            except BaseException:
+                return ''
+
+        if ip.count('.') != 3:
+            return ''
+        
+        return ip
+    
+    @classmethod
+    def get(cls) -> str:
+        if cls.read_done:
+            return cls.ip
+        
+        cls.ip = cls.read()
+        cls.read_done = True
+
+        return cls.ip
 
 
 def is_osc_port_free(port: int) -> bool:
@@ -63,3 +101,125 @@ def get_free_osc_port(default=16187) -> int:
 
     del testport
     return port_num
+
+def is_valid_osc_url(url: str) -> bool:
+    try:
+        address = Address(url)
+        return True
+    except BaseException:
+        return False
+    
+def verified_address(url: str) -> Union[Address, str]:
+    '''check osc Address with the given url.
+    return an Address if ok, else return an error message'''
+
+    try:
+        address = Address(url)
+    except BaseException:
+        return f"{url} is not a valid osc url"
+
+    try:
+        send(address, '/ping')
+        return address
+    except BaseException:
+        return f"{url} is an unknown osc url"
+
+def verified_address_from_port(port: int) -> Union[Address, str]:
+    '''check osc Address with the given port number.
+    return an Address if ok, else return an error message'''
+
+    try:
+        port = int(port)
+    except:
+        return f"{port} port must be an int"
+
+    try:
+        address = Address(port)
+    except BaseException:
+        return f"{port} is not a valid osc port"
+
+    try:
+        send(address, '/ping')
+        return address
+    except BaseException:
+        return f"{port} is an unknown osc port"
+
+def are_on_same_machine(url1: str, url2: str) -> bool:
+    if url1 == url2:
+        return True
+
+    try:
+        address1 = Address(url1)
+        address2 = Address(url2)
+    except BaseException:
+        return False
+
+    if address1.hostname == address2.hostname:
+        return True
+
+    try:
+        if (socket.gethostbyname(address1.hostname)
+                    in ('127.0.0.1', '127.0.1.1')
+                and socket.gethostbyname(address2.hostname)
+                    in ('127.0.0.1', '127.0.1.1')):
+            return True
+
+        if socket.gethostbyaddr(
+                address1.hostname) == socket.gethostbyaddr(
+                address2.hostname):
+            return True
+
+        ip = Machine192.get()
+
+        if ip not in (address1.hostname, address2.hostname):
+            return False
+
+        if (ip == socket.gethostbyname(address1.hostname)
+                == socket.gethostbyname(address2.hostname)):
+            # on some systems (as fedora),
+            # socket.gethostbyname returns a 192.168.. url
+            return True
+
+        if (socket.gethostbyname(address1.hostname)
+                in ('127.0.0.1', '127.0.1.1')):
+            if address2.hostname == ip:
+                return True
+
+        if (socket.gethostbyname(address2.hostname)
+                in ('127.0.0.1', '127.0.1.1')):
+            if address1.hostname == ip:
+                return True
+
+    except BaseException:
+        return False
+
+    return False
+
+def are_same_osc_port(url1: str, url2: str) -> bool:
+    if url1 == url2:
+        return True
+
+    try:
+        address1 = Address(url1)
+        address2 = Address(url2)
+    except BaseException:
+        return False
+
+    if address1.port != address2.port:
+        return False
+
+    if are_on_same_machine(url1, url2):
+        return True
+
+    return False
+
+def get_net_url(port: int) -> str:
+    '''get the url address of a port under a form where
+    it is usable by programs on another machine.
+    Can be an empty string in some cases.'''
+
+    ip = Machine192.get()
+    if not ip:
+        return ''
+
+    return "osc.udp://%s:%i/" % (ip, port)

@@ -106,3 +106,21 @@ def is_osc_port_free(port: int) -> bool:
 def get_free_osc_port(default=16187) -> int:
     '''get a free OSC port for daemon, start from default'''
     ...
+    
+def is_valid_osc_url(url: str) -> bool:
+    ...
+    
+def verified_address(url: str) -> Union[Address, str]:
+    '''check osc Address with the given url.
+    return an Address if ok, else return an error message'''
+    ...
+
+def verified_address_from_port(port: int) -> Union[Address, str]:
+    '''check osc Address with the given port number.
+    return an Address if ok, else return an error message'''
+
+def are_on_same_machine(url1: str, url2: str) -> bool:
+    ...
+
+def are_same_osc_port(url1: str, url2: str) -> bool:
+    ...

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Callable
 
 from qtpy.QtCore import QCoreApplication, QProcess
 
-from osclib import Address, OscPack
+from osclib import Address, OscPack, are_same_osc_port
 import ray
 from client import Client
 from multi_daemon_file import MultiDaemonFile
@@ -1818,8 +1818,8 @@ class SignaledSession(OperatingSession):
         for client in self.clients:
             if (client.protocol is ray.Protocol.RAY_NET
                     and client.ray_net.daemon_url
-                    and ray.are_same_osc_port(client.ray_net.daemon_url,
-                                              osp.src_addr.url)):
+                    and are_same_osc_port(client.ray_net.daemon_url,
+                                          osp.src_addr.url)):
                 client.ray_net.duplicate_state = state
                 client.net_daemon_copy_timer.stop()
                 break

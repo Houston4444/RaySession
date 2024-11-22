@@ -8,7 +8,7 @@ from pathlib import Path
 from qtpy.QtCore import (
     QCoreApplication, QStandardPaths, QSettings, QDateTime, QLocale)
 
-from osclib import Address
+from osclib import Address, verified_address, verified_address_from_port
 import ray
 
 if TYPE_CHECKING:
@@ -227,6 +227,19 @@ class Terminal:
         cls._last_client_name = 'daemon'
 
 
+def verified_address_arg(arg: str) -> Address:
+    addr_or_msg = verified_address(arg)
+    if isinstance(addr_or_msg, Address):
+        return addr_or_msg
+    raise argparse.ArgumentTypeError(addr_or_msg)
+
+def verified_address_from_port_arg(arg: str) -> Address:
+    addr_or_msg = verified_address_from_port(arg)
+    if isinstance(addr_or_msg, Address):
+        return addr_or_msg
+    raise argparse.ArgumentTypeError(addr_or_msg)
+
+
 class CommandLineArgs(argparse.Namespace):
     session_root = ''
     hidden = False
@@ -281,13 +294,13 @@ class ArgParser(argparse.ArgumentParser):
                           help='select OSC port for the daemon')
         self.add_argument('--findfreeport', action='store_true',
                           help='find another port if port is not free')
-        self.add_argument('--gui-url', type=ray.get_liblo_address,
+        self.add_argument('--gui-url', type=verified_address_arg,
                           help=argparse.SUPPRESS)
-        self.add_argument('--gui-port', type=ray.get_liblo_address_from_port,
+        self.add_argument('--gui-port', type=verified_address_from_port_arg,
                           help=argparse.SUPPRESS)
         self.add_argument('--gui-pid', type=int,
                           help=argparse.SUPPRESS)
-        self.add_argument('--control-url', type=ray.get_liblo_address,
+        self.add_argument('--control-url', type=verified_address_arg,
                           help=argparse.SUPPRESS)
         self.add_argument('--no-options', action='store_true',
             help='start without any option and do not save options at quit')

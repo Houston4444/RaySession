@@ -14,7 +14,7 @@ from io import BytesIO
 
 from qtpy.QtCore import QCoreApplication, QTimer
 
-from osclib import Address
+from osclib import Address, is_valid_osc_url, are_same_osc_port
 import ray
 from bookmarker import BookMarker
 from desktops_memory import DesktopsMemory
@@ -496,8 +496,10 @@ class Session(ServerSender):
             
         return False
         
-    def send_initial_monitor(self, monitor_addr: Address, monitor_is_client=True):
+    def send_initial_monitor(
+            self, monitor_addr: Address, monitor_is_client=True):
         '''send clients states to a new monitor'''
+
         prefix = '/nsm/client/monitor/'
         if not monitor_is_client:
             prefix = '/ray/monitor/'
@@ -507,7 +509,7 @@ class Session(ServerSender):
         for client in self.clients:
             if (monitor_is_client
                     and client.addr is not None
-                    and ray.are_same_osc_port(client.addr.url, monitor_addr.url)):
+                    and are_same_osc_port(client.addr.url, monitor_addr.url)):
                 continue
 
             self.send(
@@ -1358,7 +1360,7 @@ for better organization.""")
             if client.protocol is ray.Protocol.RAY_NET:
                 client.ray_net.duplicate_state = -1
                 if (client.ray_net.daemon_url
-                        and ray.is_valid_osc_url(client.ray_net.daemon_url)):
+                        and is_valid_osc_url(client.ray_net.daemon_url)):
                     self.send(Address(client.ray_net.daemon_url),
                               '/ray/session/duplicate_only',
                               self.get_short_path(),

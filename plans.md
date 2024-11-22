@@ -9,9 +9,7 @@ Since tool bar is customizable, we could add optional actions for _recents sessi
 
 ## Remove totally ray-proxy
 
-RayHack does the job ray-proxy was doing. RayHack appeared in the v0.9.0 (Jul 2020). ray-proxy is still included to ensure compatibility with sessions created with older versions, but its code has not been maintained, and errors could appears because of a lib or python update. The solution could simply be to convert ray-proxy to RayHack at session open, this means it will not be possible to re-open this session with older RS version, but I didn't really care about this scenario from the start TBH, these kinds of considerations slow down development considerably.
-
-This would be a good task for the 1.0.0 release.
+Done.
 
 ## add dialog for icon selection
 

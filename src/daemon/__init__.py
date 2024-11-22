@@ -12,7 +12,7 @@ os.environ['QT_API'] = QT_API
 from qtpy.QtCore import (
     QCoreApplication, QTimer, QLocale, QTranslator)
 
-from osclib import get_free_osc_port
+from osclib import get_free_osc_port, is_osc_port_free, get_net_url
 import ray
 from daemon_tools import (get_code_root, init_daemon_tools, RS,
                           CommandLineArgs, ArgParser, Terminal)
@@ -90,7 +90,7 @@ if __name__ == '__main__':
                                  get_free_osc_port(
                                      CommandLineArgs.osc_port))
     else:
-        if ray.is_osc_port_free(CommandLineArgs.osc_port):
+        if is_osc_port_free(CommandLineArgs.osc_port):
             server = OscServerThread(session, CommandLineArgs.osc_port)
         else:
             sys.stderr.write(
@@ -116,7 +116,7 @@ if __name__ == '__main__':
         server.announce_controller(CommandLineArgs.control_url)
 
     # print server url
-    Terminal.message('URL : %s' % ray.get_net_url(server.port))
+    Terminal.message('URL : %s' % get_net_url(server.port))
     Terminal.message('      %s' % server.url)
     Terminal.message('ROOT: %s' % CommandLineArgs.session_root)
 
