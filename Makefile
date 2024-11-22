@@ -170,6 +170,8 @@ pure_install:
 
 	# Install main code
 	cp -r -L src $(DEST_RAY)/
+	rm -rf $(DEST_RAY)/bin
+	cp -r src/bin $(DEST_RAY)/src/
 	
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_checker_daemon $(DESTDIR)$(PREFIX)/bin/
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_config_script  $(DESTDIR)$(PREFIX)/bin/
