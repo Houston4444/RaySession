@@ -100,6 +100,9 @@ class OscPack:
     def error(self) -> tuple[Address, str, str]:
         ...
 
+def is_osc_port_free(port: int) -> bool:
+    ...
+
 def get_free_osc_port(default=16187) -> int:
     '''get a free OSC port for daemon, start from default'''
     ...
