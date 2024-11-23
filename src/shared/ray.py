@@ -5,8 +5,10 @@ from enum import Enum, IntEnum, Flag
 import os
 import shlex
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QSettings
+if TYPE_CHECKING:
+    from qtpy.QtCore import QSettings
 
 
 VERSION = "0.16.0"
@@ -260,7 +262,7 @@ def add_self_bin_to_path():
     if str(bin_path) not in path_env.split(':'):
         os.environ['PATH'] = f'{bin_path}:{path_env}'
 
-def get_list_in_settings(settings: QSettings, path: str) -> list:
+def get_list_in_settings(settings: 'QSettings', path: str) -> list:
     '''getting a QSettings value of list type seems to not works
     the same way on all machines'''
 
