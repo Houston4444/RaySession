@@ -1,108 +1,13 @@
 
 import time
 import tempfile
-import socket
 import json
-import subprocess
 from typing import TYPE_CHECKING
     
-from osclib import Server, Address
+from osclib import Server, Address, are_on_same_machine
 
 if TYPE_CHECKING:
     from ray_jackpatch_to_osc import MainObject, TransportPosition
-
-### Code copied from shared/ray.py
-### we don't import ray.py here, because this executable is Qt free
-### TODO : make a miniray.py with only Qt free code
-
-class Machine192:
-    ip = ''
-    read_done = False
-    
-    @staticmethod
-    def read()->str:
-        try:
-            ips = subprocess.check_output(
-                ['ip', 'route', 'get', '1']).decode()
-            ip_line = ips.partition('\n')[0]
-            ip_end = ip_line.rpartition('src ')[2]
-            ip = ip_end.partition(' ')[0]
-
-        except BaseException:
-            try:
-                ips = subprocess.check_output(['hostname', '-I']).decode()
-                ip = ips.split(' ')[0]
-            except BaseException:
-                return ''
-
-        if ip.count('.') != 3:
-            return ''
-        
-        return ip
-    
-    @classmethod
-    def get(cls)->str:
-        if cls.read_done:
-            return cls.ip
-        
-        cls.ip = cls.read()
-        cls.read_done = True
-
-        return cls.ip
-
-def areOnSameMachine(url1: str, url2: str):
-    if url1 == url2:
-        return True
-
-    try:
-        address1 = Address(url1)
-        address2 = Address(url2)
-    except BaseException:
-        return False
-
-    if address1.hostname == address2.hostname:
-        return True
-
-    try:
-        if (socket.gethostbyname(address1.hostname)
-                    in ('127.0.0.1', '127.0.1.1')
-                and socket.gethostbyname(address2.hostname)
-                    in ('127.0.0.1', '127.0.1.1')):
-            return True
-
-        if socket.gethostbyaddr(
-                address1.hostname) == socket.gethostbyaddr(
-                address2.hostname):
-            return True
-
-    except BaseException:
-        try:
-            ip = Machine192.get()
-
-            if ip not in (address1.hostname, address2.hostname):
-                return False
-
-            try:
-                if socket.gethostbyname(
-                        address1.hostname) in (
-                        '127.0.0.1',
-                        '127.0.1.1'):
-                    if address2.hostname == ip:
-                        return True
-            except BaseException:
-                if socket.gethostbyname(
-                        address2.hostname) in (
-                        '127.0.0.1',
-                        '127.0.1.1'):
-                    if address1.hostname == ip:
-                        return True
-
-        except BaseException:
-            return False
-
-        return False
-
-    return False
 
 
 class OscJackPatch(Server):
@@ -115,7 +20,7 @@ class OscJackPatch(Server):
                         self._ray_patchbay_add_gui)
         self.add_method('/ray/patchbay/gui_disannounce', '',
                         self._ray_patchbay_gui_disannounce)
-        self.add_method('ray/patchbay/port/set_alias', 'sis',
+        self.add_method('/ray/patchbay/port/set_alias', 'sis',
                         self._ray_patchbay_port_set_alias)
         self.add_method('/ray/patchbay/connect', 'ss',
                         self._ray_patchbay_connect)
@@ -366,7 +271,7 @@ class OscJackPatch(Server):
                   tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
                   tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
 
-        if areOnSameMachine(gui_url, self.url):
+        if are_on_same_machine(gui_url, self.url):
             self.send_local_data([gui_addr])
         else:
             self.send_distant_data([gui_addr])
@@ -382,7 +287,7 @@ class OscJackPatch(Server):
         distant_guis = []
         
         for gui_addr in self.gui_list:
-            if areOnSameMachine(self.url, gui_addr.url):
+            if are_on_same_machine(self.url, gui_addr.url):
                 local_guis.append(gui_addr)
             else:
                 distant_guis.append(gui_addr)

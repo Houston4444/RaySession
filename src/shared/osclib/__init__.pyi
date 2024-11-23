@@ -103,7 +103,7 @@ class OscPack:
 def is_osc_port_free(port: int) -> bool:
     ...
 
-def get_free_osc_port(default=16187) -> int:
+def get_free_osc_port(default=16187, protocol=UDP) -> int:
     '''get a free OSC port for daemon, start from default'''
     ...
     

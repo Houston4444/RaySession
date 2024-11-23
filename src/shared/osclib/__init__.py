@@ -79,7 +79,7 @@ def is_osc_port_free(port: int) -> bool:
     del testport
     return True
 
-def get_free_osc_port(default=16187) -> int:
+def get_free_osc_port(default=16187, protocol=UDP) -> int:
     '''get a free OSC port for daemon, start from default'''
 
     if default > 0x9999 or default < 0x400:
@@ -90,7 +90,7 @@ def get_free_osc_port(default=16187) -> int:
 
     while True:
         try:
-            testport = Server(port_num)
+            testport = Server(port_num, protocol=protocol)
             break
         except BaseException:
             port_num += 1

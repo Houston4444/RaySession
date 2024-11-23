@@ -63,6 +63,26 @@ Plan de fonctionnement:
 
 Qt6:
     Bookmark file picker Qt6
-    Enums dans add_application/open_session/snapshots
     QFontMetrics.width ?
-    suppr refs à PyXml dans le démon
+    suppr refs à PyXml dans le démon (...)
+
+TCP:
+    démon
+        UDP pour les clients (le NSM de base)
+        TCP pour relation GUI
+    GUI
+        UDP pour le sous NSM (et session réseau)
+        TCP pour la relation démon + relation démon patchbay
+
+    Démon patchbay
+        TCP partout
+
+    Étapes:
+        11h15 estimées
+        1.
+            transformer patchbay démon en TCP (1h)
+            transformer la relation patchbay démon en TCP (2h)
+            gérer l'envoi d'adresse TCP dans le démon (15mn)
+        2.
+            transformer le reste de la GUI en TCP (sauf partie qui reste en UDP) (4h)
+            transformer en TCP la partie concernée dans le démon (4h)
