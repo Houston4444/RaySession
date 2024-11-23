@@ -119,8 +119,20 @@ def verified_address_from_port(port: int) -> Union[Address, str]:
     '''check osc Address with the given port number.
     return an Address if ok, else return an error message'''
 
+def get_machine_192() -> str:
+    '''return the string address of this machine, starting with 192.168.
+    Value is saved, so, calling this function is longer the first time
+    than the next ones.'''
+    ...
+
 def are_on_same_machine(url1: str, url2: str) -> bool:
     ...
 
 def are_same_osc_port(url1: str, url2: str) -> bool:
+    ...
+    
+def get_net_url(port: int) -> str:
+    '''get the url address of a port under a form where
+    it is usable by programs on another machine.
+    Can be an empty string in some cases.'''
     ...

@@ -36,41 +36,39 @@ class OscPack:
         return (self.src_addr, '/error', self.path)
 
 
-class Machine192:
-    ip = ''
-    read_done = False
-    
-    @staticmethod
-    def read() -> str:
+_mach192_dict = {'ip': '', 'read_done': False}
+
+def _read_machine_192() -> str:
+    try:
+        ips = subprocess.check_output(
+            ['ip', 'route', 'get', '1']).decode()
+        ip_line = ips.partition('\n')[0]
+        ip_end = ip_line.rpartition('src ')[2]
+        ip = ip_end.partition(' ')[0]
+
+    except BaseException:
         try:
-            ips = subprocess.check_output(
-                ['ip', 'route', 'get', '1']).decode()
-            ip_line = ips.partition('\n')[0]
-            ip_end = ip_line.rpartition('src ')[2]
-            ip = ip_end.partition(' ')[0]
-
+            ips = subprocess.check_output(['hostname', '-I']).decode()
+            ip = ips.split(' ')[0]
         except BaseException:
-            try:
-                ips = subprocess.check_output(['hostname', '-I']).decode()
-                ip = ips.split(' ')[0]
-            except BaseException:
-                return ''
-
-        if ip.count('.') != 3:
             return ''
-        
-        return ip
+
+    if ip.count('.') != 3:
+        return ''
     
-    @classmethod
-    def get(cls) -> str:
-        if cls.read_done:
-            return cls.ip
-        
-        cls.ip = cls.read()
-        cls.read_done = True
+    return ip
 
-        return cls.ip
+def get_machine_192() -> str:
+    '''return the string address of this machine, starting with 192.168.
+    Value is saved, so, calling this function is longer the first time
+    than the next ones.'''
 
+    if _mach192_dict['read_done']:
+        return _mach192_dict['ip']
+    
+    _mach192_dict['ip'] = _read_machine_192()
+    _mach192_dict['read_done'] = True
+    return _mach192_dict['ip']
 
 def is_osc_port_free(port: int) -> bool:
     try:
@@ -169,7 +167,7 @@ def are_on_same_machine(url1: str, url2: str) -> bool:
                 address2.hostname):
             return True
 
-        ip = Machine192.get()
+        ip = get_machine_192()
 
         if ip not in (address1.hostname, address2.hostname):
             return False
@@ -218,7 +216,7 @@ def get_net_url(port: int) -> str:
     it is usable by programs on another machine.
     Can be an empty string in some cases.'''
 
-    ip = Machine192.get()
+    ip = get_machine_192()
     if not ip:
         return ''
 
