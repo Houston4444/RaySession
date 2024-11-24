@@ -6,6 +6,7 @@ import signal
 import sys
 import xml.etree.ElementTree as ET
 import warnings
+from pathlib import Path
 
 # import subprocess and osc_server (local file) conditionnally
 # in order to answer faster in many cases.
@@ -163,17 +164,15 @@ def get_daemon_list() -> list[Daemon]:
     return l_daemon_list
 
 def print_help(stdout=False, category=OperationType.NULL):
-    script_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     lang_file = "help_en_US"
-
-    if os.getenv('LANG').startswith('fr_'):
+    if os.getenv('LANG', '').startswith('fr_'):
         lang_file = "help_fr_FR"
 
-    help_path = "%s/%s" % (script_dir, lang_file)
+    help_path = Path(__file__).parent / lang_file
 
     try:
-        help_file = open(help_path, 'r')
-        full_message = help_file.read()
+        with open(help_path, 'r') as help_file:
+            full_message = help_file.read()
     except:
         sys.stderr.write('error: help_file %s is missing\n' % help_path)
         sys.exit(101)
@@ -209,7 +208,8 @@ def auto_type_string(string: str):
     return string
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
+if True:
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     add_self_bin_to_path()
 
