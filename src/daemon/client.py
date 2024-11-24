@@ -12,11 +12,8 @@ from qtpy.QtCore import (QCoreApplication, QProcess,
                          QProcessEnvironment, QTimer)
 
 from shared.osclib import Address, OscPack
-from shared import ray
+from shared import ray, xdg
 from shared.xml_tools import XmlElement
-# import xdg
-# import ray
-from . import xdg
 from .server_sender import ServerSender
 from .daemon_tools  import (
     TemplateRoots, Terminal, RS, get_code_root,

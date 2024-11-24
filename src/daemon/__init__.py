@@ -6,7 +6,7 @@ import signal
 import sys
 import logging
 
-from .qt_api import QT_API
+from shared.qt_api import QT_API
 os.environ['QT_API'] = QT_API
 
 from qtpy.QtCore import (

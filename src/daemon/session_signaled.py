@@ -9,13 +9,12 @@ from typing import TYPE_CHECKING, Callable
 from qtpy.QtCore import QCoreApplication, QProcess
 
 from shared.osclib import Address, OscPack, are_same_osc_port
-from shared import ray
+from shared import ray, xdg
 from .client import Client
 from .multi_daemon_file import MultiDaemonFile
 from .signaler import Signaler
 from .daemon_tools import Terminal, RS, is_pid_child_of, highlight_text
 from .session import OperatingSession
-from . import xdg
 from .patch_rewriter import rewrite_jack_patch_files
 
 _translate = QCoreApplication.translate

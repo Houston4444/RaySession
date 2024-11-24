@@ -7,8 +7,7 @@ import xml.etree.ElementTree as ET
 
 from qtpy.QtCore import QProcess, QCoreApplication
 
-from . import xdg
-from shared import ray
+from shared import ray, xdg
 from shared.xml_tools import XmlElement
 from .daemon_tools import (
     exec_and_desktops,
