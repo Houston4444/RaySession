@@ -7,19 +7,19 @@ import xml.etree.ElementTree as ET
 
 from qtpy.QtCore import QProcess, QCoreApplication
 
-import xdg
-import ray
-from daemon_tools import (
+from . import xdg
+from shared import ray
+from shared.xml_tools import XmlElement
+from .daemon_tools import (
     exec_and_desktops,
     TemplateRoots,
     get_git_default_un_and_ignored,
     AppTemplate)
-import ardour_templates
-from client import Client
-from xml_tools import XmlElement
+from . import ardour_templates
+from .client import Client
 
 if TYPE_CHECKING:
-    from session import Session
+    from .session import Session
 
 
 _translate = QCoreApplication.translate

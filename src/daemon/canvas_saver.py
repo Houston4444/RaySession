@@ -6,18 +6,17 @@ import tempfile
 import time
 from typing import TYPE_CHECKING, Union
 
-from osclib import Address, are_on_same_machine
-
-import ray
-from daemon_tools import RS, Terminal
-from server_sender import ServerSender
-from jack_renaming_tools import group_belongs_to_client
-from patshared import (
+from shared.osclib import Address, are_on_same_machine
+from shared import ray
+from .daemon_tools import RS, Terminal
+from .server_sender import ServerSender
+from .jack_renaming_tools import group_belongs_to_client
+from .patshared import (
     PortgroupsDict, from_json_to_str, PortTypesViewFlag, GroupPos,
     PortgroupMem, ViewsDict)
 
 if TYPE_CHECKING:
-    from session_signaled import SignaledSession
+    from .session_signaled import SignaledSession
 
 
 _logger = logging.getLogger(__name__)

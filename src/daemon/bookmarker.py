@@ -13,8 +13,8 @@ if not QT5:
 
 from qtpy.QtXml  import QDomDocument, QDomNode
 
-import ray
-from daemon_tools import get_app_config_path
+from shared import ray
+from .daemon_tools import get_app_config_path
 
 QFILEDIALOG_MAGIC = 190
 

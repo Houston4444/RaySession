@@ -8,11 +8,12 @@ from pathlib import Path
 from qtpy.QtCore import (
     QCoreApplication, QStandardPaths, QSettings, QDateTime, QLocale)
 
-from osclib import Address, verified_address, verified_address_from_port
-import ray
+from shared.osclib import (
+    Address, verified_address, verified_address_from_port)
+from shared import ray
 
 if TYPE_CHECKING:
-    from client import Client
+    from .client import Client
 
 
 settings = QSettings()

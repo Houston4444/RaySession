@@ -2,12 +2,12 @@ from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QObject
 
-import ray
-from osc_server_thread import OscServerThread
-from daemon_tools import AppTemplate
+from shared import ray
+from .osc_server_thread import OscServerThread
+from .daemon_tools import AppTemplate
 
 if TYPE_CHECKING:
-    from osc_server_thread import OscServerThread
+    from .osc_server_thread import OscServerThread
 
 
 class ServerSender(QObject):

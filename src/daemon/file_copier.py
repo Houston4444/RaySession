@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 from pathlib import Path
 
 from qtpy.QtCore import QProcess, QTimer
-from osclib import Address
 
-from server_sender import ServerSender
-import ray
+from shared.osclib import Address
+from shared import ray
+from .server_sender import ServerSender
 
 if TYPE_CHECKING:
-    from session import Session
+    from .session import Session
 
 _logger = logging.getLogger(__name__)
 

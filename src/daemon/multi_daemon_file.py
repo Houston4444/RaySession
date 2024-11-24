@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING, Union
 from qtpy.QtXml import QDomDocument, QDomElement
 from pathlib import Path
 
-import ray
+from shared import ray
 
 if TYPE_CHECKING:
-    from session import Session
-    from osc_server_thread import OscServerThread
+    from .session import Session
+    from .osc_server_thread import OscServerThread
 
 
 _logger = logging.getLogger(__name__)
