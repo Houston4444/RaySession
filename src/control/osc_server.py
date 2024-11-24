@@ -2,11 +2,8 @@
 import os
 import sys
 import time
-
-try:
-    import liblo
-except ImportError:
-    import pyliblo3 as liblo
+    
+from shared.osclib import Server, Address
 
 # !!! we don't load ray.py to win import duration
 # if change in ray.Err numbers, this has to be changed too !!!
@@ -24,9 +21,9 @@ def highlight_text(string):
     return "'%s'" % string
 
 
-class OscServer(liblo.Server):
+class OscServer(Server):
     def __init__(self, detach=False):
-        liblo.Server.__init__(self)
+        Server.__init__(self)
         self.m_daemon_address = None
         self.add_method('/reply', None, self.reply_message)
         self.add_method('/error', 'sis', self.error_message)
@@ -142,7 +139,7 @@ class OscServer(liblo.Server):
         self.send_order_message()
 
     def set_daemon_address(self, daemon_port):
-        self.m_daemon_address = liblo.Address(daemon_port)
+        self.m_daemon_address = Address(daemon_port)
         self._wait_for_announce = True
         self._announce_time = time.time()
         self.to_daemon('/ray/server/controller_announce', os.getpid())

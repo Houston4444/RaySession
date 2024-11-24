@@ -453,8 +453,8 @@ if True:
     if operation_type is OperationType.CONTROL and operation == 'stop':
         osc_order_path = '/ray/server/quit'
 
-    import osc_server  # see top of the file    
-    server = osc_server.OscServer(detach)
+    from .osc_server import OscServer  # see top of the file
+    server = OscServer(detach)
     server.set_order_path_args(osc_order_path, arg_list)
     daemon_process = None
 
@@ -507,9 +507,9 @@ if True:
             process_args.append('--hidden')
             process_args.append('--no-options')
 
-        daemon_process = subprocess.Popen(process_args, -1, None, None,
-                                          subprocess.DEVNULL,
-                                          subprocess.DEVNULL)
+        daemon_process = subprocess.Popen(
+            process_args, -1, None, None,
+            subprocess.DEVNULL, subprocess.DEVNULL)
 
         server.wait_for_start()
 
