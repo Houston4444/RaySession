@@ -27,7 +27,7 @@ from port_data import PortData
 
 if TYPE_CHECKING:
     from ray_jackpatch_to_osc import MainObject
-    from osc_server import OscJackPatch
+
 
 PORT_IS_INPUT = 0x1
 PORT_IS_OUTPUT = 0x2

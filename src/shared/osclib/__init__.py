@@ -90,7 +90,7 @@ def get_free_osc_port(default=16187, protocol=UDP) -> int:
 
     while True:
         try:
-            testport = Server(port_num, protocol=protocol)
+            testport = Server(port_num, proto=protocol)
             break
         except BaseException:
             port_num += 1
@@ -211,7 +211,7 @@ def are_same_osc_port(url1: str, url2: str) -> bool:
 
     return False
 
-def get_net_url(port: int) -> str:
+def get_net_url(port: int, protocol=UDP) -> str:
     '''get the url address of a port under a form where
     it is usable by programs on another machine.
     Can be an empty string in some cases.'''
@@ -220,4 +220,11 @@ def get_net_url(port: int) -> str:
     if not ip:
         return ''
 
-    return "osc.udp://%s:%i/" % (ip, port)
+    proto_str = 'udp'
+    if protocol == TCP:
+        proto_str = 'tcp'
+    elif protocol == UNIX:
+        # in this case, impossible to call it from another machine
+        return ''
+    
+    return f"osc.{proto_str}://{ip}:{port}/"

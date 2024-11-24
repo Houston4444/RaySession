@@ -1868,7 +1868,7 @@ class SignaledSession(OperatingSession):
         self.terminated_yet = True
         self.steps_order = [self.terminate_step_scripter,
                             self.close, self.exit_now]
-        print('ok finissons', self.steps_order)
+
         self.next_function()
 
 
