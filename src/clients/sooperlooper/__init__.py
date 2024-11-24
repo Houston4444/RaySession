@@ -18,7 +18,7 @@ from shared.nsm_client import NsmServer, NsmCallback, Err
 from shared.xml_tools import XmlElement
 
 if TYPE_CHECKING:
-    from . import jacklib
+    import jacklib
 
 
 _logger = logging.getLogger(__name__)
@@ -411,7 +411,7 @@ def run():
 
     if transport_wk:
         global jacklib
-        from . import jacklib
+        import jacklib
         jack_client = jacklib.client_open(
             "sooper_ray_wk",
             jacklib.JackOptions.NO_START_SERVER

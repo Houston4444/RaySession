@@ -4,10 +4,10 @@ import tempfile
 import json
 from typing import TYPE_CHECKING
     
-from osclib import Server, Address, are_on_same_machine
+from shared.osclib import Server, Address, are_on_same_machine
 
 if TYPE_CHECKING:
-    from ray_jackpatch_to_osc import MainObject, TransportPosition
+    from . import MainObject, TransportPosition
 
 
 class OscJackPatch(Server):

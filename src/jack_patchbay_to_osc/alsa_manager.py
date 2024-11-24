@@ -23,10 +23,10 @@ from pyalsa.alsaseq import (
     SEQ_EVENT_PORT_UNSUBSCRIBED,
     SequencerError
 )
-from port_data import PortData
+from .port_data import PortData
 
 if TYPE_CHECKING:
-    from ray_jackpatch_to_osc import MainObject
+    from . import MainObject
 
 
 PORT_IS_INPUT = 0x1

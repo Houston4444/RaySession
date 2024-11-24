@@ -2,6 +2,9 @@
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+src_path = Path(__file__).parent.parent
+pyjacklib_path = src_path.parent / 'pyjacklib'
+sys.path.insert(0, str(pyjacklib_path))
+sys.path.insert(0, str(src_path))
 
 from clients import sooperlooper

@@ -7,14 +7,8 @@ import signal
 import sys
 from typing import Optional
 import warnings
-
-import osc_server
 import threading
 import time
-
-import jacklib
-from jacklib.helpers import c_char_p_p_to_list
-from jacklib.enums import JackOptions, JackPortFlags, JackMetadata
 
 # check ALSA LIB
 try:
@@ -25,6 +19,13 @@ try:
     from alsa_manager import AlsaManager
 except:
     ALSA_LIB_OK = False
+
+import jacklib
+from jacklib.helpers import c_char_p_p_to_list
+from jacklib.enums import JackOptions, JackPortFlags, JackMetadata
+
+from .osc_server import OscJackPatch
+
     
 
 PORT_TYPE_NULL = 0
@@ -146,7 +147,7 @@ class MainObject:
         self._waiting_jack_client_open = True
         self.last_transport_pos = TransportPosition(0, False, False, 0, 0, 0, 0.0)
 
-        self.osc_server = osc_server.OscJackPatch(self)
+        self.osc_server = OscJackPatch(self)
         self.osc_server.set_tmp_gui_url(gui_url)
         self.write_existence_file()
         self.start_jack_client()
@@ -624,7 +625,7 @@ def main_process():
     main_object.exit()
 
 
-if __name__ == '__main__':
+if True:
     # prevent deprecation warnings python messages
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     

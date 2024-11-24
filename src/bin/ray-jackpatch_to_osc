@@ -1,1 +1,10 @@
-../jack_patchbay_to_osc/ray_jackpatch_to_osc.py
+#!/usr/bin/env python3
+
+import sys
+from pathlib import Path
+src_path = Path(__file__).parent.parent
+pyjacklib_path = src_path.parent / 'pyjacklib'
+sys.path.insert(0, str(pyjacklib_path))
+sys.path.insert(0, str(src_path))
+
+import jack_patchbay_to_osc

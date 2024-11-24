@@ -1,7 +1,8 @@
-#ignore hidden files except git and github
+#ignore hidden files except git, github and vscode
 /.*
 !/.github
 !/.git
+!/.vscode
 build_config
 
 #Package builds
