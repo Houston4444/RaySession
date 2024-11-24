@@ -22,12 +22,12 @@ import sys
 import logging
 import xml.etree.ElementTree as ET
 
-from nsm_client import NsmServer, NsmCallback, Err, Address
-from bases import (EventHandler, MonitorStates, PortMode, PortType,
-                   Event, JackPort, Timer, Glob, debug_conn_str)
-from jack_renaming_tools import (
+from shared.nsm_client import NsmServer, NsmCallback, Err, Address
+from shared.jack_renaming_tools import (
     port_belongs_to_client, port_name_client_replaced)
-from engine import Engine, XML_TAG, NSM_NAME
+from .bases import (EventHandler, MonitorStates, PortMode, PortType,
+                   Event, JackPort, Timer, Glob, debug_conn_str)
+from .engine import Engine, XML_TAG, NSM_NAME
 
 _logger = logging.getLogger(__name__)
 _log_handler = logging.StreamHandler()
