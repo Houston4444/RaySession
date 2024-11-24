@@ -22,7 +22,7 @@ from pyalsa.alsaseq import (
     SEQ_EVENT_PORT_UNSUBSCRIBED,
 )
 
-from bases import Glob, EventHandler, Event, PortMode, PortType
+from .bases import Glob, EventHandler, Event, PortMode, PortType
 
 _PORT_READS = SEQ_PORT_CAP_READ | SEQ_PORT_CAP_SUBS_READ
 _PORT_WRITES = SEQ_PORT_CAP_WRITE | SEQ_PORT_CAP_SUBS_WRITE

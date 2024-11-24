@@ -1,4 +1,4 @@
-from alsa_engine import AlsaEngine
+from .alsa_engine import AlsaEngine
 
 XML_TAG = 'RAY-ALSAPATCH'
 EXECUTABLE = 'ray-alsapatch'

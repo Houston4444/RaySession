@@ -1,5 +1,5 @@
-from bases import ProtoEngine
-from alsa_thread import AlsaManager
+from .bases import ProtoEngine
+from .alsa_thread import AlsaManager
 
 class AlsaEngine(ProtoEngine):
     def __init__(self):
