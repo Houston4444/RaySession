@@ -13,16 +13,17 @@ import time
 import subprocess
 import shutil
 
-from nsm_client.osclib import Address, get_free_osc_port, is_osc_port_free
-from nsm_client import NsmServer, NsmCallback, Err
-from xml_tools import XmlElement
+from shared.osclib import Address, get_free_osc_port, is_osc_port_free
+from shared.nsm_client import NsmServer, NsmCallback, Err
+from shared.xml_tools import XmlElement
 
 if TYPE_CHECKING:
-    import jacklib
+    from . import jacklib
 
 
 _logger = logging.getLogger(__name__)
 
+print('galop')
 
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -410,7 +411,7 @@ def run():
 
     if transport_wk:
         global jacklib
-        import jacklib
+        from . import jacklib
         jack_client = jacklib.client_open(
             "sooper_ray_wk",
             jacklib.JackOptions.NO_START_SERVER
@@ -466,5 +467,5 @@ def run():
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if True:
     run()
