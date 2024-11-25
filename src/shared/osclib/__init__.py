@@ -211,7 +211,7 @@ def are_same_osc_port(url1: str, url2: str) -> bool:
 
     return False
 
-def get_net_url(port: int, protocol=UDP) -> str:
+def get_net_url(port: Union[int, str], protocol=UDP) -> str:
     '''get the url address of a port under a form where
     it is usable by programs on another machine.
     Can be an empty string in some cases.'''

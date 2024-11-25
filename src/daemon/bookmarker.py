@@ -484,7 +484,7 @@ class BookMarker:
         self._bookmarks_memory = get_app_config_path() / 'bookmarks.xml'
         self._daemon_port = 0
 
-        home = Path(os.getenv('HOME'))
+        home = Path.home()
 
         self._gtk2 = PickerTypeGtk(home / '.gtk-bookmarks')
         self._gtk3 = PickerTypeGtk(home / '.config/gtk-3.0/bookmarks')
@@ -493,13 +493,6 @@ class BookMarker:
         self._kde5 = PickerTypeKde5(home / '.local/share/user-places.xbel')
         self._qt4 = PickerTypeQt4(home / '.config/Trolltech.conf')
         self._qt5 = PickerTypeQt5(home / '.config/QtProject.conf')
-        # self._gtk2 = PickerTypeGtk("%s/.gtk-bookmarks" % home)
-        # self._gtk3 = PickerTypeGtk("%s/.config/gtk-3.0/bookmarks" % home)
-        # self._fltk = PickerTypeFltk(
-        #     "%s/._fltk/fltk.org/filechooser.prefs" % home)
-        # self._kde5 = PickerTypeKde5("%s/.local/share/user-places.xbel" % home)
-        # self._qt4 = PickerTypeQt4("%s/.config/Trolltech.conf" % home)
-        # self._qt5 = PickerTypeQt5("%s/.config/QtProject.conf" % home)
 
     def _get_xml(self) -> Optional[QDomDocument]:
         xml = QDomDocument()

@@ -63,7 +63,7 @@ if True:
     # manage session_root
     session_root = CommandLineArgs.session_root
     if not session_root:
-        session_root = str(Path(os.getenv('HOME'))
+        session_root = str(Path(os.getenv('HOME', ''))
                            / _translate('daemon', 'Ray Network Sessions'))
 
     session_root_path = Path(session_root)

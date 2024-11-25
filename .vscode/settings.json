@@ -1,6 +1,7 @@
 {
     "python.analysis.extraPaths": [
         "HoustonPatchbay",
-        "pyjacklib"
+        "pyjacklib",
+        "src/shared"
     ]
 }

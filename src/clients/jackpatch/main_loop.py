@@ -97,7 +97,7 @@ def port_added(port_name: str, port_mode: int, port_type: int):
     port.type = PortType(port_type)
     port.is_new = True
 
-    jack_ports[port_mode].append(port)
+    jack_ports[port.mode].append(port)
     timer_connect_check.start()
 
 def port_removed(port_name: str, port_mode: PortMode, port_type: PortType):
@@ -213,10 +213,10 @@ def open_file(project_path: str, session_name: str,
         
         for child in root:
             if child.tag == 'connection':
-                port_from: str = child.attrib.get('from')
-                port_to: str = child.attrib.get('to')
-                nsm_client_from: str = child.attrib.get('nsm_client_from')
-                nsm_client_to: str = child.attrib.get('nsm_client_to')
+                port_from: str = child.attrib.get('from', '')
+                port_to: str = child.attrib.get('to', '')
+                nsm_client_from: str = child.attrib.get('nsm_client_from', '')
+                nsm_client_to: str = child.attrib.get('nsm_client_to', '')
 
                 if not port_from and port_to:
                     _logger.warning(
@@ -441,7 +441,7 @@ def run():
 
             elif read_log_level:
                 if arg.isdigit():
-                    log_level = int(uarg)
+                    log_level = int(arg)
                 else:
                     uarg = arg.upper()
                     if (uarg in logging.__dict__.keys()

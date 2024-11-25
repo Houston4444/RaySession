@@ -1,12 +1,11 @@
 
 import logging
 
-from . import jacklib
-from .jacklib.helpers import c_char_p_p_to_list
-from .jacklib.api import JackPortFlags, JackOptions, pointer, jack_client_t
+import jacklib
+from jacklib.helpers import c_char_p_p_to_list
+from jacklib.api import JackPortFlags, JackOptions, pointer, jack_client_t
 
 from . import jack_callbacks
-
 from .bases import JackPort, PortMode, ProtoEngine, PortType
 
 

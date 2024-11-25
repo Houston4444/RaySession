@@ -124,7 +124,7 @@ class JackPort:
 
 class MainObject:
     port_list = list[JackPort]()
-    connection_list = list[tuple[str]]()
+    connection_list = list[tuple[str, str]]()
     metadata_list = list[dict]()
     client_list = list[dict]()
     client_names_queue = list[str]()
