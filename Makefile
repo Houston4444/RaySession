@@ -137,6 +137,7 @@ pure_install:
 	install -d $(DEST_RAY)/locale/
 	install -d $(DEST_RAY)/$(PATCHBAY_DIR)/
 	install -d $(DEST_RAY)/$(PATCHBAY_DIR)/locale/
+	install -d $(DEST_RAY)/pyjacklib/
 	install -d $(DESTDIR)/etc/xdg/
 	install -d $(DESTDIR)/etc/xdg/raysession/
 	install -d $(DESTDIR)/etc/xdg/raysession/client_templates/
@@ -156,9 +157,13 @@ pure_install:
 	cp -r session_scripts   $(DEST_RAY)/
 	cp -r data              $(DEST_RAY)/
 
-	# Copy patchbay themes
+	# Copy patchbay themes, manual and lib
 	cp -r HoustonPatchbay/themes $(DEST_RAY)/$(PATCHBAY_DIR)/
 	cp -r HoustonPatchbay/manual $(DEST_RAY)/$(PATCHBAY_DIR)/
+	cp -r HoustonPatchbay/patchbay $(DEST_RAY)/$(PATCHBAY_DIR)/
+
+	# Copy pyjacklib
+	cp -r pyjacklib/jacklib $(DEST_RAY)/pyjacklib/
 
 	# Copy Desktop Files
 	install -m 644 data/share/applications/*.desktop \

@@ -5,6 +5,12 @@ import signal
 import sys
 import time
 import os
+from pathlib import Path
+
+root_path = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(root_path / 'HoustonPatchbay'))
+sys.path.insert(0, str(root_path / 'pyjacklib'))
+sys.path.insert(0, str(root_path / 'src' / 'shared'))
 
 from qt_api import QT_API
 os.environ['QT_API'] = QT_API
@@ -18,6 +24,7 @@ from gui_tools import (ArgParser, CommandLineArgs,
                        init_gui_tools, get_code_root)
 from gui_server_thread import GuiServerThread
 from gui_session import SignaledSession
+
 import ray
 
 # prevent to not find icon at startup
@@ -40,7 +47,7 @@ def signal_handler(sig, frame):
         session.main_win.terminate_request = True
         session.daemon_manager.stop()
 
-if __name__ == '__main__':
+if True:
     # set Qt Application
     app = QApplication(sys.argv)
     app.setApplicationName(ray.APP_TITLE)
