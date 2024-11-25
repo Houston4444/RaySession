@@ -4,7 +4,7 @@ from enum import IntEnum
 import os
 from typing import Callable, Optional
 
-from .osclib import Server, make_method, Address
+from osclib import Server, make_method, Address
 
 
 class Err(IntEnum):
