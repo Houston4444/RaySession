@@ -2,7 +2,7 @@ from ctypes import c_char_p, pointer
 
 import jacklib
 from jacklib import JackPortFlags
-from .bases import EventHandler, Event, PortMode, PortType, b2str
+from bases import EventHandler, Event, PortMode, PortType, b2str
 
 _jack_client: 'pointer[jacklib.jack_port_t]'
     

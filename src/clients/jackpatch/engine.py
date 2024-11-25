@@ -1,4 +1,4 @@
-from .jack_engine import JackEngine
+from jack_engine import JackEngine
 
 XML_TAG = 'RAY-JACKPATCH'
 EXECUTABLE = 'ray-jackpatch'

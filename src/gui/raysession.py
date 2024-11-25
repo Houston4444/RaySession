@@ -8,9 +8,11 @@ import os
 from pathlib import Path
 
 root_path = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(root_path / 'HoustonPatchbay'))
-sys.path.insert(0, str(root_path / 'pyjacklib'))
-sys.path.insert(0, str(root_path / 'src' / 'shared'))
+
+# import libs from submodules and shared
+sys.path.insert(1, str(root_path / 'HoustonPatchbay'))
+sys.path.insert(1, str(root_path / 'pyjacklib'))
+sys.path.insert(1, str(root_path / 'src' / 'shared'))
 
 from qt_api import QT_API
 os.environ['QT_API'] = QT_API

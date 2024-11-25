@@ -2,9 +2,11 @@
 
 import sys
 from pathlib import Path
-src_path = Path(__file__).parent.parent
-pyjacklib_path = src_path.parent / 'pyjacklib'
-sys.path.insert(0, str(pyjacklib_path))
-sys.path.insert(0, str(src_path))
+from typing import TYPE_CHECKING
 
-from clients import sooperlooper
+sys.path[0] = str(Path(__file__).parents[1] / 'clients' / 'sooperlooper')
+
+if TYPE_CHECKING:
+    import clients.sooperlooper.sooperlooper
+else:
+    import sooperlooper

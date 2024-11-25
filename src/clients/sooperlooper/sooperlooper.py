@@ -13,9 +13,12 @@ import time
 import subprocess
 import shutil
 
-from shared.osclib import Address, get_free_osc_port, is_osc_port_free
-from shared.nsm_client import NsmServer, NsmCallback, Err
-from shared.xml_tools import XmlElement
+sys.path.insert(1, str(Path(__file__).parents[3] / 'pyjacklib'))
+sys.path.insert(1, str(Path(__file__).parents[2] / 'shared'))
+
+from osclib import Address, get_free_osc_port, is_osc_port_free
+from nsm_client import NsmServer, NsmCallback, Err
+from xml_tools import XmlElement
 
 if TYPE_CHECKING:
     import jacklib
@@ -23,7 +26,6 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 
-print('galop')
 
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
