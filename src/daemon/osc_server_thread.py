@@ -27,7 +27,7 @@ from daemon_tools import (
     RS,
     get_code_root)
 from terminal_starter import which_terminal
-from patshared import GroupPos
+from patchbay.patchcanvas.patshared import GroupPos
 
 if TYPE_CHECKING:
     from session_signaled import SignaledSession

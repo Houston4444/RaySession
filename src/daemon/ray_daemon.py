@@ -1,15 +1,17 @@
 #!/usr/bin/python3 -u
 
 import os
-from pathlib import Path
-import signal
 import sys
-import logging
+from pathlib import Path
 
+sys.path.insert(1, str(Path(__file__).parents[2] / 'HoustonPatchbay'))
 sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
 from qt_api import QT_API
 os.environ['QT_API'] = QT_API
+
+import logging
+import signal
 
 from qtpy.QtCore import (
     QCoreApplication, QTimer, QLocale, QTranslator)
