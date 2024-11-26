@@ -8,6 +8,8 @@ import xml.etree.ElementTree as ET
 import warnings
 from pathlib import Path
 
+sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
+
 # import subprocess and osc_server (local file) conditionnally
 # in order to answer faster in many cases.
 
@@ -453,7 +455,7 @@ if True:
     if operation_type is OperationType.CONTROL and operation == 'stop':
         osc_order_path = '/ray/server/quit'
 
-    from .osc_server import OscServer  # see top of the file
+    from osc_server import OscServer  # see top of the file
     server = OscServer(detach)
     server.set_order_path_args(osc_order_path, arg_list)
     daemon_process = None

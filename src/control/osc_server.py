@@ -3,7 +3,7 @@ import os
 import sys
 import time
     
-from shared.osclib import Server, Address
+from osclib import Server, Address
 
 # !!! we don't load ray.py to win import duration
 # if change in ray.Err numbers, this has to be changed too !!!

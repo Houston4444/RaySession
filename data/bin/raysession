@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+
+import sys
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+sys.path[0] = (Path(__file__).parents[1]
+               / 'share' / 'raysession' / 'src' / 'gui')
+
+if TYPE_CHECKING:
+    import gui.raysession
+else:
+    import raysession
