@@ -7,11 +7,11 @@ import warnings
 
 from qtpy.QtCore import QProcess
 
-from shared.xml_tools import XmlElement
-from .daemon_tools import is_pid_child_of
+from xml_tools import XmlElement
+from daemon_tools import is_pid_child_of
 
 if TYPE_CHECKING:
-    from .session import Session
+    from session import Session
 
 
 def move_win(win_id, desktop_from, desktop_to):

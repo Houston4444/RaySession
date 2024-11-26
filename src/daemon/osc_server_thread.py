@@ -12,25 +12,25 @@ import xml.etree.ElementTree as ET
 
 from qtpy.QtCore import QCoreApplication
 
-from shared.osclib import (
+from osclib import (
     Address, ServerThread, make_method, Message, OscPack,
     are_on_same_machine, are_same_osc_port)
-from shared import ray
-from shared.xml_tools import XmlElement
+import ray
+from xml_tools import XmlElement
 
-from .signaler import Signaler
-from .multi_daemon_file import MultiDaemonFile
-from .daemon_tools import (
+from signaler import Signaler
+from multi_daemon_file import MultiDaemonFile
+from daemon_tools import (
     TemplateRoots,
     CommandLineArgs,
     Terminal,
     RS,
     get_code_root)
-from .terminal_starter import which_terminal
-from .patshared import GroupPos
+from terminal_starter import which_terminal
+from patshared import GroupPos
 
 if TYPE_CHECKING:
-    from .session_signaled import SignaledSession
+    from session_signaled import SignaledSession
 
 
 instance = None

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
 from pathlib import Path
 import sys
 from typing import Optional
@@ -13,8 +12,9 @@ if not QT5:
 
 from qtpy.QtXml  import QDomDocument, QDomNode
 
-from shared import ray
-from .daemon_tools import get_app_config_path
+import ray
+
+from daemon_tools import get_app_config_path
 
 QFILEDIALOG_MAGIC = 190
 

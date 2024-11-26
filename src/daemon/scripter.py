@@ -4,14 +4,14 @@ from typing import TYPE_CHECKING, Optional
 
 from qtpy.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 
-from shared.osclib import OscPack
-from shared import ray
-from .daemon_tools import Terminal, highlight_text
-from .server_sender import ServerSender
+from osclib import OscPack
+import ray
+from daemon_tools import Terminal, highlight_text
+from server_sender import ServerSender
 
 if TYPE_CHECKING:
-    from .session import OperatingSession
-    from .client import Client
+    from session import OperatingSession
+    from client import Client
 
 
 _translate = QCoreApplication.translate

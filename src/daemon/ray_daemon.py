@@ -6,20 +6,22 @@ import signal
 import sys
 import logging
 
-from shared.qt_api import QT_API
+sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
+
+from qt_api import QT_API
 os.environ['QT_API'] = QT_API
 
 from qtpy.QtCore import (
     QCoreApplication, QTimer, QLocale, QTranslator)
 
-from shared.osclib import get_free_osc_port, is_osc_port_free, get_net_url
-from shared import ray
-from .daemon_tools import (
+from osclib import get_free_osc_port, is_osc_port_free, get_net_url
+import ray
+from daemon_tools import (
     get_code_root, init_daemon_tools, RS,
     CommandLineArgs, ArgParser, Terminal)
-from .osc_server_thread import OscServerThread
-from .multi_daemon_file import MultiDaemonFile
-from .session_signaled import SignaledSession
+from osc_server_thread import OscServerThread
+from multi_daemon_file import MultiDaemonFile
+from session_signaled import SignaledSession
 
 
 _logger = logging.getLogger(__name__)

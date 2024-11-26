@@ -6,12 +6,12 @@ from pathlib import Path
 
 from qtpy.QtCore import QProcess, QTimer
 
-from shared.osclib import Address
-from shared import ray
-from .server_sender import ServerSender
+from osclib import Address
+import ray
+from server_sender import ServerSender
 
 if TYPE_CHECKING:
-    from .session import Session
+    from session import Session
 
 _logger = logging.getLogger(__name__)
 

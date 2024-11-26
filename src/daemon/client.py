@@ -11,15 +11,16 @@ import xml.etree.ElementTree as ET
 from qtpy.QtCore import (QCoreApplication, QProcess,
                          QProcessEnvironment, QTimer)
 
-from shared.osclib import Address, OscPack
-from shared import ray, xdg
-from shared.xml_tools import XmlElement
-from .server_sender import ServerSender
-from .daemon_tools  import (
+from osclib import Address, OscPack
+import ray
+import xdg
+from xml_tools import XmlElement
+from server_sender import ServerSender
+from daemon_tools  import (
     TemplateRoots, Terminal, RS, get_code_root,
     highlight_text, exec_and_desktops)
-from .signaler import Signaler
-from .scripter import ClientScripter
+from signaler import Signaler
+from scripter import ClientScripter
 
 
 # only used to identify session functions in the IDE

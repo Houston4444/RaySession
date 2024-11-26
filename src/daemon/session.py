@@ -14,24 +14,25 @@ from io import BytesIO
 
 from qtpy.QtCore import QCoreApplication, QTimer
 
-from shared.osclib import Address, is_valid_osc_url, are_same_osc_port
-from shared import ray
-from shared.xml_tools import XmlElement
-from .bookmarker import BookMarker
-from .desktops_memory import DesktopsMemory
-from .snapshoter import Snapshoter
-from .multi_daemon_file import MultiDaemonFile
-from .signaler import Signaler
-from .server_sender import ServerSender
-from .file_copier import FileCopier
-from .client import Client
-from .scripter import StepScripter
-from .canvas_saver import CanvasSaver
-from .daemon_tools import (
+from osclib import Address, is_valid_osc_url, are_same_osc_port
+import ray
+from xml_tools import XmlElement
+
+from bookmarker import BookMarker
+from desktops_memory import DesktopsMemory
+from snapshoter import Snapshoter
+from multi_daemon_file import MultiDaemonFile
+from signaler import Signaler
+from server_sender import ServerSender
+from file_copier import FileCopier
+from client import Client
+from scripter import StepScripter
+from canvas_saver import CanvasSaver
+from daemon_tools import (
     TemplateRoots, RS, Terminal, highlight_text)
-from . import ardour_templates
-from . import templates_database
-from .patch_rewriter import rewrite_jack_patch_files
+import ardour_templates
+import templates_database
+from patch_rewriter import rewrite_jack_patch_files
 
 
 _translate = QCoreApplication.translate

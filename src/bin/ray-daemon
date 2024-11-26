@@ -2,7 +2,11 @@
 
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path[0] = str(Path(__file__).parents[1] / 'daemon')
 
-import daemon
+if TYPE_CHECKING:
+    import daemon.ray_daemon
+else:
+    import ray_daemon

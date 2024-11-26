@@ -9,12 +9,12 @@ import xml.etree.ElementTree as ET
 from qtpy.QtCore import QProcess, QObject, QDateTime
 from qtpy.QtXml import QDomDocument, QDomElement
 
-from shared import ray
-from shared.xml_tools import XmlElement
-from .daemon_tools import Terminal
+import ray
+from xml_tools import XmlElement
+from daemon_tools import Terminal
 
 if TYPE_CHECKING:
-    from .session import Session
+    from session import Session
     
 _logger = logging.getLogger(__name__)
 

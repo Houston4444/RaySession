@@ -6,12 +6,12 @@ import tempfile
 import time
 from typing import TYPE_CHECKING, Union
 
-from shared import ray
-from shared.osclib import Address, are_on_same_machine
-from shared.jack_renaming_tools import group_belongs_to_client
-from .daemon_tools import RS, Terminal
-from .server_sender import ServerSender
-from .patshared import (
+import ray
+from osclib import Address, are_on_same_machine
+from jack_renaming_tools import group_belongs_to_client
+from daemon_tools import RS, Terminal
+from server_sender import ServerSender
+from patshared import (
     PortgroupsDict, from_json_to_str, PortTypesViewFlag, GroupPos,
     PortgroupMem, ViewsDict)
 
