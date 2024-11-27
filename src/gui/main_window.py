@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 import time
 import subprocess
 
+# third party imports
 from qtpy.QtWidgets import (
     QApplication, QMainWindow, QMenu, QDialog,
     QMessageBox, QToolButton, QAbstractItemView,

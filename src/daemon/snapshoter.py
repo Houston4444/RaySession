@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Optional
 import xml.etree.ElementTree as ET
 
+# third party imports
 from qtpy.QtCore import QProcess, QObject, QDateTime
 from qtpy.QtXml import QDomDocument, QDomElement
 

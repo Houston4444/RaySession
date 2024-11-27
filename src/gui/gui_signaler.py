@@ -2,9 +2,10 @@
 # Imports from standard library
 import enum
 
+# third party imports
 from qtpy.QtCore import QObject, Signal
-from osclib import Address
 
+from osclib import Address
 import ray
 
 

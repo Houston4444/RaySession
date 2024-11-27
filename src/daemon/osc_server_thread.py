@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Callable
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
+# third party imports
 from qtpy.QtCore import QCoreApplication
 
 from osclib import (

@@ -3,6 +3,7 @@
 from enum import IntEnum
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtWidgets import QApplication, QMessageBox
 from qtpy.QtCore import Slot
 

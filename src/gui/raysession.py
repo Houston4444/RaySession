@@ -17,9 +17,12 @@ sys.path.insert(1, str(root_path / 'src' / 'shared'))
 from qt_api import QT_API
 os.environ['QT_API'] = QT_API
 
+# third party imports
 from qtpy.QtWidgets import QApplication
 from qtpy.QtGui import QIcon, QFontDatabase
 from qtpy.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo
+
+import ray
 
 #local imports
 from gui_tools import (ArgParser, CommandLineArgs,
@@ -27,10 +30,9 @@ from gui_tools import (ArgParser, CommandLineArgs,
 from gui_server_thread import GuiServerThread
 from gui_session import SignaledSession
 
-import ray
-
 # prevent to not find icon at startup
 import resources_rc
+
 
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):

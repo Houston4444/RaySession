@@ -1,9 +1,12 @@
+
+# Imports from standard library
 import os
 import sys
 import time
 import subprocess
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtWidgets import (
     QDialog, QDialogButtonBox, QCompleter, QMessageBox,
     QFileDialog, QApplication, QListWidgetItem)

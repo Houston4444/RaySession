@@ -2,6 +2,7 @@
 # Imports from standard library
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtCore import Qt, QSize
 from qtpy.QtWidgets import (QDialogButtonBox, QListWidget, QListWidgetItem,
                              QFrame, QMenu, QAction, QShortcut)

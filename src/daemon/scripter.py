@@ -4,10 +4,12 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
+# third party imports
 from qtpy.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 
 from osclib import OscPack
 import ray
+
 from daemon_tools import Terminal, highlight_text
 from server_sender import ServerSender
 

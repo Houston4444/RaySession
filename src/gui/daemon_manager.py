@@ -5,6 +5,7 @@ import socket
 import sys
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtCore import QObject, QProcess, QTimer
 from qtpy.QtWidgets import QApplication
 

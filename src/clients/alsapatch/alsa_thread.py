@@ -4,7 +4,8 @@ from dataclasses import dataclass
 import time
 from typing import TYPE_CHECKING, Iterator, Optional
 from threading import Thread
-    
+
+# third party imports
 from pyalsa import alsaseq
 from pyalsa.alsaseq import (
     SEQ_PORT_CAP_NO_EXPORT,
@@ -23,6 +24,7 @@ from pyalsa.alsaseq import (
     SEQ_EVENT_PORT_UNSUBSCRIBED,
 )
 
+# imports from jackpatch
 if TYPE_CHECKING:
     from src.clients.jackpatch.bases import (
         Glob, EventHandler, Event, PortMode, PortType)

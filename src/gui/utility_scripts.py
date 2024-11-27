@@ -4,6 +4,7 @@ import os
 import shutil
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtWidgets import (
     QApplication, QFileDialog, QMessageBox, QDialogButtonBox)
 from qtpy.QtGui import QIcon

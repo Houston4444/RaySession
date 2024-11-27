@@ -1,3 +1,5 @@
+
+# third party imports
 from qtpy.QtCore import QObject, Signal
 
 instance = None

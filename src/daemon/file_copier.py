@@ -6,10 +6,12 @@ import subprocess
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 from pathlib import Path
 
+# third party imports
 from qtpy.QtCore import QProcess, QTimer
 
 from osclib import Address
 import ray
+
 from server_sender import ServerSender
 
 if TYPE_CHECKING:

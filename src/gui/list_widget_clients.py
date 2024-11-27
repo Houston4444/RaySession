@@ -3,6 +3,7 @@
 # Imports from standard library
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtWidgets import (QListWidget, QListWidgetItem,
                              QFrame, QMenu, QBoxLayout)
 from qtpy.QtGui import (QIcon, QFontMetrics, QContextMenuEvent,

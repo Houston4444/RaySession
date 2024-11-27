@@ -1,9 +1,11 @@
 
+# third party imports
 from qtpy.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu
 from qtpy.QtGui import QIcon, QFontMetrics, QContextMenuEvent, QMouseEvent
 from qtpy.QtCore import QSize, Signal
 
 import ray
+
 from gui_server_thread import GuiServerThread
 from gui_tools import _translate, split_in_two, get_app_icon
 

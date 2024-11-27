@@ -4,6 +4,7 @@ import os
 import signal
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtCore import QTimer, QFile
 from qtpy.QtGui import QShowEvent
 from qtpy.QtWidgets import QFileDialog, QFrame

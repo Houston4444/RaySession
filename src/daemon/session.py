@@ -14,6 +14,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 from io import BytesIO
 
+# third party imports
 from qtpy.QtCore import QCoreApplication, QTimer
 
 from osclib import Address, is_valid_osc_url, are_same_osc_port

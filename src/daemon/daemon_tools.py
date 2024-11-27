@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Union
 from pathlib import Path
 
+# third party imports
 from qtpy.QtCore import (
     QCoreApplication, QStandardPaths, QSettings, QDateTime, QLocale)
 

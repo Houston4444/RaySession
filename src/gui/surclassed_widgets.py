@@ -3,6 +3,7 @@
 import time
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtWidgets import (
     QLineEdit, QStackedWidget, QLabel, QToolButton, QFrame,
     QSplitter, QSplitterHandle, QDialogButtonBox, QPushButton,

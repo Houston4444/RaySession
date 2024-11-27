@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtCore import QSettings, QSize, QFile
 from qtpy.QtWidgets import QApplication, QWidget
 from qtpy.QtGui import QIcon, QPixmap, QPalette

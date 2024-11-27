@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 import ray
 from nsm_client_qt import NSMThread, NSMSignaler
+
 from gui_tools import CommandLineArgs, _translate
 from gui_server_thread import GuiServerThread
 

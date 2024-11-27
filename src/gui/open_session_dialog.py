@@ -5,6 +5,7 @@ import shutil
 import time
 from typing import Optional
 
+# third party imports
 from qtpy.QtWidgets import (QApplication, QTreeWidget, QTreeWidgetItem,
                              QDialogButtonBox, QMenu, QMessageBox)
 from qtpy.QtGui import QIcon, QCursor

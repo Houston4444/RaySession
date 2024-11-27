@@ -1,3 +1,5 @@
+
+# Imports from standard library
 import logging
 import os
 import shlex
@@ -8,6 +10,7 @@ from pathlib import Path
 from enum import Enum
 import xml.etree.ElementTree as ET
 
+# third party imports
 from qtpy.QtCore import (QCoreApplication, QProcess,
                          QProcessEnvironment, QTimer)
 
@@ -15,6 +18,7 @@ from osclib import Address, OscPack
 import ray
 import xdg
 from xml_tools import XmlElement
+
 from server_sender import ServerSender
 from daemon_tools  import (
     TemplateRoots, Terminal, RS, get_code_root,

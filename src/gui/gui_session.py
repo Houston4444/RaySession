@@ -3,6 +3,7 @@
 import sys
 from typing import Optional
 
+# third party imports
 from qtpy.QtWidgets import QApplication
 
 from patchbay.base_elements import TransportPosition

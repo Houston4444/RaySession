@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 from typing import Optional
 
+# third party imports
 from qtpy import QT5
 from qtpy.QtCore import (
     QSettings, QDataStream, QIODevice, QUrl, QByteArray)

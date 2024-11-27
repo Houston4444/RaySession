@@ -7,11 +7,13 @@ from typing import TYPE_CHECKING, Iterator, TypedDict
 import logging
 import xml.etree.ElementTree as ET
 
+# third party imports
 from qtpy.QtCore import QProcess, QCoreApplication
 
 import ray
 import xdg
 from xml_tools import XmlElement
+
 from daemon_tools import (
     exec_and_desktops,
     TemplateRoots,

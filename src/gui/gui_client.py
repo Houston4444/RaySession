@@ -4,6 +4,7 @@ import time
 import sys
 from typing import TYPE_CHECKING, Optional
 
+# third party imports
 from qtpy.QtCore import QObject, Signal
 from qtpy.QtWidgets import QAction
 

@@ -7,6 +7,7 @@ import subprocess
 import time
 from typing import TYPE_CHECKING, Callable
 
+# third party imports
 from qtpy.QtCore import QCoreApplication, QProcess
 
 from osclib import Address, OscPack, are_same_osc_port

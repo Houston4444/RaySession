@@ -2,6 +2,7 @@
 # Imports from standard library
 from enum import IntEnum
 
+# third party imports
 from qtpy.QtCore import Qt, QDateTime, QDate
 from qtpy.QtWidgets import QDialogButtonBox, QTreeWidgetItem
 
