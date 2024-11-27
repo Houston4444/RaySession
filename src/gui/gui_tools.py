@@ -18,6 +18,7 @@ import ray
 if TYPE_CHECKING:
     from gui_signaler import Signaler
 
+
 _translate = QApplication.translate
 
 _RAY_ICONS_CACHE_LIGHT = {}

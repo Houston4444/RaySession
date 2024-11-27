@@ -7,9 +7,11 @@ from qtpy.QtCore import QSize, Signal
 # Imports from src/shared
 import ray
 
+# Local imports
 from gui_server_thread import GuiServerThread
 from gui_tools import _translate, split_in_two, get_app_icon
 
+# Import UIs made with Qt-Designer
 import ui.preview_client_slot
 
 

@@ -12,6 +12,7 @@ from qtpy.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QKeyEvent, QMouseEvent)
 from qtpy.QtCore import Qt, QTimer, Signal
 
+# Imports from HoustonPatchbay
 from patchbay import filter_frame, tool_bar, PatchGraphicsView
 
 if TYPE_CHECKING:

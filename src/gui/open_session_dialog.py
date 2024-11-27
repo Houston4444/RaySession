@@ -14,6 +14,7 @@ from qtpy.QtCore import Qt, QTimer, QDateTime, QLocale, QPoint
 # Imports from src/shared
 import ray
 
+# Local imports
 import child_dialogs
 from gui_tools import CommandLineArgs, RayIcon, is_dark_theme, basename
 from child_dialogs import ChildDialog
@@ -21,6 +22,7 @@ from client_properties_dialog import ClientPropertiesDialog
 from snapshots_dialog import (
     Snapshot, SnapGroup, SnGroup)
 
+# Import UIs made with Qt-Designer
 import ui.open_session
 
 _translate = QApplication.translate

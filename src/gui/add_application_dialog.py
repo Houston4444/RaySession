@@ -12,9 +12,11 @@ from qtpy.QtGui import QIcon
 import ray
 import client_properties_dialog
 
+# Local imports
 from gui_tools import RS, _translate, is_dark_theme, get_app_icon
 from child_dialogs import ChildDialog
 
+# Import UIs made with Qt-Designer
 import ui.template_slot
 import ui.remove_template
 import ui.add_application

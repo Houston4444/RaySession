@@ -15,6 +15,7 @@ import ray
 import xdg
 from xml_tools import XmlElement
 
+# Local imports
 from daemon_tools import (
     exec_and_desktops,
     TemplateRoots,

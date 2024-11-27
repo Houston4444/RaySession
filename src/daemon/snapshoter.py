@@ -14,6 +14,8 @@ from qtpy.QtXml import QDomDocument, QDomElement
 # Imports from src/shared
 import ray
 from xml_tools import XmlElement
+
+# Local imports
 from daemon_tools import Terminal
 
 if TYPE_CHECKING:

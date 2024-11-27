@@ -8,7 +8,9 @@ if TYPE_CHECKING:
 else:
     from bases import ProtoEngine
 
+# Local imports
 from alsa_thread import AlsaManager
+
 
 class AlsaEngine(ProtoEngine):
     def __init__(self):

@@ -17,11 +17,13 @@ from qtpy.QtCore import Qt, QTimer
 from osclib import Address, verified_address
 import ray
 
+# Local imports
 import client_properties_dialog
 from gui_server_thread import GuiServerThread
 from gui_tools import (ErrDaemon, _translate, get_app_icon,
                        CommandLineArgs, RS, is_dark_theme)
 
+# Import UIs made with Qt-Designer
 import ui.new_session
 import ui.save_template_session
 import ui.client_trash

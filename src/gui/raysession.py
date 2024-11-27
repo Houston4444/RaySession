@@ -25,7 +25,7 @@ from qtpy.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo
 # Imports from src/shared
 import ray
 
-#local imports
+# Local imports
 from gui_tools import (ArgParser, CommandLineArgs,
                        init_gui_tools, get_code_root)
 from gui_server_thread import GuiServerThread

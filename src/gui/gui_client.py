@@ -11,6 +11,7 @@ from qtpy.QtWidgets import QAction
 # Imports from src/shared
 import ray
 
+# Local imports
 from gui_server_thread import GuiServerThread
 from client_properties_dialog import ClientPropertiesDialog
 

@@ -1,4 +1,3 @@
-#!/usr/bin/python3 -u
 
 # Imports from standard library
 import os
@@ -12,9 +11,11 @@ from nsm_client import NsmServer, NsmCallback, Err, Address
 from jack_renaming_tools import (
     port_belongs_to_client, port_name_client_replaced)
 
+# Local imports
 from bases import (EventHandler, MonitorStates, PortMode, PortType,
                    Event, JackPort, Timer, Glob, debug_conn_str)
 from engine import Engine, XML_TAG, NSM_NAME
+
 
 _logger = logging.getLogger(__name__)
 _log_handler = logging.StreamHandler()

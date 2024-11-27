@@ -6,9 +6,11 @@ from enum import IntEnum
 from qtpy.QtCore import Qt, QDateTime, QDate
 from qtpy.QtWidgets import QDialogButtonBox, QTreeWidgetItem
 
+# Local imports
 from child_dialogs import ChildDialog
 from gui_tools import _translate, RS
 
+# Import UIs made with Qt-Designer
 import ui.snapshot_name
 import ui.list_snapshots
 import ui.snapshots_info

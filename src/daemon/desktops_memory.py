@@ -12,6 +12,7 @@ from qtpy.QtCore import QProcess
 # Imports from src/shared
 from xml_tools import XmlElement
 
+# Local imports
 from daemon_tools import is_pid_child_of
 
 if TYPE_CHECKING:

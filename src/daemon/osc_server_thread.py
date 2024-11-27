@@ -15,6 +15,8 @@ import xml.etree.ElementTree as ET
 # third party imports
 from qtpy.QtCore import QCoreApplication
 
+from patchbay.patchcanvas.patshared import GroupPos
+
 # Imports from src/shared
 from osclib import (
     Address, ServerThread, make_method, Message, OscPack,
@@ -22,6 +24,7 @@ from osclib import (
 import ray
 from xml_tools import XmlElement
 
+# Local imports
 from signaler import Signaler
 from multi_daemon_file import MultiDaemonFile
 from daemon_tools import (
@@ -31,7 +34,6 @@ from daemon_tools import (
     RS,
     get_code_root)
 from terminal_starter import which_terminal
-from patchbay.patchcanvas.patshared import GroupPos
 
 if TYPE_CHECKING:
     from session_signaled import SignaledSession

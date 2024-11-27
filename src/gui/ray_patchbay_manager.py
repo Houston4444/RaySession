@@ -7,6 +7,7 @@ import os
 import sys
 import logging
 
+# Imports from HoustonPatchbay
 from patchbay.patchcanvas.patshared import (
     GroupPos, PortgroupMem, PortMode, PortTypesViewFlag)
 from patchbay.base_elements import ToolDisplayed
@@ -25,6 +26,7 @@ import ray
 import xdg
 from jack_renaming_tools import group_belongs_to_client
 
+# Local imports
 from gui_server_thread import GuiServerThread
 from gui_tools import RS, get_code_root
 

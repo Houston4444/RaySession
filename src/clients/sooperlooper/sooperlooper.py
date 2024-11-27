@@ -16,6 +16,7 @@ import shutil
 sys.path.insert(1, str(Path(__file__).parents[3] / 'pyjacklib'))
 sys.path.insert(1, str(Path(__file__).parents[2] / 'shared'))
 
+# Imports from src/shared
 from osclib import Address, get_free_osc_port, is_osc_port_free
 from nsm_client import NsmServer, NsmCallback, Err
 from xml_tools import XmlElement

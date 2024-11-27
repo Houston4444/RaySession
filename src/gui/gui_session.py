@@ -6,11 +6,13 @@ from typing import Optional
 # third party imports
 from qtpy.QtWidgets import QApplication
 
+# Imports from HoustonPatchbay
 from patchbay.base_elements import TransportPosition
 
 # Imports from src/shared
 import ray
 
+# Local imports
 from daemon_manager import DaemonManager
 from gui_client import Client, TrashedClient
 from gui_signaler import Signaler

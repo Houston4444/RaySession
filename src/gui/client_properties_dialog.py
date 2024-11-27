@@ -13,10 +13,12 @@ from qtpy.QtWidgets import QFileDialog, QFrame
 import ray
 from osclib import is_valid_osc_url
 
+# Local imports
 from gui_tools import _translate, client_status_string, get_app_icon
 from child_dialogs import ChildDialog
 from client_prop_adv_dialog import AdvancedPropertiesDialog
 
+# Import UIs made with Qt-Designer
 import ui.ray_hack_copy
 import ui.client_properties
 import ui.nsm_properties

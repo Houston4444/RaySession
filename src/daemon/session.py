@@ -22,6 +22,7 @@ from osclib import Address, is_valid_osc_url, are_same_osc_port
 import ray
 from xml_tools import XmlElement
 
+# Local imports
 from bookmarker import BookMarker
 from desktops_memory import DesktopsMemory
 from snapshoter import Snapshoter

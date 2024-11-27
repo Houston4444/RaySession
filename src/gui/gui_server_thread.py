@@ -4,12 +4,15 @@ import os
 import sys
 from typing import TYPE_CHECKING
 
+# Imports from HoustonPatchbay
+from patchbay.patchcanvas.patshared import GroupPos
+
 # Imports from src/shared
 from osclib import ServerThread, make_method
 import ray
 
+# Local imports
 from gui_tools import CommandLineArgs
-from patchbay.patchcanvas.patshared import GroupPos
 
 if TYPE_CHECKING:
     from gui_session import SignaledSession

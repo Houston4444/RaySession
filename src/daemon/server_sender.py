@@ -7,6 +7,8 @@ from qtpy.QtCore import QObject
 
 # Imports from src/shared
 import ray
+
+# Local imports
 from osc_server_thread import OscServerThread
 from daemon_tools import AppTemplate
 

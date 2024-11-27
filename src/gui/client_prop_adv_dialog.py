@@ -10,14 +10,17 @@ from qtpy.QtCore import Slot
 # Imports from src/shared
 import ray
 
+# Local imports
 from child_dialogs import ChildDialog
 from gui_server_thread import GuiServerThread
+
+# Import UIs made with Qt-Designer
+import ui.client_advanced_properties
 
 if TYPE_CHECKING:
     from client_properties_dialog import ClientPropertiesDialog
     from gui_client import Client, TrashedClient
 
-import ui.client_advanced_properties
 
 _translate = QApplication.translate
 

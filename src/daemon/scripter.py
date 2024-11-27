@@ -11,6 +11,7 @@ from qtpy.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 from osclib import OscPack
 import ray
 
+# Local imports
 from daemon_tools import Terminal, highlight_text
 from server_sender import ServerSender
 

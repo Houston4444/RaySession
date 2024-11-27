@@ -13,12 +13,14 @@ from qtpy.QtCore import Slot, QSize, Qt, Signal
 # Imports from src/shared
 import ray
 
+# Local imports
 import child_dialogs
 import snapshots_dialog
 from gui_server_thread import GuiServerThread
 from gui_tools import (client_status_string, _translate, is_dark_theme,
                        RayIcon, split_in_two, get_app_icon)
 
+# Import UIs made with Qt-Designer
 import ui.client_slot
 
 if TYPE_CHECKING:

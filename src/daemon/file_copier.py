@@ -13,10 +13,12 @@ from qtpy.QtCore import QProcess, QTimer
 from osclib import Address
 import ray
 
+# Local imports
 from server_sender import ServerSender
 
 if TYPE_CHECKING:
     from session import Session
+
 
 _logger = logging.getLogger(__name__)
 

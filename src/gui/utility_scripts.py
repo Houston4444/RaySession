@@ -13,10 +13,12 @@ from qtpy.QtCore import QProcess, QProcessEnvironment
 # Imports from src/shared
 import ray
 
+# Local imports
 from gui_tools import CommandLineArgs, RS
 from open_session_dialog import OpenSessionDialog
 from child_dialogs import ChildDialog
 
+# Import UIs made with Qt-Designer
 import ui.ardour_convert
 import ui.hydro_rh_nsm
 import ui.ray_to_nsm

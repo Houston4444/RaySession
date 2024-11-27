@@ -13,6 +13,7 @@ from qtpy.QtGui import (QIcon, QDesktopServices, QFontMetrics,
                          QCloseEvent, QKeyEvent)
 from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt
 
+# Imports from HoustonPatchbay
 from patchbay.base_elements import ToolDisplayed
 from patchbay.tools_widgets import PatchbayToolsWidget, TextWithIcons
 
@@ -20,6 +21,7 @@ from patchbay.tools_widgets import PatchbayToolsWidget, TextWithIcons
 from osclib import are_on_same_machine
 import ray
 
+# Local imports
 import add_application_dialog
 import open_session_dialog
 import child_dialogs
@@ -33,6 +35,7 @@ from gui_client import TrashedClient
 from gui_server_thread import GuiServerThread
 from utility_scripts import UtilityScriptLauncher
 
+# Import UIs made with Qt-Designer
 import ui.raysession
 
 if TYPE_CHECKING:

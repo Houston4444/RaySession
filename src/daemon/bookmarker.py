@@ -16,6 +16,7 @@ from qtpy.QtXml  import QDomDocument, QDomNode
 # Imports from src/shared
 import ray
 
+# Local imports
 from daemon_tools import get_app_config_path
 
 QFILEDIALOG_MAGIC = 190

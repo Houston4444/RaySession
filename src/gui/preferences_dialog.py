@@ -10,10 +10,12 @@ from qtpy.QtCore import Slot
 # Imports from src/shared
 import ray
 
+# Local imports
 from child_dialogs import ChildDialog
 from gui_server_thread import GuiServerThread
 from gui_tools import RS
 
+# Import UIs made with Qt-Designer
 import ui.settings
 
 if TYPE_CHECKING:
