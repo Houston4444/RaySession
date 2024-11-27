@@ -1,7 +1,7 @@
 
 from dataclasses import dataclass
 import time
-from typing import Iterator, Optional
+from typing import TYPE_CHECKING, Iterator, Optional
 from threading import Thread
     
 from pyalsa import alsaseq
@@ -22,7 +22,13 @@ from pyalsa.alsaseq import (
     SEQ_EVENT_PORT_UNSUBSCRIBED,
 )
 
-from bases import Glob, EventHandler, Event, PortMode, PortType
+if TYPE_CHECKING:
+    from src.clients.jackpatch.bases import (
+        Glob, EventHandler, Event, PortMode, PortType)
+else:
+    from bases import (
+        Glob, EventHandler, Event, PortMode, PortType)
+
 
 _PORT_READS = SEQ_PORT_CAP_READ | SEQ_PORT_CAP_SUBS_READ
 _PORT_WRITES = SEQ_PORT_CAP_WRITE | SEQ_PORT_CAP_SUBS_WRITE
@@ -43,7 +49,9 @@ class AlsaConn:
     dest_client_id: int
     dest_port_id: int
     
-    def as_port_names(self, clients: dict[int, 'AlsaClient']) -> Optional[tuple[str, str]]:
+    def as_port_names(
+            self, clients: dict[int, 'AlsaClient']) -> \
+                Optional[tuple[str, str]]:
         src_client = clients.get(self.source_client_id)
         dest_client = clients.get(self.dest_client_id)
         

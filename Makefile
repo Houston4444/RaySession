@@ -135,11 +135,9 @@ pure_install:
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 	install -d $(DEST_RAY)/
 	install -d $(DEST_RAY)/locale/
-	install -d $(DEST_RAY)/$(PATCHBAY_DIR)/
+	install -d $(DEST_RAY)/$(_DIR)/
 	install -d $(DEST_RAY)/$(PATCHBAY_DIR)/locale/
 	install -d $(DEST_RAY)/pyjacklib/
-	install -d $(DESTDIR)/etc/xdg/
-	install -d $(DESTDIR)/etc/xdg/raysession/
 	install -d $(DESTDIR)/etc/xdg/raysession/client_templates/
 	
 	# Install icons
@@ -174,10 +172,8 @@ pure_install:
 		$(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 
 	# Install main code
-	cp -r -L src $(DEST_RAY)/
-	rm -rf $(DEST_RAY)/bin
-	cp -r src/bin $(DEST_RAY)/src/
-	
+	cp -r src $(DEST_RAY)/
+
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_checker_daemon $(DESTDIR)$(PREFIX)/bin/
 	$(LINK) $(DEST_RAY)/src/bin/ray-jack_config_script  $(DESTDIR)$(PREFIX)/bin/
 	$(LINK) $(DEST_RAY)/src/bin/ray-pulse2jack          $(DESTDIR)$(PREFIX)/bin/
@@ -193,15 +189,9 @@ pure_install:
 	cp -r utility-scripts $(DEST_RAY)/
 	
 	# install main bash scripts to bin
-	install -m 755 data/raysession  $(DESTDIR)$(PREFIX)/bin/
-	install -m 755 data/ray-daemon  $(DESTDIR)$(PREFIX)/bin/
-	install -m 755 data/ray_control $(DESTDIR)$(PREFIX)/bin/
-	
-	# modify PREFIX in main bash scripts
-	sed -i "s?X-PREFIX-X?$(PREFIX)?" \
-		$(DESTDIR)$(PREFIX)/bin/raysession \
-		$(DESTDIR)$(PREFIX)/bin/ray-daemon \
-		$(DESTDIR)$(PREFIX)/bin/ray_control
+	install -m 755 data/bin/raysession  $(DESTDIR)$(PREFIX)/bin/
+	install -m 755 data/bin/ray-daemon  $(DESTDIR)$(PREFIX)/bin/
+	install -m 755 data/bin/ray_control $(DESTDIR)$(PREFIX)/bin/
 	
 	# Install Translations
 	install -m 644 locale/*.qm $(DEST_RAY)/locale/

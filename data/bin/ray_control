@@ -4,10 +4,10 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-sys.path[0] = (Path(__file__).parents[1]
-               / 'share' / 'raysession' / 'src' / 'control')
+sys.path[0] = str(Path(__file__).parents[1]
+                  / 'share' / 'raysession' / 'src' / 'control')
 
 if TYPE_CHECKING:
-    import control.ray_control
+    import src.control.ray_control
 else:
     import ray_control

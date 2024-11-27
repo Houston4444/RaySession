@@ -4,10 +4,10 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-sys.path[0] = (Path(__file__).parents[1]
-               / 'share' / 'raysession' / 'src' / 'daemon')
+sys.path[0] = str(Path(__file__).parents[1]
+                  / 'share' / 'raysession' / 'src' / 'daemon')
 
 if TYPE_CHECKING:
-    import daemon.ray_daemon
+    import src.daemon.ray_daemon
 else:
     import ray_daemon
