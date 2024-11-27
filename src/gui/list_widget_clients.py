@@ -10,6 +10,7 @@ from qtpy.QtGui import (QIcon, QFontMetrics, QContextMenuEvent,
                          QMouseEvent, QKeyEvent)
 from qtpy.QtCore import Slot, QSize, Qt, Signal
 
+# Imports from src/shared
 import ray
 
 import child_dialogs

@@ -10,18 +10,21 @@ from qtpy.QtWidgets import (
 from qtpy.QtGui import QIcon
 from qtpy.QtCore import QProcess, QProcessEnvironment
 
+# Imports from src/shared
 import ray
+
 from gui_tools import CommandLineArgs, RS
 from open_session_dialog import OpenSessionDialog
 from child_dialogs import ChildDialog
+
+import ui.ardour_convert
+import ui.hydro_rh_nsm
+import ui.ray_to_nsm
 
 if TYPE_CHECKING:
     from gui_session import Session
     from main_window import MainWindow
 
-import ui.ardour_convert
-import ui.hydro_rh_nsm
-import ui.ray_to_nsm
 
 _translate = QApplication.translate
 

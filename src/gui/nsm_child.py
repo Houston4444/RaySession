@@ -2,6 +2,7 @@
 # Imports from standard library
 from typing import TYPE_CHECKING
 
+# Imports from src/shared
 import ray
 from nsm_client_qt import NSMThread, NSMSignaler
 

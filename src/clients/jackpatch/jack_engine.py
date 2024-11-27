@@ -2,6 +2,7 @@
 # Imports from standard library
 import logging
 
+# Imports from pyjacklib
 import jacklib
 from jacklib.helpers import c_char_p_p_to_list
 from jacklib.api import JackPortFlags, JackOptions, pointer, jack_client_t

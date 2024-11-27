@@ -10,6 +10,7 @@ import xml.etree.ElementTree as ET
 # third party imports
 from qtpy.QtCore import QProcess, QCoreApplication
 
+# Imports from src/shared
 import ray
 import xdg
 from xml_tools import XmlElement

@@ -7,9 +7,11 @@ import sys
 import logging
 import xml.etree.ElementTree as ET
 
+# Imports from src/shared
 from nsm_client import NsmServer, NsmCallback, Err, Address
 from jack_renaming_tools import (
     port_belongs_to_client, port_name_client_replaced)
+
 from bases import (EventHandler, MonitorStates, PortMode, PortType,
                    Event, JackPort, Timer, Glob, debug_conn_str)
 from engine import Engine, XML_TAG, NSM_NAME

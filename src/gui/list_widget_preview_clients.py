@@ -4,6 +4,7 @@ from qtpy.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu
 from qtpy.QtGui import QIcon, QFontMetrics, QContextMenuEvent, QMouseEvent
 from qtpy.QtCore import QSize, Signal
 
+# Imports from src/shared
 import ray
 
 from gui_server_thread import GuiServerThread

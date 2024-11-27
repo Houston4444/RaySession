@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (QDialogButtonBox, QListWidget, QListWidgetItem,
                              QFrame, QMenu, QAction, QShortcut)
 from qtpy.QtGui import QIcon
 
+# Imports from src/shared
 import ray
 import client_properties_dialog
 

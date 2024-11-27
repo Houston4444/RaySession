@@ -7,14 +7,17 @@ import tempfile
 import time
 from typing import TYPE_CHECKING, Union
 
-import ray
-from osclib import Address, are_on_same_machine
-from jack_renaming_tools import group_belongs_to_client
-from daemon_tools import RS, Terminal
-from server_sender import ServerSender
 from patchbay.patchcanvas.patshared import (
     PortgroupsDict, from_json_to_str, PortTypesViewFlag, GroupPos,
     PortgroupMem, ViewsDict)
+
+# Imports from src/shared
+import ray
+from osclib import Address, are_on_same_machine
+from jack_renaming_tools import group_belongs_to_client
+
+from daemon_tools import RS, Terminal
+from server_sender import ServerSender
 
 if TYPE_CHECKING:
     from .session_signaled import SignaledSession

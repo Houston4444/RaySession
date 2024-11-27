@@ -15,6 +15,7 @@ import xml.etree.ElementTree as ET
 # third party imports
 from qtpy.QtCore import QCoreApplication
 
+# Imports from src/shared
 from osclib import (
     Address, ServerThread, make_method, Message, OscPack,
     are_on_same_machine, are_same_osc_port)

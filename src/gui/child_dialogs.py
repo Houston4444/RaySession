@@ -13,15 +13,14 @@ from qtpy.QtWidgets import (
 from qtpy.QtGui import QIcon, QPixmap, QGuiApplication, QKeyEvent
 from qtpy.QtCore import Qt, QTimer
 
+# Imports from src/shared
 from osclib import Address, verified_address
 import ray
+
 import client_properties_dialog
 from gui_server_thread import GuiServerThread
 from gui_tools import (ErrDaemon, _translate, get_app_icon,
                        CommandLineArgs, RS, is_dark_theme)
-if TYPE_CHECKING:
-    from main_window import MainWindow
-    from gui_client import Client
 
 import ui.new_session
 import ui.save_template_session
@@ -47,6 +46,10 @@ import ui.donations
 import ui.systray_close
 import ui.startup_dialog
 import ui.error_dialog
+
+if TYPE_CHECKING:
+    from main_window import MainWindow
+    from gui_client import Client
 
 
 class ChildDialog(QDialog):

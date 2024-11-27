@@ -7,10 +7,12 @@ from typing import TYPE_CHECKING
 from qtpy.QtWidgets import QApplication, QMessageBox
 from qtpy.QtCore import Slot
 
+# Imports from src/shared
+import ray
+
 from child_dialogs import ChildDialog
 from gui_server_thread import GuiServerThread
 from gui_tools import RS
-import ray
 
 import ui.settings
 

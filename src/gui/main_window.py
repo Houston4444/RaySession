@@ -16,6 +16,7 @@ from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt
 from patchbay.base_elements import ToolDisplayed
 from patchbay.tools_widgets import PatchbayToolsWidget, TextWithIcons
 
+# Imports from src/shared
 from osclib import are_on_same_machine
 import ray
 

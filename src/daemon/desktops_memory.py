@@ -9,6 +9,7 @@ import warnings
 # third party imports
 from qtpy.QtCore import QProcess
 
+# Imports from src/shared
 from xml_tools import XmlElement
 
 from daemon_tools import is_pid_child_of

@@ -9,21 +9,22 @@ from qtpy.QtCore import QTimer, QFile
 from qtpy.QtGui import QShowEvent
 from qtpy.QtWidgets import QFileDialog, QFrame
 
+# Imports from src/shared
 import ray
-
 from osclib import is_valid_osc_url
+
 from gui_tools import _translate, client_status_string, get_app_icon
 from child_dialogs import ChildDialog
 from client_prop_adv_dialog import AdvancedPropertiesDialog
-
-if TYPE_CHECKING:
-    from gui_client import Client
 
 import ui.ray_hack_copy
 import ui.client_properties
 import ui.nsm_properties
 import ui.ray_hack_properties
 import ui.ray_net_properties
+
+if TYPE_CHECKING:
+    from gui_client import Client
 
 
 class RayHackCopyDialog(ChildDialog):

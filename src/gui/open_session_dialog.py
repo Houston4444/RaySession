@@ -11,7 +11,9 @@ from qtpy.QtWidgets import (QApplication, QTreeWidget, QTreeWidgetItem,
 from qtpy.QtGui import QIcon, QCursor
 from qtpy.QtCore import Qt, QTimer, QDateTime, QLocale, QPoint
 
+# Imports from src/shared
 import ray
+
 import child_dialogs
 from gui_tools import CommandLineArgs, RayIcon, is_dark_theme, basename
 from child_dialogs import ChildDialog
