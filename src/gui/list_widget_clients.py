@@ -1,5 +1,8 @@
 
+
+# Imports from standard library
 from typing import TYPE_CHECKING
+
 from qtpy.QtWidgets import (QListWidget, QListWidgetItem,
                              QFrame, QMenu, QBoxLayout)
 from qtpy.QtGui import (QIcon, QFontMetrics, QContextMenuEvent,
@@ -7,18 +10,18 @@ from qtpy.QtGui import (QIcon, QFontMetrics, QContextMenuEvent,
 from qtpy.QtCore import Slot, QSize, Qt, Signal
 
 import ray
+
 import child_dialogs
 import snapshots_dialog
-
 from gui_server_thread import GuiServerThread
 from gui_tools import (client_status_string, _translate, is_dark_theme,
                        RayIcon, split_in_two, get_app_icon)
 
+import ui.client_slot
+
 if TYPE_CHECKING:
     from gui_client import Client
     from gui_session import Session
-
-import ui.client_slot
 
 
 class ClientSlot(QFrame):

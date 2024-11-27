@@ -1,4 +1,7 @@
 #!/usr/bin/python3 -u
+
+# Starter for ray-alsapatch
+
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -7,7 +10,7 @@ from typing import TYPE_CHECKING
 sys.path.insert(1, str(Path(__file__).parents[2] / 'shared'))
 
 # set src/clients/jackpatch/* as libs
-# this way it can share main_loop and bases
+# this way it can share main_loop.py and bases.py
 sys.path.insert(1, str(Path(__file__).parents[1] / 'jackpatch'))
 
 if TYPE_CHECKING:

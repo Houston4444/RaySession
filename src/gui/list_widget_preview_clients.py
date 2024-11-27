@@ -1,4 +1,5 @@
-from qtpy.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu, QBoxLayout
+
+from qtpy.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu
 from qtpy.QtGui import QIcon, QFontMetrics, QContextMenuEvent, QMouseEvent
 from qtpy.QtCore import QSize, Signal
 

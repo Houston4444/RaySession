@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -u
 
-#libs
+# Imports from standard library
 import signal
 import sys
 import time

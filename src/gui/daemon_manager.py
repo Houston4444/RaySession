@@ -1,8 +1,10 @@
 
+# Imports from standard library
 import os
 import socket
 import sys
 from typing import TYPE_CHECKING
+
 from qtpy.QtCore import QObject, QProcess, QTimer
 from qtpy.QtWidgets import QApplication
 

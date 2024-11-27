@@ -1,4 +1,7 @@
+
+# Imports from standard library
 import enum
+
 from qtpy.QtCore import QObject, Signal
 from osclib import Address
 

@@ -1,11 +1,14 @@
 
+# Imports from standard library
 import sys
 from typing import Optional
 
 from qtpy.QtWidgets import QApplication
 
-import ray
 from patchbay.base_elements import TransportPosition
+
+import ray
+
 from daemon_manager import DaemonManager
 from gui_client import Client, TrashedClient
 from gui_signaler import Signaler

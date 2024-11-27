@@ -1,4 +1,5 @@
 
+# Imports from standard library
 from enum import IntEnum
 
 from qtpy.QtCore import Qt, QDateTime, QDate

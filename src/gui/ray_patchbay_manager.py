@@ -1,4 +1,5 @@
 
+# Imports from standard library
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -6,11 +7,6 @@ import os
 import sys
 import logging
 
-import ray
-import xdg
-from gui_server_thread import GuiServerThread
-from gui_tools import RS, get_code_root
-from jack_renaming_tools import group_belongs_to_client
 from patchbay.patchcanvas.patshared import (
     GroupPos, PortgroupMem, PortMode, PortTypesViewFlag)
 from patchbay.base_elements import ToolDisplayed
@@ -24,12 +20,20 @@ from patchbay import (
     patchcanvas
 )
 
+import ray
+import xdg
+
+from gui_server_thread import GuiServerThread
+from gui_tools import RS, get_code_root
+from jack_renaming_tools import group_belongs_to_client
+
 if TYPE_CHECKING:
     from gui_session import Session
     from main_window import MainWindow
 
 
 _logger = logging.getLogger(__name__)
+
 
 class RayPatchbayCallbacker(Callbacker):
     def __init__(self, manager: 'RayPatchbayManager'):

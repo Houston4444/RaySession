@@ -1,4 +1,13 @@
-from bases import ProtoEngine
+
+# Imports from standard library
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from src.clients.jackpatch.bases import ProtoEngine
+else:
+    from bases import ProtoEngine
+
 from alsa_thread import AlsaManager
 
 class AlsaEngine(ProtoEngine):

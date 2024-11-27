@@ -1,6 +1,8 @@
 
+# Imports from standard library
 import time
 from typing import TYPE_CHECKING
+
 from qtpy.QtWidgets import (
     QLineEdit, QStackedWidget, QLabel, QToolButton, QFrame,
     QSplitter, QSplitterHandle, QDialogButtonBox, QPushButton,

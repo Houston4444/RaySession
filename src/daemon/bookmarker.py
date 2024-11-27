@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 
+# Imports from standard library
 from pathlib import Path
 import sys
 from typing import Optional

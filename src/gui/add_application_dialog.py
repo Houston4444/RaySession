@@ -1,11 +1,11 @@
+
+# Imports from standard library
 from typing import TYPE_CHECKING
+
 from qtpy.QtCore import Qt, QSize
 from qtpy.QtWidgets import (QDialogButtonBox, QListWidget, QListWidgetItem,
                              QFrame, QMenu, QAction, QShortcut)
 from qtpy.QtGui import QIcon
-
-if TYPE_CHECKING:
-    from gui_session import SignaledSession
 
 import ray
 import client_properties_dialog
@@ -17,6 +17,8 @@ import ui.template_slot
 import ui.remove_template
 import ui.add_application
 
+if TYPE_CHECKING:
+    from gui_session import SignaledSession
 
 TEMPLATE_NAME_DATA = Qt.ItemDataRole.UserRole
 DISPLAY_NAME_DATA = Qt.ItemDataRole.UserRole + 1

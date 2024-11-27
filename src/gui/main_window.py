@@ -1,3 +1,5 @@
+
+# Imports from standard library
 from typing import TYPE_CHECKING
 import time
 import subprocess
@@ -10,28 +12,30 @@ from qtpy.QtGui import (QIcon, QDesktopServices, QFontMetrics,
                          QCloseEvent, QKeyEvent)
 from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt
 
+from patchbay.base_elements import ToolDisplayed
+from patchbay.tools_widgets import PatchbayToolsWidget, TextWithIcons
+
 from osclib import are_on_same_machine
 import ray
+
 import add_application_dialog
 import open_session_dialog
 import child_dialogs
 import snapshots_dialog
 import preferences_dialog
 import list_widget_clients
-
 from gui_tools import (
     RS, RayIcon, CommandLineArgs, _translate, server_status_string,
     is_dark_theme, get_code_root, get_app_icon)
 from gui_client import TrashedClient
 from gui_server_thread import GuiServerThread
 from utility_scripts import UtilityScriptLauncher
-from patchbay.base_elements import ToolDisplayed
-from patchbay.tools_widgets import PatchbayToolsWidget, TextWithIcons
+
+import ui.raysession
 
 if TYPE_CHECKING:
     from .gui_session import SignaledSession
 
-import ui.raysession
 
 UI_PATCHBAY_UNDEF = 0
 UI_PATCHBAY_HIDDEN = 1

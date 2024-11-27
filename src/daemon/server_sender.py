@@ -1,3 +1,5 @@
+
+# Imports from standard library
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QObject

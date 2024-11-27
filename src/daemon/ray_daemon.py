@@ -1,15 +1,20 @@
 #!/usr/bin/python3 -u
 
+# Needed imports to load HoustonPatchbay and src/shared
 import os
 import sys
 from pathlib import Path
 
+# set HoustonPatchbay/patchbay and src/shared/* as libs
 sys.path.insert(1, str(Path(__file__).parents[2] / 'HoustonPatchbay'))
 sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
+# Set QT_API environment variable, to make qtpy knows
+# if it should use Qt5 or Qt6
 from qt_api import QT_API
 os.environ['QT_API'] = QT_API
 
+# other imports from standard library
 import logging
 import signal
 
