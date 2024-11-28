@@ -4,9 +4,12 @@ from typing import TYPE_CHECKING
 
 # third party imports
 from qtpy.QtCore import Qt, QSize
+from qtpy.QtGui import QIcon
+if TYPE_CHECKING:
+    # FIX : QAction not found by pylance
+    from qtpy.QtGui import QAction, QShortcut
 from qtpy.QtWidgets import (QDialogButtonBox, QListWidget, QListWidgetItem,
                              QFrame, QMenu, QAction, QShortcut)
-from qtpy.QtGui import QIcon
 
 # Imports from src/shared
 import ray

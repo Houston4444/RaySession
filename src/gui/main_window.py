@@ -5,13 +5,16 @@ import time
 import subprocess
 
 # third party imports
+from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt
+from qtpy.QtGui import (QIcon, QDesktopServices, QFontMetrics,
+                         QCloseEvent, QKeyEvent)
+if TYPE_CHECKING:
+    # FIX : QAction not found by pylance
+    from qtpy.QtGui import QAction, QShortcut
 from qtpy.QtWidgets import (
     QApplication, QMainWindow, QMenu, QDialog,
     QMessageBox, QToolButton, QAbstractItemView,
     QBoxLayout, QSystemTrayIcon, QShortcut, QAction)
-from qtpy.QtGui import (QIcon, QDesktopServices, QFontMetrics,
-                         QCloseEvent, QKeyEvent)
-from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt
 
 # Imports from HoustonPatchbay
 from patchbay.base_elements import ToolDisplayed

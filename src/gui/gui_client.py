@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING, Optional
 
 # third party imports
 from qtpy.QtCore import QObject, Signal
+if TYPE_CHECKING:
+    # FIX : QAction not found by pylance
+    from qtpy.QtGui import QAction
 from qtpy.QtWidgets import QAction
 
 # Imports from src/shared
