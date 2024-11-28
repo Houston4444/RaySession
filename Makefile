@@ -180,6 +180,8 @@ pure_install:
 	$(LINK) $(DEST_RAY)/src/bin/ray_git                 $(DESTDIR)$(PREFIX)/bin/
 	
 	# compile python files
+	$(PYTHON) -m compileall $(DEST_RAY)/HoustonPatchbay/patchbay/
+	$(PYTHON) -m compileall $(DEST_RAY)/pyjacklib/jacklib/
 	$(PYTHON) -m compileall $(DEST_RAY)/src/
 	
 	# install local manual
