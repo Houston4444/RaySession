@@ -30,7 +30,6 @@ _logger = logging.getLogger(__name__)
 
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
-        print('I receive sig', main.full_client_id, nsm_server.sl_addr.port)
         main.leaving = True
 
 

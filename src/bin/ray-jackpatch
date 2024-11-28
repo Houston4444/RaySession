@@ -9,5 +9,4 @@ sys.path[0] = str(Path(__file__).parents[1] / 'clients' / 'jackpatch')
 if TYPE_CHECKING:
     from clients.jackpatch import jackpatch
 else:
-    print('malzelf', sys.path)
     import jackpatch
