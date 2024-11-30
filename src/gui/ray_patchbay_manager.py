@@ -469,7 +469,7 @@ class RayPatchbayManager(PatchbayManager):
         if self.main_win._patchbay_tools is not None:
             self.set_tools_widget(self.main_win._patchbay_tools)
         self.set_options_dialog(
-            CanvasOptionsDialog(self.main_win, self, RS.settings))
+            CanvasOptionsDialog(self.main_win, self))
 
     def fast_temp_file_memory(self, temp_path: str):
         '''receive a .json file path from daemon with groups positions
