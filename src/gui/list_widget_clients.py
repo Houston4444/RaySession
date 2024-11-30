@@ -18,7 +18,7 @@ import child_dialogs
 import snapshots_dialog
 from gui_server_thread import GuiServerThread
 from gui_tools import (client_status_string, _translate, is_dark_theme,
-                       RayIcon, split_in_two, get_app_icon)
+                       ray_icon, split_in_two, get_app_icon)
 
 # Import UIs made with Qt-Designer
 import ui.client_slot
@@ -86,17 +86,17 @@ class ClientSlot(QFrame):
         
         dark = is_dark_theme(self)
         
-        self._save_icon = RayIcon('document-save', dark)
-        self._saved_icon = RayIcon('document-saved', dark)
-        self._unsaved_icon = RayIcon('document-unsaved', dark)
-        self._no_save_icon = RayIcon('document-nosave', dark)
-        self._icon_visible = RayIcon('visibility', dark)
-        self._icon_invisible = RayIcon('hint', dark)
-        self._stop_icon = RayIcon('media-playback-stop', dark)
-        self._kill_icon = RayIcon('media-playback-stop_red', dark)
+        self._save_icon = ray_icon('document-save', dark)
+        self._saved_icon = ray_icon('document-saved', dark)
+        self._unsaved_icon = ray_icon('document-unsaved', dark)
+        self._no_save_icon = ray_icon('document-nosave', dark)
+        self._icon_visible = ray_icon('visibility', dark)
+        self._icon_invisible = ray_icon('hint', dark)
+        self._stop_icon = ray_icon('media-playback-stop', dark)
+        self._kill_icon = ray_icon('media-playback-stop_red', dark)
 
-        self.ui.startButton.setIcon(RayIcon('media-playback-start', dark))
-        self.ui.closeButton.setIcon(RayIcon('window-close', dark))
+        self.ui.startButton.setIcon(ray_icon('media-playback-start', dark))
+        self.ui.closeButton.setIcon(ray_icon('window-close', dark))
         self.ui.saveButton.setIcon(self._save_icon)
         self.ui.stopButton.setIcon(self._stop_icon)
 

@@ -90,24 +90,19 @@ class ErrDaemon:
     WRONG_VERSION = -6
 
 
-class RayAbstractIcon(QIcon):
-    def __init__(self, icon_name: str, dark=False):
-        QIcon.__init__(self)
-        breeze = 'breeze-dark' if dark else 'breeze'
-        self.addFile(':scalable/%s/%s' % (breeze, icon_name), QSize(22, 22))
-        self.addPixmap(
-            QPixmap(
-                ':scalable/%s/disabled/%s' %
-                (breeze, icon_name)), QIcon.Mode.Disabled, QIcon.State.Off)
-
-
-def RayIcon(icon_name: str, dark=False) -> RayAbstractIcon:
+def ray_icon(icon_name: str, dark=False) -> QIcon:
     if dark and icon_name in _RAY_ICONS_CACHE_DARK.keys():
         return _RAY_ICONS_CACHE_DARK[icon_name]
     if not dark and icon_name in _RAY_ICONS_CACHE_LIGHT.keys():
         return _RAY_ICONS_CACHE_LIGHT[icon_name]
     
-    icon = RayAbstractIcon(icon_name, dark)
+    icon = QIcon()
+    breeze = 'breeze-dark' if dark else 'breeze'
+    icon.addFile(':scalable/%s/%s' % (breeze, icon_name), QSize(22, 22))
+    icon.addPixmap(
+        QPixmap(f':scalable/{breeze}/disabled/{icon_name}'),
+        QIcon.Mode.Disabled, QIcon.State.Off)
+    
     if dark:
         _RAY_ICONS_CACHE_DARK[icon_name] = icon
     else:

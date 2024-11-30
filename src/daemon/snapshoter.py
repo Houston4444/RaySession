@@ -208,7 +208,6 @@ class Snapshoter(QObject):
             return ray.Err.OK
         except BaseException as e:
             _logger.error(str(e))
-            print('parlmdmmd')
             return ray.Err.CREATE_FAILED
 
     def _write_exclude_file(self) -> int:

@@ -16,7 +16,7 @@ import ray
 
 # Local imports
 import child_dialogs
-from gui_tools import CommandLineArgs, RayIcon, is_dark_theme, basename
+from gui_tools import CommandLineArgs, ray_icon, is_dark_theme, basename
 from child_dialogs import ChildDialog
 from client_properties_dialog import ClientPropertiesDialog
 from snapshots_dialog import (
@@ -285,9 +285,9 @@ class OpenSessionDialog(ChildDialog):
 
         dark = is_dark_theme(self)
         self.action_duplicate.setIcon(
-            RayIcon('xml-node-duplicate', dark))
+            ray_icon('xml-node-duplicate', dark))
         self.action_save_as_template.setIcon(
-            RayIcon('document-save-as-template', dark))
+            ray_icon('document-save-as-template', dark))
 
         self.action_rename.triggered.connect(self._ask_for_session_rename)
         self.action_duplicate.triggered.connect(self._ask_for_session_duplicate)
@@ -1007,7 +1007,7 @@ class OpenSessionDialog(ChildDialog):
             if session_item is not None:
                 if has_notes:
                     session_item.set_notes_icon(
-                        RayIcon('notes', is_dark_theme(self)))
+                        ray_icon('notes', is_dark_theme(self)))
                 
                 # we add directly date to top item
                 # this way folder also read the last date

@@ -32,7 +32,7 @@ import snapshots_dialog
 import preferences_dialog
 import list_widget_clients
 from gui_tools import (
-    RS, RayIcon, CommandLineArgs, _translate, server_status_string,
+    RS, ray_icon, CommandLineArgs, _translate, server_status_string,
     is_dark_theme, get_code_root, get_app_icon)
 from gui_client import TrashedClient
 from gui_server_thread import GuiServerThread
@@ -314,54 +314,54 @@ class MainWindow(QMainWindow):
         dark = is_dark_theme(self)
 
         if self.ui.actionNewSession.icon().isNull():
-            self.ui.actionNewSession.setIcon(RayIcon('folder-new', dark))
+            self.ui.actionNewSession.setIcon(ray_icon('folder-new', dark))
         if self.ui.actionOpenSession.icon().isNull():
-            self.ui.actionOpenSession.setIcon(RayIcon('document-open', dark))
+            self.ui.actionOpenSession.setIcon(ray_icon('document-open', dark))
 
         if self.ui.actionControlMenu.icon().isNull():
             self.ui.actionControlMenu.setIcon(
                 QIcon.fromTheme('configuration_section'))
             if self.ui.actionControlMenu.icon().isNull():
-                self.ui.actionControlMenu.setIcon(RayIcon('configure', dark))
+                self.ui.actionControlMenu.setIcon(ray_icon('configure', dark))
 
         if self.ui.actionOpenSessionFolder.icon().isNull():
             self.ui.actionOpenSessionFolder.setIcon(
-                RayIcon('system-file-manager', dark))
+                ray_icon('system-file-manager', dark))
 
         if self.ui.actionAddApplication.icon().isNull():
-            self.ui.actionAddApplication.setIcon(RayIcon('list-add', dark))
+            self.ui.actionAddApplication.setIcon(ray_icon('list-add', dark))
 
         if self.ui.actionAddExecutable.icon().isNull():
             self.ui.actionAddExecutable.setIcon(QIcon.fromTheme('system-run'))
             if self.ui.actionAddExecutable.icon().isNull():
-                self.ui.actionAddExecutable.setIcon(RayIcon('run-install'))
+                self.ui.actionAddExecutable.setIcon(ray_icon('run-install'))
 
         self.ui.actionReturnToAPreviousState.setIcon(
-            RayIcon('media-seek-backward', dark))
+            ray_icon('media-seek-backward', dark))
 
         self.ui.actionRememberOptionalGuiStates.setIcon(
-            RayIcon('visibility', dark))
-        self.ui.trashButton.setIcon(RayIcon('trash-empty', dark))
+            ray_icon('visibility', dark))
+        self.ui.trashButton.setIcon(ray_icon('trash-empty', dark))
         if self.ui.trashButton.icon().isNull():
-            self.ui.trashButton.setIcon(RayIcon('trash'), dark)
+            self.ui.trashButton.setIcon(ray_icon('trash'), dark)
 
         self.ui.actionDuplicateSession.setIcon(
-            RayIcon('xml-node-duplicate', dark))
+            ray_icon('xml-node-duplicate', dark))
         self.ui.actionDuplicateSession_2.setIcon(
-            RayIcon('xml-node-duplicate', dark))
+            ray_icon('xml-node-duplicate', dark))
         self.ui.actionSaveTemplateSession.setIcon(
-            RayIcon('document-save-as-template', dark))
+            ray_icon('document-save-as-template', dark))
         self.ui.actionSaveTemplateSession_2.setIcon(
-            RayIcon('document-save-as-template', dark))
-        self.ui.actionCloseSession.setIcon(RayIcon('window-close', dark))
-        self.ui.actionAbortSession.setIcon(RayIcon('list-remove', dark))
-        self.ui.actionSaveSession.setIcon(RayIcon('document-save', dark))
-        self.ui.toolButtonSaveSession.setIcon(RayIcon('document-save', dark))
-        self.ui.actionSessionNotes.setIcon(RayIcon('notes', dark))
-        self.ui.toolButtonNotes.setIcon(RayIcon('notes', dark))
-        self.ui.actionDesktopsMemory.setIcon(RayIcon('view-list-icons', dark))
+            ray_icon('document-save-as-template', dark))
+        self.ui.actionCloseSession.setIcon(ray_icon('window-close', dark))
+        self.ui.actionAbortSession.setIcon(ray_icon('list-remove', dark))
+        self.ui.actionSaveSession.setIcon(ray_icon('document-save', dark))
+        self.ui.toolButtonSaveSession.setIcon(ray_icon('document-save', dark))
+        self.ui.actionSessionNotes.setIcon(ray_icon('notes', dark))
+        self.ui.toolButtonNotes.setIcon(ray_icon('notes', dark))
+        self.ui.actionDesktopsMemory.setIcon(ray_icon('view-list-icons', dark))
         self.ui.toolButtonSessionMenu.setIcon(
-            RayIcon('application-menu', dark))
+            ray_icon('application-menu', dark))
         self.ui.listWidget.set_session(self.session)
         self.ui.listWidget.currentItemChanged.connect(
             self._list_widget_item_changed)
@@ -1345,7 +1345,7 @@ class MainWindow(QMainWindow):
             icon_str = 'notes-editing'
 
         self.ui.actionSessionNotes.setIcon(
-            RayIcon(icon_str, is_dark_theme(self)))
+            ray_icon(icon_str, is_dark_theme(self)))
 
     def stop_client(self, client_id):
         client = self.session.get_client(client_id)
@@ -1672,6 +1672,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event: QCloseEvent):        
         self.save_window_settings()
         self.session.patchbay_manager.save_patchcanvas_cache()
+        self.session.patchbay_manager.save_settings()
+        
         self.hidden_maximized = self.isMaximized()
 
         if self._systray.isVisible() and self.session.is_running():
