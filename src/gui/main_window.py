@@ -103,7 +103,7 @@ class MainWindow(QMainWindow):
             button : QToolButton = self.ui.toolBar.widgetForAction(action)
             self._tool_bar_main_actions_width += button.iconSize().width()
             self._tool_bar_main_actions_width += \
-                QFontMetrics(button.font()).width(button.text())
+                QFontMetrics(button.font()).horizontalAdvance(button.text())
             self._tool_bar_main_actions_width += 6
 
         # manage geometry depending of use of embedded jack patchbay

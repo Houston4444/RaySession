@@ -74,7 +74,7 @@ class ClientSlot(QFrame):
 
     def update_layout(self):
         font = self.ui.ClientName.font()
-        main_size = QFontMetrics(font).width(self.client.prettier_name())
+        main_size = QFontMetrics(font).horizontalAdvance(self.client.prettier_name())
 
         layout_width = self._list_widget.width()
 
@@ -97,7 +97,7 @@ class ClientSlot(QFrame):
             if not text:
                 continue
 
-            size = QFontMetrics(font).width(text)
+            size = QFontMetrics(font).horizontalAdvance(text)
             max_size = max(max_size, size)
 
         if max_size <= max_label_width:
