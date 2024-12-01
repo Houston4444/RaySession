@@ -395,7 +395,7 @@ class CanvasSaver(ServerSender):
         
         for view_num, view_data in self.views_session.items():
             for ptv_dict in view_data.ptvs.values():
-                group_name_change_list = list[tuple(str, str)]()
+                group_name_change_list = list[tuple[str, str]]()
                 
                 for group_name in ptv_dict.keys():
                     if group_belongs_to_client(group_name, old_jack_name):

@@ -724,7 +724,7 @@ class Client(ServerSender, ray.ClientData):
         c = XmlElement(ET.SubElement(root, 'Client-Template'))
         self.write_xml_properties(c)
         c.set_str('template-name', template_name)
-        c.set_str('client_id', self.short_client_id())
+        c.set_str('client_id', self.short_client_id(self.client_id))
         
         if not self.is_running():
             c.set_bool('launched', False)
@@ -2011,9 +2011,9 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         template_dir = TemplateRoots.user_clients / template_name
         if template_dir.exists():
-            if os.access(template_dir, os.W_OK):
-                template_dir.rmdir()
-            else:
+            try:
+                shutil.rmtree(template_dir)
+            except:
                 self._send_error_to_caller(
                     OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
                     _translate('GUIMSG', 'impossible to remove %s !')
