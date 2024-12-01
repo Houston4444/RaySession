@@ -151,7 +151,7 @@ class SignaledSession(OperatingSession):
             pass
 
     def osc_receive(self, osp: OscPack):
-        nsm_equivs = {"/nsm/server/add" : "/ray/session/add_executable",
+        nsm_equivs = {"/nsm/server/add" : "/ray/session/add_exec",
                       "/nsm/server/save": "/ray/session/save",
                       "/nsm/server/open": "/ray/server/open_session",
                       "/nsm/server/new" : "/ray/server/new_session",
