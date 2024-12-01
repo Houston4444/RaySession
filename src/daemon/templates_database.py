@@ -196,13 +196,18 @@ def _list_xml_elements(base: str) -> Iterator[tuple[Path, XmlElement]]:
         
         try:
             tree = ET.parse(templates_file)
-        except:
-            _logger.error(f"{templates_file} is not a valid xml file")
+        except BaseException as e:
+            _logger.error(
+                f"{templates_file} is not a valid xml file\n{str(e)}")
             continue
 
         root = tree.getroot()
         if root.tag != 'RAY-CLIENT-TEMPLATES':
             continue
+        
+        dbase_version = root.attrib.get('VERSION', '0.8.0')
+        old_mode = ray.version_to_tuple(dbase_version) < (0, 17, 0)
+        
         
         if not factory and root.attrib.get('VERSION') != ray.VERSION:
             # we may rewrite user client templates file
@@ -210,10 +215,10 @@ def _list_xml_elements(base: str) -> Iterator[tuple[Path, XmlElement]]:
                 root, templates_file)
         
         xroot = XmlElement(root)
-        erased_by_nsm_desktop_global = xroot.bool('erased_by_nsm_desktop_file')
+        erased_by_nsm_desktop_global = xroot.bool(
+            'erased_by_nsm_desktop_file')
 
         for c in xroot.iter():
-        # for child in root:
             if c.el.tag != 'Client-Template':
                 continue
             
@@ -221,7 +226,7 @@ def _list_xml_elements(base: str) -> Iterator[tuple[Path, XmlElement]]:
                     and not c.bool('erased_by_nsm_desktop_file')):
                 c.set_bool('erased_by_nsm_desktop_file', True)
                 
-            yield search_path, c
+            yield search_path, c, old_mode
 
         if file_rewritten:
             _logger.info('rewrite user client templates XML file')
@@ -239,14 +244,14 @@ def rebuild_templates_database(session: 'Session', base: str):
     template_names = set[str]()
     template_execs = set[str]()
     
-    for search_path, c in _list_xml_elements(base):
+    for search_path, c, old_mode in _list_xml_elements(base):
         template_execs.add(c.str('executable'))
 
     from_desktop_execs = list[NsmDesktopExec]()
     if base == 'factory':
         from_desktop_execs = _first_desktops_scan()
 
-    for search_path, c in _list_xml_elements(base):
+    for search_path, c, old_mode in _list_xml_elements(base):
         template_name = c.str('template-name')
 
         if (not template_name
@@ -376,7 +381,7 @@ def rebuild_templates_database(session: 'Session', base: str):
                     continue
 
         template_client = Client(session)
-        template_client.read_xml_properties(c)
+        template_client.read_xml_properties(c, old_mode=old_mode)
         template_client.client_id = c.str('client_id')        
         if not template_client.client_id:
             template_client.client_id == session.generate_abstract_client_id(

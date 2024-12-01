@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 from enum import Enum
 import xml.etree.ElementTree as ET
+from typing import TYPE_CHECKING, Optional
 
 # third party imports
 from qtpy.QtCore import (QCoreApplication, QProcess,
@@ -28,19 +29,11 @@ from daemon_tools  import (
 from signaler import Signaler
 from scripter import ClientScripter
 
-
 # only used to identify session functions in the IDE
 # 'Session' is not importable simply because it would be
 # a circular import.
-from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from .session_signaled import SignaledSession
-
-_logger = logging.getLogger(__name__)
-_logger.parent = logging.getLogger('__main__')
-
-NSM_API_VERSION_MAJOR = 1
-NSM_API_VERSION_MINOR = 0
 
 
 class OscSrc(Enum):
@@ -51,12 +44,13 @@ class OscSrc(Enum):
     STOP = 4
 
 
+NSM_API_VERSION_MAJOR = 1
+NSM_API_VERSION_MINOR = 0
+
+_logger = logging.getLogger(__name__)
+_logger.parent = logging.getLogger('__main__')
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
-
-
-def basename(*args):
-    return os.path.basename(*args)
 
 
 class Client(ServerSender, ray.ClientData):
@@ -100,7 +94,7 @@ class Client(ServerSender, ray.ClientData):
     _desktop_icon = ""
     _desktop_description = ""
 
-    jack_naming = ray.JackNaming.SHORT
+    jack_naming = ray.JackNaming.LONG
 
     launched_in_terminal = False
     process_drowned = False
@@ -136,11 +130,7 @@ class Client(ServerSender, ray.ClientData):
 
         # stock osc src_addr and src_path of respectively
         # start, open, save, save_tp, stop
-        # self._osc_srcs = [(None, ''), (None, ''), (None, ''),
-        #                   (None, ''), (None, '')]
         self._osc_srcs = dict[OscSrc, Optional[OscPack]]()
-        # for osc_src in OscSrc:
-        #     self._osc_srcs[osc_src] = None
 
         self._open_timer = QTimer()
         self._open_timer.setSingleShot(True)
@@ -407,12 +397,11 @@ class Client(ServerSender, ray.ClientData):
                         break
 
     def _rename_files(
-            self, spath_str: str,
+            self, spath: Path,
             old_session_name: str, new_session_name: str,
             old_prefix: str, new_prefix: str,
             old_client_id: str, new_client_id: str,
             old_client_links_dir: str, new_client_links_dir: str):
-        spath = Path(spath_str)
 
         # rename client script dir
         scripts_dir = spath / f"{ray.SCRIPTS_DIR}.{old_client_id}"
@@ -810,7 +799,7 @@ class Client(ServerSender, ray.ClientData):
 
         return jack_client_name
 
-    def read_xml_properties(self, c: XmlElement):
+    def read_xml_properties(self, c: XmlElement, old_mode=False):
         self.executable_path = c.str('executable')
         self.arguments = c.str('arguments')
         self.pre_env = c.str('pre_env')
@@ -825,12 +814,18 @@ class Client(ServerSender, ray.ClientData):
         self.start_gui_hidden = not c.bool('gui_visible', True)
         self.template_origin = c.str('template_origin')
 
-        if c.bool('from_nsm_file') or c.bool('jack_naming'):
-            self.jack_naming = ray.JackNaming.LONG
+        if old_mode:
+            self.jack_naming = ray.JackNaming.SHORT
+            self.prefix_mode = ray.PrefixMode.SESSION_NAME
+
+        if c.str('jack_naming'):
+            self.jack_naming = ray.JackNaming(int(c.bool('jack_naming')))
+        elif c.str('from_nsm_file'):
+            self.jack_naming = ray.JackNaming(int(c.bool('from_nsm_file')))
 
         # ensure client has a name
         if not self.name:
-            self.name = basename(self.executable_path)
+            self.name = Path(self.executable_path).name
 
         self.update_infos_from_desktop_file()
 
@@ -871,7 +866,7 @@ class Client(ServerSender, ray.ClientData):
 
         # backward compatibility with network session
         if (self.protocol is ray.Protocol.NSM
-                and basename(self.executable_path) == 'ray-network'):
+                and Path(self.executable_path).name == 'ray-network'):
             self.protocol = ray.Protocol.RAY_NET
 
             if self.arguments:
@@ -2163,7 +2158,8 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         X_SESSION_X = "XXX_SESSION_NAME_XXX"
         X_CLIENT_ID_X = "XXX_CLIENT_ID_XXX"
-        X_CLIENT_LINKS_DIR_X = "XXX_CLIENT_LINKS_DIR_XXX" # used for Carla links dir
+        X_CLIENT_LINKS_DIR_X = "XXX_CLIENT_LINKS_DIR_XXX"
+        # used for Carla links dir
 
         if template_save is ray.Template.NONE:
             if self.prefix_mode is not ray.PrefixMode.SESSION_NAME:
@@ -2214,7 +2210,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             old_prefix = new_prefix = self.custom_prefix
 
         self._rename_files(
-            str(spath),
+            spath,
             old_session_name, new_session_name,
             old_prefix, new_prefix,
             old_client_id, new_client_id,

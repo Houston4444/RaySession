@@ -11,8 +11,7 @@ if TYPE_CHECKING:
     from qtpy.QtCore import QSettings
 
 
-VERSION = "0.16.0"
-
+VERSION = '0.17.0'
 APP_TITLE = 'RaySession'
 DEFAULT_SESSION_ROOT = "%s/Ray Sessions" % os.getenv('HOME')
 SCRIPTS_DIR = 'ray-scripts'
@@ -20,7 +19,6 @@ NOTES_PATH = 'ray-notes'
 FACTORY_SESSION_TEMPLATES = (
     'with_jack_patch', 'with_jack_config', 'scripted')
 RAYNET_BIN = 'ray-network'
-
 GIT_IGNORED_EXTENSIONS = ".wav .flac .ogg .mp3 .mp4 .avi .mkv .peak .m4a .pdf"
 
 
