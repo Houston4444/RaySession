@@ -944,6 +944,9 @@ class OperatingSession(Session):
             self.load_error(ray.Err.BAD_PROJECT)
             return
         
+        sess_version = root.attrib.get('VERSION', '0.8.0')
+        old_mode = bool(ray.version_to_tuple(sess_version) < (0, 17, 0))
+        
         root.attrib['name'] = spath.name
 
         tmp_clients = list[Client]()
@@ -954,7 +957,8 @@ class OperatingSession(Session):
 
             for client_xml in child:
                 client = Client(self)
-                client.read_xml_properties(XmlElement(client_xml))
+                client.read_xml_properties(
+                    XmlElement(client_xml), old_mode=old_mode)
                 if not client.executable_path:
                     continue
             
@@ -1763,6 +1767,9 @@ for better organization.""")
 
             xroot = XmlElement(root)
             sess_name = xroot.str('name')
+            sess_version = xroot.str('VERSION', '0.9.0')
+            old_mode = ray.version_to_tuple(sess_version) < (0, 17, 0)
+            
             if xroot.bool('notes_shown'):
                 self.future_notes_shown = True
 
@@ -1773,7 +1780,7 @@ for better organization.""")
                     for cchild in child:
                         c = XmlElement(cchild)
                         client = Client(self)
-                        client.read_xml_properties(c)
+                        client.read_xml_properties(c, old_mode=old_mode)
                         
                         if not client.executable_path:
                             continue
