@@ -1132,6 +1132,40 @@ class OscServerThread(ClientCommunicating):
             self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False
+        
+    @osp_method('/ray/session/add_exec', 'siiissi')
+    def raySessionAddExecAdvanced(self, osp: OscPack):
+        executable_path, auto_start, protocol, \
+            prefix_mode, prefix_pattern, client_id, jack_naming = osp.args
+
+        if self.session.path is None:
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
+                      "Cannot add to session because no session is loaded.")
+            return False
+
+        if protocol is ray.Protocol.NSM and '/' in executable_path:
+            self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
+                "Absolute paths are not permitted. Clients must be in $PATH")
+            return False
+
+    @osp_method('/ray/session/add_exec', None)
+    def raySessionAddExecStrings(self, osp: OscPack):
+        if not (osp.types and ray.types_are_all_strings(osp.types)):
+            self._unknown_message(osp)
+            return False
+
+        if self.session.path is None:
+            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
+                      "Cannot add to session because no session is loaded.")
+            return False
+
+        executable_path = osp.args[0]
+        ray_hack = bool(len(osp.args) > 1 and 'ray_hack' in osp.args[1:])
+
+        if '/' in executable_path and not ray_hack:
+            self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
+                "Absolute paths are not permitted. Clients must be in $PATH")
+            return False
 
     @osp_method('/ray/session/open_folder', '')
     def rayServerOpenFolder(self, osp: OscPack):

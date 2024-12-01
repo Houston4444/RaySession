@@ -121,7 +121,7 @@ control RaySession daemons
         Saves, closes the session, back to SNAPSHOT and re-open it
     rename NEW_SESSION_NAME
         renames the current session to NEW_SESSION_NAME
-    add_executable EXECUTABLE [OPTION1] [OPTION2]...
+    add_exec EXECUTABLE [OPTION1] [OPTION2]...
         Adds a client to the current session
         Available options are 
             ray_hack    runs the executable with Ray-Hack protocol (not NSM)
