@@ -64,8 +64,11 @@ def _first_desktops_scan() -> list[NsmDesktopExec]:
     # exec_and_desks = dict[str, str]()
     exec_and_desktops.clear()
 
-    lang = os.getenv('LANG')
-    lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
+    lang = os.getenv('LANG', '')
+    if len(lang) < 5:
+        lang_strs = (lang, lang, '')
+    else:
+        lang_strs = ("[%s]" % lang[0:5], "[%s]" % lang[0:2], "")
 
     for desk_path in desk_paths:
         full_desk_path = desk_path / 'applications'
@@ -319,11 +322,13 @@ def rebuild_templates_database(session: 'Session', base: str):
             # search for '/nsm/server/announce' in executable binary
             # if it is asked by "check_nsm_bin" key
             if c.bool('check_nsm_bin'):
-                result = QProcess.execute(
-                    'grep', ['-q', '/nsm/server/announce',
-                             shutil.which(executable)])
-                if result:
-                    continue
+                which_exec = shutil.which(executable)
+                if which_exec:
+                    result = QProcess.execute(
+                        'grep', ['-q', '/nsm/server/announce',
+                                which_exec])
+                    if result:
+                        continue
 
             # check if a version is at least required for this template
             # don't use needed-version without check how the program acts !

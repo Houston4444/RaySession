@@ -58,6 +58,8 @@ def get_description(template_path: Path) -> str:
 
     for child in root:
         if child.tag == 'description':
+            if child.text is None:
+                return ''
             return child.text
         
     return ''

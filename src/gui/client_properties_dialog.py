@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 # third party imports
 from qtpy.QtCore import QTimer, QFile
 from qtpy.QtGui import QShowEvent
-from qtpy.QtWidgets import QFileDialog, QFrame
+from qtpy.QtWidgets import QFileDialog, QFrame, QWidget
 
 # Imports from src/shared
 import ray

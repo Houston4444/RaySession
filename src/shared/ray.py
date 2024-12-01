@@ -5,22 +5,20 @@ from enum import Enum, IntEnum, Flag
 import os
 import shlex
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from qtpy.QtCore import QSettings
 
 
 VERSION = "0.16.0"
-
 APP_TITLE = 'RaySession'
-DEFAULT_SESSION_ROOT = "%s/Ray Sessions" % os.getenv('HOME')
+DEFAULT_SESSION_ROOT = Path.home() / 'Ray Sessions'
 SCRIPTS_DIR = 'ray-scripts'
 NOTES_PATH = 'ray-notes'
 FACTORY_SESSION_TEMPLATES = (
     'with_jack_patch', 'with_jack_config', 'scripted')
 RAYNET_BIN = 'ray-network'
-
 GIT_IGNORED_EXTENSIONS = ".wav .flac .ogg .mp3 .mp4 .avi .mkv .peak .m4a .pdf"
 
 
@@ -240,11 +238,11 @@ class Favorite:
     display_name: str
 
 
-def version_to_tuple(version_str: str) -> tuple[int]:
+def version_to_tuple(version_str: str) -> tuple[int, int, int]:
     version_list = []
     for c in version_str.split('.'):
         if not c.isdigit():
-            return ()
+            return (0, 0, 0)
         version_list.append(int(c))
 
     return tuple(version_list)
@@ -314,7 +312,7 @@ def is_valid_full_path(path: str) -> bool:
         return False
     return True
 
-def shell_line_to_args(string: str) -> list:
+def shell_line_to_args(string: str) -> Optional[list[str]]:
     try:
         args = shlex.split(string)
     except BaseException:
@@ -358,8 +356,8 @@ class ClientData:
     jack_client_name = ''
     jack_naming = JackNaming.SHORT
     in_terminal = False
-    ray_hack: 'RayHack' = None
-    ray_net: 'RayNet' = None
+    ray_hack: 'Optional[RayHack]' = None
+    ray_net: 'Optional[RayNet]' = None
 
     @staticmethod
     def sisi():

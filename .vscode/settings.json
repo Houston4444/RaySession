@@ -3,5 +3,6 @@
         "HoustonPatchbay",
         "pyjacklib",
         "src/shared"
-    ]
+    ],
+    "python.analysis.typeCheckingMode": "basic"
 }

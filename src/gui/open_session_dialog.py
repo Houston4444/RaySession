@@ -1,6 +1,7 @@
 
 # Imports from standard library
 import os
+from pathlib import Path
 import shutil
 import time
 from typing import Optional
@@ -598,10 +599,10 @@ class OpenSessionDialog(ChildDialog):
         self.ui.labelSessionSize.setText('')
         
         if item is not None and item.is_session:
-            session_full_name = item.data(
+            session_full_name: str = item.data(
                 COLUMN_NAME, Qt.ItemDataRole.UserRole)
             self.ui.stackedWidgetSessionName.set_text(
-                basename(session_full_name))
+                Path(session_full_name).name)
             self.ui.previewFrame.setEnabled(True)
             if session_full_name:
                 self.to_daemon(
@@ -793,10 +794,10 @@ class OpenSessionDialog(ChildDialog):
         if item is None:
             return
 
-        old_name = item.data(COLUMN_NAME, Qt.ItemDataRole.UserRole)
+        old_name: str = item.data(COLUMN_NAME, Qt.ItemDataRole.UserRole)
 
         # prevent accidental renaming to same name
-        if basename(old_name) == new_name:
+        if Path(old_name).name == new_name:
             return
         
         if self._pending_action:

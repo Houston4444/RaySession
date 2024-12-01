@@ -4,7 +4,7 @@ import argparse
 import os
 from pathlib import Path
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 # third party imports
 from qtpy.QtCore import QSettings, QSize, QFile
@@ -42,7 +42,7 @@ class RS:
     HD_StartupRecentSessions = 0x080
     HD_ArdourConversion = 0x100
     
-    _signaler: 'Signaler' = None
+    _signaler: 'Optional[Signaler]' = None
     
     @classmethod
     def set_settings(cls, settings):
@@ -118,15 +118,18 @@ def verified_address_arg(arg: str) -> Address:
     raise argparse.ArgumentTypeError(addr_or_msg)
 
 def verified_address_from_port_arg(arg: str) -> Address:
-    addr_or_msg = verified_address_from_port(arg)
+    if not arg.isdigit():
+        raise argparse.ArgumentTypeError(arg)
+    
+    addr_or_msg = verified_address_from_port(int(arg))
     if isinstance(addr_or_msg, Address):
         return addr_or_msg
     raise argparse.ArgumentTypeError(addr_or_msg)
 
 
 class CommandLineArgs(argparse.Namespace):
-    daemon_url: Address = None
-    daemon_port: Address = None
+    daemon_url: Optional[Address] = None
+    daemon_port: Optional[Address] = None
     out_daemon = False
     session_root: str = ''
     config_dir = ''
@@ -161,7 +164,7 @@ class CommandLineArgs(argparse.Namespace):
 
         if os.getenv('NSM_URL'):
             try:
-                cls.NSM_URL = verified_address_arg(os.getenv('NSM_URL'))
+                cls.NSM_URL = verified_address_arg(os.getenv('NSM_URL', ''))
             except BaseException:
                 sys.stderr.write('%s is not a valid NSM_URL\n'
                                  % os.getenv('NSM_URL'))
@@ -239,7 +242,7 @@ def init_gui_tools():
     if not CommandLineArgs.session_root:
         CommandLineArgs.change_session_root(
             settings.value('default_session_root',
-                           ray.DEFAULT_SESSION_ROOT,
+                           str(ray.DEFAULT_SESSION_ROOT),
                            type=str))
 
 def is_dark_theme(widget: QWidget) -> bool:
@@ -251,8 +254,9 @@ def is_dark_theme(widget: QWidget) -> bool:
 
 def split_in_two(string: str) -> tuple[str, str]:
         middle = int(len(string)/2)
-        sep_indexes = []
+        sep_indexes = list[int]()
         last_was_digit = False
+        sep = ''
 
         for sep in (' ', '-', '_', 'capital'):
             for i in range(len(string)):
