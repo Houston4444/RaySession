@@ -983,19 +983,30 @@ class SignaledSession(OperatingSession):
         self.send(*osp.reply(), self.notes)
         self.send(*osp.reply())
 
-    def _ray_session_add_executable(self, osp: OscPack):
+    def _ray_session_add_exec(self, osp: OscPack):
+        self._ray_session_add_executable(osp, old_defaults=False)
+
+    def _ray_session_add_executable(self, osp: OscPack, old_defaults=True):
         executable = osp.args[0]
-        prefix_mode = ray.PrefixMode.SESSION_NAME
+        protocol = ray.Protocol.NSM
+
+        if old_defaults:
+            prefix_mode = ray.PrefixMode.SESSION_NAME
+            jack_naming = 0
+        else:
+            prefix_mode = ray.PrefixMode.CLIENT_NAME
+            jack_naming = 1
+
         custom_prefix = ''
         client_id = ""
         start_it = 1
-        jack_naming = 0
 
         if len(osp.args) == 1:
             pass
 
         elif ray.types_are_all_strings(osp.types):
             start_it = int(bool('not_start' not in osp.args[1:]))
+
             if 'ray_hack' in osp.args[1:]:
                 protocol = ray.Protocol.RAY_HACK
 
@@ -1042,10 +1053,14 @@ class SignaledSession(OperatingSession):
             executable, start_it, protocol_int, \
                 prefix_mode_int, custom_prefix, client_id, jack_naming = osp.args
 
+            protocol = ray.Protocol(protocol_int)
             prefix_mode = ray.PrefixMode(prefix_mode_int)
 
             if prefix_mode is ray.PrefixMode.CUSTOM and not custom_prefix:
-                prefix_mode = ray.PrefixMode.SESSION_NAME
+                if old_defaults:
+                    prefix_mode = ray.PrefixMode.SESSION_NAME
+                else:
+                    prefix_mode = ray.PrefixMode.CLIENT_NAME
 
             client_id: str
 
@@ -1070,7 +1085,7 @@ class SignaledSession(OperatingSession):
 
         client = Client(self)
 
-        client.protocol = ray.Protocol(protocol_int)
+        client.protocol = protocol
         client.executable_path = executable
         client.name = os.path.basename(executable)
         client.client_id = client_id
