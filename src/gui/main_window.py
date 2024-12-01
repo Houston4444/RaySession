@@ -154,8 +154,8 @@ class MainWindow(QMainWindow):
             self.restoreState(RS.settings.value('MainWindow/WindowState'))
         show_menu_bar = RS.settings.value(
             'MainWindow/ShowMenuBar', False, type=bool)
-        if show_menu_bar:
-            self.ui.actionShowMenuBar.activate(QAction.Trigger)
+        if not show_menu_bar:
+            self.ui.actionShowMenuBar.activate(QAction.ActionEvent.Trigger)
         self.ui.actionToggleShowMessages.toggled.connect(
             self._show_messages_widget)
 
