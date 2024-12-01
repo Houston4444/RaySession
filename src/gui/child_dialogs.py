@@ -815,7 +815,7 @@ class NewExecutableDialog(ChildDialog):
             _translate('new_executable', 'Client Name'))
         self.ui.comboBoxPrefixMode.addItem(
             _translate('new_executable', 'Session Name'))
-        self.ui.comboBoxPrefixMode.setCurrentIndex(2)
+        self.ui.comboBoxPrefixMode.setCurrentIndex(1)
 
         self.ui.comboBoxPrefixMode.currentIndexChanged.connect(
             self._prefix_mode_changed)
@@ -868,7 +868,7 @@ class NewExecutableDialog(ChildDialog):
         if self._is_allowed():
             self.accept()
 
-    def get_selection(self)->tuple:
+    def get_selection(self) -> tuple[str, bool, bool, int, str, str, bool]:
         return (self.ui.lineEdit.text(),
                 self.ui.checkBoxStartClient.isChecked(),
                 not self.ui.checkBoxNsm.isChecked(),

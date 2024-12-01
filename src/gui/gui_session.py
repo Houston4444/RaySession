@@ -163,7 +163,8 @@ class SignaledSession(Session):
 
     def _reply(self, path, args):
         if len(args) == 2:
-            if args[0] == '/ray/session/add_executable':
+            if args[0] in ('/ray/session/add_exec',
+                           '/ray/session/add_executable'):
                 client_id: str = args[1]
 
                 for client in self.client_list:
