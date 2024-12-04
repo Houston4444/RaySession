@@ -71,7 +71,7 @@ def client_action(func: Callable):
         sess, osp, *rest = args
         
         if TYPE_CHECKING:
-            sess = SignaledSession
+            sess: SignaledSession
             osp: OscPack
 
         client_id: str = osp.args.pop(0)
@@ -184,6 +184,8 @@ class SignaledSession(OperatingSession):
 
     def _nsm_server_announce(self, osp: OscPack):
         client_name, capabilities, executable_path, major, minor, pid = osp.args
+        executable_path: str
+        pid: int
 
         if self.wait_for is ray.WaitFor.QUIT:
             if osp.path.startswith('/nsm/server/'):
@@ -235,7 +237,7 @@ class SignaledSession(OperatingSession):
         if self.wait_for is ray.WaitFor.QUIT:
             return
 
-        message = osp.args[1]
+        message: str = osp.args[1]
         client = self.get_client_by_address(osp.src_addr)
         if client:
             client.set_reply(ray.Err.OK, message)
@@ -250,6 +252,8 @@ class SignaledSession(OperatingSession):
 
     def _error(self, osp: OscPack):
         path, errcode, message = osp.args
+        errcode: int
+        message: str
 
         client = self.get_client_by_address(osp.src_addr)
         if client:
@@ -295,7 +299,7 @@ class SignaledSession(OperatingSession):
         self.snapshoter.abort()
 
     def _ray_server_change_root(self, osp: OscPack):
-        new_root_str = osp.args[0]
+        new_root_str: str = osp.args[0]
         if self.path:
             self.send(*osp.error(), ray.Err.SESSION_LOCKED,
                       "impossible to change root. session %s is loaded"
