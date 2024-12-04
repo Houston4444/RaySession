@@ -1,6 +1,6 @@
 
 # Imports from standard library
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 # Imports from src/shared
 import ray
@@ -89,7 +89,7 @@ class ServerSender:
 
         return server.is_nsm_locked
 
-    def get_server(self) -> 'OscServerThread':
+    def get_server(self) -> 'Optional[OscServerThread]':
         if self.is_dummy:
             return None
         

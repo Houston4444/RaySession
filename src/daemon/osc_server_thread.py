@@ -8,7 +8,7 @@ import random
 import shutil
 import subprocess
 import time
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Optional
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
@@ -28,11 +28,8 @@ from xml_tools import XmlElement
 from signaler import Signaler
 from multi_daemon_file import MultiDaemonFile
 from daemon_tools import (
-    TemplateRoots,
-    CommandLineArgs,
-    Terminal,
-    RS,
-    get_code_root)
+    TemplateRoots, CommandLineArgs,
+    Terminal, RS, get_code_root)
 from terminal_starter import which_terminal
 
 if TYPE_CHECKING:
@@ -505,7 +502,7 @@ class OscServerThread(ClientCommunicating):
         instance = self
 
     @staticmethod
-    def get_instance() -> 'OscServerThread':
+    def get_instance() -> 'Optional[OscServerThread]':
         return instance
 
     @osp_method('/ray/server/gui_announce', 'sisii')
