@@ -356,8 +356,8 @@ class ClientData:
     jack_client_name = ''
     jack_naming = JackNaming.SHORT
     in_terminal = False
-    ray_hack: 'RayHack'
-    ray_net: 'RayNet'
+    ray_hack: 'Optional[RayHack]' = None
+    ray_net: 'Optional[RayNet]' = None
 
     @staticmethod
     def sisi():
