@@ -2,9 +2,6 @@
 # Imports from standard library
 from typing import TYPE_CHECKING
 
-# third party imports
-from qtpy.QtCore import QObject
-
 # Imports from src/shared
 import ray
 
@@ -16,11 +13,10 @@ if TYPE_CHECKING:
     from osc_server_thread import OscServerThread
 
 
-class ServerSender(QObject):
+class ServerSender:
     '''Abstract class giving some quick access to OSC server'''
     
     def __init__(self):
-        QObject.__init__(self)
         self.is_dummy = False
 
     def has_server(self) -> bool:
