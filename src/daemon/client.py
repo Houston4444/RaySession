@@ -105,6 +105,9 @@ class Client(ServerSender, ray.ClientData):
     launched_in_terminal = False
     process_drowned = False
     _process_start_time = 0.0
+    
+    ray_hack: ray.RayHack
+    ray_net: ray.RayNet
 
     def __init__(self, parent_session: 'SignaledSession'):
         ServerSender.__init__(self)
