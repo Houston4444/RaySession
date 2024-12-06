@@ -13,6 +13,7 @@ import ray
 
 # Local imports
 from gui_tools import CommandLineArgs
+from gui_tcp_thread import GuiTcpThread
 
 if TYPE_CHECKING:
     from gui_session import SignaledSession
@@ -203,7 +204,8 @@ class GuiServerThread(ServerThread):
         if (self.session is not None
                 and self.session.main_win is not None
                 and self.session.main_win.waiting_for_patchbay):
-            self.send(src_addr, '/ray/server/ask_for_patchbay')
+            self.send(src_addr, '/ray/server/ask_for_patchbay',
+                      GuiTcpThread.instance().url)
             self.session.main_win.waiting_for_patchbay = False
 
         self.signaler.daemon_announce.emit(
@@ -298,19 +300,7 @@ class GuiServerThread(ServerThread):
         self.signaler.client_progress.emit(*args)
         return True
 
-    @ray_method('/ray/gui/patchbay/announce', 'iii')
-    def _ray_gui_patchbay_announce(self, path, args, types, src_addr):
-        self.patchbay_addr = src_addr
-
-    @ray_method('/ray/gui/patchbay/update_portgroup', None)
-    def _patchbay_update_portgroup(self, path, args, types: str, src_addr):
-        if not types.startswith('siiis'):
-            return False
-
-        types_end = types.replace('siiis', '', 1)
-        for c in types_end:
-            if c != 's':
-                return False
+    
 
     def send(self, *args):
         if CommandLineArgs.debug:

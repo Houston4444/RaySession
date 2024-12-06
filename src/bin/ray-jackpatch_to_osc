@@ -2,9 +2,15 @@
 
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 src_path = Path(__file__).parent.parent
 pyjacklib_path = src_path.parent / 'pyjacklib'
 sys.path.insert(0, str(pyjacklib_path))
 sys.path.insert(0, str(src_path))
 
-import jack_patchbay_to_osc
+sys.path[0] = str(Path(__file__).parents[1] / 'jack_patchbay_to_osc')
+
+if TYPE_CHECKING:
+    import src.jack_patchbay_to_osc.jack_patchbay_to_osc
+else:
+    import jack_patchbay_to_osc

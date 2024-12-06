@@ -28,6 +28,7 @@ from jack_renaming_tools import group_belongs_to_client
 
 # Local imports
 from gui_server_thread import GuiServerThread
+from gui_tcp_thread import GuiTcpThread
 from gui_tools import RS, get_code_root
 
 if TYPE_CHECKING:
@@ -104,14 +105,14 @@ class RayPatchbayManager(PatchbayManager):
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
-        server = GuiServerThread.instance()
-        if not server:
+        tcp_server = GuiTcpThread.instance()
+        if not tcp_server:
             return
 
-        if server.patchbay_addr is None:
+        if tcp_server.patchbay_addr is None:
             return
 
-        server.send(server.patchbay_addr, *args)
+        tcp_server.send(tcp_server.patchbay_addr, *args)
 
     @staticmethod
     def send_to_daemon(*args):
@@ -584,7 +585,7 @@ class RayPatchbayManager(PatchbayManager):
             pass
 
     def patchbay_announce(self, jack_running: int, samplerate: int,
-                          buffer_size: int):
+                          buffer_size: int, tcp_url: str):
         if self._tools_widget is None:
             return
         

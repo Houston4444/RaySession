@@ -36,6 +36,7 @@ from gui_tools import (
     is_dark_theme, get_code_root, get_app_icon)
 from gui_client import TrashedClient
 from gui_server_thread import GuiServerThread
+from gui_tcp_thread import GuiTcpThread
 from utility_scripts import UtilityScriptLauncher
 
 # Import UIs made with Qt-Designer
@@ -821,7 +822,8 @@ class MainWindow(QMainWindow):
         height = rect.height()
 
         if yesno:
-            self.to_daemon('/ray/server/ask_for_patchbay')
+            self.to_daemon('/ray/server/ask_for_patchbay',
+                           GuiTcpThread.instance().url)
 
             patchbay_geom = RS.settings.value('MainWindow/patchbay_geometry')
             sizes = RS.settings.value('MainWindow/splitter_canvas_sizes')

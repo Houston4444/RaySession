@@ -7,6 +7,6 @@ from typing import TYPE_CHECKING
 sys.path[0] = str(Path(__file__).parents[1] / 'clients' / 'jackpatch')
 
 if TYPE_CHECKING:
-    from clients.jackpatch import jackpatch
+    from src.clients.jackpatch import jackpatch
 else:
     import jackpatch
