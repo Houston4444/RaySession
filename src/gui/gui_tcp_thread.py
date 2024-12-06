@@ -46,6 +46,7 @@ class GuiTcpThread(ServerThread):
         _instance = self
         
         self.stopping = False
+        self.patchbay_addr: Optional[Address] = None
     
     @staticmethod
     def instance() -> 'GuiTcpThread':
@@ -114,7 +115,9 @@ class GuiTcpThread(ServerThread):
     def stop(self):
         self.stopping = True
 
-        # if self.patchbay_addr:
-        #     self.send(self.patchbay_addr, '/ray/patchbay/gui_disannounce')
+
+        if self.patchbay_addr is not None:
+            self.send(
+                self.patchbay_addr, '/ray/patchbay/gui_disannounce', self.url)
 
         super().stop()

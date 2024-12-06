@@ -1,4 +1,5 @@
 
+import logging
 import time
 import tempfile
 import json
@@ -11,18 +12,20 @@ if TYPE_CHECKING:
     from jack_patchbay_to_osc import MainObject, TransportPosition
 
 
+_logger = logging.getLogger(__name__)
+
+
 class OscJackPatch(Server):
     SLOW_WAIT_TIME = 0.020
     SLOW_WAIT_NUM = 50
     
     def __init__(self, main_object: 'MainObject'):
         tcp_port = get_free_osc_port(4444, TCP)
-        print('Patchbay TCP port', tcp_port)
         
         Server.__init__(self, tcp_port, TCP)
         self.add_method('/ray/patchbay/add_gui', 'ss',
                         self._ray_patchbay_add_gui)
-        self.add_method('/ray/patchbay/gui_disannounce', '',
+        self.add_method('/ray/patchbay/gui_disannounce', 's',
                         self._ray_patchbay_gui_disannounce)
         self.add_method('/ray/patchbay/port/set_alias', 'sis',
                         self._ray_patchbay_port_set_alias)
@@ -63,12 +66,14 @@ class OscJackPatch(Server):
         self.add_gui(*args)
 
     def _ray_patchbay_gui_disannounce(self, path, args, types, src_addr: Address):
+        url: str = args[0]
+
         for gui_addr in self.gui_list:
-            if gui_addr.url == src_addr.url:
+            if gui_addr.url == url:
                 # possible because we break the loop
                 self.gui_list.remove(gui_addr)
                 break
-        
+
         if not self.gui_list:
             # no more GUI connected, no reason to exists anymore
             self._terminate = True
@@ -125,8 +130,18 @@ class OscJackPatch(Server):
         self.main_object.set_transport_wanted(args[0])
 
     def send_gui(self, *args):
+        rm_gui = list[Address]()
+        
         for gui_addr in self.gui_list:
-            self.send(gui_addr, *args)
+            try:
+                self.send(gui_addr, *args)
+            except OSError:
+                rm_gui.append(gui_addr)
+            except BaseException as e:
+                _logger.warning(str(e))
+        
+        for gui_addr in rm_gui:
+            self.gui_list.remove(gui_addr)
 
     def multi_send(self, src_addr_list, *args):
         for src_addr in src_addr_list:
