@@ -149,7 +149,8 @@ class FileCopier(ServerSender):
 
             self._is_active = False
             self._send_copy_state_to_gui(0)
-            self._abort_function(*self._next_args)
+            if self._abort_function is not None:
+                self._abort_function(*self._next_args)
             return
 
         # run next_function if copy is terminated
@@ -277,7 +278,7 @@ class FileCopier(ServerSender):
         self._start(src_dir, dest_dir, next_function,
                     abort_function, next_args)
 
-    def abort(self, abort_function: Callable =None, next_args=[]):
+    def abort(self, abort_function: Optional[Callable] =None, next_args=[]):
         if abort_function:
             self._abort_function = abort_function
             self._next_args = next_args

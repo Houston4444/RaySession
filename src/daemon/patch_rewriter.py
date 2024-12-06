@@ -45,8 +45,8 @@ def rewrite_jack_patch_files(
         
         for child in root:
             if child.tag == 'connection':
-                port_from: str = child.attrib.get('from')
-                port_to: str = child.attrib.get('to')
+                port_from: str = child.attrib.get('from', '')
+                port_to: str = child.attrib.get('to', '')
                 
                 if port_belongs_to_client(port_from, old_jack_name):
                     has_modifs = True

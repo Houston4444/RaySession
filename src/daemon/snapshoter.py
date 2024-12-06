@@ -210,9 +210,9 @@ class Snapshoter(QObject):
             _logger.error(str(e))
             return ray.Err.CREATE_FAILED
 
-    def _write_exclude_file(self) -> int:
+    def _write_exclude_file(self) -> ray.Err:
         if self.session.path is None:
-            return
+            return ray.Err.NO_SESSION_OPEN
         
         file_path = self.session.path / self._gitdir / self._exclude_path
 

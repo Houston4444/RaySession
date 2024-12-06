@@ -407,7 +407,7 @@ class RayPatchbayManager(PatchbayManager):
 
     def update_group_position(self, *args):
         view_number = args[0]        
-        gpos = GroupPos.from_arg_list(*args[1:])
+        gpos = GroupPos.from_arg_list(args[1:])
         view_dict = self.views.get(view_number)
         if view_dict is None:
             view_dict = self.views[view_number] = \

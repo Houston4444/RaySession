@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional, Union
 from pathlib import Path
 
 # third party imports
@@ -239,7 +239,10 @@ def verified_address_arg(arg: str) -> Address:
     raise argparse.ArgumentTypeError(addr_or_msg)
 
 def verified_address_from_port_arg(arg: str) -> Address:
-    addr_or_msg = verified_address_from_port(arg)
+    if not arg.isdigit():
+        raise argparse.ArgumentTypeError(arg)
+    
+    addr_or_msg = verified_address_from_port(int(arg))
     if isinstance(addr_or_msg, Address):
         return addr_or_msg
     raise argparse.ArgumentTypeError(addr_or_msg)
@@ -250,9 +253,9 @@ class CommandLineArgs(argparse.Namespace):
     hidden = False
     osc_port = 0
     findfreeport = True
-    control_url: Address = None
-    gui_url: Address = None
-    gui_port: Address = 0
+    control_url: Optional[Address] = None
+    gui_url: Optional[Address] = None
+    gui_port = 0
     gui_pid = 0
     config_dir = ''
     debug = False

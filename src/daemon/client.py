@@ -65,7 +65,7 @@ class Client(ServerSender, ray.ClientData):
     progress = 0
 
     # have to be modified by main thread for security
-    addr: Address = None
+    addr: Optional[Address] = None
     pid = 0
     pid_from_nsm = 0
     pending_command = ray.Command.NONE
@@ -99,6 +99,9 @@ class Client(ServerSender, ray.ClientData):
     launched_in_terminal = False
     process_drowned = False
     _process_start_time = 0.0
+    
+    ray_hack: ray.RayHack
+    ray_net: ray.RayNet
 
     def __init__(self, parent_session: 'SignaledSession'):
         ServerSender.__init__(self)
@@ -713,7 +716,7 @@ class Client(ServerSender, ray.ClientData):
         c = XmlElement(ET.SubElement(root, 'Client-Template'))
         self.write_xml_properties(c)
         c.set_str('template-name', template_name)
-        c.set_str('client_id', self.short_client_id())
+        c.set_str('client_id', self.short_client_id(self.client_id))
         
         if not self.is_running():
             c.set_bool('launched', False)
@@ -770,7 +773,7 @@ class Client(ServerSender, ray.ClientData):
             return
         self.session.message(message)
 
-    def get_jack_client_name(self):
+    def get_jack_client_name(self) -> str:
         if self.protocol is ray.Protocol.RAY_NET:
             # ray-net will use jack_client_name for template
             # quite dirty, but this is the easier way
@@ -1152,7 +1155,7 @@ class Client(ServerSender, ray.ClientData):
 
         return bool(not self.did_announce)
 
-    def is_capable_of(self, capability: str)->bool:
+    def is_capable_of(self, capability: str) -> bool:
         return bool(capability in self.capabilities)
 
     def gui_msg_style(self)->str:
@@ -1207,6 +1210,8 @@ class Client(ServerSender, ray.ClientData):
             return Path(self.session.get_short_path())
 
         spath = self.session.path
+        if spath is None:
+            return None
 
         if self.prefix_mode is ray.PrefixMode.SESSION_NAME:
             return spath / f'{self.session.name}.{self.client_id}'
@@ -1630,7 +1635,7 @@ class Client(ServerSender, ray.ClientData):
             if self.is_external:
                 os.kill(self.pid, signal.SIGTERM)
             elif self.is_ray_hack() and self.ray_hack.stop_sig != signal.SIGTERM.value:
-                os.kill(self._process.pid(), self.ray_hack.stop_sig)
+                os.kill(self._process.processId(), self.ray_hack.stop_sig)
             else:
                 self._process.terminate()
         else:
@@ -1877,6 +1882,8 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         client_files = list[Path]()
         project_path = self.get_project_path()
         spath = self.session.path
+        if spath is None:
+            return []
 
         if project_path.exists():
             client_files.append(project_path)
@@ -2006,9 +2013,9 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         template_dir = TemplateRoots.user_clients / template_name
         if template_dir.exists():
-            if os.access(template_dir, os.W_OK):
-                template_dir.rmdir()
-            else:
+            try:
+                shutil.rmtree(template_dir)
+            except:
                 self._send_error_to_caller(
                     OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
                     _translate('GUIMSG', 'impossible to remove %s !')
@@ -2219,6 +2226,13 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
     def server_announce(self, osp: OscPack, is_new: bool):
         client_name, capabilities, executable_path, \
             major, minor, pid = osp.args
+
+        client_name: str
+        capabilities: str
+        executable_path: str
+        major: int
+        minor: int
+        pid: int
 
         if self.pending_command is ray.Command.STOP:
             # assume to not answer to a dying client.

@@ -95,7 +95,7 @@ class MultiDaemonFile:
         element.setAttribute('session_path', str(self.session.path))
         element.setAttribute('pid', os.getpid())
         element.setAttribute('port', self.server.port)
-        element.setAttribute('user', os.getenv('USER'))
+        element.setAttribute('user', os.getenv('USER', ''))
         element.setAttribute('not_default',
                              int(bool(self.server.is_nsm_locked
                                       or self.server.not_default)))
@@ -280,11 +280,11 @@ class MultiDaemonFile:
             port = dxe.attribute('port')
 
             if net_daemon_id.isdigit():
-                daemon.net_daemon_id = net_daemon_id
+                daemon.net_daemon_id = int(net_daemon_id)
             if pid.isdigit():
                 daemon.pid = int(pid)
             if port.isdigit():
-                daemon.port = port
+                daemon.port = int(port)
 
             if not self._pid_exists(daemon.pid):
                 has_dirty_pid = True

@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 import tempfile
 import time
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from patchbay.patchcanvas.patshared import (
     PortgroupsDict, from_json_to_str, PortTypesViewFlag, GroupPos,
@@ -74,7 +74,7 @@ class CanvasSaver(ServerSender):
 
                 elif 'group_positions' in json_contents.keys():
                     # config file older than 0.15.0
-                    gpos_list: list[GroupPos] = \
+                    gpos_list: list[dict[str, Any]] = \
                         json_contents['group_positions']
                     gpos_version = _get_version_tuple_json_dict(json_contents)
                     
@@ -279,7 +279,7 @@ class CanvasSaver(ServerSender):
         try:
             json_dict: dict[str, Union[int, str, list[str]]] = \
                 json.loads(args[0])
-            view_num = json_dict['view_num']
+            view_num: int = json_dict['view_num']
             ptv = PortTypesViewFlag.from_config_str(json_dict['ptv'])
             presents = set(json_dict['presents'])
         except BaseException as e:
@@ -395,7 +395,7 @@ class CanvasSaver(ServerSender):
         
         for view_num, view_data in self.views_session.items():
             for ptv_dict in view_data.ptvs.values():
-                group_name_change_list = list[tuple(str, str)]()
+                group_name_change_list = list[tuple[str, str]]()
                 
                 for group_name in ptv_dict.keys():
                     if group_belongs_to_client(group_name, old_jack_name):

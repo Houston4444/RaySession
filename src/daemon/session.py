@@ -79,7 +79,7 @@ class Session(ServerSender):
         self.step_scripter = StepScripter(self)
         self.canvas_saver = CanvasSaver(self)
         
-        self.osc_src_addr: Address = None
+        self.osc_src_addr: Optional[Address] = None
         
         self._time_at_open = 0
 
@@ -637,7 +637,8 @@ class OperatingSession(Session):
         self.osc_args.clear()
 
     def _wait_and_go_to(
-            self, duration: int, follow: Union[tuple, list, Callable],
+            self, duration: int,
+            follow: Union[tuple[Callable], list[Callable], Callable],
             wait_for: ray.WaitFor, redondant=False):
         self.timer.stop()
 
@@ -645,7 +646,7 @@ class OperatingSession(Session):
         del self.timer
         self.timer = QTimer()
 
-        if type(follow) in (list, tuple):
+        if isinstance(follow, (list, tuple)):
             if len(follow) == 0:
                 return
 
@@ -653,6 +654,8 @@ class OperatingSession(Session):
                 follow = follow[0]
             else:
                 follow = functools.partial(follow[0], *follow[1:])
+
+        # follow: Callable
 
         if wait_for is ray.WaitFor.SCRIPT_QUIT:
             if self.step_scripter.is_running():

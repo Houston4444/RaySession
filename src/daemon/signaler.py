@@ -16,7 +16,7 @@ class Signaler(QObject):
     def instance():
         global instance
 
-        if not instance:
+        if instance is None:
             instance = Signaler()
         return instance
 
