@@ -20,7 +20,7 @@ from patchbay.patchcanvas.patshared import GroupPos
 # Imports from src/shared
 from osclib import (
     Address, ServerThread, make_method, Message, OscPack,
-    are_on_same_machine, are_same_osc_port)
+    are_on_same_machine, are_same_osc_port, send, TCP)
 import ray
 from xml_tools import XmlElement
 
@@ -584,15 +584,16 @@ class OscServerThread(ClientCommunicating):
                     good_port = False
 
                     try:
-                        patchbay_addr = Address(int(port_str))
+                        patchbay_addr = Address(int(port_str), proto=TCP)
                         good_port = True
                     except:
                         patchbay_addr = None
                         sys.stderr.write(
-                            'port given for patchbay %s is not a valid osc port')
+                            f'port given for patchbay {port_str} '
+                            'is not a valid osc TCP port')
 
                     if good_port:
-                        self.send(patchbay_addr, '/ray/patchbay/add_gui',
+                        send(patchbay_addr, '/ray/patchbay/add_gui',
                                   osp.src_addr.url, gui_tcp_url)
                         return False
                     break

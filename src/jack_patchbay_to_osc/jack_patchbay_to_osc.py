@@ -188,15 +188,16 @@ class MainObject:
             sys.exit(1)
     
     def remove_existence_file(self):
-        if not os.path.exists(EXISTENCE_PATH + self._daemon_port):
+        existence_path = EXISTENCE_PATH / self._daemon_port
+        if not existence_path.exists():
             return 
 
         try:
-            os.remove(EXISTENCE_PATH + self._daemon_port)
+            existence_path.unlink()
         except PermissionError:
             sys.stderr.write(
-                'ray-patchbay_to_osc: Error, unable to remove %s\n'
-                % EXISTENCE_PATH + self._daemon_port)
+                'ray-patchbay_to_osc: Error, '
+                f'unable to remove {existence_path}\n')
     
     @classmethod
     def signal_handler(cls, sig: int, frame):

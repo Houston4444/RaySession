@@ -123,6 +123,7 @@ if True:
     time.sleep(0.002)
 
     server.stop()
+    tcp_server.stop()
     session.quit()
     del session
     del app
