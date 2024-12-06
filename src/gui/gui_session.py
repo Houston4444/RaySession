@@ -5,6 +5,7 @@ from typing import Optional
 
 # third party imports
 from qtpy.QtWidgets import QApplication
+from gui_tcp_thread import GuiTcpThread
 
 # Imports from HoustonPatchbay
 from patchbay.base_elements import TransportPosition
@@ -42,6 +43,9 @@ class Session:
 
         server = GuiServerThread.instance()
         server.start()
+        
+        tcp_server = GuiTcpThread.instance()
+        tcp_server.start()
 
         RS.set_signaler(self.signaler)
 
@@ -68,6 +72,7 @@ class Session:
         self.daemon_manager.finish_init()
         self.patchbay_manager.finish_init()
         server.finish_init(self)
+        tcp_server.finish_init(self)
         self.main_win.show()
 
         # display donations dialog under breizh conditions

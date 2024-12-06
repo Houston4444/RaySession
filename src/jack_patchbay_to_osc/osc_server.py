@@ -4,10 +4,11 @@ import tempfile
 import json
 from typing import TYPE_CHECKING
     
-from shared.osclib import Server, Address, are_on_same_machine
+from osclib import (
+    Server, Address, are_on_same_machine, get_free_osc_port, TCP)
 
 if TYPE_CHECKING:
-    from . import MainObject, TransportPosition
+    from jack_patchbay_to_osc import MainObject, TransportPosition
 
 
 class OscJackPatch(Server):
@@ -15,8 +16,11 @@ class OscJackPatch(Server):
     SLOW_WAIT_NUM = 50
     
     def __init__(self, main_object: 'MainObject'):
-        Server.__init__(self)
-        self.add_method('/ray/patchbay/add_gui', 's',
+        tcp_port = get_free_osc_port(4444, TCP)
+        print('Patchbay TCP port', tcp_port)
+        
+        Server.__init__(self, tcp_port, TCP)
+        self.add_method('/ray/patchbay/add_gui', 'ss',
                         self._ray_patchbay_add_gui)
         self.add_method('/ray/patchbay/gui_disannounce', '',
                         self._ray_patchbay_gui_disannounce)
@@ -56,9 +60,9 @@ class OscJackPatch(Server):
         self._tmp_gui_url = gui_url
     
     def _ray_patchbay_add_gui(self, path, args, types, src_addr):
-        self.add_gui(args[0])
+        self.add_gui(*args)
 
-    def _ray_patchbay_gui_disannounce(self, path, args, types, src_addr):
+    def _ray_patchbay_gui_disannounce(self, path, args, types, src_addr: Address):
         for gui_addr in self.gui_list:
             if gui_addr.url == src_addr.url:
                 # possible because we break the loop
@@ -253,30 +257,64 @@ class OscJackPatch(Server):
 
         self.multi_send(src_addr_list, '/ray/gui/patchbay/big_packets', 1)
 
-    def add_gui(self, gui_url):
-        gui_addr = Address(gui_url)
-        if gui_addr is None:
+    def send_distant_data2(self, src_addr_list):
+        self.multi_send(src_addr_list, '/ray/gui/patchbay/big_packets', 0)
+        
+        for port in self.port_list:
+            self.multi_send(src_addr_list, '/ray/gui/patchbay/port_added',
+                            port.name, port.type, port.flags, port.uuid)
+            
+        for connection in self.connection_list:
+            self.multi_send(src_addr_list,
+                            '/ray/gui/patchbay/connection_added',
+                            connection[0], connection[1])
+            
+        for metadata in self.metadata_list:
+            self.multi_send(src_addr_list,
+                            '/ray/gui/patchbay/metadata_updated',
+                            metadata['uuid'], metadata['key'],
+                            metadata['value'])
+            
+        if self.main_object.alsa_mng is not None:
+            alsa_mng = self.main_object.alsa_mng
+            for port in alsa_mng.parse_ports_and_flags():
+                self.multi_send(src_addr_list, '/ray/gui/patchbay/port_added',
+                                port.name, port.type, port.flags, port.uuid)
+                
+            for conn in alsa_mng.parse_connections():
+                self.multi_send(
+                    src_addr_list,
+                    '/ray/gui/patchbay/connection_added',
+                    *conn)
+                
+        self.multi_send(src_addr_list, '/ray/gui/patchbay/big_packets', 1)
+
+    def add_gui(self, gui_url: str, gui_tcp_url: str):
+        gui_tcp_addr = Address(gui_tcp_url)
+        if gui_tcp_addr is None:
             return
         
-        self.send(gui_addr, '/ray/gui/patchbay/announce',
+        self.send(gui_tcp_addr, '/ray/gui/patchbay/announce',
                   int(self.main_object.jack_running),
                   self.main_object.samplerate,
-                  self.main_object.buffer_size)
+                  self.main_object.buffer_size,
+                  self.url)
 
-        self.send(gui_addr, '/ray/gui/patchbay/dsp_load',
+        self.send(gui_tcp_addr, '/ray/gui/patchbay/dsp_load',
                   self.main_object.last_sent_dsp_load)
 
         tpos = self.main_object.last_transport_pos
-        self.send(gui_addr, '/ray/gui/patchbay/transport_position',
+        self.send(gui_tcp_addr, '/ray/gui/patchbay/transport_position',
                   tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
                   tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
 
-        if are_on_same_machine(gui_url, self.url):
-            self.send_local_data([gui_addr])
-        else:
-            self.send_distant_data([gui_addr])
+        # if are_on_same_machine(gui_tcp_url, self.url):
+        #     self.send_local_data([gui_tcp_addr])
+        # else:
+        #     self.send_distant_data([gui_tcp_addr])
+        self.send_distant_data2([gui_tcp_addr])
         
-        self.gui_list.append(gui_addr)
+        self.gui_list.append(gui_tcp_addr)
 
     def server_restarted(self):
         self.send_gui('/ray/gui/patchbay/server_started')
@@ -291,11 +329,13 @@ class OscJackPatch(Server):
                 local_guis.append(gui_addr)
             else:
                 distant_guis.append(gui_addr)
-                
-        if local_guis:
-            self.send_local_data(local_guis)
-        if distant_guis:
-            self.send_distant_data(distant_guis)
+        
+        self.send_distant_data2(self.gui_list)
+        
+        # if local_guis:
+        #     self.send_local_data(local_guis)
+        # if distant_guis:
+        #     self.send_distant_data2(distant_guis)
 
     def client_name_and_uuid(self, client_name: str, uuid: int):
         self.send_gui('/ray/gui/patchbay/client_name_and_uuid',

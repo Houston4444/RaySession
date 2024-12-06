@@ -645,7 +645,7 @@ class Client(ServerSender, ray.ClientData):
             if xml_file.is_dir():
                 # should not be a dir, remove it !
                 _logger.info(
-                    'removing {xml_file} because it is a dir, it must be a file')
+                    f'removing {xml_file} because it is a dir, it must be a file')
                 try:
                     shutil.rmtree(xml_file)
                 except:
@@ -2169,9 +2169,6 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         # used for Carla links dir
 
         if template_save is ray.Template.NONE:
-            if self.prefix_mode is not ray.PrefixMode.SESSION_NAME:
-                return
-
             spath = self.session.root / new_session_full_name
 
         elif template_save is ray.Template.RENAME:
@@ -2209,6 +2206,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             old_client_id = X_CLIENT_ID_X
             old_client_links_dir = X_CLIENT_LINKS_DIR_X
 
+        print('narroufpf', self.client_id)
         old_prefix = old_session_name
         new_prefix = new_session_name
         if self.prefix_mode is ray.PrefixMode.CLIENT_NAME:

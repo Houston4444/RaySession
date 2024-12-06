@@ -9,6 +9,10 @@ from typing import Optional
 import warnings
 import threading
 import time
+from pathlib import Path
+
+sys.path.insert(1, str(Path(__file__).parents[2] / 'pyjacklib'))
+sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
 # check ALSA LIB
 try:
@@ -20,19 +24,18 @@ try:
 except:
     ALSA_LIB_OK = False
 
+from proc_name import set_proc_name
 import jacklib
 from jacklib.helpers import c_char_p_p_to_list
 from jacklib.enums import JackOptions, JackPortFlags, JackMetadata
 
-from .osc_server import OscJackPatch
-
-    
+from osc_server import OscJackPatch
 
 PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1
 PORT_TYPE_MIDI = 2
 
-EXISTENCE_PATH = '/tmp/RaySession/patchbay_daemons/'
+EXISTENCE_PATH = Path('/tmp/RaySession/patchbay_daemons')
 
 
 
@@ -145,7 +148,8 @@ class MainObject:
         self.last_sent_dsp_load = 0
         self.max_dsp_since_last_sent = 0.00
         self._waiting_jack_client_open = True
-        self.last_transport_pos = TransportPosition(0, False, False, 0, 0, 0, 0.0)
+        self.last_transport_pos = TransportPosition(
+            0, False, False, 0, 0, 0, 0.0)
 
         self.osc_server = OscJackPatch(self)
         self.osc_server.set_tmp_gui_url(gui_url)
@@ -171,21 +175,17 @@ class MainObject:
         return value
     
     def write_existence_file(self):
-        if not os.path.isdir(EXISTENCE_PATH):
-            os.makedirs(EXISTENCE_PATH)
+        EXISTENCE_PATH.mkdir(parents=True, exist_ok=True)
         
         try:
-            file = open(EXISTENCE_PATH + self._daemon_port, 'w')
+            with open(EXISTENCE_PATH / self._daemon_port, 'w') as file:
+                contents = f'pid:{os.getpid()}port:{self.osc_server.port}\n'
+                file.write(contents)
+
         except PermissionError:
             sys.stderr.write(
                 'ray-patchbay_to_osc: Error, no permission for existence file\n')
             sys.exit(1)
-
-        contents = 'pid:%i\n' % os.getpid()
-        contents += 'port:%i\n' % self.osc_server.port
-
-        file.write(contents)
-        file.close()
     
     def remove_existence_file(self):
         if not os.path.exists(EXISTENCE_PATH + self._daemon_port):
@@ -225,8 +225,8 @@ class MainObject:
             else:
                 self.client_list.append({'name': client_name, 'uuid': uuid})
     
-    def add_gui(self, gui_url: str):
-        self.osc_server.add_gui(gui_url)
+    def add_gui(self, gui_url: str, gui_tcp_url: str):
+        self.osc_server.add_gui(gui_url, gui_tcp_url)
     
     def check_jack_client_responding(self):
         for i in range(100): # JACK has 5s to answer
@@ -606,26 +606,27 @@ def main_process():
     args = sys.argv.copy()
     daemon_port = ''
     gui_url = ''
+    gui_tcp_url = ''
 
     if args:
         this_exec = args.pop(0)
-
     if args:
         daemon_port = args.pop(0)
-    
     if args:
-        gui_url = args[0]
+        gui_url = args.pop(0)
+    if args:
+        gui_tcp_url = args.pop(0)
     
     main_object = MainObject(daemon_port, gui_url)
-
-    for gui_url in args:
-        main_object.add_gui(gui_url)
+    main_object.add_gui(gui_url, gui_tcp_url)
     
     main_object.start_loop()
     main_object.exit()
 
 
 if True:
+    set_proc_name('ray-jack_patchbay_to_osc')
+    
     # prevent deprecation warnings python messages
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     

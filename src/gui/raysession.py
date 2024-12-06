@@ -9,7 +9,7 @@ from pathlib import Path
 
 root_path = Path(__file__).parent.parent.parent
 
-# import libs from submodules and shared
+# allow libs to be imported from submodules and shared
 sys.path.insert(1, str(root_path / 'HoustonPatchbay'))
 sys.path.insert(1, str(root_path / 'pyjacklib'))
 sys.path.insert(1, str(root_path / 'src' / 'shared'))
@@ -24,11 +24,13 @@ from qtpy.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo
 
 # Imports from src/shared
 import ray
+from proc_name import set_proc_name
 
 # Local imports
 from gui_tools import (ArgParser, CommandLineArgs,
                        init_gui_tools, get_code_root)
 from gui_server_thread import GuiServerThread
+from gui_tcp_thread import GuiTcpThread
 from gui_session import SignaledSession
 
 # prevent to not find icon at startup
@@ -53,6 +55,8 @@ def signal_handler(sig, frame):
         session.daemon_manager.stop()
 
 if True:
+    set_proc_name(ray.APP_TITLE.lower())
+    
     # set Qt Application
     app = QApplication(sys.argv)
     app.setApplicationName(ray.APP_TITLE)
@@ -110,6 +114,7 @@ if True:
 
     #build session
     server = GuiServerThread()
+    tcp_server = GuiTcpThread()
     session = SignaledSession()
 
     app.exec()

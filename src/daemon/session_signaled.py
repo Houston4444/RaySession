@@ -280,8 +280,9 @@ class SignaledSession(OperatingSession):
         server = self.get_server()
         if server is None:
             return
-        QProcess.startDetached('ray-jackpatch_to_osc',
-                               [str(server.port), osp.src_addr.url])
+        QProcess.startDetached(
+            'ray-jackpatch_to_osc',
+            [str(server.port), osp.src_addr.url, osp.args[0]])
 
     def _ray_server_abort_copy(self, osp: OscPack):
         self.file_copier.abort()
