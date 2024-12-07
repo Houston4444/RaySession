@@ -17,7 +17,7 @@ class OscJackPatch(Server):
         tcp_port = get_free_osc_port(4444, TCP)
         
         Server.__init__(self, tcp_port, TCP)
-        self.add_method('/ray/patchbay/add_gui', 'ss',
+        self.add_method('/ray/patchbay/add_gui', 's',
                         self._ray_patchbay_add_gui)
         self.add_method('/ray/patchbay/gui_disannounce', 's',
                         self._ray_patchbay_gui_disannounce)
@@ -57,7 +57,7 @@ class OscJackPatch(Server):
         self._tmp_gui_url = gui_url
     
     def _ray_patchbay_add_gui(self, path, args):
-        self.add_gui(*args)
+        self.add_gui(args[0])
 
     def _ray_patchbay_gui_disannounce(self, path, args):
         url: str = args[0]

@@ -15,11 +15,12 @@ import xml.etree.ElementTree as ET
 # third party imports
 from qtpy.QtCore import QCoreApplication
 
+# Imports from HoustonPatchbay
 from patchbay.patchcanvas.patshared import GroupPos
 
 # Imports from src/shared
 from osclib import (
-    Address, ServerThread, make_method, Message, OscPack,
+    Address, ServerThread, get_net_url, make_method, Message, OscPack,
     are_on_same_machine, are_same_osc_port, send, TCP)
 import ray
 from xml_tools import XmlElement
@@ -91,9 +92,11 @@ class ClientCommunicating(ServerThread):
     '''Contains NSM protocol.
     OSC paths have to be never changed.'''
     
-    def __init__(self, session: 'SignaledSession', osc_num=0):
+    def __init__(self, session: 'SignaledSession', osc_num=0, tcp_port=0):
         ServerThread.__init__(self, osc_num)
         self.session = session
+        self.tcp_port = tcp_port
+        'the port number of the tcp_server.'
 
         self._nsm_locker_url = ''
         self._net_master_daemon_url = ''
@@ -377,8 +380,10 @@ class OscServerThread(ClientCommunicating):
     key: OSC path
     value: minimum number of arguments'''
     
-    def __init__(self, session, osc_num=0):
-        ClientCommunicating.__init__(self, session, osc_num)
+    def __init__(self, session, osc_num=0, tcp_port=0):
+        print('atchcoup', tcp_port)
+        ClientCommunicating.__init__(
+            self, session, osc_num=osc_num, tcp_port=tcp_port)
 
         self._OPTIONS_DICT = {
             'save_from_client': ray.Option.SAVE_FROM_CLIENT,
@@ -594,7 +599,7 @@ class OscServerThread(ClientCommunicating):
 
                     if good_port:
                         send(patchbay_addr, '/ray/patchbay/add_gui',
-                                  osp.src_addr.url, gui_tcp_url)
+                             osp.src_addr.url, gui_tcp_url)
                         return False
                     break
 
@@ -1315,9 +1320,11 @@ class OscServerThread(ClientCommunicating):
         gui_addr = GuiAdress(url)
         gui_addr.gui_pid = gui_pid
 
+        tcp_url = get_net_url(self.tcp_port, protocol=TCP)
+
         self.send(gui_addr, '/ray/gui/server/announce', ray.VERSION,
                   self.server_status.value, self.options.value,
-                  str(self.session.root), int(is_net_free))
+                  str(self.session.root), int(is_net_free), tcp_url)
 
         self.send(gui_addr, '/ray/gui/server/status',
                   self.server_status.value)

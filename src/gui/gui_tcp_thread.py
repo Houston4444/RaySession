@@ -47,6 +47,7 @@ class GuiTcpThread(ServerThread):
         
         self.stopping = False
         self.patchbay_addr: Optional[Address] = None
+        self.daemon_addr: Optional[Address] = None
     
     @staticmethod
     def instance() -> 'GuiTcpThread':
@@ -108,7 +109,13 @@ class GuiTcpThread(ServerThread):
                 self.patchbay_addr, '/ray/patchbay/gui_disannounce', self.url)
 
         super().stop()
-        
+    
+    def set_daemon_tcp_url(self, url: str):
+        try:
+            self.daemon_addr = Address(url)
+        except:
+            _logger.error(f'Failed to instantiate Address from url {url}')
+    
     def send_patchbay_daemon(self, *args):
         if self.patchbay_addr is None:
             return
