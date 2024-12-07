@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from patchbay.patchcanvas.patshared import GroupPos
 
 # Imports from src/shared
-from osclib import ServerThread, make_method
+from osclib import ServerThread, get_net_url, make_method, TCP
 import ray
 
 # Local imports
@@ -171,18 +171,23 @@ class GuiServerThread(ServerThread):
         elif reply_path == '/ray/server/abort_parrallel_copy':
             self.signaler.parrallel_copy_aborted.emit()
 
-    @ray_method('/ray/gui/server/announce', 'siisi')
+    @ray_method('/ray/gui/server/announce', 'siisis')
     def _server_announce(self, path, args, types, src_addr):
         if self.daemon_manager.is_announced():
             return
 
-        version, server_status_int, options, session_root, is_net_free = args
+        (version, server_status_int, options,
+         session_root, is_net_free, tcp_url) = args
+        
+        tcp_server = GuiTcpThread.instance()
+        if tcp_server is not None:
+            tcp_server.set_daemon_tcp_url(tcp_url)
 
         if (self.session is not None
                 and self.session.main_win is not None
                 and self.session.main_win.waiting_for_patchbay):
-            self.send(src_addr, '/ray/server/ask_for_patchbay',
-                      GuiTcpThread.instance().url)
+            tcp_url = get_net_url(GuiTcpThread.instance().port, protocol=TCP)
+            self.send(src_addr, '/ray/server/ask_for_patchbay', tcp_url)
             self.session.main_win.waiting_for_patchbay = False
 
         self.signaler.daemon_announce.emit(

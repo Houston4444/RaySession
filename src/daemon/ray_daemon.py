@@ -31,6 +31,7 @@ from daemon_tools import (
     get_code_root, init_daemon_tools, RS,
     CommandLineArgs, ArgParser, Terminal)
 from osc_server_thread import OscServerThread
+from tcp_server_thread import TcpServerThread
 from multi_daemon_file import MultiDaemonFile
 from session_signaled import SignaledSession
 
@@ -76,7 +77,7 @@ if True:
     # manage session_root
     session_root = CommandLineArgs.session_root
     if not session_root:
-        session_root = str(Path(os.getenv('HOME', ''))
+        session_root = str(Path.home()
                            / _translate('daemon', 'Ray Network Sessions'))
 
     session_root_path = Path(session_root)
@@ -99,21 +100,28 @@ if True:
     # create session
     session = SignaledSession(session_root_path)
 
+    tcp_server = TcpServerThread(session)
+    tcp_server.start()
+
     # create and start server
     if CommandLineArgs.findfreeport:
-        server = OscServerThread(session,
-                                 get_free_osc_port(
-                                     CommandLineArgs.osc_port))
+        server = OscServerThread(
+            session,
+            osc_num=get_free_osc_port(CommandLineArgs.osc_port),
+            tcp_port=tcp_server.port)
     else:
         if is_osc_port_free(CommandLineArgs.osc_port):
-            server = OscServerThread(session, CommandLineArgs.osc_port)
+            server = OscServerThread(
+                session,
+                osc_num=CommandLineArgs.osc_port,
+                tcp_port=tcp_server.port)
         else:
             sys.stderr.write(
                 _translate('daemon',
                            'port %i is not free, try another one\n')
                 % CommandLineArgs.osc_port)
             sys.exit()
-    server.start()
+    server.start()    
 
     if CommandLineArgs.hidden:
         server.not_default = True
@@ -188,8 +196,9 @@ if True:
 
     RS.settings.sync()
 
-    # stop the server
+    # stop the servers
     server.stop()
+    tcp_server.stop()
 
     del server
     del session
