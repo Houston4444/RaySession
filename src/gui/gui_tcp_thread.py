@@ -1,6 +1,5 @@
+import logging
 from typing import TYPE_CHECKING, Optional
-
-from patchbay.patchcanvas.patshared import GroupPos
 
 from osclib import ServerThread, get_free_osc_port, TCP, make_method, Address
 
@@ -8,6 +7,7 @@ if TYPE_CHECKING:
     from gui_session import SignaledSession
 
 
+_logger = logging.getLogger(__name__)
 _instance: 'Optional[GuiTcpThread]' = None
 
 
@@ -39,7 +39,7 @@ def ray_method(path, types):
 
 class GuiTcpThread(ServerThread):
     def __init__(self):
-        port = get_free_osc_port(16187, TCP)
+        port = get_free_osc_port(5644, TCP)
         ServerThread.__init__(self, port, TCP)
 
         global _instance
@@ -65,28 +65,25 @@ class GuiTcpThread(ServerThread):
         # _ray_gui_session_name
 
         for path_types in (
-            ('/error', 'sis'),
-            ('/minor_error', 'sis'),
-            ('/ray/gui/patchbay/port_added', 'siih'),
-            ('/ray/gui/patchbay/port_renamed', 'ss'),
-            ('/ray/gui/patchbay/port_removed', 's'),
-            ('/ray/gui/patchbay/connection_added', 'ss'),
-            ('/ray/gui/patchbay/connection_removed', 'ss'),
-            ('/ray/gui/patchbay/server_stopped', ''),
-            ('/ray/gui/patchbay/metadata_updated', 'hss'),
-            ('/ray/gui/patchbay/dsp_load', 'i'),
-            ('/ray/gui/patchbay/add_xrun', ''),
-            ('/ray/gui/patchbay/buffer_size', 'i'),
-            ('/ray/gui/patchbay/sample_rate', 'i'),
-            ('/ray/gui/patchbay/server_started', ''),
-            ('/ray/gui/patchbay/big_packets', 'i'),
-            ('/ray/gui/patchbay/server_lose', ''),
-            ('/ray/gui/patchbay/fast_temp_file_memory', 's'),
-            ('/ray/gui/patchbay/fast_temp_file_running', 's'),
-            ('/ray/gui/patchbay/client_name_and_uuid', 'sh'),
-            ('/ray/gui/patchbay/transport_position', 'iiiiiif')):
-                self.add_method(path_types[0], path_types[1],
-                                self._generic_callback)
+                ('/ray/gui/patchbay/port_added', 'siih'),
+                ('/ray/gui/patchbay/port_renamed', 'ss'),
+                ('/ray/gui/patchbay/port_removed', 's'),
+                ('/ray/gui/patchbay/connection_added', 'ss'),
+                ('/ray/gui/patchbay/connection_removed', 'ss'),
+                ('/ray/gui/patchbay/server_stopped', ''),
+                ('/ray/gui/patchbay/metadata_updated', 'hss'),
+                ('/ray/gui/patchbay/dsp_load', 'i'),
+                ('/ray/gui/patchbay/add_xrun', ''),
+                ('/ray/gui/patchbay/buffer_size', 'i'),
+                ('/ray/gui/patchbay/sample_rate', 'i'),
+                ('/ray/gui/patchbay/server_started', ''),
+                ('/ray/gui/patchbay/big_packets', 'i'),
+                ('/ray/gui/patchbay/server_lose', ''),
+                ('/ray/gui/patchbay/fast_temp_file_memory', 's'),
+                ('/ray/gui/patchbay/client_name_and_uuid', 'sh'),
+                ('/ray/gui/patchbay/transport_position', 'iiiiiif')):
+            self.add_method(path_types[0], path_types[1],
+                            self._generic_callback)
         
     def _generic_callback(self, path, args, types, src_addr):        
         if self.stopping:
@@ -101,16 +98,6 @@ class GuiTcpThread(ServerThread):
     @ray_method('/ray/gui/patchbay/announce', 'iiis')
     def _ray_gui_patchbay_announce(self, path, args, types, src_addr):
         self.patchbay_addr = Address(args[3])
-
-    @ray_method('/ray/gui/patchbay/update_portgroup', None)
-    def _patchbay_update_portgroup(self, path, args, types: str, src_addr):
-        if not types.startswith('siiis'):
-            return False
-
-        types_end = types.replace('siiis', '', 1)
-        for c in types_end:
-            if c != 's':
-                return False
     
     def stop(self):
         self.stopping = True
@@ -121,3 +108,17 @@ class GuiTcpThread(ServerThread):
                 self.patchbay_addr, '/ray/patchbay/gui_disannounce', self.url)
 
         super().stop()
+        
+    def send_patchbay_daemon(self, *args):
+        if self.patchbay_addr is None:
+            return
+        
+        try:
+            self.send(self.patchbay_addr, *args)
+        except OSError:
+            _logger.warning(
+                'Failed to send message to patchbay daemon '
+                f'{self.patchbay_addr.url}')
+            self.patchbay_addr = None
+        except BaseException as e:
+            _logger.error(str(e))

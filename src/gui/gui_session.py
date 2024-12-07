@@ -549,6 +549,3 @@ class SignaledSession(Session):
 
     def _ray_gui_patchbay_fast_temp_file_memory(self, path, args):
         self.patchbay_manager.fast_temp_file_memory(*args)
-
-    def _ray_gui_patchbay_fast_temp_file_running(self, path, args):
-        self.patchbay_manager.fast_temp_file_running(*args)

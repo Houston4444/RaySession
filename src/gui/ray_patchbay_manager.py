@@ -20,6 +20,7 @@ from patchbay import (
     CanvasMenu,
     patchcanvas
 )
+from patchbay.patchcanvas.patshared import ViewData
 
 # Imports from src/shared
 import ray
@@ -109,10 +110,7 @@ class RayPatchbayManager(PatchbayManager):
         if not tcp_server:
             return
 
-        if tcp_server.patchbay_addr is None:
-            return
-
-        tcp_server.send(tcp_server.patchbay_addr, *args)
+        tcp_server.send_patchbay_daemon(*args)
 
     @staticmethod
     def send_to_daemon(*args):
@@ -409,14 +407,15 @@ class RayPatchbayManager(PatchbayManager):
     def update_group_position(self, *args):
         view_number = args[0]        
         gpos = GroupPos.from_arg_list(args[1:])
-        view_dict = self.views.get(view_number)
-        if view_dict is None:
-            view_dict = self.views[view_number] = \
-                dict[PortTypesViewFlag, dict[str, GroupPos]]()
+        view_data = self.views.get(view_number)
         
-        ptv_dict = view_dict.get(gpos.port_types_view)
+        if view_data is None:
+            view_data = self.views[view_number] = ViewData(
+                gpos.port_types_view)
+        
+        ptv_dict = view_data.ptvs.get(gpos.port_types_view)
         if ptv_dict is None:
-            ptv_dict = view_dict[gpos.port_types_view] = \
+            ptv_dict = view_data.ptvs[gpos.port_types_view] = \
                 dict[str, GroupPos]()
                 
         ptv_dict[gpos.group_name] = gpos
@@ -425,7 +424,8 @@ class RayPatchbayManager(PatchbayManager):
                 and gpos.port_types_view is self.port_types_view):
             group = self.get_group_from_name(gpos.group_name)
             if group is not None:
-                group.set_group_position(gpos)
+                group.set_group_position(
+                    gpos, redraw=PortMode.BOTH, restore=PortMode.BOTH)
 
     def update_portgroup(self, *args):
         pg_mem = PortgroupMem.from_arg_list(args)
@@ -482,7 +482,6 @@ class RayPatchbayManager(PatchbayManager):
                 f"Failed to load tmp file {temp_path} to get canvas positions")
             return
 
-
         pg_memory = canvas_data.get('portgroups')
         starting = pg_memory is not None
 
@@ -503,84 +502,6 @@ class RayPatchbayManager(PatchbayManager):
         if starting or self.view_number not in self.views.keys():
             self.view_number = self.views.first_view_num()
         self.change_view(self.view_number)
-
-    def fast_temp_file_running(self, temp_path: str):
-        '''receives a .json file path from patchbay daemon with all ports,
-        connections and jack metadatas'''
-            
-        patchbay_data = self._get_json_contents_from_path(temp_path)
-        if not patchbay_data:
-            sys.stderr.write(
-                "RaySession::Failed to load tmp file %s to get JACK ports\n"
-                % temp_path)
-            return
-
-        self.clear_all()
-
-        # optimize_operation allow to not redraw group at each port added.
-        # however, if there is no group position
-        # (i.e. if there is no config at all), it is prefferable to
-        # know where finish the group boxes before to add another one.
-        
-        # very fast operation means that nothing is done in the patchcanvas
-        # everything stays here in this file.
-        has_group_positions = False
-        for gpos in self.views.iter_group_poses():
-            has_group_positions = True
-            break
-        
-        if has_group_positions:
-            self.optimize_operation(True)
-            self._set_very_fast_operation(True)
-
-        for key in patchbay_data.keys():
-            if key == 'ports':
-                p: dict[str, Any]
-                for p in patchbay_data[key]:
-                    self.add_port(p.get('name'), p.get('type'),
-                                  p.get('flags'), p.get('uuid'))
-
-            elif key == 'connections':
-                c: dict[str, Any]
-                for c in patchbay_data[key]:
-                    self.add_connection(c.get('port_out_name'),
-                                        c.get('port_in_name'))
-
-        for key in patchbay_data.keys():
-            if key == 'clients':
-                cnu: dict[str, Any]
-                for cnu in patchbay_data[key]:
-                    self.set_group_uuid_from_name(cnu.get('name'), cnu.get('uuid'))
-                break
-
-        for key in patchbay_data.keys():
-            if key == 'metadatas':
-                m: dict[str, Any]
-                for m in patchbay_data[key]:
-                    self.metadata_update(
-                        m.get('uuid'), m.get('key'), m.get('value'))
-                break
-
-        for group in self.groups:
-            group.sort_ports_in_canvas()
-
-        self._set_very_fast_operation(False)
-                
-        for group in self.groups:
-            group.add_all_ports_to_canvas()
-        
-        for conn in self.connections:
-            conn.add_to_canvas()
-
-        self.optimize_operation(False)
-        self.redraw_all_groups()
-
-        try:
-            os.remove(temp_path)
-        except:
-            # if this tmp file can not be removed
-            # this is really not strong.
-            pass
 
     def patchbay_announce(self, jack_running: int, samplerate: int,
                           buffer_size: int, tcp_url: str):

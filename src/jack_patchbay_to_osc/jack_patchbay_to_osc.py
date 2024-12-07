@@ -226,9 +226,6 @@ class MainObject:
             else:
                 self.client_list.append({'name': client_name, 'uuid': uuid})
     
-    def add_gui(self, gui_url: str, gui_tcp_url: str):
-        self.osc_server.add_gui(gui_url, gui_tcp_url)
-    
     def check_jack_client_responding(self):
         for i in range(100): # JACK has 5s to answer
             time.sleep(0.050)
@@ -606,27 +603,24 @@ class MainObject:
 def main_process():
     args = sys.argv.copy()
     daemon_port = ''
-    gui_url = ''
     gui_tcp_url = ''
 
-    if args:
-        this_exec = args.pop(0)
+    args.pop(0)
+
     if args:
         daemon_port = args.pop(0)
     if args:
-        gui_url = args.pop(0)
-    if args:
         gui_tcp_url = args.pop(0)
     
-    main_object = MainObject(daemon_port, gui_url)
-    main_object.add_gui(gui_url, gui_tcp_url)
-    
-    main_object.start_loop()
+    main_object = MainObject(daemon_port, gui_tcp_url)
+    main_object.osc_server.add_gui(gui_tcp_url)
+    if main_object.osc_server.gui_list:
+        main_object.start_loop()
     main_object.exit()
 
 
 if True:
-    set_proc_name('ray-jack_patchbay_to_osc')
+    set_proc_name('ray-patch_dmn')
     
     # prevent deprecation warnings python messages
     warnings.filterwarnings("ignore", category=DeprecationWarning)

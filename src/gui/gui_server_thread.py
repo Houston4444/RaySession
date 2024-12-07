@@ -53,8 +53,6 @@ class GuiServerThread(ServerThread):
         global _instance
         _instance = self
 
-        self.patchbay_addr = None
-
         # Try to prevent impossibility to stop server
         # while receiving messages
         self.stopping = False
@@ -64,10 +62,6 @@ class GuiServerThread(ServerThread):
 
     def stop(self):
         self.stopping = True
-
-        if self.patchbay_addr:
-            self.send(self.patchbay_addr, '/ray/patchbay/gui_disannounce')
-
         super().stop()
 
     def finish_init(self, session: 'SignaledSession'):
@@ -124,27 +118,10 @@ class GuiServerThread(ServerThread):
             ('/ray/gui/hide_script_info', ''),
             ('/ray/gui/script_user_action', 's'),
             ('/ray/gui/hide_script_user_action', ''),
-            ('/ray/gui/patchbay/port_added', 'siih'),
-            ('/ray/gui/patchbay/port_renamed', 'ss'),
-            ('/ray/gui/patchbay/port_removed', 's'),
-            ('/ray/gui/patchbay/connection_added', 'ss'),
-            ('/ray/gui/patchbay/connection_removed', 'ss'),
-            ('/ray/gui/patchbay/server_stopped', ''),
             ('/ray/gui/patchbay/update_group_position',
              'i' + GroupPos.args_types()),
             ('/ray/gui/patchbay/views_changed', 's'),
-            ('/ray/gui/patchbay/metadata_updated', 'hss'),
-            ('/ray/gui/patchbay/dsp_load', 'i'),
-            ('/ray/gui/patchbay/add_xrun', ''),
-            ('/ray/gui/patchbay/buffer_size', 'i'),
-            ('/ray/gui/patchbay/sample_rate', 'i'),
-            ('/ray/gui/patchbay/server_started', ''),
-            ('/ray/gui/patchbay/big_packets', 'i'),
-            ('/ray/gui/patchbay/server_lose', ''),
-            ('/ray/gui/patchbay/fast_temp_file_memory', 's'),
-            ('/ray/gui/patchbay/fast_temp_file_running', 's'),
-            ('/ray/gui/patchbay/client_name_and_uuid', 'sh'),
-            ('/ray/gui/patchbay/transport_position', 'iiiiiif')):
+            ('/ray/gui/patchbay/fast_temp_file_memory', 's')):
                 self.add_method(path_types[0], path_types[1],
                                 self._generic_callback)
 
@@ -300,7 +277,15 @@ class GuiServerThread(ServerThread):
         self.signaler.client_progress.emit(*args)
         return True
 
-    
+    @ray_method('/ray/gui/patchbay/update_portgroup', None)
+    def _patchbay_update_portgroup(self, path, args, types: str, src_addr):
+        if not types.startswith('siiis'):
+            return False
+
+        types_end = types.replace('siiis', '', 1)
+        for c in types_end:
+            if c != 's':
+                return False
 
     def send(self, *args):
         if CommandLineArgs.debug:
@@ -318,7 +303,7 @@ class GuiServerThread(ServerThread):
 
         NSM_URL = os.getenv('NSM_URL')
         if not NSM_URL:
-            NSM_URL = ""
+            NSM_URL = ''
 
         self.send(self.daemon_manager.address, '/ray/server/gui_announce',
                   ray.VERSION, int(CommandLineArgs.under_nsm),
