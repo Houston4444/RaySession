@@ -6,7 +6,7 @@ from osclib import (
     Server, Address, are_on_same_machine, get_free_osc_port, TCP)
 
 if TYPE_CHECKING:
-    from jack_patchbay_to_osc import MainObject, TransportPosition
+    from src.patchbay_daemon.patchbay_daemon import MainObject, TransportPosition
 
 
 _logger = logging.getLogger(__name__)
