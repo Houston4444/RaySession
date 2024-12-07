@@ -1316,17 +1316,17 @@ class OscServerThread(ClientCommunicating):
         gui_addr = GuiAdress(url)
         gui_addr.gui_pid = gui_pid
 
-        self.send(gui_addr, "/ray/gui/server/announce", ray.VERSION,
+        self.send(gui_addr, '/ray/gui/server/announce', ray.VERSION,
                   self.server_status.value, self.options.value,
                   str(self.session.root), int(is_net_free))
 
-        self.send(gui_addr, "/ray/gui/server/status",
+        self.send(gui_addr, '/ray/gui/server/status',
                   self.server_status.value)
 
         if self.session.path is None:
-            self.send(gui_addr, "/ray/gui/session/name", "")
+            self.send(gui_addr, '/ray/gui/session/name', '')
         else:
-            self.send(gui_addr, "/ray/gui/session/name",
+            self.send(gui_addr, '/ray/gui/session/name',
                       self.session.name, str(self.session.path))
 
         self.send(gui_addr, '/ray/gui/session/notes', self.session.notes)
@@ -1336,7 +1336,7 @@ class OscServerThread(ClientCommunicating):
         self.session.canvas_saver.send_all_group_positions(gui_addr)
 
         for favorite in RS.favorites:
-            self.send(gui_addr, "/ray/gui/favorites/added",
+            self.send(gui_addr, '/ray/gui/favorites/added',
                       favorite.name, favorite.icon, int(favorite.factory),
                       favorite.display_name)
 
@@ -1356,7 +1356,7 @@ class OscServerThread(ClientCommunicating):
                           client.client_id,
                           *client.ray_net.spread())
 
-            self.send(gui_addr, "/ray/gui/client/status",
+            self.send(gui_addr, '/ray/gui/client/status',
                       client.client_id, client.status.value)
 
             if client.is_capable_of(':optional-gui:'):
