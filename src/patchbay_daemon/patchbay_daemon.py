@@ -179,7 +179,7 @@ class MainObject:
         
         try:
             with open(EXISTENCE_PATH / self._daemon_port, 'w') as file:
-                contents = f'pid:{os.getpid()}port:{self.osc_server.port}\n'
+                contents = f'pid:{os.getpid()}\nport:{self.osc_server.port}\n'
                 file.write(contents)
 
         except PermissionError:

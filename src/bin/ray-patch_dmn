@@ -8,9 +8,9 @@ pyjacklib_path = src_path.parent / 'pyjacklib'
 sys.path.insert(0, str(pyjacklib_path))
 sys.path.insert(0, str(src_path))
 
-sys.path[0] = str(Path(__file__).parents[1] / 'jack_patchbay_to_osc')
+sys.path[0] = str(Path(__file__).parents[1] / 'patchbay_daemon')
 
 if TYPE_CHECKING:
-    import src.jack_patchbay_to_osc.jack_patchbay_to_osc
+    import src.patchbay_daemon.patchbay_daemon
 else:
-    import jack_patchbay_to_osc
+    import patchbay_daemon
