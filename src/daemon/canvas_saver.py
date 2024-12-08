@@ -21,7 +21,8 @@ from daemon_tools import RS, Terminal
 from server_sender import ServerSender
 
 if TYPE_CHECKING:
-    from .session_signaled import SignaledSession
+    from session_signaled import SignaledSession
+    from osc_server_thread import Gui
 
 
 _logger = logging.getLogger(__name__)
@@ -127,142 +128,46 @@ class CanvasSaver(ServerSender):
         if self.is_dummy:
             return
         
-        server = self.get_server()
-        if not server:
-            return
-
-        local_guis = list['Address']()
-        distant_guis = list['Address']()
-        
         mixed_views = (self.views_config.short_data_states()
                        | self.views_session.short_data_states())
         mixed_views_str = json.dumps(mixed_views)
-        
-        for gui_addr in server.gui_list:
-            if are_on_same_machine(server.url, gui_addr.url):
-                local_guis.append(gui_addr)
-            else:
-                distant_guis.append(gui_addr)
+                
+        for view_number in self.views_session.keys():
+            for gpos in self.views_session.iter_group_poses(
+                    view_num=view_number):
+                self.send_tcp_gui(
+                    '/ray/gui/patchbay/update_group_position',
+                    view_number, *gpos.to_arg_list())
 
-        if local_guis:
-            views_dict = {'views': self.views_session.to_json_list()}
+        self.send_tcp_gui(
+            '/ray/gui/patchbay/views_changed', mixed_views_str)
 
-            for gui_addr in local_guis:
-                with (tempfile.NamedTemporaryFile(delete=False, mode='w+') as f):
-                    json.dump(views_dict, f)
-                    self.send(gui_addr,
-                              '/ray/gui/patchbay/fast_temp_file_memory',
-                              f.name)
-                
-                self.send(gui_addr,
-                          '/ray/gui/patchbay/views_changed',
-                          mixed_views_str)
-
-        if distant_guis:
-            for gui_addr in distant_guis:
-                i = 0
-                
-                for view_number in self.views_session.keys():
-                    for gpos in self.views_session.iter_group_poses(
-                            view_num=view_number):
-                        self.send(
-                            gui_addr,
-                            '/ray/gui/patchbay/update_group_position',
-                            view_number, *gpos.to_arg_list())
-                        i += 1
-                        
-                        if i == 50:
-                            time.sleep(0.020)
-                            i = 0
-            
-                self.send(gui_addr,
-                          '/ray/gui/patchbay/views_changed',
-                          mixed_views_str)
-
-    def send_all_group_positions(self, src_addr: Address):
-        '''Used when a GUI is connected to the daemon.'''
-        if are_on_same_machine(self.get_server_url(), src_addr.url):
-            canvas_dict = dict[str, list]()
-            canvas_dict['portgroups'] = self.portgroups.to_json()
-
-            config_list = self.views_config.to_json_list()
-            session_list = self.views_session.to_json_list()
-            
-            mixed_dict = dict[int, dict]()
-            
-            for cf_view_dict in config_list:
-                cf_index = cf_view_dict.get('index')
-                if cf_index is None:
-                    continue
-                
-                mixed_dict[cf_index] = cf_view_dict
-                
-            for ss_view_dict in session_list:
-                ss_index = ss_view_dict.get('index')
-                if ss_index is None:
-                    continue
-                
-                mixed_view_dict = mixed_dict.get(ss_index)
-                
-                if mixed_view_dict is None:
-                    mixed_dict[ss_index] = ss_view_dict
-                    continue
-                
-                mixed_view_dict |= ss_view_dict
-            
-            canvas_dict['views'] = [d for d in mixed_dict.values()]
-            
-            with tempfile.NamedTemporaryFile(delete=False, mode='w+') as f:
-                json.dump(canvas_dict, f)
-                self.send(src_addr,
-                          '/ray/gui/patchbay/fast_temp_file_memory',
-                          f.name)
-            return
-
-        i = 0
+    def send_all_group_positions(self, gui: 'Gui'):
+        '''Used when a new GUI is connected to the daemon.'''
 
         for view_index in self.views_config.keys():
             for gpos in self.views_config.iter_group_poses(
                     view_num=view_index):
                 self.send(
-                    src_addr, '/ray/gui/patchbay/update_group_position',
+                    gui.tcp_addr, '/ray/gui/patchbay/update_group_position',
                     view_index, *gpos.to_arg_list())
-                
-                i += 1
-                if i == 50:
-                    # we need to slow big process of canvas memory
-                    # to prevent loss OSC packets
-                    time.sleep(0.020)
-                    i = 0
 
         for view_index in self.views_session.keys():
             for gpos in self.views_session.iter_group_poses(
                     view_num=view_index):
                 self.send(
-                    src_addr, '/ray/gui/patchbay/update_group_position',
+                    gui.tcp_addr, '/ray/gui/patchbay/update_group_position',
                     view_index, *gpos.to_arg_list())
-                
-                i += 1
-                if i == 50:
-                    # we need to slow big process of canvas memory
-                    # to prevent loss OSC packets
-                    time.sleep(0.020)
-                    i = 0
 
         for pg_mem in self.portgroups.iter_all_portgroups():
-            self.send(src_addr, '/ray/gui/patchbay/update_portgroup',
+            self.send(gui.tcp_addr, '/ray/gui/patchbay/update_portgroup',
                       *pg_mem.to_arg_list())
-
-            i += 1
-            if i == 50:
-                time.sleep(0.020)
-                i = 0
                 
         # send view datas
         view_data_mixed = (self.views_config.short_data_states()
                            |self.views_session.short_data_states())
 
-        self.send(src_addr,
+        self.send(gui.tcp_addr,
                   '/ray/gui/patchbay/views_changed',
                   json.dumps(view_data_mixed))
 
@@ -407,6 +312,6 @@ class CanvasSaver(ServerSender):
                 for old, new in group_name_change_list:
                     ptv_dict[new] = ptv_dict.pop(old)
                     ptv_dict[new].group_name = new
-                    server.send_gui(
+                    self.send_tcp_gui(
                         '/ray/gui/patchbay/update_group_position',
-                        view_num, *ptv_dict[new].to_arg_list())                    
+                        view_num, *ptv_dict[new].to_arg_list()) 

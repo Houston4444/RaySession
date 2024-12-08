@@ -1,16 +1,21 @@
 
 # Imports from standard library
+import logging
 from typing import TYPE_CHECKING, Optional
 
 # Imports from src/shared
 import ray
 
 # Local imports
-from osc_server_thread import OscServerThread
+from osc_server_thread import OscServerThread, Gui
+from tcp_server_thread import TcpServerThread
 from daemon_tools import AppTemplate
 
 if TYPE_CHECKING:
     from osc_server_thread import OscServerThread
+
+
+_logger = logging.getLogger(__name__)
 
 
 class ServerSender:
@@ -51,6 +56,39 @@ class ServerSender:
             return
 
         server.send_gui(*args)
+
+    def send_tcp_gui(self, *args):
+        if self.is_dummy:
+            return
+        
+        server = OscServerThread.get_instance()
+        tcp_server = TcpServerThread.instance()
+        
+        if server is None or tcp_server is None:
+            return
+        
+        rm_tcps = list[Gui]()
+        
+        for gui in server.gui_list:
+            if gui.tcp_addr is None:
+                continue
+
+            try:
+                tcp_server.send(gui.tcp_addr, *args)
+            except OSError:
+                _logger.warning(
+                    f'Failed to send TCP message to GUI at {gui.tcp_addr.url}')
+                rm_tcps.append(gui.tcp_addr)
+            except BaseException as e:
+                _logger.warning(
+                    f'Failed to send TCP message to GUI at {gui.tcp_addr.url}')
+                _logger.error(str(e))
+                
+        for gui in rm_tcps:
+            for gui_ in server.gui_list:
+                if gui_ is gui:
+                    gui_.tcp_addr = None
+                    break
 
     def send_gui_message(self, message:str):
         self.send_gui('/ray/gui/server/message', message)

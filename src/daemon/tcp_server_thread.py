@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from qtpy.QtCore import QCoreApplication
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from session_signaled import SignaledSession
 
 
-instance = None
+_instance = None
 signaler = Signaler.instance()
 _translate = QCoreApplication.translate
 _logger = logging.getLogger(__name__)
@@ -23,3 +23,10 @@ class TcpServerThread(ServerThread):
         super().__init__(tcp_port, TCP)
         
         self.session = session
+        
+        global _instance
+        _instance = self
+        
+    @staticmethod
+    def instance() -> 'Optional[TcpServerThread]':
+        return _instance

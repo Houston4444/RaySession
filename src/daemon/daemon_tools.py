@@ -255,6 +255,7 @@ class CommandLineArgs(argparse.Namespace):
     findfreeport = True
     control_url: Optional[Address] = None
     gui_url: Optional[Address] = None
+    gui_tcp_url: Optional[Address] = None
     gui_port = 0
     gui_pid = 0
     config_dir = ''
@@ -305,6 +306,8 @@ class ArgParser(argparse.ArgumentParser):
         self.add_argument('--gui-url', type=verified_address_arg,
                           help=argparse.SUPPRESS)
         self.add_argument('--gui-port', type=verified_address_from_port_arg,
+                          help=argparse.SUPPRESS)
+        self.add_argument('--gui-tcp-url', type=verified_address_arg,
                           help=argparse.SUPPRESS)
         self.add_argument('--gui-pid', type=int,
                           help=argparse.SUPPRESS)

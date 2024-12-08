@@ -123,25 +123,28 @@ if True:
             sys.exit()
     server.start()    
 
+    # print server url
+    Terminal.message('URL : %s' % get_net_url(server.port))
+    Terminal.message('      %s' % server.url)
+    Terminal.message('ROOT: %s' % CommandLineArgs.session_root)
+
     if CommandLineArgs.hidden:
         server.not_default = True
 
     # announce server to GUI
     if CommandLineArgs.gui_url:
         server.announce_gui(CommandLineArgs.gui_url.url,
-                            gui_pid=CommandLineArgs.gui_pid)
+                            gui_pid=CommandLineArgs.gui_pid,
+                            tcp_addr=CommandLineArgs.gui_tcp_url)
     elif CommandLineArgs.gui_port:
         server.announce_gui(CommandLineArgs.gui_port.url,
-                            gui_pid=CommandLineArgs.gui_pid)
+                            gui_pid=CommandLineArgs.gui_pid,
+                            tcp_addr=CommandLineArgs.gui_tcp_url)
 
     # announce to ray_control if launched from it.
     if CommandLineArgs.control_url:
         server.announce_controller(CommandLineArgs.control_url)
 
-    # print server url
-    Terminal.message('URL : %s' % get_net_url(server.port))
-    Terminal.message('      %s' % server.url)
-    Terminal.message('ROOT: %s' % CommandLineArgs.session_root)
 
     # create or update multi_daemon_file in /tmp
     multi_daemon_file = MultiDaemonFile(session, server)

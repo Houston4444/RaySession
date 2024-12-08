@@ -117,11 +117,7 @@ class GuiServerThread(ServerThread):
             ('/ray/gui/script_info', 's'),
             ('/ray/gui/hide_script_info', ''),
             ('/ray/gui/script_user_action', 's'),
-            ('/ray/gui/hide_script_user_action', ''),
-            ('/ray/gui/patchbay/update_group_position',
-             'i' + GroupPos.args_types()),
-            ('/ray/gui/patchbay/views_changed', 's'),
-            ('/ray/gui/patchbay/fast_temp_file_memory', 's')):
+            ('/ray/gui/hide_script_user_action', '')):
                 self.add_method(path_types[0], path_types[1],
                                 self._generic_callback)
 
@@ -282,16 +278,6 @@ class GuiServerThread(ServerThread):
         self.signaler.client_progress.emit(*args)
         return True
 
-    @ray_method('/ray/gui/patchbay/update_portgroup', None)
-    def _patchbay_update_portgroup(self, path, args, types: str, src_addr):
-        if not types.startswith('siiis'):
-            return False
-
-        types_end = types.replace('siiis', '', 1)
-        for c in types_end:
-            if c != 's':
-                return False
-
     def send(self, *args):
         if CommandLineArgs.debug:
             sys.stderr.write(
@@ -310,10 +296,13 @@ class GuiServerThread(ServerThread):
         if not NSM_URL:
             NSM_URL = ''
 
+        tcp_server = GuiTcpThread.instance()
+        tcp_url = get_net_url(tcp_server.port)
+
         self.send(self.daemon_manager.address, '/ray/server/gui_announce',
                   ray.VERSION, int(CommandLineArgs.under_nsm),
                   NSM_URL, os.getpid(),
-                  CommandLineArgs.net_daemon_id)
+                  CommandLineArgs.net_daemon_id, tcp_url)
 
     def disannounce(self, src_addr):
         self.send(src_addr, '/ray/server/gui_disannounce')
