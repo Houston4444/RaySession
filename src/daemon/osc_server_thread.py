@@ -21,7 +21,7 @@ from patchbay.patchcanvas.patshared import GroupPos
 # Imports from src/shared
 from osclib import (
     Address, ServerThread, get_net_url, make_method, Message, OscPack,
-    are_on_same_machine, are_same_osc_port, send, TCP)
+    are_on_same_machine, are_same_osc_port, send, TCP, verified_address)
 import ray
 from xml_tools import XmlElement
 
@@ -81,8 +81,15 @@ class Controller:
     pid = 0
 
 
-class GuiAdress(Address):
-    gui_pid = 0
+class Gui(Address):
+    pid: int
+    addr: Address
+    tcp_addr: Optional[Address]
+    
+    def __init__(self, url: str):
+        self.addr = Address(url)
+        self.tcp_addr = None
+        self.pid = 0
 
 
 # Osc server thread separated in many classes for confort.
@@ -102,7 +109,7 @@ class ClientCommunicating(ServerThread):
         self._net_master_daemon_url = ''
         self._list_asker_addr = None
 
-        self.gui_list = list[GuiAdress]()
+        self.gui_list = list[Gui]()
         self.controller_list = list[Controller]()
         self.monitor_list = list[Address]()
         self.server_status = ray.ServerStatus.OFF
@@ -381,7 +388,6 @@ class OscServerThread(ClientCommunicating):
     value: minimum number of arguments'''
     
     def __init__(self, session, osc_num=0, tcp_port=0):
-        print('atchcoup', tcp_port)
         ClientCommunicating.__init__(
             self, session, osc_num=osc_num, tcp_port=tcp_port)
 
@@ -510,10 +516,10 @@ class OscServerThread(ClientCommunicating):
     def get_instance() -> 'Optional[OscServerThread]':
         return instance
 
-    @osp_method('/ray/server/gui_announce', 'sisii')
+    @osp_method('/ray/server/gui_announce', 'sisiis')
     def rayGuiGui_announce(self, osp: OscPack):
         (version, int_nsm_locked, net_master_daemon_url,
-         gui_pid, net_daemon_id) = osp.args
+         gui_pid, net_daemon_id, tcp_url) = osp.args
 
         nsm_locked = bool(int_nsm_locked)
         is_net_free = True
@@ -523,9 +529,9 @@ class OscServerThread(ClientCommunicating):
             self.is_nsm_locked = True
             self._nsm_locker_url = osp.src_addr.url
 
-            for gui_addr in self.gui_list:
-                if not are_same_osc_port(gui_addr.url, osp.src_addr.url):
-                    self.send(gui_addr, '/ray/gui/server/nsm_locked', 1)
+            for gui in self.gui_list:
+                if not are_same_osc_port(gui.addr.url, osp.src_addr.url):
+                    self.send(gui.addr, '/ray/gui/server/nsm_locked', 1)
 
             self.net_daemon_id = net_daemon_id
 
@@ -534,17 +540,22 @@ class OscServerThread(ClientCommunicating):
                 is_net_free = multi_daemon_file.is_free_for_root(
                     self.net_daemon_id, self.session.root)
 
-        self.announce_gui(osp.src_addr.url, nsm_locked, is_net_free, gui_pid)
+        tcp_addr = verified_address(tcp_url)
+        if isinstance(tcp_addr, str):
+            tcp_addr = None
+
+        self.announce_gui(
+            osp.src_addr.url, nsm_locked, is_net_free, gui_pid, tcp_addr)
 
     @osp_method('/ray/server/gui_disannounce', '')
     def rayGuiGui_disannounce(self, osp: OscPack):
-        for addr in self.gui_list:
-            if are_same_osc_port(addr.url, osp.src_addr.url):
+        for gui in self.gui_list:
+            if are_same_osc_port(gui.addr.url, osp.src_addr.url):
                 break
         else:
             return False
 
-        self.gui_list.remove(addr)
+        self.gui_list.remove(gui)
 
         if osp.src_addr.url == self._nsm_locker_url:
             self.net_daemon_id = random.randint(1, 999999999)
@@ -648,9 +659,9 @@ class OscServerThread(ClientCommunicating):
         self.is_nsm_locked = True
         self._nsm_locker_url = osp.src_addr.url
 
-        for gui_addr in self.gui_list:
-            if gui_addr.url != osp.src_addr.url:
-                self.send(gui_addr, '/ray/gui/server/nsm_locked', 1)
+        for gui in self.gui_list:
+            if gui.addr.url != osp.src_addr.url:
+                self.send(gui.addr, '/ray/gui/server/nsm_locked', 1)
 
     @osp_method('/ray/server/change_root', 's')
     def rayServerChangeRoot(self, osp: OscPack):
@@ -869,9 +880,9 @@ class OscServerThread(ClientCommunicating):
         else:
             self.options &= ~option        
 
-        for gui_addr in self.gui_list:
-            if not are_same_osc_port(gui_addr.url, osp.src_addr.url):
-                self.send(gui_addr, '/ray/gui/server/options',
+        for gui in self.gui_list:
+            if not are_same_osc_port(gui.addr.url, osp.src_addr.url):
+                self.send(gui.addr, '/ray/gui/server/options',
                           self.options.value)
 
     # set options from ray_control
@@ -912,9 +923,9 @@ class OscServerThread(ClientCommunicating):
                 else:
                     self.options &= ~option
 
-        for gui_addr in self.gui_list:
-            if not are_same_osc_port(gui_addr.url, osp.src_addr.url):
-                self.send(gui_addr, '/ray/gui/server/options',
+        for gui in self.gui_list:
+            if not are_same_osc_port(gui.addr.url, osp.src_addr.url):
+                self.send(gui.addr, '/ray/gui/server/options',
                           self.options.value)
 
         self.send(*osp.reply(), 'Options set')
@@ -971,11 +982,10 @@ class OscServerThread(ClientCommunicating):
                 'i' + GroupPos.args_types())
     def rayServerPatchbaySaveCoordinates(self, osp: OscPack):
         # here send to others GUI the new group position
-        for gui_addr in self.gui_list:
-            if not are_same_osc_port(gui_addr.url, osp.src_addr.url):
-                print('update gp to GUI', gui_addr.url, osp.src_addr.url)
+        for gui in self.gui_list:
+            if not are_same_osc_port(gui.addr.url, osp.src_addr.url):
                 self.send(
-                    gui_addr,
+                    gui.addr,
                     '/ray/gui/patchbay/update_group_position',
                     *osp.args)
 
@@ -1102,9 +1112,9 @@ class OscServerThread(ClientCommunicating):
     def raySessionSetNotes(self, osp: OscPack):
         self.session.notes = osp.args[0]
 
-        for gui_addr in self.gui_list:
-            if not are_same_osc_port(gui_addr.url, osp.src_addr.url):
-                self.send(gui_addr, '/ray/gui/session/notes',
+        for gui in self.gui_list:
+            if not are_same_osc_port(gui.addr.url, osp.src_addr.url):
+                self.send(gui.addr, '/ray/gui/session/notes',
                           self.session.notes)
 
     @osp_method('/ray/session/add_executable', 'siiissi')
@@ -1295,8 +1305,8 @@ class OscServerThread(ClientCommunicating):
         ClientCommunicating.send(self, *args)
 
     def send_gui(self, *args):
-        for gui_addr in self.gui_list:
-            self.send(gui_addr, *args)
+        for gui in self.gui_list:
+            self.send(gui.addr, *args)
 
     def set_server_status(self, server_status:ray.ServerStatus):
         self.server_status = server_status
@@ -1317,91 +1327,94 @@ class OscServerThread(ClientCommunicating):
         self.send_gui('/ray/gui/session/renameable', 1)
 
     def announce_gui(
-            self, url: str, nsm_locked=False, is_net_free=True, gui_pid=0):
-        gui_addr = GuiAdress(url)
-        gui_addr.gui_pid = gui_pid
+            self, url: str, nsm_locked=False,
+            is_net_free=True, gui_pid=0, tcp_addr: Optional[Address]=None):
+        gui = Gui(url)
+        gui.pid = gui_pid
+        gui.tcp_addr = tcp_addr
 
         tcp_url = get_net_url(self.tcp_port, protocol=TCP)
 
-        self.send(gui_addr, '/ray/gui/server/announce', ray.VERSION,
+        self.send(gui.addr, '/ray/gui/server/announce', ray.VERSION,
                   self.server_status.value, self.options.value,
                   str(self.session.root), int(is_net_free), tcp_url)
 
-        self.send(gui_addr, '/ray/gui/server/status',
+        self.send(gui.addr, '/ray/gui/server/status',
                   self.server_status.value)
 
         if self.session.path is None:
-            self.send(gui_addr, '/ray/gui/session/name', '')
+            self.send(gui.addr, '/ray/gui/session/name', '')
         else:
-            self.send(gui_addr, '/ray/gui/session/name',
+            self.send(gui.addr, '/ray/gui/session/name',
                       self.session.name, str(self.session.path))
 
-        self.send(gui_addr, '/ray/gui/session/notes', self.session.notes)
-        self.send(gui_addr, '/ray/gui/server/terminal_command',
+        self.send(gui.addr, '/ray/gui/session/notes', self.session.notes)
+        self.send(gui.addr, '/ray/gui/server/terminal_command',
                   self.terminal_command)
 
-        self.session.canvas_saver.send_all_group_positions(gui_addr)
+        self.session.canvas_saver.send_all_group_positions(gui)
 
         for favorite in RS.favorites:
-            self.send(gui_addr, '/ray/gui/favorites/added',
+            self.send(gui.addr, '/ray/gui/favorites/added',
                       favorite.name, favorite.icon, int(favorite.factory),
                       favorite.display_name)
 
         for client in self.session.clients:
-            self.send(gui_addr,
+            self.send(gui.addr,
                       '/ray/gui/client/new',
                       *client.spread())
 
             if client.protocol is ray.Protocol.RAY_HACK:
-                self.send(gui_addr,
+                self.send(gui.addr,
                           '/ray/gui/client/ray_hack_update',
                           client.client_id,
                           *client.ray_hack.spread())
             elif client.protocol is ray.Protocol.RAY_NET:
-                self.send(gui_addr,
+                self.send(gui.addr,
                           '/ray/gui/client/ray_net_update',
                           client.client_id,
                           *client.ray_net.spread())
 
-            self.send(gui_addr, '/ray/gui/client/status',
+            self.send(gui.addr, '/ray/gui/client/status',
                       client.client_id, client.status.value)
 
             if client.is_capable_of(':optional-gui:'):
-                self.send(gui_addr, '/ray/gui/client/gui_visible',
+                self.send(gui.addr, '/ray/gui/client/gui_visible',
                           client.client_id, int(client.gui_visible))
 
             if client.is_capable_of(':dirty:'):
-                self.send(gui_addr, '/ray/gui/client/dirty',
+                self.send(gui.addr, '/ray/gui/client/dirty',
                           client.client_id, client.dirty)
 
         for trashed_client in self.session.trashed_clients:
-            self.send(gui_addr, '/ray/gui/trash/add',
+            self.send(gui.addr, '/ray/gui/trash/add',
                       *trashed_client.spread())
 
             if trashed_client.protocol is ray.Protocol.RAY_HACK:
-                self.send(gui_addr, '/ray/gui/trash/ray_hack_update',
+                self.send(gui.addr, '/ray/gui/trash/ray_hack_update',
                           trashed_client.client_id,
                           *trashed_client.ray_hack.spread())
             elif trashed_client.protocol is ray.Protocol.RAY_NET:
-                self.send(gui_addr, '/ray/gui/trash/ray_net_update',
+                self.send(gui.addr, '/ray/gui/trash/ray_net_update',
                           trashed_client.client_id,
                           *trashed_client.ray_net.spread())
 
         self.session.check_recent_sessions_existing()
         if self.session.root in self.session.recent_sessions.keys():
-            self.send(gui_addr, '/ray/gui/server/recent_sessions',
+            self.send(gui.addr, '/ray/gui/server/recent_sessions',
                       *self.session.recent_sessions[self.session.root])
 
-        self.send(gui_addr, '/ray/gui/server/message',
+        self.send(gui.addr, '/ray/gui/server/message',
                   _translate('daemon', "daemon runs at %s") % self.url)
 
-        self.gui_list.append(gui_addr)
+        self.gui_list.append(gui)
 
         multi_daemon_file = MultiDaemonFile.get_instance()
         if multi_daemon_file:
             multi_daemon_file.update()
 
-        Terminal.message(f"GUI connected at {gui_addr.url}")
+        Terminal.message(f"GUI connected at {gui.addr.url}")
+        Terminal.message(f"             and {gui.tcp_addr.url}")
 
     def announce_controller(self, control_address):
         controller = Controller()
@@ -1418,8 +1431,8 @@ class OscServerThread(ClientCommunicating):
     def has_gui(self)->int:
         has_gui = False
 
-        for gui_addr in self.gui_list:
-            if are_on_same_machine(self.url, gui_addr.url):
+        for gui in self.gui_list:
+            if are_on_same_machine(self.url, gui.addr.url):
                 # we've got a local GUI
                 return 3
 
@@ -1432,13 +1445,13 @@ class OscServerThread(ClientCommunicating):
 
     def get_local_gui_pid_list(self) -> str:
         pid_list = []
-        for gui_addr in self.gui_list:
-            if are_on_same_machine(gui_addr.url, self.url):
-                pid_list.append(str(gui_addr.gui_pid))
+        for gui in self.gui_list:
+            if are_on_same_machine(gui.addr.url, self.url):
+                pid_list.append(str(gui.pid))
         return ':'.join(pid_list)
 
     def is_gui_address(self, addr: Address) -> bool:
-        for gui_addr in self.gui_list:
-            if are_same_osc_port(gui_addr.url, addr.url):
+        for gui in self.gui_list:
+            if are_same_osc_port(gui.addr.url, addr.url):
                 return True
         return False

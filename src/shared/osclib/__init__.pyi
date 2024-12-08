@@ -125,13 +125,13 @@ def get_machine_192() -> str:
     than the next ones.'''
     ...
 
-def are_on_same_machine(url1: str, url2: str) -> bool:
+def are_on_same_machine(url1: str | Address, url2: str | Address) -> bool:
     ...
 
 def are_same_osc_port(url1: str, url2: str) -> bool:
     ...
     
-def get_net_url(port: int) -> str:
+def get_net_url(port: int, protocol=UDP) -> str:
     '''get the url address of a port under a form where
     it is usable by programs on another machine.
     Can be an empty string in some cases.'''

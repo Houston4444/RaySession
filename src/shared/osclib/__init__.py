@@ -142,7 +142,13 @@ def verified_address_from_port(port: int) -> Union[Address, str]:
     except BaseException:
         return f"{port} is an unknown osc port"
 
-def are_on_same_machine(url1: str, url2: str) -> bool:
+def are_on_same_machine(
+        url1: Union[str, Address], url2: Union[str, Address]) -> bool:
+    if isinstance(url1, Address):
+        url1 = url1.url
+    if isinstance(url2, Address):
+        url2 = url2.url
+    
     if url1 == url2:
         return True
 

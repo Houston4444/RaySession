@@ -1,6 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Optional
 
+from patchbay.patchcanvas.patshared import GroupPos
+
 from osclib import ServerThread, get_free_osc_port, TCP, make_method, Address
 
 if TYPE_CHECKING:
@@ -82,7 +84,9 @@ class GuiTcpThread(ServerThread):
                 ('/ray/gui/patchbay/server_lose', ''),
                 ('/ray/gui/patchbay/fast_temp_file_memory', 's'),
                 ('/ray/gui/patchbay/client_name_and_uuid', 'sh'),
-                ('/ray/gui/patchbay/transport_position', 'iiiiiif')):
+                ('/ray/gui/patchbay/transport_position', 'iiiiiif'),
+                ('/ray/gui/patchbay/update_group_position', 'i' + GroupPos.args_types()),
+                ('/ray/gui/patchbay/views_changed', 's')):
             self.add_method(path_types[0], path_types[1],
                             self._generic_callback)
         
@@ -99,6 +103,17 @@ class GuiTcpThread(ServerThread):
     @ray_method('/ray/gui/patchbay/announce', 'iiis')
     def _ray_gui_patchbay_announce(self, path, args, types, src_addr):
         self.patchbay_addr = Address(args[3])
+    
+    @ray_method('/ray/gui/patchbay/update_portgroup', None)
+    def _ray_gui_patchbay_update_portgroup(
+            self, path, args, types: str, src_addr: Address):
+        if not types.startswith('siiis'):
+            return False
+
+        types_end = types.replace('siiis', '', 1)
+        for c in types_end:
+            if c != 's':
+                return False
     
     def stop(self):
         self.stopping = True

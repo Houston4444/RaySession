@@ -10,7 +10,8 @@ from qtpy.QtCore import QObject, QProcess, QTimer
 from qtpy.QtWidgets import QApplication
 
 # Imports from src/shared
-from osclib import Address, get_free_osc_port, verified_address
+from osclib import (TCP, Address, get_free_osc_port,
+                    get_net_url, verified_address)
 import ray
 
 # Local imports
@@ -224,9 +225,13 @@ class DaemonManager(QObject):
         if not server:
             sys.stderr.write(
                 "impossible for GUI to launch daemon. server missing.\n")
+            
+        tcp_server = GuiTcpThread.instance()
+        tcp_url = get_net_url(tcp_server.port, protocol=TCP)
 
         # start process
         arguments = ['--gui-url', str(server.url),
+                     '--gui-tcp-url', tcp_url,
                      '--gui-pid', str(os.getpid()),
                      '--osc-port', str(self._port),
                      '--session-root', CommandLineArgs.session_root]

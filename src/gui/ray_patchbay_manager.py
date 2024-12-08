@@ -2,14 +2,13 @@
 # Imports from standard library
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 import os
-import sys
 import logging
 
 # Imports from HoustonPatchbay
 from patchbay.patchcanvas.patshared import (
-    GroupPos, PortgroupMem, PortMode, PortTypesViewFlag, ViewData)
+    GroupPos, PortgroupMem, PortMode, ViewData)
 from patchbay.base_elements import ToolDisplayed
 from patchbay.base_group import Group
 from patchbay import (
@@ -20,7 +19,6 @@ from patchbay import (
     CanvasMenu,
     patchcanvas
 )
-from patchbay.patchcanvas.patshared import ViewData
 
 # Imports from src/shared
 import ray
@@ -471,37 +469,6 @@ class RayPatchbayManager(PatchbayManager):
             self.set_tools_widget(self.main_win._patchbay_tools)
         self.set_options_dialog(
             CanvasOptionsDialog(self.main_win, self))
-
-    def fast_temp_file_memory(self, temp_path: str):
-        '''receive a .json file path from daemon with groups positions
-        and portgroups remembered from user.'''
-
-        canvas_data = self._get_json_contents_from_path(temp_path)
-        if not canvas_data:
-            _logger.error(
-                f"Failed to load tmp file {temp_path} to get canvas positions")
-            return
-
-        pg_memory = canvas_data.get('portgroups')
-        starting = pg_memory is not None
-
-        if pg_memory is not None:
-            self.portgroups_memory.eat_json(pg_memory)
-
-        self.views.eat_json_list(canvas_data.get('views'), clear=starting)
-
-        try:
-            os.remove(temp_path)
-        except:
-            pass
-        
-        # do not use self.set_views_changed(), we don't need to send
-        # views to daemon, just update widgets
-        self.sg.views_changed.emit()
-    
-        if starting or self.view_number not in self.views.keys():
-            self.view_number = self.views.first_view_num()
-        self.change_view(self.view_number)
 
     def patchbay_announce(self, jack_running: int, samplerate: int,
                           buffer_size: int, tcp_url: str):
