@@ -203,6 +203,7 @@ if True:
     server.stop()
     tcp_server.stop()
 
+    del tcp_server
     del server
     del session
     del app

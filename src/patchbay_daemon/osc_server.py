@@ -177,7 +177,7 @@ class OscJackPatch(Server):
         gui_addr = Address(gui_url)
         if gui_addr is None:
             return
-        
+
         try:
             self.send(gui_addr, '/ray/gui/patchbay/announce',
                     int(self.main_object.jack_running),

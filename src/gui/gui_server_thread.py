@@ -297,7 +297,7 @@ class GuiServerThread(ServerThread):
             NSM_URL = ''
 
         tcp_server = GuiTcpThread.instance()
-        tcp_url = get_net_url(tcp_server.port)
+        tcp_url = get_net_url(tcp_server.port, protocol=TCP)
 
         self.send(self.daemon_manager.address, '/ray/server/gui_announce',
                   ray.VERSION, int(CommandLineArgs.under_nsm),
