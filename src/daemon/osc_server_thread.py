@@ -600,7 +600,7 @@ class OscServerThread(ClientCommunicating):
                     good_port = False
 
                     try:
-                        patchbay_addr = Address(int(port_str), proto=TCP)
+                        patchbay_addr = Address(f'osc.tcp://localhost:{port_str}/')
                         good_port = True
                     except:
                         patchbay_addr = None
@@ -610,7 +610,7 @@ class OscServerThread(ClientCommunicating):
 
                     if good_port:
                         send(patchbay_addr, '/ray/patchbay/add_gui',
-                             osp.src_addr.url, gui_tcp_url)
+                             gui_tcp_url)
                         return False
                     break
 

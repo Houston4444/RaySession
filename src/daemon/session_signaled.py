@@ -469,13 +469,6 @@ class SignaledSession(OperatingSession):
                 has_general_scripts = True
                 break
             search_scripts_dir = search_scripts_dir.parent
-        
-        
-        # while search_scripts_dir and not search_scripts_dir != '/':
-        #     if os.path.isdir(search_scripts_dir + '/' + ray.SCRIPTS_DIR):
-        #         has_general_scripts = True
-        #         break
-        #     search_scripts_dir = dirname(search_scripts_dir)
 
         locked_sessions = list[str]()
         multi_daemon_file = MultiDaemonFile.get_instance()
@@ -1217,7 +1210,7 @@ class SignaledSession(OperatingSession):
         snapshots = self.snapshoter.list(client_id)
 
         i = 0
-        snap_send = []
+        snap_send = list[str]()
 
         for snapshot in snapshots:
             if i == 20:

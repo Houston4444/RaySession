@@ -77,7 +77,7 @@ class OscServer(Server):
 
         if reply_path.endswith('/list_snapshots'):
             if len(args) >= 2:
-                snapshots = args[1:]
+                snapshots: str = args[1:]
                 out_message = ""
                 for snapshot_and_info in snapshots:
                     snapshot, slash, info = snapshot_and_info.partition(':')

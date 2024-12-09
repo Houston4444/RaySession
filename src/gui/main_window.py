@@ -1,6 +1,6 @@
 
 # Imports from standard library
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 import time
 import subprocess
 
@@ -108,7 +108,7 @@ class MainWindow(QMainWindow):
             self._tool_bar_main_actions_width += 6
 
         # manage geometry depending of use of embedded jack patchbay
-        self._patchbay_tools : PatchbayToolsWidget = None
+        self._patchbay_tools : Optional[PatchbayToolsWidget] = None
         
         show_patchbay = RS.settings.value(
             'MainWindow/show_patchbay', True, type=bool)
@@ -1657,15 +1657,13 @@ class MainWindow(QMainWindow):
                              self.ui.splitterSessionVsMessages.sizes())
 
         if with_patchbay:
-            RS.settings.setValue(
-                'tool_bar/jack_elements',
-                self._patchbay_tools._tools_displayed.to_save_string())
-            RS.settings.setValue(
-                'tool_bar/text_with_icons',
-                self._patchbay_tools._text_with_icons.name)
-            # RS.settings.setValue(
-            #     'Canvas/default_port_types_view',
-            #     self.session.patchbay_manager.port_types_view.value)
+            if self._patchbay_tools is not None:
+                RS.settings.setValue(
+                    'tool_bar/jack_elements',
+                    self._patchbay_tools._tools_displayed.to_save_string())
+                RS.settings.setValue(
+                    'tool_bar/text_with_icons',
+                    self._patchbay_tools._text_with_icons.name)
 
         RS.settings.sync()
 

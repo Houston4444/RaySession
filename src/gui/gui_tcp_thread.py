@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional
 
 from patchbay.patchcanvas.patshared import GroupPos
 
-from osclib import ServerThread, get_free_osc_port, TCP, make_method, Address
+from osclib import ServerThread, get_free_osc_port, TCP, get_net_url, make_method, Address
 
 if TYPE_CHECKING:
     from gui_session import SignaledSession
@@ -121,7 +121,8 @@ class GuiTcpThread(ServerThread):
 
         if self.patchbay_addr is not None:
             self.send(
-                self.patchbay_addr, '/ray/patchbay/gui_disannounce', self.url)
+                self.patchbay_addr, '/ray/patchbay/gui_disannounce',
+                get_net_url(self.port, protocol=TCP))
 
         super().stop()
     
