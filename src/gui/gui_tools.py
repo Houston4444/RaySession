@@ -4,6 +4,7 @@ import argparse
 import os
 from pathlib import Path
 import sys
+import logging
 from typing import TYPE_CHECKING, Optional
 
 # third party imports
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
     from gui_signaler import Signaler
 
 
+_logger = logging.getLogger(__name__)
 _translate = QApplication.translate
 
 _RAY_ICONS_CACHE_LIGHT = {}
@@ -157,17 +159,17 @@ class CommandLineArgs(argparse.Namespace):
             cls.force_new_daemon = True
 
         if cls.config_dir and not os.access(cls.config_dir, os.W_OK):
-            sys.stderr.write(
-                '%s is not a writable config dir, try another one\n'
-                % cls.config_dir)
+            _logger.error(
+                f'{cls.config_dir} is not a writable config dir, '
+                'try another one !')
             sys.exit(1)
 
         if os.getenv('NSM_URL'):
+            nsm_url = os.getenv('NSM_URL', '')
             try:
-                cls.NSM_URL = verified_address_arg(os.getenv('NSM_URL', ''))
+                cls.NSM_URL = verified_address_arg(nsm_url)
             except BaseException:
-                sys.stderr.write('%s is not a valid NSM_URL\n'
-                                 % os.getenv('NSM_URL'))
+                _logger.error(f'{nsm_url} is not a valid NSM_URL')
                 sys.exit(1)
 
             cls.under_nsm = True

@@ -60,10 +60,10 @@ def osp_method(path: str, types: str):
         @make_method(path, types)
         def wrapper(*args, **kwargs):
             t_thread, t_path, t_args, t_types, src_addr, rest = args
-            if CommandLineArgs.debug:
-                sys.stderr.write(
-                    '\033[94mOSC::daemon_receives\033[0m %s, %s, %s, %s\n'
-                    % (t_path, t_types, t_args, src_addr.url))
+            _logger.debug(
+                '\033[94mOSC::daemon_receives\033[0m '
+                f'{t_path}, {t_types}, {t_args}, %{src_addr.url}'
+            )
 
             osp = OscPack(t_path, t_args, t_types, src_addr)
             response = func(t_thread, osp, **kwargs)
@@ -604,7 +604,7 @@ class OscServerThread(ClientCommunicating):
                         good_port = True
                     except:
                         patchbay_addr = None
-                        sys.stderr.write(
+                        _logger.error(
                             f'port given for patchbay {port_str} '
                             'is not a valid osc TCP port')
 
@@ -1298,10 +1298,7 @@ class OscServerThread(ClientCommunicating):
         return False
 
     def send(self, *args):
-        if CommandLineArgs.debug:
-            sys.stderr.write(
-                '\033[96mOSC::daemon sends\033[0m ' + str(args[1:]) + '\n')
-
+        _logger.debug('\033[96mOSC::daemon sends\033[0m ' + str(args[1:]))        
         ClientCommunicating.send(self, *args)
 
     def send_gui(self, *args):

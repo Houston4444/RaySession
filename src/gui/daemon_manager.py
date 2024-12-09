@@ -4,6 +4,7 @@ import os
 import socket
 import sys
 from typing import TYPE_CHECKING
+import logging
 
 # third party imports
 from qtpy.QtCore import QObject, QProcess, QTimer
@@ -21,6 +22,9 @@ from gui_tools import CommandLineArgs, ErrDaemon, _translate
 
 if TYPE_CHECKING:
     from .gui_session import SignaledSession
+
+
+_logger = logging.getLogger(__name__)
 
 
 class DaemonManager(QObject):
@@ -79,8 +83,8 @@ class DaemonManager(QObject):
 
         server = GuiServerThread.instance()
         if not server:
-            sys.stderr.write(
-                'GUI can not call daemon, GUI OSC server is missing.\n')
+            _logger.error(
+                'GUI can not call daemon, GUI OSC server is missing.')
             return
 
         server.announce()
@@ -223,9 +227,9 @@ class DaemonManager(QObject):
 
         server = GuiServerThread.instance()
         if not server:
-            sys.stderr.write(
-                "impossible for GUI to launch daemon. server missing.\n")
-            
+            _logger.error(
+                "impossible for GUI to launch daemon. server is missing.")
+
         tcp_server = GuiTcpThread.instance()
         tcp_url = get_net_url(tcp_server.port, protocol=TCP)
 
@@ -268,6 +272,7 @@ class DaemonManager(QObject):
         if not (self.address or self._port):
             self._port = get_free_osc_port()
             self.address = Address(self._port)
+            print('caphiiie', self._port, self.address)
 
     def is_announced(self):
         return self._is_announced
