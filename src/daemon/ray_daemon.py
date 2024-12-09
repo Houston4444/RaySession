@@ -84,16 +84,16 @@ if True:
     # make session_root folder if needed
     if not session_root_path.is_dir():
         if session_root_path.exists():
-            sys.stderr.write(
-                "%s exists and is not a dir, please choose another path !\n"
-                % session_root_path)
+            _logger.error(
+                f'{session_root_path} exists and is not a dir, '
+                'please choose another path !')
             sys.exit(1)
 
         try:
             session_root_path.mkdir(parents=True)
         except:
-            sys.stderr.write("impossible to make dir %s , aborted !\n"
-                             % session_root_path)
+            _logger.error(
+                "impossible to make dir {session_root_path} , aborted !")
             sys.exit(1)
 
 

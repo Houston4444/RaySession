@@ -186,7 +186,7 @@ class Session(ServerSender):
             if client.client_id == client_id:
                 return client
 
-        sys.stderr.write("client_id %s is not in ray-daemon session\n")
+        _logger.error(f'client_id {client_id} is not in ray-daemon session')
 
     def get_client_by_address(self, addr: Address) -> Client:
         if not addr:
@@ -2519,8 +2519,8 @@ for better organization.""")
                     try:
                         file_size = os.path.getsize(full_file_path)
                     except:
-                        sys.stderr.write("Unable to read %s size\n"
-                                        % full_file_path)
+                        _logger.warning(
+                            f'Unable to read {full_file_path} size')
                         size_unreadable = True
                         break
 

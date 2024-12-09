@@ -1,7 +1,7 @@
 
 # Imports from standard library
 import os
-import sys
+import logging
 import time
 import subprocess
 from typing import TYPE_CHECKING
@@ -54,6 +54,9 @@ if TYPE_CHECKING:
     from gui_client import Client
 
 
+_logger = logging.getLogger(__name__)
+
+
 class ChildDialog(QDialog):
     def __init__(self, parent: 'MainWindow'):
         QDialog.__init__(self, parent)
@@ -78,8 +81,7 @@ class ChildDialog(QDialog):
         if server:
             server.to_daemon(*args)
         else:
-            sys.stderr.write('Error No GUI OSC Server, can not send %s.\n'
-                             % args)
+            _logger.error(f'No GUI OSC Server, can not send {args}.')
 
     def _server_status_changed(self, server_status: int):
         pass

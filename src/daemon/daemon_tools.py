@@ -6,6 +6,7 @@ import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, Union
 from pathlib import Path
+import logging
 
 # third party imports
 from qtpy.QtCore import (
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
     from client import Client
 
 
+_logger = logging.getLogger(__name__)
 settings = QSettings()
 
 # remember here associated desktop files for executables
@@ -166,8 +168,8 @@ class Terminal:
         if cls._last_client_name and cls._last_client_name != 'daemon':
             sys.stderr.write('\n')
 
-        sys.stderr.write('[\033[90mray-daemon\033[0m]\033[92m%s\033[0m\n'
-                            % string)
+        sys.stderr.write(
+            f'[\033[90mray-daemon\033[0m]\033[92m{string}\033[0m\n')
 
         log_dir = get_app_config_path() / 'logs'
         
@@ -196,8 +198,7 @@ class Terminal:
         snapshoter_str = "snapshoter:.%s" % command
 
         if cls._last_client_name != snapshoter_str:
-            sys.stderr.write('\n[\033[90mray-daemon-git%s\033[0m]\n'
-                             % command)
+            sys.stderr.write(f'\n[\033[90mray-daemon-git{command}\033[0m]\n')
         sys.stderr.buffer.write(byte_string)
 
         cls._last_client_name = snapshoter_str
@@ -207,8 +208,8 @@ class Terminal:
         scripter_str = "scripter:.%s" % command
 
         if cls._last_client_name != scripter_str:
-            sys.stderr.write('\n[\033[90mray-daemon %s script\033[0m]\n'
-                             % command)
+            sys.stderr.write(
+                f'\n[\033[90mray-daemon {command} script\033[0m]\n')
         sys.stderr.buffer.write(byte_string)
 
         cls._last_client_name = scripter_str
@@ -220,15 +221,16 @@ class Terminal:
         if (not CommandLineArgs.debug_only
                 and not CommandLineArgs.no_client_messages):
             if cls._last_client_name != client_str:
-                sys.stderr.write('\n[\033[90m%s-%s\033[0m]\n'
-                                    % (client_name, client_id))
+                sys.stderr.write(
+                    f'\n[\033[90m{client_name}-{client_id}\033[0m]\n')
             sys.stderr.buffer.write(byte_string)
 
         cls._last_client_name = client_str
 
     @classmethod
     def warning(cls, string):
-        sys.stderr.write('[\033[90mray-daemon\033[0m]%s\033[0m\n' % string)
+        sys.stderr.write(
+            f'[\033[90mray-daemon\033[0m]{string}\033[0m\n')
         cls._last_client_name = 'daemon'
 
 
@@ -280,9 +282,10 @@ class CommandLineArgs(argparse.Namespace):
 
         if cls.config_dir and not os.access(cls.config_dir, os.W_OK):
             sys.stderr.write(
-                '%s is not a writable config dir, try another one\n'
-                    % cls.config_dir)
+                f'{cls.config_dir} is not a writable config dir, '
+                'try another one\n')
             sys.exit(1)
+
 
 class ArgParser(argparse.ArgumentParser):
     def __init__(self):

@@ -1,7 +1,7 @@
 
 # Imports from standard library
 import time
-import sys
+import logging
 from typing import TYPE_CHECKING, Optional
 
 # third party imports
@@ -20,6 +20,9 @@ from client_properties_dialog import ClientPropertiesDialog
 
 if TYPE_CHECKING:
     from gui_session import SignaledSession
+
+
+_logger = logging.getLogger(__name__)
 
 
 class Client(QObject, ray.ClientData):
@@ -104,9 +107,9 @@ class Client(QObject, ray.ClientData):
     def send_properties_to_daemon(self):
         server = GuiServerThread.instance()
         if not server:
-            sys.stderr.write(
-                'Server not found. Client %s can not send its properties\n'
-                % self.client_id)
+            _logger.error(
+                'Server not found. '
+                f'Client {self.client_id} can not send its properties')
             return
 
         server.to_daemon('/ray/client/update_properties',

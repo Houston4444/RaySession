@@ -3,6 +3,7 @@
 import os
 import sys
 from typing import TYPE_CHECKING
+import logging
 
 # Imports from HoustonPatchbay
 from patchbay.patchcanvas.patshared import GroupPos
@@ -18,7 +19,10 @@ from gui_tcp_thread import GuiTcpThread
 if TYPE_CHECKING:
     from gui_session import SignaledSession
 
+
+_logger = logging.getLogger(__name__)
 _instance = None
+
 
 def ray_method(path, types):
     def decorated(func):
@@ -28,10 +32,9 @@ def ray_method(path, types):
             if TYPE_CHECKING:
                 assert isinstance(t_thread, GuiServerThread)
 
-            if CommandLineArgs.debug:
-                sys.stderr.write(
-                    '\033[93mOSC::gui_receives\033[0m %s, %s, %s, %s\n'
-                    % (t_path, t_types, t_args, src_addr.url))
+            _logger.debug(
+                '\033[93mOSC::gui_receives\033[0m '
+                f'{t_path}, {t_types}, {t_args}, {src_addr.url}')
 
             if t_thread.stopping:
                 return
@@ -129,9 +132,9 @@ class GuiServerThread(ServerThread):
         if self.stopping:
             return
 
-        if CommandLineArgs.debug:
-            sys.stderr.write('\033[93mOSC::gui_receives\033[0m (%s, %s, %s)\n'
-                             % (path, args, types))
+        _logger.debug(
+            '\033[93mOSC::gui_receives\033[0m '
+            f'({path}, {args}, {types})')
 
         self.signaler.osc_receive.emit(path, args)
 
@@ -279,18 +282,14 @@ class GuiServerThread(ServerThread):
         return True
 
     def send(self, *args):
-        if CommandLineArgs.debug:
-            sys.stderr.write(
-                '\033[95mOSC::gui sends\033[0m %s\n' % str(args[1:]))
-
+        _logger.debug(f'\033[95mOSC::gui sends\033[0m {args[1:]}')
         super().send(*args)
 
     def to_daemon(self, *args):
         self.send(self.daemon_manager.address, *args)
 
     def announce(self):
-        if CommandLineArgs.debug:
-            sys.stderr.write('serverOSC::raysession_sends announce\n')
+        _logger.debug('raysession_sends announce')
 
         NSM_URL = os.getenv('NSM_URL')
         if not NSM_URL:

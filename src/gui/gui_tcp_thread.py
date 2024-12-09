@@ -21,10 +21,9 @@ def ray_method(path, types):
             if TYPE_CHECKING:
                 assert isinstance(t_thread, GuiTcpThread)
 
-            # if CommandLineArgs.debug:
-            #     sys.stderr.write(
-            #         '\033[93mOSC::gui_receives\033[0m %s, %s, %s, %s\n'
-            #         % (t_path, t_types, t_args, src_addr.url))
+            _logger.debug(
+                '\033[93mOSC::gui_receives\033[0m '
+                f'{t_path}, {t_types}, {t_args}, {src_addr.url}')
 
             if t_thread.stopping:
                 return
@@ -94,9 +93,8 @@ class GuiTcpThread(ServerThread):
         if self.stopping:
             return
 
-        # if CommandLineArgs.debug:
-        #     sys.stderr.write('\033[93mOSC::gui_receives\033[0m (%s, %s, %s)\n'
-        #                      % (path, args, types))
+        _logger.debug('\033[93mOSC::gui_receives\033[0m '
+                      f'({path}, {args}, {types})')
 
         self.signaler.osc_receive.emit(path, args)
     

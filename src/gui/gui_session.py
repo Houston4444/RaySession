@@ -1,11 +1,10 @@
 
 # Imports from standard library
-import sys
+import logging
 from typing import Optional
 
 # third party imports
 from qtpy.QtWidgets import QApplication
-from gui_tcp_thread import GuiTcpThread
 
 # Imports from HoustonPatchbay
 from patchbay.base_elements import TransportPosition
@@ -18,10 +17,14 @@ from daemon_manager import DaemonManager
 from gui_client import Client, TrashedClient
 from gui_signaler import Signaler
 from gui_server_thread import GuiServerThread
+from gui_tcp_thread import GuiTcpThread
 from gui_tools import CommandLineArgs, RS, error_text
 from main_window import MainWindow
 from nsm_child import NsmChild, NsmChildOutside
 from ray_patchbay_manager import RayPatchbayManager
+
+
+_logger = logging.getLogger(__name__)
 
 
 class Session:
@@ -113,9 +116,7 @@ class Session:
             if client.client_id == client_id:
                 return client
 
-        if CommandLineArgs.debug:
-            sys.stderr.write("gui_session does not contains client %s\n"
-                             % client_id)
+        _logger.debug(f"gui_session does not contains client {client_id}")
         return None
 
     def add_favorite(self, template_name: str, icon_name: str,
