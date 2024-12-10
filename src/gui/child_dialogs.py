@@ -78,7 +78,7 @@ class ChildDialog(QDialog):
     @classmethod
     def to_daemon(cls, *args):
         server = GuiServerThread.instance()
-        if server:
+        if server is not None:
             server.to_daemon(*args)
         else:
             _logger.error(f'No GUI OSC Server, can not send {args}.')

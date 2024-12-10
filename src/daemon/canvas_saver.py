@@ -3,8 +3,6 @@
 import json
 import logging
 from pathlib import Path
-import tempfile
-import time
 from typing import TYPE_CHECKING, Any, Union
 
 from patchbay.patchcanvas.patshared import (
@@ -13,7 +11,6 @@ from patchbay.patchcanvas.patshared import (
 
 # Imports from src/shared
 import ray
-from osclib import Address, are_on_same_machine
 from jack_renaming_tools import group_belongs_to_client
 
 # Local imports

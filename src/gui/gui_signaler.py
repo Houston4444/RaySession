@@ -38,7 +38,7 @@ class Signaler(QObject):
 
     root_changed = Signal(str)
 
-    session_preview_update = Signal()
+    session_preview_update = Signal(int)
     session_details = Signal(str, int, int, int)
     scripted_dir = Signal(str, int)
     parrallel_copy_state = Signal(int, int)

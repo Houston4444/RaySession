@@ -92,7 +92,7 @@ class Gui(Address):
         self.pid = 0
 
 
-# Osc server thread separated in many classes for confort.
+# Osc server thread separated in several classes for confort.
 
 
 class ClientCommunicating(ServerThread):
@@ -439,7 +439,7 @@ class OscServerThread(ClientCommunicating):
             self.terminal_command = shlex.join(
                 which_terminal(title='RAY_TERMINAL_TITLE'))
 
-        self._SIMPLE_OSC_PATHS = (
+        self._SIMPLE_OSC_PATHS = {
             ('/ray/server/quit', ''),
             ('/ray/server/abort_copy', ''),
             ('/ray/server/abort_parrallel_copy', 'i'),
@@ -495,7 +495,7 @@ class OscServerThread(ClientCommunicating):
             ('/ray/trashed_client/remove_definitely', 's'),
             ('/ray/trashed_client/remove_keep_files', 's'),
             ('/ray/net_daemon/duplicate_state', 'f')
-        )
+        }
         
         self._STRINGS_OSC_PATHS = {
             '/ray/server/list_user_client_templates': 0,
@@ -848,9 +848,9 @@ class OscServerThread(ClientCommunicating):
                       "Invalid session name.")
             return False
 
-    @osp_method('/ray/server/get_session_preview', 's')
+    @osp_method('/ray/server/get_session_preview', 'ss')
     def rayServerGetSessionPreview(self, osp: OscPack):
-        self.session_to_preview = osp.args[0]
+        self.session_to_preview = osp.args[1]
     
     @osp_method('/ray/server/script_info', 's')
     def rayServerScriptInfo(self, osp: OscPack):
@@ -1413,7 +1413,7 @@ class OscServerThread(ClientCommunicating):
         Terminal.message(f"GUI connected at {gui.addr.url}")
         Terminal.message(f"             and {gui.tcp_addr.url}")
 
-    def announce_controller(self, control_address):
+    def announce_controller(self, control_address: Address):
         controller = Controller()
         controller.addr = control_address
         self.controller_list.append(controller)
@@ -1421,11 +1421,11 @@ class OscServerThread(ClientCommunicating):
                   ray.VERSION, self.server_status.value, self.options.value,
                   str(self.session.root), 1)
 
-    def send_controller_message(self, message):
+    def send_controller_message(self, message: str):
         for controller in self.controller_list:
             self.send(controller.addr, '/ray/control/message', message)
 
-    def has_gui(self)->int:
+    def has_gui(self) -> int:
         has_gui = False
 
         for gui in self.gui_list:
