@@ -272,7 +272,6 @@ class DaemonManager(QObject):
         if not (self.address or self._port):
             self._port = get_free_osc_port()
             self.address = Address(self._port)
-            print('caphiiie', self._port, self.address)
 
     def is_announced(self):
         return self._is_announced

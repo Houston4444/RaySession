@@ -14,6 +14,7 @@ from qtpy.QtCore import Qt, QTimer, QDateTime, QLocale, QPoint
 
 # Imports from src/shared
 import ray
+from osclib import get_net_url, TCP
 
 # Local imports
 import child_dialogs
@@ -22,6 +23,7 @@ from child_dialogs import ChildDialog
 from client_properties_dialog import ClientPropertiesDialog
 from snapshots_dialog import (
     Snapshot, SnapGroup, SnGroup)
+from gui_tcp_thread import GuiTcpThread
 
 # Import UIs made with Qt-Designer
 import ui.open_session
@@ -266,7 +268,8 @@ class OpenSessionDialog(ChildDialog):
         self._listing_timer_progress_n = 0
         self._listing_timer_progress = QTimer()
         self._listing_timer_progress.setInterval(50)
-        self._listing_timer_progress.timeout.connect(self._listing_timer_progress_timeout)
+        self._listing_timer_progress.timeout.connect(
+            self._listing_timer_progress_timeout)
         self._listing_timer_progress.start()
         self._progress_inverted = False
 
@@ -605,8 +608,11 @@ class OpenSessionDialog(ChildDialog):
                 Path(session_full_name).name)
             self.ui.previewFrame.setEnabled(True)
             if session_full_name:
+                tcp_server = GuiTcpThread.instance()
+                tcp_url = get_net_url(tcp_server.port, protocol=TCP)
                 self.to_daemon(
-                    '/ray/server/get_session_preview', session_full_name)
+                    '/ray/server/get_session_preview',
+                    tcp_url, session_full_name)
 
             if item.text(COLUMN_SCRIPTS):
                 self._set_preview_scripted(True)
@@ -926,7 +932,7 @@ class OpenSessionDialog(ChildDialog):
                     COLUMN_NAME, Qt.ItemDataRole.UserRole)):
             self.accept()
 
-    def _session_preview_update(self):
+    def _session_preview_update(self, state: int):
         self.ui.plainTextEditNotes.setPlainText(self.session.preview_notes)
 
         for pv_client in self.session.preview_client_list:

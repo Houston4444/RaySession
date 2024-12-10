@@ -3,7 +3,9 @@ from typing import TYPE_CHECKING, Optional
 
 from patchbay.patchcanvas.patshared import GroupPos
 
-from osclib import ServerThread, get_free_osc_port, TCP, get_net_url, make_method, Address
+import ray
+from osclib import (ServerThread, get_free_osc_port, TCP,
+                    get_net_url, make_method, Address)
 
 if TYPE_CHECKING:
     from gui_session import SignaledSession
@@ -85,7 +87,16 @@ class GuiTcpThread(ServerThread):
                 ('/ray/gui/patchbay/client_name_and_uuid', 'sh'),
                 ('/ray/gui/patchbay/transport_position', 'iiiiiif'),
                 ('/ray/gui/patchbay/update_group_position', 'i' + GroupPos.args_types()),
-                ('/ray/gui/patchbay/views_changed', 's')):
+                ('/ray/gui/patchbay/views_changed', 's'),
+                ('/ray/gui/preview/clear', ''),
+                ('/ray/gui/preview/notes', 's'),
+                ('/ray/gui/preview/client/update', ray.ClientData.sisi()),
+                ('/ray/gui/preview/client/ray_hack_update', 's' + ray.RayHack.sisi()),
+                ('/ray/gui/preview/client/ray_net_update', 's' + ray.RayNet.sisi()),
+                ('/ray/gui/preview/client/is_started', 'si'),
+                ('/ray/gui/preview/snapshot', 's'),
+                ('/ray/gui/preview/session_size', 'h'),
+                ('/ray/gui/preview/state', 'i')):
             self.add_method(path_types[0], path_types[1],
                             self._generic_callback)
         
@@ -112,6 +123,10 @@ class GuiTcpThread(ServerThread):
         for c in types_end:
             if c != 's':
                 return False
+    
+    @ray_method('/ray/gui/preview/state', 'i')
+    def _ray_gui_preview_state(self, path, args, types, src_addr):
+        self.signaler.session_preview_update.emit(args[0])
     
     def stop(self):
         self.stopping = True

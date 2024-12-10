@@ -6,12 +6,13 @@ from pathlib import Path
 import subprocess
 import time
 from typing import TYPE_CHECKING, Callable
+import logging
 
 # third party imports
 from qtpy.QtCore import QCoreApplication, QProcess
 
 # Imports from src/shared
-from osclib import Address, OscPack, are_same_osc_port
+from osclib import Address, OscPack, are_same_osc_port, TCP
 import ray
 import xdg
 
@@ -24,6 +25,7 @@ from session import OperatingSession
 from patch_rewriter import rewrite_jack_patch_files
 
 
+_logger = logging.getLogger(__name__)
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
 
@@ -669,7 +671,7 @@ class SignaledSession(OperatingSession):
             osp.path, [template_name, net], osp.src_addr)
 
     def _ray_server_get_session_preview(self, osp: OscPack):
-        session_name = osp.args[0]
+        session_name = osp.args[1]
         server = self.get_server()
         if server is None:
             return
@@ -1945,11 +1947,18 @@ class DummySession(OperatingSession):
     
     def ray_server_get_session_preview(self, osp: OscPack,
                                        folder_sizes: list):
-        session_name = osp.args[0]
+        
+        try:
+            tcp_addr = Address(osp.args[0])
+            assert tcp_addr.protocol == TCP
+        except:
+            _logger.error(f'unable to make a TCP address with {osp.args[0]}')
+        
+        session_name = osp.args[1]
         self.steps_order = [(self.preload, session_name, False),
                             self.take_place,
                             self.load,
-                            (self.send_preview, osp.src_addr, folder_sizes)]
+                            (self.send_preview, tcp_addr, osp.src_addr, folder_sizes)]
         self.next_function()
     
     def dummy_load(self, session_name):
