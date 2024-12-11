@@ -2435,21 +2435,25 @@ for better organization.""")
         self.answer(src_addr, src_path, 'Clients cleared')
         
     def send_preview(self, src_addr: Address, udp_addr: Address, folder_sizes: list):
+        def send_state(preview_state: ray.PreviewState):
+            self.send_tcp_even_dummy(
+                src_addr,  '/ray/gui/preview/state',
+                preview_state.value) 
+        
         if self.path is None:
             return
-        
-        td = dict[str, float]()
-        td['start'] = time.time()
         
         # prevent long list of OSC sends if preview order already changed
         server = self.get_server_even_dummy()
         if server and server.session_to_preview != self.get_short_path():
             return
         
-        self.send_tcp_even_dummy(src_addr, '/ray/gui/preview/clear')
-        self.send_tcp_even_dummy(src_addr, '/ray/gui/preview/notes', self.notes)
-
-        td['notes'] = time.time()
+        self.send_tcp_even_dummy(src_addr, '/ray/gui/preview/clear')        
+        send_state(ray.PreviewState.STARTED)
+        
+        self.send_tcp_even_dummy(
+            src_addr, '/ray/gui/preview/notes', self.notes)
+        send_state(ray.PreviewState.NOTES)
 
         for client in self.clients:
             self.send_tcp_even_dummy(
@@ -2470,22 +2474,13 @@ for better organization.""")
                     src_addr, '/ray/gui/preview/client/ray_net_update',
                     client.client_id, *client.ray_net.spread())
 
-        td['clients'] = time.time()
+        send_state(ray.PreviewState.CLIENTS)
 
-        # i = 0
         for snapshot in self.snapshoter.list():
             self.send_tcp_even_dummy(
                 src_addr, '/ray/gui/preview/snapshot', snapshot)
-            
-            # i += 1
-            # if i == 100:
-            #     # check if preview is still wanted on this session
-            #     if server and server.session_to_preview != self.get_short_path():
-            #         return
-            #     i = 0
-
-        td['snapshots'] = time.time()
         
+        send_state(ray.PreviewState.SNAPSHOTS)
 
 
         # re check here if preview has not changed before calculate session size
@@ -2510,7 +2505,9 @@ for better organization.""")
         if not total_size:
             for root, dirs, files in os.walk(self.path):
                 # check each loop if it is still pertinent to walk
-                if server and server.session_to_preview != self.get_short_path():
+                if (server 
+                        and (server.session_to_preview
+                             != self.get_short_path())):
                     return
 
                 # exclude symlinks directories from count
@@ -2539,8 +2536,6 @@ for better organization.""")
                     total_size = -1
                     break
         
-        td['presizes'] = time.time()
-        
         for folder_size in folder_sizes:
             if folder_size['path'] == str(self.path):
                 folder_size['modified'] = modified
@@ -2548,24 +2543,16 @@ for better organization.""")
                 break
         else:
             folder_sizes.append(
-                {'path': str(self.path), 'modified': modified, 'size': total_size})
-
-        td['post_sizes'] = time.time()
+                {'path': str(self.path),
+                 'modified': modified,
+                 'size': total_size})
 
         self.send_tcp_even_dummy(
             src_addr, '/ray/gui/preview/session_size', total_size)
 
+        send_state(ray.PreviewState.FOLDER_SIZE)
+
         self.send_tcp_even_dummy(
             src_addr, '/ray/gui/preview/state', 2)
-        
-        td['finished'] = time.time()
-        
-        sn_list = self.snapshoter.list()
-        td['list snap'] = time.time()
-        print('len snapsh', len(sn_list))
-        
-        for key, value in td.items():
-            print('fd', value, key)
-        # self.send_even_dummy(
-        #     udp_addr, '/reply', '/ray/server/get_session_preview')
+
         del self

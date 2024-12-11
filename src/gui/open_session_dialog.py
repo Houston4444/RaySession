@@ -933,28 +933,37 @@ class OpenSessionDialog(ChildDialog):
             self.accept()
 
     def _session_preview_update(self, state: int):
-        self.ui.plainTextEditNotes.setPlainText(self.session.preview_notes)
+        preview_state = ray.PreviewState(state)
+        
+        if preview_state is ray.PreviewState.NOTES:
+            self.ui.plainTextEditNotes.setPlainText(
+                self.session.preview_notes)
 
-        for pv_client in self.session.preview_client_list:
-            client_slot = self.ui.listWidgetPreview.create_client_widget(pv_client)
-            client_slot.set_launched(
-                pv_client.client_id in self.session.preview_started_clients)
+        elif preview_state is ray.PreviewState.CLIENTS:
+            for pv_client in self.session.preview_client_list:
+                client_slot = self.ui.listWidgetPreview \
+                    .create_client_widget(pv_client)
+                client_slot.set_launched(
+                    pv_client.client_id
+                    in self.session.preview_started_clients)
         
-        self.main_snap_group.snapshots.clear()
-        self._add_snapshots(self.session.preview_snapshots)
+        elif preview_state is ray.PreviewState.SNAPSHOTS:
+            self.main_snap_group.snapshots.clear()
+            self._add_snapshots(self.session.preview_snapshots)
         
-        locale = QLocale()
-        self.ui.labelSessionSize.setText(
-            locale.formattedDataSize(self.session.preview_size))
-        
-        # store size in item
-        item = self.ui.sessionList.currentItem()
-        if item is not None:
-            item.setData(COLUMN_NAME, DATA_SIZE, self.session.preview_size)
-            self._set_preview_scripted(
-                bool(item.text(COLUMN_SCRIPTS)))
-        else:
-            self._set_preview_scripted(False)
+        elif preview_state is ray.PreviewState.FOLDER_SIZE:
+            locale = QLocale()
+            self.ui.labelSessionSize.setText(
+                locale.formattedDataSize(self.session.preview_size))
+            
+            # store size in item
+            item = self.ui.sessionList.currentItem()
+            if item is not None:
+                item.setData(COLUMN_NAME, DATA_SIZE, self.session.preview_size)
+                self._set_preview_scripted(
+                    bool(item.text(COLUMN_SCRIPTS)))
+            else:
+                self._set_preview_scripted(False)
                 
         self._update_session_menu()
 
