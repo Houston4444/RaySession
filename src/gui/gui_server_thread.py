@@ -151,8 +151,6 @@ class GuiServerThread(ServerThread):
         elif reply_path in ('/ray/session/list_snapshots',
                             '/ray/client/list_snapshots'):
             self.signaler.snapshots_found.emit(new_args)
-        elif reply_path == '/ray/server/get_session_preview':
-            self.signaler.session_preview_update.emit()
         elif reply_path == '/ray/server/rename_session':
             self.signaler.other_session_renamed.emit()
         elif reply_path == '/ray/session/duplicate_only':

@@ -230,6 +230,17 @@ class ScriptFile(Flag):
     CLOSE = 0x8
     
 
+class PreviewState(Enum):
+    STARTED = 1
+    NOTES = 2
+    CLIENTS = 3
+    SNAPSHOTS = 4
+    FOLDER_SIZE = 5
+    
+    def _missing_(self, value):
+        return self.STARTED
+
+
 @dataclass
 class Favorite:
     name: str
