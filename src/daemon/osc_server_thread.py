@@ -689,7 +689,7 @@ class OscServerThread(ClientCommunicating):
 
     @osp_method('/ray/server/list_path', '')
     def rayServerListPath(self, osp: OscPack):
-        exec_list = list[str]()
+        exec_set = set[str]()
         tmp_exec_list = list[str]()
         n = 0
 
@@ -700,14 +700,15 @@ class OscServerThread(ClientCommunicating):
                 for exe in listexe:
                     fullexe = pathdir + '/' + exe
 
-                    if (os.path.isfile(fullexe)
-                            and os.access(fullexe, os.X_OK)
-                            and not exe in exec_list):
-                        exec_list.append(exe)
+                    if (exe not in exec_set
+                            and os.path.isfile(fullexe)
+                            and os.access(fullexe, os.X_OK)):
+                        exec_set.add(exe)
                         tmp_exec_list.append(exe)
                         n += len(exe)
 
                         if n >= 20000:
+                            print('un reply path', tmp_exec_list)
                             self.send(osp.src_addr, '/reply',
                                       osp.path, *tmp_exec_list)
                             tmp_exec_list.clear()

@@ -1870,9 +1870,8 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         return message
 
     def relevant_no_save_level(self) -> int:
-        '''This method will be renamed or deleted later
-        no_save_level will be deprecated for NSM client
-        it will applies only on Ray-Hack clients'''
+        '''return no_save_level (1 or 2) only if it uses RayHack protocol
+        and if it takes sense, else 0'''
         if self.is_ray_hack():
             return self.ray_hack.relevant_no_save_level()
 
@@ -2206,7 +2205,6 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             old_client_id = X_CLIENT_ID_X
             old_client_links_dir = X_CLIENT_LINKS_DIR_X
 
-        print('narroufpf', self.client_id)
         old_prefix = old_session_name
         new_prefix = new_session_name
         if self.prefix_mode is ray.PrefixMode.CLIENT_NAME:
@@ -2263,15 +2261,15 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         self.message("Process has pid: %i" % pid)
         self.message(
-            "The client \"%s\" at \"%s\" " % (self.name, self.addr.url)
-            + "informs us it's ready to receive commands.")
+            f"The client \"{self.name}\" at \"{self.addr.url}\" "
+            "informs us it's ready to receive commands.")
 
         server = self.get_server()
         if not server:
             return
 
         self.send_gui_message(
-            _translate('GUIMSG', "  %s: announced" % self.gui_msg_style()))
+            _translate('GUIMSG', "  %s: announced") % self.gui_msg_style())
 
         # if this daemon is under another NSM session
         # do not enable server-control
@@ -2279,7 +2277,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         server_capabilities = ""
         if not server.is_nsm_locked:
             server_capabilities += ":server-control"
-        server_capabilities += ":broadcast:optional-gui:no-save-level:monitor:"
+        server_capabilities += ":broadcast:optional-gui:monitor:"
 
         self.send(*osp.reply(),
                   "Well hello, stranger. Welcome to the party."

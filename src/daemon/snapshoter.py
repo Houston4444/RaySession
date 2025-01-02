@@ -408,7 +408,7 @@ class Snapshoter(QObject):
     def list(self, client_id="") -> list[str]:
         root = self._get_history_xml_root()
         if root is None:
-            return
+            return list[str]()
 
         all_tags = list[str]()
         all_snaps = list[tuple[str, str]]()
