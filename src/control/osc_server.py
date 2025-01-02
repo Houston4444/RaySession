@@ -37,13 +37,14 @@ class OscServer(Server):
         self._wait_for_start = False
         self._wait_for_start_only = False
         self._started_time = 0
-        self._stop_port_list = []
+        self._stop_port_list = list[int]()
         self._detach = detach
         self._announce_time = 0
         self._osc_order_path = ''
         self._osc_order_args = []
 
-    def reply_message(self, path, args, types, src_addr):
+    def reply_message(
+            self, path: str, args: list, types: str, src_addr: Address):
         if not are_they_all_strings(args):
             return
 
@@ -202,7 +203,7 @@ class OscServer(Server):
         self.set_daemon_address(port)
         self.to_daemon('/ray/server/quit')
 
-    def stop_daemons(self, stop_port_list):
+    def stop_daemons(self, stop_port_list: list[int]):
         self._stop_port_list = stop_port_list
         if self._stop_port_list:
             self.stop_daemon(self._stop_port_list[0])
