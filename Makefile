@@ -158,7 +158,7 @@ pure_install:
 	# Copy patchbay themes, manual and lib
 	cp -r HoustonPatchbay/themes $(DEST_RAY)/$(PATCHBAY_DIR)/
 	cp -r HoustonPatchbay/manual $(DEST_RAY)/$(PATCHBAY_DIR)/
-	cp -r HoustonPatchbay/patchbay $(DEST_RAY)/$(PATCHBAY_DIR)/
+	cp -r HoustonPatchbay/source $(DEST_RAY)/$(PATCHBAY_DIR)/
 
 	# Copy pyjacklib
 	cp -r pyjacklib/jacklib $(DEST_RAY)/pyjacklib/
@@ -180,7 +180,7 @@ pure_install:
 	$(LINK) $(DEST_RAY)/src/bin/ray_git                 $(DESTDIR)$(PREFIX)/bin/
 	
 	# compile python files
-	$(PYTHON) -m compileall $(DEST_RAY)/HoustonPatchbay/patchbay/
+	$(PYTHON) -m compileall $(DEST_RAY)/HoustonPatchbay/source/
 	$(PYTHON) -m compileall $(DEST_RAY)/pyjacklib/jacklib/
 	$(PYTHON) -m compileall $(DEST_RAY)/src/
 	

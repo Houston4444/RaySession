@@ -69,3 +69,27 @@ Qt6:
 TCP:
     À voir éventuellement, mais pas sûr vu que ça ne reconnait pas la src_addr
     qui est beaucoup utilisée.
+
+
+Pretty names dans RS:
+    nécessite un patchbay daemon permanent, un soupçon plus de ressources sans GUI,
+    mais tellement plus simple et fiable.
+
+    action:
+        sauvegarder direct dans la base du patchbay
+        Envoyer au démon de quoi mettre à jour sa base
+            Le démon:
+                enregistre dans sa base
+                update la base du patchbay daemon
+
+    nouveau port dans patchbay:
+        appliquer le pretty_name contenu dans la base du patchbay
+
+    nouveau port dans patchbay_daemon:
+        (nécessite une communication TCP ou UNIX directe avec le démon)
+        appliquer les métadonnées par rapport à la base
+            après la liste du graphe
+            Xms après l'apparition d'un port ou d'un client (200ms ?)
+
+    réception d'un pretty name dans le patchbay_daemon depuis le démon:
+        appliquer les métadonnées immédiatement

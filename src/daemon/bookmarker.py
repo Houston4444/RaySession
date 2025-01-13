@@ -525,7 +525,7 @@ class BookMarker:
         except:
             return
 
-    def _get_pickers_for_xml(self):
+    def _get_pickers_for_xml(self) -> str:
         string = ":"
         if self._gtk2.written:
             string += "gtk2:"

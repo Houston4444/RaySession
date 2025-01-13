@@ -207,7 +207,8 @@ class MainObject:
     def eat_client_names_queue(self):
         while self.client_names_queue:
             client_name = self.client_names_queue.pop(0)
-            b_uuid = jacklib.get_uuid_for_client_name(self.jack_client, client_name)
+            b_uuid = jacklib.get_uuid_for_client_name(
+                self.jack_client, client_name)
 
             # convert bytes uuid to int
             uuid = 0

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import logging
 
 # Imports from HoustonPatchbay
-from patchbay.patchcanvas.patshared import GroupPos
+from patshared import GroupPos
 
 # Imports from src/shared
 from osclib import ServerThread, get_net_url, make_method, TCP

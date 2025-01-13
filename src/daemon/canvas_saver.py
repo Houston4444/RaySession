@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Union
 
-from patchbay.patchcanvas.patshared import (
+from patshared import (
     PortgroupsDict, from_json_to_str, PortTypesViewFlag, GroupPos,
     PortgroupMem, ViewsDict)
 

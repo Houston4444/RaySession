@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 # set HoustonPatchbay/patchbay and src/shared/* as libs
-sys.path.insert(1, str(Path(__file__).parents[2] / 'HoustonPatchbay'))
+sys.path.insert(1, str(Path(__file__).parents[2] / 'HoustonPatchbay/source'))
 sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
 # Set QT_API environment variable, to make qtpy knows
