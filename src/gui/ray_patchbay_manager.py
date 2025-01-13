@@ -7,7 +7,7 @@ import os
 import logging
 
 # Imports from HoustonPatchbay
-from patchbay.patchcanvas.patshared import (
+from patshared import (
     GroupPos, PortgroupMem, PortMode, ViewData)
 from patchbay.base_elements import ToolDisplayed
 from patchbay.base_group import Group

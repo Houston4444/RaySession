@@ -7,10 +7,10 @@ import time
 import os
 from pathlib import Path
 
-root_path = Path(__file__).parent.parent.parent
+root_path = Path(__file__).parents[2]
 
 # allow libs to be imported from submodules and shared
-sys.path.insert(1, str(root_path / 'HoustonPatchbay'))
+sys.path.insert(1, str(root_path / 'HoustonPatchbay/source'))
 sys.path.insert(1, str(root_path / 'pyjacklib'))
 sys.path.insert(1, str(root_path / 'src' / 'shared'))
 

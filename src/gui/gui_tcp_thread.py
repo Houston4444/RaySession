@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Optional
 
-from patchbay.patchcanvas.patshared import GroupPos
+from patshared import GroupPos
 
 import ray
 from osclib import (ServerThread, get_free_osc_port, TCP,

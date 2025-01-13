@@ -1,0 +1,12 @@
+Patchance:
+    Si pas de pretty_name en place:
+        on applique
+    Si pretty_name en place == pretty_name sauvé:
+        Ne rien faire
+    Si pretty_name existant == pretty_name en dessous:
+        on applique
+
+en gros:
+    le pretty_name sauvé contient:
+        le pretty_name
+        le pretty_name précédant si existant

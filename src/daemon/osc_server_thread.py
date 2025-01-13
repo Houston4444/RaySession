@@ -16,7 +16,7 @@ import xml.etree.ElementTree as ET
 from qtpy.QtCore import QCoreApplication
 
 # Imports from HoustonPatchbay
-from patchbay.patchcanvas.patshared import GroupPos
+from patshared import GroupPos
 
 # Imports from src/shared
 from osclib import (
