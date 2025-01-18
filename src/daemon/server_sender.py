@@ -48,6 +48,22 @@ class ServerSender:
 
         server.send(*args)
 
+    def send_tcp(self, *args):
+        if self.is_dummy:
+            return
+        
+        tcp_server = TcpServerThread.instance()
+        if not tcp_server:
+            return
+
+        try:
+            tcp_server.send(*args)
+        except:
+            if isinstance(args[0], Address):
+                _logger.error(f'Failed to send TCP to {args[0].url}')
+            else:
+                _logger.error(f'Failed to send TCP to {args[0]}')
+
     def send_tcp_even_dummy(self, *args):
         tcp_server = TcpServerThread.instance()
         if not tcp_server:
