@@ -3,7 +3,6 @@
 import logging
 import os
 import shlex
-import sys
 import random
 import shutil
 import subprocess
@@ -77,22 +76,18 @@ def osp_method(path: str, types: str):
 
 
 class Controller:
-    addr: Address = None
+    addr: Optional[Address] = None
     pid = 0
 
 
-class Gui(Address):
-    pid: int
-    addr: Address
-    tcp_addr: Optional[Address]
-    
+class Gui:
     def __init__(self, url: str):
         self.addr = Address(url)
-        self.tcp_addr = None
+        self.tcp_addr: Optional[Address] = None
         self.pid = 0
 
 
-# Osc server thread separated in several classes for confort.
+# Osc server thread is splitted in several classes for confort.
 
 
 class ClientCommunicating(ServerThread):

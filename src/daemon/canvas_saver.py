@@ -145,26 +145,27 @@ class CanvasSaver(ServerSender):
         for view_index in self.views_config.keys():
             for gpos in self.views_config.iter_group_poses(
                     view_num=view_index):
-                self.send(
+                self.send_tcp(
                     gui.tcp_addr, '/ray/gui/patchbay/update_group_position',
                     view_index, *gpos.to_arg_list())
 
         for view_index in self.views_session.keys():
             for gpos in self.views_session.iter_group_poses(
                     view_num=view_index):
-                self.send(
+                self.send_tcp(
                     gui.tcp_addr, '/ray/gui/patchbay/update_group_position',
                     view_index, *gpos.to_arg_list())
 
         for pg_mem in self.portgroups.iter_all_portgroups():
-            self.send(gui.tcp_addr, '/ray/gui/patchbay/update_portgroup',
-                      *pg_mem.to_arg_list())
+            self.send_tcp(
+                gui.tcp_addr, '/ray/gui/patchbay/update_portgroup',
+                *pg_mem.to_arg_list())
                 
         # send view datas
         view_data_mixed = (self.views_config.short_data_states()
                            |self.views_session.short_data_states())
 
-        self.send(gui.tcp_addr,
+        self.send_tcp(gui.tcp_addr,
                   '/ray/gui/patchbay/views_changed',
                   json.dumps(view_data_mixed))
 
