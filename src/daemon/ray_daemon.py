@@ -136,6 +136,7 @@ if True:
         server.announce_gui(CommandLineArgs.gui_url.url,
                             gui_pid=CommandLineArgs.gui_pid,
                             tcp_addr=CommandLineArgs.gui_tcp_url)
+
     elif CommandLineArgs.gui_port:
         server.announce_gui(CommandLineArgs.gui_port.url,
                             gui_pid=CommandLineArgs.gui_pid,
@@ -144,7 +145,6 @@ if True:
     # announce to ray_control if launched from it.
     if CommandLineArgs.control_url:
         server.announce_controller(CommandLineArgs.control_url)
-
 
     # create or update multi_daemon_file in /tmp
     multi_daemon_file = MultiDaemonFile(session, server)
@@ -167,8 +167,9 @@ if True:
     timer.timeout.connect(lambda: None)
     timer.start()
 
-    # start app
+    # run main loop app
     app.exec()
+
     # app is stopped
 
     # update multi_daemon_file without this server

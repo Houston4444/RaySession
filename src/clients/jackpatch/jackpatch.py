@@ -24,6 +24,9 @@ from pathlib import Path
 sys.path.insert(1, str(Path(__file__).parents[3] / 'pyjacklib'))
 sys.path.insert(1, str(Path(__file__).parents[2] / 'shared'))
 
+from proc_name import set_proc_name
+set_proc_name('ray-jackpatch')
+
 import main_loop
 
 main_loop.run()
