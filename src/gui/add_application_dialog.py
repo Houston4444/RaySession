@@ -95,11 +95,8 @@ class TemplateSlot(QFrame):
         return self.ui.label.text()
 
     def remove_template(self):
-        add_app_dialog = self._list_widget.parent()
-        
-        # 'if' statement only for typing, should always be True.
-        if isinstance(add_app_dialog, AddApplicationDialog):
-            add_app_dialog.remove_template(self._name, self._factory)
+        add_app_dialog: AddApplicationDialog = self._list_widget.parent()        
+        add_app_dialog.remove_template(self._name, self._factory)
 
     def set_as_favorite(self, yesno: bool):
         self.ui.toolButtonFavorite.set_as_favorite(yesno)
@@ -111,7 +108,8 @@ class TemplateSlot(QFrame):
 class TemplateItem(QListWidgetItem):
     def __init__(self, parent: QListWidget, session: 'SignaledSession',
                  name: str, factory: bool):
-        QListWidgetItem.__init__(self, parent, QListWidgetItem.ItemType.UserType + 1)
+        QListWidgetItem.__init__(
+            self, parent, QListWidgetItem.ItemType.UserType + 1)
 
         self.client_data = ray.ClientData()
         self._widget = TemplateSlot(parent, session,
@@ -173,7 +171,8 @@ class RemoveTemplateDialog(ChildDialog):
         self.ui.label.setText(
             _translate(
                 'add_app_dialog',
-                '<p>Are you sure to want to remove<br>the template "%s" and all its files ?</p>')
+                '<p>Are you sure to want to remove<br>'
+                'the template "%s" and all its files ?</p>')
                 % template_name)
 
         self.ui.pushButtonCancel.setFocus()
@@ -195,11 +194,16 @@ class AddApplicationDialog(ChildDialog):
             'AddApplication/ray_hack_box', True, type=bool))
         self.ui.widgetTemplateInfos.setVisible(False)
 
-        self.ui.checkBoxFactory.stateChanged.connect(self._factory_box_changed)
-        self.ui.checkBoxUser.stateChanged.connect(self._user_box_changed)
-        self.ui.checkBoxNsm.stateChanged.connect(self._nsm_box_changed)
-        self.ui.checkBoxRayHack.stateChanged.connect(self._ray_hack_box_changed)
-        self.ui.pushButtonRefresh.clicked.connect(self._refresh_database)
+        self.ui.checkBoxFactory.stateChanged.connect(
+            self._factory_box_changed)
+        self.ui.checkBoxUser.stateChanged.connect(
+            self._user_box_changed)
+        self.ui.checkBoxNsm.stateChanged.connect(
+            self._nsm_box_changed)
+        self.ui.checkBoxRayHack.stateChanged.connect(
+            self._ray_hack_box_changed)
+        self.ui.pushButtonRefresh.clicked.connect(
+            self._refresh_database)
         self._refresh_shortcut = QShortcut('F5', self)
         self._refresh_shortcut.activated.connect(self._refresh_database)
 
@@ -248,8 +252,8 @@ class AddApplicationDialog(ChildDialog):
         self.to_daemon('/ray/server/list_factory_client_templates')
         self.listing_finished = 0
 
-        self.user_template_list = []
-        self.factory_template_list = []
+        self.user_template_list = list[str]()
+        self.factory_template_list = list[str]()
 
         self._server_will_accept = False
         self.has_selection = False
@@ -318,7 +322,7 @@ class AddApplicationDialog(ChildDialog):
         self.to_daemon('/ray/server/list_user_client_templates')
         self.to_daemon('/ray/server/list_factory_client_templates')
 
-    def _add_user_templates(self, template_list):
+    def _add_user_templates(self, template_list: list[str]):
         for template_name in template_list:
             if template_name in self.user_template_list:
                 continue
@@ -337,7 +341,7 @@ class AddApplicationDialog(ChildDialog):
 
         self._update_filtered_list()
 
-    def _add_factory_templates(self, template_list):
+    def _add_factory_templates(self, template_list: list[str]):
         for template_name in template_list:
             if template_name in self.factory_template_list:
                 continue
