@@ -48,6 +48,7 @@ class OscJackPatch(Server):
         self.port_list = main_object.port_list
         self.connection_list = main_object.connection_list
         self.metadata_list = main_object.metadata_list
+        self.metadatas = main_object.metadatas
         self.client_list = main_object.client_list
         self.gui_list = list[Address]()
         self._tmp_gui_url = ''
@@ -73,18 +74,7 @@ class OscJackPatch(Server):
             self._terminate = True
 
     def _ray_patchbay_port_set_alias(self, path, args, types, src_addr):
-        port_name, alias_num, alias = args
-        for port in self.port_list:
-            if port.name == port_name:
-                # TODO
-                # better would be to use jacklib.port_set_alias(port, alias)
-                # but this is very confuse
-                # 2 aliases possibles, but only one arg to this method (after port).
-                if alias_num == 1:
-                    port.alias_1 = alias
-                elif alias_num == 2:
-                    port.alias_2 = alias
-                break
+        ...
 
     def _ray_patchbay_connect(self, path, args):
         port_out_name, port_in_name = args
@@ -152,12 +142,13 @@ class OscJackPatch(Server):
             self.multi_send(src_addr_list,
                             '/ray/gui/patchbay/connection_added',
                             connection[0], connection[1])
-            
-        for metadata in self.metadata_list:
-            self.multi_send(src_addr_list,
-                            '/ray/gui/patchbay/metadata_updated',
-                            metadata['uuid'], metadata['key'],
-                            metadata['value'])
+        
+        for uuid, key_dict in self.metadatas.items():
+            for key, value in key_dict.items():
+                self.multi_send(
+                    src_addr_list,
+                    '/ray/gui/patchbay/metadata_updated',
+                    uuid, key, value)
             
         if self.main_object.alsa_mng is not None:
             alsa_mng = self.main_object.alsa_mng
