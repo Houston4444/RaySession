@@ -10,6 +10,7 @@ import warnings
 import threading
 import time
 from pathlib import Path
+import logging
 
 sys.path.insert(1, str(Path(__file__).parents[2] / 'pyjacklib'))
 sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
@@ -24,12 +25,13 @@ try:
 except:
     ALSA_LIB_OK = False
 
+import jack
+
 from proc_name import set_proc_name
-import jacklib
-from jacklib.helpers import c_char_p_p_to_list
-from jacklib.enums import JackOptions, JackPortFlags, JackMetadata
 
 from osc_server import OscJackPatch
+
+_logger = logging.getLogger(__name__)
 
 PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1
@@ -70,6 +72,24 @@ class suppress_stdout_stderr(object):
             os.close(fd)
             
 
+class JackMetadata:
+    _PREFIX = "http://jackaudio.org/metadata/"
+    CONNECTED = _PREFIX + "connected"
+    EVENT_TYPES = _PREFIX + "event-types"
+    HARDWARE = _PREFIX + "hardware"
+    ICON_LARGE = _PREFIX + "icon-large"
+    ICON_NAME = _PREFIX + "icon-name"
+    ICON_SMALL = _PREFIX + "icon-small"
+    ORDER = _PREFIX + "order"
+    PORT_GROUP = _PREFIX + "port-group"
+    PRETTY_NAME = _PREFIX + "pretty-name"
+    SIGNAL_TYPE = _PREFIX + "signal-type"
+
+    # Specific to HoustonPatchbay
+    MIDI_BRIDGE_GROUP_PRETTY_NAME = \
+        "HoustonPatchbay/midi-bridge-pretty-name"
+
+
 @dataclass
 class TransportPosition:
     frame: int
@@ -88,47 +108,48 @@ class TransportWanted(IntEnum):
 
 
 class JackPort:
-    id = 0
-    name = ''
-    type = PORT_TYPE_NULL
-    flags = 0
-    alias_1 = ''
-    alias_2 = ''
-    order = None
-    uuid = 0
+    def __init__(self, name: str, type_: int, flags: int, uuid: int):
+        self.name = name
+        self.type = type_
+        self.flags = flags
+        self.uuid = uuid
+        self.order: Optional[int] = None
+
+
+# class JackPort:
+#     id = 0
+#     name = ''
+#     type = PORT_TYPE_NULL
+#     flags = 0
+#     order = None
+#     uuid = 0
     
-    def __init__(self, port_name:str, jack_client, port_ptr=None):
-        # In some cases, port could has just been renamed
-        # then, jacklib.port_by_name() fail.
-        # that is why, port_ptr can be sent as argument here
-        self.name = port_name
-        if port_ptr is None:
-            port_ptr = jacklib.port_by_name(jack_client, port_name)
-        self.flags = jacklib.port_flags(port_ptr)
-        self.uuid = jacklib.port_uuid(port_ptr)
+#     def __init__(self, port_name:str, jack_client, port_ptr=None):
+#         # In some cases, port could has just been renamed
+#         # then, jacklib.port_by_name() fail.
+#         # that is why, port_ptr can be sent as argument here
+#         self.name = port_name
+#         if port_ptr is None:
+#             port_ptr = jacklib.port_by_name(jack_client, port_name)
+#         self.flags = jacklib.port_flags(port_ptr)
+#         self.uuid = jacklib.port_uuid(port_ptr)
 
-        port_type_str = jacklib.port_type(port_ptr)
-        if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
-            self.type = PORT_TYPE_AUDIO
-        elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
-            self.type = PORT_TYPE_MIDI
-            
-        order_prop = jacklib.get_property(
-            self.uuid, JackMetadata.ORDER)
+#         port_type_str = jacklib.port_type(port_ptr)
+#         if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
+#             self.type = PORT_TYPE_AUDIO
+#         elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
+#             self.type = PORT_TYPE_MIDI
 
-        ret, alias_1, alias_2 = jacklib.port_get_aliases(port_ptr)
-        if ret:
-            self.alias_1 = alias_1
-            self.alias_2 = alias_2
-
-    def __lt__(self, other: 'JackPort'):
-        return self.uuid < other.uuid
+#     def __lt__(self, other: 'JackPort'):
+#         return self.uuid < other.uuid
 
 
 class MainObject:
     port_list = list[JackPort]()
     connection_list = list[tuple[str, str]]()
     metadata_list = list[dict]()
+    metadatas = dict[int, dict[str, str]]()
+    'dict[uuid, dict[key, value]]'
     client_list = list[dict]()
     client_names_queue = list[str]()
     jack_running = False
@@ -136,6 +157,7 @@ class MainObject:
     alsa_mng: Optional['AlsaManager'] = None
     terminate = False
     jack_client = None
+    client = None
     samplerate = 48000
     buffer_size = 1024
     
@@ -159,20 +181,6 @@ class MainObject:
         if ALSA_LIB_OK:
             self.alsa_mng = AlsaManager(self)
             self.alsa_mng.add_all_ports()
-    
-    @staticmethod
-    def get_metadata_value_str(prop: jacklib.Property) -> str:
-        value = prop.value
-        if isinstance(value, bytes):
-            return value.decode()
-        elif isinstance(value, str):
-            return value
-        else:
-            try:
-                value = str(value)
-            except:
-                return ''
-        return value
     
     def write_existence_file(self):
         EXISTENCE_PATH.mkdir(parents=True, exist_ok=True)
@@ -207,25 +215,18 @@ class MainObject:
     def eat_client_names_queue(self):
         while self.client_names_queue:
             client_name = self.client_names_queue.pop(0)
-            b_uuid = jacklib.get_uuid_for_client_name(
-                self.jack_client, client_name)
-
-            # convert bytes uuid to int
-            uuid = 0
-            if isinstance(b_uuid, bytes):
-                str_uuid = b_uuid.decode()
-                if str_uuid.isdigit():
-                    uuid = int(str_uuid)
-
-            if not uuid:
+            try:
+                client_uuid = int(self.client.get_uuid_for_client_name(
+                    client_name))
+            except:
                 continue
 
             for client_dict in self.client_list:
                 if client_dict['name'] == client_name:
-                    client_dict['uuid'] = uuid
+                    client_dict['uuid'] = client_uuid
                     break
             else:
-                self.client_list.append({'name': client_name, 'uuid': uuid})
+                self.client_list.append({'name': client_name, 'uuid': client_uuid})
     
     def check_jack_client_responding(self):
         for i in range(100): # JACK has 5s to answer
@@ -254,7 +255,7 @@ class MainObject:
     def remember_dsp_load(self):
         self.max_dsp_since_last_sent = max(
             self.max_dsp_since_last_sent,
-            jacklib.cpu_load(self.jack_client))
+            self.client.cpu_load())
         
     def send_dsp_load(self):
         current_dsp = int(self.max_dsp_since_last_sent + 0.5)
@@ -273,23 +274,20 @@ class MainObject:
         if not self.jack_running:
             return
         
-        pos = jacklib.jack_position_t()
-        pos.valid = 0
-
-        state = jacklib.transport_query(self.jack_client, jacklib.pointer(pos))
+        state, pos_dict = self.client.transport_query()
         
         if (self.transport_wanted is TransportWanted.STATE_ONLY
                 and bool(state) == self.last_transport_pos.rolling):
             return
 
         transport_position = TransportPosition(
-            int(pos.frame),
-            bool(state),
-            bool(pos.valid & jacklib.JackPositionBits.POSITION_BBT),
-            int(pos.bar),
-            int(pos.beat),
-            int(pos.tick),
-            float(pos.beats_per_minute))
+            pos_dict['frame'],
+            state == jack.ROLLING,
+            'bar' in pos_dict,
+            pos_dict.get('bar', 0),
+            pos_dict.get('beat', 0),
+            pos_dict.get('tick', 0),
+            pos_dict.get('beats_per_minute', 0.0))
         
         if transport_position == self.last_transport_pos:
             return
@@ -305,9 +303,9 @@ class MainObject:
             return
 
         if disconnect:
-            jacklib.disconnect(self.jack_client, port_out_name, port_in_name)
+            self.client.disconnect(port_out_name, port_in_name)
         else:
-            jacklib.connect(self.jack_client, port_out_name, port_in_name)
+            self.client.connect(port_out_name, port_in_name)
     
     def start_loop(self):
         n = 0
@@ -339,8 +337,8 @@ class MainObject:
                 
     def exit(self):
         if self.jack_running:
-            jacklib.deactivate(self.jack_client)
-            jacklib.client_close(self.jack_client)
+            self.client.deactivate()
+            self.client.close()
 
         if self.alsa_mng is not None:
             self.alsa_mng.stop_events_loop()
@@ -359,27 +357,32 @@ class MainObject:
             target=self.check_jack_client_responding)
         jack_waiter_thread.start()
 
-        with suppress_stdout_stderr():
-            self.jack_client = jacklib.client_open(
-                "ray-patch_to_osc",
-                JackOptions.NO_START_SERVER | JackOptions.SESSION_ID,
-                None)
+        fail_info = False
 
+        with suppress_stdout_stderr():
+            try:
+                self.client = jack.Client(
+                    'ray-patch_mng', no_start_server=True)
+            except jack.JackOpenError:
+                fail_info = True
+                del self.client
+                self.client = None
+        
+        if fail_info:
+            _logger.info('Failed to connect client to JACK server')
+                
         self._waiting_jack_client_open = False
-        ## Some problems happens to the JACK server sometimes without it
-        #time.sleep(0.030)
 
         jack_waiter_thread.join()
 
-        if self.jack_client:
-            self.jack_running = True
+        self.jack_running = bool(self.client is not None)
+
+        if self.jack_running:
             self.set_registrations()
             self.get_all_ports_and_connections()
-            self.samplerate = jacklib.get_sample_rate(self.jack_client)
-            self.buffer_size = jacklib.get_buffer_size(self.jack_client)
+            self.samplerate = self.client.samplerate
+            self.buffer_size = self.client.blocksize
             self.osc_server.server_restarted()
-        else:
-            self.jack_running = False
 
     def is_terminate(self)->bool:
         if self.terminate or self.osc_server.is_terminate():
@@ -388,48 +391,135 @@ class MainObject:
         return False
     
     def set_registrations(self):
-        if not self.jack_client:
+        if self.client is None:
             return
+
+        @self.client.set_client_registration_callback
+        def client_registration(name: str, register: bool):
+            if register:
+                self.client_names_queue.append(name)
+            
+        @self.client.set_port_registration_callback
+        def port_registration(port: jack.Port, register: bool):
+            port_type_int = PORT_TYPE_NULL
+            if port.is_audio:
+                port_type_int = PORT_TYPE_AUDIO
+            elif port.is_midi:
+                port_type_int = PORT_TYPE_MIDI
+            flags = jack._lib.jack_port_flags(port._ptr)
+            port_name = port.name
+            port_uuid = port.uuid
+
+            if register:                
+                self.port_list.append(
+                    JackPort(port_name, port_type_int, flags, port_uuid))
+                self.osc_server.port_added(
+                    port.name, port_type_int, flags, port.uuid)
+            else:
+                for port in self.port_list:
+                    if port.name == port_name and port.uuid == port_uuid:
+                        self.port_list.remove(port)
+                        break
+
+                self.osc_server.port_removed(port.name)
+
+        @self.client.set_port_connect_callback
+        def port_connect(port_a: jack.Port, port_b: jack.Port, connect: bool):
+            conn = (port_a.name, port_b.name)
+
+            if connect:
+                self.connection_list.append(conn)
+                self.osc_server.connection_added(conn)
+            else:
+                if conn in self.connection_list:
+                    self.connection_list.remove(conn)
+                self.osc_server.connection_removed(conn)
+            
+        @self.client.set_port_rename_callback
+        def port_rename(port: jack.Port, old: str, new: str):
+            for exist_port in self.port_list:
+                if exist_port.name == old:
+                    exist_port.name = new
+                    break
+            
+            self.osc_server.port_renamed(old, new)
         
-        jacklib.set_client_registration_callback(
-            self.jack_client, self.jack_client_registration_callback, None)
-        jacklib.set_port_registration_callback(
-            self.jack_client, self.jack_port_registration_callback, None)
-        jacklib.set_port_connect_callback(
-            self.jack_client, self.jack_port_connect_callback, None)
-        jacklib.set_port_rename_callback(
-            self.jack_client, self.jack_port_rename_callback, None)
-        jacklib.set_xrun_callback(
-            self.jack_client, self.jack_xrun_callback, None)
-        jacklib.set_buffer_size_callback(
-            self.jack_client, self.jack_buffer_size_callback, None)
-        jacklib.set_sample_rate_callback(
-            self.jack_client, self.jack_sample_rate_callback, None)
-        jacklib.set_property_change_callback(
-            self.jack_client, self.jack_properties_change_callback, None)
-        jacklib.on_shutdown(
-            self.jack_client, self.jack_shutdown_callback, None)
-        jacklib.activate(self.jack_client)
+        @self.client.set_xrun_callback
+        def xrun(delayed_usecs: float):
+            self.osc_server.send_one_xrun()
+            
+        @self.client.set_blocksize_callback
+        def blocksize(size: int):
+            self.buffer_size = size
+            self.osc_server.send_buffersize()
+            
+        @self.client.set_samplerate_callback
+        def samplerate(samplerate: int):
+            self.samplerate = samplerate
+            self.osc_server.send_samplerate()
+            
+        try:
+            @self.client.set_property_change_callback
+            def property_change(subject: int, key: str, change: int):
+                if change == jack.PROPERTY_DELETED:
+                    if (self.metadatas.get(subject) is not None
+                            and self.metadatas[subject].get(key) is not None):
+                        self.metadatas[subject].pop(key)
+                        if not self.metadatas[subject]:
+                            self.metadatas.pop(subject)
+                            
+                    self.osc_server.metadata_updated(subject, key, '')
+                    return                            
+                
+                value_type = jack.get_property(subject, key)
+                if value_type is None:
+                    return
+                value = value_type[0].decode()
+                
+                if self.metadatas.get(subject) is None:
+                    self.metadatas[subject] = dict[str, str]()
+                self.metadatas[subject][key] = value
+                
+                self.osc_server.metadata_updated(subject, key, value)
+
+        except jack.JackError as e:
+            _logger.warning(
+                "jack-metadatas are not available,"
+                "probably due to the way JACK has been compiled."
+                + str(e))
+            
+        @self.client.set_shutdown_callback
+        def on_shutdown(status: jack.Status, reason: str):
+            self.jack_running = False
+            self.port_list.clear()
+            self.connection_list.clear()
+            self.metadatas.clear()
+            self.osc_server.server_stopped()
+            
+        self.client.activate()
     
     def get_all_ports_and_connections(self):
         self.port_list.clear()
         self.connection_list.clear()
-        self.metadata_list.clear()
+        self.metadatas.clear()
+
+        client_names = set[str]()
 
         #get all currents Jack ports and connections
-        port_name_list = c_char_p_p_to_list(
-            jacklib.get_ports(self.jack_client, "", "", 0))
-        
-        client_names = []
-        
-        for port_name in port_name_list:
-            port_ptr = jacklib.port_by_name(self.jack_client, port_name)
-            jport = JackPort(port_name, self.jack_client)
-            self.port_list.append(jport)
-            
-            client_name = port_name.partition(':')[0]
-            if not client_name in client_names:
-                client_names.append(client_name)
+        for port in self.client.get_ports():
+            flags = jack._lib.jack_port_flags(port._ptr)
+            port_name = port.name
+            port_uuid = port.uuid
+            port_type = PORT_TYPE_NULL
+            if port.is_audio:
+                port_type = PORT_TYPE_AUDIO
+            elif port.is_midi:
+                port_type = PORT_TYPE_MIDI
+
+            self.port_list.append(
+                JackPort(port_name, port_type, flags, port_uuid))
+
+            client_names.add(port_name.partition(':')[0])
 
             # get port metadatas
             for key in (JackMetadata.CONNECTED,
@@ -437,168 +527,61 @@ class MainObject:
                         JackMetadata.PORT_GROUP,
                         JackMetadata.PRETTY_NAME,
                         JackMetadata.SIGNAL_TYPE):
-                prop = jacklib.get_property(jport.uuid, key)
-                if prop is None:
+                value_type = jack.get_property(port_uuid, key)
+                if value_type is None:
                     continue
 
-                value = self.get_metadata_value_str(prop)
-                self.metadata_list.append(
-                    {'uuid': jport.uuid,
-                     'key': key,
-                     'value': value})
-
-            if jport.flags & JackPortFlags.IS_INPUT:
+                if self.metadatas.get(port_uuid) is None:
+                    self.metadatas[port_uuid] = dict[str, str]()
+                self.metadatas[port_uuid][key] = value_type[0].decode()
+                
+            if port.is_input:
                 continue
 
-            port_ptr = jacklib.port_by_name(self.jack_client, jport.name)
-            
             # this port is output, list its connections
-            port_connection_names = tuple(
-                jacklib.port_get_all_connections(self.jack_client, port_ptr))
-
-            for port_con_name in port_connection_names:
-                self.connection_list.append((jport.name, port_con_name))
+            for conn_port in self.client.get_all_connections(port):
+                self.connection_list.append((port_name, conn_port.name))
         
         for client_name in client_names:
-            uuid = jacklib.get_uuid_for_client_name(self.jack_client, client_name)
-            if not uuid:
+            try:
+                client_uuid = int(
+                    self.client.get_uuid_for_client_name(client_name))
+            except jack.JackError:
+                continue
+            except ValueError:
+                _logger.warning(
+                    f"uuid for client name {client_name} is not digit")
                 continue
 
-            self.client_list.append({'name': client_name, 'uuid': int(uuid)})
+            self.client_list.append(
+                {'name': client_name, 'uuid': client_uuid})
             
             # we only look for icon_name now, but in the future other client
             # metadatas could be enabled
             for key in (JackMetadata.ICON_NAME,):
-                prop = jacklib.get_property(int(uuid), JackMetadata.ICON_NAME)
-                if prop is None:
+                value_type = jack.get_property(client_uuid, key)
+                if value_type is None:
                     continue
-                value = self.get_metadata_value_str(prop)
-                self.metadata_list.append(
-                    {'uuid': int(uuid),
-                    'key': key,
-                    'value': value})
-    
-    def jack_shutdown_callback(self, arg=None)->int:
-        self.jack_running = False
-        self.port_list.clear()
-        self.connection_list.clear()
-        self.osc_server.server_stopped()
-        return 0
-
-    def jack_xrun_callback(self, arg=None)->int:
-        self.osc_server.send_one_xrun()
-        return 0
-
-    def jack_sample_rate_callback(self, samplerate, arg=None) -> int:
-        self.samplerate = samplerate
-        self.osc_server.send_samplerate()
-        return 0
-
-    def jack_buffer_size_callback(self, buffer_size, arg=None) -> int:
-        self.buffer_size = buffer_size
-        self.osc_server.send_buffersize()
-        return 0
-
-    def jack_client_registration_callback(self, client_name: bytes,
-                                          register: int, arg=None) -> int:
-        client_name = client_name.decode()
-        self.client_names_queue.append(client_name)
-        return 0
-        
-    def jack_port_registration_callback(self, port_id: int, register: bool,
-                                        arg=None) -> int:
-        if not self.jack_client:
-            return 0
-        
-        port_ptr = jacklib.port_by_id(self.jack_client, port_id)
-        port_name = jacklib.port_name(port_ptr)
-        
-        if register:
-            jport = JackPort(port_name, self.jack_client, port_ptr)
-            self.port_list.append(jport)
-            self.osc_server.port_added(
-                jport.name, jport.type, jport.flags, jport.uuid)
-        else:
-            for jport in self.port_list:
-                if jport.name == port_name:
-                    self.port_list.remove(jport)
-                    self.osc_server.port_removed(jport.name)
-                    break
-        return 0
-    
-    def jack_port_rename_callback(self, port_id: int, old_name: bytes,
-                                  new_name: bytes, arg=None)->int:
-        for jport in self.port_list:
-            if jport.name == str(old_name.decode()):
-                ex_name = jport.name
-                jport.name = str(new_name.decode())
-                self.osc_server.port_renamed(ex_name, jport.name)
-                break
-        return 0
-    
-    def jack_port_connect_callback(self, port_id_A: int, port_id_B: int,
-                                   connect_yesno: bool, arg=None)->int:
-        port_ptr_A = jacklib.port_by_id(self.jack_client, port_id_A)
-        port_ptr_B = jacklib.port_by_id(self.jack_client, port_id_B)
-
-        port_str_A = jacklib.port_name(port_ptr_A)
-        port_str_B = jacklib.port_name(port_ptr_B)
-
-        connection = (port_str_A, port_str_B)
-
-        if connect_yesno:
-            self.connection_list.append(connection)
-            self.osc_server.connection_added(connection)
-        elif connection in self.connection_list:
-            self.connection_list.remove(connection)
-            self.osc_server.connection_removed(connection)
-
-        return 0
-
-    def jack_properties_change_callback(self, uuid: int, name: bytes,
-                                        type_: int, arg=None)->int:
-        if name is not None:
-            name = name.decode()
-        
-        value = ''
-
-        if name and type_ != jacklib.JackPropertyChange.DELETED:
-            prop = jacklib.get_property(uuid, name)
-            if prop is None:
-                return 0
-
-            value = self.get_metadata_value_str(prop)
-        
-        for metadata in self.metadata_list:
-            if metadata['uuid'] == uuid and metadata['key'] == name:
-                metadata['value'] = value
-                break
-        else:
-            self.metadata_list.append(
-                {'uuid': uuid, 'key': name, 'value': value})
-
-        self.osc_server.metadata_updated(uuid, name, value)
-
-        return 0
-    
-    def set_buffer_size(self, buffer_size: int):
-        jacklib.set_buffer_size(self.jack_client, buffer_size)
+                
+                if self.metadatas.get(client_uuid) is None:
+                    self.metadatas[client_uuid] = dict[str, str]()
+                self.metadatas[client_uuid][key] = value_type[0].decode()
 
     def set_metadata(self, uuid: int, key: str, value: str):
-        jacklib.set_property(uuid, key, value, 'text/plain', jacklib.ENCODING)
+        self.client.set_property(uuid, key, value, 'text/plain')
 
     def transport_play(self, play: bool):
         if play:
-            jacklib.transport_start(self.jack_client)
+            self.client.transport_start()
         else:
-            jacklib.transport_stop(self.jack_client)
+            self.client.transport_stop()
             
     def transport_stop(self):
-        jacklib.transport_stop(self.jack_client)
-        jacklib.transport_locate(self.jack_client, 0)
+        self.client.transport_stop()
+        self.client.transport_locate(0)
         
     def transport_relocate(self, frame: int):
-        jacklib.transport_locate(self.jack_client, frame)
+        self.client.transport_locate(frame)
 
 
 def main_process():
