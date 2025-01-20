@@ -384,7 +384,7 @@ class MainObject:
             self.buffer_size = self.client.blocksize
             self.osc_server.server_restarted()
 
-    def is_terminate(self)->bool:
+    def is_terminate(self) -> bool:
         if self.terminate or self.osc_server.is_terminate():
             return True
         
@@ -584,7 +584,22 @@ class MainObject:
         self.client.transport_locate(frame)
 
 
-def main_process():
+def main_process(daemon_port: int, gui_tcp_url: str):
+    main_object = MainObject(daemon_port, gui_tcp_url)
+    main_object.osc_server.add_gui(gui_tcp_url)
+    if main_object.osc_server.gui_list:
+        main_object.start_loop()
+    main_object.exit()
+
+def start():
+    set_proc_name('ray-patch_dmn')
+    
+    # prevent deprecation warnings python messages
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    
+    signal.signal(signal.SIGINT, MainObject.signal_handler)
+    signal.signal(signal.SIGTERM, MainObject.signal_handler)
+    
     args = sys.argv.copy()
     daemon_port = ''
     gui_tcp_url = ''
@@ -596,20 +611,4 @@ def main_process():
     if args:
         gui_tcp_url = args.pop(0)
     
-    main_object = MainObject(daemon_port, gui_tcp_url)
-    main_object.osc_server.add_gui(gui_tcp_url)
-    if main_object.osc_server.gui_list:
-        main_object.start_loop()
-    main_object.exit()
-
-
-if True:
-    set_proc_name('ray-patch_dmn')
-    
-    # prevent deprecation warnings python messages
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    
-    signal.signal(signal.SIGINT, MainObject.signal_handler)
-    signal.signal(signal.SIGTERM, MainObject.signal_handler)
-    
-    main_process()
+    main_process(daemon_port, gui_tcp_url)

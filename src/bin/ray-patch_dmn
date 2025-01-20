@@ -11,6 +11,8 @@ sys.path.insert(0, str(src_path))
 sys.path[0] = str(Path(__file__).parents[1] / 'patchbay_daemon')
 
 if TYPE_CHECKING:
-    import src.patchbay_daemon.patchbay_daemon
+    import src.patchbay_daemon.patchbay_daemon as pbd
+    pbd.start()
 else:
     import patchbay_daemon
+    patchbay_daemon.start()

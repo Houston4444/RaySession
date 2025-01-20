@@ -26,7 +26,7 @@ from xml_tools import XmlElement
 
 # Local imports
 from signaler import Signaler
-from multi_daemon_file import MultiDaemonFile
+import multi_daemon_file
 from daemon_tools import (
     TemplateRoots, CommandLineArgs,
     Terminal, RS, get_code_root)
@@ -530,10 +530,8 @@ class OscServerThread(ClientCommunicating):
 
             self.net_daemon_id = net_daemon_id
 
-            multi_daemon_file = MultiDaemonFile.get_instance()
-            if multi_daemon_file:
-                is_net_free = multi_daemon_file.is_free_for_root(
-                    self.net_daemon_id, self.session.root)
+            is_net_free = multi_daemon_file.is_free_for_root(
+                self.net_daemon_id, self.session.root)
 
         tcp_addr = verified_address(tcp_url)
         if isinstance(tcp_addr, str):
@@ -559,9 +557,7 @@ class OscServerThread(ClientCommunicating):
             self._nsm_locker_url = ''
             self.send_gui('/ray/gui/server/nsm_locked', 0)
 
-        multi_daemon_file = MultiDaemonFile.get_instance()
-        if multi_daemon_file:
-            multi_daemon_file.update()
+        multi_daemon_file.update()
 
     @osp_method('/ray/server/ask_for_patchbay', 's')
     def rayServerGetPatchbayPort(self, osp: OscPack):
@@ -1402,9 +1398,7 @@ class OscServerThread(ClientCommunicating):
 
         self.gui_list.append(gui)
 
-        multi_daemon_file = MultiDaemonFile.get_instance()
-        if multi_daemon_file:
-            multi_daemon_file.update()
+        multi_daemon_file.update()
 
         Terminal.message(f"GUI connected at {gui.addr.url}")
         Terminal.message(f"             and {gui.tcp_addr.url}")

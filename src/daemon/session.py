@@ -26,7 +26,7 @@ from xml_tools import XmlElement
 from bookmarker import BookMarker
 from desktops_memory import DesktopsMemory
 from snapshoter import Snapshoter
-from multi_daemon_file import MultiDaemonFile
+import multi_daemon_file
 from signaler import Signaler
 from server_sender import ServerSender
 from file_copier import FileCopier
@@ -137,9 +137,7 @@ class Session(ServerSender):
         if self.is_dummy:
             return
 
-        multi_daemon_file = MultiDaemonFile.get_instance()
-        if multi_daemon_file:
-            multi_daemon_file.update()
+        multi_daemon_file.update()
 
         if self.path:
             if self.has_server_option(ray.Option.BOOKMARK_SESSION):
@@ -1399,9 +1397,7 @@ for better organization.""")
         self.send_gui_message(_translate('GUIMSG', 'start session copy...'))
 
         # lock the directory of the new session created
-        multi_daemon_file = MultiDaemonFile.get_instance()
-        if multi_daemon_file:
-            multi_daemon_file.add_locked_path(spath)
+        multi_daemon_file.add_locked_path(spath)
 
         self.file_copier.start_session_copy(
             self.path, spath,
@@ -1431,10 +1427,7 @@ for better organization.""")
         self.adjust_files_after_copy(new_session_full_name, ray.Template.NONE)
 
         # unlock the directory of the new session created
-        multi_daemon_file = MultiDaemonFile.get_instance()
-        if multi_daemon_file:
-            multi_daemon_file.unlock_path(
-                self.root / new_session_full_name)
+        multi_daemon_file.unlock_path(self.root / new_session_full_name)
         
         self.next_function()
 
@@ -1442,10 +1435,7 @@ for better organization.""")
         self.steps_order.clear()
 
         # unlock the directory of the aborted session
-        multi_daemon_file = MultiDaemonFile.get_instance()
-        if multi_daemon_file:
-            multi_daemon_file.unlock_path(
-                self.root / new_session_full_name)
+        multi_daemon_file.unlock_path(self.root / new_session_full_name)
 
         if self.osc_path == '/nsm/server/duplicate':
             # for nsm server control API compatibility
@@ -1703,10 +1693,8 @@ for better organization.""")
                 self.load_error(ray.Err.CREATE_FAILED)
                 return
 
-        multi_daemon_file = MultiDaemonFile.get_instance()
-        if (multi_daemon_file
-                and not multi_daemon_file.is_free_for_session(spath)):
-            Terminal.warning("Session %s is used by another daemon" % spath)
+        if not multi_daemon_file.is_free_for_session(spath):
+            Terminal.warning(f"Session {spath} is used by another daemon")
             self.load_error(ray.Err.SESSION_LOCKED)
             return
 
