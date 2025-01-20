@@ -18,7 +18,7 @@ import xdg
 
 # Local imports
 from client import Client
-from multi_daemon_file import MultiDaemonFile
+import multi_daemon_file
 from signaler import Signaler
 from daemon_tools import Terminal, RS, is_pid_child_of, highlight_text
 from session import OperatingSession
@@ -282,6 +282,13 @@ class SignaledSession(OperatingSession):
         server = self.get_server()
         if server is None:
             return
+        
+        # import threading
+        # import patchbay_daemon as pbd
+        # patch_thread = threading.Thread(
+        #     target=pbd.main_process, args=(str(server.port), osp.args[0]))
+        # patch_thread.start()
+        
         QProcess.startDetached(
             'ray-patch_dmn',
             [str(server.port), osp.args[0]])
@@ -326,9 +333,7 @@ class SignaledSession(OperatingSession):
 
         self.root = new_root
 
-        multi_daemon_file = MultiDaemonFile.get_instance()
-        if multi_daemon_file:
-            multi_daemon_file.update()
+        multi_daemon_file.update()
 
         self.send(*osp.reply(),
                   "root folder changed to %s" % self.root)
@@ -472,10 +477,7 @@ class SignaledSession(OperatingSession):
                 break
             search_scripts_dir = search_scripts_dir.parent
 
-        locked_sessions = list[str]()
-        multi_daemon_file = MultiDaemonFile.get_instance()
-        if multi_daemon_file is not None:
-            locked_sessions = multi_daemon_file.get_all_session_paths()
+        locked_sessions = set(multi_daemon_file.get_all_session_paths())
 
         for root, dirs, files in os.walk(self.root):
             #exclude hidden files and dirs
@@ -591,9 +593,7 @@ class SignaledSession(OperatingSession):
                     % highlight_text(session_name))
             return
 
-        multi_daemon_file = MultiDaemonFile.get_instance()
-        if (multi_daemon_file
-                and not multi_daemon_file.is_free_for_session(spath)):
+        if not multi_daemon_file.is_free_for_session(spath):
             Terminal.warning("Session %s is used by another daemon"
                               % highlight_text(str(spath)))
 
@@ -851,9 +851,7 @@ class SignaledSession(OperatingSession):
                     % highlight_text(spath))
             return
 
-        multi_daemon_file = MultiDaemonFile.get_instance()
-        if (multi_daemon_file
-                and not multi_daemon_file.is_free_for_session(spath)):
+        if not multi_daemon_file.is_free_for_session(spath):
             Terminal.warning("Session %s is used by another daemon"
                              % highlight_text(new_session_full_name))
             self._send_error(ray.Err.SESSION_LOCKED,

@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 # set HoustonPatchbay/patchbay and src/shared/* as libs
+# sys.path.insert(1, str(Path(__file__).parents[1] / 'patchbay_daemon'))
 sys.path.insert(1, str(Path(__file__).parents[2] / 'HoustonPatchbay/source'))
 sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
@@ -32,7 +33,7 @@ from daemon_tools import (
     CommandLineArgs, ArgParser, Terminal)
 from osc_server_thread import OscServerThread
 from tcp_server_thread import TcpServerThread
-from multi_daemon_file import MultiDaemonFile
+import multi_daemon_file
 from session_signaled import SignaledSession
 
 
@@ -147,7 +148,7 @@ if True:
         server.announce_controller(CommandLineArgs.control_url)
 
     # create or update multi_daemon_file in /tmp
-    multi_daemon_file = MultiDaemonFile(session, server)
+    multi_daemon_file.init(session, server)    
     multi_daemon_file.update()
 
     # clean bookmarks created by crashed daemons

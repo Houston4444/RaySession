@@ -171,24 +171,25 @@ class OscJackPatch(Server):
 
         try:
             self.send(gui_addr, '/ray/gui/patchbay/announce',
-                    int(self.main_object.jack_running),
-                    self.main_object.samplerate,
-                    self.main_object.buffer_size,
-                    self.url)
+                      int(self.main_object.jack_running),
+                      self.main_object.samplerate,
+                      self.main_object.buffer_size,
+                      self.url)
             self.send(gui_addr, '/ray/gui/patchbay/dsp_load',
-                    self.main_object.last_sent_dsp_load)
+                      self.main_object.last_sent_dsp_load)
 
             tpos = self.main_object.last_transport_pos
             self.send(gui_addr, '/ray/gui/patchbay/transport_position',
-                    tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
-                    tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
+                      tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
+                      tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
 
             self.send_distant_data([gui_addr])
             
             self.gui_list.append(gui_addr)
 
-        except OSError:
+        except OSError as e:
             _logger.error(f'Failed to send TCP message to GUI at {gui_url}')
+            _logger.error(str(e))
         
         except BaseException as e:
             _logger.error(str(e))
