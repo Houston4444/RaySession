@@ -6,12 +6,16 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+
 # set src/shared/* as libs
 sys.path.insert(1, str(Path(__file__).parents[2] / 'shared'))
 
 # set src/clients/jackpatch/* as libs
 # this way it can share main_loop.py and bases.py
 sys.path.insert(1, str(Path(__file__).parents[1] / 'jackpatch'))
+
+from proc_name import set_proc_name
+set_proc_name('ray-alsapatch')
 
 if TYPE_CHECKING:
     import src.clients.jackpatch.main_loop as main_loop

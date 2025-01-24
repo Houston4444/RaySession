@@ -42,7 +42,25 @@ class RayPatchbayCallbacker(Callbacker):
     def __init__(self, manager: 'RayPatchbayManager'):
         super().__init__(manager)
         self.mng = manager
+    
+    def _group_rename(self, group_id: int, pretty_name: str):
+        group = self.mng.get_group_from_id(group_id)
+        if group is None:
+            return
         
+        self.mng.send_to_daemon(
+            '/ray/server/patchbay/save_group_pretty_name',
+            group.name, pretty_name)
+        
+    def _port_rename(self, group_id: int, port_id: int, pretty_name: str):
+        port = self.mng.get_port_from_id(group_id, port_id)
+        if port is None:
+            return
+        
+        self.mng.send_to_daemon(
+            '/ray/server/patchbay/save_port_pretty_name',
+            port.full_name, pretty_name)
+    
     def _ports_connect(self, group_out_id: int, port_out_id: int,
                        group_in_id: int, port_in_id: int):
         port_out = self.mng.get_port_from_id(group_out_id, port_out_id)
@@ -455,6 +473,18 @@ class RayPatchbayManager(PatchbayManager):
                     if group_belongs_to_client(group.name, client.jack_client_name):
                         group.set_optional_gui_state(visible)
                 break
+    
+    def update_group_pretty_name(self, group_name: str, pretty_name: str):
+        self.pretty_names.save_group(group_name, pretty_name, '')
+        group = self.get_group_from_name(group_name)
+        if group is not None:
+            group.rename_in_canvas()
+    
+    def update_port_pretty_name(self, port_name: str, pretty_name: str):
+        self.pretty_names.save_port(port_name, pretty_name, '')
+        port = self.get_port_from_name(port_name)
+        if port is not None:
+            port.rename_in_canvas()
     
     def receive_big_packets(self, state: int):
         self.optimize_operation(not bool(state))

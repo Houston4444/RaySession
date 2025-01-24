@@ -358,6 +358,7 @@ class MainObject:
         jack_waiter_thread.start()
 
         fail_info = False
+        self.client = None
 
         with suppress_stdout_stderr():
             try:

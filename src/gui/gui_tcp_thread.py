@@ -88,6 +88,8 @@ class GuiTcpThread(ServerThread):
                 ('/ray/gui/patchbay/transport_position', 'iiiiiif'),
                 ('/ray/gui/patchbay/update_group_position', 'i' + GroupPos.args_types()),
                 ('/ray/gui/patchbay/views_changed', 's'),
+                ('/ray/gui/patchbay/update_group_pretty_name', 'ss'),
+                ('/ray/gui/patchbay/update_port_pretty_name', 'ss'),
                 ('/ray/gui/preview/clear', ''),
                 ('/ray/gui/preview/notes', 's'),
                 ('/ray/gui/preview/client/update', ray.ClientData.sisi()),
