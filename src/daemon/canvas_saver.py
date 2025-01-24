@@ -5,9 +5,10 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Union
 
+# Imports from HoustonPatchbay
 from patshared import (
     PortgroupsDict, from_json_to_str, PortTypesViewFlag, GroupPos,
-    PortgroupMem, ViewsDict)
+    PortgroupMem, ViewsDict, PrettyNames)
 
 # Imports from src/shared
 import ray
@@ -49,6 +50,8 @@ class CanvasSaver(ServerSender):
         self.views_config = ViewsDict(ensure_one_view=False)
         self.views_session_at_load = ViewsDict(ensure_one_view=False)
         self.views_config_at_load = ViewsDict(ensure_one_view=False)
+        self.pretty_names_config = PrettyNames()
+        self.pretty_names_session = PrettyNames()
 
         self.portgroups = PortgroupsDict()
         self._config_json_path = \
@@ -82,6 +85,10 @@ class CanvasSaver(ServerSender):
 
                 if 'portgroups' in json_contents.keys():
                     self.portgroups.eat_json(json_contents['portgroups'])
+                    
+                if 'pretty_names' in json_contents.keys():
+                    self.pretty_names_config.eat_json(
+                        json_contents['pretty_names'])
             
             self.views_config_at_load = self.views_config.copy()
         
@@ -135,6 +142,16 @@ class CanvasSaver(ServerSender):
                 self.send_tcp_gui(
                     '/ray/gui/patchbay/update_group_position',
                     view_number, *gpos.to_arg_list())
+            
+        for gp_name, pretty_group in self.pretty_names_session.groups.items():
+            self.send_tcp_gui(
+                '/ray/gui/patchbay/update_group_pretty_name',
+                gp_name, pretty_group)
+
+        for pt_name, pretty_port in self.pretty_names_session.ports.items():
+            self.send_tcp_gui(
+                '/ray/gui/patchbay/update_port_pretty_name',
+                pt_name, pretty_port)
 
         self.send_tcp_gui(
             '/ray/gui/patchbay/views_changed', mixed_views_str)
@@ -160,7 +177,27 @@ class CanvasSaver(ServerSender):
             self.send_tcp(
                 gui.tcp_addr, '/ray/gui/patchbay/update_portgroup',
                 *pg_mem.to_arg_list())
-                
+        
+        for gp_name, pretty_group in self.pretty_names_config.groups.items():
+            self.send_tcp(
+                gui.tcp_addr, '/ray/gui/patchbay/update_group_pretty_name',
+                gp_name, pretty_group.pretty)
+            
+        for gp_name, pretty_group in self.pretty_names_session.groups.items():
+            self.send_tcp(
+                gui.tcp_addr, '/ray/gui/patchbay/update_group_pretty_name',
+                gp_name, pretty_group.pretty)
+
+        for pt_name, pretty_port in self.pretty_names_config.ports.items():
+            self.send_tcp(
+                gui.tcp_addr, '/ray/gui/patchbay/update_port_pretty_name',
+                pt_name, pretty_port.pretty)
+
+        for pt_name, pretty_port in self.pretty_names_session.ports.items():
+            self.send_tcp(
+                gui.tcp_addr, '/ray/gui/patchbay/update_port_pretty_name',
+                pt_name, pretty_port.pretty)
+
         # send view datas
         view_data_mixed = (self.views_config.short_data_states()
                            |self.views_session.short_data_states())
@@ -238,7 +275,11 @@ class CanvasSaver(ServerSender):
                 for gpos_dict in gpos_list:
                     self.views_session.add_old_json_gpos(
                         gpos_dict, session_version)
-        
+                    
+            if 'pretty_names' in json_contents.keys():
+                self.pretty_names_session.eat_json(
+                    json_contents['pretty_names'])
+
         self.views_session_at_load = self.views_session.copy()
         self.views_config_at_load = self.views_config.copy()
                     
@@ -247,6 +288,7 @@ class CanvasSaver(ServerSender):
 
         json_contents = {}
         json_contents['views'] = self.views_session.to_json_list()
+        json_contents['pretty_names'] = self.pretty_names_session.to_json()
         json_contents['version'] = ray.VERSION
 
         with open(session_json_path, 'w+') as f:
@@ -254,13 +296,15 @@ class CanvasSaver(ServerSender):
 
     def unload_session(self):
         self._clear_config_from_unused_views()
-        self.views_session.clear()        
+        self.views_session.clear()
+        self.pretty_names_session.clear()
         self.send_session_group_positions()
 
     def save_config_file(self):
         json_contents = {
             'views': self.views_config.to_json_list(),
             'portgroups': self.portgroups.to_json(),
+            'pretty_names': self.pretty_names_config.to_json(),
             'version': ray.VERSION
         }
 
@@ -269,6 +313,14 @@ class CanvasSaver(ServerSender):
 
     def save_portgroup(self, *args):
         self.portgroups.save_portgroup(PortgroupMem.from_arg_list(args))
+
+    def save_group_pretty_name(self, group_name: str, pretty_name: str):
+        self.pretty_names_config.save_group(group_name, pretty_name)
+        self.pretty_names_session.save_group(group_name, pretty_name)
+        
+    def save_port_pretty_name(self, port_name: str, pretty_name: str):
+        self.pretty_names_config.save_port(port_name, pretty_name)
+        self.pretty_names_session.save_port(port_name, pretty_name)
 
     def views_changed(self, *args):
         json_views_list = args[0]

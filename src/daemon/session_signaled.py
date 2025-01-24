@@ -716,6 +716,12 @@ class SignaledSession(OperatingSession):
     def _ray_server_patchbay_view_ptv_changed(self, osp: OscPack):
         self.canvas_saver.view_ptv_changed(*osp.args)
 
+    def _ray_server_patchbay_save_group_pretty_name(self, osp: OscPack):
+        self.canvas_saver.save_group_pretty_name(*osp.args)
+        
+    def _ray_server_patchbay_save_port_pretty_name(self, osp: OscPack):
+        self.canvas_saver.save_port_pretty_name(*osp.args)
+
     @session_operation
     def _ray_session_save(self, osp: OscPack):        
         self.steps_order = [self.save, self.snapshot, self.save_done]

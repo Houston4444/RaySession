@@ -17,6 +17,7 @@ sys.path.insert(1, str(Path(__file__).parents[3] / 'pyjacklib'))
 sys.path.insert(1, str(Path(__file__).parents[2] / 'shared'))
 
 # Imports from src/shared
+from proc_name import set_proc_name
 from osclib import Address, get_free_osc_port, is_osc_port_free
 from nsm_client import NsmServer, NsmCallback, Err
 from xml_tools import XmlElement
@@ -24,6 +25,7 @@ from xml_tools import XmlElement
 if TYPE_CHECKING:
     import jacklib
 
+set_proc_name('ray-sooploop')
 
 _logger = logging.getLogger(__name__)
 
