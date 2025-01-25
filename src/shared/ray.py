@@ -106,6 +106,7 @@ class Protocol(Enum):
     NSM = 0
     RAY_HACK = 1
     RAY_NET = 2
+    INTERNAL = 3
     
     @classmethod
     def _missing_(cls, value) -> 'Protocol':
@@ -113,17 +114,22 @@ class Protocol(Enum):
     
     def to_string(self) -> str:
         if self is self.RAY_HACK:
-            return "Ray-Hack"
+            return 'Ray-Hack'
         if self is self.RAY_NET:
-            return "Ray-Net"
-        return "NSM"
+            return 'Ray-Net'
+        if self is self.INTERNAL:
+            return 'Internal'
+        return 'NSM'
     
     @staticmethod
     def from_string(string: str) -> 'Protocol':
-        if string.lower() in ('ray_hack', 'ray-hack'):
+        lo_str = string.lower()
+        if lo_str in ('ray_hack', 'ray-hack'):
             return Protocol.RAY_HACK
-        if string.lower() in ('ray_net', 'ray-net'):
+        if lo_str in ('ray_net', 'ray-net'):
             return Protocol.RAY_NET
+        if lo_str == 'internal':
+            return Protocol.INTERNAL
         return Protocol.NSM
 
 
@@ -460,6 +466,14 @@ class ClientData:
                 and self.name):
             return self.name
         return self.executable_path
+    
+    @property
+    def is_ray_hack(self) -> bool:
+        return self.protocol is Protocol.RAY_HACK
+    
+    @property
+    def is_ray_net(self) -> bool:
+        return self.protocol is Protocol.RAY_NET
 
 
 class RayHack:

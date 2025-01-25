@@ -445,7 +445,7 @@ class Session(ServerSender):
         if self.load_locked or self.path is None:
             return False
 
-        if client.is_ray_hack():
+        if client.is_ray_hack:
             project_path = client.get_project_path()
             if not project_path.is_dir():
                 try:
@@ -834,6 +834,12 @@ class OperatingSession(Session):
                 if not os.path.exists('/proc/%i' % client.pid):
                     client.external_finished()
             
+            elif client._internal_thread is not None:
+                if client._internal_thread.is_alive():
+                    has_alives = True
+                elif client.nsm_active:
+                    client.external_finished()
+
             elif (client.is_running()
                     and client.launched_in_terminal
                     and client.status is not ray.ClientStatus.LOSE):
@@ -1369,7 +1375,7 @@ for better organization.""")
                highlight_text(new_session_full_name)))
 
         for client in self.clients:
-            if client.protocol is ray.Protocol.RAY_NET:
+            if client.is_ray_net:
                 client.ray_net.duplicate_state = -1
                 if (client.ray_net.daemon_url
                         and is_valid_osc_url(client.ray_net.daemon_url)):
@@ -1409,7 +1415,7 @@ for better organization.""")
         
         self.send_gui_message(_translate('GUIMSG', '...session copy finished.'))
         for client in self.clients:
-            if (client.protocol is ray.Protocol.RAY_NET
+            if (client.is_ray_net
                     and 0 <= client.ray_net.duplicate_state < 1):
                 self.expected_clients.append(client)
 
@@ -1484,7 +1490,7 @@ for better organization.""")
         # on the machine where is the master daemon, for example).
 
         for client in self.clients:
-            if (client.protocol is ray.Protocol.RAY_NET
+            if (client.is_ray_net
                     and client.ray_net.daemon_url):
                 self.send(Address(client.ray_net.daemon_url),
                           '/ray/server/save_session_template',
@@ -2452,12 +2458,12 @@ for better organization.""")
                 src_addr, '/ray/gui/preview/client/is_started',
                 client.client_id, int(client.auto_start))
             
-            if client.protocol is ray.Protocol.RAY_HACK:
+            if client.is_ray_hack:
                 self.send_tcp_even_dummy(
                     src_addr, '/ray/gui/preview/client/ray_hack_update',
                     client.client_id, *client.ray_hack.spread())
 
-            elif client.protocol is ray.Protocol.RAY_NET:
+            elif client.is_ray_net:
                 self.send_tcp_even_dummy(
                     src_addr, '/ray/gui/preview/client/ray_net_update',
                     client.client_id, *client.ray_net.spread())

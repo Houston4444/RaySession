@@ -10,6 +10,7 @@ from pathlib import Path
 from enum import Enum
 import xml.etree.ElementTree as ET
 from typing import TYPE_CHECKING, Optional
+import threading
 
 # third party imports
 from qtpy.QtCore import (QCoreApplication, QProcess,
@@ -46,6 +47,8 @@ class OscSrc(Enum):
 
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
+
+INTERNAL_EXECS = {'ray-jackpatch', 'ray-alsapatch', 'ray-sooperlooper'}
 
 _logger = logging.getLogger(__name__)
 _logger.parent = logging.getLogger('__main__')
@@ -97,7 +100,14 @@ class Client(ServerSender, ray.ClientData):
     jack_naming = ray.JackNaming.LONG
 
     launched_in_terminal = False
+    
     process_drowned = False
+    '''when launched in terminal
+    with some terminals (mate-terminal, gnome-terminal)
+    if the terminal is already launched for another process,
+    the launched process finishs fastly because
+    the program is 'linked' in the current terminal process.'''
+    
     _process_start_time = 0.0
     
     ray_hack: ray.RayHack
@@ -144,6 +154,9 @@ class Client(ServerSender, ray.ClientData):
         self.scripter = ClientScripter(self)
 
         self.ray_hack_waiting_win = False
+        
+        self._internal_thread: Optional[threading.Thread] = None
+        self._internal_lib = None
 
     @staticmethod
     def short_client_id(wanted: str) -> str:
@@ -178,14 +191,14 @@ class Client(ServerSender, ray.ClientData):
 
         self.set_status(ray.ClientStatus.LAUNCH)
 
-        self.send_gui_message(_translate("GUIMSG", "  %s: launched")
-                            % self.gui_msg_style())
+        self.send_gui_message(
+            _translate("GUIMSG", "  %s: launched") % self.gui_msg_style())
 
         self.session.send_monitor_event('started', self.client_id)
 
         self._send_reply_to_caller(OscSrc.START, 'client started')
 
-        if self.is_ray_hack():
+        if self.is_ray_hack:
             if self.ray_hack.config_file:
                 self.pending_command = ray.Command.OPEN
                 self.set_status(ray.ClientStatus.OPEN)
@@ -196,6 +209,7 @@ class Client(ServerSender, ray.ClientData):
                 and self.pending_command is ray.Command.START
                 and not exit_code
                 and time.time() - self._process_start_time < 1.0):
+
             # when launched in terminal
             # with some terminals (mate-terminal, gnome-terminal)
             # if the terminal is already launched for another process,
@@ -321,7 +335,7 @@ class Client(ServerSender, ray.ClientData):
             self.session.end_timer_if_last_expected(self)
 
     def _ray_hack_near_ready(self):
-        if not self.is_ray_hack():
+        if not self.is_ray_hack:
             return
 
         if not self.is_running():
@@ -335,7 +349,7 @@ class Client(ServerSender, ray.ClientData):
             self.ray_hack_ready()
 
     def _ray_hack_saved(self):
-        if not self.is_ray_hack():
+        if not self.is_ray_hack:
             return
 
         if self.pending_command is ray.Command.SAVE:
@@ -416,7 +430,7 @@ class Client(ServerSender, ray.ClientData):
         files_to_rename = list[tuple[Path, Path]]()
         do_rename = True
 
-        if self.is_ray_hack():
+        if self.is_ray_hack:
             if project_path.is_dir():
                 if not os.access(project_path, os.W_OK):
                     do_rename = False
@@ -746,21 +760,18 @@ class Client(ServerSender, ray.ClientData):
 
         self._send_reply_to_caller(OscSrc.SAVE_TP, 'client template created')
 
-    def _save_as_template_aborted(self, template_name):
+    def _save_as_template_aborted(self, template_name: str):
         self.set_status(self.status)
         self._send_error_to_caller(OscSrc.SAVE_TP, ray.Err.COPY_ABORTED,
             _translate('GUIMSG', 'Copy has been aborted !'))
 
     def get_links_dirname(self) -> str:
-        ''' returns the dir path used by carla for links such as
+        '''return the dir path used by carla for links such as
         audio convolutions or soundfonts '''
         links_dir = self.get_jack_client_name()
         for c in ('-', '.'):
             links_dir = links_dir.replace(c, '_')
         return links_dir
-
-    def is_ray_hack(self) -> bool:
-        return self.protocol is ray.Protocol.RAY_HACK
 
     def send_to_self_address(self, *args):
         if not self.addr:
@@ -774,7 +785,7 @@ class Client(ServerSender, ray.ClientData):
         self.session.message(message)
 
     def get_jack_client_name(self) -> str:
-        if self.protocol is ray.Protocol.RAY_NET:
+        if self.is_ray_net:
             # ray-net will use jack_client_name for template
             # quite dirty, but this is the easier way
             return self.ray_net.session_template
@@ -903,7 +914,7 @@ class Client(ServerSender, ray.ClientData):
             self.ray_net.session_root = c.str('net_session_root')
             self.ray_net.session_template = c.str('net_session_template')
 
-        if self.protocol is ray.Protocol.RAY_NET:
+        if self.is_ray_net:
             # neeeded only to know if RAY_NET client is capable of switch
             self.executable_path = ray.RAYNET_BIN
             if self.ray_net.daemon_url and self.ray_net.session_root:
@@ -922,7 +933,7 @@ class Client(ServerSender, ray.ClientData):
                 self.custom_data = c.el.attrib.copy()
 
     def write_xml_properties(self, c: XmlElement):
-        if self.protocol is not ray.Protocol.RAY_NET:
+        if not self.is_ray_net:
             c.set_str('executable', self.executable_path)
             if self.arguments:
                 c.set_str('arguments', self.arguments)
@@ -962,14 +973,14 @@ class Client(ServerSender, ray.ClientData):
         if self.protocol is not ray.Protocol.NSM:
             c.set_str('protocol', self.protocol.to_string())
 
-            if self.protocol is ray.Protocol.RAY_HACK:
+            if self.is_ray_hack:
                 c.set_str('config_file', self.ray_hack.config_file)
                 c.set_int('save_signal', self.ray_hack.save_sig)
                 c.set_int('stop_signal', self.ray_hack.stop_sig)
                 c.set_bool('wait_win', self.ray_hack.wait_win)
                 c.set_int('no_save_level', self.ray_hack.no_save_level)
 
-            elif self.protocol is ray.Protocol.RAY_NET:
+            elif self.is_ray_net:
                 c.set_str('net_daemon_url', self.ray_net.daemon_url)
                 c.set_str('net_session_root', self.ray_net.session_root)
                 c.set_str('net_session_template', self.ray_net.session_template)
@@ -1150,7 +1161,7 @@ class Client(ServerSender, ray.ClientData):
         return self.pending_command is not ray.Command.NONE
 
     def is_dumb_client(self) -> bool:
-        if self.is_ray_hack():
+        if self.is_ray_hack:
             return False
 
         return bool(not self.did_announce)
@@ -1158,11 +1169,11 @@ class Client(ServerSender, ray.ClientData):
     def is_capable_of(self, capability: str) -> bool:
         return bool(capability in self.capabilities)
 
-    def gui_msg_style(self)->str:
+    def gui_msg_style(self) -> str:
         return "%s (%s)" % (self.name, self.client_id)
 
-    def set_network_properties(self, net_daemon_url, net_session_root):
-        if self.protocol is not ray.Protocol.RAY_NET:
+    def set_network_properties(self, net_daemon_url: str, net_session_root: str):
+        if not self.is_ray_net:
             return
 
         self.ray_net.daemon_url = net_daemon_url
@@ -1171,8 +1182,8 @@ class Client(ServerSender, ray.ClientData):
         self.ray_net.running_session_root = net_session_root
         self.send_gui_client_properties()
 
-    def get_ray_net_arguments_line(self)->str:
-        if self.protocol is not ray.Protocol.RAY_NET:
+    def get_ray_net_arguments_line(self) -> str:
+        if not self.is_ray_net:
             return ''
         return '--daemon-url %s --net-session-root "%s"' % (
                 self.ray_net.daemon_url,
@@ -1206,7 +1217,7 @@ class Client(ServerSender, ray.ClientData):
         return ''
 
     def get_project_path(self) -> Path:
-        if self.protocol is ray.Protocol.RAY_NET:
+        if self.is_ray_net:
             return Path(self.session.get_short_path())
 
         spath = self.session.path
@@ -1267,8 +1278,8 @@ class Client(ServerSender, ray.ClientData):
                     % self.gui_msg_style())
             return
 
-        if (self.protocol is ray.Protocol.RAY_NET
-                and not self.session.path.is_relative_to(self.session.root)):
+        if (self.is_ray_net
+                and not self.session.root in self.session.path.parents):
             self._send_error_to_caller(OscSrc.START, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG',
                     "Impossible to run Ray-Net client when session is not in root folder"))
@@ -1305,7 +1316,7 @@ class Client(ServerSender, ray.ClientData):
                               f"{self.client_id} {self.executable_path}")
                     for a in shlex.split(server.terminal_command)]
 
-        if self.protocol is ray.Protocol.RAY_NET:
+        if self.is_ray_net:
             server = self.get_server()
             if not server:
                 return
@@ -1323,7 +1334,7 @@ class Client(ServerSender, ray.ClientData):
 
         arguments_line = self.arguments
 
-        if self.is_ray_hack():
+        if self.is_ray_hack:
             all_envs = {'CONFIG_FILE': ('', ''),
                         'RAY_SESSION_NAME': ('', ''),
                         'RAY_CLIENT_ID': ('', ''),
@@ -1377,7 +1388,7 @@ class Client(ServerSender, ray.ClientData):
         self.running_executable = self.executable_path
         self.running_arguments = self.arguments
 
-        if self.is_ray_hack():
+        if self.is_ray_hack:
             self._process.setWorkingDirectory(str(ray_hack_pwd))
             process_env.insert('RAY_SESSION_NAME', self.session.name)
             process_env.insert('RAY_CLIENT_ID', self.client_id)
@@ -1386,15 +1397,34 @@ class Client(ServerSender, ray.ClientData):
             self.send_gui_client_properties()
 
         self.launched_in_terminal = self.in_terminal
-        if self.launched_in_terminal:
+        if self.launched_in_terminal or self.executable_path in INTERNAL_EXECS:
+            print('start external timer')
             self.session.externals_timer.start()
 
         self.session.send_monitor_event(
             'start_request', self.client_id)
 
         self._process.setProcessEnvironment(process_env)
-        prog, *other_args = terminal_args + [self.executable_path] + arguments        
-        self._process.start(prog, other_args)
+        prog, *other_args = terminal_args + [self.executable_path] + arguments
+        
+        if False and self.executable_path == 'ray-jackpatch':
+            print('vas-y mon grand', self.executable_path)
+            import sys
+            # import importlib
+            sys.path.insert(
+                1, str(Path(__file__).parents[1] / 'clients' / 'jackpatch'))
+            import jackpatch
+            # importlib.reload(jackpatch)
+            
+            self._internal_lib = jackpatch
+            
+            self._internal_thread = threading.Thread(
+                target=self._internal_lib.internal_run,
+                kwargs={'NSM_URL': self.get_server_url()})
+            self._internal_thread.start()
+            self._process_started()
+        else:
+            self._process.start(prog, other_args)
 
     def load(self, osp: Optional[OscPack]=None):
         if osp is not None:
@@ -1466,6 +1496,9 @@ class Client(ServerSender, ray.ClientData):
     def is_running(self):
         if self.is_external:
             return True
+        
+        if self._internal_thread is not None:
+            return self._internal_thread.is_alive()
         
         return self._process.state() == QProcess.ProcessState.Running
 
@@ -1541,7 +1574,7 @@ class Client(ServerSender, ray.ClientData):
             self.send_to_self_address("/nsm/client/session_is_loaded")
 
     def can_save_now(self):
-        if self.is_ray_hack():
+        if self.is_ray_hack:
             if not self.ray_hack.saveable():
                 return False
 
@@ -1576,7 +1609,7 @@ class Client(ServerSender, ray.ClientData):
             self.session.send_monitor_event(
                 'save_request', self.client_id)
 
-            if self.is_ray_hack():
+            if self.is_ray_hack:
                 self.pending_command = ray.Command.SAVE
                 self.set_status(ray.ClientStatus.SAVE)
                 if self.ray_hack.save_sig > 0:
@@ -1606,8 +1639,8 @@ class Client(ServerSender, ray.ClientData):
         if osp is not None:
             self._osc_srcs[OscSrc.STOP] = osp
 
-        self.send_gui_message(_translate('GUIMSG', "  %s: stopping")
-                                % self.gui_msg_style())
+        self.send_gui_message(
+            _translate('GUIMSG', "  %s: stopping") % self.gui_msg_style())
 
         if self.is_running():
             if self.scripter.start(ray.Command.STOP, osp,
@@ -1632,9 +1665,11 @@ class Client(ServerSender, ray.ClientData):
                 except:
                     self.pid_from_nsm = 0
 
-            if self.is_external:
+            if self._internal_thread is not None:
+                self._internal_lib.internal_stop()
+            elif self.is_external:
                 os.kill(self.pid, signal.SIGTERM)
-            elif self.is_ray_hack() and self.ray_hack.stop_sig != signal.SIGTERM.value:
+            elif self.is_ray_hack and self.ray_hack.stop_sig != signal.SIGTERM.value:
                 os.kill(self._process.processId(), self.ray_hack.stop_sig)
             else:
                 self._process.terminate()
@@ -1705,7 +1740,7 @@ class Client(ServerSender, ray.ClientData):
                 or (self.is_dumb_client() and self.is_running())):
             return False
 
-        if self.protocol is ray.Protocol.RAY_NET:
+        if self.is_ray_net:
             return bool(self.ray_net.running_daemon_url
                             == other_client.ray_net.daemon_url
                         and self.ray_net.running_session_root
@@ -1726,11 +1761,11 @@ class Client(ServerSender, ray.ClientData):
 
         self.send_gui(ad, *ray.ClientData.spread_client(self))
 
-        if self.protocol is ray.Protocol.RAY_HACK:
+        if self.is_ray_hack:
             self.send_gui(
                 hack_ad, self.client_id, *self.ray_hack.spread())
 
-        elif self.protocol is ray.Protocol.RAY_NET:
+        elif self.is_ray_net:
             self.send_gui(
                 net_ad, self.client_id, *self.ray_net.spread())
 
@@ -1786,7 +1821,7 @@ class Client(ServerSender, ray.ClientData):
                 # do not change protocol value
                 continue
 
-            if self.protocol is ray.Protocol.RAY_HACK:
+            if self.is_ray_hack:
                 if prop == 'config_file':
                     self.ray_hack.config_file = value
                 elif prop == 'save_sig':
@@ -1808,7 +1843,7 @@ class Client(ServerSender, ray.ClientData):
                     if value.isdigit() and 0 <= int(value) <= 2:
                         self.ray_hack.no_save_level = int(value)
 
-            elif self.protocol is ray.Protocol.RAY_NET:
+            elif self.is_ray_net:
                 if prop == 'net_daemon_url':
                     self.ray_net.daemon_url = value
                 elif prop == 'net_session_root':
@@ -1849,7 +1884,7 @@ ignored_extensions:%s""" % (self.client_id,
                             int(self.check_last_save),
                             self.ignored_extensions)
 
-        if self.protocol is ray.Protocol.NSM:
+        if self.protocol in (ray.Protocol.NSM, ray.Protocol.INTERNAL):
             message += "\ncapabilities:%s" % self.capabilities
         elif self.protocol is ray.Protocol.RAY_HACK:
             message += """\nconfig_file:%s
@@ -1872,7 +1907,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
     def relevant_no_save_level(self) -> int:
         '''return no_save_level (1 or 2) only if it uses RayHack protocol
         and if it takes sense, else 0'''
-        if self.is_ray_hack():
+        if self.is_ray_hack:
             return self.ray_hack.relevant_no_save_level()
 
         return 0
@@ -2023,7 +2058,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         template_dir.mkdir(parents=True)
 
-        if self.protocol is ray.Protocol.RAY_NET:
+        if self.is_ray_net:
             if self.ray_net.daemon_url:
                 self.ray_net.session_template = template_name
                 net_session_root = self.ray_net.session_root
@@ -2230,6 +2265,8 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         minor: int
         pid: int
 
+        print('server_announce alaclient', self.client_id, pid, is_new)
+
         if self.pending_command is ray.Command.STOP:
             # assume to not answer to a dying client.
             # He will never know, or perhaps, it depends on beliefs.
@@ -2288,7 +2325,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         client_project_path = str(self.get_project_path())
         self.jack_client_name = self.get_jack_client_name()
 
-        if self.protocol is ray.Protocol.RAY_NET:
+        if self.is_ray_net:
             client_project_path = self.session.get_short_path()
             self.jack_client_name = self.ray_net.session_template
 

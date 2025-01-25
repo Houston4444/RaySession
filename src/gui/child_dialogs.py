@@ -968,7 +968,9 @@ class ClientRenameDialog(ChildDialog):
         self.ui.checkBoxIdRename.stateChanged.connect(
             self._id_rename_state_changed)
 
-        if client.protocol not in (ray.Protocol.NSM, ray.Protocol.RAY_HACK):
+        if client.protocol not in (ray.Protocol.NSM,
+                                   ray.Protocol.RAY_HACK,
+                                   ray.Protocol.INTERNAL):
             self.ui.checkBoxIdRename.setVisible(False)
 
         self._change_box_text_with_status(client.status)

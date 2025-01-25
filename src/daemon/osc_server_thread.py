@@ -1355,12 +1355,12 @@ class OscServerThread(ClientCommunicating):
                       '/ray/gui/client/new',
                       *client.spread())
 
-            if client.protocol is ray.Protocol.RAY_HACK:
+            if client.is_ray_hack:
                 self.send(gui.addr,
                           '/ray/gui/client/ray_hack_update',
                           client.client_id,
                           *client.ray_hack.spread())
-            elif client.protocol is ray.Protocol.RAY_NET:
+            elif client.is_ray_net:
                 self.send(gui.addr,
                           '/ray/gui/client/ray_net_update',
                           client.client_id,
@@ -1381,11 +1381,11 @@ class OscServerThread(ClientCommunicating):
             self.send(gui.addr, '/ray/gui/trash/add',
                       *trashed_client.spread())
 
-            if trashed_client.protocol is ray.Protocol.RAY_HACK:
+            if trashed_client.is_ray_hack:
                 self.send(gui.addr, '/ray/gui/trash/ray_hack_update',
                           trashed_client.client_id,
                           *trashed_client.ray_hack.spread())
-            elif trashed_client.protocol is ray.Protocol.RAY_NET:
+            elif trashed_client.is_ray_net:
                 self.send(gui.addr, '/ray/gui/trash/ray_net_update',
                           trashed_client.client_id,
                           *trashed_client.ray_net.spread())
