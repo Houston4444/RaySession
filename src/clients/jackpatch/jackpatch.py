@@ -29,4 +29,11 @@ set_proc_name('ray-jackpatch')
 
 import main_loop
 
-main_loop.run()
+def run():
+    main_loop.run()
+    
+def internal_run(*args, **kwargs):
+    main_loop.internal_run(*args, **kwargs)
+    
+def internal_stop():
+    main_loop.internal_stop()

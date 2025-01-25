@@ -22,7 +22,7 @@ def rewrite_jack_patch_files(
         old_client_id: str, new_client_id: str,
         old_jack_name: str, new_jack_name: str):
     for client in session.clients + session.trashed_clients:
-        if client.protocol is not ray.Protocol.NSM:
+        if client.protocol not in (ray.Protocol.NSM, ray.Protocol.INTERNAL):
             continue
 
         patch_path = Path(str(client.get_project_path()) + '.xml')

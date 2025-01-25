@@ -107,10 +107,22 @@ class Glob:
     terminate = False
     monitor_states_done = MonitorStates.NEVER_DONE
     client_changing_id: Optional[tuple[str, str]] = None
-
+    
+    @classmethod
+    def reset(cls):
+        cls.file_path = ''
+        cls.is_dirty = False
+        cls.dirty_state_sent = False
+        cls.pending_connection = False
+        cls.open_done_once = False
+        cls.allow_disconnections = False
+        cls.terminate = False
+        cls.monitor_states_done = MonitorStates.NEVER_DONE
+        cls.client_changing_id = None
+    
 
 def b2str(src_bytes: bytes) -> str:
-    ''' decodes bytes to string '''
+    '''decode bytes to string'''
     return str(src_bytes, encoding="utf-8")
 
 def debug_conn_str(conn: tuple[str, str]):

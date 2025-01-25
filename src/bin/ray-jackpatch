@@ -8,5 +8,7 @@ sys.path[0] = str(Path(__file__).parents[1] / 'clients' / 'jackpatch')
 
 if TYPE_CHECKING:
     from src.clients.jackpatch import jackpatch
+    jackpatch.run()
 else:
     import jackpatch
+    jackpatch.run()

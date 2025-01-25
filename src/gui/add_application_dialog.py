@@ -510,7 +510,8 @@ class AddApplicationDialog(ChildDialog):
         for widget in (self.ui.labelNameTitle,
                        self.ui.labelNameColon,
                        self.ui.labelName):
-            widget.setVisible(bool(cdata.protocol is ray.Protocol.NSM))
+            widget.setVisible(bool(
+                cdata.protocol in (ray.Protocol.NSM, ray.Protocol.INTERNAL)))
 
         self.ui.toolButtonUser.setVisible(not item.is_factory)
         self.ui.toolButtonFavorite.set_template(

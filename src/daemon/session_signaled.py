@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import subprocess
 import time
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Optional
 import logging
 
 # third party imports
@@ -197,40 +197,81 @@ class SignaledSession(OperatingSession):
                           + "for this application to join.")
             return
 
-        # we can't be absolutely sure that the announcer is the good one
-        # but if client announce a known PID,
-        # we can be sure of which client is announcing
-
-        for client in self.clients:
-            if client.pid == pid and not client.nsm_active and client.is_running():
-                client.server_announce(osp, False)
-                break
-        else:
+        def find_the_client() -> Optional[Client]:
+            # we can't be absolutely sure that the announcer is the good one
+            # but if client announce a known PID,
+            # we can be sure of which client is announcing
+            if pid == os.getpid():
+                for client in self.clients:
+                    if (client._internal_thread is not None
+                            and not client.nsm_active):
+                        return client
+            
+            for client in self.clients:
+                if (client.pid == pid
+                        and not client.nsm_active
+                        and client.is_running()):
+                    return client
+                
             for client in self.clients:
                 if (not client.nsm_active and client.is_running()
                         and is_pid_child_of(pid, client.pid)):
-                    client.server_announce(osp, False)
+                    return client
+
+        client = find_the_client()
+        if client is not None:
+            client.server_announce(osp, False)
+        else:
+            for client in self.clients:
+                if (client.launched_in_terminal
+                        and client.process_drowned
+                        and client.executable_path == executable_path):
+                    # when launched in terminal
+                    # the client process can be stopped
+                    # because the terminal process is 'linked' to an existing instance
+                    # then, we may can say this stopped client is the good one,
+                    # and we declare it as external because we won't check its process
+                    # state with QProcess.state().
+                    client.server_announce(osp, True)
                     break
             else:
-                for client in self.clients:
-                    if (client.launched_in_terminal
-                            and client.process_drowned
-                            and client.executable_path == executable_path):
-                        # when launched in terminal
-                        # the client process can be stopped
-                        # because the terminal process is 'linked' to an existing instance
-                        # then, we may can say this stopped client is the good one,
-                        # and we declare it as external because we won't check its process
-                        # state with QProcess.state().
-                        client.server_announce(osp, True)
-                        break
-                else:
-                    # Client launched externally from daemon
-                    # by command : $:NSM_URL=url executable
-                    client = self._new_client(executable_path)
-                    self.externals_timer.start()
-                    self.send_monitor_event('joined', client.client_id)
-                    client.server_announce(osp, True)
+                # Client launched externally from daemon
+                # by command : $:NSM_URL=url executable
+                client = self._new_client(executable_path)
+                self.externals_timer.start()
+                self.send_monitor_event('joined', client.client_id)
+                client.server_announce(osp, True)
+
+        # for client in self.clients:
+        #     if client.pid == pid and not client.nsm_active and client.is_running():
+        #         client.server_announce(osp, False)
+        #         break
+        # else:
+        #     for client in self.clients:
+        #         if (not client.nsm_active and client.is_running()
+        #                 and is_pid_child_of(pid, client.pid)):
+        #             client.server_announce(osp, False)
+        #             break
+        #     else:
+        #         for client in self.clients:
+        #             if (client.launched_in_terminal
+        #                     and client.process_drowned
+        #                     and client.executable_path == executable_path):
+        #                 # when launched in terminal
+        #                 # the client process can be stopped
+        #                 # because the terminal process is 'linked' to an existing instance
+        #                 # then, we may can say this stopped client is the good one,
+        #                 # and we declare it as external because we won't check its process
+        #                 # state with QProcess.state().
+        #                 client.server_announce(osp, True)
+        #                 break
+        #         else:
+        #             # Client launched externally from daemon
+        #             # by command : $:NSM_URL=url executable
+        #             client = self._new_client(executable_path)
+        #             self.externals_timer.start()
+        #             self.send_monitor_event('joined', client.client_id)
+        #             client.server_announce(osp, True)
 
         if self.wait_for is ray.WaitFor.ANNOUNCE:
             self.end_timer_if_last_expected(client)
@@ -395,12 +436,12 @@ class SignaledSession(OperatingSession):
                     int(factory), template_name, display_name,
                     *template_client.spread())
 
-                if template_client.protocol is ray.Protocol.RAY_HACK:
+                if template_client.is_ray_hack:
                     self.send_gui(
                         '/ray/gui/client_template_ray_hack_update',
                         int(factory), template_name,
                         *template_client.ray_hack.spread())
-                elif template_client.protocol is ray.Protocol.RAY_NET:
+                elif template_client.is_ray_net:
                     self.send_gui(
                         '/ray/gui/client_template_ray_net_update',
                         int(factory), template_name,
@@ -423,7 +464,7 @@ class SignaledSession(OperatingSession):
 
         if with_net:
             for client in self.clients:
-                if (client.protocol is ray.Protocol.RAY_NET
+                if (client.is_ray_net
                         and client.ray_net.daemon_url):
                     self.send(Address(client.ray_net.daemon_url),
                               '/ray/server/list_sessions', 1)
@@ -732,7 +773,7 @@ class SignaledSession(OperatingSession):
         net = False if len(osp.args) < 2 else osp.args[1]
 
         for client in self.clients:
-            if client.protocol is ray.Protocol.RAY_NET:
+            if client.is_ray_net:
                 client.ray_net.session_template = template_name
 
         self.steps_order = [self.save, self.snapshot,
@@ -1428,14 +1469,14 @@ class SignaledSession(OperatingSession):
 
     @client_action
     def _ray_client_update_ray_hack_properties(self, osp: OscPack, client:Client):
-        if client.is_ray_hack():
+        if client.is_ray_hack:
             client.ray_hack.update(*osp.args)
 
         self.send(*osp.reply(), 'ray_hack updated')
 
     @client_action
     def _ray_client_update_ray_net_properties(self, osp: OscPack, client:Client):
-        if client.protocol is ray.Protocol.RAY_NET:
+        if client.is_ray_net:
             client.ray_net.update(*osp.args)
         self.send(*osp.reply(), 'ray_net updated')
 
@@ -1841,7 +1882,7 @@ class SignaledSession(OperatingSession):
     def _ray_net_daemon_duplicate_state(self, osp: OscPack):
         state = osp.args[0]
         for client in self.clients:
-            if (client.protocol is ray.Protocol.RAY_NET
+            if (client.is_ray_net
                     and client.ray_net.daemon_url
                     and are_same_osc_port(client.ray_net.daemon_url,
                                           osp.src_addr.url)):

@@ -414,6 +414,105 @@ def session_is_loaded():
 
 # --- end of NSM callbacks --- 
 
+def internal_run(*func_args: str, **kwargs: str):
+    Glob.reset()
+    global nsm_server
+
+    # set log level with exec arguments
+    if len(func_args) > 1:
+        read_log_level = False
+        log_level = logging.WARNING
+
+        for func_arg in func_args:
+            if func_arg in ('-log', '--log'):
+                read_log_level = True
+                log_level = logging.DEBUG
+
+            elif read_log_level:
+                if func_arg.isdigit():
+                    log_level = int(func_arg)
+                else:
+                    uarg = func_arg.upper()
+                    if (uarg in logging.__dict__.keys()
+                            and isinstance(logging.__dict__[uarg], int)):
+                        log_level = logging.__dict__[uarg]
+        _logger.setLevel(log_level)
+
+    nsm_url = kwargs.get('NSM_URL')
+    if not nsm_url:
+        _logger.error('Could not register as NSM client.')
+        # sys.exit(1)
+        return
+
+    try:
+        daemon_address = Address(nsm_url)
+    except:
+        _logger.error('NSM_URL seems to be invalid.')
+        # sys.exit(1)
+        return
+
+    if not engine.init():
+        # sys.exit(2)
+        return
+
+    nsm_server = NsmServer(daemon_address)
+    nsm_server.set_callback(NsmCallback.OPEN, open_file)
+    nsm_server.set_callback(NsmCallback.SAVE, save_file)
+    nsm_server.set_callback(
+        NsmCallback.MONITOR_CLIENT_STATE, monitor_client_state)
+    nsm_server.set_callback(
+        NsmCallback.MONITOR_CLIENT_EVENT, monitor_client_event)
+    nsm_server.set_callback(
+        NsmCallback.MONITOR_CLIENT_UPDATED, monitor_client_updated)
+    nsm_server.set_callback(
+        NsmCallback.SESSION_IS_LOADED, session_is_loaded)
+    nsm_server.announce(
+        NSM_NAME, ':dirty:switch:monitor:', sys.argv[0].rpartition('/')[2])
+    
+    # #connect program interruption signals
+    # signal.signal(signal.SIGINT, signal_handler)
+    # signal.signal(signal.SIGTERM, signal_handler)
+
+    for port_mode in jack_ports:
+        jack_ports[port_mode].clear()
+    connection_list.clear()
+
+    engine.fill_ports_and_connections(jack_ports, connection_list)
+    
+    jack_stopped = False
+
+    while True:
+        if Glob.terminate:
+            break
+
+        nsm_server.recv(50)
+        for event, args in EventHandler.new_events():
+            if event is Event.PORT_ADDED:
+                port_added(*args)
+            elif event is Event.PORT_REMOVED:
+                port_removed(*args)
+            elif event is Event.PORT_RENAMED:
+                port_renamed(*args)
+            elif event is Event.CONNECTION_ADDED:
+                connection_added(*args)
+            elif event is Event.CONNECTION_REMOVED:
+                connection_removed(*args)
+            elif event is Event.JACK_STOPPED:
+                jack_stopped = True
+                break
+        
+        if timer_dirty_check.elapsed():
+            timer_dirty_finished()
+        
+        if timer_connect_check.elapsed():
+            may_make_one_connection()
+
+    if not jack_stopped:
+        engine.quit()
+
+def internal_stop():
+    Glob.terminate = True
+
 def run():
     global nsm_server
 

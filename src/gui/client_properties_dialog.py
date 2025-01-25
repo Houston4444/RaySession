@@ -112,7 +112,7 @@ class ClientPropertiesDialog(ChildDialog):
 
     @staticmethod
     def create(window, client: ray.ClientData) -> 'ClientPropertiesDialog':
-        if client.protocol is ray.Protocol.NSM:
+        if client.protocol in (ray.Protocol.NSM, ray.Protocol.INTERNAL):
             return NsmClientPropertiesDialog(window, client)
         if client.protocol is ray.Protocol.RAY_HACK:
             return RayHackClientPropertiesDialog(window, client)

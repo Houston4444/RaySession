@@ -128,7 +128,7 @@ class Client(QObject, ray.ClientData):
                          *self.ray_hack.spread())
 
     def send_ray_net(self):
-        if self.protocol is not ray.Protocol.RAY_NET:
+        if not self.is_ray_net:
             return
 
         server = GuiServerThread.instance()
