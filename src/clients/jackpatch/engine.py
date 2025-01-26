@@ -1,13 +1,14 @@
 
+from patcher.bases import EventHandler
+
 # Local imports
-from jack_engine import JackEngine
-
-
-XML_TAG = 'RAY-JACKPATCH'
-EXECUTABLE = 'ray-jackpatch'
-NSM_NAME = 'JACK Connections'
+from .jack_engine import JackEngine
 
 
 class Engine(JackEngine):
-    def __init__(self):
-        super().__init__()
+    XML_TAG = 'RAY-JACKPATCH'
+    EXECUTABLE = 'ray-jackpatch'
+    NSM_NAME = 'JACK Connections'
+
+    def __init__(self, event_handler: EventHandler):
+        super().__init__(event_handler)

@@ -20,20 +20,13 @@
 import sys
 from pathlib import Path
 
-# import custom pyjacklib and shared
-sys.path.insert(1, str(Path(__file__).parents[3] / 'pyjacklib'))
+# add 'shared' import path
 sys.path.insert(1, str(Path(__file__).parents[2] / 'shared'))
 
 from proc_name import set_proc_name
 set_proc_name('ray-jackpatch')
 
-import main_loop
+from .main_loop import run as main_loop_run
 
 def run():
-    main_loop.run()
-    
-def internal_run(*args, **kwargs):
-    main_loop.internal_run(*args, **kwargs)
-    
-def internal_stop():
-    main_loop.internal_stop()
+    main_loop_run()

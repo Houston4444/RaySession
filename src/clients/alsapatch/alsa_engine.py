@@ -1,24 +1,18 @@
 
-# Imports from standard library
-from typing import TYPE_CHECKING
-
-# imports from jackpatch
-if TYPE_CHECKING:
-    from src.clients.jackpatch.bases import ProtoEngine
-else:
-    from bases import ProtoEngine
+# imports from shared
+from patcher.bases import EventHandler, ProtoEngine
 
 # Local imports
-from alsa_thread import AlsaManager
+from .alsa_thread import AlsaManager
 
 
 class AlsaEngine(ProtoEngine):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, event_handler: EventHandler):
+        super().__init__(event_handler)
         self._alsa_mng: AlsaManager = None
         
     def init(self) -> bool:
-        self._alsa_mng = AlsaManager()
+        self._alsa_mng = AlsaManager(self.ev_handler)
         return True
 
     def connect_ports(self, port_out: str, port_in: str):
@@ -26,4 +20,7 @@ class AlsaEngine(ProtoEngine):
 
     def disconnect_ports(self, port_out: str, port_in: str):
         self._alsa_mng.connect_ports(port_out, port_in, disconnect=True)
+        
+    def quit(self):
+        self._alsa_mng.stop()
 

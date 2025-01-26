@@ -1,3 +1,4 @@
+from types import NoneType
 from typing import Callable, Union, overload, Optional
 from dataclasses import dataclass
 

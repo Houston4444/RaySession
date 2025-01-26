@@ -1,84 +1,100 @@
 
 # Imports from standard library
 import logging
+from typing import Optional
 
-# Imports from pyjacklib
-import jacklib
-from jacklib.helpers import c_char_p_p_to_list
-from jacklib.api import JackPortFlags, JackOptions, pointer, jack_client_t
+# Third party
+import jack
 
-# Local imports
-import jack_callbacks
-from bases import JackPort, PortMode, ProtoEngine, PortType
+# imports from shared
+from patcher.bases import (
+    EventHandler, Event, JackPort,
+    PortMode, PortType, ProtoEngine)
 
 
 _logger = logging.getLogger(__name__)
 
 
+def mode_type(port: jack.Port) -> tuple[PortMode, PortType]:
+    port_mode = PortMode.NULL    
+    if port.is_input:
+        port_mode = PortMode.INPUT
+    elif port.is_output:
+        port_mode = PortMode.OUTPUT
+    
+    port_type = PortType.NULL
+    if port.is_audio:
+        port_type = PortType.AUDIO
+    elif port.is_midi:
+        port_type = PortType.MIDI
+
+    return port_mode, port_type
+
+
 class JackEngine(ProtoEngine):
-    def __init__(self):
-        super().__init__()
-        self._jack_client: 'pointer[jack_client_t]' = None
+    def __init__(self, event_handler: EventHandler):
+        super().__init__(event_handler)
+        self._client: Optional[jack.Client] = None
 
     def init(self) -> bool:
-        self._jack_client = jacklib.client_open(
-            'ray-jackpatch',
-            JackOptions.NO_START_SERVER,
-            None)
-
-        if not self._jack_client:
+        try:
+            self._client = jack.Client('ray-jackpatch', no_start_server=True)
+        except jack.JackOpenError:
             _logger.error('Unable to make a jack client !')
             return False
         
-        jack_callbacks.set_callbacks(self._jack_client)
-        jacklib.activate(self._jack_client)
+        if self._client is None:
+            return False
+        
+        @self._client.set_port_registration_callback
+        def port_registration(port: jack.Port, register: bool):
+            self.ev_handler.add_event(
+                Event.PORT_ADDED if register else Event.PORT_REMOVED,
+                port.name, *mode_type(port))
+        
+        @self._client.set_port_rename_callback
+        def port_rename(port: jack.Port, old: str, new: str):
+            self.ev_handler.add_event(
+                Event.PORT_RENAMED(old, new, *mode_type(port)))
+            
+        @self._client.set_port_connect_callback
+        def port_connect(port_a: jack.Port, port_b: jack.Port, connect: bool):
+            self.ev_handler.add_event(
+                Event.CONNECTION_ADDED if connect
+                else Event.CONNECTION_REMOVED,
+                port_a.name, port_b.name)
+            
+        @self._client.set_shutdown_callback
+        def on_shutdown(status: jack.Status, reason: str):
+            self.ev_handler.add_event(Event.JACK_STOPPED)
+            
+        self._client.activate()
         return True
 
     def fill_ports_and_connections(
             self, all_ports: dict[PortMode, list[JackPort]],
             connection_list: list[tuple[str, str]]):
         '''get all current JACK ports and connections at startup'''
-        port_name_list = c_char_p_p_to_list(
-            jacklib.get_ports(self._jack_client, "", "", 0))
-
-        for port_name in port_name_list:
+        for port in self._client.get_ports():
             jack_port = JackPort()
-            jack_port.name = port_name
-
-            port_ptr = jacklib.port_by_name(self._jack_client, port_name)
-            port_flags = jacklib.port_flags(port_ptr)
-
-            if port_flags & JackPortFlags.IS_INPUT:
-                jack_port.mode = PortMode.INPUT
-            elif port_flags & JackPortFlags.IS_OUTPUT:
-                jack_port.mode = PortMode.OUTPUT
-            else:
-                jack_port.mode = PortMode.NULL
-
-            port_type_str = jacklib.port_type(port_ptr)
-            if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
-                jack_port.type = PortType.AUDIO
-            elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
-                jack_port.type = PortType.MIDI
-            else:
-                jack_port.type = PortType.NULL
-
+            jack_port.name = port.name
+            port_mode, port_type = mode_type(port)
+            jack_port.mode = port_mode
+            jack_port.type = port_type
             jack_port.is_new = True
-
             all_ports[jack_port.mode].append(jack_port)
-
+            
             if jack_port.mode is PortMode.OUTPUT:
-                for port_con_name in jacklib.port_get_all_connections(
-                        self._jack_client, port_ptr):
-                    connection_list.append((port_name, port_con_name))
+                for oth_port in self._client.get_all_connections(port):
+                    connection_list.append((jack_port.name, oth_port.name))
 
     def connect_ports(self, port_out: str, port_in: str):
-        jacklib.connect(self._jack_client, port_out, port_in)
+        self._client.connect(port_out, port_in)
 
     def disconnect_ports(self, port_out: str, port_in: str):
-        jacklib.disconnect(self._jack_client, port_out, port_in)
+        self._client.disconnect(port_out, port_in)
 
     def quit(self):
-        jacklib.deactivate(self._jack_client)
-        jacklib.client_close(self._jack_client)
+        self._client.deactivate()
+        self._client.close()
     

@@ -1,12 +1,16 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S python3 -u
 
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-sys.path[0] = str(Path(__file__).parent.parent / 'clients' / 'alsapatch')
+sys.path[0] = str(Path(__file__).parents[1] / 'clients')
 
 if TYPE_CHECKING:
-    from clients.alsapatch import alsapatch
+    from src.clients.alsapatch import alsapatch
+    alsapatch.run()
 else:
-    import alsapatch
+    import alsapatch.alsapatch as alsapatch
+    alsapatch.run()
+
+print('la c terminé')
