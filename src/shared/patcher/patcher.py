@@ -87,8 +87,6 @@ class Patcher:
 
         if not jack_stopped:
             self.engine.quit()
-            
-        
 
     def stop(self, *args):
         self.glob.terminate = True

@@ -203,7 +203,8 @@ class SignaledSession(OperatingSession):
             # we can be sure of which client is announcing
             if pid == os.getpid():
                 for client in self.clients:
-                    if (client._internal_thread is not None
+                    if (client.protocol is ray.Protocol.INTERNAL
+                            and client._internal is not None
                             and not client.nsm_active):
                         return client
             

@@ -29,6 +29,7 @@ from daemon_tools  import (
     highlight_text, exec_and_desktops)
 from signaler import Signaler
 from scripter import ClientScripter
+from internal_client import InternalClient
 
 # only used to identify session functions in the IDE
 # 'Session' is not importable simply because it would be
@@ -155,8 +156,10 @@ class Client(ServerSender, ray.ClientData):
 
         self.ray_hack_waiting_win = False
         
-        self._internal_thread: Optional[threading.Thread] = None
-        self._internal_lib = None
+        self._internal: Optional[InternalClient] = None
+
+    def __repr__(self) -> str:
+        return f'Client({self.client_id})'
 
     @staticmethod
     def short_client_id(wanted: str) -> str:
@@ -1354,8 +1357,8 @@ class Client(ServerSender, ray.ClientData):
             for env in all_envs:
                 os.environ[env] = all_envs[env][1]
 
-            os.environ['CONFIG_FILE'] = os.path.expandvars(
-                                            self.ray_hack.config_file)
+            os.environ['CONFIG_FILE'] = \
+                os.path.expandvars(self.ray_hack.config_file)
 
             back_pwd = os.getenv('PWD')
             ray_hack_pwd = self.get_project_path()
@@ -1398,7 +1401,6 @@ class Client(ServerSender, ray.ClientData):
 
         self.launched_in_terminal = self.in_terminal
         if self.launched_in_terminal or self.executable_path in INTERNAL_EXECS:
-            print('start external timer')
             self.session.externals_timer.start()
 
         self.session.send_monitor_event(
@@ -1407,21 +1409,13 @@ class Client(ServerSender, ray.ClientData):
         self._process.setProcessEnvironment(process_env)
         prog, *other_args = terminal_args + [self.executable_path] + arguments
         
-        if False and self.executable_path == 'ray-jackpatch':
-            print('vas-y mon grand', self.executable_path)
-            import sys
-            # import importlib
-            sys.path.insert(
-                1, str(Path(__file__).parents[1] / 'clients' / 'jackpatch'))
-            import jackpatch
-            # importlib.reload(jackpatch)
+        if self.executable_path in ('ray-jackpatch', 'ray-alsapatch'):
+            self.protocol = ray.Protocol.INTERNAL
+            self._internal = InternalClient(
+                self.executable_path, arguments, self.get_server_url())
+            self._internal.start()
+            self.session.externals_timer.start()
             
-            self._internal_lib = jackpatch
-            
-            self._internal_thread = threading.Thread(
-                target=self._internal_lib.internal_run,
-                kwargs={'NSM_URL': self.get_server_url()})
-            self._internal_thread.start()
             self._process_started()
         else:
             self._process.start(prog, other_args)
@@ -1467,6 +1461,11 @@ class Client(ServerSender, ray.ClientData):
                 self._process.terminate()
 
     def kill(self):
+        if (self.protocol is ray.Protocol.INTERNAL
+                and self._internal is not None):
+            self._internal.kill()
+            return
+
         if self.is_external:
             os.kill(self.pid, signal.SIGKILL)
             return
@@ -1497,8 +1496,8 @@ class Client(ServerSender, ray.ClientData):
         if self.is_external:
             return True
         
-        if self._internal_thread is not None:
-            return self._internal_thread.is_alive()
+        if self._internal is not None:
+            return self._internal.running
         
         return self._process.state() == QProcess.ProcessState.Running
 
@@ -1665,8 +1664,8 @@ class Client(ServerSender, ray.ClientData):
                 except:
                     self.pid_from_nsm = 0
 
-            if self._internal_thread is not None:
-                self._internal_lib.internal_stop()
+            if self._internal is not None:
+                self._internal.stop()
             elif self.is_external:
                 os.kill(self.pid, signal.SIGTERM)
             elif self.is_ray_hack and self.ray_hack.stop_sig != signal.SIGTERM.value:
@@ -2264,8 +2263,6 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         major: int
         minor: int
         pid: int
-
-        print('server_announce alaclient', self.client_id, pid, is_new)
 
         if self.pending_command is ray.Command.STOP:
             # assume to not answer to a dying client.
