@@ -103,7 +103,12 @@ class NsmServer(Server):
     def set_callback(self, on_event: NsmCallback, func: Callable):
         self._callbacks[on_event] = func
 
-    def _exec_callback(self, event: NsmCallback, *args) -> Optional[tuple[Err, str]]:
+    def set_callbacks(self, cb_dict: dict[NsmCallback, Callable]):
+        for on_event, func in cb_dict.items():
+            self._callbacks[on_event] = func
+
+    def _exec_callback(
+            self, event: NsmCallback, *args) -> Optional[tuple[Err, str]]:
         if event in self._callbacks.keys():
             return self._callbacks[event](*args)
 

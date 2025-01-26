@@ -72,3 +72,4 @@ def run():
     signal.signal(signal.SIGINT, stop_func)
     signal.signal(signal.SIGTERM, stop_func)
     start_func()
+    print('c fini')

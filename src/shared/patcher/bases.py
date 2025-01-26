@@ -3,7 +3,19 @@
 from queue import Queue
 import time
 from enum import IntEnum
-from typing import Iterator, Optional
+from typing import Iterator, Optional, TypeAlias
+
+
+# Type aliases
+NsmClientName: TypeAlias = str
+
+JackClientBaseName: TypeAlias = str
+'''base of a jack client name,
+can be the full client name or just its prefix if there are
+multiple JACK clients for the same NSM client'''
+
+FullPortName: TypeAlias = str
+'Full port name string under the form "jack_client_name:port_name"'
 
 
 class PortMode(IntEnum):
@@ -32,6 +44,13 @@ class JackPort:
     
     
 class ProtoEngine:
+    XML_TAG = 'RAY-PATCH'
+    EXECUTABLE = 'ray-patch'
+    NSM_NAME = 'Connections'
+
+    def __init__(self, event_handler: 'EventHandler'):
+        self.ev_handler = event_handler
+
     def init(self) -> bool:
         return True
 
@@ -85,16 +104,15 @@ class Timer:
 
 
 class EventHandler:
-    _event_queue = Queue()
+    def __init__(self):
+        self._event_queue = Queue()
     
-    @classmethod
-    def add_event(cls, event: Event, *args: tuple):
-        cls._event_queue.put((event, args))
+    def add_event(self, event: Event, *args: tuple):
+        self._event_queue.put((event, args))
 
-    @classmethod
-    def new_events(cls) -> Iterator[tuple[Event, tuple]]:
-        while cls._event_queue.qsize():
-            yield cls._event_queue.get()
+    def new_events(self) -> Iterator[tuple[Event, tuple]]:
+        while self._event_queue.qsize():
+            yield self._event_queue.get()
 
 
 class Glob:

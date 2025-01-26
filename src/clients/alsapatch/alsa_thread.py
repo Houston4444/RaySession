@@ -24,13 +24,8 @@ from pyalsa.alsaseq import (
     SEQ_EVENT_PORT_UNSUBSCRIBED,
 )
 
-# imports from jackpatch
-if TYPE_CHECKING:
-    from src.clients.jackpatch.bases import (
-        Glob, EventHandler, Event, PortMode, PortType)
-else:
-    from bases import (
-        Glob, EventHandler, Event, PortMode, PortType)
+# imports from shared
+from patcher.bases import Glob, EventHandler, Event, PortMode, PortType
 
 
 _PORT_READS = SEQ_PORT_CAP_READ | SEQ_PORT_CAP_SUBS_READ
@@ -100,7 +95,9 @@ class AlsaClient:
 
 
 class AlsaManager:
-    def __init__(self):
+    def __init__(self, event_handler: EventHandler):
+        self.ev_handler = event_handler
+        self.terminate = False
         self.seq = alsaseq.Sequencer(clientname='ray-alsapatch')
 
         self._all_alsa_connections = list[AlsaConn]()
@@ -168,18 +165,18 @@ class AlsaManager:
         for client in self._clients.values():
             for port in client.ports.values():
                 if port.caps & _PORT_READS == _PORT_READS:
-                    EventHandler.add_event(
+                    self.ev_handler.add_event(
                         Event.PORT_ADDED, f'{client.name}:{port.name}',
                         PortMode.OUTPUT, PortType.MIDI)
                 if port.caps & _PORT_WRITES == _PORT_WRITES:
-                    EventHandler.add_event(
+                    self.ev_handler.add_event(
                         Event.PORT_ADDED, f'{client.name}:{port.name}',
                         PortMode.INPUT, PortType.MIDI)
 
         for conn in self._connections:
             port_names = conn.as_port_names(self._clients)
             if port_names is not None:
-                EventHandler.add_event(
+                self.ev_handler.add_event(
                     Event.CONNECTION_ADDED, *port_names)
     
     def parse_connections(self) -> Iterator[tuple[str, str]]:
@@ -231,7 +228,7 @@ class AlsaManager:
         
     def read_events(self):
         while True:
-            if Glob.terminate:
+            if self.terminate:
                 break
 
             event_list = self.seq.receive_events(timeout=128, maxevents=1)
@@ -290,11 +287,11 @@ class AlsaManager:
                         continue
                     
                     if port.caps & _PORT_READS == _PORT_READS:
-                        EventHandler.add_event(
+                        self.ev_handler.add_event(
                             Event.PORT_ADDED, f'{client.name}:{port.name}',
                             PortMode.OUTPUT, PortType.MIDI)
                     if port.caps & _PORT_WRITES == _PORT_WRITES:
-                        EventHandler.add_event(
+                        self.ev_handler.add_event(
                             Event.PORT_ADDED, f'{client.name}:{port.name}',
                             PortMode.INPUT, PortType.MIDI)
                     
@@ -317,14 +314,14 @@ class AlsaManager:
                             
                     for conn in to_rm_conns:
                         self._connections.remove(conn)
-                        EventHandler.add_event(
+                        self.ev_handler.add_event(
                             Event.CONNECTION_REMOVED, *conn.as_port_names(self._clients))
                     if port.caps & _PORT_READS == _PORT_READS:
-                        EventHandler.add_event(
+                        self.ev_handler.add_event(
                             Event.PORT_REMOVED, f'{client.name}:{port.name}',
                             PortMode.OUTPUT, PortType.MIDI)
                     if port.caps & _PORT_WRITES == _PORT_WRITES:
-                        EventHandler.add_event(
+                        self.ev_handler.add_event(
                             Event.PORT_REMOVED, f'{client.name}:{port.name}',
                             PortMode.INPUT, PortType.MIDI)
 
@@ -349,7 +346,7 @@ class AlsaManager:
                     port_names = alsa_conn.as_port_names(self._clients)
                     
                     if port_names is not None:
-                        EventHandler.add_event(
+                        self.ev_handler.add_event(
                             Event.CONNECTION_ADDED, *port_names)
 
                 elif event.type == SEQ_EVENT_PORT_UNSUBSCRIBED:
@@ -369,8 +366,12 @@ class AlsaManager:
                                 and conn.source_port_id == sender_port.id
                                 and conn.dest_client_id == dest_client.id
                                 and conn.dest_port_id == dest_port.id):
-                            EventHandler.add_event(
+                            self.ev_handler.add_event(
                                 Event.CONNECTION_REMOVED, *conn.as_port_names(self._clients))
                             self._connections.remove(conn)
                             break
+                        
+    def stop(self):
+        self.terminate = True
+        self._event_thread.join()
     
