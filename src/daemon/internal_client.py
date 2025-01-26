@@ -20,12 +20,14 @@ class InternalClient:
     
     def main_loop(self):
         'target on the _thread attribute'
-        
+
+        module_name = self.name.replace('ray-', '')
+
         # import the client modules
         try:
-            self._lib = importlib.import_module(self.name)
+            self._lib = importlib.import_module(module_name)
         except:
-            _logger.warning(f'Failed to import module {self.name} '
+            _logger.warning(f'Failed to import module {module_name} '
                             'for internal client')
             return
 

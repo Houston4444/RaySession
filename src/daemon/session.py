@@ -592,7 +592,6 @@ class OperatingSession(Session):
         self.timer_quit = QTimer()
         self.timer_quit.setInterval(100)
         self.timer_quit.timeout.connect(self._timer_quit_timeout)
-        self._client_quitting: Optional[Client] = None
         self.clients_to_quit = list[Client]()
 
         self.timer_waituser_progress = QTimer()
@@ -807,11 +806,10 @@ class OperatingSession(Session):
 
     def _timer_quit_timeout(self):
         if self.clients_to_quit:
-            self._client_quitting = self.clients_to_quit.pop(0)
-            self._client_quitting.stop()
+            client_quitting = self.clients_to_quit.pop(0)
+            client_quitting.stop()
 
         if not self.clients_to_quit:
-            self._client_quitting = None
             self.timer_quit.stop()
 
     def _timer_wait_user_progress_timeout(self):
@@ -824,21 +822,26 @@ class OperatingSession(Session):
         self.send_gui('/ray/gui/server/progress', ratio)
 
     def _check_externals_states(self):
-        '''checks if client started from external are still alive
+        '''check if clients started from external are still alive
         or if clients launched in terminal have still their process active'''
         has_alives = False
+
+        # execute client.external_finished will remove the client
+        # from self.clients, so we need to collect them first
+        # and execute this after to avoid item remove during iteration
+        clients_to_finish = list[Client]()
 
         for client in self.clients:
             if client.is_external:
                 has_alives = True
                 if not os.path.exists('/proc/%i' % client.pid):
-                    client.external_finished()
+                    clients_to_finish.append(client)
             
-            elif client._internal_thread is not None:
-                if client._internal_thread.is_alive():
+            elif client._internal is not None:
+                if client._internal.running:
                     has_alives = True
                 elif client.nsm_active:
-                    client.external_finished()
+                    clients_to_finish.append(client)
 
             elif (client.is_running()
                     and client.launched_in_terminal
@@ -847,6 +850,9 @@ class OperatingSession(Session):
                 if (client.nsm_active
                         and not os.path.exists('/proc/%i' % client.pid_from_nsm)):
                     client.nsm_finished_terminal_alive()
+
+        for client in clients_to_finish:
+            client.external_finished()
 
         if not has_alives:
             self.externals_timer.stop()
@@ -1252,8 +1258,8 @@ class OperatingSession(Session):
         self.trashed_clients.clear()
         self.send_gui('/ray/gui/trash/clear')
 
-        self._wait_and_go_to(30000, (self.close_substep1, clear_all_clients),
-                         ray.WaitFor.QUIT)
+        self._wait_and_go_to(
+            30000, (self.close_substep1, clear_all_clients), ray.WaitFor.QUIT)
 
     def close_substep1(self, clear_all_clients=False):
         for client in self.expected_clients:
