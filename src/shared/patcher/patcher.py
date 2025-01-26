@@ -22,14 +22,14 @@ from .bases import (
     Event,
     debug_conn_str)
 
-_logger = logging.getLogger(__name__)
-
 
 class Patcher:
     def __init__(
-            self, engine: ProtoEngine, nsm_server: NsmServer):
+            self, engine: ProtoEngine, nsm_server: NsmServer,
+            logger: logging.Logger):
         self.glob = Glob()
         self.engine = engine
+        self._logger = logger
         self.brothers_dict = dict[NsmClientName, JackClientBaseName]()
         self.connection_list = list[tuple[FullPortName, FullPortName]]()
         self.saved_connections = list[tuple[FullPortName, FullPortName]]()
@@ -85,15 +85,12 @@ class Patcher:
             if self.timer_connect_check.elapsed():
                 self.may_make_one_connection()
 
-        print('finiiiissh')
-
         if not jack_stopped:
             self.engine.quit()
             
         
 
     def stop(self, *args):
-        print('oula stop', *args)
         self.glob.terminate = True
 
     def set_dirty_clean(self):
@@ -198,7 +195,7 @@ class Patcher:
             if self.to_disc_connections:
                 for to_disc_con in self.to_disc_connections:
                     if to_disc_con in self.connection_list:
-                        _logger.info(f'disconnect ports: {to_disc_con}')
+                        self._logger.info(f'disconnect ports: {to_disc_con}')
                         self.engine.disconnect_ports(*to_disc_con)
                         return
                 else:
@@ -223,7 +220,7 @@ class Patcher:
                     self.glob.pending_connection = True
                     break
 
-                _logger.info(f'connect ports: {sv_con}')
+                self._logger.info(f'connect ports: {sv_con}')
                 self.engine.connect_ports(*sv_con)
                 one_connected = True
         else:
@@ -241,7 +238,7 @@ class Patcher:
 
         file_path = project_path + '.xml'
         self.glob.file_path = file_path
-        _logger.info(f'open file: {file_path}')
+        self._logger.info(f'open file: {file_path}')
 
         XML_TAG = self.engine.XML_TAG
 
@@ -249,14 +246,14 @@ class Patcher:
             try:
                 tree = ET.parse(file_path)
             except:
-                _logger.error(f'unable to read file {file_path}')
+                self._logger.error(f'unable to read file {file_path}')
                 return (Err.BAD_PROJECT,
                         f'{file_path} is not a correct .xml file')
             
             # read the DOM
             root = tree.getroot()
             if root.tag != XML_TAG:
-                _logger.error(f'{file_path} is not a {XML_TAG} .xml file')
+                self._logger.error(f'{file_path} is not a {XML_TAG} .xml file')
                 return (Err.BAD_PROJECT,
                         f'{file_path} is not a {XML_TAG} .xml file')
             
@@ -274,7 +271,7 @@ class Patcher:
                         'nsm_client_to', '')
 
                     if not port_from and port_to:
-                        _logger.warning(
+                        self._logger.warning(
                             f"{debug_conn_str((port_from, port_to))} "
                             "is incomplete.")
                         continue
@@ -285,7 +282,7 @@ class Patcher:
                         if (nsm_client_from 
                                 and nsm_client_from
                                     not in self.brothers_dict.keys()):
-                            _logger.info(
+                            self._logger.info(
                                 f"{debug_conn_str((port_from, port_to))}"
                                 " is removed "
                                 f"because NSM client {nsm_client_from}"
@@ -294,7 +291,7 @@ class Patcher:
                         if (nsm_client_to
                                 and nsm_client_to 
                                     not in self.brothers_dict.keys()):
-                            _logger.info(
+                            self._logger.info(
                                 f"{debug_conn_str((port_from, port_to))}"
                                 " is removed "
                                 f"because NSM client {nsm_client_to}"
@@ -401,13 +398,12 @@ class Patcher:
             # we can indent the xml tree since python3.9
             ET.indent(root, space='  ', level=0)
 
-        print('logger info', _logger.level, _logger.parent.level)
-        _logger.info(f'save file: {self.glob.file_path}')
+        self._logger.info(f'save file: {self.glob.file_path}')
         tree = ET.ElementTree(root)
         try:
             tree.write(self.glob.file_path)
         except:
-            _logger.error(f'unable to write file {self.glob.file_path}')
+            self._logger.error(f'unable to write file {self.glob.file_path}')
             self.glob.terminate = True
             return
 
@@ -452,7 +448,7 @@ class Patcher:
         else:
             n_clients = is_started
             if len(self.brothers_dict) != n_clients:
-                _logger.warning('list of monitored clients is incomplete !')
+                self._logger.warning('list of monitored clients is incomplete !')
                 ## following line would be the most obvious thing to do,
                 ## but in case of problem, we could have 
                 # an infinite messages loop 

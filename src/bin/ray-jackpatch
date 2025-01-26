@@ -5,10 +5,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 sys.path[0] = str(Path(__file__).parents[1] / 'clients')
+sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
 if TYPE_CHECKING:
-    from src.clients.jackpatch import jackpatch
+    from src.clients import jackpatch
     jackpatch.run()
 else:
-    import jackpatch.jackpatch as jackpatch
+    import jackpatch
     jackpatch.run()
