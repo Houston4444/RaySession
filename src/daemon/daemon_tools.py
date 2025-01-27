@@ -35,9 +35,9 @@ def get_app_config_path() -> Path:
         / QCoreApplication.organizationName())
 
 def get_code_root() -> Path:
-    return Path(__file__).parent.parent.parent
+    return Path(__file__).parents[2]
 
-def is_pid_child_of(child_pid, parent_pid) -> bool:
+def is_pid_child_of(child_pid: int, parent_pid: int) -> bool:
     if child_pid < parent_pid:
         return False
 
@@ -50,7 +50,7 @@ def is_pid_child_of(child_pid, parent_pid) -> bool:
         except BaseException:
             return False
 
-        for line in proc_contents.split('\n'):
+        for line in proc_contents.splitlines():
             if line.startswith('PPid:'):
                 ppid_str = line.rpartition('\t')[2]
                 if ppid_str.isdigit():
@@ -178,8 +178,7 @@ class Terminal:
         else:
             log_file_path = log_dir / 'dummy'
 
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
+        log_dir.mkdir(exist_ok=True, parents=True)
 
         with open(log_file_path, 'a') as log_file:
             date_time = QDateTime.currentDateTime()

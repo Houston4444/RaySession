@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Callable, Optional
 import logging
 
 # third party imports
-from qtpy.QtCore import QCoreApplication, QProcess
+from qtpy.QtCore import QCoreApplication
 
 # Imports from src/shared
 from osclib import Address, OscPack, are_same_osc_port, TCP
@@ -23,6 +23,7 @@ from signaler import Signaler
 from daemon_tools import Terminal, RS, is_pid_child_of, highlight_text
 from session import OperatingSession
 from patch_rewriter import rewrite_jack_patch_files
+from internal_client import InternalClient
 
 
 _logger = logging.getLogger(__name__)
@@ -125,6 +126,11 @@ class SignaledSession(OperatingSession):
             except:
                 # cache file load failed and this is really not strong
                 pass
+            
+        self._patchbay_internal: Optional[InternalClient] = None
+        '''can contain the Internal patchbay daemon if it is launched
+        as a thread in the daemon process.
+        Use less RAM consumption than a separated process.'''
     
     def _get_new_dummy_session_id(self) -> int:
         to_return = self._next_session_id
@@ -243,37 +249,6 @@ class SignaledSession(OperatingSession):
                 self.send_monitor_event('joined', client.client_id)
                 client.server_announce(osp, True)
 
-        # for client in self.clients:
-        #     if client.pid == pid and not client.nsm_active and client.is_running():
-        #         client.server_announce(osp, False)
-        #         break
-        # else:
-        #     for client in self.clients:
-        #         if (not client.nsm_active and client.is_running()
-        #                 and is_pid_child_of(pid, client.pid)):
-        #             client.server_announce(osp, False)
-        #             break
-        #     else:
-        #         for client in self.clients:
-        #             if (client.launched_in_terminal
-        #                     and client.process_drowned
-        #                     and client.executable_path == executable_path):
-        #                 # when launched in terminal
-        #                 # the client process can be stopped
-        #                 # because the terminal process is 'linked' to an existing instance
-        #                 # then, we may can say this stopped client is the good one,
-        #                 # and we declare it as external because we won't check its process
-        #                 # state with QProcess.state().
-        #                 client.server_announce(osp, True)
-        #                 break
-        #         else:
-        #             # Client launched externally from daemon
-        #             # by command : $:NSM_URL=url executable
-        #             client = self._new_client(executable_path)
-        #             self.externals_timer.start()
-        #             self.send_monitor_event('joined', client.client_id)
-        #             client.server_announce(osp, True)
-
         if self.wait_for is ray.WaitFor.ANNOUNCE:
             self.end_timer_if_last_expected(client)
 
@@ -325,15 +300,13 @@ class SignaledSession(OperatingSession):
         if server is None:
             return
         
-        # import threading
-        # import patchbay_daemon as pbd
-        # patch_thread = threading.Thread(
-        #     target=pbd.main_process, args=(str(server.port), osp.args[0]))
-        # patch_thread.start()
+        self._patchbay_internal = InternalClient(
+            'ray-patchbay_daemon', (str(self.get_server_port()), osp.args[0]), '')
+        self._patchbay_internal.start()
         
-        QProcess.startDetached(
-            'ray-patch_dmn',
-            [str(server.port), osp.args[0]])
+        # QProcess.startDetached(
+        #     'ray-patch_dmn',
+        #     [str(server.port), osp.args[0]])
 
     def _ray_server_abort_copy(self, osp: OscPack):
         self.file_copier.abort()

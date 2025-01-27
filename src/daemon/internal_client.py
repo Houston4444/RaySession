@@ -19,26 +19,28 @@ class InternalClient:
         self._stop_func: Optional[Callable] = None
     
     def main_loop(self):
-        'target on the _thread attribute'
+        'target of the _thread attribute'
 
         module_name = self.name.replace('ray-', '')
 
-        # import the client modules
+        # import the client module
         try:
             self._lib = importlib.import_module(module_name)
-        except:
+        except BaseException as e:
             _logger.warning(f'Failed to import module {module_name} '
-                            'for internal client')
+                            f'for internal client {self.name}\n'
+                            + str(e))
             return
 
         # run the internal_prepare function        
         try:
             funcs = self._lib.internal_prepare(
                 *self.args, nsm_url=self.nsm_url)
-        except:
+        except BaseException as e:
             _logger.warning(
                 'Failed to load internal_prepare function of '
-                f'the internal client {self.name}')
+                f'the internal client {self.name}\n'
+                + str(e))
             return
         
         # check if internal_prepare success 
@@ -63,8 +65,12 @@ class InternalClient:
         if not self.running:
             return
         
-        if self._stop_func is not None:
-            self._stop_func()
+        if self._stop_func is None:
+            _logger.error(f'Impossible to stop Internal Client {self.name},'
+                          'stop_func is not defined')
+            return
+
+        self._stop_func()
 
     def kill(self):
         '''Does not really kill the thread,

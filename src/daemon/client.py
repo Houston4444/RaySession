@@ -770,7 +770,7 @@ class Client(ServerSender, ray.ClientData):
 
     def get_links_dirname(self) -> str:
         '''return the dir path used by carla for links such as
-        audio convolutions or soundfonts '''
+        audio convolutions or soundfonts'''
         links_dir = self.get_jack_client_name()
         for c in ('-', '.'):
             links_dir = links_dir.replace(c, '_')
@@ -2063,6 +2063,12 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         
         tmp_basedir = ".tmp_ray_workdir"
         spath = self.session.path
+        
+        if spath is None:
+            self.send(src_addr, '/error', osc_path, ray.Err.NO_SESSION_OPEN,
+                      "impossible to eat other session client, "
+                      "no session open")
+            return
         
         while Path(spath / tmp_basedir).exists():
             tmp_basedir += 'X'
