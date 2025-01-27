@@ -1359,54 +1359,6 @@ class Client(ServerSender, ray.ClientData):
                         f'for Ray-Hack client {self.client_id}.\n'
                         + str(e))
                     return
-            
-
-            # all_envs = {'CONFIG_FILE': ('', ''),
-            #             'RAY_SESSION_NAME': ('', ''),
-            #             'RAY_CLIENT_ID': ('', ''),
-            #             'RAY_JACK_CLIENT_NAME': ('', '')}
-
-            # all_envs['RAY_SESSION_NAME'] = (os.getenv('RAY_SESSION_NAME'),
-            #                                 self.session.name)
-            # all_envs['RAY_CLIENT_ID'] = (os.getenv('RAY_CLIENT_ID'),
-            #                              self.client_id)
-            # all_envs['RAY_JACK_CLIENT_NAME'] = (
-            #     os.getenv('RAY_JACK_CLIENT_NAME'),
-            #     self.get_jack_client_name())
-
-            # # The only way I found to expand vars is to set environment vars
-            # # globally, and remove them just after.
-            # # In case you see a better way, please say it.
-            # for env in all_envs:
-            #     os.environ[env] = all_envs[env][1]
-
-            # os.environ['CONFIG_FILE'] = \
-            #     os.path.expandvars(self.ray_hack.config_file)
-
-            # back_pwd = os.getenv('PWD')
-            # ray_hack_pwd = self.get_project_path()
-            # os.environ['PWD'] = str(ray_hack_pwd)
-
-            # if not ray_hack_pwd.exists():
-            #     try:
-            #         ray_hack_pwd.mkdir(parents=True)
-            #     except:
-            #         os.environ['PWD'] = back_pwd
-            #         # TODO
-            #         return
-
-            # arguments_line = os.path.expandvars(self.arguments)
-
-            # if back_pwd is None:
-            #     os.unsetenv('PWD')
-            # else:
-            #     os.environ['PWD'] = back_pwd
-
-            # for env in all_envs:
-            #     if all_envs[env][0] is None:
-            #         os.unsetenv(env)
-            #     else:
-            #         os.environ[env] = all_envs[env][0]
 
         if self.arguments:
             arguments += shlex.split(arguments_line)
