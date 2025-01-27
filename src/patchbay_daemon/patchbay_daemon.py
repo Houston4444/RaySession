@@ -12,8 +12,6 @@ import time
 from pathlib import Path
 import logging
 
-sys.path.insert(1, str(Path(__file__).parents[2] / 'pyjacklib'))
-sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
 # check ALSA LIB
 try:
@@ -116,34 +114,6 @@ class JackPort:
         self.order: Optional[int] = None
 
 
-# class JackPort:
-#     id = 0
-#     name = ''
-#     type = PORT_TYPE_NULL
-#     flags = 0
-#     order = None
-#     uuid = 0
-    
-#     def __init__(self, port_name:str, jack_client, port_ptr=None):
-#         # In some cases, port could has just been renamed
-#         # then, jacklib.port_by_name() fail.
-#         # that is why, port_ptr can be sent as argument here
-#         self.name = port_name
-#         if port_ptr is None:
-#             port_ptr = jacklib.port_by_name(jack_client, port_name)
-#         self.flags = jacklib.port_flags(port_ptr)
-#         self.uuid = jacklib.port_uuid(port_ptr)
-
-#         port_type_str = jacklib.port_type(port_ptr)
-#         if port_type_str == jacklib.JACK_DEFAULT_AUDIO_TYPE:
-#             self.type = PORT_TYPE_AUDIO
-#         elif port_type_str == jacklib.JACK_DEFAULT_MIDI_TYPE:
-#             self.type = PORT_TYPE_MIDI
-
-#     def __lt__(self, other: 'JackPort'):
-#         return self.uuid < other.uuid
-
-
 class MainObject:
     port_list = list[JackPort]()
     connection_list = list[tuple[str, str]]()
@@ -211,7 +181,10 @@ class MainObject:
     def signal_handler(cls, sig: int, frame):
         if sig in (signal.SIGINT, signal.SIGTERM):
             cls.terminate = True
-            
+    
+    def internal_stop(self):
+        self.terminate = True
+    
     def eat_client_names_queue(self):
         while self.client_names_queue:
             client_name = self.client_names_queue.pop(0)
@@ -613,3 +586,12 @@ def start():
         gui_tcp_url = args.pop(0)
     
     main_process(daemon_port, gui_tcp_url)
+    
+def internal_prepare(daemon_port: str, gui_tcp_url: str, nsm_url=''):
+    main_object = MainObject(daemon_port, gui_tcp_url)
+    main_object.osc_server.add_gui(gui_tcp_url)
+    if not main_object.osc_server.gui_list:
+        return 1
+    return main_object.start_loop, main_object.internal_stop
+    
+    

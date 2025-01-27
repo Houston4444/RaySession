@@ -562,7 +562,7 @@ class OscServerThread(ClientCommunicating):
         multi_daemon_file.update()
 
     @osp_method('/ray/server/ask_for_patchbay', 's')
-    def rayServerGetPatchbayPort(self, osp: OscPack):
+    def rayServerAskForPatchbay(self, osp: OscPack):
         gui_tcp_url: str = osp.args[0]
         patchbay_file = \
             Path('/tmp/RaySession/patchbay_daemons') / str(self.port)
