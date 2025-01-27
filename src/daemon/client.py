@@ -10,7 +10,6 @@ from pathlib import Path
 from enum import Enum
 import xml.etree.ElementTree as ET
 from typing import TYPE_CHECKING, Optional
-import threading
 
 # third party imports
 from qtpy.QtCore import (QCoreApplication, QProcess,
@@ -21,6 +20,7 @@ from osclib import Address, OscPack
 import ray
 import xdg
 from xml_tools import XmlElement
+from expand_vars import expand_vars
 
 # Local imports
 from server_sender import ServerSender
@@ -1338,52 +1338,75 @@ class Client(ServerSender, ray.ClientData):
         arguments_line = self.arguments
 
         if self.is_ray_hack:
-            all_envs = {'CONFIG_FILE': ('', ''),
-                        'RAY_SESSION_NAME': ('', ''),
-                        'RAY_CLIENT_ID': ('', ''),
-                        'RAY_JACK_CLIENT_NAME': ('', '')}
-
-            all_envs['RAY_SESSION_NAME'] = (os.getenv('RAY_SESSION_NAME'),
-                                            self.session.name)
-            all_envs['RAY_CLIENT_ID'] = (os.getenv('RAY_CLIENT_ID'),
-                                         self.client_id)
-            all_envs['RAY_JACK_CLIENT_NAME'] = (
-                os.getenv('RAY_JACK_CLIENT_NAME'),
-                self.get_jack_client_name())
-
-            # The only way I found to expand vars is to set environment vars
-            # globally, and remove them just after.
-            # In case you see a better way, please say it.
-            for env in all_envs:
-                os.environ[env] = all_envs[env][1]
-
-            os.environ['CONFIG_FILE'] = \
-                os.path.expandvars(self.ray_hack.config_file)
-
-            back_pwd = os.getenv('PWD')
+            env = os.environ.copy()
+            env['RAY_SESSION_NAME'] = self.session.name
+            env['RAY_CLIENT_ID'] = self.client_id
+            env['RAY_JACK_CLIENT_NAME'] = self.get_jack_client_name()
+            env['CONFIG_FILE'] = expand_vars(env, self.ray_hack.config_file)
+            env['PWD'] = str(self.get_project_path())
+            
             ray_hack_pwd = self.get_project_path()
-            os.environ['PWD'] = str(ray_hack_pwd)
+            env['PWD'] = str(ray_hack_pwd)
+            
+            arguments_line = expand_vars(env, self.arguments)
 
             if not ray_hack_pwd.exists():
                 try:
                     ray_hack_pwd.mkdir(parents=True)
-                except:
-                    os.environ['PWD'] = back_pwd
-                    # TODO
+                except BaseException as e:
+                    _logger.error(
+                        f'Fail to create directory {ray_hack_pwd} '
+                        f'for Ray-Hack client {self.client_id}.\n'
+                        + str(e))
                     return
+            
 
-            arguments_line = os.path.expandvars(self.arguments)
+            # all_envs = {'CONFIG_FILE': ('', ''),
+            #             'RAY_SESSION_NAME': ('', ''),
+            #             'RAY_CLIENT_ID': ('', ''),
+            #             'RAY_JACK_CLIENT_NAME': ('', '')}
 
-            if back_pwd is None:
-                os.unsetenv('PWD')
-            else:
-                os.environ['PWD'] = back_pwd
+            # all_envs['RAY_SESSION_NAME'] = (os.getenv('RAY_SESSION_NAME'),
+            #                                 self.session.name)
+            # all_envs['RAY_CLIENT_ID'] = (os.getenv('RAY_CLIENT_ID'),
+            #                              self.client_id)
+            # all_envs['RAY_JACK_CLIENT_NAME'] = (
+            #     os.getenv('RAY_JACK_CLIENT_NAME'),
+            #     self.get_jack_client_name())
 
-            for env in all_envs:
-                if all_envs[env][0] is None:
-                    os.unsetenv(env)
-                else:
-                    os.environ[env] = all_envs[env][0]
+            # # The only way I found to expand vars is to set environment vars
+            # # globally, and remove them just after.
+            # # In case you see a better way, please say it.
+            # for env in all_envs:
+            #     os.environ[env] = all_envs[env][1]
+
+            # os.environ['CONFIG_FILE'] = \
+            #     os.path.expandvars(self.ray_hack.config_file)
+
+            # back_pwd = os.getenv('PWD')
+            # ray_hack_pwd = self.get_project_path()
+            # os.environ['PWD'] = str(ray_hack_pwd)
+
+            # if not ray_hack_pwd.exists():
+            #     try:
+            #         ray_hack_pwd.mkdir(parents=True)
+            #     except:
+            #         os.environ['PWD'] = back_pwd
+            #         # TODO
+            #         return
+
+            # arguments_line = os.path.expandvars(self.arguments)
+
+            # if back_pwd is None:
+            #     os.unsetenv('PWD')
+            # else:
+            #     os.environ['PWD'] = back_pwd
+
+            # for env in all_envs:
+            #     if all_envs[env][0] is None:
+            #         os.unsetenv(env)
+            #     else:
+            #         os.environ[env] = all_envs[env][0]
 
         if self.arguments:
             arguments += shlex.split(arguments_line)
