@@ -13,8 +13,7 @@ import time
 import subprocess
 import shutil
 
-sys.path.insert(1, str(Path(__file__).parents[3] / 'pyjacklib'))
-sys.path.insert(1, str(Path(__file__).parents[2] / 'shared'))
+
 
 # Imports from src/shared
 from proc_name import set_proc_name
@@ -469,7 +468,3 @@ def run():
                 main.sl_process.kill()
 
     sys.exit(0)
-
-
-if True:
-    run()

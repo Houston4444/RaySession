@@ -4,9 +4,14 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-sys.path[0] = str(Path(__file__).parents[1] / 'clients' / 'sooperlooper')
+
+sys.path[0] = str(Path(__file__).parents[1] / 'clients')
+sys.path.insert(1, str(Path(__file__).parents[2] / 'pyjacklib'))
+sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
 if TYPE_CHECKING:
-    import clients.sooperlooper.sooperlooper
+    import src.clients.sooperlooper as sooperlooper
+    sooperlooper.run()
 else:
     import sooperlooper
+    sooperlooper.run()
