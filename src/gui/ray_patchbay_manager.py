@@ -250,8 +250,9 @@ class RayPatchbayManager(PatchbayManager):
 
         else:
             for group in self.groups:
-                opac = bool(text.lower() not in group.name.lower()
-                            and text.lower() not in group.display_name.lower())
+                opac = bool(
+                    text.lower() not in group.name.lower()
+                    and text.lower() not in group.graceful_name.lower())
                 if opac:
                     opac_grp_ids.add(group.group_id)
         
@@ -333,7 +334,7 @@ class RayPatchbayManager(PatchbayManager):
                 if (client.icon
                         and client.jack_client_name.endswith('.' + client.client_id)
                         and group.name.startswith(client.jack_client_name)):
-                    group.display_name = group.display_name.partition('.')[2]
+                    group.graceful_name = group.graceful_name.partition('.')[2]
                 
                 if client.has_gui:
                     group.set_optional_gui_state(client.gui_state)
