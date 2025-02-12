@@ -104,6 +104,7 @@ class MainObject:
     metadatas = JackMetadatas()
     client_name_uuids = dict[str, int]()
     client_names_queue = Queue()
+    pretty_events_queue = Queue[tuple[bool, bool, str, float]]()
     jack_running = False
     osc_server = None
     alsa_mng: Optional['AlsaManager'] = None
@@ -180,6 +181,64 @@ class MainObject:
             
             self.client_name_uuids[client_name] = client_uuid
             self.osc_server.client_name_and_uuid(client_name, client_uuid)
+    
+    def _check_pretty_names_export(self):
+        client_names = set[str]()
+        port_names = set[str]()
+        
+        while self.pretty_events_queue.qsize():
+            for_client, add, name, add_time = self.pretty_events_queue.queue[0]
+
+            if time.time() - add_time < 0.200:
+                break
+            
+            self.pretty_events_queue.get()
+            
+            if for_client:
+                if add: client_names.add(name)
+                else: client_names.discard(name)
+            else:
+                if add: port_names.add(name)
+                else: port_names.discard(name)
+        
+        if not self.jack_running:
+            return
+        
+        for client_name in client_names:
+            client_uuid = self.client_name_uuids.get(client_name)
+            if client_uuid is None:
+                continue
+            
+            mdata_pretty_name = ''
+            value_type = jack.get_property(
+                client_uuid, JackMetadata.PRETTY_NAME)
+            if value_type is not None:
+                mdata_pretty_name = value_type[0].decode()
+            
+            pretty_name = self.pretty_names.pretty_group(
+                client_name, mdata_pretty_name)
+            if pretty_name:
+                self.set_metadata(
+                    client_uuid, JackMetadata.PRETTY_NAME, pretty_name)
+                
+        for port_name in port_names:
+            port = self.client.get_port_by_name(port_name)
+            if port is None:
+                continue
+            
+            port_uuid = port.uuid
+            
+            mdata_pretty_name = ''
+            value_type = jack.get_property(
+                port_uuid, JackMetadata.PRETTY_NAME)
+            if value_type is not None:
+                mdata_pretty_name = value_type[0].decode()
+            
+            pretty_name = self.pretty_names.pretty_port(
+                port.name, mdata_pretty_name)
+            if pretty_name:
+                self.set_metadata(
+                    port_uuid, JackMetadata.PRETTY_NAME, pretty_name)
     
     def check_jack_client_responding(self):
         for i in range(100): # JACK has 5s to answer
@@ -282,6 +341,8 @@ class MainObject:
                         self.send_dsp_load()
                 
                 self.eat_client_names_queue()
+                self._check_pretty_names_export()
+
                 if self.transport_wanted is not TransportWanted.NO:
                     self._send_transport_pos()
 
@@ -360,6 +421,8 @@ class MainObject:
         def client_registration(name: str, register: bool):
             if register:
                 self.client_names_queue.put(name)
+            self.pretty_events_queue.put(
+                (True, register, name, time.time()))
             
         @self.client.set_port_registration_callback
         def port_registration(port: jack.Port, register: bool):
@@ -378,12 +441,15 @@ class MainObject:
                 self.osc_server.port_added(
                     port.name, port_type_int, flags, port.uuid)
             else:
-                for port in self.port_list:
-                    if port.name == port_name and port.uuid == port_uuid:
-                        self.port_list.remove(port)
+                for jport in self.port_list:
+                    if jport.name == port_name and jport.uuid == port_uuid:
+                        self.port_list.remove(jport)
                         break
 
-                self.osc_server.port_removed(port.name)
+                self.osc_server.port_removed(jport.name)
+            
+            self.pretty_events_queue.put(
+                (False, register, port_name, time.time()))
 
         @self.client.set_port_connect_callback
         def port_connect(port_a: jack.Port, port_b: jack.Port, connect: bool):
