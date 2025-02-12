@@ -47,6 +47,10 @@ class OscJackPatch(Server):
                         self._ray_patchbay_group_pretty_name)
         self.add_method('/ray/patchbay/port_pretty_name', 'sss',
                         self._ray_patchbay_port_pretty_name)
+        self.add_method('/ray/patchbay/save_group_pretty_name', 'ssi',
+                        self._ray_patchbay_set_group_pretty_name)
+        self.add_method('/ray/patchbay/save_port_pretty_name', 'ssi',
+                        self._ray_patchbay_set_port_pretty_name)
 
         self.main_object = main_object
         self.port_list = main_object.port_list
@@ -128,6 +132,18 @@ class OscJackPatch(Server):
             # empty string received,
             # listing is finished, lets apply pretty names to JACK
             self.main_object.set_all_pretty_names()
+
+    def _ray_patchbay_set_group_pretty_name(self, path, args):
+        group_name, pretty_name, save_in_jack = args
+        self.pretty_names.save_group(group_name, pretty_name)
+        if save_in_jack:
+            self.main_object.write_group_pretty_name(group_name, pretty_name)
+    
+    def _ray_patchbay_set_port_pretty_name(self, path, args):
+        port_name, pretty_name, save_in_jack = args
+        self.pretty_names.save_port(port_name, pretty_name)
+        if save_in_jack:
+            self.main_object.write_port_pretty_name(port_name, pretty_name)
 
     def send_gui(self, *args):
         rm_gui = list[Address]()

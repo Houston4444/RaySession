@@ -44,24 +44,28 @@ class RayPatchbayCallbacker(Callbacker):
         super().__init__(manager)
         self.mng = manager
     
-    def _group_rename(self, group_id: int, pretty_name: str):
+    def _group_rename(
+            self, group_id: int, pretty_name: str, save_in_jack: bool):
         group = self.mng.get_group_from_id(group_id)
         if group is None:
             return
-        
+
         self.mng.send_to_daemon(
             '/ray/server/patchbay/save_group_pretty_name',
-            group.name, pretty_name)
+            group.name, pretty_name, group.mdata_pretty_name,
+            int(save_in_jack))
         
-    def _port_rename(self, group_id: int, port_id: int, pretty_name: str):
+    def _port_rename(self, group_id: int, port_id: int,
+                     pretty_name: str, save_in_jack: bool):
         port = self.mng.get_port_from_id(group_id, port_id)
         if port is None:
             return
         
         self.mng.send_to_daemon(
             '/ray/server/patchbay/save_port_pretty_name',
-            port.full_name, pretty_name)
-    
+            port.full_name_id_free, pretty_name,
+            port.mdata_pretty_name, int(save_in_jack))
+
     def _ports_connect(self, group_out_id: int, port_out_id: int,
                        group_in_id: int, port_in_id: int):
         port_out = self.mng.get_port_from_id(group_out_id, port_out_id)
