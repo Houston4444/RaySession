@@ -71,6 +71,7 @@ class GuiTcpThread(ServerThread):
         for path_types in (
                 ('/ray/gui/patchbay/port_added', 'siih'),
                 ('/ray/gui/patchbay/port_renamed', 'ss'),
+                ('/ray/gui/patchbay/port_renamed', 'ssi'),
                 ('/ray/gui/patchbay/port_removed', 's'),
                 ('/ray/gui/patchbay/connection_added', 'ss'),
                 ('/ray/gui/patchbay/connection_removed', 'ss'),
