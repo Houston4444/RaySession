@@ -13,7 +13,8 @@ from qtpy.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
 from qtpy.QtCore import Qt, QTimer, Signal
 
 # Imports from HoustonPatchbay
-from patchbay import filter_frame, tool_bar, PatchGraphicsView
+from patchbay import PatchGraphicsView
+from patchbay.widgets import filter_frame, tool_bar
 
 if TYPE_CHECKING:
     from gui_session import Session
