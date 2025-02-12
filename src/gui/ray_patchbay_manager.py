@@ -21,6 +21,7 @@ from patchbay import (
 )
 
 # Imports from src/shared
+from osclib import get_net_url, TCP
 import ray
 import xdg
 from jack_renaming_tools import group_belongs_to_client
@@ -188,7 +189,11 @@ class RayPatchbayManager(PatchbayManager):
         self.send_to_patchbay_daemon('/ray/patchbay/refresh')
     
     def disannounce(self):
-        self.send_to_patchbay_daemon('/ray/patchbay/gui_disannounce')
+        tcp_server = GuiTcpThread.instance()
+        if tcp_server is not None:
+            self.send_to_patchbay_daemon(
+                '/ray/patchbay/gui_disannounce',
+                get_net_url(tcp_server.port, protocol=TCP))
         super().disannounce()
     
     def set_views_changed(self):
