@@ -13,6 +13,7 @@ from patshared import (
 # Imports from src/shared
 import ray
 from jack_renaming_tools import group_belongs_to_client
+from osclib import Address, TCP
 
 # Local imports
 from daemon_tools import RS, Terminal
@@ -365,3 +366,21 @@ class CanvasSaver(ServerSender):
                     self.send_tcp_gui(
                         '/ray/gui/patchbay/update_group_position',
                         view_num, *ptv_dict[new].to_arg_list()) 
+
+    def send_pretty_names_to_patchbay_daemon(self, pdmn_port: int):
+        addr = Address('localhost', pdmn_port, proto=TCP)
+        pretty_names = self.pretty_names_config | self.pretty_names_session
+        
+        for group_name, ptov in pretty_names.groups.items():
+            self.send_tcp(
+                addr, '/ray/patchbay/group_pretty_name',
+                group_name, ptov.pretty, ptov.above_pretty)
+        
+        self.send_tcp(addr, '/ray/patchbay/group_pretty_name', '', '', '')
+
+        for port_name, ptov in pretty_names.ports.items():
+            self.send_tcp(
+                addr, '/ray/patchbay/port_pretty_name',
+                port_name, ptov.pretty, ptov.above_pretty)
+        
+        self.send_tcp(addr, '/ray/patchbay/port_pretty_name', '', '', '')

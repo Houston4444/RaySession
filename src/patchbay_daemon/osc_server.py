@@ -43,12 +43,17 @@ class OscJackPatch(Server):
                         self._ray_patchbay_activate_dsp_load)
         self.add_method('/ray/patchbay/activate_transport', 'i',
                         self._ray_patchbay_activate_transport)
+        self.add_method('/ray/patchbay/group_pretty_name', 'sss',
+                        self._ray_patchbay_group_pretty_name)
+        self.add_method('/ray/patchbay/port_pretty_name', 'sss',
+                        self._ray_patchbay_port_pretty_name)
 
         self.main_object = main_object
         self.port_list = main_object.port_list
         self.connection_list = main_object.connection_list
         self.metadatas = main_object.metadatas
         self.client_name_uuids = main_object.client_name_uuids
+        self.pretty_names = main_object.pretty_names
         self.gui_list = list[Address]()
         self._tmp_gui_url = ''
         self._terminate = False
@@ -111,6 +116,18 @@ class OscJackPatch(Server):
         
     def _ray_patchbay_activate_transport(self, path, args):
         self.main_object.set_transport_wanted(args[0])
+
+    def _ray_patchbay_group_pretty_name(self, path, args):
+        if args[0]:
+            self.pretty_names.save_group(*args)
+        
+    def _ray_patchbay_port_pretty_name(self, path, args):
+        if args[0]:
+            self.pretty_names.save_port(*args)
+        else:
+            # empty string received,
+            # listing is finished, lets apply pretty names to JACK
+            self.main_object.set_all_pretty_names()
 
     def send_gui(self, *args):
         rm_gui = list[Address]()
@@ -282,3 +299,15 @@ class OscJackPatch(Server):
                 return
         
         self.send(addr, '/ray/gui/patchbay/server_lose')
+
+    def ask_pretty_names(self, port: int):
+        self.pretty_names.clear()
+
+        addr = Address('localhost', port, proto=TCP)
+
+        try:
+            self.send(addr, '/ray/server/ask_for_pretty_names', self.port)
+        except BaseException as e:
+            _logger.warning(
+                f'Failed to ask pretty names to daemon at port {port}')
+            _logger.warning(str(e))
