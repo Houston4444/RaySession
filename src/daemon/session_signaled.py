@@ -739,10 +739,20 @@ class SignaledSession(OperatingSession):
         self.canvas_saver.view_ptv_changed(*osp.args)
 
     def _ray_server_patchbay_save_group_pretty_name(self, osp: OscPack):
-        self.canvas_saver.save_group_pretty_name(*osp.args[0:2])
+        group_name, pretty_name, over_pretty, save_in_jack = osp.args
+        self.canvas_saver.save_group_pretty_name(
+            group_name, pretty_name, over_pretty)
+        self.send_patchbay_daemon(
+            '/ray/patchbay/save_group_pretty_name',
+            group_name, pretty_name, save_in_jack)
         
     def _ray_server_patchbay_save_port_pretty_name(self, osp: OscPack):
-        self.canvas_saver.save_port_pretty_name(*osp.args[0:2])
+        port_name, pretty_name, over_pretty, save_in_jack = osp.args
+        self.canvas_saver.save_port_pretty_name(
+            port_name, pretty_name, over_pretty)
+        self.send_patchbay_daemon(
+            '/ray/patchbay/save_port_pretty_name',
+            port_name, pretty_name, save_in_jack)
 
     def _ray_server_ask_for_pretty_names(self, osp: OscPack):
         self.canvas_saver.send_pretty_names_to_patchbay_daemon(*osp.args)

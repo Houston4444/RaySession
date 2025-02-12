@@ -98,6 +98,13 @@ class JackPort:
         self.order: Optional[int] = None
 
 
+def jack_pretty_name(uuid: int) -> str:
+    value_type = jack.get_property(uuid, JackMetadata.PRETTY_NAME)
+    if value_type is None:
+        return ''
+    return value_type[0].decode()
+
+
 class MainObject:
     port_list = list[JackPort]()
     connection_list = list[tuple[str, str]]()
@@ -569,36 +576,67 @@ class MainObject:
     def set_metadata(self, uuid: int, key: str, value: str):
         self.client.set_property(uuid, key, value, 'text/plain')
 
+    def set_pretty_name(self, uuid: int, pretty_name: str):
+        'write pretty-name metadata, or remove it if value is empty'
+        if pretty_name:
+            try:
+                self.client.set_property(
+                    uuid, JackMetadata.PRETTY_NAME, pretty_name)
+            except:
+                _logger.warning(
+                    f'Failed to set pretty-name "{pretty_name}" for {uuid}')
+        else:
+            try:
+                self.client.remove_property(uuid, JackMetadata.PRETTY_NAME)
+            except:
+                _logger.warning(
+                    f'Failed to remove pretty-name for {uuid}')
+
     def set_all_pretty_names(self):
         if not self.jack_running:
             return
         
         for client_name, client_uuid in self.client_name_uuids.items():
-            mdata_pretty_name = ''
-            valuetype = jack.get_property(
-                client_uuid, JackMetadata.PRETTY_NAME)
-            if valuetype is not None:
-                mdata_pretty_name = valuetype[0].decode()
-            
+            mdata_pretty_name = jack_pretty_name(client_uuid)
             pretty_name = self.pretty_names.pretty_group(
                 client_name, mdata_pretty_name)
-            
             if pretty_name:
-                self.set_metadata(
-                    client_uuid, JackMetadata.PRETTY_NAME, pretty_name)
+                self.set_pretty_name(client_uuid, pretty_name)
                 
         for port in self.client.get_ports():
-            mdata_pretty_name = ''
             port_uuid = port.uuid
-            valuetype = jack.get_property(port_uuid, JackMetadata.PRETTY_NAME)
-            if valuetype is not None:
-                mdata_pretty_name = valuetype[0].decode()
-                
+            mdata_pretty_name = jack_pretty_name(port_uuid)                
             pretty_name = self.pretty_names.pretty_port(
                 port.name, mdata_pretty_name)
             if pretty_name:
-                self.set_metadata(
-                    port_uuid, JackMetadata.PRETTY_NAME, pretty_name)
+                self.set_pretty_name(port_uuid, pretty_name)
+
+    def write_group_pretty_name(self, client_name: str, pretty_name: str):
+        if not self.jack_running:
+            return
+        
+        client_uuid = self.client_name_uuids.get(client_name)
+        if client_uuid is None:
+            return
+
+        mdata_pretty_name = jack_pretty_name(client_uuid)
+        self.pretty_names.save_group(
+            client_name, pretty_name, mdata_pretty_name)
+        
+        self.set_pretty_name(client_uuid, pretty_name)
+
+    def write_port_pretty_name(self, port_name: str, pretty_name: str):
+        if not self.jack_running:
+            return
+        
+        port = self.client.get_port_by_name(port_name)
+        if port is None:
+            return
+
+        port_uuid = port.uuid
+        mdata_pretty_name = jack_pretty_name(port_uuid)
+        self.pretty_names.save_port(port_name, pretty_name, mdata_pretty_name)
+        self.set_pretty_name(port.uuid, pretty_name)
 
     def transport_play(self, play: bool):
         if play:

@@ -77,6 +77,13 @@ class ServerSender:
             else:
                 _logger.error(f'Failed to send TCP to {args[0]}')
 
+    def send_patchbay_daemon(self, *args):
+        tcp_server = TcpServerThread.instance()
+        if not tcp_server:
+            return
+        
+        tcp_server.send_patchbay_daemon(*args)
+
     def send_gui(self, *args):
         if self.is_dummy:
             return
