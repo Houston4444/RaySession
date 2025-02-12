@@ -7,7 +7,7 @@ from typing import Optional
 from qtpy.QtWidgets import QApplication
 
 # Imports from HoustonPatchbay
-from patchbay.base_elements import TransportPosition
+from patchbay.bases.elements import TransportPosition
 
 # Imports from src/shared
 import ray

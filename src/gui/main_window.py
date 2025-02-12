@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
     QBoxLayout, QSystemTrayIcon, QShortcut, QAction)
 
 # Imports from HoustonPatchbay
-from patchbay.base_elements import ToolDisplayed
+from patchbay.bases.elements import ToolDisplayed
 from patchbay.tools_widgets import PatchbayToolsWidget, TextWithIcons
 
 # Imports from src/shared

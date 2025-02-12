@@ -9,8 +9,8 @@ import logging
 # Imports from HoustonPatchbay
 from patshared import (
     GroupPos, PortgroupMem, PortMode, ViewData)
-from patchbay.base_elements import ToolDisplayed
-from patchbay.base_group import Group
+from patchbay.bases.elements import ToolDisplayed
+from patchbay.bases.group import Group
 from patchbay import (
     PatchbayManager,
     Callbacker,

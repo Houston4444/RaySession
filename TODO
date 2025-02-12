@@ -94,6 +94,8 @@ Pretty names dans RS:
     réception d'un pretty name dans le patchbay_daemon depuis le démon:
         appliquer les métadonnées immédiatement
 
+
+
 review server_sender and called methods
 
 
