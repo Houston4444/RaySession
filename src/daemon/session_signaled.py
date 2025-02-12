@@ -295,7 +295,7 @@ class SignaledSession(OperatingSession):
             client.set_network_properties(net_daemon_url, net_session_root)
 
     def _ray_server_ask_for_patchbay(self, osp: OscPack):
-        # if we are here, this means we need a patchbay to osc to run
+        # if we are here, it means that we need a patchbay daemon to run
         server = self.get_server()
         if server is None:
             return

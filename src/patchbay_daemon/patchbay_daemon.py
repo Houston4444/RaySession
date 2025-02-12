@@ -285,6 +285,8 @@ class MainObject:
             # for faster modulos
             if n == 20:
                 n = 0
+
+        self.exit()
                 
     def exit(self):
         if self.jack_running:
@@ -498,17 +500,6 @@ class MainObject:
                 continue
 
             self.client_name_uuids[client_name] = client_uuid
-            
-            # # we only look for icon_name now, but in the future other client
-            # # metadatas could be enabled
-            # for key in (JackMetadata.ICON_NAME,):
-            #     value_type = jack.get_property(client_uuid, key)
-            #     if value_type is None:
-            #         continue
-                
-            #     if self.metadatas.get(client_uuid) is None:
-            #         self.metadatas[client_uuid] = dict[str, str]()
-            #     self.metadatas[client_uuid][key] = value_type[0].decode()
         
         for uuid, uuid_dict in jack.get_all_properties().items():
             for key, valuetype in uuid_dict.items():
