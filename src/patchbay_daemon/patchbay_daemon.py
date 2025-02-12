@@ -11,6 +11,7 @@ import threading
 import time
 from pathlib import Path
 import logging
+from queue import Queue
 
 
 # check ALSA LIB
@@ -26,6 +27,7 @@ except:
 import jack
 
 from proc_name import set_proc_name
+from patshared import JackMetadatas, JackMetadata
 
 from osc_server import OscJackPatch
 
@@ -68,24 +70,6 @@ class suppress_stdout_stderr(object):
         # Close all file descriptors
         for fd in self.null_fds + self.save_fds:
             os.close(fd)
-            
-
-class JackMetadata:
-    _PREFIX = "http://jackaudio.org/metadata/"
-    CONNECTED = _PREFIX + "connected"
-    EVENT_TYPES = _PREFIX + "event-types"
-    HARDWARE = _PREFIX + "hardware"
-    ICON_LARGE = _PREFIX + "icon-large"
-    ICON_NAME = _PREFIX + "icon-name"
-    ICON_SMALL = _PREFIX + "icon-small"
-    ORDER = _PREFIX + "order"
-    PORT_GROUP = _PREFIX + "port-group"
-    PRETTY_NAME = _PREFIX + "pretty-name"
-    SIGNAL_TYPE = _PREFIX + "signal-type"
-
-    # Specific to HoustonPatchbay
-    MIDI_BRIDGE_GROUP_PRETTY_NAME = \
-        "HoustonPatchbay/midi-bridge-pretty-name"
 
 
 @dataclass
@@ -117,11 +101,9 @@ class JackPort:
 class MainObject:
     port_list = list[JackPort]()
     connection_list = list[tuple[str, str]]()
-    metadata_list = list[dict]()
-    metadatas = dict[int, dict[str, str]]()
-    'dict[uuid, dict[key, value]]'
-    client_list = list[dict]()
-    client_names_queue = list[str]()
+    metadatas = JackMetadatas()
+    client_name_uuids = dict[str, int]()
+    client_names_queue = Queue()
     jack_running = False
     osc_server = None
     alsa_mng: Optional['AlsaManager'] = None
@@ -186,20 +168,16 @@ class MainObject:
         self.terminate = True
     
     def eat_client_names_queue(self):
-        while self.client_names_queue:
-            client_name = self.client_names_queue.pop(0)
+        while self.client_names_queue.qsize():
+            client_name = self.client_names_queue.get(0)
             try:
                 client_uuid = int(self.client.get_uuid_for_client_name(
                     client_name))
             except:
                 continue
-
-            for client_dict in self.client_list:
-                if client_dict['name'] == client_name:
-                    client_dict['uuid'] = client_uuid
-                    break
-            else:
-                self.client_list.append({'name': client_name, 'uuid': client_uuid})
+            
+            self.client_name_uuids[client_name] = client_uuid
+            self.osc_server.client_name_and_uuid(client_name, client_uuid)
     
     def check_jack_client_responding(self):
         for i in range(100): # JACK has 5s to answer
@@ -371,7 +349,7 @@ class MainObject:
         @self.client.set_client_registration_callback
         def client_registration(name: str, register: bool):
             if register:
-                self.client_names_queue.append(name)
+                self.client_names_queue.put(name)
             
         @self.client.set_port_registration_callback
         def port_registration(port: jack.Port, register: bool):
@@ -416,7 +394,7 @@ class MainObject:
                     exist_port.name = new
                     break
             
-            self.osc_server.port_renamed(old, new)
+            self.osc_server.port_renamed(old, new, port.uuid)
         
         @self.client.set_xrun_callback
         def xrun(delayed_usecs: float):
@@ -436,12 +414,7 @@ class MainObject:
             @self.client.set_property_change_callback
             def property_change(subject: int, key: str, change: int):
                 if change == jack.PROPERTY_DELETED:
-                    if (self.metadatas.get(subject) is not None
-                            and self.metadatas[subject].get(key) is not None):
-                        self.metadatas[subject].pop(key)
-                        if not self.metadatas[subject]:
-                            self.metadatas.pop(subject)
-                            
+                    self.metadatas.add(subject, key, '')
                     self.osc_server.metadata_updated(subject, key, '')
                     return                            
                 
@@ -450,10 +423,7 @@ class MainObject:
                     return
                 value = value_type[0].decode()
                 
-                if self.metadatas.get(subject) is None:
-                    self.metadatas[subject] = dict[str, str]()
-                self.metadatas[subject][key] = value
-                
+                self.metadatas.add(subject, key, value)
                 self.osc_server.metadata_updated(subject, key, value)
 
         except jack.JackError as e:
@@ -495,19 +465,19 @@ class MainObject:
 
             client_names.add(port_name.partition(':')[0])
 
-            # get port metadatas
-            for key in (JackMetadata.CONNECTED,
-                        JackMetadata.ORDER,
-                        JackMetadata.PORT_GROUP,
-                        JackMetadata.PRETTY_NAME,
-                        JackMetadata.SIGNAL_TYPE):
-                value_type = jack.get_property(port_uuid, key)
-                if value_type is None:
-                    continue
+            # # get port metadatas
+            # for key in (JackMetadata.CONNECTED,
+            #             JackMetadata.ORDER,
+            #             JackMetadata.PORT_GROUP,
+            #             JackMetadata.PRETTY_NAME,
+            #             JackMetadata.SIGNAL_TYPE):
+            #     value_type = jack.get_property(port_uuid, key)
+            #     if value_type is None:
+            #         continue
 
-                if self.metadatas.get(port_uuid) is None:
-                    self.metadatas[port_uuid] = dict[str, str]()
-                self.metadatas[port_uuid][key] = value_type[0].decode()
+            #     if self.metadatas.get(port_uuid) is None:
+            #         self.metadatas[port_uuid] = dict[str, str]()
+            #     self.metadatas[port_uuid][key] = value_type[0].decode()
                 
             if port.is_input:
                 continue
@@ -527,19 +497,23 @@ class MainObject:
                     f"uuid for client name {client_name} is not digit")
                 continue
 
-            self.client_list.append(
-                {'name': client_name, 'uuid': client_uuid})
+            self.client_name_uuids[client_name] = client_uuid
             
-            # we only look for icon_name now, but in the future other client
-            # metadatas could be enabled
-            for key in (JackMetadata.ICON_NAME,):
-                value_type = jack.get_property(client_uuid, key)
-                if value_type is None:
-                    continue
+            # # we only look for icon_name now, but in the future other client
+            # # metadatas could be enabled
+            # for key in (JackMetadata.ICON_NAME,):
+            #     value_type = jack.get_property(client_uuid, key)
+            #     if value_type is None:
+            #         continue
                 
-                if self.metadatas.get(client_uuid) is None:
-                    self.metadatas[client_uuid] = dict[str, str]()
-                self.metadatas[client_uuid][key] = value_type[0].decode()
+            #     if self.metadatas.get(client_uuid) is None:
+            #         self.metadatas[client_uuid] = dict[str, str]()
+            #     self.metadatas[client_uuid][key] = value_type[0].decode()
+        
+        for uuid, uuid_dict in jack.get_all_properties().items():
+            for key, valuetype in uuid_dict.items():
+                value = valuetype[0].decode()
+                self.metadatas.add(uuid, key, value)
 
     def set_metadata(self, uuid: int, key: str, value: str):
         self.client.set_property(uuid, key, value, 'text/plain')
