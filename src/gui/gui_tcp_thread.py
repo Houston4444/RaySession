@@ -134,7 +134,6 @@ class GuiTcpThread(ServerThread):
     def stop(self):
         self.stopping = True
 
-
         if self.patchbay_addr is not None:
             self.send(
                 self.patchbay_addr, '/ray/patchbay/gui_disannounce',

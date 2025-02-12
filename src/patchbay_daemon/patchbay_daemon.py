@@ -27,7 +27,7 @@ except:
 import jack
 
 from proc_name import set_proc_name
-from patshared import JackMetadatas, JackMetadata
+from patshared import JackMetadatas, JackMetadata, PrettyNames
 
 from osc_server import OscJackPatch
 
@@ -108,7 +108,6 @@ class MainObject:
     osc_server = None
     alsa_mng: Optional['AlsaManager'] = None
     terminate = False
-    jack_client = None
     client = None
     samplerate = 48000
     buffer_size = 1024
@@ -116,8 +115,9 @@ class MainObject:
     dsp_wanted = True
     transport_wanted = TransportWanted.FULL
     
-    def __init__(self, daemon_port: str, gui_url: str):
+    def __init__(self, daemon_port: str, daemon_tcp_port: str, gui_url: str):
         self._daemon_port = daemon_port
+        self._daemon_tcp_port = int(daemon_tcp_port)
         self.ALSA_LIB_OK = ALSA_LIB_OK
         self.last_sent_dsp_load = 0
         self.max_dsp_since_last_sent = 0.00
@@ -125,8 +125,10 @@ class MainObject:
         self.last_transport_pos = TransportPosition(
             0, False, False, 0, 0, 0, 0.0)
 
+        self.pretty_names = PrettyNames()
         self.osc_server = OscJackPatch(self)
         self.osc_server.set_tmp_gui_url(gui_url)
+        self.osc_server.ask_pretty_names(self._daemon_tcp_port)
         self.write_existence_file()
         self.start_jack_client()
         
@@ -257,6 +259,12 @@ class MainObject:
             self.client.disconnect(port_out_name, port_in_name)
         else:
             self.client.connect(port_out_name, port_in_name)
+    
+    def set_buffer_size(self, blocksize: int):
+        if not self.jack_running:
+            return
+        
+        self.client.blocksize = blocksize
     
     def start_loop(self):
         n = 0
@@ -466,20 +474,6 @@ class MainObject:
                 JackPort(port_name, port_type, flags, port_uuid))
 
             client_names.add(port_name.partition(':')[0])
-
-            # # get port metadatas
-            # for key in (JackMetadata.CONNECTED,
-            #             JackMetadata.ORDER,
-            #             JackMetadata.PORT_GROUP,
-            #             JackMetadata.PRETTY_NAME,
-            #             JackMetadata.SIGNAL_TYPE):
-            #     value_type = jack.get_property(port_uuid, key)
-            #     if value_type is None:
-            #         continue
-
-            #     if self.metadatas.get(port_uuid) is None:
-            #         self.metadatas[port_uuid] = dict[str, str]()
-            #     self.metadatas[port_uuid][key] = value_type[0].decode()
                 
             if port.is_input:
                 continue
@@ -509,6 +503,37 @@ class MainObject:
     def set_metadata(self, uuid: int, key: str, value: str):
         self.client.set_property(uuid, key, value, 'text/plain')
 
+    def set_all_pretty_names(self):
+        if not self.jack_running:
+            return
+        
+        for client_name, client_uuid in self.client_name_uuids.items():
+            mdata_pretty_name = ''
+            valuetype = jack.get_property(
+                client_uuid, JackMetadata.PRETTY_NAME)
+            if valuetype is not None:
+                mdata_pretty_name = valuetype[0].decode()
+            
+            pretty_name = self.pretty_names.pretty_group(
+                client_name, mdata_pretty_name)
+            
+            if pretty_name:
+                self.set_metadata(
+                    client_uuid, JackMetadata.PRETTY_NAME, pretty_name)
+                
+        for port in self.client.get_ports():
+            mdata_pretty_name = ''
+            port_uuid = port.uuid
+            valuetype = jack.get_property(port_uuid, JackMetadata.PRETTY_NAME)
+            if valuetype is not None:
+                mdata_pretty_name = valuetype[0].decode()
+                
+            pretty_name = self.pretty_names.pretty_port(
+                port.name, mdata_pretty_name)
+            if pretty_name:
+                self.set_metadata(
+                    port_uuid, JackMetadata.PRETTY_NAME, pretty_name)
+
     def transport_play(self, play: bool):
         if play:
             self.client.transport_start()
@@ -523,8 +548,8 @@ class MainObject:
         self.client.transport_locate(frame)
 
 
-def main_process(daemon_port: int, gui_tcp_url: str):
-    main_object = MainObject(daemon_port, gui_tcp_url)
+def main_process(daemon_port: str, daemon_tcp_port: str, gui_tcp_url: str):
+    main_object = MainObject(daemon_port, daemon_tcp_port, gui_tcp_url)
     main_object.osc_server.add_gui(gui_tcp_url)
     if main_object.osc_server.gui_list:
         main_object.start_loop()
@@ -548,12 +573,15 @@ def start():
     if args:
         daemon_port = args.pop(0)
     if args:
+        daemon_tcp_port = args.pop(0)
+    if args:
         gui_tcp_url = args.pop(0)
     
-    main_process(daemon_port, gui_tcp_url)
+    main_process(daemon_port, daemon_tcp_port, gui_tcp_url)
     
-def internal_prepare(daemon_port: str, gui_tcp_url: str, nsm_url=''):
-    main_object = MainObject(daemon_port, gui_tcp_url)
+def internal_prepare(daemon_port: str, daemon_tcp_port: str,
+                     gui_tcp_url: str, nsm_url=''):
+    main_object = MainObject(daemon_port, daemon_tcp_port, gui_tcp_url)
     main_object.osc_server.add_gui(gui_tcp_url)
     if not main_object.osc_server.gui_list:
         return 1

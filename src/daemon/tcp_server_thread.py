@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional
 
 from qtpy.QtCore import QCoreApplication
 
-from osclib import TCP, ServerThread, get_free_osc_port
+from osclib import TCP, ServerThread, get_free_osc_port, OscPack
 
 from signaler import Signaler
 
@@ -27,6 +27,13 @@ class TcpServerThread(ServerThread):
         global _instance
         _instance = self
         
+        self.add_method('/ray/server/ask_for_pretty_names', 'i',
+                        self._ray_server_ask_for_pretty_names)
+        
     @staticmethod
     def instance() -> 'Optional[TcpServerThread]':
         return _instance
+
+    def _ray_server_ask_for_pretty_names(self, path, args, types, src_addr):
+        osp = OscPack(path, args, types, src_addr)
+        signaler.osc_recv.emit(osp)

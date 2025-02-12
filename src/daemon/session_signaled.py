@@ -17,6 +17,7 @@ import ray
 import xdg
 
 # Local imports
+from tcp_server_thread import TcpServerThread
 from client import Client
 import multi_daemon_file
 from signaler import Signaler
@@ -300,8 +301,14 @@ class SignaledSession(OperatingSession):
         if server is None:
             return
         
+        tcp_server = TcpServerThread.instance()
+        if tcp_server is None:
+            return
+        
         self._patchbay_internal = InternalClient(
-            'ray-patchbay_daemon', (str(self.get_server_port()), osp.args[0]), '')
+            'ray-patchbay_daemon',
+            (str(self.get_server_port()), str(tcp_server.port), osp.args[0]),
+            '')
         self._patchbay_internal.start()
         
         # QProcess.startDetached(
@@ -736,6 +743,9 @@ class SignaledSession(OperatingSession):
         
     def _ray_server_patchbay_save_port_pretty_name(self, osp: OscPack):
         self.canvas_saver.save_port_pretty_name(*osp.args)
+
+    def _ray_server_ask_for_pretty_names(self, osp: OscPack):
+        self.canvas_saver.send_pretty_names_to_patchbay_daemon(*osp.args)
 
     @session_operation
     def _ray_session_save(self, osp: OscPack):        
