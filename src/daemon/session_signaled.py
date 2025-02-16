@@ -305,15 +305,16 @@ class SignaledSession(OperatingSession):
         if tcp_server is None:
             return
         
-        self._patchbay_internal = InternalClient(
-            'ray-patchbay_daemon',
-            (str(self.get_server_port()), str(tcp_server.port), osp.args[0]),
-            '')
-        self._patchbay_internal.start()
+        # self._patchbay_internal = InternalClient(
+        #     'ray-patchbay_daemon',
+        #     (str(self.get_server_port()), str(tcp_server.port), osp.args[0]),
+        #     '')
+        # self._patchbay_internal.start()
         
-        # QProcess.startDetached(
-        #     'ray-patch_dmn',
-        #     [str(server.port), osp.args[0]])
+        from qtpy.QtCore import QProcess
+        QProcess.startDetached(
+            'ray-patch_dmn',
+            [str(server.port), str(tcp_server.port), osp.args[0]])
 
     def _ray_server_abort_copy(self, osp: OscPack):
         self.file_copier.abort()
