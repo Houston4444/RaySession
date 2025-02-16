@@ -136,23 +136,35 @@ class CanvasSaver(ServerSender):
         mixed_views = (self.views_config.short_data_states()
                        | self.views_session.short_data_states())
         mixed_views_str = json.dumps(mixed_views)
-                
+
         for view_number in self.views_session.keys():
             for gpos in self.views_session.iter_group_poses(
                     view_num=view_number):
                 self.send_tcp_gui(
                     '/ray/gui/patchbay/update_group_position',
                     view_number, *gpos.to_arg_list())
-            
-        for gp_name, pretty_group in self.pretty_names_session.groups.items():
+
+        for gp_name, ptov in self.pretty_names_session.groups.items():
             self.send_tcp_gui(
                 '/ray/gui/patchbay/update_group_pretty_name',
-                gp_name, pretty_group)
+                gp_name, ptov.pretty)
+            self.send_patchbay_daemon(
+                '/ray/patchbay/group_pretty_name',
+                gp_name, ptov.pretty, ptov.above_pretty)
+        
+        self.send_patchbay_daemon(
+            '/ray/patchbay/group_pretty_name', '', '', '')
 
-        for pt_name, pretty_port in self.pretty_names_session.ports.items():
+        for port_name, ptov in self.pretty_names_session.ports.items():
             self.send_tcp_gui(
                 '/ray/gui/patchbay/update_port_pretty_name',
-                pt_name, pretty_port)
+                port_name, ptov.pretty)
+            self.send_patchbay_daemon(
+                '/ray/patchbay/port_pretty_name',
+                port_name, ptov.pretty, ptov.above_pretty)
+
+        self.send_patchbay_daemon(
+            '/ray/patchbay/port_pretty_name', '', '', '')
 
         self.send_tcp_gui(
             '/ray/gui/patchbay/views_changed', mixed_views_str)

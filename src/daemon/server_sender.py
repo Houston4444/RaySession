@@ -52,17 +52,7 @@ class ServerSender:
         if self.is_dummy:
             return
         
-        tcp_server = TcpServerThread.instance()
-        if not tcp_server:
-            return
-
-        try:
-            tcp_server.send(*args)
-        except:
-            if isinstance(args[0], Address):
-                _logger.error(f'Failed to send TCP to {args[0].url}')
-            else:
-                _logger.error(f'Failed to send TCP to {args[0]}')
+        self.send_tcp_even_dummy(*args)
 
     def send_tcp_even_dummy(self, *args):
         tcp_server = TcpServerThread.instance()
@@ -71,11 +61,13 @@ class ServerSender:
         
         try:
             tcp_server.send(*args)
-        except:
-            if isinstance(args[0], Address):
-                _logger.error(f'Failed to send TCP to {args[0].url}')
-            else:
-                _logger.error(f'Failed to send TCP to {args[0]}')
+        except BaseException as e:
+            url: str = args[0]
+            if isinstance(url, Address):
+                url = url.url
+            
+            _logger.error(f'Failed to send TCP to {url}, {args[1:]}')
+            _logger.error(str(e))
 
     def send_patchbay_daemon(self, *args):
         tcp_server = TcpServerThread.instance()
