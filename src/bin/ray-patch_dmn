@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 sys.path[0] = str(Path(__file__).parents[1] / 'patchbay_daemon')
 sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
-
+sys.path.insert(1, str(Path(__file__).parents[2] / 'HoustonPatchbay/source'))
 
 if TYPE_CHECKING:
     import src.patchbay_daemon.patchbay_daemon as pbd
