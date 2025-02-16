@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from typing import Union
 import logging
+import random
 import socket
 import subprocess
+from typing import Callable
 
 _logger = logging.getLogger(__name__)
     
@@ -20,6 +22,150 @@ except ImportError:
         _logger.error(
             'Failed to find a liblo lib for OSC (liblo or pyliblo3)')
         _logger.error(str(e))
+
+
+_RESERVED_PORT = 47
+
+def _mega_send(server: 'Union[BunServer, BunServerThread]',
+               url: Union[str, int, Address, list[str | int | Address]],
+               messages: list[Message], pack=10) -> bool:
+    bundler_id = random.randrange(0x100, 0x100000)
+    bundle_number_self = random.randrange(0x100, 0x100000)
+    
+    i = 0
+    stocked_msgs = list[Message]()
+    pending_msgs = list[Message]()
+    head_msg_self = Message('/bundle_head', bundle_number_self, 0, 0)
+    head_msg = Message('/bundle_head', bundler_id, 0, 0)
+    
+    urls = url if isinstance(url, list) else [url]
+    
+    for message in messages:
+        pending_msgs.append(message)
+
+        if (i+1) % pack == 0:
+            success = True
+            try:
+                server.send(
+                    _RESERVED_PORT,
+                    Bundle(*[head_msg_self]+stocked_msgs+pending_msgs))
+            except:
+                success = False
+            
+            if success:
+                stocked_msgs += pending_msgs
+                pending_msgs.clear()
+            else:
+                if stocked_msgs:
+                    for url in urls:
+                        server.send(url, Bundle(*[head_msg]+stocked_msgs))
+                        
+                        server._sem_dict.add_waiting(bundler_id)
+
+                        j = 0
+                        
+                        while server._sem_dict.count(bundler_id) >= 1:
+                            if isinstance(server, BunServerThread):
+                                time.sleep(0.001)
+                            else:
+                                server.recv(1)
+                            j += 1
+                            if j >= 200:
+                                print('too long wait for bundle recv confirmation')
+                                return False
+                    
+                    stocked_msgs.clear()
+                else:
+                    print(f'error pack of {pack} is too high')
+                    return False
+        
+        i += 1
+    
+    success = True
+
+    try:
+        server.send(_RESERVED_PORT,
+                    Bundle(*[head_msg_self]+stocked_msgs+pending_msgs))
+    except:
+        success = False
+        
+    if success:
+        server.send(url, Bundle(*[head_msg]+stocked_msgs+pending_msgs))
+    else:
+        server.send(url, Bundle(*[head_msg]+stocked_msgs))
+        server.send(url, Bundle(*[head_msg]+pending_msgs))
+    
+    return True
+
+
+class _SemDict(dict[int, int]):
+    def __init__(self):
+        super().__init__()
+    
+    def head_received(self, bundler_id: int):
+        if not bundler_id in self:
+            return
+        
+        if self[bundler_id] > 0:
+            self[bundler_id] -= 1
+            
+    def add_waiting(self, bundler_id: int):
+        if bundler_id not in self:
+            self[bundler_id] = 0
+        self[bundler_id] += 1
+        
+    def count(self, bundler_id: int) -> int:
+        return self.get(bundler_id, 0)
+
+        
+class BunServer(Server):
+    def __init__(self):
+        super().__init__()
+        
+        self._methods = dict[tuple(str, str), Callable]()
+        
+        self.add_method('/bundle_head', 'iii', self._bundle_head)
+        self.add_method('/bundle_head_reply', 'iii', self._bundle_head_reply)
+        
+        self._sem_dict = _SemDict()
+    
+    def add_method(self, path: str, typespec: str, func: Callable, user_data=None):
+        self._methods[(path, typespec)] = func
+        return super().add_method(path, typespec, func, user_data)
+    
+    def _bundle_head(self, path, args, types, src_addr):
+        self.send(src_addr, '/bundle_head_reply', *args)
+    
+    def _bundle_head_reply(self, path, args, types, src_addr):
+        self._sem_dict.head_received(args[0])
+    
+    def mega_send(self, url: str, messages: list[Message], pack=10) -> bool:
+        return _mega_send(self, url, messages, pack=pack)
+ 
+ 
+class BunServerThread(ServerThread):
+    def __init__(self):
+        super().__init__()
+
+        self._methods = dict[tuple(str, str), Callable]()
+        
+        self.add_method('/bundle_head', 'iii', self._bundle_head)
+        self.add_method('/bundle_head_reply', 'iii', self._bundle_head_reply)
+        
+        self._sem_dict = _SemDict()
+    
+    def add_method(self, path: str, typespec: str, func: Callable, user_data=None):
+        self._methods[(path, typespec)] = func
+        return super().add_method(path, typespec, func, user_data)
+    
+    def _bundle_head(self, path, args, types, src_addr):
+        self.send(src_addr, '/bundle_head_reply', *args)
+    
+    def _bundle_head_reply(self, path, args, types, src_addr):
+        self._sem_dict.head_received(args[0])
+    
+    def mega_send(self, url: str, messages: list[Message], pack=10) -> bool:
+        return _mega_send(self, url, messages, pack=pack)
 
 
 @dataclass()
