@@ -11,6 +11,7 @@ import threading
 import time
 from pathlib import Path
 import logging
+import json
 from queue import Queue
 
 
@@ -133,7 +134,17 @@ class MainObject:
         self.last_transport_pos = TransportPosition(
             0, False, False, 0, 0, 0, 0.0)
 
+        self.exp_pretty_names = PrettyNames()
+        'Contains only the pretty names set by this in JACK metadatas'
+        self.uuid_pretty_names = dict[int, str]()
+        
         self.pretty_names = PrettyNames()
+        '''Contains all internal pretty names,
+        including some groups and ports not existing now'''
+        
+        self.pretty_tmp_path = (Path('/tmp/RaySession/')
+                                / f'pretty_names.{daemon_port}.json')
+        
         self.osc_server = OscJackPatch(self)
         self.osc_server.set_tmp_gui_url(gui_url)
         self.osc_server.ask_pretty_names(self._daemon_tcp_port)
@@ -216,17 +227,11 @@ class MainObject:
             if client_uuid is None:
                 continue
             
-            mdata_pretty_name = ''
-            value_type = jack.get_property(
-                client_uuid, JackMetadata.PRETTY_NAME)
-            if value_type is not None:
-                mdata_pretty_name = value_type[0].decode()
-            
+            mdata_pretty_name = self.jack_pretty_name_if_not_mine(client_uuid)            
             pretty_name = self.pretty_names.pretty_group(
                 client_name, mdata_pretty_name)
             if pretty_name:
-                self.set_metadata(
-                    client_uuid, JackMetadata.PRETTY_NAME, pretty_name)
+                self.set_pretty_name(True, client_name, client_uuid, pretty_name)
                 
         for port_name in port_names:
             port = self.client.get_port_by_name(port_name)
@@ -235,17 +240,13 @@ class MainObject:
             
             port_uuid = port.uuid
             
-            mdata_pretty_name = ''
-            value_type = jack.get_property(
-                port_uuid, JackMetadata.PRETTY_NAME)
-            if value_type is not None:
-                mdata_pretty_name = value_type[0].decode()
-            
+            mdata_pretty_name = self.jack_pretty_name_if_not_mine(port_uuid)            
             pretty_name = self.pretty_names.pretty_port(
                 port.name, mdata_pretty_name)
             if pretty_name:
-                self.set_metadata(
-                    port_uuid, JackMetadata.PRETTY_NAME, pretty_name)
+                self.set_pretty_name(False, port.name, port_uuid, pretty_name)
+        
+        self.save_exp_pretty_names()
     
     def check_jack_client_responding(self):
         for i in range(100): # JACK has 5s to answer
@@ -576,7 +577,16 @@ class MainObject:
     def set_metadata(self, uuid: int, key: str, value: str):
         self.client.set_property(uuid, key, value, 'text/plain')
 
-    def set_pretty_name(self, uuid: int, pretty_name: str):
+    def save_exp_pretty_names(self):
+        'save the contents of exp_pretty_names in /tmp'
+        try:
+            with open(self.pretty_tmp_path, 'w') as f:
+                json.dump(self.uuid_pretty_names, f)
+        except:
+            _logger.warning(f'Failed to save {self.pretty_tmp_path}')
+
+    def set_pretty_name(
+            self, for_client: bool, name: str, uuid: int, pretty_name: str):
         'write pretty-name metadata, or remove it if value is empty'
         if pretty_name:
             try:
@@ -585,31 +595,74 @@ class MainObject:
             except:
                 _logger.warning(
                     f'Failed to set pretty-name "{pretty_name}" for {uuid}')
+                return
+            
+            try:
+                self.client.set_property(
+                    uuid, '/Houston/pretty-name-setter',
+                    f'raysession.{self._daemon_port}:{pretty_name}')
+            except:
+                _logger.warning(
+                    f'Failed to set pretty-name-setter for {uuid}')
+            
         else:
             try:
                 self.client.remove_property(uuid, JackMetadata.PRETTY_NAME)
             except:
                 _logger.warning(
                     f'Failed to remove pretty-name for {uuid}')
+                return
+            
+            try:
+                self.client.remove_property(uuid, 'Houston/pretty-name-setter')
+            except:
+                pass
+            
+            if uuid in self.uuid_pretty_names:
+                self.uuid_pretty_names.pop(uuid)
+        
+        if pretty_name:
+            self.uuid_pretty_names[uuid] = pretty_name
+        else:
+            if uuid in self.uuid_pretty_names:
+                self.uuid_pretty_names.pop(uuid)
+
+        if for_client:
+            self.exp_pretty_names.save_group(name, pretty_name)
+        else:
+            self.exp_pretty_names.save_port(name, pretty_name)
+
+    def jack_pretty_name_if_not_mine(self, uuid: int) -> str:
+        mdata_pretty_name = jack_pretty_name(uuid)
+        if not mdata_pretty_name:
+            return ''
+        
+        if mdata_pretty_name == self.uuid_pretty_names.get(uuid):
+            return ''
+        
+        return mdata_pretty_name
 
     def set_all_pretty_names(self):
         if not self.jack_running:
             return
         
         for client_name, client_uuid in self.client_name_uuids.items():
-            mdata_pretty_name = jack_pretty_name(client_uuid)
+            mdata_pretty_name = self.jack_pretty_name_if_not_mine(client_uuid)
             pretty_name = self.pretty_names.pretty_group(
                 client_name, mdata_pretty_name)
             if pretty_name:
-                self.set_pretty_name(client_uuid, pretty_name)
+                self.set_pretty_name(True, client_name, client_uuid, pretty_name)
                 
         for port in self.client.get_ports():
             port_uuid = port.uuid
-            mdata_pretty_name = jack_pretty_name(port_uuid)                
+            port_name = port.name
+            mdata_pretty_name = self.jack_pretty_name_if_not_mine(port_uuid)                
             pretty_name = self.pretty_names.pretty_port(
-                port.name, mdata_pretty_name)
+                port_name, mdata_pretty_name)
             if pretty_name:
-                self.set_pretty_name(port_uuid, pretty_name)
+                self.set_pretty_name(False, port_name, port_uuid, pretty_name)
+                
+        self.save_exp_pretty_names()
 
     def write_group_pretty_name(self, client_name: str, pretty_name: str):
         if not self.jack_running:
@@ -619,24 +672,33 @@ class MainObject:
         if client_uuid is None:
             return
 
-        mdata_pretty_name = jack_pretty_name(client_uuid)
+        mdata_pretty_name = self.jack_pretty_name_if_not_mine(client_uuid)
         self.pretty_names.save_group(
             client_name, pretty_name, mdata_pretty_name)
         
-        self.set_pretty_name(client_uuid, pretty_name)
+        self.set_pretty_name(True, client_name, client_uuid, pretty_name)
+        self.save_exp_pretty_names()
 
     def write_port_pretty_name(self, port_name: str, pretty_name: str):
         if not self.jack_running:
             return
-        
-        port = self.client.get_port_by_name(port_name)
+
+        try:
+            port = self.client.get_port_by_name(port_name)
+        except BaseException as e:
+            _logger.warning(
+                f'Unable to find port {port_name} '
+                f'to set the pretty-name {pretty_name}')
+            return
+
         if port is None:
             return
 
         port_uuid = port.uuid
-        mdata_pretty_name = jack_pretty_name(port_uuid)
+        mdata_pretty_name = self.jack_pretty_name_if_not_mine(port_uuid)
         self.pretty_names.save_port(port_name, pretty_name, mdata_pretty_name)
-        self.set_pretty_name(port.uuid, pretty_name)
+        self.set_pretty_name(False, port_name, port.uuid, pretty_name)
+        self.save_exp_pretty_names()
 
     def transport_play(self, play: bool):
         if play:
