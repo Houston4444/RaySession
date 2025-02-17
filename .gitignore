@@ -45,3 +45,4 @@ RaySession.kdev4
 
 # ignore memo
 memo_snapshots
+resources/resources_rc.py

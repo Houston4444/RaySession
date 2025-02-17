@@ -243,9 +243,7 @@ class CanvasSaver(ServerSender):
         self.views_config.clear_absents(view_num, ptv, presents)
         self.views_session.clear_absents(view_num, ptv, presents)
 
-    def change_view_number(self, *args):
-        ex_view_num, new_view_num = args
-        
+    def change_view_number(self, ex_view_num: int, new_view_num: int):        
         for vdict in (self.views_config, self.views_session):
             if vdict.get(ex_view_num) is None:
                 _logger.warning(

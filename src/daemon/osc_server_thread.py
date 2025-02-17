@@ -19,7 +19,7 @@ from patshared import GroupPos
 
 # Imports from src/shared
 from osclib import (
-    Address, ServerThread, get_net_url, make_method, Message, OscPack,
+    Address, BunServerThread, get_net_url, make_method, Message, OscPack,
     are_on_same_machine, are_same_osc_port, send, TCP, verified_address)
 import ray
 from xml_tools import XmlElement
@@ -90,12 +90,12 @@ class Gui:
 # Osc server thread is splitted in several classes for confort.
 
 
-class ClientCommunicating(ServerThread):
+class ClientCommunicating(BunServerThread):
     '''Contains NSM protocol.
     OSC paths have to be never changed.'''
     
     def __init__(self, session: 'SignaledSession', osc_num=0, tcp_port=0):
-        ServerThread.__init__(self, osc_num)
+        BunServerThread.__init__(self, osc_num)
         self.session = session
         self.tcp_port = tcp_port
         'the port number of the tcp_server.'
@@ -120,7 +120,7 @@ class ClientCommunicating(ServerThread):
 
     @osp_method('/reply', None)
     def reply(self, osp: OscPack):
-        if not ray.types_are_all_strings(osp.types):
+        if not osp.strings_only:
             self._unknown_message(osp)
 
         if not len(osp.args) >= 1:
@@ -291,7 +291,7 @@ class ClientCommunicating(ServerThread):
 
         client.progress = osp.args[0]
         self.send_gui("/ray/gui/client/progress", client.client_id,
-                     client.progress)
+                      client.progress)
 
     @osp_method('/nsm/client/is_dirty', '')
     def nsmClientIs_dirty(self, osp: OscPack):
@@ -801,7 +801,7 @@ class OscServerThread(ClientCommunicating):
 
     @osp_method('/ray/server/new_session', None)
     def rayServerNewSession(self, osp: OscPack):
-        if not ray.types_are_all_strings(osp.types):
+        if not osp.strings_only:
             self._unknown_message(osp)
             return False
 
@@ -882,7 +882,7 @@ class OscServerThread(ClientCommunicating):
     # set options from ray_control
     @osp_method('/ray/server/set_options', None)
     def rayServerSetOptions(self, osp: OscPack):
-        if not ray.types_are_all_strings(osp.types):
+        if not osp.strings_only:
             self._unknown_message(osp)
             return False
 
@@ -1128,7 +1128,7 @@ class OscServerThread(ClientCommunicating):
 
     @osp_method('/ray/session/add_executable', None)
     def raySessionAddExecutableStrings(self, osp: OscPack):
-        if not (osp.types and ray.types_are_all_strings(osp.types)):
+        if not osp.strict_strings: 
             self._unknown_message(osp)
             return False
 
@@ -1162,7 +1162,7 @@ class OscServerThread(ClientCommunicating):
 
     @osp_method('/ray/session/add_exec', None)
     def raySessionAddExecStrings(self, osp: OscPack):
-        if not (osp.types and ray.types_are_all_strings(osp.types)):
+        if not osp.strict_strings:
             self._unknown_message(osp)
             return False
 

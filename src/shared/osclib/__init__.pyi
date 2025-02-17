@@ -1,5 +1,5 @@
 from types import NoneType
-from typing import Callable, Union, overload, Optional
+from typing import Callable, Union, overload, Optional, Literal
 from dataclasses import dataclass
 
 UDP: int
@@ -67,7 +67,22 @@ class Server(__AbstractServer):
 class ServerThread(__AbstractServer):
     def start(self): ...
     def stop(self): ...
-    
+
+
+class BunServer(Server):
+    def mega_send(
+            self,
+            url: Union[str, int, Address, list[Union[str, int, Address]]],
+            messages: list[Message]) -> bool:
+        ...
+
+class BunServerThread(Server):
+    def mega_send(
+            self,
+            url: Union[str, int, Address, list[Union[str, int, Address]]],
+            messages: list[Message]) -> bool:
+        ...
+
 
 class ServerError(BaseException): ...
 
@@ -100,7 +115,25 @@ class OscPack:
     
     def error(self) -> tuple[Address, str, str]:
         ...
+    
+    @property
+    def strings_only(self) -> bool:
+        '''False if at least one arg is not a str'''
+        ...
 
+    @property
+    def strict_strings(self) -> bool:
+        '''False if args is empty or at least one arg is not a str'''
+
+    @overload
+    def argt(self, types: Literal['ss']) -> tuple[str, str]: ...
+    @overload
+    def argt(self, types: Literal['si']) -> tuple[str, int]: ...
+    @overload
+    def argt(self, types: Literal['ii']) -> tuple[int, int]: ...
+    def argt(self, types: str) -> tuple:
+        return tuple(self.args)
+    
 def is_osc_port_free(port: int) -> bool:
     ...
 
