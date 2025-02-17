@@ -375,7 +375,7 @@ class MainObject:
             del self.alsa_mng
 
         self.remove_existence_file()
-        del self.osc_server
+        # del self.osc_server
     
     def start_jack_client(self):
         self._waiting_jack_client_open = True
@@ -719,7 +719,7 @@ def main_process(daemon_port: str, daemon_tcp_port: str, gui_tcp_url: str):
     main_object.osc_server.add_gui(gui_tcp_url)
     if main_object.osc_server.gui_list:
         main_object.start_loop()
-    main_object.exit()
+    # main_object.exit()
 
 def start():
     set_proc_name('ray-patch_dmn')

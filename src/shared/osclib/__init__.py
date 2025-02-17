@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Union
+from typing import Union, overload
 import logging
 import random
 import socket
@@ -119,8 +119,8 @@ class _SemDict(dict[int, int]):
 
         
 class BunServer(Server):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         
         self._methods = dict[tuple(str, str), Callable]()
         
@@ -131,7 +131,7 @@ class BunServer(Server):
     
     def add_method(self, path: str, typespec: str, func: Callable, user_data=None):
         self._methods[(path, typespec)] = func
-        return super().add_method(path, typespec, func, user_data)
+        return super().add_method(path, typespec, func, user_data, user_data=user_data)
     
     def _bundle_head(self, path, args, types, src_addr):
         self.send(src_addr, '/bundle_head_reply', *args)
@@ -144,19 +144,19 @@ class BunServer(Server):
  
  
 class BunServerThread(ServerThread):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        self._methods = dict[tuple(str, str), Callable]()
+        # self._methods = dict[tuple(str, str), Callable]()
         
         self.add_method('/bundle_head', 'iii', self._bundle_head)
         self.add_method('/bundle_head_reply', 'iii', self._bundle_head_reply)
         
         self._sem_dict = _SemDict()
     
-    def add_method(self, path: str, typespec: str, func: Callable, user_data=None):
-        self._methods[(path, typespec)] = func
-        return super().add_method(path, typespec, func, user_data)
+    # def add_method(self, path: str, typespec: str, func: Callable, user_data=None):
+    #     self._methods[(path, typespec)] = func
+    #     return super().add_method(path, typespec, func, user_data)
     
     def _bundle_head(self, path, args, types, src_addr):
         self.send(src_addr, '/bundle_head_reply', *args)
@@ -181,6 +181,50 @@ class OscPack:
     def error(self) -> tuple[Address, str, str]:
         return (self.src_addr, '/error', self.path)
 
+    @property
+    def strings_only(self) -> bool:
+        for c in self.types:
+            if c != 's':
+                return False
+        return True
+    
+    @property
+    def strict_strings(self) -> bool:
+        if not self.types:
+            return False
+        return self.strings_only
+    
+    def argt(self, types: str):
+        return tuple(self.args)
+    
+    def depack(self, types: str) -> tuple[str | int | float]:
+        if types == self.types:
+            return tuple(self.args)
+        
+        ret_list = []
+        
+        for i in range(len(types)):
+            if types[i] == self.types[i]:
+                ret_list.append(self.args[i])
+            elif types[i] == 'i':
+                try:
+                    ret_list.append(int(self.args[i]))
+                except:
+                    ret_list.append(0)
+            elif types[i] == 'f':
+                try:
+                    ret_list.append(float(self.args[i]))
+                except:
+                    ret_list.append(0.0)
+            elif types[i] == 's':
+                try:
+                    ret_list.append(str(self.args[i]))
+                except:
+                    ret_list.append('')
+            else:
+                ret_list.append('')
+        
+        return tuple(ret_list)
 
 _mach192_dict = {'ip': '', 'read_done': False}
 

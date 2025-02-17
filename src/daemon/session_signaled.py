@@ -764,7 +764,7 @@ class SignaledSession(OperatingSession):
 
     @session_operation
     def _ray_session_save_as_template(self, osp: OscPack):
-        template_name = osp.args[0]
+        template_name: str = osp.args[0]
         net = False if len(osp.args) < 2 else osp.args[1]
 
         for client in self.clients:
@@ -1044,7 +1044,7 @@ class SignaledSession(OperatingSession):
         if len(osp.args) == 1:
             pass
 
-        elif ray.types_are_all_strings(osp.types):
+        elif osp.strings_only:
             start_it = int(bool('not_start' not in osp.args[1:]))
 
             if 'ray_hack' in osp.args[1:]:
