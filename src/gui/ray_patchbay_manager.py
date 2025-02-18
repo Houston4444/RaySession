@@ -9,7 +9,7 @@ import logging
 
 # Imports from HoustonPatchbay
 from patchbay.patchcanvas.patshared import (
-    GroupPos, PortgroupMem, PortMode, PortTypesViewFlag)
+    GroupPos, PortgroupMem, PortMode, PortTypesViewFlag, ViewData)
 from patchbay.base_elements import ToolDisplayed
 from patchbay.base_group import Group
 from patchbay import (
@@ -408,14 +408,15 @@ class RayPatchbayManager(PatchbayManager):
     def update_group_position(self, *args):
         view_number = args[0]        
         gpos = GroupPos.from_arg_list(args[1:])
-        view_dict = self.views.get(view_number)
-        if view_dict is None:
-            view_dict = self.views[view_number] = \
-                dict[PortTypesViewFlag, dict[str, GroupPos]]()
+        view_data = self.views.get(view_number)
         
-        ptv_dict = view_dict.get(gpos.port_types_view)
+        if view_data is None:
+            view_data = self.views[view_number] = ViewData(
+                gpos.port_types_view)
+        
+        ptv_dict = view_data.ptvs.get(gpos.port_types_view)
         if ptv_dict is None:
-            ptv_dict = view_dict[gpos.port_types_view] = \
+            ptv_dict = view_data.ptvs[gpos.port_types_view] = \
                 dict[str, GroupPos]()
                 
         ptv_dict[gpos.group_name] = gpos
@@ -424,7 +425,8 @@ class RayPatchbayManager(PatchbayManager):
                 and gpos.port_types_view is self.port_types_view):
             group = self.get_group_from_name(gpos.group_name)
             if group is not None:
-                group.set_group_position(gpos)
+                group.set_group_position(
+                    gpos, redraw=PortMode.BOTH, restore=PortMode.BOTH)
 
     def update_portgroup(self, *args):
         pg_mem = PortgroupMem.from_arg_list(args)
