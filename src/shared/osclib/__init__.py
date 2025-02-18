@@ -122,7 +122,7 @@ class BunServer(Server):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self._methods = dict[tuple(str, str), Callable]()
+        self._methods = dict[tuple[str, str], Callable]()
         
         self.add_method('/bundle_head', 'iii', self._bundle_head)
         self.add_method('/bundle_head_reply', 'iii', self._bundle_head_reply)
@@ -131,7 +131,7 @@ class BunServer(Server):
     
     def add_method(self, path: str, typespec: str, func: Callable, user_data=None):
         self._methods[(path, typespec)] = func
-        return super().add_method(path, typespec, func, user_data, user_data=user_data)
+        return super().add_method(path, typespec, func, user_data=user_data)
     
     def _bundle_head(self, path, args, types, src_addr):
         self.send(src_addr, '/bundle_head_reply', *args)
