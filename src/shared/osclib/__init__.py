@@ -169,6 +169,9 @@ def are_on_same_machine(url1: str, url2: str) -> bool:
 
         ip = get_machine_192()
 
+        print('are_on_same_machine', url1, url2)
+        print(f"    '{ip}' '{address1.hostname}' '{address2.hostname}")
+
         if ip not in (address1.hostname, address2.hostname):
             return False
 

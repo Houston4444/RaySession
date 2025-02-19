@@ -965,6 +965,7 @@ class OscServerThread(ClientCommunicating):
         # here send to others GUI the new group position
         for gui_addr in self.gui_list:
             if not are_same_osc_port(gui_addr.url, osp.src_addr.url):
+                print('update gp to GUI', gui_addr.url, osp.src_addr.url)
                 self.send(
                     gui_addr,
                     '/ray/gui/patchbay/update_group_position',
