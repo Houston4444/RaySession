@@ -1,20 +1,18 @@
 
-from typing import Literal, Callable, overload
+from typing import Callable, Optional
 from pathlib import Path
 import sys
 
 sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
 
-from osclib import BunServer, Address, OscPack
+from osclib import Server, Address, OscPack
 
 
-_CHALA = '/chala'
-
-
-class Server(BunServer):
+class Server(Server):
     def __init__(self):
         self._path_funcs = dict[str, Callable]()
+        self._path_str_only = dict[str, int]()
         super().__init__()
         
         self._uscat = 64
@@ -23,13 +21,28 @@ class Server(BunServer):
             /chala  ss
             /uscat  sf
             /zoefpf si sis sisi
+            /quedustring ss*
+            /quedurien .
         ''')
+    
+    def __generic_callback(self, osp: OscPack):
+        print('__generic_callback', osp.path, osp.args, osp.types)
     
     def __director(self, path: str, args: list, types: str,
                    src_addr: Address, user_data=None):
         if path in self._path_funcs:
-            self._path_funcs[path](OscPack(path, args, types, src_addr))
-    
+            osp = OscPack(path, args, types, src_addr)
+
+            if path in self._path_str_only:
+                if self._path_str_only[path]:
+                    if not osp.strict_strings:
+                        return
+                else:
+                    if not osp.strings_only:
+                        return
+                
+            self._path_funcs[path](osp)
+
     # @overload
     def add_methods(self, methods: str):
         '''add methods with one string argument.
@@ -38,43 +51,64 @@ class Server(BunServer):
         having the same name than the path,
         replacing '/' and '-' with '_'.
         
+        special types can be :
+            .   : No argument
+            s*  : Only strings arguments
+            ss* : Only strings arguments, but at least one
+        
         example:
         
+        self.add_methods("""
             /my_method/path/to ss
-            
-        Here path is connected to self._my_method_path_to
+
+            /my_method/path/toto .
+        """)
+
+        /my_method/path/to is connected to self._my_method_path_to
         '''
         for line in methods.splitlines():
             sline = line.strip()
             if not sline.startswith('/'):
                 continue
             
-            words = line.split()
+            words = sline.split()
             path = words[0]
             types = words[1:]
             
-            funcname = path.replace('/', '_').replace('-', '_')
-            if not funcname in self.__dir__():
-                print(f'no func named {funcname} for {path}')
-                continue
-            
-            valid_types = set[str]()
+            valid_types = set[Optional[str]]()
+            types_broken = False
             for type_ in types:
-                if type_ in ('.', 's*', 'ss*'):
-                    valid_types.add(type_)
-                    continue
+                if not valid_types and type_ in ('.', 's*', 'ss*'):
+                    if type_ == '.':
+                        valid_types.add('')
+                    else:
+                        valid_types.add(None)
+                        self._path_str_only[path] = 0 if type_ == 's*' else 1
+
+                    break
                 
                 for c in type_:
                     if c not in 'ihfdcsSmtTFNIb':
+                        types_broken = True
                         break
                 else:
                     valid_types.add(type_)
+                
+                if types_broken:
+                    break
             
-            function = self.__getattribute__(funcname)
-            if not callable(function):
-                print(f'self.{funcname} is not callable, {function}')
-                continue
-            self._path_funcs[path] = function
+            use_generic = True
+            funcname = path.replace('/', '_').replace('-', '_')
+            
+            if funcname in self.__dir__():
+                function = self.__getattribute__(funcname)
+                if callable(function):
+                    use_generic = False
+                    
+            if use_generic:
+                self._path_funcs[path] = self.__generic_callback
+            else:
+                self._path_funcs[path] = function
 
             if not valid_types:
                 self.add_method(path, None, self.__director)
@@ -109,6 +143,9 @@ server_2 = Server()
 server_2.send(server_1.port, '/chala', 'roux', 'slip')
 server_2.send(server_1.port, '/zoefpf', 'soij', 14, 45)
 server_2.send(server_1.port, '/zoefpf', 'soij', 14, 'joif', 24)
+server_2.send(server_1.port, '/quedustring', 'soil', 'mmalz', 'ldam')
+server_2.send(server_1.port, '/quedustring', 'soila', 24, 'zoak', 'aps')
+server_2.send(server_1.port, '/quedurien')
 
 while True:
     server_1.recv(10)
