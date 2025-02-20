@@ -19,7 +19,7 @@ from patshared import GroupPos
 
 # Imports from src/shared
 from osclib import (
-    Address, BunServer, get_net_url, make_method, Message, OscPack,
+    Address, BunServerThread, MegaSend, get_net_url, make_method, Message, OscPack,
     are_on_same_machine, are_same_osc_port, send, TCP, verified_address)
 import ray
 from xml_tools import XmlElement
@@ -90,12 +90,12 @@ class Gui:
 # Osc server thread is splitted in several classes for confort.
 
 
-class ClientCommunicating(BunServer):
+class ClientCommunicating(BunServerThread):
     '''Contains NSM protocol.
     OSC paths have to be never changed.'''
     
     def __init__(self, session: 'SignaledSession', osc_num=0, tcp_port=0):
-        BunServer.__init__(self, osc_num)
+        BunServerThread.__init__(self, osc_num)
         self.session = session
         self.tcp_port = tcp_port
         'the port number of the tcp_server.'
@@ -1255,8 +1255,10 @@ class OscServerThread(ClientCommunicating):
 
     @osp_method('/ray/server/ask_for_pretty_names', 'i')
     def askForPrettyNames(self, osp: OscPack):
+        print('ask for pretty names received', osp.args)
         self.patchbay_dmn_port = osp.args[0]
-        signaler.osc_recv.emit(osp)
+        # signaler.osc_recv.emit(osp)
+        return True
 
     # @osp_method(None, None)
     # cannot be decorated, else it is defined in priority to all methods
@@ -1265,13 +1267,14 @@ class OscServerThread(ClientCommunicating):
             self, path: str, args: list, types: str, src_addr: Address):
         osp = OscPack(path, args, types, src_addr)
         if ((osp.path, osp.types)) in self._SIMPLE_OSC_PATHS:
-            return True
+            signaler.osc_recv.emit(osp)
+            return
         
         if self._is_string_osc_path(osp):
-            return True
+            signaler.osc_recv.emit(osp)
+            return
 
         self._unknown_message(osp)
-        return False
 
     def _is_string_osc_path(self, osp: OscPack) -> bool:
         mini_strings = self._STRINGS_OSC_PATHS.get(osp.path)
@@ -1310,11 +1313,11 @@ class OscServerThread(ClientCommunicating):
         for gui in self.gui_list:
             self.send(gui.addr, *args)
 
-    def mega_send_gui(self, messages: list[Message]):
-        self.mega_send([gui.addr for gui in self.gui_list], messages)
+    def mega_send_gui(self, mega_send: MegaSend):
+        self.mega_send([gui.addr for gui in self.gui_list], mega_send)
         
-    def mega_send_patchbay(self, messages: list[Message]):
-        self.mega_send(self.patchbay_dmn_port, messages)
+    def mega_send_patchbay(self, mega_send: MegaSend):
+        self.mega_send(self.patchbay_dmn_port, mega_send)
 
     def set_server_status(self, server_status:ray.ServerStatus):
         self.server_status = server_status

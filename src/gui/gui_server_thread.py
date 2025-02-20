@@ -7,7 +7,7 @@ import logging
 from patshared import GroupPos
 
 # Imports from src/shared
-from osclib import BunServer, get_net_url, make_method, TCP, Address
+from osclib import BunServerThread, get_net_url, make_method, TCP, Address
 import ray
 
 # Local imports
@@ -47,9 +47,9 @@ def ray_method(path, types):
     return decorated
 
 
-class GuiServerThread(BunServer):
+class GuiServerThread(BunServerThread):
     def __init__(self):
-        BunServer.__init__(self)
+        BunServerThread.__init__(self)
 
         global _instance
         _instance = self

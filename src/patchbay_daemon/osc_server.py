@@ -2,7 +2,7 @@
 import logging
 from typing import TYPE_CHECKING
     
-from osclib import BunServer, Address, MegaSend, are_on_same_machine
+from osclib import BunServer, Address, MegaSend, are_on_same_machine, are_same_osc_port
 
 if TYPE_CHECKING:
     from src.patchbay_daemon.patchbay_daemon import MainObject, TransportPosition
@@ -67,17 +67,18 @@ class OscJackPatch(BunServer):
     def _ray_patchbay_add_gui(self, path, args):
         self.add_gui(args[0])
 
-    def _ray_patchbay_gui_disannounce(self, path, args):
+    def _ray_patchbay_gui_disannounce(self, path, args, types, src_addr):
         url: str = args[0]
 
         for gui_addr in self.gui_list:
-            if gui_addr.url == url:
+            if are_same_osc_port(gui_addr.url, src_addr.url):
                 # possible because we break the loop
                 self.gui_list.remove(gui_addr)
                 break
 
         if not self.gui_list:
             # no more GUI connected, no reason to exists anymore
+            print('gaoud baille')
             self._terminate = True
 
     def _ray_patchbay_port_set_alias(self, path, args, types, src_addr):
@@ -163,7 +164,7 @@ class OscJackPatch(BunServer):
             self.send(src_addr, *args)
 
     def send_distant_data(self, src_addrs: list[Address]):
-        ms = MegaSend()        
+        ms = MegaSend('patchbay_ports')        
         ms.add('/ray/gui/patchbay/big_packets', 0)
         
         for port in self.port_list:
@@ -194,8 +195,7 @@ class OscJackPatch(BunServer):
         
         ms.add('/ray/gui/patchbay/big_packets', 1)
         
-        print('tchichi', src_addrs)
-        self.mega_send(src_addrs, ms.messages)
+        self.mega_send(src_addrs, ms)
 
     def add_gui(self, gui_url: str):
         gui_addr = Address(gui_url)
@@ -317,10 +317,4 @@ class OscJackPatch(BunServer):
         self.pretty_names.clear()
 
         addr = Address(port)
-
-        try:
-            self.send(addr, '/ray/server/ask_for_pretty_names', self.port)
-        except BaseException as e:
-            _logger.warning(
-                f'Failed to ask pretty names to daemon at port {port}')
-            _logger.warning(str(e))
+        self.send(addr, '/ray/server/ask_for_pretty_names', self.port)

@@ -37,7 +37,6 @@ from gui_session import SignaledSession
 # prevent to not find icon at startup
 import resources_rc
 
-terminate = False
 
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -57,12 +56,6 @@ def signal_handler(sig, frame):
         session.daemon_manager.stop()
     global terminate
     terminate = True
-
-def server_checker():
-    while True:
-        server.recv(20)
-        if terminate:
-            break
 
 
 if True:
@@ -126,17 +119,9 @@ if True:
     #build session
     server = GuiServerThread()
     tcp_server = GuiTcpThread()
-    servers_thread = Thread(target=server_checker, daemon=True)
-    session = SignaledSession(servers_thread)
+    session = SignaledSession()
 
     app.exec()
 
-    # print('hoppoh')
-    # # TODO find something better, sometimes program never ends without.
-    # time.sleep(0.002)
-
-    # server.stop()
-    # print('server stopped')
-    # tcp_server.stop()
-    # print('tcp servre stopped')
+    server.stop()
     session.quit()

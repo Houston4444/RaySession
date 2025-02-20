@@ -199,11 +199,8 @@ class RayPatchbayManager(PatchbayManager):
         self.send_to_patchbay_daemon('/ray/patchbay/refresh')
     
     def disannounce(self):
-        tcp_server = GuiTcpThread.instance()
-        if tcp_server is not None:
-            self.send_to_patchbay_daemon(
-                '/ray/patchbay/gui_disannounce',
-                get_net_url(tcp_server.port, protocol=TCP))
+        self.send_to_patchbay_daemon(
+            '/ray/patchbay/gui_disannounce', '')
         super().disannounce()
     
     def set_views_changed(self):

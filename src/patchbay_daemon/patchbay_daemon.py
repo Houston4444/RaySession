@@ -425,7 +425,6 @@ class MainObject:
                             self.uuid_pretty_names[int(key)] = value
             except:
                 pass
-        print(self.uuid_pretty_names)
 
     def is_terminate(self) -> bool:
         if self.terminate or self.osc_server.is_terminate():

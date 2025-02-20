@@ -20,7 +20,6 @@ os.environ['QT_API'] = QT_API
 # other imports from standard library
 import logging
 import signal
-from threading import Thread
 
 # third party imports
 from qtpy.QtCore import (
@@ -56,12 +55,6 @@ def signal_handler(sig, frame):
         _terminate = True
 
 
-def server_checker():    
-    while True:
-        server.recv(10)
-        
-        if _terminate:
-            break
 
 # if __name__ == '__main__':
 if True:
@@ -136,8 +129,7 @@ if True:
                 % CommandLineArgs.osc_port)
             sys.exit()
 
-    server_checker_thread = Thread(target=server_checker)
-    server_checker_thread.start()
+    server.start()
 
     # print server url
     Terminal.message('URL : %s' % get_net_url(server.port))
@@ -185,7 +177,6 @@ if True:
 
     # run main loop app
     app.exec()
-
     # app is stopped
 
     # update multi_daemon_file without this server
@@ -217,13 +208,6 @@ if True:
     RS.settings.sync()
 
     # stop the servers
-    # server.stop()
+    server.stop()
     tcp_server.stop()
 
-    _terminate = True
-    server_checker_thread.join()
-
-    del tcp_server
-    del server
-    del session
-    del app

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from threading import Thread
 from typing import Union, overload
 import logging
 import random
@@ -30,7 +31,8 @@ _RESERVED_PORT = 47
 
 class MegaSend:
     messages: list[Message]
-    def __init__(self):
+    def __init__(self, ref: str):
+        self.ref = ref
         self.messages = list[Message]()
     
     def add(self, *args):
@@ -39,7 +41,7 @@ class MegaSend:
 
 def _mega_send(server: 'Union[BunServer, BunServerThread]',
                url: Union[str, int, Address, list[str | int | Address]],
-               messages: list[Message], pack=10) -> bool:
+               mega_send: MegaSend, pack=10) -> bool:
     bundler_id = random.randrange(0x100, 0x100000)
     bundle_number_self = random.randrange(0x100, 0x100000)
     
@@ -53,13 +55,15 @@ def _mega_send(server: 'Union[BunServer, BunServerThread]',
     if not urls:
         return True
 
+    messages = mega_send.messages
+
     # first, try to send all in one bundle
     all_ok = True   
     urls_done = set[str, int, Address]()
     for url in urls:
         try:
             server.send(url, Bundle(*[head_msg]+messages))
-            assert server.wait_mega_send_answer(bundler_id)
+            assert server.wait_mega_send_answer(bundler_id, mega_send.ref)
             urls_done.add(url)
         except:
             all_ok = False
@@ -90,12 +94,13 @@ def _mega_send(server: 'Union[BunServer, BunServerThread]',
                 if stocked_msgs:
                     for url in urls:
                         server.send(url, Bundle(*[head_msg]+stocked_msgs))
-                        server.wait_mega_send_answer(bundler_id)
+                        server.wait_mega_send_answer(bundler_id, mega_send.ref)
                     
                     stocked_msgs.clear()
                 else:
                     _logger.error(
-                        f'pack of {pack} is too high for this mega_send')
+                        f'pack of {pack} is too high '
+                        f'for mega_send {mega_send.ref}')
                     return False
         
         i += 1
@@ -111,11 +116,11 @@ def _mega_send(server: 'Union[BunServer, BunServerThread]',
     if success:
         for url in urls:
             server.send(url, Bundle(*[head_msg]+stocked_msgs+pending_msgs))
-            server.wait_mega_send_answer(bundler_id)
+            server.wait_mega_send_answer(bundler_id, mega_send.ref)
     else:
         for url in urls:
             server.send(url, Bundle(*[head_msg]+stocked_msgs))
-            server.wait_mega_send_answer(bundler_id)
+            server.wait_mega_send_answer(bundler_id, mega_send.ref)
             server.send(url, Bundle(*[head_msg]+pending_msgs))
             server.wait_mega_send_answer(bundler_id)
     
@@ -163,10 +168,10 @@ class BunServer(Server):
     def _bundle_head_reply(self, path, args, types, src_addr):
         self._sem_dict.head_received(args[0])
     
-    def mega_send(self, url: str, messages: list[Message], pack=10) -> bool:
-        return _mega_send(self, url, messages, pack=pack)
+    def mega_send(self, url: str, mega_send: MegaSend, pack=10) -> bool:
+        return _mega_send(self, url, mega_send, pack=pack)
     
-    def wait_mega_send_answer(self, bundler_id: int) -> bool:
+    def wait_mega_send_answer(self, bundler_id: int, ref: str) -> bool:
         self._sem_dict.add_waiting(bundler_id)
 
         start = time.time()
@@ -174,14 +179,14 @@ class BunServer(Server):
         while self._sem_dict.count(bundler_id) >= 1:
             self.recv(1)
             if time.time() - start >= 0.200:
-                _logger.warning(
+                _logger.error(
                     f'too long wait for bundle '
-                    f'recv confirmation {bundler_id}')
+                    f'recv confirmation {bundler_id}. {ref}')
                 return False 
         return True
  
  
-class BunServerThread(ServerThread):
+class BunServerThread(Server):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -191,6 +196,20 @@ class BunServerThread(ServerThread):
         self.add_method('/bundle_head_reply', 'iii', self._bundle_head_reply)
         
         self._sem_dict = _SemDict()
+        
+        self._terminated = False
+        self._thread = Thread(target=self._main_loop)
+    
+    def start(self):
+        self._thread.start()
+        
+    def stop(self):
+        self._terminated = True
+        self._thread.join()
+    
+    def _main_loop(self):
+        while not self._terminated:
+            self.recv(10)
     
     # def add_method(self, path: str, typespec: str, func: Callable, user_data=None):
     #     self._methods[(path, typespec)] = func
@@ -202,10 +221,10 @@ class BunServerThread(ServerThread):
     def _bundle_head_reply(self, path, args, types, src_addr):
         self._sem_dict.head_received(args[0])
     
-    def mega_send(self, url: str, messages: list[Message], pack=100) -> bool:
-        return _mega_send(self, url, messages, pack=pack)
+    def mega_send(self, url: str, mega_send: MegaSend, pack=100) -> bool:
+        return _mega_send(self, url, mega_send, pack=pack)
 
-    def wait_mega_send_answer(self, bundler_id: int) -> bool:
+    def wait_mega_send_answer(self, bundler_id: int, ref: str) -> bool:
         self._sem_dict.add_waiting(bundler_id)
 
         i = 0
@@ -216,7 +235,7 @@ class BunServerThread(ServerThread):
             if i >= 200:
                 _logger.warning(
                     f'too long wait for bundle '
-                    f'recv confirmation {bundler_id}')
+                    f'recv confirmation {bundler_id}. {ref}')
                 return False 
         return True
 
