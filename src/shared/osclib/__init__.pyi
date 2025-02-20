@@ -73,6 +73,8 @@ class MegaSend():
     '''container for multiple messages to send
     with `mega_send` method of a BunServer'''
     messages: list[Message]
+    ref: str
+    def __init__(self, ref: str): ...
     def add(self, *args): ...
 
 
@@ -80,14 +82,14 @@ class BunServer(Server):
     def mega_send(
             self,
             url: Union[str, int, Address, list[Union[str, int, Address]]],
-            messages: list[Message]) -> bool:
+            mega_send: MegaSend) -> bool:
         ...
 
 class BunServerThread(Server):
     def mega_send(
             self,
             url: Union[str, int, Address, list[Union[str, int, Address]]],
-            messages: list[Message]) -> bool:
+            mega_send: MegaSend) -> bool:
         ...
 
 

@@ -756,7 +756,7 @@ class SignaledSession(OperatingSession):
             port_name, pretty_name, save_in_jack)
 
     def _ray_server_ask_for_pretty_names(self, osp: OscPack):
-        self.canvas_saver.send_pretty_names_to_patchbay_daemon(*osp.args)
+        self.canvas_saver.send_pretty_names_to_patchbay_daemon(osp)
 
     @session_operation
     def _ray_session_save(self, osp: OscPack):        
