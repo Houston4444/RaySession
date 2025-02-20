@@ -1,11 +1,13 @@
 
 # Imports from standard library
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 import logging
 
+from patshared import GroupPos
+
 # Imports from src/shared
-from osclib import ServerThread, get_net_url, make_method, TCP
+from osclib import BunServer, get_net_url, make_method, TCP, Address
 import ray
 
 # Local imports
@@ -45,9 +47,9 @@ def ray_method(path, types):
     return decorated
 
 
-class GuiServerThread(ServerThread):
+class GuiServerThread(BunServer):
     def __init__(self):
-        ServerThread.__init__(self)
+        BunServer.__init__(self)
 
         global _instance
         _instance = self
@@ -67,6 +69,7 @@ class GuiServerThread(ServerThread):
         self.session = session
         self.signaler = self.session.signaler
         self.daemon_manager = self.session.daemon_manager
+        self.patchbay_addr: Optional[Address] = None
 
         # all theses OSC messages are directly treated by
         # SignaledSession in gui_session.py
@@ -108,7 +111,42 @@ class GuiServerThread(ServerThread):
             ('/ray/gui/script_info', 's'),
             ('/ray/gui/hide_script_info', ''),
             ('/ray/gui/script_user_action', 's'),
-            ('/ray/gui/hide_script_user_action', '')):
+            ('/ray/gui/hide_script_user_action', ''),
+            
+            # patchbay related paths
+            ('/ray/gui/patchbay/port_added', 'siih'),
+            ('/ray/gui/patchbay/port_renamed', 'ss'),
+            ('/ray/gui/patchbay/port_renamed', 'ssi'),
+            ('/ray/gui/patchbay/port_removed', 's'),
+            ('/ray/gui/patchbay/connection_added', 'ss'),
+            ('/ray/gui/patchbay/connection_removed', 'ss'),
+            ('/ray/gui/patchbay/server_stopped', ''),
+            ('/ray/gui/patchbay/metadata_updated', 'hss'),
+            ('/ray/gui/patchbay/dsp_load', 'i'),
+            ('/ray/gui/patchbay/add_xrun', ''),
+            ('/ray/gui/patchbay/buffer_size', 'i'),
+            ('/ray/gui/patchbay/sample_rate', 'i'),
+            ('/ray/gui/patchbay/server_started', ''),
+            ('/ray/gui/patchbay/big_packets', 'i'),
+            ('/ray/gui/patchbay/server_lose', ''),
+            ('/ray/gui/patchbay/fast_temp_file_memory', 's'),
+            ('/ray/gui/patchbay/client_name_and_uuid', 'sh'),
+            ('/ray/gui/patchbay/transport_position', 'iiiiiif'),
+            ('/ray/gui/patchbay/update_group_position', 'i' + GroupPos.args_types()),
+            ('/ray/gui/patchbay/views_changed', 's'),
+            ('/ray/gui/patchbay/update_group_pretty_name', 'ss'),
+            ('/ray/gui/patchbay/update_port_pretty_name', 'ss'),
+            
+            # previews
+            ('/ray/gui/preview/clear', ''),
+            ('/ray/gui/preview/notes', 's'),
+            ('/ray/gui/preview/client/update', ray.ClientData.sisi()),
+            ('/ray/gui/preview/client/ray_hack_update', 's' + ray.RayHack.sisi()),
+            ('/ray/gui/preview/client/ray_net_update', 's' + ray.RayNet.sisi()),
+            ('/ray/gui/preview/client/is_started', 'si'),
+            ('/ray/gui/preview/snapshot', 's'),
+            ('/ray/gui/preview/session_size', 'h'),
+            ('/ray/gui/preview/state', 'i')):
                 self.add_method(path_types[0], path_types[1],
                                 self._generic_callback)
 
@@ -267,12 +305,47 @@ class GuiServerThread(ServerThread):
         self.signaler.client_progress.emit(*args)
         return True
 
+    @ray_method('/ray/gui/patchbay/announce', 'iiis')
+    def _ray_gui_patchbay_announce(self, path, args, types, src_addr):
+        self.patchbay_addr = Address(args[3])
+    
+    @ray_method('/ray/gui/patchbay/update_portgroup', None)
+    def _ray_gui_patchbay_update_portgroup(
+            self, path, args, types: str, src_addr: Address):
+        if not types.startswith('siiis'):
+            return False
+
+        types_end = types.replace('siiis', '', 1)
+        for c in types_end:
+            if c != 's':
+                return False
+    
+    @ray_method('/ray/gui/preview/state', 'i')
+    def _ray_gui_preview_state(self, path, args, types, src_addr):
+        self.signaler.session_preview_update.emit(args[0])
+
     def send(self, *args):
         _logger.debug(f'\033[95mOSC::gui sends\033[0m {args[1:]}')
         super().send(*args)
 
     def to_daemon(self, *args):
         self.send(self.daemon_manager.address, *args)
+
+    def send_patchbay_daemon(self, *args):
+        if self.patchbay_addr is None:
+            return
+        
+        self.send(self.patchbay_addr, *args)
+        
+        # try:
+        #     self.send(self.patchbay_addr, *args)
+        # except OSError:
+        #     _logger.warning(
+        #         'Failed to send message to patchbay daemon '
+        #         f'{self.patchbay_addr.url}')
+        #     self.patchbay_addr = None
+        # except BaseException as e:
+        #     _logger.error(str(e))
 
     def announce(self):
         _logger.debug('raysession_sends announce')

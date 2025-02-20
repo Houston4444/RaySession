@@ -69,6 +69,13 @@ class ServerThread(__AbstractServer):
     def stop(self): ...
 
 
+class MegaSend():
+    '''container for multiple messages to send
+    with `mega_send` method of a BunServer'''
+    messages: list[Message]
+    def add(self, *args): ...
+
+
 class BunServer(Server):
     def mega_send(
             self,

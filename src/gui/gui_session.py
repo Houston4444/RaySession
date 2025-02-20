@@ -2,6 +2,7 @@
 # Imports from standard library
 import logging
 from typing import Optional
+from threading import Thread
 
 # third party imports
 from qtpy.QtWidgets import QApplication
@@ -28,7 +29,7 @@ _logger = logging.getLogger(__name__)
 
 
 class Session:
-    def __init__(self):
+    def __init__(self, servers_thread: Thread):
         self.client_list = list[Client]()
         self.trashed_clients = list[TrashedClient]()
         self.favorite_list = list[ray.Favorite]()
@@ -45,10 +46,11 @@ class Session:
         self.patchbay_manager = RayPatchbayManager(self)
 
         server = GuiServerThread.instance()
-        server.start()
+        # server.start()
         
         tcp_server = GuiTcpThread.instance()
-        tcp_server.start()
+        # tcp_server.start()
+        servers_thread.start()
 
         RS.set_signaler(self.signaler)
 
@@ -148,8 +150,8 @@ class Session:
 
 
 class SignaledSession(Session):
-    def __init__(self):
-        Session.__init__(self)
+    def __init__(self, servers_thread: Thread):
+        Session.__init__(self, servers_thread)
         self.signaler.osc_receive.connect(self._osc_receive)
         self.daemon_manager.start()
         

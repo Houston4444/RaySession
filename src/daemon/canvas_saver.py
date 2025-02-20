@@ -13,7 +13,7 @@ from patshared import (
 # Imports from src/shared
 import ray
 from jack_renaming_tools import group_belongs_to_client
-from osclib import Address, TCP
+from osclib import Address, TCP, Bundle, MegaSend, Message
 
 # Local imports
 from daemon_tools import RS, Terminal
@@ -137,87 +137,83 @@ class CanvasSaver(ServerSender):
                        | self.views_session.short_data_states())
         mixed_views_str = json.dumps(mixed_views)
 
+        gui_sd = MegaSend()
+        patch_sd = MegaSend()
+
         for view_number in self.views_session.keys():
             for gpos in self.views_session.iter_group_poses(
                     view_num=view_number):
-                self.send_tcp_gui(
+                gui_sd.add(
                     '/ray/gui/patchbay/update_group_position',
                     view_number, *gpos.to_arg_list())
 
         for gp_name, ptov in self.pretty_names_session.groups.items():
-            self.send_tcp_gui(
-                '/ray/gui/patchbay/update_group_pretty_name',
-                gp_name, ptov.pretty)
-            self.send_patchbay_daemon(
-                '/ray/patchbay/group_pretty_name',
-                gp_name, ptov.pretty, ptov.above_pretty)
+            gui_sd.add('/ray/gui/patchbay/update_group_pretty_name',
+                       gp_name, ptov.pretty)
+            gui_sd.add('/ray/patchbay/group_pretty_name',
+                       gp_name, ptov.pretty, ptov.above_pretty)
         
-        self.send_patchbay_daemon(
-            '/ray/patchbay/group_pretty_name', '', '', '')
+        patch_sd.add('/ray/patchbay/group_pretty_name', '', '', '')
 
         for port_name, ptov in self.pretty_names_session.ports.items():
-            self.send_tcp_gui(
-                '/ray/gui/patchbay/update_port_pretty_name',
-                port_name, ptov.pretty)
-            self.send_patchbay_daemon(
-                '/ray/patchbay/port_pretty_name',
-                port_name, ptov.pretty, ptov.above_pretty)
+            gui_sd.add('/ray/gui/patchbay/update_port_pretty_name',
+                       port_name, ptov.pretty)
+            gui_sd.add('/ray/patchbay/port_pretty_name',
+                       port_name, ptov.pretty, ptov.above_pretty)
 
-        self.send_patchbay_daemon(
-            '/ray/patchbay/port_pretty_name', '', '', '')
+        patch_sd.add('/ray/patchbay/port_pretty_name', '', '', '')
+        gui_sd.add('/ray/gui/patchbay/views_changed', mixed_views_str)
 
-        self.send_tcp_gui(
-            '/ray/gui/patchbay/views_changed', mixed_views_str)
+        print('send session group pos')
+        self.mega_send_patchbay(patch_sd.messages)
+        print('senf session group pos 2')
+        self.mega_send_gui(gui_sd.messages)
 
     def send_all_group_positions(self, gui: 'Gui'):
         '''Used when a new GUI is connected to the daemon.'''
 
+        ms = MegaSend()
+
         for view_index in self.views_config.keys():
             for gpos in self.views_config.iter_group_poses(
                     view_num=view_index):
-                self.send_tcp(
-                    gui.tcp_addr, '/ray/gui/patchbay/update_group_position',
-                    view_index, *gpos.to_arg_list())
+                ms.add('/ray/gui/patchbay/update_group_position',
+                       view_index, *gpos.to_arg_list())
 
         for view_index in self.views_session.keys():
             for gpos in self.views_session.iter_group_poses(
                     view_num=view_index):
-                self.send_tcp(
-                    gui.tcp_addr, '/ray/gui/patchbay/update_group_position',
-                    view_index, *gpos.to_arg_list())
+                ms.add('/ray/gui/patchbay/update_group_position',
+                       view_index, *gpos.to_arg_list())
 
         for pg_mem in self.portgroups.iter_all_portgroups():
-            self.send_tcp(
-                gui.tcp_addr, '/ray/gui/patchbay/update_portgroup',
-                *pg_mem.to_arg_list())
+            ms.add('/ray/gui/patchbay/update_portgroup',
+                   *pg_mem.to_arg_list())
         
         for gp_name, pretty_group in self.pretty_names_config.groups.items():
-            self.send_tcp(
-                gui.tcp_addr, '/ray/gui/patchbay/update_group_pretty_name',
-                gp_name, pretty_group.pretty)
+            ms.add('/ray/gui/patchbay/update_group_pretty_name',
+                   gp_name, pretty_group.pretty)
             
         for gp_name, pretty_group in self.pretty_names_session.groups.items():
-            self.send_tcp(
-                gui.tcp_addr, '/ray/gui/patchbay/update_group_pretty_name',
-                gp_name, pretty_group.pretty)
+            ms.add('/ray/gui/patchbay/update_group_pretty_name',
+                   gp_name, pretty_group.pretty)
 
         for pt_name, pretty_port in self.pretty_names_config.ports.items():
-            self.send_tcp(
-                gui.tcp_addr, '/ray/gui/patchbay/update_port_pretty_name',
-                pt_name, pretty_port.pretty)
+            ms.add('/ray/gui/patchbay/update_port_pretty_name',
+                   pt_name, pretty_port.pretty)
 
         for pt_name, pretty_port in self.pretty_names_session.ports.items():
-            self.send_tcp(
-                gui.tcp_addr, '/ray/gui/patchbay/update_port_pretty_name',
-                pt_name, pretty_port.pretty)
+            ms.add('/ray/gui/patchbay/update_port_pretty_name',
+                   pt_name, pretty_port.pretty)
 
         # send view datas
         view_data_mixed = (self.views_config.short_data_states()
                            |self.views_session.short_data_states())
 
-        self.send_tcp(gui.tcp_addr,
-                  '/ray/gui/patchbay/views_changed',
-                  json.dumps(view_data_mixed))
+        ms.add('/ray/gui/patchbay/views_changed',
+               json.dumps(view_data_mixed))
+        
+        self.mega_send(gui.addr, ms.messages)
 
     def save_group_position(self, *args):
         '''Save a group position sent by GUI'''
@@ -379,24 +375,24 @@ class CanvasSaver(ServerSender):
                 for old, new in group_name_change_list:
                     ptv_dict[new] = ptv_dict.pop(old)
                     ptv_dict[new].group_name = new
-                    self.send_tcp_gui(
+                    self.send_gui(
                         '/ray/gui/patchbay/update_group_position',
                         view_num, *ptv_dict[new].to_arg_list()) 
 
     def send_pretty_names_to_patchbay_daemon(self, pdmn_port: int):
-        addr = Address('localhost', pdmn_port, proto=TCP)
-        pretty_names = self.pretty_names_config | self.pretty_names_session
+        pretty_names = self.pretty_names_config | self.pretty_names_session        
+        ms = MegaSend()
         
         for group_name, ptov in pretty_names.groups.items():
-            self.send_tcp(
-                addr, '/ray/patchbay/group_pretty_name',
-                group_name, ptov.pretty, ptov.above_pretty)
+            ms.add('/ray/patchbay/group_pretty_name',
+                   group_name, ptov.pretty, ptov.above_pretty)
         
-        self.send_tcp(addr, '/ray/patchbay/group_pretty_name', '', '', '')
+        ms.add('/ray/patchbay/group_pretty_name', '', '', '')
 
         for port_name, ptov in pretty_names.ports.items():
-            self.send_tcp(
-                addr, '/ray/patchbay/port_pretty_name',
-                port_name, ptov.pretty, ptov.above_pretty)
+            ms.add('/ray/patchbay/port_pretty_name',
+                   port_name, ptov.pretty, ptov.above_pretty)
         
-        self.send_tcp(addr, '/ray/patchbay/port_pretty_name', '', '', '')
+        ms.add('/ray/patchbay/port_pretty_name', '', '', '')
+        
+        self.mega_send(pdmn_port, ms.messages)

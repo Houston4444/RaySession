@@ -50,6 +50,9 @@ class RayPatchbayCallbacker(Callbacker):
         if group is None:
             return
 
+        if not group.uuid:
+            save_in_jack = False
+
         self.mng.send_to_daemon(
             '/ray/server/patchbay/save_group_pretty_name',
             group.name, pretty_name, group.mdata_pretty_name,
@@ -60,6 +63,9 @@ class RayPatchbayCallbacker(Callbacker):
         port = self.mng.get_port_from_id(group_id, port_id)
         if port is None:
             return
+        
+        if not port.type.is_jack:
+            save_in_jack = False
         
         self.mng.send_to_daemon(
             '/ray/server/patchbay/save_port_pretty_name',
@@ -127,11 +133,11 @@ class RayPatchbayManager(PatchbayManager):
 
     @staticmethod
     def send_to_patchbay_daemon(*args):
-        tcp_server = GuiTcpThread.instance()
-        if not tcp_server:
+        server = GuiServerThread.instance()
+        if not server:
             return
 
-        tcp_server.send_patchbay_daemon(*args)
+        server.send_patchbay_daemon(*args)
 
     @staticmethod
     def send_to_daemon(*args):
@@ -225,8 +231,8 @@ class RayPatchbayManager(PatchbayManager):
 
     def change_buffersize(self, buffer_size: int):
         super().change_buffersize(buffer_size)
-        self.send_to_patchbay_daemon('/ray/patchbay/set_buffer_size',
-                                     buffer_size)
+        self.send_to_patchbay_daemon(
+            '/ray/patchbay/set_buffer_size', buffer_size)
 
     def filter_groups(self, text: str, n_select=0) -> int:
         ''' semi hides groups not matching with text

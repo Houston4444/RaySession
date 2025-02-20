@@ -2,7 +2,7 @@
 # Imports from standard library
 import logging
 from typing import TYPE_CHECKING, Optional
-from osclib import Address
+from osclib import Address, Message
 
 # Imports from src/shared
 import ray
@@ -75,6 +75,27 @@ class ServerSender:
             return
         
         tcp_server.send_patchbay_daemon(*args)
+
+    def mega_send(self, addr, messages: list[Message]):
+        server = OscServerThread.get_instance()
+        if not server:
+            return
+        
+        server.mega_send(addr, messages)
+
+    def mega_send_patchbay(self, messages: list[Message]):
+        server = OscServerThread.get_instance()
+        if not server:
+            return
+        
+        server.mega_send_patchbay(messages)
+
+    def mega_send_gui(self, messages: list[Message]):
+        server = OscServerThread.get_instance()
+        if not server:
+            return
+        
+        server.mega_send_gui(messages)
 
     def send_gui(self, *args):
         if self.is_dummy:
