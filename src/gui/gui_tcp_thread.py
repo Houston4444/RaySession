@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional
 from patshared import GroupPos
 
 import ray
-from osclib import (ServerThread, get_free_osc_port, TCP,
+from osclib import (BunServer, get_free_osc_port, TCP,
                     get_net_url, make_method, Address)
 
 if TYPE_CHECKING:
@@ -40,10 +40,10 @@ def ray_method(path, types):
     return decorated
 
 
-class GuiTcpThread(ServerThread):
+class GuiTcpThread(BunServer):
     def __init__(self):
         port = get_free_osc_port(5644, TCP)
-        ServerThread.__init__(self, port, TCP)
+        BunServer.__init__(self, port, TCP)
 
         global _instance
         _instance = self

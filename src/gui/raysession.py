@@ -6,6 +6,7 @@ import sys
 import time
 import os
 from pathlib import Path
+from threading import Thread
 
 root_path = Path(__file__).parents[2]
 
@@ -36,6 +37,7 @@ from gui_session import SignaledSession
 # prevent to not find icon at startup
 import resources_rc
 
+terminate = False
 
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -53,6 +55,15 @@ def signal_handler(sig, frame):
 
         session.main_win.terminate_request = True
         session.daemon_manager.stop()
+    global terminate
+    terminate = True
+
+def server_checker():
+    while True:
+        server.recv(20)
+        if terminate:
+            break
+
 
 if True:
     set_proc_name(ray.APP_TITLE.lower())
@@ -115,15 +126,17 @@ if True:
     #build session
     server = GuiServerThread()
     tcp_server = GuiTcpThread()
-    session = SignaledSession()
+    servers_thread = Thread(target=server_checker, daemon=True)
+    session = SignaledSession(servers_thread)
 
     app.exec()
 
-    # TODO find something better, sometimes program never ends without.
-    time.sleep(0.002)
+    # print('hoppoh')
+    # # TODO find something better, sometimes program never ends without.
+    # time.sleep(0.002)
 
-    server.stop()
-    tcp_server.stop()
+    # server.stop()
+    # print('server stopped')
+    # tcp_server.stop()
+    # print('tcp servre stopped')
     session.quit()
-    del session
-    del app

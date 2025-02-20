@@ -414,6 +414,18 @@ class MainObject:
             self.samplerate = self.client.samplerate
             self.buffer_size = self.client.blocksize
             self.osc_server.server_restarted()
+        
+        if self.pretty_tmp_path.exists():
+            try:
+                with open(self.pretty_tmp_path, 'r') as f:
+                    pretty_dict = json.load(f)
+                    if isinstance(pretty_dict, dict):
+                        self.uuid_pretty_names.clear()
+                        for key, value in pretty_dict.items():
+                            self.uuid_pretty_names[int(key)] = value
+            except:
+                pass
+        print(self.uuid_pretty_names)
 
     def is_terminate(self) -> bool:
         if self.terminate or self.osc_server.is_terminate():
@@ -642,7 +654,7 @@ class MainObject:
         
         return mdata_pretty_name
 
-    def set_all_pretty_names(self):
+    def set_all_pretty_names(self):        
         if not self.jack_running:
             return
         
@@ -656,7 +668,7 @@ class MainObject:
         for port in self.client.get_ports():
             port_uuid = port.uuid
             port_name = port.name
-            mdata_pretty_name = self.jack_pretty_name_if_not_mine(port_uuid)                
+            mdata_pretty_name = self.jack_pretty_name_if_not_mine(port_uuid)
             pretty_name = self.pretty_names.pretty_port(
                 port_name, mdata_pretty_name)
             if pretty_name:
@@ -679,7 +691,7 @@ class MainObject:
         self.set_pretty_name(True, client_name, client_uuid, pretty_name)
         self.save_exp_pretty_names()
 
-    def write_port_pretty_name(self, port_name: str, pretty_name: str):
+    def write_port_pretty_name(self, port_name: str, pretty_name: str):        
         if not self.jack_running:
             return
 

@@ -2,8 +2,7 @@
 import logging
 from typing import TYPE_CHECKING
     
-from osclib import (
-    Server, Address, are_on_same_machine, get_free_osc_port, TCP)
+from osclib import BunServer, Address, MegaSend, are_on_same_machine
 
 if TYPE_CHECKING:
     from src.patchbay_daemon.patchbay_daemon import MainObject, TransportPosition
@@ -12,11 +11,11 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
-class OscJackPatch(Server):
+class OscJackPatch(BunServer):
     def __init__(self, main_object: 'MainObject'):
-        tcp_port = get_free_osc_port(4444, TCP)
+        # tcp_port = get_free_osc_port(4444, TCP)
         
-        Server.__init__(self, tcp_port, TCP)
+        BunServer.__init__(self)
         self.add_method('/ray/patchbay/add_gui', 's',
                         self._ray_patchbay_add_gui)
         self.add_method('/ray/patchbay/gui_disannounce', 's',
@@ -164,41 +163,39 @@ class OscJackPatch(Server):
             self.send(src_addr, *args)
 
     def send_distant_data(self, src_addrs: list[Address]):
-        self.multi_send(src_addrs, '/ray/gui/patchbay/big_packets', 0)
+        ms = MegaSend()        
+        ms.add('/ray/gui/patchbay/big_packets', 0)
         
         for port in self.port_list:
-            self.multi_send(src_addrs, '/ray/gui/patchbay/port_added',
-                            port.name, port.type, port.flags, port.uuid)
+            ms.add('/ray/gui/patchbay/port_added',
+                   port.name, port.type, port.flags, port.uuid)
         
         for client_name, client_uuid in self.client_name_uuids.items():
-            self.multi_send(src_addrs, '/ray/gui/patchbay/client_name_and_uuid',
-                            client_name, client_uuid)
+            ms.add('/ray/gui/patchbay/client_name_and_uuid',
+                   client_name, client_uuid)
         
         for connection in self.connection_list:
-            self.multi_send(src_addrs,
-                            '/ray/gui/patchbay/connection_added',
-                            connection[0], connection[1])
+            ms.add('/ray/gui/patchbay/connection_added',
+                   connection[0], connection[1])
         
         for uuid, key_dict in self.metadatas.items():
             for key, value in key_dict.items():
-                self.multi_send(
-                    src_addrs,
-                    '/ray/gui/patchbay/metadata_updated',
-                    uuid, key, value)
+                ms.add('/ray/gui/patchbay/metadata_updated',
+                       uuid, key, value)
             
         if self.main_object.alsa_mng is not None:
             alsa_mng = self.main_object.alsa_mng
             for port in alsa_mng.parse_ports_and_flags():
-                self.multi_send(src_addrs, '/ray/gui/patchbay/port_added',
-                                port.name, port.type, port.flags, port.uuid)
+                ms.add('/ray/gui/patchbay/port_added',
+                       port.name, port.type, port.flags, port.uuid)
                 
             for conn in alsa_mng.parse_connections():
-                self.multi_send(
-                    src_addrs,
-                    '/ray/gui/patchbay/connection_added',
-                    *conn)
-                
-        self.multi_send(src_addrs, '/ray/gui/patchbay/big_packets', 1)
+                ms.add('/ray/gui/patchbay/connection_added', *conn)
+        
+        ms.add('/ray/gui/patchbay/big_packets', 1)
+        
+        print('tchichi', src_addrs)
+        self.mega_send(src_addrs, ms.messages)
 
     def add_gui(self, gui_url: str):
         gui_addr = Address(gui_url)
@@ -319,7 +316,7 @@ class OscJackPatch(Server):
     def ask_pretty_names(self, port: int):
         self.pretty_names.clear()
 
-        addr = Address('localhost', port, proto=TCP)
+        addr = Address(port)
 
         try:
             self.send(addr, '/ray/server/ask_for_pretty_names', self.port)

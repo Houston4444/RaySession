@@ -20,6 +20,7 @@ os.environ['QT_API'] = QT_API
 # other imports from standard library
 import logging
 import signal
+from threading import Thread
 
 # third party imports
 from qtpy.QtCore import (
@@ -46,11 +47,21 @@ _log_handler.setFormatter(logging.Formatter(
 _logger.setLevel(logging.DEBUG)
 _logger.addHandler(_log_handler)
 
+_terminate = False
 
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         session.terminate()
+        global _terminate
+        _terminate = True
 
+
+def server_checker():    
+    while True:
+        server.recv(10)
+        
+        if _terminate:
+            break
 
 # if __name__ == '__main__':
 if True:
@@ -124,7 +135,9 @@ if True:
                            'port %i is not free, try another one\n')
                 % CommandLineArgs.osc_port)
             sys.exit()
-    server.start()    
+
+    server_checker_thread = Thread(target=server_checker)
+    server_checker_thread.start()
 
     # print server url
     Terminal.message('URL : %s' % get_net_url(server.port))
@@ -204,8 +217,11 @@ if True:
     RS.settings.sync()
 
     # stop the servers
-    server.stop()
+    # server.stop()
     tcp_server.stop()
+
+    _terminate = True
+    server_checker_thread.join()
 
     del tcp_server
     del server

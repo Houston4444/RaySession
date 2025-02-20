@@ -6,14 +6,17 @@ import sys
 sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
 
-from osclib import Server, Address, OscPack
+from osclib import Bundle, Message, Server, Address, OscPack
 
 
 class Server(Server):
-    def __init__(self):
+    def __init__(self, port=0):
         self._path_funcs = dict[str, Callable]()
         self._path_str_only = dict[str, int]()
-        super().__init__()
+        if port:
+            super().__init__(port)
+        else:
+            super().__init__()
         
         self._uscat = 64
         
@@ -26,7 +29,7 @@ class Server(Server):
         ''')
     
     def __generic_callback(self, osp: OscPack):
-        print('__generic_callback', osp.path, osp.args, osp.types)
+        print('__generic_callback', osp.path, osp.args, osp.types, osp.src_addr.url)
     
     def __director(self, path: str, args: list, types: str,
                    src_addr: Address, user_data=None):
@@ -118,10 +121,10 @@ class Server(Server):
                 self.add_method(path, type_, self.__director)
         
     def _chala(self, osp: OscPack):
-        print('makkko', osp.path, osp.args, osp.types)
+        print('makkko', osp.path, osp.args, osp.types, osp.src_addr.url)
         
     def _zoefpf(self, osp: OscPack):
-        print('zoeof', osp.path, osp.args, osp.types)
+        print('zoeof', osp.path, osp.args, osp.types, osp.src_addr.url)
         string: str
         intit: int
         strug: str
@@ -137,16 +140,26 @@ class Server(Server):
         
         print('eporfff', string, intit)
 
-server_1 = Server()
+server_1 = Server(7894)
 server_2 = Server()
+print('server 1 hostname', server_1.url, server_2.url)
+
 
 server_2.send(server_1.port, '/chala', 'roux', 'slip')
 server_2.send(server_1.port, '/zoefpf', 'soij', 14, 45)
 server_2.send(server_1.port, '/zoefpf', 'soij', 14, 'joif', 24)
 server_2.send(server_1.port, '/quedustring', 'soil', 'mmalz', 'ldam')
 server_2.send(server_1.port, '/quedustring', 'soila', 24, 'zoak', 'aps')
-server_2.send(server_1.port, '/quedurien')
+server_2.send('osc.udp://127.0.1.1:7894/', '/quedurien')
+bundle = Bundle()
+bundle.add(Message('/chala', 'sou', 'siir'))
+bundle.add(Message('/chala', 'soux', 'siirx'))
+bundle.add(Message('/chala', 'soupo', 'siirpo'))
+server_2.send(server_1.port, bundle)
 
-while True:
+import time
+
+for i in range(20):
     server_1.recv(10)
+    print('moga', time.time())
     # server_2.recv(10)

@@ -314,7 +314,7 @@ class SignaledSession(OperatingSession):
         from qtpy.QtCore import QProcess
         QProcess.startDetached(
             'ray-patch_dmn',
-            [str(server.port), str(tcp_server.port), osp.args[0]])
+            [str(server.port), str(server.port), osp.src_addr.url])
 
     def _ray_server_abort_copy(self, osp: OscPack):
         self.file_copier.abort()

@@ -99,3 +99,5 @@ Pretty names dans RS:
 review server_sender and called methods
 
 
+fix: load session patch hides/restore boxes,
+    but there are present before and after.
