@@ -71,7 +71,7 @@ class ServerThread(__AbstractServer):
 
 class MegaSend():
     '''container for multiple messages to send
-    with `mega_send` method of a BunServer'''
+    with `mega_send` method of a BunServer (or BunServerThread)'''
     messages: list[Message]
     ref: str
     def __init__(self, ref: str): ...
@@ -79,6 +79,9 @@ class MegaSend():
 
 
 class BunServer(Server):
+    '''Class inheriting liblo.Server. Provides a server
+    with the mega_send feature, which allows to send massive
+    bundle of messages, in several sends if needed.'''
     def mega_send(
             self,
             url: Union[str, int, Address, list[Union[str, int, Address]]],
@@ -86,6 +89,9 @@ class BunServer(Server):
         ...
 
 class BunServerThread(Server):
+    '''Class inheriting liblo.Server. Provides a server thread
+    with the mega_send feature, which allows to send massive
+    bundle of messages, in several sends if needed.'''
     def mega_send(
             self,
             url: Union[str, int, Address, list[Union[str, int, Address]]],

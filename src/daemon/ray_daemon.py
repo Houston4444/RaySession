@@ -34,7 +34,6 @@ from daemon_tools import (
     get_code_root, init_daemon_tools, RS,
     CommandLineArgs, ArgParser, Terminal)
 from osc_server_thread import OscServerThread
-from tcp_server_thread import TcpServerThread
 import multi_daemon_file
 from session_signaled import SignaledSession
 
@@ -107,21 +106,16 @@ if True:
     # create session
     session = SignaledSession(session_root_path)
 
-    tcp_server = TcpServerThread(session)
-    tcp_server.start()
-
     # create and start server
     if CommandLineArgs.findfreeport:
         server = OscServerThread(
             session,
-            osc_num=get_free_osc_port(CommandLineArgs.osc_port),
-            tcp_port=tcp_server.port)
+            osc_num=get_free_osc_port(CommandLineArgs.osc_port))
     else:
         if is_osc_port_free(CommandLineArgs.osc_port):
             server = OscServerThread(
                 session,
-                osc_num=CommandLineArgs.osc_port,
-                tcp_port=tcp_server.port)
+                osc_num=CommandLineArgs.osc_port)
         else:
             sys.stderr.write(
                 _translate('daemon',
@@ -209,5 +203,4 @@ if True:
 
     # stop the servers
     server.stop()
-    tcp_server.stop()
 

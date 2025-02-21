@@ -1313,6 +1313,9 @@ class OscServerThread(ClientCommunicating):
         for gui in self.gui_list:
             self.send(gui.addr, *args)
 
+    def send_patchbay_dmn(self, *args):
+        self.send(self.patchbay_dmn_port, *args)
+
     def mega_send_gui(self, mega_send: MegaSend):
         self.mega_send([gui.addr for gui in self.gui_list], mega_send)
         
