@@ -12,7 +12,6 @@ import ray
 
 # Local imports
 from gui_tools import CommandLineArgs
-from gui_tcp_thread import GuiTcpThread
 
 if TYPE_CHECKING:
     from gui_session import SignaledSession
@@ -201,16 +200,11 @@ class GuiServerThread(BunServerThread):
 
         (version, server_status_int, options,
          session_root, is_net_free, tcp_url) = args
-        
-        tcp_server = GuiTcpThread.instance()
-        if tcp_server is not None:
-            tcp_server.set_daemon_tcp_url(tcp_url)
 
         if (self.session is not None
                 and self.session.main_win is not None
                 and self.session.main_win.waiting_for_patchbay):
-            tcp_url = get_net_url(GuiTcpThread.instance().port, protocol=TCP)
-            self.send(src_addr, '/ray/server/ask_for_patchbay', tcp_url)
+            self.send(src_addr, '/ray/server/ask_for_patchbay', '')
             self.session.main_win.waiting_for_patchbay = False
 
         self.signaler.daemon_announce.emit(
@@ -349,18 +343,10 @@ class GuiServerThread(BunServerThread):
 
     def announce(self):
         _logger.debug('raysession_sends announce')
-
-        NSM_URL = os.getenv('NSM_URL')
-        if not NSM_URL:
-            NSM_URL = ''
-
-        tcp_server = GuiTcpThread.instance()
-        tcp_url = get_net_url(tcp_server.port, protocol=TCP)
-
         self.send(self.daemon_manager.address, '/ray/server/gui_announce',
                   ray.VERSION, int(CommandLineArgs.under_nsm),
-                  NSM_URL, os.getpid(),
-                  CommandLineArgs.net_daemon_id, tcp_url)
+                  os.getenv('NSM_URL', ''), os.getpid(),
+                  CommandLineArgs.net_daemon_id, '')
 
     def disannounce(self, src_addr):
         self.send(src_addr, '/ray/server/gui_disannounce')

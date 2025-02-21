@@ -689,7 +689,7 @@ class SignaledSession(OperatingSession):
             osp.path, [template_name, net], osp.src_addr)
 
     def _ray_server_get_session_preview(self, osp: OscPack):
-        session_name = osp.args[1]
+        session_name = osp.args[0]
         server = self.get_server()
         if server is None:
             return
@@ -1989,7 +1989,7 @@ class DummySession(OperatingSession):
         # except:
         #     _logger.error(f'unable to make a TCP address with {osp.args[0]}')
         
-        session_name = osp.args[1]
+        session_name = osp.args[0]
         self.steps_order = [(self.preload, session_name, False),
                             self.take_place,
                             self.load,

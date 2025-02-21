@@ -28,7 +28,6 @@ from jack_renaming_tools import group_belongs_to_client
 
 # Local imports
 from gui_server_thread import GuiServerThread
-from gui_tcp_thread import GuiTcpThread
 from gui_tools import RS, get_code_root
 
 if TYPE_CHECKING:

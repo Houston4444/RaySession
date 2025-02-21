@@ -3,16 +3,13 @@
 # Imports from standard library
 import signal
 import sys
-import time
 import os
 from pathlib import Path
-from threading import Thread
 
 root_path = Path(__file__).parents[2]
 
 # allow libs to be imported from submodules and shared
-sys.path.insert(1, str(root_path / 'HoustonPatchbay/source'))
-sys.path.insert(1, str(root_path / 'pyjacklib'))
+sys.path.insert(1, str(root_path / 'HoustonPatchbay' / 'source'))
 sys.path.insert(1, str(root_path / 'src' / 'shared'))
 
 from qt_api import QT_API
@@ -31,7 +28,6 @@ from proc_name import set_proc_name
 from gui_tools import (ArgParser, CommandLineArgs,
                        init_gui_tools, get_code_root)
 from gui_server_thread import GuiServerThread
-from gui_tcp_thread import GuiTcpThread
 from gui_session import SignaledSession
 
 # prevent to not find icon at startup
@@ -118,7 +114,6 @@ if True:
 
     #build session
     server = GuiServerThread()
-    tcp_server = GuiTcpThread()
     session = SignaledSession()
 
     app.exec()

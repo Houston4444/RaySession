@@ -844,9 +844,11 @@ class OscServerThread(ClientCommunicating):
                       "Invalid session name.")
             return False
 
-    @osp_method('/ray/server/get_session_preview', 'ss')
+    @osp_method('/ray/server/get_session_preview', 's')
     def rayServerGetSessionPreview(self, osp: OscPack):
-        self.session_to_preview = osp.args[1]
+        sess_prev: str
+        sess_prev = osp.args[0]
+        self.session_to_preview = sess_prev
     
     @osp_method('/ray/server/script_info', 's')
     def rayServerScriptInfo(self, osp: OscPack):
@@ -1426,7 +1428,6 @@ class OscServerThread(ClientCommunicating):
         multi_daemon_file.update()
 
         Terminal.message(f"GUI connected at {gui.addr.url}")
-        Terminal.message(f"             and {gui.tcp_addr.url}")
 
     def announce_controller(self, control_address: Address):
         controller = Controller()
