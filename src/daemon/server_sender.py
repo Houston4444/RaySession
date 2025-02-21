@@ -5,11 +5,10 @@ from typing import TYPE_CHECKING, Optional
 
 # Imports from src/shared
 import ray
-from osclib import Address, MegaSend, Message
+from osclib import MegaSend
 
 # Local imports
 from osc_server_thread import OscServerThread, Gui
-from tcp_server_thread import TcpServerThread
 from daemon_tools import AppTemplate
 
 if TYPE_CHECKING:
@@ -48,33 +47,12 @@ class ServerSender:
 
         server.send(*args)
 
-    def send_tcp(self, *args):
-        if self.is_dummy:
-            return
-        
-        self.send_tcp_even_dummy(*args)
-
-    def send_tcp_even_dummy(self, *args):
-        tcp_server = TcpServerThread.instance()
-        if not tcp_server:
-            return
-        
-        try:
-            tcp_server.send(*args)
-        except BaseException as e:
-            url: str = args[0]
-            if isinstance(url, Address):
-                url = url.url
-            
-            _logger.error(f'Failed to send TCP to {url}, {args[1:]}')
-            _logger.error(str(e))
-
     def send_patchbay_daemon(self, *args):
-        tcp_server = TcpServerThread.instance()
-        if not tcp_server:
+        server = OscServerThread.get_instance()
+        if not server:
             return
         
-        tcp_server.send_patchbay_daemon(*args)
+        server.send_patchbay_dmn(*args)
 
     def mega_send(self, addr, mega_send: MegaSend):
         server = OscServerThread.get_instance()
@@ -106,39 +84,6 @@ class ServerSender:
             return
 
         server.send_gui(*args)
-
-    def send_tcp_gui(self, *args):
-        if self.is_dummy:
-            return
-        
-        server = OscServerThread.get_instance()
-        tcp_server = TcpServerThread.instance()
-        
-        if server is None or tcp_server is None:
-            return
-        
-        rm_tcps = list[Gui]()
-        
-        for gui in server.gui_list:
-            if gui.tcp_addr is None:
-                continue
-
-            try:
-                tcp_server.send(gui.tcp_addr, *args)
-            except OSError:
-                _logger.warning(
-                    f'Failed to send TCP message to GUI at {gui.tcp_addr.url}')
-                rm_tcps.append(gui.tcp_addr)
-            except BaseException as e:
-                _logger.warning(
-                    f'Failed to send TCP message to GUI at {gui.tcp_addr.url}')
-                _logger.error(str(e))
-                
-        for gui in rm_tcps:
-            for gui_ in server.gui_list:
-                if gui_ is gui:
-                    gui_.tcp_addr = None
-                    break
 
     def send_gui_message(self, message:str):
         self.send_gui('/ray/gui/server/message', message)

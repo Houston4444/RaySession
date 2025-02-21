@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from threading import Thread
-from typing import Union, overload
+from typing import Optional, Union, overload
 import logging
 import random
 import socket
@@ -198,14 +198,22 @@ class BunServerThread(Server):
         self._sem_dict = _SemDict()
         
         self._terminated = False
-        self._thread = Thread(target=self._main_loop)
+        self._thread: Optional[Thread] = None
     
     def start(self):
+        if self._thread is not None and self._thread.is_alive():
+            return
+        
+        if self._thread is None:
+            self._thread = Thread(target=self._main_loop)
         self._thread.start()
         
     def stop(self):
+        if self._thread is None:
+            return
         self._terminated = True
         self._thread.join()
+        self._thread = None
     
     def _main_loop(self):
         while not self._terminated:

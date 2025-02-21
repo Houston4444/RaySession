@@ -17,7 +17,6 @@ import ray
 import xdg
 
 # Local imports
-from tcp_server_thread import TcpServerThread
 from client import Client
 import multi_daemon_file
 from signaler import Signaler
@@ -299,10 +298,6 @@ class SignaledSession(OperatingSession):
         # if we are here, it means that we need a patchbay daemon to run
         server = self.get_server()
         if server is None:
-            return
-        
-        tcp_server = TcpServerThread.instance()
-        if tcp_server is None:
             return
         
         # self._patchbay_internal = InternalClient(
@@ -1988,17 +1983,17 @@ class DummySession(OperatingSession):
     def ray_server_get_session_preview(self, osp: OscPack,
                                        folder_sizes: list):
         
-        try:
-            tcp_addr = Address(osp.args[0])
-            assert tcp_addr.protocol == TCP
-        except:
-            _logger.error(f'unable to make a TCP address with {osp.args[0]}')
+        # try:
+        #     tcp_addr = Address(osp.args[0])
+        #     assert tcp_addr.protocol == TCP
+        # except:
+        #     _logger.error(f'unable to make a TCP address with {osp.args[0]}')
         
         session_name = osp.args[1]
         self.steps_order = [(self.preload, session_name, False),
                             self.take_place,
                             self.load,
-                            (self.send_preview, tcp_addr, osp.src_addr, folder_sizes)]
+                            (self.send_preview, osp.src_addr, folder_sizes)]
         self.next_function()
     
     def dummy_load(self, session_name):

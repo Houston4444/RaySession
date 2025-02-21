@@ -18,7 +18,7 @@ from io import BytesIO
 from qtpy.QtCore import QCoreApplication, QTimer
 
 # Imports from src/shared
-from osclib import Address, is_valid_osc_url, are_same_osc_port
+from osclib import Address, MegaSend, is_valid_osc_url, are_same_osc_port
 import ray
 from xml_tools import XmlElement
 
@@ -2434,10 +2434,10 @@ for better organization.""")
     def clear_clients_substep3(self, src_addr, src_path):
         self.answer(src_addr, src_path, 'Clients cleared')
         
-    def send_preview(self, src_addr: Address, udp_addr: Address, folder_sizes: list):
+    def send_preview(self, src_addr: Address, folder_sizes: list):
         def send_state(preview_state: ray.PreviewState):
-            self.send_tcp_even_dummy(
-                src_addr,  '/ray/gui/preview/state',
+            self.send_even_dummy(
+                src_addr, '/ray/gui/preview/state',
                 preview_state.value) 
         
         if self.path is None:
@@ -2448,40 +2448,42 @@ for better organization.""")
         if server and server.session_to_preview != self.get_short_path():
             return
         
-        self.send_tcp_even_dummy(src_addr, '/ray/gui/preview/clear')        
+        self.send_even_dummy(src_addr, '/ray/gui/preview/clear')        
         send_state(ray.PreviewState.STARTED)
         
-        self.send_tcp_even_dummy(
+        self.send_even_dummy(
             src_addr, '/ray/gui/preview/notes', self.notes)
         send_state(ray.PreviewState.NOTES)
 
+        ms = MegaSend('session_preview')
+
         for client in self.clients:
-            self.send_tcp_even_dummy(
-                src_addr, '/ray/gui/preview/client/update',
-                *client.spread())
+            ms.add('/ray/gui/preview/client/update',
+                   *client.spread())
             
-            self.send_tcp_even_dummy(
-                src_addr, '/ray/gui/preview/client/is_started',
-                client.client_id, int(client.auto_start))
+            ms.add('/ray/gui/preview/client/is_started',
+                   client.client_id, int(client.auto_start))
             
             if client.is_ray_hack:
-                self.send_tcp_even_dummy(
-                    src_addr, '/ray/gui/preview/client/ray_hack_update',
-                    client.client_id, *client.ray_hack.spread())
+                ms.add('/ray/gui/preview/client/ray_hack_update',
+                       client.client_id, *client.ray_hack.spread())
 
             elif client.is_ray_net:
-                self.send_tcp_even_dummy(
-                    src_addr, '/ray/gui/preview/client/ray_net_update',
-                    client.client_id, *client.ray_net.spread())
+                ms.add('/ray/gui/preview/client/ray_net_update',
+                       client.client_id, *client.ray_net.spread())
+                
+        self.mega_send(src_addr, ms)
 
         send_state(ray.PreviewState.CLIENTS)
 
+        mss = MegaSend('snapshots_preview')
+
         for snapshot in self.snapshoter.list():
-            self.send_tcp_even_dummy(
-                src_addr, '/ray/gui/preview/snapshot', snapshot)
+            mss.add('/ray/gui/preview/snapshot', snapshot)
+        
+        self.mega_send(src_addr, mss)
         
         send_state(ray.PreviewState.SNAPSHOTS)
-
 
         # re check here if preview has not changed before calculate session size
         if server and server.session_to_preview != self.get_short_path():
@@ -2547,12 +2549,12 @@ for better organization.""")
                  'modified': modified,
                  'size': total_size})
 
-        self.send_tcp_even_dummy(
+        self.send_even_dummy(
             src_addr, '/ray/gui/preview/session_size', total_size)
 
         send_state(ray.PreviewState.FOLDER_SIZE)
 
-        self.send_tcp_even_dummy(
+        self.send_even_dummy(
             src_addr, '/ray/gui/preview/state', 2)
 
         del self
