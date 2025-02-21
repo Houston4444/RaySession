@@ -17,7 +17,6 @@ import ray
 
 # Local imports
 from gui_server_thread import GuiServerThread
-from gui_tcp_thread import GuiTcpThread
 from gui_tools import CommandLineArgs, ErrDaemon, _translate
 
 if TYPE_CHECKING:
@@ -153,8 +152,7 @@ class DaemonManager(QObject):
         if self.main_win is not None and self.main_win.waiting_for_patchbay:
             self.main_win.waiting_for_patchbay = False
             server = GuiServerThread.instance()
-            tcp_server = GuiTcpThread.instance()
-            server.to_daemon('/ray/server/ask_for_patchbay', tcp_server.url)
+            server.to_daemon('/ray/server/ask_for_patchbay', '')
 
         self.signaler.daemon_announce_ok.emit()
         self.session.set_daemon_options(options)
@@ -230,12 +228,8 @@ class DaemonManager(QObject):
             _logger.error(
                 "impossible for GUI to launch daemon. server is missing.")
 
-        tcp_server = GuiTcpThread.instance()
-        tcp_url = get_net_url(tcp_server.port, protocol=TCP)
-
         # start process
         arguments = ['--gui-url', str(server.url),
-                     '--gui-tcp-url', tcp_url,
                      '--gui-pid', str(os.getpid()),
                      '--osc-port', str(self._port),
                      '--session-root', CommandLineArgs.session_root]
