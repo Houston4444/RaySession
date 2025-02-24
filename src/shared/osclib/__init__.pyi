@@ -8,7 +8,13 @@ TCP: int
 
 
 class Message:
+    path: str
+    args: list[int | float | str | bytes]
+    types: str
+    
     def __init__(self, path: str, *args: tuple) -> None: ...
+    def deserialise(self, buf) -> 'Message': ...
+    def serialise(self): ...
     def add(self, *args: tuple): ...
 
 
@@ -86,6 +92,10 @@ class BunServer(Server):
             self,
             url: Union[str, int, Address, list[Union[str, int, Address]]],
             mega_send: MegaSend) -> bool:
+        '''send a undeterminated number of messages to another BunServer
+        (or BunServerThread).
+        
+        !!! the recepter MUST be a Bunserver or a BunServerThread !!!'''
         ...
 
 class BunServerThread(Server):
@@ -96,6 +106,10 @@ class BunServerThread(Server):
             self,
             url: Union[str, int, Address, list[Union[str, int, Address]]],
             mega_send: MegaSend) -> bool:
+        '''send a undeterminated number of messages to another BunServer
+        (or BunServerThread).
+        
+        !!! the recepter MUST be a Bunserver or a BunServerThread !!!'''
         ...
     def start(): ...
     def stop(): ...

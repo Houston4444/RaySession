@@ -7,7 +7,7 @@ import logging
 from patshared import GroupPos
 
 # Imports from src/shared
-from osclib import BunServerThread, get_net_url, make_method, TCP, Address
+from osclib import BunServerThread, make_method, Address
 import ray
 
 # Local imports
@@ -144,8 +144,7 @@ class GuiServerThread(BunServerThread):
             ('/ray/gui/preview/client/ray_net_update', 's' + ray.RayNet.sisi()),
             ('/ray/gui/preview/client/is_started', 'si'),
             ('/ray/gui/preview/snapshot', 's'),
-            ('/ray/gui/preview/session_size', 'h'),
-            ('/ray/gui/preview/state', 'i')):
+            ('/ray/gui/preview/session_size', 'h')):
                 self.add_method(path_types[0], path_types[1],
                                 self._generic_callback)
 
