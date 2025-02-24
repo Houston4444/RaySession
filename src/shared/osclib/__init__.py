@@ -215,13 +215,12 @@ class BunServer(Server):
     def add_method(
             self, path: str, typespec: str, func: Callable[[], None],
             user_data=None):
-        print('BunServer add_method', path, typespec)
         self._methods_adder.add(path, typespec, func, user_data)
         return super().add_method(path, typespec, func, user_data=user_data)
     
     def __bundle_head(
             self, path: str, args: list[int], types: str, src_addr: Address):
-        self.send(src_addr, '/bundle_head_reply', *args)
+        self.send(src_addr, '/_bundle_head_reply', *args)
     
     def __bundle_head_reply(
             self, path: str, args: list[int], types: str, src_addr: Address):
@@ -241,7 +240,6 @@ class BunServer(Server):
                         num += 1
             return num
 
-        print('__local mega', path, args)
         ms_path = args[0]
         try:
             with open(ms_path, 'r') as f:
@@ -272,7 +270,6 @@ class BunServer(Server):
             
             types_func = self._methods_adder.get_func(path, args_)
             if types_func is None:
-                print('No met for', path, args_)
                 continue
             
             types, func = types_func
@@ -283,11 +280,8 @@ class BunServer(Server):
                 case 3: func(path, args_, types)
                 case 4: func(path, args_, types, src_addr)
                 case 5: func(path, args_, types, src_addr, None)
-
-    # def mega_send(self, url: str, mega_send: MegaSend, pack=10) -> bool:
-    #     return _mega_send(self, url, mega_send, pack=pack)
     
-    def _mega_send(self: 'Union[BunServer, BunServerThread]',
+    def mega_send(self: 'Union[BunServer, BunServerThread]',
                url: Union[str, int, Address, list[str | int | Address]],
                mega_send: MegaSend, pack=10) -> bool:
         bundler_id = random.randrange(0x100, 0x100000)
