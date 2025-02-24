@@ -1,12 +1,16 @@
 from dataclasses import dataclass
 from threading import Thread
-from typing import Optional, Union, overload
+from typing import Optional, Union, Any
 import logging
 import random
 import socket
 import subprocess
 from typing import Callable
 import time
+import json
+import tempfile
+import os
+from inspect import signature, _ParameterKind
 
 _logger = logging.getLogger(__name__)
     
@@ -33,98 +37,15 @@ class MegaSend:
     messages: list[Message]
     def __init__(self, ref: str):
         self.ref = ref
+        self.tuples = list[tuple[int | str | float]]()
         self.messages = list[Message]()
     
     def add(self, *args):
+        self.tuples.append(args)
         self.messages.append(Message(*args))
 
 
-def _mega_send(server: 'Union[BunServer, BunServerThread]',
-               url: Union[str, int, Address, list[str | int | Address]],
-               mega_send: MegaSend, pack=10) -> bool:
-    bundler_id = random.randrange(0x100, 0x100000)
-    bundle_number_self = random.randrange(0x100, 0x100000)
-    
-    i = 0
-    stocked_msgs = list[Message]()
-    pending_msgs = list[Message]()
-    head_msg_self = Message('/bundle_head', bundle_number_self, 0, 0)
-    head_msg = Message('/bundle_head', bundler_id, 0, 0)
-    
-    urls = url if isinstance(url, list) else [url]
-    if not urls:
-        return True
 
-    messages = mega_send.messages
-
-    # first, try to send all in one bundle
-    all_ok = True   
-    urls_done = set[str, int, Address]()
-    for url in urls:
-        try:
-            server.send(url, Bundle(*[head_msg]+messages))
-            assert server.wait_mega_send_answer(bundler_id, mega_send.ref)
-            urls_done.add(url)
-        except:
-            all_ok = False
-            break
-    
-    if all_ok:
-        return True
-    
-    for url in urls_done:
-        urls.remove(url)
-    
-    for message in messages:
-        pending_msgs.append(message)
-
-        if (i+1) % pack == 0:
-            success = True
-            try:
-                server.send(
-                    _RESERVED_PORT,
-                    Bundle(*[head_msg_self]+stocked_msgs+pending_msgs))
-            except:
-                success = False
-            
-            if success:
-                stocked_msgs += pending_msgs
-                pending_msgs.clear()
-            else:
-                if stocked_msgs:
-                    for url in urls:
-                        server.send(url, Bundle(*[head_msg]+stocked_msgs))
-                        server.wait_mega_send_answer(bundler_id, mega_send.ref)
-                    
-                    stocked_msgs.clear()
-                else:
-                    _logger.error(
-                        f'pack of {pack} is too high '
-                        f'for mega_send {mega_send.ref}')
-                    return False
-        
-        i += 1
-    
-    success = True
-
-    try:
-        server.send(_RESERVED_PORT,
-                    Bundle(*[head_msg_self]+stocked_msgs+pending_msgs))
-    except:
-        success = False
-        
-    if success:
-        for url in urls:
-            server.send(url, Bundle(*[head_msg]+stocked_msgs+pending_msgs))
-            server.wait_mega_send_answer(bundler_id, mega_send.ref)
-    else:
-        for url in urls:
-            server.send(url, Bundle(*[head_msg]+stocked_msgs))
-            server.wait_mega_send_answer(bundler_id, mega_send.ref)
-            server.send(url, Bundle(*[head_msg]+pending_msgs))
-            server.wait_mega_send_answer(bundler_id)
-    
-    return True
 
 
 class _SemDict(dict[int, int]):
@@ -146,30 +67,333 @@ class _SemDict(dict[int, int]):
     def count(self, bundler_id: int) -> int:
         return self.get(bundler_id, 0)
 
+
+class MethodsAdder:
+    def __init__(self):
+        self._dict = dict[str | None, list[tuple[str | None, Callable]]]()
+        
+    def _already_associated_by(
+            self, path: str, typespec: str) \
+                -> Optional[tuple[str | None, str | None]]:
+        '''check if add_method path types association will be effective or
+        already managed by a previous add_method.
+        
+        return None if Ok, otherwise return tuple[path, types]'''
+        none_type_funcs = self._dict.get(None)
+        if none_type_funcs is not None:
+            for types, func_ in none_type_funcs:
+                if types is None:
+                    return (None, None)
+                if types == typespec:
+                    return (None, types)
+
+        type_funcs = self._dict.get(path)
+        if type_funcs is None:
+            return None
+        
+        for types, func_ in type_funcs:
+            if types is None:
+                return (path, None)
+            if types == typespec:
+                return (path, types)
+        
+        return None
+        
+    def add(self, path: str, typespec: str, func: Callable[[], None],
+            user_data=None):
+        already_ass = self._already_associated_by(path, typespec)
+        if already_ass is not None:
+            ass_path, ass_types = already_ass
+            _logger.warning(
+                f"Add method {path} '{typespec}' {func.__name__} "
+                f"Will not be effective, association is already defined"
+                f" by {ass_path} '{ass_types}'.")
+            return
+        
+        type_funcs = self._dict.get(path)
+        if type_funcs is None:
+            self._dict[path] = [(typespec, func)]
+        else:
+            type_funcs.append((typespec, func))
+
+    def _get_types_with_args(self, args: list) -> str:
+        'for funcs with "None" types in add_method, create the types string'
+        types = ''
+        for arg in args:
+            if isinstance(arg, str):
+                types += 's'
+            elif isinstance(arg, float):
+                types += 'f'
+            elif arg is True:
+                types += 'T'
+            elif arg is False:
+                types += 'F'
+            elif isinstance(arg, int):
+                if - 0x80000000 <= arg < 0x80000000:
+                    types += 'i'
+                else:
+                    types += 'h'
+            elif arg is None:
+                types += 'N'
+            else:
+                types += 'b'
+        
+        return types
+
+    def _get_func_in_list(
+            self, args: list[int | float | str | bytes],
+            type_funcs: list[tuple[str, Callable[[], None]]]) \
+                -> Optional[tuple[str, Callable[[], None]]]:
+        for types, func in type_funcs:
+            if types is None:
+                return self._get_types_with_args(args), func
+            
+            if len(types) != len(args):
+                continue
+            
+            for i in range(len(types)):
+                c = types[i]
+                a = args[i]
+                match c:
+                    case 'c':
+                        if not (isinstance(a, str) and len(a) == 1):
+                            break
+                    case 's'|'S':
+                        if not isinstance(a, str):
+                            break
+                    case 'f'|'d'|'t'|'I':
+                        if not isinstance(a, float):
+                            break
+                    case 'i'|'h':
+                        if not isinstance(a, int):
+                            break
+                    case 'b':
+                        if not isinstance(a, bytes):
+                            break
+                    case 'N':
+                        if a is not None:
+                            break
+                    case 'T':
+                        if a is not True:
+                            break
+                    case 'F':
+                        if a is not False:
+                            break
+                    case 'm':
+                        if not (isinstance(a, tuple)
+                                and len(a) == 4):
+                            break
+            else:
+                return types, func
+
+    def get_func(
+            self, path: str, args: list[int | float | str | bytes]) \
+                -> Optional[tuple[str, Callable[[], None]]]:
+        type_funcs = self._dict.get(path)
+        if type_funcs is not None:
+            types_func = self._get_func_in_list(args, type_funcs)
+            if types_func is not None:
+                return types_func
+        
+        none_type_funcs = self._dict.get(None)
+        if none_type_funcs is not None:
+            return self._get_func_in_list(args, none_type_funcs)
+                            
         
 class BunServer(Server):
     def __init__(self, *args, **kwargs):
+        # self._methods = dict[str | None, list[tuple[str | None, Callable]]]()
+        self._methods_adder = MethodsAdder()
         super().__init__(*args, **kwargs)
-        
-        self._methods = dict[tuple[str, str], Callable]()
-        
-        self.add_method('/bundle_head', 'iii', self._bundle_head)
-        self.add_method('/bundle_head_reply', 'iii', self._bundle_head_reply)
+
+        self.add_method('/_bundle_head', 'iii', self.__bundle_head)
+        self.add_method('/_bundle_head_reply', 'iii', self.__bundle_head_reply)
+        self.add_method('/_local_mega_send', 's', self.__local_mega_send)
         
         self._sem_dict = _SemDict()
     
-    # def add_method(self, path: str, typespec: str, func: Callable, user_data=None):
-    #     # self._methods[(path, typespec)] = func
-    #     return super().add_method(path, typespec, func, user_data=user_data)
+    def add_method(
+            self, path: str, typespec: str, func: Callable[[], None],
+            user_data=None):
+        print('BunServer add_method', path, typespec)
+        self._methods_adder.add(path, typespec, func, user_data)
+        return super().add_method(path, typespec, func, user_data=user_data)
     
-    def _bundle_head(self, path, args, types, src_addr):
-        self.send(src_addr.port, '/bundle_head_reply', *args)
+    def __bundle_head(
+            self, path: str, args: list[int], types: str, src_addr: Address):
+        self.send(src_addr, '/bundle_head_reply', *args)
     
-    def _bundle_head_reply(self, path, args, types, src_addr):
+    def __bundle_head_reply(
+            self, path: str, args: list[int], types: str, src_addr: Address):
         self._sem_dict.head_received(args[0])
     
-    def mega_send(self, url: str, mega_send: MegaSend, pack=10) -> bool:
-        return _mega_send(self, url, mega_send, pack=pack)
+    def __local_mega_send(
+            self, path: str, args: list[str], types: str, src_addr: Address):
+        def number_of_args(func: Callable) -> int:
+            sig = signature(func)
+            num = 0
+            for param in sig.parameters.values():
+                match param.kind:
+                    case _ParameterKind.VAR_POSITIONAL:
+                        return 5
+                    case (_ParameterKind.POSITIONAL_ONLY
+                          | _ParameterKind.POSITIONAL_OR_KEYWORD):
+                        num += 1
+            return num
+
+        print('__local mega', path, args)
+        ms_path = args[0]
+        try:
+            with open(ms_path, 'r') as f:
+                events: list[tuple[str, float, int]] = json.load(f)
+        except BaseException as e:
+            _logger.error(
+                f'__local_mega_send: failed to open file "{ms_path}"')
+            return
+        
+        if not isinstance(events, list):
+            _logger.error(
+                f'__local_mega_send: wrong data in "{ms_path}"')
+            return
+        
+        try:
+            os.path.remove(ms_path)
+        except:
+            _logger.info(
+                f'__local_mega_send: Failed to remove tmp file {ms_path}')
+        
+        for event in events:
+            if not (isinstance(event, list) and len(event) > 0):
+                _logger.error(
+                    f'__local_mega_send: wrong data in "{ms_path}"')
+                return
+            
+            path, args_ = event[0], event[1:]
+            
+            types_func = self._methods_adder.get_func(path, args_)
+            if types_func is None:
+                print('No met for', path, args_)
+                continue
+            
+            types, func = types_func
+                    
+            match number_of_args(func):
+                case 1: func(path)
+                case 2: func(path, args_)
+                case 3: func(path, args_, types)
+                case 4: func(path, args_, types, src_addr)
+                case 5: func(path, args_, types, src_addr, None)
+
+    # def mega_send(self, url: str, mega_send: MegaSend, pack=10) -> bool:
+    #     return _mega_send(self, url, mega_send, pack=pack)
+    
+    def _mega_send(self: 'Union[BunServer, BunServerThread]',
+               url: Union[str, int, Address, list[str | int | Address]],
+               mega_send: MegaSend, pack=10) -> bool:
+        bundler_id = random.randrange(0x100, 0x100000)
+        bundle_number_self = random.randrange(0x100, 0x100000)
+        
+        i = 0
+        stocked_msgs = list[Message]()
+        pending_msgs = list[Message]()
+        head_msg_self = Message('/_bundle_head', bundle_number_self, 0, 0)
+        head_msg = Message('/_bundle_head', bundler_id, 0, 0)
+        
+        urls = url if isinstance(url, list) else [url]
+        if not urls:
+            return True
+
+        messages = mega_send.messages
+
+        # first, try to send all in one bundle
+        all_ok = True   
+        urls_done = set[str, int, Address]()
+        for url in urls:
+            try:
+                self.send(url, Bundle(*[head_msg]+messages))
+                assert self.wait_mega_send_answer(bundler_id, mega_send.ref)
+                urls_done.add(url)
+            except:
+                all_ok = False
+                break
+        
+        if all_ok:
+            return True
+        
+        for url in urls_done:
+            urls.remove(url)
+        urls_done.clear()
+        
+        for url in urls:
+            is_local = False
+            if isinstance(url, Address):
+                is_local = are_on_same_machine(self.url, url.url)
+            elif isinstance(url, str):
+                is_local = are_on_same_machine(self.url, url)
+            elif isinstance(url, int):
+                is_local = True
+            
+            if is_local:
+                tmp_file = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
+                tmp_file.write(json.dumps(mega_send.tuples))
+                tmp_file.seek(0)
+                self.send(url, '/_local_mega_send', tmp_file.name)
+                urls_done.add(url)
+                
+        for url in urls_done:
+            urls.remove(url)
+        
+        for message in messages:
+            pending_msgs.append(message)
+
+            if (i+1) % pack == 0:
+                success = True
+                try:
+                    self.send(
+                        _RESERVED_PORT,
+                        Bundle(*[head_msg_self]+stocked_msgs+pending_msgs))
+                except:
+                    success = False
+                
+                if success:
+                    stocked_msgs += pending_msgs
+                    pending_msgs.clear()
+                else:
+                    if stocked_msgs:
+                        for url in urls:
+                            self.send(url, Bundle(*[head_msg]+stocked_msgs))
+                            self.wait_mega_send_answer(
+                                bundler_id, mega_send.ref)
+                        
+                        stocked_msgs.clear()
+                    else:
+                        _logger.error(
+                            f'pack of {pack} is too high '
+                            f'for mega_send {mega_send.ref}')
+                        return False
+            
+            i += 1
+        
+        success = True
+
+        try:
+            self.send(_RESERVED_PORT,
+                        Bundle(*[head_msg_self]+stocked_msgs+pending_msgs))
+        except:
+            success = False
+            
+        if success:
+            for url in urls:
+                self.send(url, Bundle(*[head_msg]+stocked_msgs+pending_msgs))
+                self.wait_mega_send_answer(bundler_id, mega_send.ref)
+        else:
+            for url in urls:
+                self.send(url, Bundle(*[head_msg]+stocked_msgs))
+                self.wait_mega_send_answer(bundler_id, mega_send.ref)
+                self.send(url, Bundle(*[head_msg]+pending_msgs))
+                self.wait_mega_send_answer(bundler_id)
+        
+        return True
     
     def wait_mega_send_answer(self, bundler_id: int, ref: str) -> bool:
         self._sem_dict.add_waiting(bundler_id)
@@ -186,16 +410,9 @@ class BunServer(Server):
         return True
  
  
-class BunServerThread(Server):
+class BunServerThread(BunServer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # self._methods = dict[tuple(str, str), Callable]()
-        
-        self.add_method('/bundle_head', 'iii', self._bundle_head)
-        self.add_method('/bundle_head_reply', 'iii', self._bundle_head_reply)
-        
-        self._sem_dict = _SemDict()
         
         self._terminated = False
         self._thread: Optional[Thread] = None
@@ -218,19 +435,6 @@ class BunServerThread(Server):
     def _main_loop(self):
         while not self._terminated:
             self.recv(10)
-    
-    # def add_method(self, path: str, typespec: str, func: Callable, user_data=None):
-    #     self._methods[(path, typespec)] = func
-    #     return super().add_method(path, typespec, func, user_data)
-    
-    def _bundle_head(self, path, args, types, src_addr):
-        self.send(src_addr, '/bundle_head_reply', *args)
-    
-    def _bundle_head_reply(self, path, args, types, src_addr):
-        self._sem_dict.head_received(args[0])
-    
-    def mega_send(self, url: str, mega_send: MegaSend, pack=100) -> bool:
-        return _mega_send(self, url, mega_send, pack=pack)
 
     def wait_mega_send_answer(self, bundler_id: int, ref: str) -> bool:
         self._sem_dict.add_waiting(bundler_id)
