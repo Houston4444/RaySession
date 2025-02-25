@@ -155,7 +155,7 @@ def are_on_same_machine(url1: str, url2: str) -> bool:
     if address1.hostname == address2.hostname:
         return True
 
-    def resolve_host(name):
+    def resolve_host(name: str) -> str:
         for family in (socket.AF_INET, socket.AF_INET6):
             result = None
             try:
@@ -164,7 +164,7 @@ def are_on_same_machine(url1: str, url2: str) -> bool:
                 continue
             if result:
                 return result[0][4][0]
-        return host
+        return name
 
     host1 = resolve_host(address1.hostname)
     host2 = resolve_host(address2.hostname)
@@ -179,7 +179,8 @@ def are_on_same_machine(url1: str, url2: str) -> bool:
 
     ip = get_machine_192()
 
-    if ip not in (resolve_host(address1.hostname), resolve_host(address2.hostname)):
+    if ip not in (resolve_host(address1.hostname),
+                  resolve_host(address2.hostname)):
         return False
 
     if ip == resolve_host(address1.hostname) == resolve_host(address2.hostname):
