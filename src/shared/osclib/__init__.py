@@ -152,115 +152,45 @@ def are_on_same_machine(url1: str, url2: str) -> bool:
     except BaseException:
         return False
 
-    hostname_1, hostname_2 = address1.hostname, address2.hostname
-    if hostname_1 == hostname_2:
+    if address1.hostname == address2.hostname:
         return True
 
-    # check if address is IPv6 (between brackets)
-    addr1_ipv6, addr2_ipv6 = False, False
-    if hostname_1.startswith('[') and hostname_1.endswith(']'):
-        hostname_1 = hostname_1[1:-1]
-        addr1_ipv6 = True
-    if hostname_2.startswith('[') and hostname_2.endswith(']'):
-        hostname_2 = hostname_2[1:-1]
-        addr2_ipv6 = True
-
-    if addr1_ipv6 and addr2_ipv6:
-        try:
-            if (socket.gethostbyaddr(hostname_1)
-                    == socket.gethostbyaddr(hostname_2)):
-                return True
-
-        except BaseException as e:
-            _logger.warning(
-                f'Failed to find IPv6 host by addr '
-                f'for "{hostname_1}" or "{hostname_2}"\n'
-                f'{str(e)}')
-
-    elif not addr1_ipv6 and not addr2_ipv6:
-        try:
-            addr1 = socket.gethostbyname(hostname_1)
-            addr2 = socket.gethostbyname(hostname_2)
-            if (addr1 in ('127.0.0.1', '127.0.1.1')
-                    and addr2 in ('127.0.0.1', '127.0.1.1')):
-                return True
-
+    def resolve_host(name: str) -> str:
+        for family in (socket.AF_INET, socket.AF_INET6):
+            result = None
             try:
-                if socket.gethostbyaddr(addr1) == socket.gethostbyaddr(addr2):
-                    return True
+                result = socket.getaddrinfo(name, None, family, socket.SOCK_DGRAM)
+            except socket.gaierror:
+                continue
+            if result:
+                return result[0][4][0]
+        return name
 
-            except BaseException as e:
-                _logger.warning(
-                    f'Failed to find host by addr'
-                    f'for "{addr1}" or "{addr2}"\n'
-                    f'{str(e)}')
+    host1 = resolve_host(address1.hostname)
+    host2 = resolve_host(address2.hostname)
 
-        except BaseException as e:
-            _logger.warning(
-                f'Failed to find host by name for '
-                f'"{hostname_1}" or "{hostname_2}"\n'
-                f'{str(e)}')
-            
-    # if (socket.gethostbyname(address1.hostname)
-    #             in ('127.0.0.1', '127.0.1.1')
-    #         and socket.gethostbyname(address2.hostname)
-    #             in ('127.0.0.1', '127.0.1.1')):
-    #     return True            
-    
-    elif addr1_ipv6:
-        try:
-            if (socket.gethostbyaddr(hostname_1)[0] == 'localhost'
-                    and socket.gethostbyname(hostname_2)
-                        in ('127.0.0.1', '127.0.1.1')):
-                return True
+    if host1 == host2:
+        return True
 
-        except BaseException as e:
-            _logger.warning(str(e))
-            
-    elif addr2_ipv6:
-        try:
-            if (socket.gethostbyaddr(hostname_2)[0] == 'localhost'
-                    and socket.gethostbyname(hostname_1)
-                        in ('127.0.0.1', '127.0.1.1')):
-                return True
+    LOCAL_ADDRS = ('127.0.0.1', '127.0.1.1', '::1')
 
-        except BaseException as e:
-            _logger.warning(str(e))
+    if host1 in LOCAL_ADDRS and host2 in LOCAL_ADDRS:
+        return True
 
     ip = get_machine_192()
 
-    print('are_on_same_machine', url1, url2)
-    print(f"    '{ip}' '{address1.hostname}' '{address2.hostname}")
-
-    if ip not in (hostname_1, hostname_2):
+    if ip not in (resolve_host(address1.hostname),
+                  resolve_host(address2.hostname)):
         return False
 
-    try:
-        if (ip == socket.gethostbyname(hostname_1)
-                == socket.gethostbyname(hostname_2)):
-            # on some systems (as fedora),
-            # socket.gethostbyname returns a 192.168.. url
+    if ip == resolve_host(address1.hostname) == resolve_host(address2.hostname):
+        # on some systems (as fedora),
+        # socket.gethostbyname returns a 192.168.. url
+        return True
+
+    for host in (address1.hostname, address2.hostname):
+        if resolve_host(host) in LOCAL_ADDRS and host == ip:
             return True
-
-    except BaseException as e:
-        _logger.warning(str(e))
-
-    try:
-        if (socket.gethostbyname(hostname_1)
-                in ('127.0.0.1', '127.0.1.1')):
-            if hostname_2 == ip:
-                return True
-
-    except BaseException as e:
-        _logger.warning(str(e))
-
-    try:
-        if (socket.gethostbyname(hostname_2)
-                in ('127.0.0.1', '127.0.1.1')):
-            if hostname_1 == ip:
-                return True
-    except BaseException as e:
-        _logger.warning(str(e))
 
     return False
 
