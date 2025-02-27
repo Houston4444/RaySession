@@ -2,8 +2,8 @@ import os
 import shutil
 
 def which_terminal(title='', hold=True) -> list[str]:
-        """ returns the most appropriate terminal executable
-            with its arguments """
+        '''return the most appropriate terminal executable
+        with its arguments'''
         terminals = ['gnome-terminal', 'mate-terminal', 'xfce4-terminal',
                      'xterm', 'konsole', 'lxterminal', 'rxvt']
         current_desktop = os.getenv('XDG_CURRENT_DESKTOP')

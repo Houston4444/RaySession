@@ -142,7 +142,7 @@ class FileCopier(ServerSender):
                         except:
                             if self._abort_src_addr and self._abort_src_path:
                                 self.send(self._abort_src_addr,
-                                          '/error_minor',
+                                          '/minor_error',
                                           self._abort_src_path,
                                           ray.Err.SUBPROCESS_CRASH,
                                           "%s hasn't been removed !")
