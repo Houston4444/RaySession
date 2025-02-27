@@ -170,7 +170,8 @@ class Snapshoter(QObject):
 
         return tagdate
 
-    def _write_history_file(self, date_str: str, snapshot_name='', rewind_snapshot='') -> int:
+    def _write_history_file(
+            self, date_str: str, snapshot_name='', rewind_snapshot='') -> int:
         if self.session.path is None:
             return ray.Err.NO_SESSION_OPEN
 

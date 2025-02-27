@@ -1419,11 +1419,11 @@ class MainWindow(QMainWindow):
                 if status is ray.ClientStatus.READY:
                     self._raise_window()
 
-    def print_message(self, message):
+    def print_message(self, message: str):
         self.ui.textEditMessages.appendPlainText(
             time.strftime("%H:%M:%S") + '  ' + message)
 
-    def rename_session(self, session_name, session_path):
+    def rename_session(self, session_name: str, session_path: str):
         if session_name:
             self.setWindowTitle('%s - %s' % (ray.APP_TITLE, session_name))
             self.ui.stackedWidgetSessionName.set_text(session_name)

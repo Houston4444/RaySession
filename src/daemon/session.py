@@ -175,7 +175,8 @@ class Session(ServerSender):
                 self.recent_sessions[self.root].remove(long_name)
             self.recent_sessions[self.root].insert(0, long_name)
             if len(self.recent_sessions[self.root]) > 7:
-                self.recent_sessions[self.root] = self.recent_sessions[self.root][:7]
+                self.recent_sessions[self.root] = \
+                    self.recent_sessions[self.root][:7]
             self.send_gui('/ray/gui/server/recent_sessions',
                           *self.recent_sessions[self.root])
 
@@ -240,9 +241,8 @@ class Session(ServerSender):
         client.terminate_scripts()
         client.terminate()
 
-        if not client in self.clients:
+        if client not in self.clients:
             raise NameError("No client to remove: %s" % client.client_id)
-            return
 
         client.set_status(ray.ClientStatus.REMOVED)
 

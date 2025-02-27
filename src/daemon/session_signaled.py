@@ -836,9 +836,10 @@ class SignaledSession(OperatingSession):
                               "An operation pending.")
                     return
             else:
-                self._send_error(ray.Err.ABORT_ORDERED,
-                               _translate('GUIMSG',
-                                    'abort ordered from elsewhere, sorry !'))
+                self._send_error(
+                    ray.Err.ABORT_ORDERED,
+                    _translate('GUIMSG',
+                               'abort ordered from elsewhere, sorry !'))
 
         self.remember_osc_args(osp.path, osp.args, osp.src_addr)
         self.steps_order = [(self.close, True), self.abort_done]
@@ -908,7 +909,8 @@ class SignaledSession(OperatingSession):
                             self.duplicate_done]
 
     def _ray_session_duplicate_only(self, osp: OscPack):
-        session_to_load, new_session, sess_root = osp.args
+        osp_args: tuple[str, str, str] = osp.args
+        session_to_load, new_session, sess_root = osp_args
         spath = Path(sess_root) / new_session
 
         if spath.exists():

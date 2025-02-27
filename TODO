@@ -101,3 +101,13 @@ review server_sender and called methods
 
 fix: load session patch hides/restore boxes,
     but there are present before and after.
+
+PATHS: 
+    import osc_paths as p
+    import osc_paths.ray as r
+    import osc_paths.ray.gui as rg
+    import osc_paths.ray.gui as rgp
+    import osc_paths.nsm as nsm
+
+    dict généré pour les liaisons gui_session et session_signaled
+    plutôt que les methodes basées sur le nom du path (en gardant les mêmes)
