@@ -324,7 +324,7 @@ def rebuild_templates_database(session: 'Session', base: str):
                 continue
 
         if not has_nsm_desktop:
-            # search for '/nsm/server/announce' in executable binary
+            # search for NSM.server.ANNOUNCE in executable binary
             # if it is asked by "check_nsm_bin" key
             if c.bool('check_nsm_bin'):
                 which_exec = shutil.which(executable)

@@ -10,6 +10,7 @@ from qtpy.QtCore import QProcess, QProcessEnvironment, QCoreApplication
 # Imports from src/shared
 from osclib import OscPack
 import ray
+import osc_paths as p
 
 # Local imports
 from daemon_tools import Terminal, highlight_text
@@ -55,7 +56,7 @@ class Scripter(ServerSender):
                             highlight_text(self.get_path()), exit_code)
 
             if self._src_addr:
-                self.send(self._src_addr, '/error', self._src_path,
+                self.send(self._src_addr, p.ERROR, self._src_path,
                           - exit_code, message)
         else:
             self.send_gui_message(
@@ -63,7 +64,7 @@ class Scripter(ServerSender):
                     % highlight_text(self.get_path()))
 
             if self._src_addr:
-                self.send(self._src_addr, '/reply',
+                self.send(self._src_addr, p.REPLY,
                           self._src_path, 'script finished')
 
     def _standard_error(self):

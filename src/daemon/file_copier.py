@@ -12,6 +12,9 @@ from qtpy.QtCore import QProcess, QTimer
 # Imports from src/shared
 from osclib import Address
 import ray
+import osc_paths as p
+import osc_paths.ray as R
+import osc_paths.ray.gui as RG
 
 # Local imports
 from server_sender import ServerSender
@@ -99,15 +102,15 @@ class FileCopier(ServerSender):
             progress = float(current_size/self._copy_size)
 
             if self._client_id:
-                self.send_gui('/ray/gui/client/progress',
+                self.send_gui(RG.client.PROGRESS,
                               self._client_id, progress)
             elif self.session.session_id:
-                self.send_gui('/ray/gui/server/parrallel_copy_progress',
+                self.send_gui(RG.server.PARRALLEL_COPY_PROGRESS,
                               self.session.session_id, progress)
             else:
-                self.send_gui('/ray/gui/server/progress', progress)
+                self.send_gui(RG.server.PROGRESS, progress)
 
-            self.session.osc_reply('/ray/net_daemon/duplicate_state', progress)
+            self.session.osc_reply(R.net_daemon.DUPLICATE_STATE, progress)
 
         self._timer.start()
 
@@ -142,7 +145,7 @@ class FileCopier(ServerSender):
                         except:
                             if self._abort_src_addr and self._abort_src_path:
                                 self.send(self._abort_src_addr,
-                                          '/minor_error',
+                                          p.MINOR_ERROR,
                                           self._abort_src_path,
                                           ray.Err.SUBPROCESS_CRASH,
                                           "%s hasn't been removed !")
@@ -255,10 +258,10 @@ class FileCopier(ServerSender):
 
     def _send_copy_state_to_gui(self, state: int):
         if self.session.session_id:
-            self.send_gui('/ray/gui/server/parrallel_copy_state',
+            self.send_gui(RG.server.PARRALLEL_COPY_STATE,
                           self.session.session_id, state)
         else:
-            self.send_gui('/ray/gui/server/copying', state)
+            self.send_gui(RG.server.COPYING, state)
 
     def start_client_copy(
             self, client_id: str, src_list: list[Path], dest_dir: Path,

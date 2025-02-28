@@ -14,6 +14,9 @@ from qtpy.QtCore import QProcess, QObject, QDateTime
 # Imports from src/shared
 import ray
 from xml_tools import XmlElement
+import osc_paths as p
+import osc_paths.ray as R
+import osc_paths.ray.gui as RG
 
 # Local imports
 from daemon_tools import Terminal
@@ -90,7 +93,7 @@ class Snapshoter(QObject):
 
         self._n_file_treated += len(standard_output.splitlines()) -1
 
-        self.session.send_gui('/ray/gui/server/progress',
+        self.session.send_gui(RG.server.PROGRESS,
                               self._n_file_treated / self._n_file_changed)
 
     def _standard_error(self):
@@ -394,8 +397,8 @@ class Snapshoter(QObject):
 
             # not really a reply, not strong.
             self.session.send_gui(
-                '/reply',
-                '/ray/session/list_snapshots',
+                p.REPLY,
+                R.session.LIST_SNAPSHOTS,
                 full_ref_for_gui(ref, self._next_snapshot_name,
                                  self._rw_snapshot))
 

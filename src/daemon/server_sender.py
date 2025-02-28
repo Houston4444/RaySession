@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Optional
 # Imports from src/shared
 import ray
 from osclib import MegaSend
+import osc_paths as p
+import osc_paths.ray.gui as RG
 
 # Local imports
 from osc_server_thread import OscServerThread, Gui
@@ -86,7 +88,7 @@ class ServerSender:
         server.send_gui(*args)
 
     def send_gui_message(self, message:str):
-        self.send_gui('/ray/gui/server/message', message)
+        self.send_gui(RG.server.MESSAGE, message)
 
         server = OscServerThread.get_instance()
         if server:
@@ -147,9 +149,9 @@ class ServerSender:
 
     def answer(self, src_addr, src_path, message, err=ray.Err.OK):
         if err == ray.Err.OK:
-            self.send(src_addr, '/reply', src_path, message)
+            self.send(src_addr, p.REPLY, src_path, message)
         else:
-            self.send(src_addr, '/error', src_path, err, message)
+            self.send(src_addr, p.ERROR, src_path, err, message)
 
     def has_server_option(self, option: ray.Option) -> bool:
         server = self.get_server()

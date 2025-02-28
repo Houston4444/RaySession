@@ -21,6 +21,10 @@ import ray
 import xdg
 from xml_tools import XmlElement
 from expand_vars import expand_vars
+import osc_paths as p
+import osc_paths.nsm as NSM
+import osc_paths.ray as R
+import osc_paths.ray.gui as RG
 
 # Local imports
 from server_sender import ServerSender
@@ -280,7 +284,7 @@ class Client(ServerSender, ray.ClientData):
                             % self.gui_msg_style())
 
                 self.session.osc_reply(
-                    "/error", self.session.osc_path,
+                    p.ERROR, self.session.osc_path,
                     ray.Err.LAUNCH_FAILED, error_message)
 
             for osc_slot in (OscSrc.START, OscSrc.OPEN):
@@ -294,7 +298,7 @@ class Client(ServerSender, ray.ClientData):
 
     def _stopped_since_long(self):
         self._stopped_since_long_ = True
-        self.send_gui('/ray/gui/client/still_running', self.client_id)
+        self.send_gui(RG.client.STILL_RUNNING, self.client_id)
 
     def _send_reply_to_caller(self, slot: OscSrc, message: str):
         osp = self._osc_srcs.get(slot)
@@ -329,7 +333,7 @@ class Client(ServerSender, ray.ClientData):
                 % self.gui_msg_style())
 
     def _send_status_to_gui(self):
-        self.send_gui('/ray/gui/client/status', self.client_id, self.status.value)
+        self.send_gui(RG.client.STATUS, self.client_id, self.status.value)
 
     def _net_daemon_out_of_time(self):
         self.ray_net.duplicate_state = -1
@@ -1140,7 +1144,7 @@ class Client(ServerSender, ray.ClientData):
                             and not self.start_gui_hidden
                             and not self.gui_visible
                             and not self.gui_has_been_visible):
-                        self.send_to_self_address('/nsm/client/show_optional_gui')
+                        self.send_to_self_address(NSM.client.SHOW_OPTIONAL_GUI)
 
             self.set_status(ray.ClientStatus.READY)
 
@@ -1204,7 +1208,7 @@ class Client(ServerSender, ray.ClientData):
 
         if (status is ray.ClientStatus.COPY
                 or self.session.file_copier.is_active(self.client_id)):
-            self.send_gui("/ray/gui/client/status", self.client_id,
+            self.send_gui(RG.client.STATUS, self.client_id,
                           ray.ClientStatus.COPY.value)
 
     def get_prefix_string(self) -> str:
@@ -1453,19 +1457,19 @@ class Client(ServerSender, ray.ClientData):
             tru_sig = signal.Signals(sig)
         except:
             if src_addr:
-                self.send(src_addr, '/error', src_path,
+                self.send(src_addr, p.ERROR, src_path,
                           ray.Err.GENERAL_ERROR, 'invalid signal %i' % sig)
             return
 
         if not self.is_running():
             if src_addr:
-                self.send(src_addr, '/error', src_path,
+                self.send(src_addr, p.ERROR, src_path,
                           ray.Err.GENERAL_ERROR,
                           'client %s is not running' % self.client_id)
             return
 
         os.kill(self.pid, sig)
-        self.send(src_addr, '/reply', src_path, 'signal sent')
+        self.send(src_addr, p.REPLY, src_path, 'signal sent')
 
     def is_running(self):
         if self.is_external:
@@ -1545,7 +1549,7 @@ class Client(ServerSender, ray.ClientData):
         if self.nsm_active and not self.is_dumb_client():
             self.message("Telling client %s that session is loaded."
                          % self.name)
-            self.send_to_self_address("/nsm/client/session_is_loaded")
+            self.send_to_self_address(NSM.client.SESSION_IS_LOADED)
 
     def can_save_now(self):
         if self.is_ray_hack:
@@ -1592,7 +1596,7 @@ class Client(ServerSender, ray.ClientData):
 
             elif self.can_save_now():
                 self.message("Telling %s to save" % self.name)
-                self.send_to_self_address("/nsm/client/save")
+                self.send_to_self_address(NSM.client.SAVE)
 
                 self.pending_command = ray.Command.SAVE
                 self.set_status(ray.ClientStatus.SAVE)
@@ -1657,7 +1661,7 @@ class Client(ServerSender, ray.ClientData):
             self.terminate()
             self.set_status(ray.ClientStatus.QUIT)
         else:
-            self.send_gui("/ray/gui/client/status", self.client_id,
+            self.send_gui(RG.client.STATUS, self.client_id,
                           ray.ClientStatus.REMOVED)
 
     def eat_attributes(self, new_client: 'Client'):
@@ -1693,14 +1697,14 @@ class Client(ServerSender, ray.ClientData):
             f'Commanding {self.name} to switch "{client_project_path}"')
 
         self.send_to_self_address(
-            "/nsm/client/open", str(client_project_path),
+            NSM.client.OPEN, str(client_project_path),
             self.session.name, self.jack_client_name)
 
         self.pending_command = ray.Command.OPEN
         
         self.set_status(ray.ClientStatus.SWITCH)
         if self.is_capable_of(':optional-gui:'):
-            self.send_gui('/ray/gui/client/gui_visible',
+            self.send_gui(RG.client.GUI_VISIBLE,
                            self.client_id, int(self.gui_visible))
 
     def can_switch_with(self, other_client: 'Client')->bool:
@@ -1724,14 +1728,14 @@ class Client(ServerSender, ray.ClientData):
                     and self.running_arguments == other_client.arguments)
 
     def send_gui_client_properties(self, removed=False):
-        ad = '/ray/gui/client/update' if self.sent_to_gui else '/ray/gui/client/new'
-        hack_ad = '/ray/gui/client/ray_hack_update'
-        net_ad = '/ray/gui/client/ray_net_update'
+        ad = RG.client.UPDATE if self.sent_to_gui else RG.client.NEW
+        hack_ad = RG.client.RAY_HACK_UPDATE
+        net_ad = RG.client.RAY_NET_UPDATE
 
         if removed:
-            ad = '/ray/gui/trash/add'
-            hack_ad = '/ray/gui/trash/ray_hack_update'
-            net_ad = '/ray/gui/trash/ray_net_update'
+            ad = RG.trash.ADD
+            hack_ad = RG.trash.RAY_HACK_UPDATE
+            net_ad = RG.trash.RAY_NET_UPDATE
 
         self.send_gui(ad, *ray.ClientData.spread_client(self))
 
@@ -2040,7 +2044,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                     net_session_root = self.ray_net.running_session_root
 
                 self.send(Address(self.ray_net.daemon_url),
-                          '/ray/server/save_session_template',
+                          R.server.SAVE_SESSION_TEMPLATE,
                           self.session.name,
                           template_name,
                           net_session_root)
@@ -2065,7 +2069,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         spath = self.session.path
         
         if spath is None:
-            self.send(src_addr, '/error', osc_path, ray.Err.NO_SESSION_OPEN,
+            self.send(src_addr, p.ERROR, osc_path, ray.Err.NO_SESSION_OPEN,
                       "impossible to eat other session client, "
                       "no session open")
             return
@@ -2078,7 +2082,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             tmp_work_dir.mkdir(parents=True)
         except:
             self.send(
-                src_addr, '/error', osc_path, ray.Err.CREATE_FAILED,
+                src_addr, p.ERROR, osc_path, ray.Err.CREATE_FAILED,
                 f"impossible to make a tmp workdir at {tmp_work_dir}. Abort.")
             self.session._remove_client(self)
             return
@@ -2123,7 +2127,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                     'client'
                     'fail to remove temp directory %s. sorry.' % tmp_work_dir)
 
-        self.send(src_addr, '/reply', osc_path,
+        self.send(src_addr, p.REPLY, osc_path,
                   "Client copied from another session")
 
         if self.auto_start:
@@ -2135,7 +2139,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                                          client, tmp_work_dir):
         shutil.rmtree(tmp_work_dir)
         self.session._remove_client(self)
-        self.send(src_addr, '/error', osc_path, ray.Err.COPY_ABORTED,
+        self.send(src_addr, p.ERROR, osc_path, ray.Err.COPY_ABORTED,
                   "Copy was aborted by user")
 
     def change_prefix(self, prefix_mode: int, custom_prefix: str):
@@ -2314,7 +2318,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             self.session.send_initial_monitor(self.addr)
         self.session.send_monitor_client_update(self)
 
-        self.send(osp.src_addr, "/nsm/client/open", client_project_path,
+        self.send(osp.src_addr, NSM.client.OPEN, client_project_path,
                   self.session.name, self.jack_client_name)
 
         self.pending_command = ray.Command.OPEN
