@@ -14,6 +14,7 @@ from qtpy.QtWidgets import QApplication
 from osclib import (TCP, Address, get_free_osc_port,
                     get_net_url, verified_address)
 import ray
+import osc_paths.ray as r
 
 # Local imports
 from gui_server_thread import GuiServerThread
@@ -147,12 +148,12 @@ class DaemonManager(QObject):
                 self.main_win.set_nsm_locked(True)
         elif CommandLineArgs.under_nsm:
             server = GuiServerThread.instance()
-            server.to_daemon('/ray/server/set_nsm_locked')
+            server.to_daemon(r.server.SET_NSM_LOCKED)
 
         if self.main_win is not None and self.main_win.waiting_for_patchbay:
             self.main_win.waiting_for_patchbay = False
             server = GuiServerThread.instance()
-            server.to_daemon('/ray/server/ask_for_patchbay', '')
+            server.to_daemon(r.server.ASK_FOR_PATCHBAY, '')
 
         self.signaler.daemon_announce_ok.emit()
         self.session.set_daemon_options(options)
@@ -219,7 +220,7 @@ class DaemonManager(QObject):
                     if CommandLineArgs.start_session:
                         server = GuiServerThread.instance()
                         if server:
-                            server.send(self.address, '/ray/server/open_session',
+                            server.send(self.address, r.server.OPEN_SESSION,
                                         CommandLineArgs.start_session)
                     return
 
@@ -259,7 +260,7 @@ class DaemonManager(QObject):
             return
 
         server = GuiServerThread.instance()
-        server.to_daemon('/ray/server/quit')
+        server.to_daemon(r.server.QUIT)
         QTimer.singleShot(50, QApplication.quit)
 
     def set_new_osc_address(self):

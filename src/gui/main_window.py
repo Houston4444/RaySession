@@ -23,6 +23,9 @@ from patchbay.tools_widgets import PatchbayToolsWidget, TextWithIcons
 # Imports from src/shared
 from osclib import are_on_same_machine
 import ray
+import osc_paths
+import osc_paths.ray as r
+import osc_paths.ray.gui as rg
 
 # Local imports
 import add_application_dialog
@@ -516,7 +519,7 @@ class MainWindow(QMainWindow):
         self.ui.splitterSessionVsMessages.setSizes(sizes)
 
     def _open_file_manager(self):
-        self.to_daemon('/ray/session/open_folder')
+        self.to_daemon(r.session.OPEN_FOLDER)
 
     def change_systray_options(
             self, systray_mode: ray.Systray, wild_shutdown: bool,
@@ -564,7 +567,7 @@ class MainWindow(QMainWindow):
         option_int = option.value
         if not state:
             option_int = - option_int
-        self.to_daemon('/ray/server/set_option', option_int)
+        self.to_daemon(r.server.SET_OPTION, option_int)
 
     def _bookmark_session_folder_toggled(self, state: bool):
         self._set_option(ray.Option.BOOKMARK_SESSION, state)
@@ -624,7 +627,7 @@ class MainWindow(QMainWindow):
         RS.settings.setValue('last_used_template', template_name)
 
         if not template_name:
-            self.to_daemon('/ray/server/new_session', session_short_path)
+            self.to_daemon(r.server.NEW_SESSION, session_short_path)
             return
 
         if template_name.startswith('///'):
@@ -649,7 +652,7 @@ class MainWindow(QMainWindow):
                     if not autostart_jack_checker:
                         action = 'unset_jack_checker_autostart'
 
-                    self.to_daemon('/ray/server/exotic_action', action)
+                    self.to_daemon(r.server.EXOTIC_ACTION, action)
 
             elif template_name == '///' + ray.FACTORY_SESSION_TEMPLATES[2]:
                 if not RS.is_hidden(RS.HD_SessionScripts):
@@ -665,7 +668,7 @@ class MainWindow(QMainWindow):
 
                     RS.set_hidden(RS.HD_SessionScripts, dialog.not_again_value())
 
-        self.to_daemon('/ray/server/new_session', session_short_path, template_name)
+        self.to_daemon(r.server.NEW_SESSION, session_short_path, template_name)
 
     def _open_session(self):
         # from systray, better to show main window in the background
@@ -680,10 +683,10 @@ class MainWindow(QMainWindow):
         session_name = dialog.get_selected_session()
         save_previous = int(dialog.want_to_save_previous())
 
-        self.to_daemon('/ray/server/open_session', session_name, save_previous)
+        self.to_daemon(r.server.OPEN_SESSION, session_name, save_previous)
 
     def _close_session(self):
-        self.to_daemon('/ray/session/close')
+        self.to_daemon(r.session.CLOSE)
 
     def _abort_session(self):
         self.show()
@@ -691,7 +694,7 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
         if dialog.result():
-            self.to_daemon('/ray/session/abort')
+            self.to_daemon(r.session.ABORT)
 
     def _rename_session_action(self):
         if not self.session.is_renameable:
@@ -713,7 +716,7 @@ class MainWindow(QMainWindow):
             return
 
         session_name = dialog.get_session_short_path()
-        self.to_daemon('/ray/session/duplicate', session_name)
+        self.to_daemon(r.session.DUPLICATE, session_name)
 
     def _save_template_session(self):
         dialog = child_dialogs.SaveTemplateSessionDialog(self)
@@ -722,7 +725,7 @@ class MainWindow(QMainWindow):
             return
 
         session_template_name = dialog.get_template_name()
-        self.to_daemon('/ray/session/save_as_template', session_template_name)
+        self.to_daemon(r.session.SAVE_AS_TEMPLATE, session_template_name)
 
     def _return_to_a_previous_state(self):
         dialog = snapshots_dialog.SessionSnapshotsDialog(self)
@@ -731,7 +734,7 @@ class MainWindow(QMainWindow):
             return
 
         snapshot = dialog.get_selected_snapshot()
-        self.to_daemon('/ray/session/open_snapshot', snapshot)
+        self.to_daemon(r.session.OPEN_SNAPSHOT, snapshot)
 
     def _about_raysession(self):
         dialog = child_dialogs.AboutRaySessionDialog(self)
@@ -762,13 +765,13 @@ class MainWindow(QMainWindow):
             QUrl(str(manual_dir / short_locale / 'manual.html')))
 
     def _save_session(self):
-        self.to_daemon('/ray/session/save')
+        self.to_daemon(r.session.SAVE)
 
     def _toggle_notes_visibility(self):
         if (self.notes_dialog is None or not self.notes_dialog.isVisible()):
-            self.to_daemon('/ray/session/show_notes')
+            self.to_daemon(r.session.SHOW_NOTES)
         else:
-            self.to_daemon('/ray/session/hide_notes')
+            self.to_daemon(r.session.HIDE_NOTES)
 
     def _add_application(self):
         if self.session.server_status in (
@@ -784,7 +787,7 @@ class MainWindow(QMainWindow):
             template_name, factory = dialog.get_selected_template()
             unique_id = dialog.get_selected_unique_id()
             self.to_daemon(
-                '/ray/session/add_client_template',
+                r.session.ADD_CLIENT_TEMPLATE,
                 int(factory),
                 template_name,
                 'start',
@@ -805,7 +808,7 @@ class MainWindow(QMainWindow):
             prefix_mode, prefix, client_id, jack_naming = dialog.get_selection()
 
         self.to_daemon(
-            '/ray/session/add_exec', command, int(auto_start),
+            r.session.ADD_EXEC, command, int(auto_start),
             int(bool_ray_hack), prefix_mode, prefix, client_id, int(jack_naming))
 
     def _show_jack_patchbay(self, yesno: bool):
@@ -821,7 +824,7 @@ class MainWindow(QMainWindow):
         height = rect.height()
 
         if yesno:
-            self.to_daemon('/ray/server/ask_for_patchbay', '')
+            self.to_daemon(r.server.ASK_FOR_PATCHBAY, '')
 
             patchbay_geom = RS.settings.value('MainWindow/patchbay_geometry')
             sizes = RS.settings.value('MainWindow/splitter_canvas_sizes')
@@ -879,7 +882,7 @@ class MainWindow(QMainWindow):
             if not dialog.result():
                 return
 
-            self.to_daemon('/ray/server/abort_copy')
+            self.to_daemon(r.server.ABORT_COPY)
 
         elif status in (ray.ServerStatus.SNAPSHOT,
                         ray.ServerStatus.OUT_SNAPSHOT):
@@ -890,7 +893,7 @@ class MainWindow(QMainWindow):
             dialog.exec()
 
     def _rename_session_conditionnaly(self, new_session_name):
-        self.to_daemon('/ray/session/rename', new_session_name)
+        self.to_daemon(r.session.RENAME, new_session_name)
 
     def _show_snapshot_progress_dialog(self):
         if self._progress_dialog_visible:
@@ -906,7 +909,7 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
 
-        self.to_daemon('/ray/server/abort_snapshot')
+        self.to_daemon(r.server.ABORT_SNAPSHOT)
 
     def _show_daemon_url_window(self, err_code, ex_url=''):
         if not CommandLineArgs.under_nsm:
@@ -1375,7 +1378,7 @@ class MainWindow(QMainWindow):
                     if not dialog.result():
                         return
 
-        self.to_daemon('/ray/client/stop', client_id)
+        self.to_daemon(r.client.STOP, client_id)
 
     def remove_client(self, client_id: str):
         self.ui.listWidget.remove_client_widget(client_id)
@@ -1395,7 +1398,7 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
 
-        self.to_daemon('/ray/server/abort_copy')
+        self.to_daemon(r.server.ABORT_COPY)
 
     def client_status_changed(self, client_id: str, status: ray.ClientStatus):
         # launch/stop flashing status if 'open'
@@ -1470,7 +1473,7 @@ class MainWindow(QMainWindow):
             dialog.exec()
 
             if dialog.result():
-                self.to_daemon('/ray/server/open_session',
+                self.to_daemon(r.server.OPEN_SESSION,
                                dialog.get_selected_session())
             elif dialog.get_clicked_action() == dialog.ACTION_NEW:
                 self._create_new_session()
@@ -1523,7 +1526,7 @@ class MainWindow(QMainWindow):
         except BaseException:
             return
 
-        self.to_daemon('/ray/server/open_session', session_name)
+        self.to_daemon(r.server.OPEN_SESSION, session_name)
 
     @Slot()
     def show_client_trash_dialog(self):
@@ -1543,12 +1546,12 @@ class MainWindow(QMainWindow):
         if not dialog.result():
             return
 
-        self.to_daemon('/ray/trashed_client/restore', client_id)
+        self.to_daemon(r.trashed_client.RESTORE, client_id)
 
     @Slot()
     def launch_favorite(self):
         template_name, factory = self.sender().data()
-        self.to_daemon('/ray/session/add_client_template',
+        self.to_daemon(r.session.ADD_CLIENT_TEMPLATE,
                        int(factory), template_name, 'start', '')
 
     def toggle_patchbay_filters_bar(self):
@@ -1607,7 +1610,7 @@ class MainWindow(QMainWindow):
             self._script_action_dialog.close()
             del self._script_action_dialog
             self.to_daemon(
-                '/error', '/ray/gui/script_user_action',
+                osc_paths.ERROR, rg.SCRIPT_USER_ACTION,
                 ray.Err.NOT_NOW, 'another script_user_action take place')
 
         self._script_action_dialog = child_dialogs.ScriptUserActionDialog(self)

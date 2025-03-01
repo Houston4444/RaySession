@@ -12,6 +12,7 @@ from qtpy.QtCore import Slot, QSize, Qt, Signal
 
 # Imports from src/shared
 import ray
+import osc_paths.ray as r
 
 # Local imports
 import child_dialogs
@@ -117,9 +118,9 @@ class ClientSlot(QFrame):
 
     def _change_gui_state(self):
         if self._gui_state:
-            self.to_daemon('/ray/client/hide_optional_gui', self.get_client_id())
+            self.to_daemon(r.client.HIDE_OPTIONAL_GUI, self.get_client_id())
         else:
-            self.to_daemon('/ray/client/show_optional_gui', self.get_client_id())
+            self.to_daemon(r.client.SHOW_OPTIONAL_GUI, self.get_client_id())
 
     def _order_hack_visibility(self, state):
         if self.client.protocol is not ray.Protocol.RAY_HACK:
@@ -131,11 +132,11 @@ class ClientSlot(QFrame):
             self.client.close_properties_dialog()
 
     def _start_client(self):
-        self.to_daemon('/ray/client/resume', self.get_client_id())
+        self.to_daemon(r.client.RESUME, self.get_client_id())
 
     def _stop_client(self):
         if self._stop_is_kill:
-            self.to_daemon('/ray/client/kill', self.get_client_id())
+            self.to_daemon(r.client.KILL, self.get_client_id())
             return
 
         # we need to prevent accidental stop with a window confirmation
@@ -143,10 +144,10 @@ class ClientSlot(QFrame):
         self.main_win.stop_client(self.get_client_id())
 
     def _save_client(self):
-        self.to_daemon('/ray/client/save', self.get_client_id())
+        self.to_daemon(r.client.SAVE, self.get_client_id())
 
     def _trash_client(self):
-        self.to_daemon('/ray/client/trash', self.get_client_id())
+        self.to_daemon(r.client.TRASH, self.get_client_id())
 
     def _abort_copy(self):
         self.main_win.abort_copy_client(self.get_client_id())
@@ -159,7 +160,7 @@ class ClientSlot(QFrame):
             return
 
         template_name = dialog.get_template_name()
-        self.to_daemon('/ray/client/save_as_template',
+        self.to_daemon(r.client.SAVE_AS_TEMPLATE,
                        self.get_client_id(), template_name)
 
     def _open_snapshots_dialog(self):
@@ -168,7 +169,7 @@ class ClientSlot(QFrame):
         dialog.exec()
         if dialog.result():
             snapshot = dialog.get_selected_snapshot()
-            self.to_daemon('/ray/client/open_snapshot',
+            self.to_daemon(r.client.OPEN_SNAPSHOT,
                           self.get_client_id(), snapshot)
 
     def _find_patchbay_boxes(self):
@@ -185,7 +186,7 @@ class ClientSlot(QFrame):
             
             if dialog.is_identifiant_renamed():
                 self.to_daemon(
-                    '/ray/client/full_rename',
+                    r.client.FULL_RENAME,
                     self.client.client_id,
                     label)
                 return
@@ -513,7 +514,7 @@ class ListWidgetClients(QListWidget):
     def _launch_favorite(self):
         template_name, factory = self.sender().data()
         self.to_daemon(
-            '/ray/session/add_client_template',
+            r.session.ADD_CLIENT_TEMPLATE,
             int(factory),
             template_name,
             'start',
@@ -567,7 +568,7 @@ class ListWidgetClients(QListWidget):
 
         server = GuiServerThread.instance()
         if server:
-            server.to_daemon('/ray/session/reorder_clients', *client_ids_list)
+            server.to_daemon(r.session.REORDER_CLIENTS, *client_ids_list)
 
     def mousePressEvent(self, event):
         if not self.itemAt(event.pos()):

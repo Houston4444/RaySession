@@ -21,10 +21,10 @@ from patchbay import (
 )
 
 # Imports from src/shared
-from osclib import get_net_url, TCP
 import ray
 import xdg
 from jack_renaming_tools import group_belongs_to_client
+import osc_paths.ray as r
 
 # Local imports
 from gui_server_thread import GuiServerThread
@@ -53,7 +53,7 @@ class RayPatchbayCallbacker(Callbacker):
             save_in_jack = False
 
         self.mng.send_to_daemon(
-            '/ray/server/patchbay/save_group_pretty_name',
+            r.server.patchbay.SAVE_GROUP_PRETTY_NAME,
             group.name, pretty_name, group.mdata_pretty_name,
             int(save_in_jack))
         
@@ -67,7 +67,7 @@ class RayPatchbayCallbacker(Callbacker):
             save_in_jack = False
         
         self.mng.send_to_daemon(
-            '/ray/server/patchbay/save_port_pretty_name',
+            r.server.patchbay.SAVE_PORT_PRETTY_NAME,
             port.full_name_id_free, pretty_name,
             port.mdata_pretty_name, int(save_in_jack))
 
@@ -80,14 +80,14 @@ class RayPatchbayCallbacker(Callbacker):
             return
 
         self.mng.send_to_patchbay_daemon(
-            '/ray/patchbay/connect',
+            r.patchbay.CONNECT,
             port_out.full_name, port_in.full_name)
 
     def _ports_disconnect(self, connection_id: int):
         for connection in self.mng.connections:
             if connection.connection_id == connection_id:
                 self.mng.send_to_patchbay_daemon(
-                    '/ray/patchbay/disconnect',
+                    r.patchbay.DISCONNECT,
                     connection.port_out.full_name,
                     connection.port_in.full_name)
                 break
@@ -195,40 +195,40 @@ class RayPatchbayManager(PatchbayManager):
     
     def refresh(self):
         super().refresh()
-        self.send_to_patchbay_daemon('/ray/patchbay/refresh')
+        self.send_to_patchbay_daemon(r.patchbay.REFRESH)
     
     def disannounce(self):
         self.send_to_patchbay_daemon(
-            '/ray/patchbay/gui_disannounce', '')
+            r.patchbay.GUI_DISANNOUNCE, '')
         super().disannounce()
     
     def set_views_changed(self):
         super().set_views_changed()
-        self.send_to_daemon('/ray/server/patchbay/views_changed',
+        self.send_to_daemon(r.server.patchbay.VIEWS_CHANGED,
                             json.dumps(self.views.short_data_states()))
     
     def save_view_and_port_types_view(self):
         self.send_to_daemon(
-            '/ray/server/patchbay/view_ptv_changed',
+            r.server.patchbay.VIEW_PTV_CHANGED,
             self.view_number,
             self.port_types_view.value)
     
     def save_group_position(self, gpos: GroupPos):
         super().save_group_position(gpos)
         self.send_to_daemon(
-            '/ray/server/patchbay/save_group_position',
+            r.server.patchbay.SAVE_GROUP_POSITION,
             self.view_number, *gpos.to_arg_list())
 
     def save_portgroup_memory(self, pg_mem: PortgroupMem):
         super().save_portgroup_memory(pg_mem)
         self.send_to_daemon(
-            '/ray/server/patchbay/save_portgroup',
+            r.server.patchbay.SAVE_PORTGROUP,
             *pg_mem.to_arg_list())
 
     def change_buffersize(self, buffer_size: int):
         super().change_buffersize(buffer_size)
         self.send_to_patchbay_daemon(
-            '/ray/patchbay/set_buffer_size', buffer_size)
+            r.patchbay.SET_BUFFER_SIZE, buffer_size)
 
     def filter_groups(self, text: str, n_select=0) -> int:
         ''' semi hides groups not matching with text
@@ -297,7 +297,7 @@ class RayPatchbayManager(PatchbayManager):
                         'presents': [g for g in presents]}
 
             self.send_to_daemon(
-                '/ray/server/patchbay/clear_absents_in_view',
+                r.server.patchbay.CLEAR_ABSENTS_IN_VIEW,
                 json.dumps(out_dict))
             return
         
@@ -315,14 +315,14 @@ class RayPatchbayManager(PatchbayManager):
                         'presents': [g for g in presents]}
 
             self.send_to_daemon(
-                '/ray/server/patchbay/clear_absents_in_view',
+                r.server.patchbay.CLEAR_ABSENTS_IN_VIEW,
                 json.dumps(out_dict))
 
     def change_view_number(self, new_num: int):
         ex_view_num = self.view_number
         super().change_view_number(new_num)
         self.send_to_daemon(
-            '/ray/server/patchbay/view_number_changed', ex_view_num, new_num)
+            r.server.patchbay.VIEW_NUMBER_CHANGED, ex_view_num, new_num)
 
     def get_corrected_a2j_group_name(self, group_name: str) -> str:
         # fix a2j wrongly substitute '.' with space
@@ -352,13 +352,13 @@ class RayPatchbayManager(PatchbayManager):
                 break
 
     def transport_play_pause(self, play: bool):
-        self.send_to_patchbay_daemon('/ray/patchbay/transport_play', int(play))
+        self.send_to_patchbay_daemon(r.patchbay.TRANSPORT_PLAY, int(play))
     
     def transport_stop(self):
-        self.send_to_patchbay_daemon('/ray/patchbay/transport_stop')
+        self.send_to_patchbay_daemon(r.patchbay.TRANSPORT_STOP)
     
     def transport_relocate(self, frame: int):
-        self.send_to_patchbay_daemon('/ray/patchbay/transport_relocate', frame)
+        self.send_to_patchbay_daemon(r.patchbay.TRANSPORT_RELOCATE, frame)
 
     def change_tools_displayed(self, tools_displayed: ToolDisplayed):
         ex_tool_displayed = self._tools_displayed
@@ -376,13 +376,13 @@ class RayPatchbayManager(PatchbayManager):
             else:
                 int_transp = 0
 
-            self.send_to_patchbay_daemon('/ray/patchbay/activate_transport',
+            self.send_to_patchbay_daemon(r.patchbay.ACTIVATE_TRANSPORT,
                                           int_transp)
              
         if (ex_tool_displayed & ToolDisplayed.DSP_LOAD
                 != tools_displayed & ToolDisplayed.DSP_LOAD):
             self.send_to_patchbay_daemon(
-                '/ray/patchbay/activate_dsp_load',
+                r.patchbay.ACTIVATE_DSP_LOAD,
                 int(bool(tools_displayed & ToolDisplayed.DSP_LOAD)))
 
         #### added functions ####
