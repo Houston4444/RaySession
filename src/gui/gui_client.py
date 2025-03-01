@@ -13,6 +13,7 @@ from qtpy.QtWidgets import QAction
 
 # Imports from src/shared
 import ray
+import osc_paths.ray as r
 
 # Local imports
 from gui_server_thread import GuiServerThread
@@ -112,7 +113,7 @@ class Client(QObject, ray.ClientData):
                 f'Client {self.client_id} can not send its properties')
             return
 
-        server.to_daemon('/ray/client/update_properties',
+        server.to_daemon(r.client.UPDATE_PROPERTIES,
                          *ray.ClientData.spread_client(self))
 
     def send_ray_hack(self):
@@ -123,7 +124,7 @@ class Client(QObject, ray.ClientData):
         if not server:
             return
 
-        server.to_daemon('/ray/client/update_ray_hack_properties',
+        server.to_daemon(r.client.UPDATE_RAY_HACK_PROPERTIES,
                          self.client_id,
                          *self.ray_hack.spread())
 
@@ -135,7 +136,7 @@ class Client(QObject, ray.ClientData):
         if not server:
             return
 
-        server.to_daemon('/ray/client/update_ray_net_properties',
+        server.to_daemon(r.client.UPDATE_RAY_NET_PROPERTIES,
                          self.client_id,
                          *self.ray_net.spread())
 

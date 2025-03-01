@@ -9,6 +9,9 @@ from patshared import GroupPos
 # Imports from src/shared
 from osclib import BunServerThread, make_method, Address
 import ray
+import osc_paths
+import osc_paths.ray as r
+import osc_paths.ray.gui as rg
 
 # Local imports
 from gui_tools import CommandLineArgs
@@ -78,73 +81,73 @@ class GuiServerThread(BunServerThread):
         # _ray_gui_session_name
 
         for path_types in (
-            ('/error', 'sis'),
-            ('/minor_error', 'sis'),
-            ('/ray/gui/server/disannounce', ''),
-            ('/ray/gui/server/nsm_locked', 'i'),
-            ('/ray/gui/server/options', 'i'),
-            ('/ray/gui/server/message', 's'),
-            ('/ray/gui/server/terminal_command', 's'),
-            ('/ray/gui/session/name', 'ss'),
-            ('/ray/gui/session/notes', 's'),
-            ('/ray/gui/session/notes_shown', ''),
-            ('/ray/gui/session/notes_hidden', ''),
-            ('/ray/gui/session/is_nsm', ''),
-            ('/ray/gui/session/renameable', 'i'),
-            ('/ray/gui/client/new', ray.ClientData.sisi()),
-            ('/ray/gui/client/update', ray.ClientData.sisi()),
-            ('/ray/gui/client/ray_hack_update', 's' + ray.RayHack.sisi()),
-            ('/ray/gui/client/switch', 'ss'),
-            ('/ray/gui/client/status', 'si'),
-            ('/ray/gui/client/dirty', 'si'),
-            ('/ray/gui/client/has_optional_gui', 's'),
-            ('/ray/gui/client/gui_visible', 'si'),
-            ('/ray/gui/client/still_running', 's'),
-            ('/ray/gui/trash/add', ray.ClientData.sisi()),
-            ('/ray/gui/trash/ray_hack_update', 's' + ray.RayHack.sisi()),
-            ('/ray/gui/trash/ray_net_update', 's' + ray.RayNet.sisi()),
-            ('/ray/gui/trash/remove', 's'),
-            ('/ray/gui/trash/clear', ''),
-            ('/ray/gui/favorites/added', 'ssis'),
-            ('/ray/gui/favorites/removed', 'si'),
-            ('/ray/gui/script_info', 's'),
-            ('/ray/gui/hide_script_info', ''),
-            ('/ray/gui/script_user_action', 's'),
-            ('/ray/gui/hide_script_user_action', ''),
+            (osc_paths.ERROR, 'sis'),
+            (osc_paths.MINOR_ERROR, 'sis'),
+            (rg.server.DISANNOUNCE, ''),
+            (rg.server.NSM_LOCKED, 'i'),
+            (rg.server.OPTIONS, 'i'),
+            (rg.server.MESSAGE, 's'),
+            (rg.server.TERMINAL_COMMAND, 's'),
+            (rg.session.NAME, 'ss'),
+            (rg.session.NOTES, 's'),
+            (rg.session.NOTES_SHOWN, ''),
+            (rg.session.NOTES_HIDDEN, ''),
+            (rg.session.IS_NSM, ''),
+            (rg.session.RENAMEABLE, 'i'),
+            (rg.client.NEW, ray.ClientData.sisi()),
+            (rg.client.UPDATE, ray.ClientData.sisi()),
+            (rg.client.RAY_HACK_UPDATE, 's' + ray.RayHack.sisi()),
+            (rg.client.SWITCH, 'ss'),
+            (rg.client.STATUS, 'si'),
+            (rg.client.DIRTY, 'si'),
+            (rg.client.HAS_OPTIONAL_GUI, 's'),
+            (rg.client.GUI_VISIBLE, 'si'),
+            (rg.client.STILL_RUNNING, 's'),
+            (rg.trash.ADD, ray.ClientData.sisi()),
+            (rg.trash.RAY_HACK_UPDATE, 's' + ray.RayHack.sisi()),
+            (rg.trash.RAY_NET_UPDATE, 's' + ray.RayNet.sisi()),
+            (rg.trash.REMOVE, 's'),
+            (rg.trash.CLEAR, ''),
+            (rg.favorites.ADDED, 'ssis'),
+            (rg.favorites.REMOVED, 'si'),
+            (rg.SCRIPT_INFO, 's'),
+            (rg.HIDE_SCRIPT_INFO, ''),
+            (rg.SCRIPT_USER_ACTION, 's'),
+            (rg.HIDE_SCRIPT_USER_ACTION, ''),
             
             # patchbay related paths
-            ('/ray/gui/patchbay/port_added', 'siih'),
-            ('/ray/gui/patchbay/port_renamed', 'ss'),
-            ('/ray/gui/patchbay/port_renamed', 'ssi'),
-            ('/ray/gui/patchbay/port_removed', 's'),
-            ('/ray/gui/patchbay/connection_added', 'ss'),
-            ('/ray/gui/patchbay/connection_removed', 'ss'),
-            ('/ray/gui/patchbay/server_stopped', ''),
-            ('/ray/gui/patchbay/metadata_updated', 'hss'),
-            ('/ray/gui/patchbay/dsp_load', 'i'),
-            ('/ray/gui/patchbay/add_xrun', ''),
-            ('/ray/gui/patchbay/buffer_size', 'i'),
-            ('/ray/gui/patchbay/sample_rate', 'i'),
-            ('/ray/gui/patchbay/server_started', ''),
-            ('/ray/gui/patchbay/big_packets', 'i'),
-            ('/ray/gui/patchbay/server_lose', ''),
-            ('/ray/gui/patchbay/fast_temp_file_memory', 's'),
-            ('/ray/gui/patchbay/client_name_and_uuid', 'sh'),
-            ('/ray/gui/patchbay/transport_position', 'iiiiiif'),
-            ('/ray/gui/patchbay/update_group_position', 'i' + GroupPos.args_types()),
-            ('/ray/gui/patchbay/views_changed', 's'),
-            ('/ray/gui/patchbay/update_group_pretty_name', 'ss'),
-            ('/ray/gui/patchbay/update_port_pretty_name', 'ss'),
+            (rg.patchbay.PORT_ADDED, 'siih'),
+            (rg.patchbay.PORT_RENAMED, 'ss'),
+            (rg.patchbay.PORT_RENAMED, 'ssi'),
+            (rg.patchbay.PORT_REMOVED, 's'),
+            (rg.patchbay.CONNECTION_ADDED, 'ss'),
+            (rg.patchbay.CONNECTION_REMOVED, 'ss'),
+            (rg.patchbay.SERVER_STOPPED, ''),
+            (rg.patchbay.METADATA_UPDATED, 'hss'),
+            (rg.patchbay.DSP_LOAD, 'i'),
+            (rg.patchbay.ADD_XRUN, ''),
+            (rg.patchbay.BUFFER_SIZE, 'i'),
+            (rg.patchbay.SAMPLE_RATE, 'i'),
+            (rg.patchbay.SERVER_STARTED, ''),
+            (rg.patchbay.BIG_PACKETS, 'i'),
+            (rg.patchbay.SERVER_LOSE, ''),
+            (rg.patchbay.FAST_TEMP_FILE_MEMORY, 's'),
+            (rg.patchbay.CLIENT_NAME_AND_UUID, 'sh'),
+            (rg.patchbay.TRANSPORT_POSITION, 'iiiiiif'),
+            (rg.patchbay.UPDATE_GROUP_POSITION, 'i' + GroupPos.args_types()),
+            (rg.patchbay.VIEWS_CHANGED, 's'),
+            (rg.patchbay.UPDATE_GROUP_PRETTY_NAME, 'ss'),
+            (rg.patchbay.UPDATE_PORT_PRETTY_NAME, 'ss'),
             
             # previews
-            ('/ray/gui/preview/clear', ''),
-            ('/ray/gui/preview/notes', 's'),
-            ('/ray/gui/preview/client/update', ray.ClientData.sisi()),
-            ('/ray/gui/preview/client/ray_hack_update', 's' + ray.RayHack.sisi()),
-            ('/ray/gui/preview/client/ray_net_update', 's' + ray.RayNet.sisi()),
-            ('/ray/gui/preview/client/is_started', 'si'),
-            ('/ray/gui/preview/snapshot', 's'),
-            ('/ray/gui/preview/session_size', 'h')):
+            (rg.preview.CLEAR, ''),
+            (rg.preview.NOTES, 's'),
+            (rg.preview.client.UPDATE, ray.ClientData.sisi()),
+            (rg.preview.client.RAY_HACK_UPDATE, 's' + ray.RayHack.sisi()),
+            (rg.preview.client.RAY_NET_UPDATE, 's' + ray.RayNet.sisi()),
+            (rg.preview.client.IS_STARTED, 'si'),
+            (rg.preview.SNAPSHOT, 's'),
+            (rg.preview.SESSION_SIZE, 'h')):
                 self.add_method(path_types[0], path_types[1],
                                 self._generic_callback)
 
@@ -162,7 +165,7 @@ class GuiServerThread(BunServerThread):
 
         self.signaler.osc_receive.emit(path, args)
 
-    @ray_method('/reply', None)
+    @ray_method(osc_paths.REPLY, None)
     def _reply(self, path, args: list, types: str, src_addr):
         if not (types and ray.types_are_all_strings(types)):
             return False
@@ -170,29 +173,29 @@ class GuiServerThread(BunServerThread):
         new_args = args.copy()
         reply_path = new_args.pop(0)
 
-        if reply_path == '/ray/server/list_sessions':
+        if reply_path == r.server.LIST_SESSIONS:
             self.signaler.add_sessions_to_list.emit(new_args)
-        elif reply_path == '/ray/server/list_path':
+        elif reply_path == r.server.LIST_PATH:
             self.signaler.new_executable.emit(new_args)
-        elif reply_path == '/ray/server/list_session_templates':
+        elif reply_path == r.server.LIST_SESSION_TEMPLATES:
             self.signaler.session_template_found.emit(new_args)
-        elif reply_path == '/ray/server/list_user_client_templates':
+        elif reply_path == r.server.LIST_USER_CLIENT_TEMPLATES:
             self.signaler.user_client_template_found.emit(new_args)
-        elif reply_path == '/ray/server/list_factory_client_templates':
+        elif reply_path == r.server.LIST_FACTORY_CLIENT_TEMPLATES:
             self.signaler.factory_client_template_found.emit(new_args)
-        elif reply_path in ('/ray/session/list_snapshots',
-                            '/ray/client/list_snapshots'):
+        elif reply_path in (r.session.LIST_SNAPSHOTS,
+                            r.client.LIST_SNAPSHOTS):
             self.signaler.snapshots_found.emit(new_args)
-        elif reply_path == '/ray/server/rename_session':
+        elif reply_path == r.server.RENAME_SESSION:
             self.signaler.other_session_renamed.emit()
-        elif reply_path == '/ray/session/duplicate_only':
+        elif reply_path == r.session.DUPLICATE_ONLY:
             self.signaler.other_session_duplicated.emit()
-        elif reply_path == '/ray/server/save_session_template':
+        elif reply_path == r.server.SAVE_SESSION_TEMPLATE:
             self.signaler.other_session_templated.emit()
-        elif reply_path == '/ray/server/abort_parrallel_copy':
+        elif reply_path == r.server.ABORT_PARRALLEL_COPY:
             self.signaler.parrallel_copy_aborted.emit()
 
-    @ray_method('/ray/gui/server/announce', 'siisis')
+    @ray_method(rg.server.ANNOUNCE, 'siisis')
     def _server_announce(self, path, args, types, src_addr):
         if self.daemon_manager.is_announced():
             return
@@ -203,29 +206,29 @@ class GuiServerThread(BunServerThread):
         if (self.session is not None
                 and self.session.main_win is not None
                 and self.session.main_win.waiting_for_patchbay):
-            self.send(src_addr, '/ray/server/ask_for_patchbay', '')
+            self.send(src_addr, r.server.ASK_FOR_PATCHBAY, '')
             self.session.main_win.waiting_for_patchbay = False
 
         self.signaler.daemon_announce.emit(
             src_addr, version, ray.ServerStatus(server_status_int),
             ray.Option(options), session_root, is_net_free)
 
-    @ray_method('/ray/gui/server/root', 's')
+    @ray_method(rg.server.ROOT, 's')
     def _server_root(self, path, args, types, src_addr):
         session_root = args[0]
         CommandLineArgs.change_session_root(session_root)
         self.signaler.root_changed.emit(session_root)
 
-    @ray_method('/ray/gui/server/status', 'i')
+    @ray_method(rg.server.STATUS, 'i')
     def _server_status(self, path, args, types, src_addr):
         self.signaler.server_status_changed.emit(ray.ServerStatus(args[0]))
 
-    @ray_method('/ray/gui/server/copying', 'i')
+    @ray_method(rg.server.COPYING, 'i')
     def _server_copying(self, path, args, types, src_addr):
         copying = args[0]
         self.signaler.server_copying.emit(bool(copying))
 
-    @ray_method('/ray/gui/server/parrallel_copy_state', 'ii')
+    @ray_method(rg.server.PARRALLEL_COPY_STATE, 'ii')
     def _server_parrallel_copy_state(self, path, args, types, src_addr):
         session_id, state = args
 
@@ -243,7 +246,7 @@ class GuiServerThread(BunServerThread):
                 self._parrallel_copy_id_queue.remove(session_id)
                 self.signaler.parrallel_copy_state.emit(*args)
 
-    @ray_method('/ray/gui/server/parrallel_copy_progress', 'if')
+    @ray_method(rg.server.PARRALLEL_COPY_PROGRESS, 'if')
     def _server_copy_progress(self, path, args, types, src_addr):
         session_id, progress = args
 
@@ -253,56 +256,56 @@ class GuiServerThread(BunServerThread):
         if session_id == self._parrallel_copy_id_queue[0]:
             self.signaler.parrallel_copy_progress.emit(*args)
 
-    @ray_method('/ray/gui/server/progress', 'f')
+    @ray_method(rg.server.PROGRESS, 'f')
     def _server_progress(self, path, args, types, src_addr):
         progress = args[0]
         self.signaler.server_progress.emit(progress)
 
-    @ray_method('/ray/gui/server/recent_sessions', None)
+    @ray_method(rg.server.RECENT_SESSIONS, None)
     def _server_recent_sessions(self, path, args, types, src_addr):
         for t in types:
             if t != 's':
                 return False
 
-    @ray_method('/ray/gui/session/auto_snapshot', 'i')
+    @ray_method(rg.session.AUTO_SNAPSHOT, 'i')
     def _session_auto_snapshot(self, path, args, types, src_addr):
         self.signaler.reply_auto_snapshot.emit(bool(args[0]))
 
-    @ray_method('/ray/gui/session/sort_clients', None)
+    @ray_method(rg.session.SORT_CLIENTS, None)
     def _session_sort_clients(self, path, args, types, src_addr):
         if not ray.types_are_all_strings(types):
             return False
 
-    @ray_method('/ray/gui/listed_session/details', 'sihi')
+    @ray_method(rg.listed_session.DETAILS, 'sihi')
     def _listed_session_details(self, path, args, types, src_addr):
         self.signaler.session_details.emit(*args)
 
-    @ray_method('/ray/gui/listed_session/scripted_dir', 'si')
+    @ray_method(rg.listed_session.SCRIPTED_DIR, 'si')
     def _listed_session_scripted_dir(self, path, args, types, src_addr):
         self.signaler.scripted_dir.emit(*args)
 
-    @ray_method('/ray/gui/client_template_update', 'iss' + ray.ClientData.sisi())
+    @ray_method(rg.CLIENT_TEMPLATE_UPDATE, 'iss' + ray.ClientData.sisi())
     def _client_template_update(self, path, args, types, src_addr):
         self.signaler.client_template_update.emit(args)
 
-    @ray_method('/ray/gui/client_template_ray_hack_update', 'is' + ray.RayHack.sisi())
+    @ray_method(rg.CLIENT_TEMPLATE_RAY_HACK_UPDATE, 'is' + ray.RayHack.sisi())
     def _client_template_ray_hack_update(self, path, args, types, src_addr):
         self.signaler.client_template_ray_hack_update.emit(args)
 
-    @ray_method('/ray/gui/client_template_ray_net_update', 'is' + ray.RayNet.sisi())
+    @ray_method(rg.CLIENT_TEMPLATE_RAY_NET_UPDATE, 'is' + ray.RayNet.sisi())
     def _client_template_ray_net_update(self, path, args, types, src_addr):
         self.signaler.client_template_ray_net_update.emit(args)
 
-    @ray_method('/ray/gui/client/progress', 'sf')
+    @ray_method(rg.client.PROGRESS, 'sf')
     def _client_progress(self, path, args, types, src_addr):
         self.signaler.client_progress.emit(*args)
         return True
 
-    @ray_method('/ray/gui/patchbay/announce', 'iiis')
+    @ray_method(rg.patchbay.ANNOUNCE, 'iiis')
     def _ray_gui_patchbay_announce(self, path, args, types, src_addr):
         self.patchbay_addr = Address(args[3])
     
-    @ray_method('/ray/gui/patchbay/update_portgroup', None)
+    @ray_method(rg.patchbay.UPDATE_PORTGROUP, None)
     def _ray_gui_patchbay_update_portgroup(
             self, path, args, types: str, src_addr: Address):
         if not types.startswith('siiis'):
@@ -313,7 +316,7 @@ class GuiServerThread(BunServerThread):
             if c != 's':
                 return False
     
-    @ray_method('/ray/gui/preview/state', 'i')
+    @ray_method(rg.preview.STATE, 'i')
     def _ray_gui_preview_state(self, path, args, types, src_addr):
         self.signaler.session_preview_update.emit(args[0])
 
@@ -342,30 +345,30 @@ class GuiServerThread(BunServerThread):
 
     def announce(self):
         _logger.debug('raysession_sends announce')
-        self.send(self.daemon_manager.address, '/ray/server/gui_announce',
+        self.send(self.daemon_manager.address, r.server.GUI_ANNOUNCE,
                   ray.VERSION, int(CommandLineArgs.under_nsm),
                   os.getenv('NSM_URL', ''), os.getpid(),
                   CommandLineArgs.net_daemon_id, '')
 
     def disannounce(self, src_addr):
-        self.send(src_addr, '/ray/server/gui_disannounce')
+        self.send(src_addr, r.server.GUI_DISANNOUNCE)
 
     def open_session(self, session_name, save_previous=1, session_template=''):
-        self.to_daemon('/ray/server/open_session', session_name,
+        self.to_daemon(r.server.OPEN_SESSION, session_name,
                       save_previous, session_template)
 
     def save_session(self):
-        self.to_daemon('/ray/session/save')
+        self.to_daemon(r.session.SAVE)
 
     def close_session(self):
-        self.to_daemon('/ray/session/close')
+        self.to_daemon(r.session.CLOSE)
 
     def abort_session(self):
-        self.to_daemon('/ray/session/abort')
+        self.to_daemon(r.session.ABORT)
 
     def duplicate_a_session(self, session_name:str, new_session_name:str):
         self._parrallel_new_session_name = new_session_name
-        self.to_daemon('/ray/gui/session/duplicate_only',
+        self.to_daemon(rg.session.DUPLICATE_ONLY,
                        session_name, new_session_name,
                        CommandLineArgs.session_root)
 

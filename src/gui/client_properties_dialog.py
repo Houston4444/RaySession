@@ -12,6 +12,7 @@ from qtpy.QtWidgets import QFileDialog, QFrame, QWidget
 # Imports from src/shared
 import ray
 from osclib import is_valid_osc_url
+import osc_paths.ray as r
 
 # Local imports
 from gui_tools import _translate, client_status_string, get_app_icon
@@ -374,7 +375,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.client.ray_hack.config_file = self.rhack.lineEditConfigFile.text()
 
         self.client.send_properties_to_daemon()
-        self.to_daemon('/ray/client/resume', self.client.client_id)
+        self.to_daemon(r.client.RESUME, self.client.client_id)
 
         self.client.executable_path = executable
         self.client.arguments = arguments
@@ -383,11 +384,11 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.client.send_properties_to_daemon()
 
     def _stop_client(self):
-        self.to_daemon('/ray/client/send_signal', self.client.client_id,
+        self.to_daemon(r.client.SEND_SIGNAL, self.client.client_id,
                       self.rhack.comboStopSig.currentData())
 
     def _save_client(self):
-        self.to_daemon('/ray/client/send_signal', self.client.client_id,
+        self.to_daemon(r.client.SEND_SIGNAL, self.client.client_id,
                       self.rhack.comboSaveSig.currentData())
 
     def lock_widgets(self):
