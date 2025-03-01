@@ -5,22 +5,11 @@ import re
 
 sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
-import osc_paths as p
-import osc_paths.ray as R
-import osc_paths.ray.gui as RG
-import osc_paths.ray.patchbay as RP
-import osc_paths.ray.gui.patchbay as RGP
-import osc_paths.nsm as NSM
-
 import osc_paths
 import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 import osc_paths.nsm as nsm
-# subs = {'RGP': '/ray/gui/patchbay/',
-#         'RP': '/ray/patchbay/',
-#         'RG': '/ray/gui/',
-#         'R': '/ray/',
-#         'NSM': '/nsm/'}
+
 
 subs = {'rg': '/ray/gui/',
         'r': '/ray/',
@@ -74,9 +63,9 @@ for osc_path in all_paths.splitlines():
 #     # full_dict[f"'{value}'"] = f'RP.{key}'
 
 
-daemon = src_path / 'daemon'
+moduledir = src_path / 'control'
 
-for module in daemon.iterdir():
+for module in moduledir.iterdir():
     if not module.name.endswith('.py'):
         continue
 
