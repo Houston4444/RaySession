@@ -15,6 +15,10 @@ from qtpy.QtCore import QCoreApplication
 from osclib import Address, OscPack, are_same_osc_port, TCP
 import ray
 import xdg
+import osc_paths
+import osc_paths.ray as r
+import osc_paths.ray.gui as rg
+import osc_paths.nsm as nsm
 
 # Local imports
 from client import Client
@@ -159,14 +163,14 @@ class SignaledSession(OperatingSession):
             pass
 
     def osc_receive(self, osp: OscPack):
-        nsm_equivs = {"/nsm/server/add" : "/ray/session/add_exec",
-                      "/nsm/server/save": "/ray/session/save",
-                      "/nsm/server/open": "/ray/server/open_session",
-                      "/nsm/server/new" : "/ray/server/new_session",
-                      "/nsm/server/duplicate": "/ray/session/duplicate",
-                      "/nsm/server/close": "/ray/session/close",
-                      "/nsm/server/abort": "/ray/session/abort",
-                      "/nsm/server/quit" : "/ray/server/quit"}
+        nsm_equivs = {nsm.server.ADD : r.session.ADD_EXEC,
+                      nsm.server.SAVE: r.session.SAVE,
+                      nsm.server.OPEN: r.server.OPEN_SESSION,
+                      nsm.server.NEW : r.server.NEW_SESSION,
+                      nsm.server.DUPLICATE: r.session.DUPLICATE,
+                      nsm.server.CLOSE: r.session.CLOSE,
+                      nsm.server.ABORT: r.session.ABORT,
+                      nsm.server.QUIT : r.server.QUIT}
                       # /nsm/server/list is not used here because it doesn't
                       # works as /ray/server/list_sessions
 
@@ -355,11 +359,11 @@ class SignaledSession(OperatingSession):
 
         self.send(*osp.reply(),
                   "root folder changed to %s" % self.root)
-        self.send_gui('/ray/gui/server/root', str(self.root))
+        self.send_gui(rg.server.ROOT, str(self.root))
 
         if self.root not in self.recent_sessions.keys():
             self.recent_sessions[self.root] = []
-        self.send_gui('/ray/gui/server/recent_sessions',
+        self.send_gui(rg.server.RECENT_SESSIONS,
                        *self.recent_sessions[self.root])
 
     def _ray_server_list_client_templates(self, osp: OscPack):
@@ -409,18 +413,18 @@ class SignaledSession(OperatingSession):
                 display_name = app_template.display_name
                 
                 self.send_gui(
-                    '/ray/gui/client_template_update',
+                    rg.CLIENT_TEMPLATE_UPDATE,
                     int(factory), template_name, display_name,
                     *template_client.spread())
 
                 if template_client.is_ray_hack:
                     self.send_gui(
-                        '/ray/gui/client_template_ray_hack_update',
+                        rg.CLIENT_TEMPLATE_RAY_HACK_UPDATE,
                         int(factory), template_name,
                         *template_client.ray_hack.spread())
                 elif template_client.is_ray_net:
                     self.send_gui(
-                        '/ray/gui/client_template_ray_net_update',
+                        rg.CLIENT_TEMPLATE_RAY_NET_UPDATE,
                         int(factory), template_name,
                         *template_client.ray_net.spread())
 
@@ -444,7 +448,7 @@ class SignaledSession(OperatingSession):
                 if (client.is_ray_net
                         and client.ray_net.daemon_url):
                     self.send(Address(client.ray_net.daemon_url),
-                              '/ray/server/list_sessions', 1)
+                              r.server.LIST_SESSIONS, 1)
 
         if not self.root.is_absolute():
             self.send(*osp.error(), ray.Err.GENERAL_ERROR,
@@ -505,7 +509,7 @@ class SignaledSession(OperatingSession):
             if root == str(self.root):
                 if has_general_scripts:
                     self.send(
-                        osp.src_addr, '/ray/gui/listed_session/scripted_dir',
+                        osp.src_addr, rg.listed_session.SCRIPTED_DIR,
                         '', ray.ScriptFile.PARENT.value)
                 continue
             
@@ -520,7 +524,7 @@ class SignaledSession(OperatingSession):
                             os.X_OK):
                         script_files |= ray.ScriptFile[action.upper()]
 
-                self.send(osp.src_addr, '/ray/gui/listed_session/scripted_dir',
+                self.send(osp.src_addr, rg.listed_session.SCRIPTED_DIR,
                           basefolder, script_files.value)
             
             if basefolder not in sessions_set:
@@ -530,7 +534,7 @@ class SignaledSession(OperatingSession):
             last_modified = int(os.path.getmtime(root))
             locked = bool(root in locked_sessions)
 
-            self.send(osp.src_addr, '/ray/gui/listed_session/details',
+            self.send(osp.src_addr, rg.listed_session.DETAILS,
                       basefolder, int(has_notes), last_modified, int(locked))
 
             # prevent search in sub directories
@@ -739,7 +743,7 @@ class SignaledSession(OperatingSession):
         self.canvas_saver.save_group_pretty_name(
             group_name, pretty_name, over_pretty)
         self.send_patchbay_daemon(
-            '/ray/patchbay/save_group_pretty_name',
+            r.patchbay.SAVE_GROUP_PRETTY_NAME,
             group_name, pretty_name, save_in_jack)
         
     def _ray_server_patchbay_save_port_pretty_name(self, osp: OscPack):
@@ -747,7 +751,7 @@ class SignaledSession(OperatingSession):
         self.canvas_saver.save_port_pretty_name(
             port_name, pretty_name, over_pretty)
         self.send_patchbay_daemon(
-            '/ray/patchbay/save_port_pretty_name',
+            r.patchbay.SAVE_PORT_PRETTY_NAME,
             port_name, pretty_name, save_in_jack)
 
     def _ray_server_ask_for_pretty_names(self, osp: OscPack):
@@ -914,7 +918,7 @@ class SignaledSession(OperatingSession):
         spath = Path(sess_root) / new_session
 
         if spath.exists():
-            self.send(osp.src_addr, '/ray/net_daemon/duplicate_state', 1)
+            self.send(osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1)
             self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       _translate('GUIMSG', "%s already exists !")
                         % highlight_text(str(spath)))
@@ -924,7 +928,7 @@ class SignaledSession(OperatingSession):
                 and session_to_load == self.get_short_path()):
             if (self.steps_order
                     or self.file_copier.is_active()):
-                self.send(osp.src_addr, '/ray/net_daemon/duplicate_state', 1)
+                self.send(osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1)
                 return
 
             self.remember_osc_args(osp.path, osp.args, osp.src_addr)
@@ -1010,7 +1014,7 @@ class SignaledSession(OperatingSession):
         self.send_gui_message(
             _translate('GUIMSG', 'Session %s has been renamed to %s .')
             % (self.name, new_session_name))
-        self.send_gui('/ray/gui/session/name', self.name, str(self.path))
+        self.send_gui(rg.session.NAME, self.name, str(self.path))
 
     def _ray_session_set_notes(self, osp: OscPack):
         self.notes = osp.args[0]
@@ -1244,7 +1248,7 @@ class SignaledSession(OperatingSession):
             return
 
         auto_snapshot = not self.snapshoter.is_auto_snapshot_prevented()
-        self.send_gui('/ray/gui/session/auto_snapshot', int(auto_snapshot))
+        self.send_gui(rg.session.AUTO_SNAPSHOT, int(auto_snapshot))
 
         snapshots = self.snapshoter.list(client_id)
 
@@ -1444,13 +1448,13 @@ class SignaledSession(OperatingSession):
 
     @client_action
     def _ray_client_show_optional_gui(self, osp: OscPack, client:Client):
-        client.send_to_self_address("/nsm/client/show_optional_gui")
+        client.send_to_self_address(nsm.client.SHOW_OPTIONAL_GUI)
         client.show_gui_ordered = True
         self.send(*osp.reply(), 'show optional GUI asked')
 
     @client_action
     def _ray_client_hide_optional_gui(self, osp: OscPack, client:Client):
-        client.send_to_self_address("/nsm/client/hide_optional_gui")
+        client.send_to_self_address(nsm.client.HIDE_OPTIONAL_GUI)
         self.send(*osp.reply(), 'hide optional GUI asked')
 
     @client_action
@@ -1684,7 +1688,7 @@ class SignaledSession(OperatingSession):
 
         client.sent_to_gui = False
         client.send_gui_client_properties()
-        self.send_gui('/ray/gui/session/sort_clients',
+        self.send_gui(rg.session.SORT_CLIENTS,
                       *[c.client_id for c in self.clients])
 
         # we need to save session file here
@@ -1790,7 +1794,7 @@ class SignaledSession(OperatingSession):
 
         client.sent_to_gui = False
         client.send_gui_client_properties()
-        self.send_gui('/ray/gui/session/sort_clients',
+        self.send_gui(rg.session.SORT_CLIENTS,
                       *[c.client_id for c in self.clients])
 
         # we need to save session file here
@@ -1833,13 +1837,13 @@ class SignaledSession(OperatingSession):
             self.send(*osp.error(), -10, "No such client.")
             return
 
-        self.send_gui('/ray/gui/trash/remove', client.client_id)
+        self.send_gui(rg.trash.REMOVE, client.client_id)
 
         for file_path in client.get_project_files():
             try:
                 subprocess.run(['rm', '-R', file_path])
             except:
-                self.send(osp.src_addr, '/minor_error', osp.path, -10,
+                self.send(osp.src_addr, osc_paths.MINOR_ERROR, osp.path, -10,
                           f"Error while removing client file {file_path}")
                 continue
 
@@ -1864,7 +1868,7 @@ class SignaledSession(OperatingSession):
             self.send(*osp.error(), -10, "No such client.")
             return
 
-        self.send_gui('/ray/gui/trash/remove', client.client_id)
+        self.send_gui(rg.trash.REMOVE, client.client_id)
 
         self.trashed_clients.remove(client)
 

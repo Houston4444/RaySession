@@ -21,6 +21,10 @@ from qtpy.QtCore import QCoreApplication, QTimer
 from osclib import Address, MegaSend, is_valid_osc_url, are_same_osc_port
 import ray
 from xml_tools import XmlElement
+import osc_paths
+import osc_paths.ray as r
+import osc_paths.ray.gui as rg
+import osc_paths.nsm as nsm
 
 # Local imports
 from bookmarker import BookMarker
@@ -177,7 +181,7 @@ class Session(ServerSender):
             if len(self.recent_sessions[self.root]) > 7:
                 self.recent_sessions[self.root] = \
                     self.recent_sessions[self.root][:7]
-            self.send_gui('/ray/gui/server/recent_sessions',
+            self.send_gui(rg.server.RECENT_SESSIONS,
                           *self.recent_sessions[self.root])
 
     def get_client(self, client_id: str) -> Client:
@@ -254,7 +258,7 @@ class Session(ServerSender):
         if not self._add_client(client):
             return False
 
-        self.send_gui('/ray/gui/trash/remove', client.client_id)
+        self.send_gui(rg.trash.REMOVE, client.client_id)
         self.trashed_clients.remove(client)
         return True
 
@@ -473,7 +477,7 @@ class Session(ServerSender):
 
         if len(client_newlist) != len(self.clients):
             if src_addr:
-                self.send(src_addr, '/error', src_path, ray.Err.GENERAL_ERROR,
+                self.send(src_addr, osc_paths.ERROR, src_path, ray.Err.GENERAL_ERROR,
                           "%s clients are missing or incorrect" \
                             % (len(self.clients) - len(client_ids_list)))
             return
@@ -485,7 +489,7 @@ class Session(ServerSender):
         if src_addr:
             self.answer(src_addr, src_path, "clients reordered")
 
-        self.send_gui('/ray/gui/session/sort_clients',
+        self.send_gui(rg.session.SORT_CLIENTS,
                       *[c.client_id for c in self.clients])
 
     def _is_path_in_a_session_dir(self, spath: Path):
@@ -542,7 +546,7 @@ class Session(ServerSender):
             if (other_client is not client
                     and other_client.is_capable_of(':monitor:')):
                 other_client.send_to_self_address(
-                    '/nsm/client/monitor/client_updated',
+                    nsm.client.monitor.CLIENT_UPDATED,
                     client.client_id,
                     client.get_jack_client_name(),
                     int(client.is_running()))
@@ -552,7 +556,7 @@ class Session(ServerSender):
             for monitor_addr in server.monitor_list:
                 self.send(
                     monitor_addr,
-                    '/ray/monitor/client_updated',
+                    r.monitor.CLIENT_UPDATED,
                     client.client_id,
                     client.get_jack_client_name(),
                     int(client.is_running()))
@@ -563,12 +567,12 @@ class Session(ServerSender):
             if (client.client_id != client_id
                     and client.is_capable_of(':monitor:')):
                 client.send_to_self_address(
-                    '/nsm/client/monitor/client_event', client_id, event)
+                    nsm.client.monitor.CLIENT_EVENT, client_id, event)
         
         server = self.get_server()
         if server is not None:
             for monitor_addr in server.monitor_list:
-                self.send(monitor_addr, '/ray/monitor/client_event',
+                self.send(monitor_addr, r.monitor.CLIENT_EVENT,
                           client_id, event)
     
     def _rebuild_templates_database(self, base: str):        
@@ -737,7 +741,7 @@ class OperatingSession(Session):
 
     def next_function(self, from_run_step=False, run_step_args=[]):
         if self.run_step_addr and not from_run_step:
-            self.answer(self.run_step_addr, '/ray/session/run_step',
+            self.answer(self.run_step_addr, r.session.RUN_STEP,
                         'step done')
             self.run_step_addr = None
             return
@@ -819,7 +823,7 @@ class OperatingSession(Session):
         self.timer_wu_progress_n += 1
 
         ratio = float(self.timer_wu_progress_n / 240)
-        self.send_gui('/ray/gui/server/progress', ratio)
+        self.send_gui(rg.server.PROGRESS, ratio)
 
     def _check_externals_states(self):
         '''check if clients started from external are still alive
@@ -877,7 +881,7 @@ class OperatingSession(Session):
         if not (self.osc_src_addr and self.osc_path):
             return
 
-        self.send_even_dummy(self.osc_src_addr, '/reply',
+        self.send_even_dummy(self.osc_src_addr, osc_paths.REPLY,
                              self.osc_path, *messages)
 
     def _send_error(self, err, error_message):
@@ -885,20 +889,20 @@ class OperatingSession(Session):
         self.steps_order.clear()
 
         if self.run_step_addr:
-            self.answer(self.run_step_addr, '/ray/session/run_step',
+            self.answer(self.run_step_addr, r.session.RUN_STEP,
                         error_message, err)
 
         if not (self.osc_src_addr and self.osc_path):
             return
 
-        self.send_even_dummy(self.osc_src_addr, "/error",
+        self.send_even_dummy(self.osc_src_addr, osc_paths.ERROR,
                              self.osc_path, err, error_message)
 
     def _send_minor_error(self, err, error_message):
         if not (self.osc_src_addr and self.osc_path):
             return
 
-        self.send_even_dummy(self.osc_src_addr, "/minor_error",
+        self.send_even_dummy(self.osc_src_addr, osc_paths.MINOR_ERROR,
                              self.osc_path, err, error_message)
 
     def step_scripter_finished(self):
@@ -1256,7 +1260,7 @@ class OperatingSession(Session):
             self.timer_quit.start()
 
         self.trashed_clients.clear()
-        self.send_gui('/ray/gui/trash/clear')
+        self.send_gui(rg.trash.CLEAR)
 
         self._wait_and_go_to(
             30000, (self.close_substep1, clear_all_clients), ray.WaitFor.QUIT)
@@ -1287,9 +1291,9 @@ class OperatingSession(Session):
         self._clean_expected()
         self.clients.clear()
         self._set_path(None)
-        self.send_gui('/ray/gui/session/name', '', '')
-        self.send_gui('/ray/gui/session/notes', '')
-        self.send_gui('/ray/gui/session/notes_hidden')
+        self.send_gui(rg.session.NAME, '', '')
+        self.send_gui(rg.session.NOTES, '')
+        self.send_gui(rg.session.NOTES_HIDDEN)
         self._no_future()
         self._send_reply("Closed.")
         self.message("Done")
@@ -1300,9 +1304,9 @@ class OperatingSession(Session):
         self._clean_expected()
         self.clients.clear()
         self._set_path(None)
-        self.send_gui('/ray/gui/session/name', '', '')
-        self.send_gui('/ray/gui/notes', '')
-        self.send_gui('/ray/gui/session/notes_hidden')
+        self.send_gui(rg.session.NAME, '', '')
+        self.send_gui(rg.NOTES, '')
+        self.send_gui(rg.session.NOTES_HIDDEN)
         self._no_future()
         self._send_reply("Aborted.")
         self.message("Done")
@@ -1331,7 +1335,7 @@ for better organization.""")
 
         self.set_server_status(ray.ServerStatus.NEW)
         self._set_path(spath)
-        self.send_gui("/ray/gui/session/name",
+        self.send_gui(rg.session.NAME,
                       self.name, str(self.path))
         self.next_function()
 
@@ -1374,7 +1378,7 @@ for better organization.""")
                 _translate('error', "Some clients could not save"))
             return
 
-        self.send_gui('/ray/gui/trash/clear')
+        self.send_gui(rg.trash.CLEAR)
         self.send_gui_message(
             _translate('GUIMSG', '-- Duplicating session %s to %s --')
             % (highlight_text(self.get_short_path()),
@@ -1386,7 +1390,7 @@ for better organization.""")
                 if (client.ray_net.daemon_url
                         and is_valid_osc_url(client.ray_net.daemon_url)):
                     self.send(Address(client.ray_net.daemon_url),
-                              '/ray/session/duplicate_only',
+                              r.session.DUPLICATE_ONLY,
                               self.get_short_path(),
                               new_session_full_name,
                               client.ray_net.session_root)
@@ -1449,14 +1453,14 @@ for better organization.""")
         # unlock the directory of the aborted session
         multi_daemon_file.unlock_path(self.root / new_session_full_name)
 
-        if self.osc_path == '/nsm/server/duplicate':
+        if self.osc_path == nsm.server.DUPLICATE:
             # for nsm server control API compatibility
             # abort duplication is not possible in Non/New NSM
             # so, send the only known error
             self._send_error(ray.Err.NO_SUCH_FILE, "No such file.")
 
         if self.osc_src_addr is not None:
-            self.send(self.osc_src_addr, '/ray/net_daemon/duplicate_state', 1)
+            self.send(self.osc_src_addr, r.net_daemon.DUPLICATE_STATE, 1)
 
         self.set_server_status(ray.ServerStatus.READY)
         self._forget_osc_args()
@@ -1499,7 +1503,7 @@ for better organization.""")
             if (client.is_ray_net
                     and client.ray_net.daemon_url):
                 self.send(Address(client.ray_net.daemon_url),
-                          '/ray/server/save_session_template',
+                          r.server.SAVE_SESSION_TEMPLATE,
                           self.get_short_path(),
                           template_name,
                           client.ray_net.session_root)
@@ -1603,7 +1607,7 @@ for better organization.""")
             self.set_server_status(ray.ServerStatus.OFF)
 
             self._set_path(None)
-            self.send_gui('/ray/gui/session/name', '', '')
+            self.send_gui(rg.session.NAME, '', '')
 
     def rename(self, new_session_name: str):
         spath = self.path.parent / new_session_name
@@ -1827,7 +1831,7 @@ for better organization.""")
                     self.future_clients.append(client)
 
             nsm_file.close()
-            self.send_gui('/ray/gui/session/is_nsm')
+            self.send_gui(rg.session.IS_NSM)
 
         if not self.is_dummy:
             self.canvas_saver.load_json_session_canvas(spath)
@@ -1863,16 +1867,16 @@ for better organization.""")
             # find their files at reload (after session abort).
             self._save_session_file()
 
-        self.send_gui("/ray/gui/session/name", self.name, str(self.path))
+        self.send_gui(rg.session.NAME, self.name, str(self.path))
         self.trashed_clients.clear()
 
         self.notes = self.future_notes
-        self.send_gui('/ray/gui/session/notes', self.notes)
+        self.send_gui(rg.session.NOTES, self.notes)
         self.notes_shown = self.future_notes_shown
         if self.notes_shown:
-            self.send_gui('/ray/gui/session/notes_shown')
+            self.send_gui(rg.session.NOTES_SHOWN)
         else:
-            self.send_gui('/ray/gui/session/notes_hidden')
+            self.send_gui(rg.session.NOTES_HIDDEN)
 
         self.canvas_saver.send_session_group_positions()
         self.load_locked = True
@@ -1999,7 +2003,7 @@ for better organization.""")
                 client.switch()
 
         self._re_order_clients(new_client_id_list)
-        self.send_gui('/ray/gui/session/sort_clients', *new_client_id_list)
+        self.send_gui(rg.session.SORT_CLIENTS, *new_client_id_list)
         
         # send initial monitor infos for all monitors
         # Note that a monitor client starting here with the session
@@ -2088,7 +2092,7 @@ for better organization.""")
         self.send_gui_message(
             _translate('GUIMSG', 'session %s is loaded.')
             % highlight_text(self.get_short_path()))
-        self.send_gui("/ray/gui/session/name", self.name, str(self.path))
+        self.send_gui(rg.session.NAME, self.name, str(self.path))
 
         self.switching_session = False
 
@@ -2099,7 +2103,7 @@ for better organization.""")
                         and client.is_capable_of(':optional-gui:')
                         and not client.start_gui_hidden
                         and not client.gui_has_been_visible):
-                    client.send_to_self_address('/nsm/client/show_optional_gui')
+                    client.send_to_self_address(nsm.client.SHOW_OPTIONAL_GUI)
 
         self.next_function()
 
@@ -2137,7 +2141,7 @@ for better organization.""")
         self.steps_order.clear()
 
     def duplicate_only_done(self):
-        self.send(self.osc_src_addr, '/ray/net_daemon/duplicate_state', 1)
+        self.send(self.osc_src_addr, r.net_daemon.DUPLICATE_STATE, 1)
         self._send_reply("Duplicated only done.")
         self._forget_osc_args()
 
@@ -2152,7 +2156,7 @@ for better organization.""")
         self._set_path(None)
         self.message("Bye Bye...")
         self._send_reply("Bye Bye...")
-        self.send_gui('/ray/gui/server/disannounce')
+        self.send_gui(rg.server.DISANNOUNCE)
         QCoreApplication.quit()
 
     def add_client_template(self, src_addr, src_path,
@@ -2241,12 +2245,12 @@ for better organization.""")
         for favorite in RS.favorites:
             if (favorite.name == template_name
                     and favorite.factory == factory):
-                self.send_gui('/ray/gui/favorites/removed',
+                self.send_gui(rg.favorites.REMOVED,
                               favorite.name, int(favorite.factory))
                 RS.favorites.remove(favorite)
                 break
 
-        self.send(src_addr, '/error', src_path, ray.Err.NO_SUCH_FILE,
+        self.send(src_addr, osc_paths.ERROR, src_path, ray.Err.NO_SUCH_FILE,
                   _translate('GUIMSG', "%s is not an existing template !")
                   % highlight_text(template_name))
 
@@ -2262,7 +2266,7 @@ for better organization.""")
 
     def add_client_template_aborted(self, src_addr, src_path, client: Client):
         self._remove_client(client)
-        self.send(src_addr, '/error', src_path, ray.Err.COPY_ABORTED,
+        self.send(src_addr, osc_paths.ERROR, src_path, ray.Err.COPY_ABORTED,
                   _translate('GUIMSG', 'Copy has been aborted !'))
 
     def save_client_and_patchers(self, client: Client):
@@ -2310,7 +2314,7 @@ for better organization.""")
 
         client.sent_to_gui = False
         client.send_gui_client_properties()
-        self.send_gui('/ray/gui/session/sort_clients',
+        self.send_gui(rg.session.SORT_CLIENTS,
                       *[c.client_id for c in self.clients])
 
         # we need to save session file here
@@ -2382,7 +2386,7 @@ for better organization.""")
         self.steps_order.clear()
 
     def load_client_snapshot_done(self):
-        self.send(self.osc_src_addr, '/reply', self.osc_path,
+        self.send(self.osc_src_addr, osc_paths.REPLY, self.osc_path,
                   'Client snapshot loaded')
 
     def start_client(self, client: Client):
@@ -2437,7 +2441,7 @@ for better organization.""")
     def send_preview(self, src_addr: Address, folder_sizes: list):
         def send_state(preview_state: ray.PreviewState):
             self.send_even_dummy(
-                src_addr, '/ray/gui/preview/state',
+                src_addr, rg.preview.STATE,
                 preview_state.value) 
         
         if self.path is None:
@@ -2448,28 +2452,28 @@ for better organization.""")
         if server and server.session_to_preview != self.get_short_path():
             return
         
-        self.send_even_dummy(src_addr, '/ray/gui/preview/clear')        
+        self.send_even_dummy(src_addr, rg.preview.CLEAR)        
         send_state(ray.PreviewState.STARTED)
         
         self.send_even_dummy(
-            src_addr, '/ray/gui/preview/notes', self.notes)
+            src_addr, rg.preview.NOTES, self.notes)
         send_state(ray.PreviewState.NOTES)
 
         ms = MegaSend('session_preview')
 
         for client in self.clients:
-            ms.add('/ray/gui/preview/client/update',
+            ms.add(rg.preview.client.UPDATE,
                    *client.spread())
             
-            ms.add('/ray/gui/preview/client/is_started',
+            ms.add(rg.preview.client.IS_STARTED,
                    client.client_id, int(client.auto_start))
             
             if client.is_ray_hack:
-                ms.add('/ray/gui/preview/client/ray_hack_update',
+                ms.add(rg.preview.client.RAY_HACK_UPDATE,
                        client.client_id, *client.ray_hack.spread())
 
             elif client.is_ray_net:
-                ms.add('/ray/gui/preview/client/ray_net_update',
+                ms.add(rg.preview.client.RAY_NET_UPDATE,
                        client.client_id, *client.ray_net.spread())
                 
         self.mega_send(src_addr, ms)
@@ -2479,7 +2483,7 @@ for better organization.""")
         mss = MegaSend('snapshots_preview')
 
         for snapshot in self.snapshoter.list():
-            mss.add('/ray/gui/preview/snapshot', snapshot)
+            mss.add(rg.preview.SNAPSHOT, snapshot)
         
         self.mega_send(src_addr, mss)
         
@@ -2550,11 +2554,11 @@ for better organization.""")
                  'size': total_size})
 
         self.send_even_dummy(
-            src_addr, '/ray/gui/preview/session_size', total_size)
+            src_addr, rg.preview.SESSION_SIZE, total_size)
 
         send_state(ray.PreviewState.FOLDER_SIZE)
 
         self.send_even_dummy(
-            src_addr, '/ray/gui/preview/state', 2)
+            src_addr, rg.preview.STATE, 2)
 
         del self

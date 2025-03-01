@@ -74,9 +74,9 @@ for osc_path in all_paths.splitlines():
 #     # full_dict[f"'{value}'"] = f'RP.{key}'
 
 
-gui = src_path / 'gui'
+daemon = src_path / 'daemon'
 
-for module in gui.iterdir():
+for module in daemon.iterdir():
     if not module.name.endswith('.py'):
         continue
 
