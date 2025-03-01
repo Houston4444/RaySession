@@ -5,6 +5,8 @@ import time
 
 # Imports from src/shared
 from osclib import Server, Address
+import osc_paths
+import osc_paths.ray as r
 
 # !!! we don't load ray.py to win import duration
 # if change in ray.Err numbers, this has to be changed too !!!
@@ -26,11 +28,12 @@ class OscServer(Server):
     def __init__(self, detach=False):
         Server.__init__(self)
         self.m_daemon_address = None
-        self.add_method('/reply', None, self.reply_message)
-        self.add_method('/error', 'sis', self.error_message)
-        self.add_method('/minor_error', 'sis', self.minor_error_message)
-        self.add_method('/ray/control/message', 's', self.ray_control_message)
-        self.add_method('/ray/control/server/announce', 'siisi',
+        self.add_method(osc_paths.REPLY, None, self.reply_message)
+        self.add_method(osc_paths.ERROR, 'sis', self.error_message)
+        self.add_method(osc_paths.MINOR_ERROR, 'sis',
+                        self.minor_error_message)
+        self.add_method(r.control.MESSAGE, 's', self.ray_control_message)
+        self.add_method(r.control.server.ANNOUNCE, 'siisi',
                         self.ray_control_server_announce)
         self._final_err = -1
         self._wait_for_announce = False
@@ -53,11 +56,11 @@ class OscServer(Server):
         else:
             return
 
-        if reply_path == '/ray/server/controller_announce':
+        if reply_path == r.server.CONTROLLER_ANNOUNCE:
             self._wait_for_announce = False
             return
 
-        elif reply_path == '/ray/server/quit':
+        elif reply_path == r.server.QUIT:
             sys.stderr.write('--- Daemon at port %i stopped. ---\n'
                              % src_addr.port)
             if self._stop_port_list:
@@ -144,7 +147,7 @@ class OscServer(Server):
         self.m_daemon_address = Address(daemon_port)
         self._wait_for_announce = True
         self._announce_time = time.time()
-        self.to_daemon('/ray/server/controller_announce', os.getpid())
+        self.to_daemon(r.server.CONTROLLER_ANNOUNCE, os.getpid())
 
     def get_daemon_port(self):
         if self.m_daemon_address:
@@ -201,7 +204,7 @@ class OscServer(Server):
     def stop_daemon(self, port):
         sys.stderr.write('--- Stopping daemon at port %i ---\n' % port)
         self.set_daemon_address(port)
-        self.to_daemon('/ray/server/quit')
+        self.to_daemon(r.server.QUIT)
 
     def stop_daemons(self, stop_port_list: list[int]):
         self._stop_port_list = stop_port_list
@@ -209,4 +212,4 @@ class OscServer(Server):
             self.stop_daemon(self._stop_port_list[0])
 
     def disannounce_to_daemon(self):
-        self.to_daemon('/ray/server/controller_disannounce')
+        self.to_daemon(r.server.CONTROLLER_DISANNOUNCE)

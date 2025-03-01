@@ -11,6 +11,9 @@ from pathlib import Path
 
 sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
+# imports from shared
+import osc_paths.ray as r
+
 # import subprocess and osc_server (local file) conditionnally
 # in order to answer faster in many cases.
 
@@ -454,7 +457,7 @@ if True:
     osc_order_path += operation
 
     if operation_type is OperationType.CONTROL and operation == 'stop':
-        osc_order_path = '/ray/server/quit'
+        osc_order_path = r.server.QUIT
 
     from osc_server import OscServer  # see top of the file
     server = OscServer(detach)
