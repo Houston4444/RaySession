@@ -14,6 +14,7 @@ from qtpy.QtCore import QProcess, QCoreApplication
 import ray
 import xdg
 from xml_tools import XmlElement
+import osc_paths.nsm as nsm
 
 # Local imports
 from daemon_tools import (
@@ -324,13 +325,13 @@ def rebuild_templates_database(session: 'Session', base: str):
                 continue
 
         if not has_nsm_desktop:
-            # search for '/nsm/server/announce' in executable binary
+            # search for nsm.server.ANNOUNCE in executable binary
             # if it is asked by "check_nsm_bin" key
             if c.bool('check_nsm_bin'):
                 which_exec = shutil.which(executable)
                 if which_exec:
                     result = QProcess.execute(
-                        'grep', ['-q', '/nsm/server/announce',
+                        'grep', ['-q', nsm.server.ANNOUNCE,
                                 which_exec])
                     if result:
                         continue

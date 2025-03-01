@@ -101,6 +101,8 @@ review server_sender and called methods
 
 fix: load session patch hides/restore boxes,
     but there are present before and after.
+    check loop group move two guis
+    test network session / child session
 
 PATHS: 
     import osc_paths as p
