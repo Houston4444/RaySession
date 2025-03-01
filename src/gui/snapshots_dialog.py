@@ -9,6 +9,7 @@ from qtpy.QtWidgets import QDialogButtonBox, QTreeWidgetItem
 # Local imports
 from child_dialogs import ChildDialog
 from gui_tools import _translate, RS
+import osc_paths.ray as R
 
 # Import UIs made with Qt-Designer
 import ui.snapshot_name
@@ -467,7 +468,7 @@ class SessionSnapshotsDialog(SnapshotsDialog):
 
         self.ui.pushButtonSnapshotNow.clicked.connect(self._take_snapshot)
 
-        self.to_daemon('/ray/session/list_snapshots')
+        self.to_daemon(R.session.LIST_SNAPSHOTS)
 
         self.ui.checkBoxAutoSnapshot.stateChanged.connect(
             self._set_auto_snapshot)
@@ -478,13 +479,13 @@ class SessionSnapshotsDialog(SnapshotsDialog):
         if dialog.result():
             snapshot_label = dialog.get_snapshot_name()
             with_save = dialog.save_asked()
-            self.to_daemon('/ray/session/take_snapshot', snapshot_label,
+            self.to_daemon(R.session.TAKE_SNAPSHOT, snapshot_label,
                           int(with_save))
             self.ui.snapshotsList.setVisible(True)
             self.ui.label.setText(self._original_label)
 
     def _set_auto_snapshot(self, bool_snapshot):
-        self.to_daemon('/ray/session/set_auto_snapshot', int(bool_snapshot))
+        self.to_daemon(R.session.SET_AUTO_SNAPSHOT, int(bool_snapshot))
 
     def _no_snapshot_found(self):
         self.ui.label.setText(
@@ -501,7 +502,7 @@ class ClientSnapshotsDialog(SnapshotsDialog):
 
         self.client = client
 
-        self.to_daemon('/ray/client/list_snapshots', client.client_id)
+        self.to_daemon(R.client.LIST_SNAPSHOTS, client.client_id)
         self.resize(0, 0)
 
     def _no_snapshot_found(self):

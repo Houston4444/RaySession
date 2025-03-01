@@ -9,6 +9,7 @@ from qtpy.QtCore import Slot
 
 # Imports from src/shared
 import ray
+import osc_paths.ray as R
 
 # Local imports
 from child_dialogs import ChildDialog
@@ -115,7 +116,7 @@ class AdvancedPropertiesDialog(ChildDialog):
             server = GuiServerThread.instance()
             if server is not None:
                 server.to_daemon(
-                    '/ray/client/change_advanced_properties',
+                    R.client.CHANGE_ADVANCED_PROPERTIES,
                     self._client.client_id,
                     self.ui.lineEditClientId.text(),
                     self.ui.comboBoxPrefixMode.currentIndex(),

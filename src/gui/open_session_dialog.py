@@ -14,7 +14,7 @@ from qtpy.QtCore import Qt, QTimer, QDateTime, QLocale, QPoint
 
 # Imports from src/shared
 import ray
-from osclib import get_net_url, TCP
+import osc_paths.ray as R
 
 # Local imports
 import child_dialogs
@@ -352,7 +352,7 @@ class OpenSessionDialog(ChildDialog):
         self.signaler.other_session_templated.connect(
             self._session_templated_by_server)
 
-        self.to_daemon('/ray/server/list_sessions', 0)
+        self.to_daemon(R.server.LIST_SESSIONS, 0)
         
         self.ui.groupBoxProgress.setVisible(False)
 
@@ -452,7 +452,7 @@ class OpenSessionDialog(ChildDialog):
         self.ui.currentSessionsFolder.setText(session_root)
         self.ui.sessionList.clear()
         self.folders.clear()
-        self.to_daemon('/ray/server/list_sessions', 0)
+        self.to_daemon(R.server.LIST_SESSIONS, 0)
 
     def _add_sessions(self, session_names: list[str], out_of_listing=False):
         if not self._listing_sessions and not out_of_listing:
@@ -608,7 +608,7 @@ class OpenSessionDialog(ChildDialog):
             self.ui.previewFrame.setEnabled(True)
             if session_full_name:
                 self.to_daemon(
-                    '/ray/server/get_session_preview',
+                    R.server.GET_SESSION_PREVIEW,
                     session_full_name)
 
             if item.text(COLUMN_SCRIPTS):
@@ -666,7 +666,7 @@ class OpenSessionDialog(ChildDialog):
         
         session_name = item.data(COLUMN_NAME, Qt.ItemDataRole.UserRole)
         self.to_daemon(
-            '/ray/server/open_file_manager_at',
+            R.server.OPEN_FILE_MANAGER_AT,
             os.path.join(CommandLineArgs.session_root, session_name))
 
     def _set_corner_group(self, corner_mode:int):
@@ -717,7 +717,7 @@ class OpenSessionDialog(ChildDialog):
 
         self._set_pending_action(PENDING_ACTION_DUPLICATE)
         self._session_duplicating = (old_session_name, new_session_name)
-        self.to_daemon('/ray/session/duplicate_only', old_session_name,
+        self.to_daemon(R.session.DUPLICATE_ONLY, old_session_name,
                        new_session_name, CommandLineArgs.session_root)
 
     def _ask_for_session_save_as_template(self):
@@ -740,7 +740,7 @@ class OpenSessionDialog(ChildDialog):
 
         self._set_pending_action(PENDING_ACTION_TEMPLATE)
         self._session_templating = (session_name, template_name)
-        self.to_daemon('/ray/server/save_session_template',
+        self.to_daemon(R.server.SAVE_SESSION_TEMPLATE,
                        session_name, template_name)
 
     def _ask_for_session_remove(self):
@@ -808,7 +808,7 @@ class OpenSessionDialog(ChildDialog):
 
         self._set_pending_action(PENDING_ACTION_RENAME)
         self._session_renaming = (old_name, new_name)
-        self.to_daemon('/ray/server/rename_session', old_name, new_name)
+        self.to_daemon(R.server.RENAME_SESSION, old_name, new_name)
 
     def _parrallel_copy_state(self, session_id:int, state:int):
         if state and self._current_parrallel_copy_id:
@@ -836,7 +836,7 @@ class OpenSessionDialog(ChildDialog):
                 self._set_corner_group(CORNER_HIDDEN)
             return
         
-        self.to_daemon('/ray/server/abort_parrallel_copy',
+        self.to_daemon(R.server.ABORT_PARRALLEL_COPY,
                        self._current_parrallel_copy_id)
 
     def _session_renamed_by_server(self):
@@ -1083,7 +1083,7 @@ class OpenSessionDialog(ChildDialog):
             return
         
         session_name = item.data(COLUMN_NAME, Qt.ItemDataRole.UserRole)
-        self.to_daemon('/ray/session/add_other_session_client',
+        self.to_daemon(R.session.ADD_OTHER_SESSION_CLIENT,
                        session_name, client_id)
         self.reject()
 

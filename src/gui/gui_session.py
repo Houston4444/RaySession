@@ -11,6 +11,7 @@ from patchbay.bases.elements import TransportPosition
 
 # Imports from src/shared
 import ray
+import osc_paths.ray as R
 
 # Local imports
 from daemon_manager import DaemonManager
@@ -118,7 +119,7 @@ class Session:
                      factory: bool, display_name: str):
         server = GuiServerThread.instance()
         if server:
-            server.to_daemon('/ray/favorites/add', template_name,
+            server.to_daemon(R.favorites.ADD, template_name,
                              icon_name, int(factory), display_name)
 
     def remove_favorite(self, template_name: str, factory: bool):
@@ -128,7 +129,7 @@ class Session:
 
         server = GuiServerThread.instance()
         if server:
-            server.to_daemon('/ray/favorites/remove', template_name, int(factory))
+            server.to_daemon(R.favorites.REMOVE, template_name, int(factory))
 
     def is_favorite(self, template_name: str, factory: bool):
         for favorite in self.favorite_list:
@@ -164,8 +165,8 @@ class SignaledSession(Session):
 
     def _reply(self, path, args):
         if len(args) == 2:
-            if args[0] in ('/ray/session/add_exec',
-                           '/ray/session/add_executable'):
+            if args[0] in (R.session.ADD_EXEC,
+                           R.session.ADD_EXECUTABLE):
                 client_id: str = args[1]
 
                 for client in self.client_list:

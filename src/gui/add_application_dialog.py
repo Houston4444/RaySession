@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (QDialogButtonBox, QListWidget, QListWidgetItem,
 # Imports from src/shared
 import ray
 import client_properties_dialog
+import osc_paths.ray as R
 
 # Local imports
 from gui_tools import RS, _translate, is_dark_theme, get_app_icon
@@ -248,8 +249,8 @@ class AddApplicationDialog(ChildDialog):
         self.signaler.favorite_added.connect(self._favorite_added)
         self.signaler.favorite_removed.connect(self._favorite_removed)
 
-        self.to_daemon('/ray/server/list_user_client_templates')
-        self.to_daemon('/ray/server/list_factory_client_templates')
+        self.to_daemon(R.server.LIST_USER_CLIENT_TEMPLATES)
+        self.to_daemon(R.server.LIST_FACTORY_CLIENT_TEMPLATES)
         self.listing_finished = 0
 
         self.user_template_list = list[str]()
@@ -318,9 +319,9 @@ class AddApplicationDialog(ChildDialog):
         self.ui.templateList.clear()
         self.user_template_list.clear()
         self.factory_template_list.clear()
-        self.to_daemon('/ray/server/clear_client_templates_database')
-        self.to_daemon('/ray/server/list_user_client_templates')
-        self.to_daemon('/ray/server/list_factory_client_templates')
+        self.to_daemon(R.server.CLEAR_CLIENT_TEMPLATES_DATABASE)
+        self.to_daemon(R.server.LIST_USER_CLIENT_TEMPLATES)
+        self.to_daemon(R.server.LIST_FACTORY_CLIENT_TEMPLATES)
 
     def _add_user_templates(self, template_list: list[str]):
         for template_name in template_list:
@@ -584,7 +585,7 @@ class AddApplicationDialog(ChildDialog):
         if not dialog.result():
             return
 
-        self.to_daemon('/ray/server/remove_client_template', template_name)
+        self.to_daemon(R.server.REMOVE_CLIENT_TEMPLATE, template_name)
 
         for i in range(self.ui.templateList.count()):
             item: TemplateItem = self.ui.templateList.item(i)

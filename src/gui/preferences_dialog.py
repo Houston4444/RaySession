@@ -9,6 +9,7 @@ from qtpy.QtCore import Slot
 
 # Imports from src/shared
 import ray
+import osc_paths.ray as R
 
 # Local imports
 from child_dialogs import ChildDialog
@@ -171,9 +172,9 @@ class PreferencesDialog(ChildDialog):
     def _reset_terminal_command(self):
         server = GuiServerThread.instance()
         if server is not None:        
-            server.to_daemon('/ray/server/set_terminal_command', '')
+            server.to_daemon(R.server.SET_TERMINAL_COMMAND, '')
             
     def _terminal_edited(self, text: str):
         server = GuiServerThread.instance()
         if server is not None:        
-            server.to_daemon('/ray/server/set_terminal_command', text)
+            server.to_daemon(R.server.SET_TERMINAL_COMMAND, text)

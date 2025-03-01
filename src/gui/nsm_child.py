@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 # Imports from src/shared
 import ray
 from nsm_client_qt import NSMThread, NSMSignaler
+import osc_paths.nsm as NSM
 
 # Local imports
 from gui_tools import CommandLineArgs, _translate
@@ -107,7 +108,7 @@ class NsmChildOutside(NsmChild):
                 ':switch:optional-gui:ray-network:', ray.RAYNET_BIN)
 
             server_nsm.sendToDaemon(
-                '/nsm/client/network_properties',
+                NSM.client.NETWORK_PROPERTIES,
                 self.session.daemon_manager.url,
                 self.session.daemon_manager.session_root)
         self.session.main_win.hide()
@@ -117,7 +118,7 @@ class NsmChildOutside(NsmChild):
 
         if server_nsm:
             server_nsm.sendToDaemon(
-                '/nsm/client/network_properties',
+                NSM.client.NETWORK_PROPERTIES,
                 self.session.daemon_manager.url,
                 self.session.daemon_manager.session_root)
 
