@@ -2,7 +2,10 @@
 import logging
 from typing import TYPE_CHECKING
     
-from osclib import BunServer, Address, MegaSend, are_on_same_machine, are_same_osc_port
+from osclib import (BunServer, Address, MegaSend,
+                    are_on_same_machine, are_same_osc_port)
+import osc_paths.ray as r
+import osc_paths.ray.gui as rg
 
 if TYPE_CHECKING:
     from src.patchbay_daemon.patchbay_daemon import MainObject, TransportPosition
@@ -16,39 +19,35 @@ class OscJackPatch(BunServer):
         # tcp_port = get_free_osc_port(4444, TCP)
         
         BunServer.__init__(self)
-        self.add_method('/ray/patchbay/add_gui', 's',
+        self.add_method(r.patchbay.ADD_GUI, 's',
                         self._ray_patchbay_add_gui)
-        self.add_method('/ray/patchbay/gui_disannounce', 's',
+        self.add_method(r.patchbay.GUI_DISANNOUNCE, 's',
                         self._ray_patchbay_gui_disannounce)
-        self.add_method('/ray/patchbay/port/set_alias', 'sis',
-                        self._ray_patchbay_port_set_alias)
-        self.add_method('/ray/patchbay/connect', 'ss',
+        self.add_method(r.patchbay.CONNECT, 'ss',
                         self._ray_patchbay_connect)
-        self.add_method('/ray/patchbay/disconnect', 'ss',
+        self.add_method(r.patchbay.DISCONNECT, 'ss',
                         self._ray_patchbay_disconnect)
-        self.add_method('/ray/patchbay/set_buffer_size', 'i',
+        self.add_method(r.patchbay.SET_BUFFER_SIZE, 'i',
                         self._ray_patchbay_set_buffersize)
-        self.add_method('/ray/patchbay/refresh', '',
+        self.add_method(r.patchbay.REFRESH, '',
                         self._ray_patchbay_refresh)
-        self.add_method('/ray/patchbay/set_metadata', 'hss',
-                        self._ray_patchbay_set_metadata)
-        self.add_method('/ray/patchbay/transport_play', 'i',
+        self.add_method(r.patchbay.TRANSPORT_PLAY, 'i',
                         self._ray_patchbay_transport_play)
-        self.add_method('/ray/patchbay/transport_stop', '',
+        self.add_method(r.patchbay.TRANSPORT_STOP, '',
                          self._ray_patchbay_transport_stop)
-        self.add_method('/ray/patchbay/transport_relocate', 'i',
+        self.add_method(r.patchbay.TRANSPORT_RELOCATE, 'i',
                         self._ray_patchbay_transport_relocate)
-        self.add_method('/ray/patchbay/activate_dsp_load', 'i',
+        self.add_method(r.patchbay.ACTIVATE_DSP_LOAD, 'i',
                         self._ray_patchbay_activate_dsp_load)
-        self.add_method('/ray/patchbay/activate_transport', 'i',
+        self.add_method(r.patchbay.ACTIVATE_TRANSPORT, 'i',
                         self._ray_patchbay_activate_transport)
-        self.add_method('/ray/patchbay/group_pretty_name', 'sss',
+        self.add_method(r.patchbay.GROUP_PRETTY_NAME, 'sss',
                         self._ray_patchbay_group_pretty_name)
-        self.add_method('/ray/patchbay/port_pretty_name', 'sss',
+        self.add_method(r.patchbay.PORT_PRETTY_NAME, 'sss',
                         self._ray_patchbay_port_pretty_name)
-        self.add_method('/ray/patchbay/save_group_pretty_name', 'ssi',
+        self.add_method(r.patchbay.SAVE_GROUP_PRETTY_NAME, 'ssi',
                         self._ray_patchbay_set_group_pretty_name)
-        self.add_method('/ray/patchbay/save_port_pretty_name', 'ssi',
+        self.add_method(r.patchbay.SAVE_PORT_PRETTY_NAME, 'ssi',
                         self._ray_patchbay_set_port_pretty_name)
 
         self.main_object = main_object
@@ -78,11 +77,7 @@ class OscJackPatch(BunServer):
 
         if not self.gui_list:
             # no more GUI connected, no reason to exists anymore
-            print('gaoud baille')
             self._terminate = True
-
-    def _ray_patchbay_port_set_alias(self, path, args, types, src_addr):
-        ...
 
     def _ray_patchbay_connect(self, path, args):
         port_out_name, port_in_name = args
@@ -101,10 +96,6 @@ class OscJackPatch(BunServer):
 
     def _ray_patchbay_refresh(self, path, args):
         self.main_object.refresh()
-
-    def _ray_patchbay_set_metadata(self, path, args):
-        uuid, key, value = args
-        self.main_object.set_metadata(uuid, key, value)
 
     def _ray_patchbay_transport_play(self, path, args):
         self.main_object.transport_play(bool(args[0]))
@@ -165,35 +156,35 @@ class OscJackPatch(BunServer):
 
     def send_distant_data(self, src_addrs: list[Address]):
         ms = MegaSend('patchbay_ports')        
-        ms.add('/ray/gui/patchbay/big_packets', 0)
+        ms.add(rg.patchbay.BIG_PACKETS, 0)
         
         for port in self.port_list:
-            ms.add('/ray/gui/patchbay/port_added',
+            ms.add(rg.patchbay.PORT_ADDED,
                    port.name, port.type, port.flags, port.uuid)
         
         for client_name, client_uuid in self.client_name_uuids.items():
-            ms.add('/ray/gui/patchbay/client_name_and_uuid',
+            ms.add(rg.patchbay.CLIENT_NAME_AND_UUID,
                    client_name, client_uuid)
         
         for connection in self.connection_list:
-            ms.add('/ray/gui/patchbay/connection_added',
+            ms.add(rg.patchbay.CONNECTION_ADDED,
                    connection[0], connection[1])
         
         for uuid, key_dict in self.metadatas.items():
             for key, value in key_dict.items():
-                ms.add('/ray/gui/patchbay/metadata_updated',
+                ms.add(rg.patchbay.METADATA_UPDATED,
                        uuid, key, value)
             
         if self.main_object.alsa_mng is not None:
             alsa_mng = self.main_object.alsa_mng
             for port in alsa_mng.parse_ports_and_flags():
-                ms.add('/ray/gui/patchbay/port_added',
+                ms.add(rg.patchbay.PORT_ADDED,
                        port.name, port.type, port.flags, port.uuid)
                 
             for conn in alsa_mng.parse_connections():
-                ms.add('/ray/gui/patchbay/connection_added', *conn)
+                ms.add(rg.patchbay.CONNECTION_ADDED, *conn)
         
-        ms.add('/ray/gui/patchbay/big_packets', 1)
+        ms.add(rg.patchbay.BIG_PACKETS, 1)
         
         self.mega_send(src_addrs, ms)
 
@@ -203,16 +194,16 @@ class OscJackPatch(BunServer):
             return
 
         try:
-            self.send(gui_addr, '/ray/gui/patchbay/announce',
+            self.send(gui_addr, rg.patchbay.ANNOUNCE,
                       int(self.main_object.jack_running),
                       self.main_object.samplerate,
                       self.main_object.buffer_size,
                       self.url)
-            self.send(gui_addr, '/ray/gui/patchbay/dsp_load',
+            self.send(gui_addr, rg.patchbay.DSP_LOAD,
                       self.main_object.last_sent_dsp_load)
 
             tpos = self.main_object.last_transport_pos
-            self.send(gui_addr, '/ray/gui/patchbay/transport_position',
+            self.send(gui_addr, rg.patchbay.TRANSPORT_POSITION,
                       tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
                       tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
 
@@ -228,7 +219,7 @@ class OscJackPatch(BunServer):
             _logger.error(str(e))
 
     def server_restarted(self):
-        self.send_gui('/ray/gui/patchbay/server_started')
+        self.send_gui(rg.patchbay.SERVER_STARTED)
         self.send_samplerate()
         self.send_buffersize()
         
@@ -244,63 +235,63 @@ class OscJackPatch(BunServer):
         self.send_distant_data(self.gui_list)
 
     def client_name_and_uuid(self, client_name: str, uuid: int):
-        self.send_gui('/ray/gui/patchbay/client_name_and_uuid',
+        self.send_gui(rg.patchbay.CLIENT_NAME_AND_UUID,
                       client_name, uuid)
 
     def port_added(self, pname: str, ptype: int, pflags: int, puuid: int):
-        self.send_gui('/ray/gui/patchbay/port_added',
+        self.send_gui(rg.patchbay.PORT_ADDED,
                       pname, ptype, pflags, puuid) 
 
     def port_renamed(self, ex_name: str, new_name, uuid=0):
         if uuid:
             self.send_gui(
-                '/ray/gui/patchbay/port_renamed', ex_name, new_name, uuid)
+                rg.patchbay.PORT_RENAMED, ex_name, new_name, uuid)
         else:
             self.send_gui(
-                '/ray/gui/patchbay/port_renamed', ex_name, new_name)
+                rg.patchbay.PORT_RENAMED, ex_name, new_name)
     
     def port_removed(self, port_name: str):
-        self.send_gui('/ray/gui/patchbay/port_removed', port_name)
+        self.send_gui(rg.patchbay.PORT_REMOVED, port_name)
     
     def metadata_updated(self, uuid: int, key: str, value: str):
-        self.send_gui('/ray/gui/patchbay/metadata_updated', uuid, key, value)
+        self.send_gui(rg.patchbay.METADATA_UPDATED, uuid, key, value)
     
     def connection_added(self, connection: tuple[str, str]):
-        self.send_gui('/ray/gui/patchbay/connection_added',
+        self.send_gui(rg.patchbay.CONNECTION_ADDED,
                      connection[0], connection[1])
 
     def connection_removed(self, connection: tuple[str, str]):
-        self.send_gui('/ray/gui/patchbay/connection_removed',
+        self.send_gui(rg.patchbay.CONNECTION_REMOVED,
                      connection[0], connection[1])
     
     def server_stopped(self):
         # here server is JACK (or Pipewire JACK)
-        self.send_gui('/ray/gui/patchbay/server_stopped')
+        self.send_gui(rg.patchbay.SERVER_STOPPED)
     
     def send_transport_position(self, tpos: 'TransportPosition'):
-        self.send_gui('/ray/gui/patchbay/transport_position',
+        self.send_gui(rg.patchbay.TRANSPORT_POSITION,
                       tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
                       tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
     
     def send_dsp_load(self, dsp_load: int):
-        self.send_gui('/ray/gui/patchbay/dsp_load', dsp_load)
+        self.send_gui(rg.patchbay.DSP_LOAD, dsp_load)
     
     def send_one_xrun(self):
-        self.send_gui('/ray/gui/patchbay/add_xrun')
+        self.send_gui(rg.patchbay.ADD_XRUN)
     
     def send_buffersize(self):
-        self.send_gui('/ray/gui/patchbay/buffer_size',
+        self.send_gui(rg.patchbay.BUFFER_SIZE,
                      self.main_object.buffer_size)
     
     def send_samplerate(self):
-        self.send_gui('/ray/gui/patchbay/sample_rate',
+        self.send_gui(rg.patchbay.SAMPLE_RATE,
                      self.main_object.samplerate)
     
     def is_terminate(self):
         return self._terminate
     
     def send_server_lose(self):
-        self.send_gui('/ray/gui/patchbay/server_lose')
+        self.send_gui(rg.patchbay.SERVER_LOSE)
         
         # In the case server is not responding
         # and gui has not yet been added to gui_list
@@ -311,10 +302,10 @@ class OscJackPatch(BunServer):
             except:
                 return
         
-        self.send(addr, '/ray/gui/patchbay/server_lose')
+        self.send(addr, rg.patchbay.SERVER_LOSE)
 
     def ask_pretty_names(self, port: int):
         self.pretty_names.clear()
 
         addr = Address(port)
-        self.send(addr, '/ray/server/ask_for_pretty_names', self.port)
+        self.send(addr, r.server.ASK_FOR_PRETTY_NAMES, self.port)
