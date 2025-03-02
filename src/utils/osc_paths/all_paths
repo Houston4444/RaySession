@@ -1,5 +1,4 @@
 /error
-/error_minor
 /minor_error
 /nsm/client/gui_is_hidden
 /nsm/client/gui_is_shown
@@ -9,6 +8,7 @@
 /nsm/client/label
 /nsm/client/message
 /nsm/client/monitor/client_event
+/nsm/client/monitor/client_state
 /nsm/client/monitor/client_updated
 /nsm/client/network_properties
 /nsm/client/open
@@ -148,6 +148,7 @@
 /ray/gui/trash/ray_net_update
 /ray/gui/trash/remove
 /ray/monitor/client_event
+/ray/monitor/client_state
 /ray/monitor/client_updated
 /ray/net_daemon/duplicate_state
 /ray/patchbay/activate_dsp_load
