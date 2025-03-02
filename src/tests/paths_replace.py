@@ -63,7 +63,7 @@ for osc_path in all_paths.splitlines():
 #     # full_dict[f"'{value}'"] = f'RP.{key}'
 
 
-moduledir = src_path / 'patchbay_daemon'
+moduledir = src_path / 'shared' / 'nsm_client'
 
 for module in moduledir.iterdir():
     if not module.name.endswith('.py'):

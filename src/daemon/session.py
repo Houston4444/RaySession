@@ -509,9 +509,9 @@ class Session(ServerSender):
             self, monitor_addr: Address, monitor_is_client=True):
         '''send clients states to a new monitor'''
 
-        prefix = '/nsm/client/monitor/'
+        mon = nsm.client.monitor
         if not monitor_is_client:
-            prefix = '/ray/monitor/'
+            mon = r.monitor
 
         n_clients = 0
 
@@ -523,7 +523,7 @@ class Session(ServerSender):
 
             self.send(
                 monitor_addr,
-                prefix + 'client_state',
+                mon.CLIENT_STATE,
                 client.client_id,
                 client.get_jack_client_name(),
                 int(client.is_running()))
@@ -532,13 +532,13 @@ class Session(ServerSender):
         for client in self.trashed_clients:
             self.send(
                 monitor_addr,
-                prefix + 'client_state',
+                mon.CLIENT_STATE,
                 client.client_id,
                 client.get_jack_client_name(),
                 0)            
             n_clients += 1
 
-        self.send(monitor_addr, prefix + 'client_state', '', '', n_clients)
+        self.send(monitor_addr, mon.CLIENT_STATE, '', '', n_clients)
 
     def send_monitor_client_update(self, client: Client):
         '''send an event message to clients capable of ":monitor:"'''

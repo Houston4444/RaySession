@@ -5,4 +5,5 @@
 
 
 CLIENT_EVENT = '/ray/monitor/client_event'
+CLIENT_STATE = '/ray/monitor/client_state'
 CLIENT_UPDATED = '/ray/monitor/client_updated'

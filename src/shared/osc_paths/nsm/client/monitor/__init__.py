@@ -5,4 +5,5 @@
 
 
 CLIENT_EVENT = '/nsm/client/monitor/client_event'
+CLIENT_STATE = '/nsm/client/monitor/client_state'
 CLIENT_UPDATED = '/nsm/client/monitor/client_updated'
