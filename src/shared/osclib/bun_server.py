@@ -9,8 +9,9 @@ from threading import Thread
 from typing import Callable, Union, Optional
 
 from .bases import (
-    Server, Address, Message, Bundle, MethodsAdder, _SemDict, MegaSend)
+    Server, Address, Message, Bundle, MegaSend)
 from .funcs import are_on_same_machine
+from .bun_tools import MethodsAdder, _SemDict
 
 _logger = logging.getLogger(__name__)
 _RESERVED_PORT = 47
@@ -18,7 +19,6 @@ _RESERVED_PORT = 47
 
 class BunServer(Server):
     def __init__(self, *args, **kwargs):
-        # self._methods = dict[str | None, list[tuple[str | None, Callable]]]()
         self._methods_adder = MethodsAdder()
         super().__init__(*args, **kwargs)
 
