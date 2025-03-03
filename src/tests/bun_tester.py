@@ -19,7 +19,7 @@ class Server(Server):
             super().__init__()
         
         self._uscat = 64
-        
+
         self.add_methods('''
             /chala  ss
             /uscat  sf
@@ -47,6 +47,31 @@ class Server(Server):
             self._path_funcs[path](osp)
 
     # @overload
+    def add_methods_from_dict(self, methods_dict: dict[str, str]):
+        for path, typess in methods_dict.items():
+            for types in typess.split('|'):
+                valid_types = set[Optional[str]]()
+                types_broken = False
+                for type_ in types:
+                    if not valid_types and type_ in ('.', 's*', 'ss*'):
+                        if type_ == '.':
+                            valid_types.add('')
+                        else:
+                            valid_types.add(None)
+                            self._path_str_only[path] = 0 if type_ == 's*' else 1
+
+                        break
+                    
+                    for c in type_:
+                        if c not in 'ihfdcsSmtTFNIb':
+                            types_broken = True
+                            break
+                    else:
+                        valid_types.add(type_)
+                    
+                    if types_broken:
+                        break
+    
     def add_methods(self, methods: str):
         '''add methods with one string argument.
         each line contains a path and accepted types.

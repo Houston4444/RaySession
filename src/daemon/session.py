@@ -877,12 +877,12 @@ class OperatingSession(Session):
                         client.ray_hack_waiting_win = False
                         client.ray_hack_ready()
 
-    def _send_reply(self, *messages):
+    def _send_reply(self, *args):
         if not (self.osc_src_addr and self.osc_path):
             return
 
         self.send_even_dummy(self.osc_src_addr, osc_paths.REPLY,
-                             self.osc_path, *messages)
+                             self.osc_path, *args)
 
     def _send_error(self, err, error_message):
         #clear process order to allow other new operations
@@ -1640,12 +1640,13 @@ for better organization.""")
 
         self.next_function()
 
-    def rename_done(self, new_session_name):
+    def rename_done(self, new_session_name: str):
         self.send_gui_message(
             _translate('GUIMSG', 'Session %s has been renamed to %s .')
             % (self.name, new_session_name))
-        self._send_reply("Session '%s' has been renamed to '%s' ."
-                         % (self.name, new_session_name))
+        self._send_reply(
+            f"Session '{self.name}' has been renamed '"
+            f"to '{new_session_name}'.")
         self._forget_osc_args()
 
     def preload(self, session_full_name: str, auto_create=True):

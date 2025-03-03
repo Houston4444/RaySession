@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from threading import Thread
-from typing import Optional, Union, Any
+from types import NoneType
+from typing import Iterable, Optional, TypeAlias, Union, Any
 import logging
 import random
 import socket
@@ -33,6 +34,10 @@ except ImportError:
 _RESERVED_PORT = 47
 
 
+OscArg: TypeAlias = Union[
+    str, bytes, float, int, NoneType, bool, tuple[int, int, int, int]]
+
+
 class MegaSend:
     messages: list[Message]
     def __init__(self, ref: str):
@@ -43,9 +48,6 @@ class MegaSend:
     def add(self, *args):
         self.tuples.append(args)
         self.messages.append(Message(*args))
-
-
-
 
 
 class _SemDict(dict[int, int]):
@@ -120,7 +122,9 @@ class MethodsAdder:
         'for funcs with "None" types in add_method, create the types string'
         types = ''
         for arg in args:
-            if isinstance(arg, str):
+            if isinstance(arg, tuple):
+                types += args[0]
+            elif isinstance(arg, str):
                 types += 's'
             elif isinstance(arg, float):
                 types += 'f'
@@ -154,6 +158,10 @@ class MethodsAdder:
             for i in range(len(types)):
                 c = types[i]
                 a = args[i]
+                if isinstance(a, tuple) and len(a) == 2:
+                    if a[0] != c:
+                        break
+                
                 match c:
                     case 'c':
                         if not (isinstance(a, str) and len(a) == 1):
@@ -273,13 +281,29 @@ class BunServer(Server):
                 continue
             
             types, func = types_func
-                    
+            
+            # transform args_ to nargs,
+            # especially if tuples are used to send arguments
+            # for example: ('d', 0.455751122211)
+            # here received in json, there are no tuples, only lists
+            # all other arg types seems to be kept.
+            nargs = []
+            for arg in args_:
+                if isinstance(arg, list) and len(arg) == 2:
+                    if arg[0] == 'm' and isinstance(arg[1], list):
+                        nargs.append(tuple(arg[1]))
+                    else:
+                        nargs.append(arg[1])
+                else:
+                    nargs.append(arg)
+            
+            # execute function
             match number_of_args(func):
                 case 1: func(path)
-                case 2: func(path, args_)
-                case 3: func(path, args_, types)
-                case 4: func(path, args_, types, src_addr)
-                case 5: func(path, args_, types, src_addr, None)
+                case 2: func(path, nargs)
+                case 3: func(path, nargs, types)
+                case 4: func(path, nargs, types, src_addr)
+                case 5: func(path, nargs, types, src_addr, None)
     
     def mega_send(self: 'Union[BunServer, BunServerThread]',
                url: Union[str, int, Address, list[str | int | Address]],
@@ -449,7 +473,7 @@ class BunServerThread(BunServer):
 @dataclass()
 class OscPack:
     path: str
-    args: list[Union[str, int, float, bytes]]
+    args: list[OscArg]
     types: str
     src_addr: Address
     
@@ -503,6 +527,7 @@ class OscPack:
                 ret_list.append('')
         
         return tuple(ret_list)
+
 
 _mach192_dict = {'ip': '', 'read_done': False}
 

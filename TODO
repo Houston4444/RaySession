@@ -113,3 +113,8 @@ PATHS:
 
     dict généré pour les liaisons gui_session et session_signaled
     plutôt que les methodes basées sur le nom du path (en gardant les mêmes)
+
+    /ray/control/server/announce -> /ray/control/server_announce
+
+daemon/session remember_osc_args() should stock an OscPack
+    same for answer() in server_sender
