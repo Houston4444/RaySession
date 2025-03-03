@@ -101,20 +101,37 @@ class BunServer(Server):
         
         !!! the recepter MUST be a Bunserver or a BunServerThread !!!'''
         ...
+    def add_nice_methods(
+            self, methods_dict: dict[str, str],
+            func: Callable[[OscPack], None]):
+        '''Nice way to add several OSC methods to the server,
+        all routed to the same function.
+        
+        The function `func` MUST accept only one OscPack argument.
+        
+        `methods_dict` MUST be a dict where keys are osc paths
+        and value a string containing possible several types string
+        separated with '|' and accepting special characters '.' and '*'.
+        
+        '.' is used to accept any type of argument
 
-class BunServerThread(Server):
+        '*' is used to accept any number of arguments of the type specified
+        in the previous character
+        
+        examples:
+            's|i' : will accept one argument of type str or int
+
+            's*' : will accept any number of arguments (even 0) in the condition
+             they all are strings.
+             
+             'ss*' : same but at least one argument is required
+        '''
+        ...
+
+class BunServerThread(BunServer):
     '''Class inheriting liblo.Server. Provides a server thread
     with the mega_send feature, which allows to send massive
     bundle of messages, in several sends if needed.'''
-    def mega_send(
-            self,
-            url: Union[str, int, Address, list[Union[str, int, Address]]],
-            mega_send: MegaSend) -> bool:
-        '''send a undeterminated number of messages to another BunServer
-        (or BunServerThread).
-        
-        !!! the recepter MUST be a Bunserver or a BunServerThread !!!'''
-        ...
     def start(): ...
     def stop(): ...
 
@@ -141,7 +158,7 @@ def make_method(path: str, typespec: str, user_data=None): ...
 @dataclass()
 class OscPack:
     path: str
-    args: list[Union[str, int, float, bytes]]
+    args: list[OscArg]
     types: str
     src_addr: Address
     

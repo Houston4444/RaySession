@@ -851,8 +851,7 @@ class OscServerThread(ClientCommunicating):
 
     @osp_method(r.server.GET_SESSION_PREVIEW, 's')
     def rayServerGetSessionPreview(self, osp: OscPack):
-        sess_prev: str
-        sess_prev = osp.args[0]
+        sess_prev: str = osp.args[0]
         self.session_to_preview = sess_prev
     
     @osp_method(r.server.SCRIPT_INFO, 's')
@@ -1130,6 +1129,13 @@ class OscServerThread(ClientCommunicating):
                       "Cannot add to session because no session is loaded.")
             return False
 
+        try:
+            protocol = ray.Protocol(protocol)
+        except:
+            self.send(*osp.error(), ray.Err.CREATE_FAILED,
+                      f"Invalid protocol number: {protocol}")
+            return False
+
         if protocol is ray.Protocol.NSM and '/' in executable_path:
             self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
@@ -1162,6 +1168,13 @@ class OscServerThread(ClientCommunicating):
         if self.session.path is None:
             self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
+            return False
+
+        try:
+            protocol = ray.Protocol(protocol)
+        except:
+            self.send(*osp.error(), ray.Err.CREATE_FAILED,
+                      f"Invalid protocol number: {protocol}")
             return False
 
         if protocol is ray.Protocol.NSM and '/' in executable_path:
@@ -1254,7 +1267,7 @@ class OscServerThread(ClientCommunicating):
 
         for favorite in RS.favorites:
             if (favorite.name == name
-                    and bool(int_factory) == favorite.factory):
+                    and bool(int_factory) is favorite.factory):
                 RS.favorites.remove(favorite)
                 break
 
@@ -1462,7 +1475,7 @@ class OscServerThread(ClientCommunicating):
         return 0
 
     def get_local_gui_pid_list(self) -> str:
-        pid_list = []
+        pid_list = list[str]()
         for gui in self.gui_list:
             if are_on_same_machine(gui.addr.url, self.url):
                 pid_list.append(str(gui.pid))

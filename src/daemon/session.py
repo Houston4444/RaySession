@@ -477,9 +477,11 @@ class Session(ServerSender):
 
         if len(client_newlist) != len(self.clients):
             if src_addr:
-                self.send(src_addr, osc_paths.ERROR, src_path, ray.Err.GENERAL_ERROR,
-                          "%s clients are missing or incorrect" \
-                            % (len(self.clients) - len(client_ids_list)))
+                self.send(
+                    src_addr, osc_paths.ERROR, src_path, 
+                    ray.Err.GENERAL_ERROR,
+                    "%s clients are missing or incorrect" \
+                        % (len(self.clients) - len(client_ids_list)))
             return
 
         self.clients.clear()
