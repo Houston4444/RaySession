@@ -17,7 +17,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Hi !&lt;/p&gt;&lt;p&gt;it seems that you appreciate RaySession, that is already a good new.&lt;br/&gt;This software is free as in Speech and as in Beer,&lt;br/&gt;but it has required and still takes time.&lt;/p&gt;&lt;p&gt;Make a donation (even small) is a simple way to say &amp;quot;Thank you&amp;quot;.&lt;br/&gt;You can donate &lt;a href=&quot;https://liberapay.com/Houston4444&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;here&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;If ever you donate nothing,&lt;br/&gt;this program will continue to work without limits of functionnality,&lt;br/&gt;without limit of duration, and even without insulting you ;) .&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Hi !&lt;/p&gt;&lt;p&gt;it seems that you appreciate RaySession, this is already good news.&lt;br/&gt;This software is free as in Speech and as in Beer,&lt;br/&gt;but it has required and still takes time.&lt;/p&gt;&lt;p&gt;Make a donation (even small) is a simple way to say &amp;quot;Thank you&amp;quot;.&lt;br/&gt;You can donate &lt;a href=&quot;https://liberapay.com/Houston4444&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;here&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;If ever you donate nothing,&lt;br/&gt;this program will continue to work without limits of functionnality,&lt;br/&gt;without limit of duration, and even without insulting you ;) .&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="openExternalLinks">
       <bool>true</bool>
