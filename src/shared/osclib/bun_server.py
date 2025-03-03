@@ -9,9 +9,9 @@ from threading import Thread
 from typing import Callable, Union, Optional
 
 from .bases import (
-    Server, Address, Message, Bundle, MegaSend)
+    OscArg, OscPack, Server, Address, Message, Bundle, MegaSend)
 from .funcs import are_on_same_machine
-from .bun_tools import MethodsAdder, _SemDict
+from .bun_tools import MethodsAdder, _SemDict, types_validator
 
 _logger = logging.getLogger(__name__)
 _RESERVED_PORT = 47
@@ -20,6 +20,8 @@ _RESERVED_PORT = 47
 class BunServer(Server):
     def __init__(self, *args, **kwargs):
         self._methods_adder = MethodsAdder()
+        self._director_methods = dict[
+            str, tuple[str, Callable[[OscPack], None]]]()
         super().__init__(*args, **kwargs)
 
         self.add_method('/_bundle_head', 'iii', self.__bundle_head)
@@ -112,6 +114,35 @@ class BunServer(Server):
                 case 3: func(path, nargs, types)
                 case 4: func(path, nargs, types, src_addr)
                 case 5: func(path, nargs, types, src_addr, None)
+    
+    def __director(self, path: str, args: list[OscArg],
+                   types: str, src_addr: Address):
+        '''transmit messages received from methods added
+        with `add_nice_methods`'''
+        types_func = self._director_methods.get(path)
+        if types_func is None:
+            return
+        
+        full_types, func = types_func
+        if not types_validator(types, full_types):
+            _logger.info(
+                f"Message ignored: path: {path}, "
+                f"'{types}' not in '{full_types}'")
+            return
+
+        func(OscPack(path, args, types, src_addr))
+    
+    def add_nice_methods(
+            self, methods_dict: dict[str, str],
+            func: Callable[[OscPack], None]):
+        for path, full_types in methods_dict.items():
+            self._director_methods[path] = (full_types, func)
+            for types in full_types.split('|'):
+                if '.' in types or '*' in types:
+                    self.add_method(path, None, self.__director)
+                    break
+                else:
+                    self.add_method(path, types, self.__director)
     
     def mega_send(self: 'Union[BunServer, BunServerThread]',
                url: Union[str, int, Address, list[str | int | Address]],

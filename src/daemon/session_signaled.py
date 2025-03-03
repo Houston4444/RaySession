@@ -781,13 +781,24 @@ class SignaledSession(OperatingSession):
                       'No session is loaded, impossible to take snapshot')
             return
         
-        snapshot_name = ''
         with_save = 0
+        snapshot_name = ''
+        args = osp.args
         
-        if len(osp.args) == 2:
-            snapshot_name, with_save = osp.args
-        else:
-            snapshot_name = osp.args[0]
+        match osp.types:
+            case 's':
+                args: tuple[str]
+                snapshot_name, = args
+            case 'si':
+                args: tuple[str, int]
+                snapshot_name, with_save = args
+            case _:
+                return
+        
+        # if len(osp.args) == 2:
+        #     snapshot_name, with_save = osp.args
+        # else:
+        #     snapshot_name = osp.args[0]
 
         self.steps_order.clear()
 
@@ -822,23 +833,41 @@ class SignaledSession(OperatingSession):
 
         if self.steps_order:
             if self.osc_path.startswith('/nsm/server/'):
-                short_path = self.osc_path.rpartition('/')[2]
+                ns = nsm.server
 
-                if short_path == 'save':
-                    self.save_error(ray.Err.CREATE_FAILED)
-                elif short_path == 'open':
-                    self.load_error(ray.Err.SESSION_LOCKED)
-                elif short_path == 'new':
-                    self._send_error(ray.Err.CREATE_FAILED,
-                                "Could not create the session directory")
-                elif short_path == 'duplicate':
-                    self.duplicate_aborted(self.osc_args[0])
-                elif short_path in ('close', 'abort', 'quit'):
-                    # let the current close works here
-                    self.send(*osp.error(),
-                              ray.Err.OPERATION_PENDING,
-                              "An operation pending.")
-                    return
+                match self.osc_path:
+                    case ns.SAVE:
+                        self.save_error(ray.Err.CREATE_FAILED)
+                    case ns.OPEN:
+                        self.load_error(ray.Err.SESSION_LOCKED)
+                    case ns.NEW:
+                        self._send_error(
+                            ray.Err.CREATE_FAILED,
+                            "Could not create the session directory")
+                    case ns.DUPLICATE:
+                        self.duplicate_aborted(self.osc_args[0])
+                    case ns.CLOSE|ns.ABORT|ns.QUIT:
+                        # let the current close works here
+                        self.send(*osp.error(),
+                                ray.Err.OPERATION_PENDING,
+                                "An operation pending.")
+                        return
+                    
+                # if short_path == 'save':
+                #     self.save_error(ray.Err.CREATE_FAILED)
+                # elif short_path == 'open':
+                #     self.load_error(ray.Err.SESSION_LOCKED)
+                # elif short_path == 'new':
+                #     self._send_error(ray.Err.CREATE_FAILED,
+                #                 "Could not create the session directory")
+                # elif short_path == 'duplicate':
+                #     self.duplicate_aborted(self.osc_args[0])
+                # elif short_path in ('close', 'abort', 'quit'):
+                #     # let the current close works here
+                #     self.send(*osp.error(),
+                #               ray.Err.OPERATION_PENDING,
+                #               "An operation pending.")
+                #     return
             else:
                 self._send_error(
                     ray.Err.ABORT_ORDERED,
@@ -952,15 +981,16 @@ class SignaledSession(OperatingSession):
 
         snapshot = osp.args[0]
 
-        self.steps_order = [self.save,
-                              self.close_no_save_clients,
-                              (self.snapshot, '', snapshot, True),
-                              (self.close, True),
-                              (self.init_snapshot, self.path, snapshot),
-                              (self.preload, str(self.path)),
-                              self.take_place,
-                              self.load,
-                              self.load_done]
+        self.steps_order = [
+            self.save,
+            self.close_no_save_clients,
+            (self.snapshot, '', snapshot, True),
+            (self.close, True),
+            (self.init_snapshot, self.path, snapshot),
+            (self.preload, str(self.path)),
+            self.take_place,
+            self.load,
+            self.load_done]
 
     def _ray_session_rename(self, osp: OscPack):
         new_session_name = osp.args[0]
@@ -1214,11 +1244,13 @@ class SignaledSession(OperatingSession):
                               'session is busy')
                     return
 
-                new_client.eat_other_session_client(osp.src_addr, osp.path, client)
+                new_client.eat_other_session_client(
+                    osp.src_addr, osp.path, client)
                 break
         else:
-            self.send(*osp.error(), ray.Err.NO_SUCH_FILE,
-                      'no client %s found in session %s' % (client_id, other_session))
+            self.send(
+                *osp.error(), ray.Err.NO_SUCH_FILE,
+                f'no client {client_id} found in session {other_session}')
 
     def _ray_session_reorder_clients(self, osp: OscPack):
         client_ids_list = osp.args

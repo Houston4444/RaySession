@@ -3,6 +3,70 @@ from typing import Callable, Optional
 
 
 _logger = logging.getLogger(__name__)
+_AVAILABLE_TYPES = 'ihfdcsSmtTFNIb'
+
+
+def types_validator(input_types: str, avl_types_full: str) -> bool:
+    '''return True if input_types is compatible with avl_types_full,
+    
+    input_types is a regular liblo types,
+
+    avl_types_full is a string containing many types strings separated
+    by '|', all these types strings can contain specific characters
+    '.' and '*'.
+    Example: 'sis|ss*'
+    
+    '''
+    avl_typess = set(avl_types_full.split('|'))
+    if input_types in avl_typess:
+        return True
+    if '.*' in avl_typess or '*' in avl_typess:
+        return True
+    
+    for avl_types in avl_typess:
+        if not ('*' in avl_types or '.' in avl_types):
+            continue
+
+        wildcard = ''
+        mt = ''
+
+        for i in range(len(avl_types)):
+            mt = avl_types[i]
+            if i + 1 < len(avl_types) and avl_types[i+1] == '*':
+                if mt in ('', '.'):
+                    return True
+                wildcard = mt
+                
+            else:
+                wildcard = ''
+
+            if wildcard:
+                j = i
+                compat = True
+                while j < len(input_types):
+                    if input_types[j] != wildcard:
+                        compat = False
+                        break
+                    j += 1
+                
+                if compat:
+                    return True
+                else:
+                    break
+            
+            if i >= len(input_types):
+                break
+            
+            if mt == '.':
+                continue
+            
+            if input_types[i] != mt:
+                break
+        else:
+            # input_types is compatible with this avl_types
+            return True
+    
+    return False
 
 
 class _SemDict(dict[int, int]):
@@ -79,7 +143,7 @@ class MethodsAdder:
         for arg in args:
             if (isinstance(arg, tuple) 
                     and len(arg) == 2
-                    and arg[0] in 'ihfdcsSmtTFNIb'):
+                    and arg[0] in _AVAILABLE_TYPES):
                 types += arg[0]
             elif isinstance(arg, str):
                 types += 's'
