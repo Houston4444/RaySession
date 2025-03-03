@@ -1,10 +1,14 @@
 from types import NoneType
-from typing import Callable, Union, overload, Optional, Literal
+from typing import (
+    Callable, TypeAlias, Union, overload, Optional, Literal, TypeAlias)
 from dataclasses import dataclass
 
 UDP: int
 UNIX: int
 TCP: int
+
+OscArg: TypeAlias = Union[
+    str, bytes, float, int, NoneType, bool, tuple[int, int, int, int]]
 
 
 class Message:
