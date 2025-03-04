@@ -1,5 +1,6 @@
 
 # Imports from standard library
+from functools import wraps
 import logging
 import os
 import shlex
@@ -46,6 +47,9 @@ signaler = Signaler.instance()
 _translate = QCoreApplication.translate
 _logger = logging.getLogger(__name__)
 
+_validators = dict[str, Callable[[OscPack], bool]]()
+_validators_types = dict[str, str]()
+
 
 def _path_is_valid(path: str) -> bool:
     if path.startswith(('./', '../')):
@@ -59,24 +63,57 @@ def _path_is_valid(path: str) -> bool:
         return False
     return True
 
-def osp_method(path: str, types: str):
+
+def validator(path: str, full_types: str, no_sess=''):
+    '''With this decorator, the OSC path method will continue
+    its work in the main thread (in session_signaled module),
+    except if the function returns False.
+    
+    `path` is an OSC path str
+
+    `full_types` is an str containing all accepted arg types
+    separated with '|'. It also accepts special characters:
+    
+    - '.' for any arg type
+    - '*' for any number of args of type specified by the previous
+    character
+    
+    `no_sess` is the string message to send if no session is open 
+    '''
     def decorated(func: Callable):
-        @make_method(path, types)
         def wrapper(*args, **kwargs):
-            t_thread, t_path, t_args, t_types, src_addr, rest = args
-            _logger.debug(
-                '\033[94mOSC::daemon_receives\033[0m '
-                f'{t_path}, {t_types}, {t_args}, %{src_addr.url}'
-            )
+            if no_sess:
+                server: 'OscServerThread' = args[0]
+                osp: OscPack = args[1]
 
-            osp = OscPack(t_path, t_args, t_types, src_addr)
-            response = func(t_thread, osp, **kwargs)
+                if server.session.path is None:
+                    server.send(
+                        *osp.error(), ray.Err.NO_SESSION_OPEN, no_sess)
+                    return False
 
-            if response != False:
-                signaler.osc_recv.emit(osp)
+            response = func(*args, **kwargs)
+            if response is False:
+                return False
+            return True
+    
+        _validators[path] = wrapper
+        _validators_types[path] = full_types
 
-            return response
         return wrapper
+    return decorated
+
+def directos(path: str, full_types: str):
+    '''This OSC path method does all its job directly in the thread
+    of this server. No work will have to be done in the main thread.'''
+    def decorated(func: Callable):
+        def wrapper(*args, **kwargs):
+            func(*args, **kwargs)
+            return False
+
+        _validators[path] = wrapper
+        _validators_types[path] = full_types
+        return wrapper
+
     return decorated
 
 
@@ -119,20 +156,13 @@ class ClientCommunicating(BunServerThread):
         self.net_daemon_id = random.randint(1, 999999999)
         self.options = 0
 
-    @osp_method(osc_paths.osc.PING, '')
-    def oscPing(self, osp: OscPack):
+    @directos(osc_paths.osc.PING, '')
+    def _osc_ping(self, osp: OscPack):
         self.send(*osp.reply())
 
-    @osp_method(osc_paths.REPLY, None)
+    @validator(osc_paths.REPLY, 'ss*')
     def reply(self, osp: OscPack):
-        if not osp.strings_only:
-            self._unknown_message(osp)
-
-        if not len(osp.args) >= 1:
-            self._unknown_message(osp)
-            return False
-
-        reply_path = osp.args[0]
+        reply_path: str = osp.args[0]
 
         if reply_path == r.server.LIST_SESSIONS:
             # this reply is only used here for reply from net_daemon
@@ -155,7 +185,7 @@ class ClientCommunicating(BunServerThread):
             self._unknown_message(osp)
             return False
 
-    @osp_method(osc_paths.ERROR, 'sis')
+    @validator(osc_paths.ERROR, 'sis')
     def error(self, osp: OscPack):
         error_path, error_code, error_string = osp.args
 
@@ -168,50 +198,46 @@ class ClientCommunicating(BunServerThread):
                           'User action dialog aborted !')
             return False
 
-    @osp_method(osc_paths.MINOR_ERROR, 'sis')
+    @validator(osc_paths.MINOR_ERROR, 'sis')
     def minor_error(self, osp: OscPack):
-        # prevent minor_error to minor_error loop in daemon <-> daemon communication
+        # prevent minor_error to minor_error loop 
+        # in daemon <-> daemon communication
         pass
 
     # SERVER_CONTROL messages
     # following messages only for :server-control: capability
-    @osp_method(nsm.server.ADD, 's')
-    def nsmServerAdd(self, osp: OscPack):
-        executable_path = osp.args[0]
-
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "Cannot add to session because no session is loaded.")
-            return False
+    @validator(nsm.server.ADD, 's',
+               no_sess="Cannot add to session because no session is loaded.")
+    def _nsm_server_add(self, osp: OscPack):
+        executable_path: str = osp.args[0]
 
         if '/' in executable_path:
             self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False
 
-    @osp_method(nsm.server.SAVE, '')
-    def nsmServerSave(self, osp: OscPack):
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "No session to save.")
-            return False
+    @validator(nsm.server.SAVE, '', no_sess="No session to save.")
+    def _nsm_server_save(self, osp: OscPack):
+        ...
 
-    @osp_method(nsm.server.OPEN, 's')
-    def nsmServerOpen(self, osp: OscPack):
-        pass
+    @validator(nsm.server.OPEN, 's')
+    def _nsm_server_open(self, osp: OscPack):
+        ...
 
-    @osp_method(nsm.server.NEW, 's')
-    def nsmServerNew(self, osp: OscPack):
+    @validator(nsm.server.NEW, 's')
+    def _nsm_server_new(self, osp: OscPack):
         if self.is_nsm_locked:
             return False
 
-        if not _path_is_valid(osp.args[0]):
+        new_session_name: str = osp.args[0]
+
+        if not _path_is_valid(new_session_name):
             self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
 
-    @osp_method(nsm.server.DUPLICATE, 's')
-    def nsmServerDuplicate(self, osp: OscPack):
+    @validator(nsm.server.DUPLICATE, 's')
+    def _nsm_server_duplicate(self, osp: OscPack):
         if self.is_nsm_locked or self.session.path is None:
             self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session to duplicate.")
@@ -222,50 +248,34 @@ class ClientCommunicating(BunServerThread):
                       "Invalid session name.")
             return False
 
-    @osp_method(nsm.server.CLOSE, '')
-    def nsmServerClose(self, osp: OscPack):
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "No session to close.")
-            return False
+    @validator(nsm.server.CLOSE, '', no_sess='No session to close.')
+    def _nsm_server_close(self, osp: OscPack):
+        ...
 
-    @osp_method(nsm.server.ABORT, '')
-    def nsmServerAbort(self, osp: OscPack):
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "No session to abort.")
-            return False
+    @validator(nsm.server.ABORT, '', no_sess='No session to abort.')
+    def _nsm_server_abort(self, osp: OscPack):
+        ...
 
-    @osp_method(nsm.server.QUIT, '')
-    def nsmServerQuit(self, osp: OscPack):
-        pass
+    @validator(nsm.server.QUIT, '')
+    def _nsm_server_quit(self, osp: OscPack):
+        ...
 
-    @osp_method(nsm.server.LIST, '')
-    def nsmServerList(self, osp: OscPack):
-        pass
+    @validator(nsm.server.LIST, '')
+    def _nsm_server_list(self, osp: OscPack):
+        ...
 
     # END OF SERVER_CONTROL messages
 
-    @osp_method(nsm.server.ANNOUNCE, 'sssiii')
-    def nsmServerAnnounce(self, osp: OscPack):
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "Sorry, but there's no session open "
-                      "for this application to join.")
-            return False
+    @validator(nsm.server.ANNOUNCE, 'sssiii',
+               no_sess="Sorry, but there's no session open "
+                       "for this application to join.")
+    def _nsm_server_announce(self, osp: OscPack):
+        ...
 
-    @osp_method(nsm.server.BROADCAST, None)
-    def nsmServerBroadcast(self, osp: OscPack):
-        if not osp.args:
-            return False
-
-        if not isinstance(osp.args[0], str):
-            return False
-
-        #don't allow clients to broadcast NSM commands
-        follow_path = osp.args[0]
-        if not isinstance(follow_path, str):
-            return False
+    @validator(nsm.server.BROADCAST, 's.*')
+    def _nsm_server_broadcast(self, osp: OscPack):
+        # don't allow clients to broadcast NSM commands
+        follow_path: str = osp.args[0]
         if follow_path.startswith(('/nsm/', '/ray/')):
             return False
 
@@ -283,23 +293,25 @@ class ClientCommunicating(BunServerThread):
                 #if gui_addr.url != osp.src_addr.url:
                     #self.send(gui_addr, Message(*osp.args))
 
-    @osp_method(nsm.server.MONITOR_RESET, '')
-    def nsmServerGetAllStates(self, osp: OscPack):
+    @validator(nsm.server.MONITOR_RESET, '')
+    def _nsm_server_monitor_reset(self, osp: OscPack):
         self.send(*osp.reply(), 'monitor reset')
-        self.session.send_initial_monitor(osp.src_addr, monitor_is_client=True)
+        self.session.send_initial_monitor(
+            osp.src_addr, monitor_is_client=True)
 
-    @osp_method(nsm.client.PROGRESS, 'f')
-    def nsmClientProgress(self, osp: OscPack):
+    @validator(nsm.client.PROGRESS, 'f')
+    def _nsm_client_progress(self, osp: OscPack):
         client = self.session.get_client_by_address(osp.src_addr)
         if not client:
             return False
 
-        client.progress = osp.args[0]
+        progress: float = osp.args[0]
+        client.progress = progress
         self.send_gui(rg.client.PROGRESS, client.client_id,
                       client.progress)
 
-    @osp_method(nsm.client.IS_DIRTY, '')
-    def nsmClientIs_dirty(self, osp: OscPack):
+    @validator(nsm.client.IS_DIRTY, '')
+    def _nsm_client_is_dirty(self, osp: OscPack):
         client = self.session.get_client_by_address(osp.src_addr)
         if not client:
             return False
@@ -311,8 +323,8 @@ class ClientCommunicating(BunServerThread):
 
         self.send_gui(rg.client.DIRTY, client.client_id, client.dirty)
 
-    @osp_method(nsm.client.IS_CLEAN, '')
-    def nsmClientIs_clean(self, osp: OscPack):
+    @validator(nsm.client.IS_CLEAN, '')
+    def _nsm_client_is_clean(self, osp: OscPack):
         client = self.session.get_client_by_address(osp.src_addr)
         if not client:
             return False
@@ -324,8 +336,8 @@ class ClientCommunicating(BunServerThread):
         self.send_gui(rg.client.DIRTY, client.client_id, client.dirty)
         return False
 
-    @osp_method(nsm.client.MESSAGE, 'is')
-    def nsmClientMessage(self, osp: OscPack):
+    @validator(nsm.client.MESSAGE, 'is')
+    def _nsm_client_message(self, osp: OscPack):
         client = self.session.get_client_by_address(osp.src_addr)
         if not client:
             return False
@@ -333,8 +345,8 @@ class ClientCommunicating(BunServerThread):
         self.send_gui(rg.client.MESSAGE,
                       client.client_id, osp.args[0], osp.args[1])
 
-    @osp_method(nsm.client.GUI_IS_HIDDEN, '')
-    def nsmClientGui_is_hidden(self, osp: OscPack):
+    @validator(nsm.client.GUI_IS_HIDDEN, '')
+    def _nsm_client_gui_is_hidden(self, osp: OscPack):
         client = self.session.get_client_by_address(osp.src_addr)
         if not client:
             return False
@@ -344,10 +356,10 @@ class ClientCommunicating(BunServerThread):
         client.gui_visible = False
 
         self.send_gui(rg.client.GUI_VISIBLE, client.client_id,
-                     int(client.gui_visible))
+                      int(client.gui_visible))
 
-    @osp_method(nsm.client.GUI_IS_SHOWN, '')
-    def nsmClientGui_is_shown(self, osp: OscPack):
+    @validator(nsm.client.GUI_IS_SHOWN, '')
+    def _nsm_client_gui_is_shown(self, osp: OscPack):
         client = self.session.get_client_by_address(osp.src_addr)
         if not client:
             return False
@@ -358,15 +370,15 @@ class ClientCommunicating(BunServerThread):
         client.gui_has_been_visible = True
 
         self.send_gui(rg.client.GUI_VISIBLE, client.client_id,
-                     int(client.gui_visible))
+                      int(client.gui_visible))
 
-    @osp_method(nsm.client.LABEL, 's')
-    def nsmClientLabel(self, osp: OscPack):
-        pass
+    @validator(nsm.client.LABEL, 's')
+    def _nsm_client_label(self, osp: OscPack):
+        ...
 
-    @osp_method(nsm.client.NETWORK_PROPERTIES, 'ss')
-    def nsmClientNetworkProperties(self, osp: OscPack):
-        pass
+    @validator(nsm.client.NETWORK_PROPERTIES, 'ss')
+    def _nsm_client_network_properties(self, osp: OscPack):
+        ...
 
     def _unknown_message(self, osp: OscPack):
         self.send(osp.src_addr, osc_paths.MINOR_ERROR, osp.path,
@@ -375,18 +387,10 @@ class ClientCommunicating(BunServerThread):
 
     def send_gui(self, *args):
         # should be overclassed
-        pass
+        ...
 
 
 class OscServerThread(ClientCommunicating):
-    _SIMPLE_OSC_PATHS: tuple[tuple[str, str]]
-    'OSC paths directly running in session_signaled.py'
-    
-    _STRINGS_OSC_PATHS: dict[str, int]
-    '''OSC paths needing an undeterminated number of strings as argument.
-    key: OSC path
-    value: minimum number of arguments'''
-    
     def __init__(self, session, osc_num=0, tcp_port=0):
         ClientCommunicating.__init__(
             self, session, osc_num=osc_num, tcp_port=tcp_port)
@@ -438,81 +442,77 @@ class OscServerThread(ClientCommunicating):
         else:
             self.terminal_command = shlex.join(
                 which_terminal(title='RAY_TERMINAL_TITLE'))
-
-        self._SIMPLE_OSC_PATHS = {
-            (r.server.QUIT, ''),
-            (r.server.ABORT_COPY, ''),
-            (r.server.ABORT_PARRALLEL_COPY, 'i'),
-            (r.server.ABORT_SNAPSHOT, ''),
-            (r.server.OPEN_SESSION, 's'),
-            (r.server.OPEN_SESSION, 'si'),
-            (r.server.OPEN_SESSION, 'sis'),
-            (r.server.OPEN_SESSION_OFF, 's'),
-            (r.server.OPEN_SESSION_OFF, 'si'),
-            (r.server.RENAME_SESSION, 'ss'),
-            (r.server.patchbay.VIEWS_CHANGED, 's'),
-            (r.server.patchbay.CLEAR_ABSENTS_IN_VIEW, 's'),
-            (r.server.patchbay.VIEW_NUMBER_CHANGED, 'ii'),
-            (r.server.patchbay.VIEW_PTV_CHANGED, 'ii'),
-            (r.server.patchbay.SAVE_GROUP_PRETTY_NAME, 'sssi'),
-            (r.server.patchbay.SAVE_PORT_PRETTY_NAME, 'sssi'),
-            (r.session.ABORT, ''),
-            (r.session.OPEN_SNAPSHOT, 's'),
-            (r.session.GET_NOTES, ''),
-            (r.session.ADD_CLIENT_TEMPLATE, 'isss'),
-            (r.session.ADD_OTHER_SESSION_CLIENT, 'ss'),
-            (r.session.LIST_SNAPSHOTS, ''),
-            (r.session.SET_AUTO_SNAPSHOT, 'i'),
-            (r.session.LIST_TRASHED_CLIENTS, ''),
-            (r.client.STOP, 's'),
-            (r.client.KILL, 's'),
-            (r.client.TRASH, 's'),
-            (r.client.START, 's'),
-            (r.client.RESUME, 's'),
-            (r.client.OPEN, 's'),
-            (r.client.SAVE, 's'),
-            (r.client.SAVE_AS_TEMPLATE, 'ss'),
-            (r.client.SHOW_OPTIONAL_GUI, 's'),
-            (r.client.HIDE_OPTIONAL_GUI, 's'),
-            (r.client.UPDATE_PROPERTIES, ray.ClientData.sisi()),
-            (r.client.UPDATE_RAY_HACK_PROPERTIES, 's' + ray.RayHack.sisi()),
-            (r.client.UPDATE_RAY_NET_PROPERTIES, 's' + ray.RayNet.sisi()),
-            (r.client.GET_PROPERTIES, 's'),
-            (r.client.CHANGE_ADVANCED_PROPERTIES, 'ssisi'),
-            (r.client.FULL_RENAME, 'ss'),
-            (r.client.CHANGE_ID, 'ss'),
-            (r.client.SET_DESCRIPTION, 'ss'),
-            (r.client.GET_DESCRIPTION, 's'),
-            (r.client.GET_PID, 's'),
-            (r.client.LIST_FILES, 's'),
-            (r.client.LIST_SNAPSHOTS, 's'),
-            (r.client.OPEN_SNAPSHOT, 'ss'),
-            (r.client.IS_STARTED, 's'),
-            (r.client.SET_CUSTOM_DATA, 'sss'),
-            (r.client.GET_CUSTOM_DATA, 'ss'),
-            (r.client.SET_TMP_DATA, 'sss'),
-            (r.client.GET_TMP_DATA, 'ss'),
-            (r.client.SEND_SIGNAL, 'si'),
-            (r.trashed_client.RESTORE, 's'),
-            (r.trashed_client.REMOVE_DEFINITELY, 's'),
-            (r.trashed_client.REMOVE_KEEP_FILES, 's'),
-            (r.net_daemon.DUPLICATE_STATE, 'f')
+        
+        methods_dict = {
+            r.server.ABORT_COPY: '',
+            r.server.ABORT_PARRALLEL_COPY: 'i',
+            r.server.ABORT_SNAPSHOT: '',
+            r.server.LIST_FACTORY_CLIENT_TEMPLATES: 's*',
+            r.server.LIST_USER_CLIENT_TEMPLATES: 's*',
+            r.server.OPEN_SESSION: 's|si|sis',
+            r.server.OPEN_SESSION_OFF: 's|si',
+            r.server.QUIT: '',
+            r.server.RENAME_SESSION: 'ss',
+            r.server.patchbay.CLEAR_ABSENTS_IN_VIEW: 's',
+            r.server.patchbay.SAVE_GROUP_PRETTY_NAME: 'sssi',
+            r.server.patchbay.SAVE_PORT_PRETTY_NAME: 'sssi',
+            r.server.patchbay.SAVE_PORTGROUP: 'siiiss*',
+            r.server.patchbay.VIEW_NUMBER_CHANGED: 'ii',
+            r.server.patchbay.VIEW_PTV_CHANGED: 'ii',
+            r.server.patchbay.VIEWS_CHANGED: 's',
+            r.net_daemon.DUPLICATE_STATE: 'f',
+            r.session.ABORT: '',
+            r.session.ADD_CLIENT_TEMPLATE: 'isss',
+            r.session.ADD_FACTORY_CLIENT_TEMPLATE: 'ss*',
+            r.session.ADD_OTHER_SESSION_CLIENT: 'ss',
+            r.session.ADD_USER_CLIENT_TEMPLATE: 'ss*',
+            r.session.CLEAR_CLIENTS: 's*',
+            r.session.GET_NOTES: '',
+            r.session.LIST_CLIENTS: 's*',
+            r.session.LIST_SNAPSHOTS: '',
+            r.session.LIST_TRASHED_CLIENTS: '',
+            r.session.OPEN_SNAPSHOT: 's',
+            r.session.REORDER_CLIENTS: 'ss*',
+            r.session.RUN_STEP: 's*',
+            r.session.SET_AUTO_SNAPSHOT: 'i',
+            r.client.CHANGE_ADVANCED_PROPERTIES: 'ssisi',
+            r.client.CHANGE_ID: 'ss',
+            r.client.FULL_RENAME: 'ss',
+            r.client.GET_CUSTOM_DATA: 'ss',
+            r.client.GET_DESCRIPTION: 's',
+            r.client.GET_PID: 's',
+            r.client.GET_PROPERTIES: 's',
+            r.client.GET_TMP_DATA: 'ss',
+            r.client.HIDE_OPTIONAL_GUI: 's',
+            r.client.IS_STARTED: 's',
+            r.client.KILL: 's',
+            r.client.LIST_FILES: 's',
+            r.client.LIST_SNAPSHOTS: 's',
+            r.client.OPEN: 's',
+            r.client.OPEN_SNAPSHOT: 'ss',
+            r.client.RESUME: 's',
+            r.client.SAVE: 's',
+            r.client.SAVE_AS_TEMPLATE: 'ss',
+            r.client.SEND_SIGNAL: 'si',
+            r.client.SET_CUSTOM_DATA: 'sss',
+            r.client.SET_DESCRIPTION: 'ss',
+            r.client.SET_PROPERTIES: 'sss*',
+            r.client.SET_TMP_DATA: 'sss',
+            r.client.SHOW_OPTIONAL_GUI: 's',
+            r.client.START: 's',
+            r.client.STOP: 's',
+            r.client.TRASH: 's',
+            r.client.UPDATE_PROPERTIES: ray.ClientData.sisi(),
+            r.client.UPDATE_RAY_HACK_PROPERTIES: 's' + ray.RayHack.sisi(),
+            r.client.UPDATE_RAY_NET_PROPERTIES: 's' + ray.RayNet.sisi(),
+            r.trashed_client.REMOVE_DEFINITELY: 's',
+            r.trashed_client.REMOVE_KEEP_FILES: 's',
+            r.trashed_client.RESTORE: 's',
         }
         
-        self._STRINGS_OSC_PATHS = {
-            r.server.LIST_USER_CLIENT_TEMPLATES: 0,
-            r.server.LIST_FACTORY_CLIENT_TEMPLATES: 0,
-            r.session.RUN_STEP: 0,
-            r.session.ADD_FACTORY_CLIENT_TEMPLATE: 1,
-            r.session.ADD_USER_CLIENT_TEMPLATE: 1,
-            r.session.REORDER_CLIENTS: 1,
-            r.session.CLEAR_CLIENTS: 0,
-            r.session.LIST_CLIENTS: 0,
-            r.client.SET_PROPERTIES: 2,
-        }
-
+        self.add_nice_methods(methods_dict, self.generic_method)
+        self.add_nice_methods(_validators_types, self.generic_method)
         self.add_method(None, None, self.noneMethod)
-
         global instance
         instance = self
 
@@ -520,10 +520,23 @@ class OscServerThread(ClientCommunicating):
     def get_instance() -> 'Optional[OscServerThread]':
         return instance
 
-    @osp_method(r.server.GUI_ANNOUNCE, 'sisiis')
-    def rayGuiGui_announce(self, osp: OscPack):
+    def generic_method(self, osp: OscPack):
+        '''Except the unknown messages, all messages received
+        go through here.'''
+        
+        # run the method decorated with @validator or @directos
+        if osp.path in _validators:
+            if not _validators[osp.path](self, osp):
+                return
+
+        # session_signaled will operate the message in the main thread
+        signaler.osc_recv.emit(osp)
+
+    @directos(r.server.GUI_ANNOUNCE, 'sisiis')
+    def _srv_gui_announce(self, osp: OscPack):
+        args: tuple[str, int, str, int, int, str] = osp.args
         (version, int_nsm_locked, net_master_daemon_url,
-         gui_pid, net_daemon_id, tcp_url) = osp.args
+         gui_pid, net_daemon_id, tcp_url) = args
 
         nsm_locked = bool(int_nsm_locked)
         is_net_free = True
@@ -549,8 +562,8 @@ class OscServerThread(ClientCommunicating):
         self.announce_gui(
             osp.src_addr.url, nsm_locked, is_net_free, gui_pid, tcp_addr)
 
-    @osp_method(r.server.GUI_DISANNOUNCE, '')
-    def rayGuiGui_disannounce(self, osp: OscPack):
+    @directos(r.server.GUI_DISANNOUNCE, '')
+    def _srv_gui_disannounce(self, osp: OscPack):
         for gui in self.gui_list:
             if are_same_osc_port(gui.addr.url, osp.src_addr.url):
                 break
@@ -568,8 +581,8 @@ class OscServerThread(ClientCommunicating):
 
         multi_daemon_file.update()
 
-    @osp_method(r.server.ASK_FOR_PATCHBAY, 's')
-    def rayServerAskForPatchbay(self, osp: OscPack):
+    @validator(r.server.ASK_FOR_PATCHBAY, 's')
+    def _srv_ask_for_patchbay(self, osp: OscPack):
         gui_tcp_url: str = osp.args[0]
         patchbay_file = \
             Path('/tmp/RaySession/patchbay_daemons') / str(self.port)
@@ -617,18 +630,18 @@ class OscServerThread(ClientCommunicating):
         # continue in main thread if patchbay_to_osc is not started yet
         # see session_signaled.py -> _ray_server_ask_for_patchbay
 
-    @osp_method(r.server.CONTROLLER_ANNOUNCE, 'i')
-    def rayServerControllerAnnounce(self, osp: OscPack):
+    @directos(r.server.CONTROLLER_ANNOUNCE, 'i')
+    def _srv_controller_announce(self, osp: OscPack):
         controller = Controller()
         controller.addr = osp.src_addr
         controller.pid = osp.args[0]
         self.controller_list.append(controller)
         self.send(*osp.reply(), 'announced')
 
-    @osp_method(r.server.CONTROLLER_DISANNOUNCE, '')
-    def rayServerControllerDisannounce(self, osp: OscPack):
+    @directos(r.server.CONTROLLER_DISANNOUNCE, '')
+    def _srv_controller_disannonce(self, osp: OscPack):
         for controller in self.controller_list:
-            if controller.addr.url == osp.src_addr.url:
+            if controller.addr.port == osp.src_addr.port:
                 break
         else:
             return
@@ -636,15 +649,16 @@ class OscServerThread(ClientCommunicating):
         self.controller_list.remove(controller)
         self.send(*osp.reply(), 'disannounced')
 
-    @osp_method(r.server.MONITOR_ANNOUNCE, '')
-    def rayServerMonitorAnnounce(self, osp: OscPack):
+    @directos(r.server.MONITOR_ANNOUNCE, '')
+    def _srv_monitor_announce(self, osp: OscPack):
         monitor_addr = osp.src_addr
         self.monitor_list.append(monitor_addr)
-        self.session.send_initial_monitor(osp.src_addr, monitor_is_client=False)
+        self.session.send_initial_monitor(
+            osp.src_addr, monitor_is_client=False)
         self.send(*osp.reply(), 'announced')
     
-    @osp_method(r.server.MONITOR_QUIT, '')
-    def rayServerMonitorDisannounce(self, osp: OscPack):
+    @directos(r.server.MONITOR_QUIT, '')
+    def _srv_monitor_quit(self, osp: OscPack):
         for monitor_addr in self.monitor_list:
             if monitor_addr.url == osp.src_addr.url:
                 break
@@ -654,8 +668,8 @@ class OscServerThread(ClientCommunicating):
         self.monitor_list.remove(monitor_addr)
         self.send(*osp.reply(), 'monitor exit')
 
-    @osp_method(r.server.SET_NSM_LOCKED, '')
-    def rayServerSetNsmLocked(self, osp: OscPack):
+    @directos(r.server.SET_NSM_LOCKED, '')
+    def _srv_set_nsm_locked(self, osp: OscPack):
         self.is_nsm_locked = True
         self._nsm_locker_url = osp.src_addr.url
 
@@ -663,8 +677,8 @@ class OscServerThread(ClientCommunicating):
             if gui.addr.url != osp.src_addr.url:
                 self.send(gui.addr, rg.server.NSM_LOCKED, 1)
 
-    @osp_method(r.server.CHANGE_ROOT, 's')
-    def rayServerChangeRoot(self, osp: OscPack):
+    @validator(r.server.CHANGE_ROOT, 's')
+    def _srv_change_root(self, osp: OscPack):
         new_root: str = osp.args[0]
         if not(new_root.startswith('/') and _path_is_valid(new_root)):
             self.send(*osp.error(), ray.Err.CREATE_FAILED,
@@ -676,8 +690,8 @@ class OscServerThread(ClientCommunicating):
                       "Can't change session_root. Operation pending")
             return False
 
-    @osp_method(r.server.SET_TERMINAL_COMMAND, 's')
-    def rayServerSetTerminalCommand(self, osp: OscPack):
+    @directos(r.server.SET_TERMINAL_COMMAND, 's')
+    def _srv_set_terminal_command(self, osp: OscPack):
         if osp.args[0] != self.terminal_command:
             self.terminal_command = osp.args[0]
             if not self.terminal_command:
@@ -687,8 +701,8 @@ class OscServerThread(ClientCommunicating):
                           self.terminal_command)
         self.send(*osp.reply(), 'terminal command set')
 
-    @osp_method(r.server.LIST_PATH, '')
-    def rayServerListPath(self, osp: OscPack):
+    @directos(r.server.LIST_PATH, '')
+    def _srv_list_path(self, osp: OscPack):
         exec_set = set[str]()
         tmp_exec_list = list[str]()
         n = 0
@@ -708,17 +722,15 @@ class OscServerThread(ClientCommunicating):
                         n += len(exe)
 
                         if n >= 20000:
-                            print('un reply path', tmp_exec_list)
-                            self.send(osp.src_addr, osc_paths.REPLY,
-                                      osp.path, *tmp_exec_list)
+                            self.send(*osp.reply(), *tmp_exec_list)
                             tmp_exec_list.clear()
                             n = 0
 
         if tmp_exec_list:
             self.send(*osp.reply(), *tmp_exec_list)
 
-    @osp_method(r.server.LIST_SESSION_TEMPLATES, '')
-    def rayServerListSessionTemplates(self, osp: OscPack):
+    @directos(r.server.LIST_SESSION_TEMPLATES, '')
+    def _srv_list_session_templates(self, osp: OscPack):
         if not TemplateRoots.user_sessions.is_dir():
             self.send(*osp.reply())
             return False
@@ -738,8 +750,8 @@ class OscServerThread(ClientCommunicating):
 
         self.send(*osp.reply())
 
-    @osp_method(r.server.REMOVE_CLIENT_TEMPLATE, 's')
-    def rayServerRemoveClientTemplate(self, osp: OscPack):
+    @directos(r.server.REMOVE_CLIENT_TEMPLATE, 's')
+    def _srv_remove_client_template(self, osp: OscPack):
         template_name: str = osp.args[0]
         templates_root = TemplateRoots.user_clients
         templates_file = templates_root / 'client_templates.xml'
@@ -798,20 +810,12 @@ class OscServerThread(ClientCommunicating):
         self.send(*osp.reply(),
                   f'template "{template_name}" removed.')
 
-    @osp_method(r.server.LIST_SESSIONS, '')
-    def rayServerListSessions(self, osp: OscPack):
+    @validator(r.server.LIST_SESSIONS, '|i')
+    def _srv_list_sessions(self, osp: OscPack):
         self._list_asker_addr = osp.src_addr
 
-    @osp_method(r.server.LIST_SESSIONS, 'i')
-    def rayServerListSessionsWithNet(self, osp: OscPack):
-        self._list_asker_addr = osp.src_addr
-
-    @osp_method(r.server.NEW_SESSION, None)
-    def rayServerNewSession(self, osp: OscPack):
-        if not osp.strings_only:
-            self._unknown_message(osp)
-            return False
-
+    @validator(r.server.NEW_SESSION, 'ss*')
+    def _srv_new_session(self, osp: OscPack):
         if self.is_nsm_locked:
             return False
 
@@ -820,11 +824,12 @@ class OscServerThread(ClientCommunicating):
                       "Invalid session name.")
             return False
 
-    @osp_method(r.server.SAVE_SESSION_TEMPLATE, 'ss')
-    def rayServerSaveSessionTemplate(self, osp: OscPack):
-        #save as template an not loaded session
-        session_name, template_name = osp.args
+    @validator(r.server.SAVE_SESSION_TEMPLATE, 'ss|sss')
+    def _srv_save_session_template(self, osp: OscPack):
+        session_name: str = osp.args[0]
+        template_name: str = osp.args[1]
 
+        #save as template an not loaded session
         if not _path_is_valid(session_name):
             self.send(*osp.error(), ray.Err.CREATE_FAILED,
                     "Invalid session name.")
@@ -835,49 +840,43 @@ class OscServerThread(ClientCommunicating):
                       "Invalid template name.")
             return False
 
-    @osp_method(r.server.SAVE_SESSION_TEMPLATE, 'sss')
-    def rayServerSaveSessionTemplateWithRoot(self, osp: OscPack):
-        #save as template an not loaded session
-        session_name, template_name, sess_root = osp.args
-        if not _path_is_valid(session_name):
-            self.send(*osp.error(), ray.Err.CREATE_FAILED,
-                    "Invalid template name.")
-            return False
-
-        if '/' in template_name:
-            self.send(*osp.error(), ray.Err.CREATE_FAILED,
-                      "Invalid session name.")
-            return False
-
-    @osp_method(r.server.GET_SESSION_PREVIEW, 's')
-    def rayServerGetSessionPreview(self, osp: OscPack):
+    @validator(r.server.GET_SESSION_PREVIEW, 's')
+    def _srv_get_session_preview(self, osp: OscPack):
         sess_prev: str = osp.args[0]
         self.session_to_preview = sess_prev
     
-    @osp_method(r.server.SCRIPT_INFO, 's')
-    def rayServerScriptInfo(self, osp: OscPack):
-        self.send_gui(rg.SCRIPT_INFO, osp.args[0])
+    @directos(r.server.SCRIPT_INFO, 's')
+    def _srv_script_info(self, osp: OscPack):
+        info: str = osp.args[0]
+        self.send_gui(rg.SCRIPT_INFO, info)
         self.send(*osp.reply(), "Info sent")
 
-    @osp_method(r.server.HIDE_SCRIPT_INFO, '')
-    def rayServerHideScriptInfo(self, osp: OscPack):
+    @directos(r.server.HIDE_SCRIPT_INFO, '')
+    def _srv_hide_script_info(self, osp: OscPack):
         self.send_gui(rg.HIDE_SCRIPT_INFO)
         self.send(*osp.reply(), "Info hidden")
 
-    @osp_method(r.server.SCRIPT_USER_ACTION, 's')
-    def rayServerScriptUserAction(self, osp: OscPack):
+    @directos(r.server.SCRIPT_USER_ACTION, 's')
+    def _srv_script_user_action(self, osp: OscPack):
         if not self.gui_list:
             self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
                       "This server has no attached GUI")
             return
-        self.send_gui(rg.SCRIPT_USER_ACTION, osp.args[0])
+        user_act: str = osp.args[0]
+        self.send_gui(rg.SCRIPT_USER_ACTION, user_act)
 
-    # set option from GUI
-    @osp_method(r.server.SET_OPTION, 'i')
-    def rayServerSetOption(self, osp: OscPack):
-        option = ray.Option(abs(osp.args[0]))
+    @validator(r.server.SET_OPTION, 'i')
+    def _srv_set_option(self, osp: OscPack):
+        'set option from GUI'
+        option_int: int = osp.args[0]
+        try:
+            option = ray.Option(abs(option_int))
+        except:
+            self.send(*osp.error(), ray.Err.BAD_PROJECT,
+                      f"Option num {abs(option_int)} does not exists")
+            return False
 
-        if osp.args[0] >= 0:
+        if option_int >= 0:
             self.options |= option
         else:
             self.options &= ~option        
@@ -887,17 +886,12 @@ class OscServerThread(ClientCommunicating):
                 self.send(gui.addr, rg.server.OPTIONS,
                           self.options.value)
 
-    # set options from ray_control
-    @osp_method(r.server.SET_OPTIONS, None)
-    def rayServerSetOptions(self, osp: OscPack):
-        if not osp.strings_only:
-            self._unknown_message(osp)
-            return False
+    @directos(r.server.SET_OPTIONS, 'ss*')
+    def _srv_set_options(self, osp: OscPack):
+        'set options from ray_control'
+        args: list[str] = osp.args
 
-        if TYPE_CHECKING:
-            assert isinstance(osp.args, list[str])
-
-        for option_str in osp.args:
+        for option_str in args:
             option_value = True
             if option_str.startswith('not_'):
                 option_value = False
@@ -932,8 +926,8 @@ class OscServerThread(ClientCommunicating):
 
         self.send(*osp.reply(), 'Options set')
 
-    @osp_method(r.server.HAS_OPTION, 's')
-    def rayServerHasOption(self, osp: OscPack):
+    @directos(r.server.HAS_OPTION, 's')
+    def _srv_has_option(self, osp: OscPack):
         option_str = osp.args[0]
 
         if option_str not in self._OPTIONS_DICT:
@@ -947,22 +941,22 @@ class OscServerThread(ClientCommunicating):
             self.send(*osp.error(), ray.Err.GENERAL_ERROR,
                       "Option %s is not currently used" % option_str)
 
-    @osp_method(r.server.CLEAR_CLIENT_TEMPLATES_DATABASE, '')
-    def rayServerClearClientTemplatesDatabase(self, osp: OscPack):
+    @directos(r.server.CLEAR_CLIENT_TEMPLATES_DATABASE, '')
+    def _srv_clear_client_templates_database(self, osp: OscPack):
         self.client_templates_database['factory'].clear()
         self.client_templates_database['user'].clear()
         self.send(*osp.reply(), 'database cleared')
 
-    @osp_method(r.server.OPEN_FILE_MANAGER_AT, 's')
-    def rayServerOpenFileManagerAt(self, osp: OscPack):
-        folder_path = osp.args[0]
+    @directos(r.server.OPEN_FILE_MANAGER_AT, 's')
+    def _srv_open_file_manager_at(self, osp: OscPack):
+        folder_path: str = osp.args[0]
         if os.path.isdir(folder_path):
             subprocess.Popen(['xdg-open', folder_path])
         self.send(*osp.reply(), '')
 
-    @osp_method(r.server.EXOTIC_ACTION, 's')
-    def rayServerExoticAction(self, osp: OscPack):
-        action = osp.args[0]
+    @directos(r.server.EXOTIC_ACTION, 's')
+    def _srv_exotic_action(self, osp: OscPack):
+        action: str = osp.args[0]
         autostart_dir = Path.home() / '.config' / 'autostart'
         desk_file = "ray-jack_checker.desktop"
         dest_full_path = autostart_dir / desk_file
@@ -980,9 +974,9 @@ class OscServerThread(ClientCommunicating):
         elif action == 'unset_jack_checker_autostart':
             dest_full_path.unlink(missing_ok=True)
 
-    @osp_method(r.server.patchbay.SAVE_GROUP_POSITION,
-                'i' + GroupPos.args_types())
-    def rayServerPatchbaySaveCoordinates(self, osp: OscPack):
+    @validator(r.server.patchbay.SAVE_GROUP_POSITION,
+               'i' + GroupPos.args_types())
+    def _srv_patchbay_save_group_position(self, osp: OscPack):
         # here send to others GUI the new group position
         for gui in self.gui_list:
             if not are_same_osc_port(gui.addr.url, osp.src_addr.url):
@@ -991,102 +985,68 @@ class OscServerThread(ClientCommunicating):
                     rg.patchbay.UPDATE_GROUP_POSITION,
                     *osp.args)
 
-    @osp_method(r.server.patchbay.SAVE_PORTGROUP, None)
-    def rayServerPatchbaySavePortGroup(self, osp: OscPack):
-        # osp.args must be group_name, port_type, port_mode, above_metadatas, *port_names
-        # where port_names are all strings
-        # so types must start with 'siiis' and may continue with strings only
-        if not osp.types.startswith('siiis'):
-            self._unknown_message(osp)
-            return False
+    @validator(r.session.SAVE, '', no_sess='No session to save.')
+    def _sess_save(self, osp: OscPack):
+        ...
 
-        other_types = osp.types.replace('siiis', '', 1)
-        for t in other_types:
-            if t != 's':
-                self._unknown_message(osp)
-                return False
-
-    @osp_method(r.session.SAVE, '')
-    def raySessionSave(self, osp: OscPack):
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "No session to save.")
-            return False
-
-    @osp_method(r.session.SAVE_AS_TEMPLATE, 's')
-    def raySessionSaveAsTemplate(self, osp: OscPack):
-        template_name = osp.args[0]
+    @validator(r.session.SAVE_AS_TEMPLATE, 's')
+    def _sess_save_as_template(self, osp: OscPack):
+        template_name: str = osp.args[0]
         if '/' in template_name or template_name == '.':
             self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Invalid session template name.")
             return False
 
-    @osp_method(r.session.GET_SESSION_NAME, '')
-    def raySessionGetSessionName(self, osp: OscPack):
+    @directos(r.session.GET_SESSION_NAME, '')
+    def _sess_get_session_name(self, osp: OscPack):
         if self.session.path is None:
             self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session loaded.")
-            return False
+            return
 
         self.send(*osp.reply(), self.session.name)
         self.send(*osp.reply())
-        return False
 
-    @osp_method(r.session.TAKE_SNAPSHOT, 's')
-    def raySessionTakeSnapshotOnly(self, osp: OscPack):
+    @validator(r.session.TAKE_SNAPSHOT, 's|si')
+    def _sess_take_snapshot(self, osp: OscPack):
         if ray.Option.HAS_GIT not in self.options:
             self.send(*osp.error(),
                       "snapshot impossible because git is not installed")
             return False
 
-    @osp_method(r.session.TAKE_SNAPSHOT, 'si')
-    def raySessionTakeSnapshot(self, osp: OscPack):
-        if ray.Option.HAS_GIT not in self.options:
-            self.send(*osp.error(),
-                      "snapshot impossible because git is not installed")
-            return False
+    @validator(r.session.CLOSE, '', no_sess='No session to close.')
+    def _sess_close(self, osp: OscPack):
+        ...
 
-    @osp_method(r.session.CLOSE, '')
-    def raySessionClose(self, osp: OscPack):
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "No session to close.")
-            return False
+    @validator(r.session.CANCEL_CLOSE, '',
+               no_sess='No session to cancel close.')
+    def _sess_cancel_close(self, osp: OscPack):
+        ...
 
-    @osp_method(r.session.CANCEL_CLOSE, '')
-    def raySessionCancelClose(self, osp: OscPack):
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "No session to cancel close.")
-            return False
-
-    @osp_method(r.session.SKIP_WAIT_USER, '')
-    def raySessionSkipWaitUser(self, osp: OscPack):
+    @validator(r.session.SKIP_WAIT_USER, '')
+    def _sess_skip_wait_user(self, osp: OscPack):
         if self.server_status is not ray.ServerStatus.WAIT_USER:
             return False
 
-    @osp_method(r.session.DUPLICATE, 's')
-    def raySessionDuplicate(self, osp: OscPack):
+    @validator(r.session.DUPLICATE, 's', no_sess='No session to duplicate.')
+    def _sess_duplicate(self, osp: OscPack):
         if self.is_nsm_locked:
             return False
 
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "No session to duplicate.")
-            return False
+        new_name: str = osp.args[0]
 
-        if not _path_is_valid(osp.args[0]):
+        if not _path_is_valid(new_name):
             self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
 
-    @osp_method(r.session.DUPLICATE_ONLY, 'sss')
-    def nsmServerDuplicateOnly(self, osp: OscPack):
+    @validator(r.session.DUPLICATE_ONLY, 'sss')
+    def _sess_duplicate_only(self, osp: OscPack):
         self.send(osp.src_addr, r.net_daemon.DUPLICATE_STATE, 0)
 
-    @osp_method(r.session.RENAME, 's')
-    def rayServerRename(self, osp: OscPack):
-        new_session_name = osp.args[0]
+    @validator(r.session.RENAME, 's', no_sess="No session to rename.")
+    def _sess_rename(self, osp: OscPack):
+        new_session_name: str = osp.args[0]
 
         #prevent rename session in network session
         if self._nsm_locker_url:
@@ -1105,13 +1065,8 @@ class OscServerThread(ClientCommunicating):
         if self._is_operation_pending(osp):
             return False
 
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "No session to rename.")
-            return False
-
-    @osp_method(r.session.SET_NOTES, 's')
-    def raySessionSetNotes(self, osp: OscPack):
+    @validator(r.session.SET_NOTES, 's')
+    def _sess_set_notes(self, osp: OscPack):
         self.session.notes = osp.args[0]
 
         for gui in self.gui_list:
@@ -1119,96 +1074,70 @@ class OscServerThread(ClientCommunicating):
                 self.send(gui.addr, rg.session.NOTES,
                           self.session.notes)
 
-    @osp_method(r.session.ADD_EXECUTABLE, 'siiissi')
-    def raySessionAddExecutableAdvanced(self, osp: OscPack):
-        executable_path, auto_start, protocol, \
-            prefix_mode, prefix_pattern, client_id, jack_naming = osp.args
+    @validator(r.session.ADD_EXECUTABLE, 'siiissi|ss*',
+               no_sess='Cannot add to session because no session is loaded.')
+    def _sess_add_executable(self, osp: OscPack):
+        match osp.args:
+            case 'siiissi':
+                args: tuple[str, int, int, int, str, str, int] = osp.args
+                executable_path, auto_start, protocol, \
+                    prefix_mode, prefix_pattern, client_id, jack_naming = args
+                    
+                try:
+                    protocol = ray.Protocol(protocol)
+                except:
+                    self.send(*osp.error(), ray.Err.CREATE_FAILED,
+                            f"Invalid protocol number: {protocol}")
+                    return False
 
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "Cannot add to session because no session is loaded.")
-            return False
+            case _:
+                args: tuple[str, ...] = osp.args
+                executable_path = args[0]
+                ray_hack = bool(len(args) > 1 and 'ray_hack' in args[1:])
+                if ray_hack: protocol = ray.Protocol.RAY_HACK
+                else: protocol = ray.Protocol.NSM
 
-        try:
-            protocol = ray.Protocol(protocol)
-        except:
-            self.send(*osp.error(), ray.Err.CREATE_FAILED,
-                      f"Invalid protocol number: {protocol}")
+        if protocol is ray.Protocol.NSM and '/' in executable_path:
+            self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
+                "Absolute paths are not permitted. Clients must be in $PATH")
             return False
+    
+    @validator(r.session.ADD_EXEC, 'siiissi|ss*',
+               no_sess='Cannot add to session because no session is loaded.')
+    def _sess_add_exec(self, osp: OscPack):
+        match osp.args:
+            case 'siiissi':
+                args: tuple[str, int, int, int, str, str, int] = osp.args
+                executable_path, auto_start, protocol, \
+                    prefix_mode, prefix_pattern, client_id, jack_naming = args
+                    
+                try:
+                    protocol = ray.Protocol(protocol)
+                except:
+                    self.send(*osp.error(), ray.Err.CREATE_FAILED,
+                            f"Invalid protocol number: {protocol}")
+                    return False
+
+            case _:
+                args: tuple[str, ...] = osp.args
+                executable_path = args[0]
+                ray_hack = bool(len(args) > 1 and 'ray_hack' in args[1:])
+                if ray_hack: protocol = ray.Protocol.RAY_HACK
+                else: protocol = ray.Protocol.NSM
 
         if protocol is ray.Protocol.NSM and '/' in executable_path:
             self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False
 
-    @osp_method(r.session.ADD_EXECUTABLE, None)
-    def raySessionAddExecutableStrings(self, osp: OscPack):
-        if not osp.strict_strings: 
-            self._unknown_message(osp)
-            return False
-
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "Cannot add to session because no session is loaded.")
-            return False
-
-        executable_path = osp.args[0]
-        ray_hack = bool(len(osp.args) > 1 and 'ray_hack' in osp.args[1:])
-
-        if '/' in executable_path and not ray_hack:
-            self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
-                "Absolute paths are not permitted. Clients must be in $PATH")
-            return False
-        
-    @osp_method(r.session.ADD_EXEC, 'siiissi')
-    def raySessionAddExecAdvanced(self, osp: OscPack):
-        executable_path, auto_start, protocol, \
-            prefix_mode, prefix_pattern, client_id, jack_naming = osp.args
-
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "Cannot add to session because no session is loaded.")
-            return False
-
-        try:
-            protocol = ray.Protocol(protocol)
-        except:
-            self.send(*osp.error(), ray.Err.CREATE_FAILED,
-                      f"Invalid protocol number: {protocol}")
-            return False
-
-        if protocol is ray.Protocol.NSM and '/' in executable_path:
-            self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
-                "Absolute paths are not permitted. Clients must be in $PATH")
-            return False
-
-    @osp_method(r.session.ADD_EXEC, None)
-    def raySessionAddExecStrings(self, osp: OscPack):
-        if not osp.strict_strings:
-            self._unknown_message(osp)
-            return False
-
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "Cannot add to session because no session is loaded.")
-            return False
-
-        executable_path = osp.args[0]
-        ray_hack = bool(len(osp.args) > 1 and 'ray_hack' in osp.args[1:])
-
-        if '/' in executable_path and not ray_hack:
-            self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
-                "Absolute paths are not permitted. Clients must be in $PATH")
-            return False
-
-    @osp_method(r.session.OPEN_FOLDER, '')
-    def rayServerOpenFolder(self, osp: OscPack):
+    @directos(r.session.OPEN_FOLDER, '')
+    def _sess_open_folder(self, osp: OscPack):
         if self.session.path:
             subprocess.Popen(['xdg-open', self.session.path])
         self.send(*osp.reply(), '')
 
-    @osp_method(r.session.SHOW_NOTES, '')
-    def raySessionShowNotes(self, osp: OscPack):
+    @directos(r.session.SHOW_NOTES, '')
+    def _sess_show_notes(self, osp: OscPack):
         if self.session.path is None:
             self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session to show notes")
@@ -1218,8 +1147,8 @@ class OscServerThread(ClientCommunicating):
         self.send_gui(rg.session.NOTES_SHOWN)
         self.send(*osp.reply(), 'notes shown')
 
-    @osp_method(r.session.HIDE_NOTES, '')
-    def raySessionHideNotes(self, osp: OscPack):
+    @directos(r.session.HIDE_NOTES, '')
+    def _sess_hide_notes(self, osp: OscPack):
         if self.session.path is None:
             self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "No session to hide notes")
@@ -1229,29 +1158,21 @@ class OscServerThread(ClientCommunicating):
         self.send_gui(rg.session.NOTES_HIDDEN)
         self.send(*osp.reply(), 'notes hidden')
 
-    @osp_method(r.client.CHANGE_PREFIX, None)
-    def rayClientChangePrefix(self, osp: OscPack):
-        # here message can be si, ss, sis, sss
-        invalid = False
-
-        if len(osp.args) < 2:
-            invalid = True
-
-        elif osp.args[1] in (ray.PrefixMode.CUSTOM.value, 'custom'):
+    @validator(r.client.CHANGE_PREFIX, 'si|ss|sis|sss')
+    def _ray_client_change_prefix(self, osp: OscPack):
+        if osp.args[1] in (ray.PrefixMode.CUSTOM.value, 'custom'):
             if len(osp.args) < 3:
-                invalid = True
+                self._unknown_message(osp)
+                return False
 
-        if invalid:
-            self._unknown_message(osp)
-            return False
-
-    @osp_method(r.favorites.ADD, 'ssis')
-    def rayFavoriteAdd(self, osp: OscPack):
-        name, icon, int_factory, display_name = osp.args
+    @directos(r.favorites.ADD, 'ssis')
+    def _ray_favorites_add(self, osp: OscPack):
+        args: tuple[str, str, int, str] = osp.args
+        name, icon, int_factory, display_name = args
 
         for favorite in RS.favorites:
             if (favorite.name == name
-                    and bool(int_factory) == favorite.factory):
+                    and bool(int_factory) is favorite.factory):
                 favorite.icon = icon
                 favorite.display_name = display_name
                 break
@@ -1261,9 +1182,10 @@ class OscServerThread(ClientCommunicating):
 
         self.send_gui(rg.favorites.ADDED, *osp.args)
 
-    @osp_method(r.favorites.REMOVE, 'si')
-    def rayFavoriteRemove(self, osp: OscPack):
-        name, int_factory = osp.args
+    @directos(r.favorites.REMOVE, 'si')
+    def _ray_favorites_remove(self, osp: OscPack):
+        args: tuple[str, int] = osp.args
+        name, int_factory = args
 
         for favorite in RS.favorites:
             if (favorite.name == name
@@ -1273,42 +1195,17 @@ class OscServerThread(ClientCommunicating):
 
         self.send_gui(rg.favorites.REMOVED, *osp.args)
 
-    @osp_method(r.server.ASK_FOR_PRETTY_NAMES, 'i')
-    def askForPrettyNames(self, osp: OscPack):
-        print('ask for pretty names received', osp.args)
-        self.patchbay_dmn_port = osp.args[0]
-        # signaler.osc_recv.emit(osp)
-        return True
+    @validator(r.server.ASK_FOR_PRETTY_NAMES, 'i')
+    def _srv_ask_for_pretty_names(self, osp: OscPack):
+        args: tuple[int] = osp.args
+        self.patchbay_dmn_port = args[0]
 
-    # @osp_method(None, None)
     # cannot be decorated, else it is defined in priority to all methods
     # defined after
     def noneMethod(
             self, path: str, args: list, types: str, src_addr: Address):
         osp = OscPack(path, args, types, src_addr)
-        if ((osp.path, osp.types)) in self._SIMPLE_OSC_PATHS:
-            signaler.osc_recv.emit(osp)
-            return
-        
-        if self._is_string_osc_path(osp):
-            signaler.osc_recv.emit(osp)
-            return
-
         self._unknown_message(osp)
-
-    def _is_string_osc_path(self, osp: OscPack) -> bool:
-        mini_strings = self._STRINGS_OSC_PATHS.get(osp.path)
-        if mini_strings is None:
-            return False
-        
-        if len(osp.args) < mini_strings:
-            return False
-        
-        for c in osp.types:
-            if c != 's':
-                return False
-            
-        return True
 
     def _is_operation_pending(self, osp: OscPack) -> bool:
         if self.session.file_copier.is_active():

@@ -201,6 +201,6 @@ if True:
 
     RS.settings.sync()
 
-    # stop the servers
+    # stop the server
     server.stop()
 
