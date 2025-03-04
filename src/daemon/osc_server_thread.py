@@ -1,6 +1,5 @@
 
 # Imports from standard library
-from functools import wraps
 import logging
 import os
 import shlex
@@ -64,21 +63,20 @@ def _path_is_valid(path: str) -> bool:
     return True
 
 
-def validator(path: str, full_types: str, no_sess=''):
+def validator(path: str, full_types: str, no_sess='', directos=False):
     '''With this decorator, the OSC path method will continue
     its work in the main thread (in session_signaled module),
     except if the function returns False.
     
-    `path` is an OSC path str
+    `path`: OSC str path
 
-    `full_types` is an str containing all accepted arg types
+    `full_types`: str containing all accepted arg types
     separated with '|'. It also accepts special characters:
-    
     - '.' for any arg type
     - '*' for any number of args of type specified by the previous
     character
     
-    `no_sess` is the string message to send if no session is open 
+    `no_sess`: string message to send if no session is open 
     '''
     def decorated(func: Callable):
         def wrapper(*args, **kwargs):
@@ -92,7 +90,7 @@ def validator(path: str, full_types: str, no_sess=''):
                     return False
 
             response = func(*args, **kwargs)
-            if response is False:
+            if directos or response is False:
                 return False
             return True
     
@@ -102,19 +100,12 @@ def validator(path: str, full_types: str, no_sess=''):
         return wrapper
     return decorated
 
-def directos(path: str, full_types: str):
-    '''This OSC path method does all its job directly in the thread
-    of this server. No work will have to be done in the main thread.'''
-    def decorated(func: Callable):
-        def wrapper(*args, **kwargs):
-            func(*args, **kwargs)
-            return False
-
-        _validators[path] = wrapper
-        _validators_types[path] = full_types
-        return wrapper
-
-    return decorated
+def directos(path: str, full_types: str, no_sess=''):
+    '''This OSC path method decorated with this 
+    does all its job directly in the thread of the server.
+    No work will have to be done in the main thread.
+    see `validator` doc.'''
+    return validator(path, full_types, no_sess=no_sess, directos=True)
 
 
 class Controller:
@@ -997,13 +988,8 @@ class OscServerThread(ClientCommunicating):
                       "Invalid session template name.")
             return False
 
-    @directos(r.session.GET_SESSION_NAME, '')
+    @directos(r.session.GET_SESSION_NAME, '', no_sess='No session loaded.')
     def _sess_get_session_name(self, osp: OscPack):
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "No session loaded.")
-            return
-
         self.send(*osp.reply(), self.session.name)
         self.send(*osp.reply())
 
@@ -1136,24 +1122,14 @@ class OscServerThread(ClientCommunicating):
             subprocess.Popen(['xdg-open', self.session.path])
         self.send(*osp.reply(), '')
 
-    @directos(r.session.SHOW_NOTES, '')
+    @directos(r.session.SHOW_NOTES, '', no_sess='No session to show notes')
     def _sess_show_notes(self, osp: OscPack):
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "No session to show notes")
-            return False
-
         self.session.notes_shown = True
         self.send_gui(rg.session.NOTES_SHOWN)
         self.send(*osp.reply(), 'notes shown')
 
-    @directos(r.session.HIDE_NOTES, '')
+    @directos(r.session.HIDE_NOTES, '', no_sess='No session to hide notes')
     def _sess_hide_notes(self, osp: OscPack):
-        if self.session.path is None:
-            self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
-                      "No session to hide notes")
-            return False
-
         self.session.notes_shown = False
         self.send_gui(rg.session.NOTES_HIDDEN)
         self.send(*osp.reply(), 'notes hidden')
