@@ -5,14 +5,14 @@ import os
 from pathlib import Path
 import subprocess
 import time
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional, Any
 import logging
 
 # third party imports
 from qtpy.QtCore import QCoreApplication
 
 # Imports from src/shared
-from osclib import Address, OscPack, are_same_osc_port, TCP
+from osclib import Address, OscPack, are_same_osc_port
 import ray
 import xdg
 import osc_paths
@@ -25,9 +25,10 @@ from client import Client
 import multi_daemon_file
 from signaler import Signaler
 from daemon_tools import Terminal, RS, is_pid_child_of, highlight_text
-from session import OperatingSession
+from session_operating import OperatingSession
 from patch_rewriter import rewrite_jack_patch_files
 from internal_client import InternalClient
+from session_dummy import DummySession
 
 
 _logger = logging.getLogger(__name__)
@@ -95,10 +96,13 @@ def client_action(func: Callable):
         return response
     return wrapper
 
+
 # There is only one possible instance of SignaledSession
 # This is not the case for Session and OperatingSession.
 # This session receives signals from OSC server.
 class SignaledSession(OperatingSession):
+    steps_order: list[Callable | tuple[Callable, Any]]
+    
     def __init__(self, root: Path):
         OperatingSession.__init__(self, root)
 
@@ -178,10 +182,6 @@ class SignaledSession(OperatingSession):
         func_path = nsm_path if nsm_path else osp.path
 
         func_name = func_path.replace('/', '_')
-
-        if osp.path is r.server.LIST_SESSIONS:
-            print('sesssig', osp.types)
-
         if func_name in self.__dir__():
             function = self.__getattribute__(func_name)
             function(osp)
@@ -440,8 +440,6 @@ class SignaledSession(OperatingSession):
         self._ray_server_list_client_templates(osp)
 
     def _ray_server_list_sessions(self, osp: OscPack):
-        print('gogogolist')
-        
         with_net = False
         last_sent_time = time.time()
 
@@ -1896,7 +1894,7 @@ class SignaledSession(OperatingSession):
                       "Nothing in trash because no session is loaded.")
             return
 
-        client_id = osp.args[0]
+        client_id: str = osp.args[0]
 
         for client in self.trashed_clients:
             if client.client_id == client_id:
@@ -1913,7 +1911,7 @@ class SignaledSession(OperatingSession):
         self.send_monitor_event('removed', client_id)
 
     def _ray_net_daemon_duplicate_state(self, osp: OscPack):
-        state = osp.args[0]
+        state: int = osp.args[0]
         for client in self.clients:
             if (client.is_ray_net
                     and client.ray_net.daemon_url
@@ -1968,79 +1966,4 @@ class SignaledSession(OperatingSession):
         self.steps_order = [self.terminate_step_scripter,
                             self.close, self.exit_now]
 
-        self.next_function()
-
-
-class DummySession(OperatingSession):
-    ''' A dummy session allows to make such operations on not current session.
-        It is used for session preview, or duplicate a session for example.
-        When a session is dummy, it has no server options
-        (bookmarks, snapshots, session scripts...).
-        All clients are dummy and can't be started.
-        Their file copier is not dummy, it can send OSC messages to gui,
-        That is why we need a session_id to find it '''
-
-    def __init__(self, root: Path, session_id=0):
-        OperatingSession.__init__(self, root, session_id)
-        self.is_dummy = True
-        self.canvas_saver.is_dummy = True
-
-    def dummy_load_and_template(self, session_full_name, template_name):
-        self.steps_order = [(self.preload, session_full_name),
-                            self.take_place,
-                            self.load,
-                            (self.save_session_template, template_name, True)]
-        self.next_function()
-
-    def dummy_duplicate(self, osp: OscPack):
-        self.remember_osc_args(osp.path, osp.args, osp.src_addr)
-        session_to_load, new_session_full_name, sess_root = osp.args
-        self.steps_order = [(self.preload, session_to_load),
-                            self.take_place,
-                            self.load,
-                            (self.duplicate, new_session_full_name),
-                            self.duplicate_only_done]
-        self.next_function()
-
-    def ray_server_save_session_template(self, osp: OscPack):
-        self.remember_osc_args(osp.path, osp.args, osp.src_addr)
-        session_name, template_name, net = osp.args
-        self.steps_order = [(self.preload, session_name),
-                            self.take_place,
-                            self.load,
-                            (self.save_session_template, template_name, net)]
-        self.next_function()
-
-    def ray_server_rename_session(self, osp: OscPack):
-        self.remember_osc_args(osp.path, osp.args, osp.src_addr)
-        full_session_name, new_session_name = osp.args
-
-        self.steps_order = [(self.preload, full_session_name),
-                            self.take_place,
-                            self.load,
-                            (self.rename, new_session_name),
-                            self.save,
-                            (self.rename_done, new_session_name)]
-        self.next_function()
-    
-    def ray_server_get_session_preview(self, osp: OscPack,
-                                       folder_sizes: list):
-        
-        # try:
-        #     tcp_addr = Address(osp.args[0])
-        #     assert tcp_addr.protocol == TCP
-        # except:
-        #     _logger.error(f'unable to make a TCP address with {osp.args[0]}')
-        
-        session_name = osp.args[0]
-        self.steps_order = [(self.preload, session_name, False),
-                            self.take_place,
-                            self.load,
-                            (self.send_preview, osp.src_addr, folder_sizes)]
-        self.next_function()
-    
-    def dummy_load(self, session_name):
-        self.steps_order = [(self.preload, session_name, False),
-                            self.take_place,
-                            self.load]
         self.next_function()
