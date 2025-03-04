@@ -55,7 +55,7 @@ class JackEngine(ProtoEngine):
         @self._client.set_port_rename_callback
         def port_rename(port: jack.Port, old: str, new: str):
             self.ev_handler.add_event(
-                Event.PORT_RENAMED(old, new, *mode_type(port)))
+                Event.PORT_RENAMED, old, new, *mode_type(port))
             
         @self._client.set_port_connect_callback
         def port_connect(port_a: jack.Port, port_b: jack.Port, connect: bool):

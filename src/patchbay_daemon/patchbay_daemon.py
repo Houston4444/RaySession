@@ -234,8 +234,9 @@ class MainObject:
                 self.set_pretty_name(True, client_name, client_uuid, pretty_name)
                 
         for port_name in port_names:
-            port = self.client.get_port_by_name(port_name)
-            if port is None:
+            try:
+                port = self.client.get_port_by_name(port_name)
+            except:
                 continue
             
             port_uuid = port.uuid
