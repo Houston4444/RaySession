@@ -179,6 +179,9 @@ class SignaledSession(OperatingSession):
 
         func_name = func_path.replace('/', '_')
 
+        if osp.path is r.server.LIST_SESSIONS:
+            print('sesssig', osp.types)
+
         if func_name in self.__dir__():
             function = self.__getattribute__(func_name)
             function(osp)
@@ -437,6 +440,8 @@ class SignaledSession(OperatingSession):
         self._ray_server_list_client_templates(osp)
 
     def _ray_server_list_sessions(self, osp: OscPack):
+        print('gogogolist')
+        
         with_net = False
         last_sent_time = time.time()
 

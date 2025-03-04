@@ -101,6 +101,32 @@ class BunServer(Server):
         
         !!! the recepter MUST be a Bunserver or a BunServerThread !!!'''
         ...
+        
+    def add_nice_method(
+            self, path: str, full_types: str,
+            func: Callable[[OscPack], None]):
+        '''Nice way to add an OSC method to the server,
+        
+        The function `func` MUST accept only one OscPack argument.
+        
+        `full_types` is a string containing possible several types string
+        separated with '|' and accepting special characters '.' and '*'.
+        
+        '.' is used to accept any type of argument
+
+        '*' is used to accept any number of arguments of the type specified
+        by the previous character
+        
+        examples:
+            's|i' : will accept one argument of type str or int
+
+            's*' : will accept any number of arguments (even 0) in the condition
+             they all are strings.
+             
+             'ss*' : same but at least one argument is required
+        '''
+        ...
+
     def add_nice_methods(
             self, methods_dict: dict[str, str],
             func: Callable[[OscPack], None]):
@@ -116,7 +142,7 @@ class BunServer(Server):
         '.' is used to accept any type of argument
 
         '*' is used to accept any number of arguments of the type specified
-        in the previous character
+        by the previous character
         
         examples:
             's|i' : will accept one argument of type str or int

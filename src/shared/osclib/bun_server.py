@@ -121,28 +121,38 @@ class BunServer(Server):
         with `add_nice_methods`'''
         types_func = self._director_methods.get(path)
         if types_func is None:
+            types_func_bis = self._methods_adder.get_func(path, args)
+            if types_func_bis is not None:
+                types, func_bis = types_func_bis
+                func_bis(path, args, types, src_addr)
             return
         
         full_types, func = types_func
         if not types_validator(types, full_types):
-            _logger.info(
-                f"Message ignored: path: {path}, "
-                f"'{types}' not in '{full_types}'")
+            types_func_bis = self._methods_adder.get_func(path, args)
+            if types_func_bis is not None:
+                types, func_bis = types_func_bis
+                func_bis(path, args, types, src_addr)
             return
 
         func(OscPack(path, args, types, src_addr))
     
+    def add_nice_method(
+            self, path: str, full_types: str,
+            func: Callable[[OscPack], None]):
+        self._director_methods[path] = (full_types, func)
+        for types in full_types.split('|'):
+            if '.' in types or '*' in types:
+                self.add_method(path, None, self.__director)
+                break
+            else:
+                self.add_method(path, types, self.__director)
+        
     def add_nice_methods(
             self, methods_dict: dict[str, str],
             func: Callable[[OscPack], None]):
         for path, full_types in methods_dict.items():
-            self._director_methods[path] = (full_types, func)
-            for types in full_types.split('|'):
-                if '.' in types or '*' in types:
-                    self.add_method(path, None, self.__director)
-                    break
-                else:
-                    self.add_method(path, types, self.__director)
+            self.add_nice_method(path, full_types, func)
     
     def mega_send(self: 'Union[BunServer, BunServerThread]',
                url: Union[str, int, Address, list[str | int | Address]],
