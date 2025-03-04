@@ -2,6 +2,7 @@
 # Imports from standard library
 import logging
 import os
+from pickletools import optimize
 import shlex
 import random
 import shutil
@@ -1060,9 +1061,8 @@ class OscServerThread(ClientCommunicating):
                 self.send(gui.addr, rg.session.NOTES,
                           self.session.notes)
 
-    @validator(r.session.ADD_EXECUTABLE, 'siiissi|ss*',
-               no_sess='Cannot add to session because no session is loaded.')
-    def _sess_add_executable(self, osp: OscPack):
+    def _add_exec(self, osp: OscPack) -> Optional[bool]:
+        # used because the same check exists for 2 differents paths.
         match osp.args:
             case 'siiissi':
                 args: tuple[str, int, int, int, str, str, int] = osp.args
@@ -1087,34 +1087,18 @@ class OscServerThread(ClientCommunicating):
             self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
                 "Absolute paths are not permitted. Clients must be in $PATH")
             return False
+
+    @validator(r.session.ADD_EXECUTABLE, 'siiissi|ss*',
+               no_sess='Cannot add to session because no session is loaded.')
+    def _sess_add_executable(self, osp: OscPack):
+        # old method, kept because it can be still used in old scripts.
+        # Only default values differs, see session_signaled module.'''
+        return self._add_exec(osp)
     
     @validator(r.session.ADD_EXEC, 'siiissi|ss*',
                no_sess='Cannot add to session because no session is loaded.')
     def _sess_add_exec(self, osp: OscPack):
-        match osp.args:
-            case 'siiissi':
-                args: tuple[str, int, int, int, str, str, int] = osp.args
-                executable_path, auto_start, protocol, \
-                    prefix_mode, prefix_pattern, client_id, jack_naming = args
-                    
-                try:
-                    protocol = ray.Protocol(protocol)
-                except:
-                    self.send(*osp.error(), ray.Err.CREATE_FAILED,
-                            f"Invalid protocol number: {protocol}")
-                    return False
-
-            case _:
-                args: tuple[str, ...] = osp.args
-                executable_path = args[0]
-                ray_hack = bool(len(args) > 1 and 'ray_hack' in args[1:])
-                if ray_hack: protocol = ray.Protocol.RAY_HACK
-                else: protocol = ray.Protocol.NSM
-
-        if protocol is ray.Protocol.NSM and '/' in executable_path:
-            self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
-                "Absolute paths are not permitted. Clients must be in $PATH")
-            return False
+        return self._add_exec(osp)
 
     @directos(r.session.OPEN_FOLDER, '')
     def _sess_open_folder(self, osp: OscPack):
