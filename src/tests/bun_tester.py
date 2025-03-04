@@ -6,7 +6,7 @@ import sys
 sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
 
-from osclib import Bundle, Message, Server, Address, OscPack
+from osclib import Bundle, Message, Server, Address, OscPack, BunServer
 
 
 class Server(Server):
