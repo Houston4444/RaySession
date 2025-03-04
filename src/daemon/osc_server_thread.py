@@ -806,7 +806,7 @@ class OscServerThread(ClientCommunicating):
     def _srv_list_sessions(self, osp: OscPack):
         self._list_asker_addr = osp.src_addr
 
-    @validator(r.server.NEW_SESSION, 'ss*')
+    @validator(r.server.NEW_SESSION, 's|ss')
     def _srv_new_session(self, osp: OscPack):
         if self.is_nsm_locked:
             return False

@@ -2171,8 +2171,9 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.custom_prefix = custom_prefix
         self.send_gui_client_properties()
 
-    def adjust_files_after_copy(self, new_session_full_name: str,
-                                template_save=ray.Template.NONE):
+    def adjust_files_after_copy(
+            self, new_session_full_name: str,
+            template_save=ray.Template.NONE):
         spath = self.session.path
         old_session_name = self.session.name
         new_session_name = Path(new_session_full_name).name
