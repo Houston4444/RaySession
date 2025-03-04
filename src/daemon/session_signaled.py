@@ -40,6 +40,10 @@ _managed_funcs = dict[str, Callable]()
 
 
 def manage(path: str | tuple[str, ...], types: str):
+    '''This decorator indicates that the decorated function manages
+    the OSC path(s) received. `types` are indicated only for convenience.
+    '''
+
     def decorated(func):
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
@@ -54,6 +58,10 @@ def manage(path: str | tuple[str, ...], types: str):
 
 
 def session_operation(path: str | tuple[str, ...], types: str):
+    '''This decorator indicates that the decorated function manages
+    the OSC path(s) received, and that this function needs some checks
+    (operation pending, copy running).'''
+
     def decorated(func: Callable):
         def wrapper(*args, **kwargs):
             if len(args) < 2:
@@ -99,6 +107,10 @@ def session_operation(path: str | tuple[str, ...], types: str):
 
 
 def client_action(path: str, types: str):
+    '''This decorator indicates that the decorated function manages
+    the OSC path(s) received, and gives directly the client as argument
+    if it exists. Otherwise, it replies an error to the sender.'''
+
     def decorated(func: Callable):
         def wrapper(*args, **kwargs):
             if len(args) < 2:
@@ -201,25 +213,6 @@ class SignaledSession(OperatingSession):
     def osc_receive(self, osp: OscPack):
         if osp.path in _managed_funcs:
             _managed_funcs[osp.path](self, osp)
-        
-        # nsm_equivs = {nsm.server.ADD : r.session.ADD_EXEC,
-        #               nsm.server.SAVE: r.session.SAVE,
-        #               nsm.server.OPEN: r.server.OPEN_SESSION,
-        #               nsm.server.NEW : r.server.NEW_SESSION,
-        #               nsm.server.DUPLICATE: r.session.DUPLICATE,
-        #               nsm.server.CLOSE: r.session.CLOSE,
-        #               nsm.server.ABORT: r.session.ABORT,
-        #               nsm.server.QUIT : r.server.QUIT}
-        #               # /nsm/server/list is not used here because it doesn't
-        #               # works as /ray/server/list_sessions
-
-        # nsm_path = nsm_equivs.get(osp.path)
-        # func_path = nsm_path if nsm_path else osp.path
-
-        # func_name = func_path.replace('/', '_')
-        # if func_name in self.__dir__():
-        #     function = self.__getattribute__(func_name)
-        #     function(osp)
 
     def send_error_no_client(self, osp: OscPack, client_id: str):
         self.send(*osp.error(), ray.Err.CREATE_FAILED,
