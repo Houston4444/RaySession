@@ -36,14 +36,24 @@ _logger = logging.getLogger(__name__)
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
 
-def manage(path: str, types: str):
+_managed_funcs = dict[str, Callable]()
+
+
+def manage(path: str | tuple[str, ...], types: str):
     def decorated(func):
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
+        
+        if isinstance(path, str):
+            _managed_funcs[path] = wrapper
+        elif isinstance(path, tuple):
+            for p in path:
+                _managed_funcs[p] = wrapper
         return wrapper
     return decorated
 
-def session_operation(path: str, types: str):
+
+def session_operation(path: str | tuple[str, ...], types: str):
     def decorated(func: Callable):
         def wrapper(*args, **kwargs):
             if len(args) < 2:
@@ -77,8 +87,16 @@ def session_operation(path: str, types: str):
             sess.next_function()
 
             return response
+        
+        if isinstance(path, str):
+            _managed_funcs[path] = wrapper
+        elif isinstance(path, tuple):
+            for p in path:
+                _managed_funcs[p] = wrapper
+
         return wrapper
     return decorated
+
 
 def client_action(path: str, types: str):
     def decorated(func: Callable):
@@ -104,6 +122,9 @@ def client_action(path: str, types: str):
                 return
 
             return response
+        
+        _managed_funcs[path] = wrapper
+        
         return wrapper
     return decorated
 
@@ -131,7 +152,7 @@ class SignaledSession(OperatingSession):
 
         self.preview_dummy_session = None
         self.dummy_sessions = list[DummySession]()
-        self._next_session_id = 1
+        self._next_dummy_id = 1
         
         self._folder_sizes_and_dates = []
         
@@ -152,11 +173,11 @@ class SignaledSession(OperatingSession):
         Use less RAM consumption than a separated process.'''
     
     def _get_new_dummy_session_id(self) -> int:
-        to_return = self._next_session_id
-        self._next_session_id += 1
+        to_return = self._next_dummy_id
+        self._next_dummy_id += 1
         return to_return
 
-    def _new_dummy_session(self, root: Path):
+    def _new_dummy_session(self, root: Path) -> DummySession:
         new_dummy = DummySession(root, self._get_new_dummy_session_id())
         self.dummy_sessions.append(new_dummy)
         return new_dummy
@@ -178,24 +199,27 @@ class SignaledSession(OperatingSession):
             pass
 
     def osc_receive(self, osp: OscPack):
-        nsm_equivs = {nsm.server.ADD : r.session.ADD_EXEC,
-                      nsm.server.SAVE: r.session.SAVE,
-                      nsm.server.OPEN: r.server.OPEN_SESSION,
-                      nsm.server.NEW : r.server.NEW_SESSION,
-                      nsm.server.DUPLICATE: r.session.DUPLICATE,
-                      nsm.server.CLOSE: r.session.CLOSE,
-                      nsm.server.ABORT: r.session.ABORT,
-                      nsm.server.QUIT : r.server.QUIT}
-                      # /nsm/server/list is not used here because it doesn't
-                      # works as /ray/server/list_sessions
+        if osp.path in _managed_funcs:
+            _managed_funcs[osp.path](self, osp)
+        
+        # nsm_equivs = {nsm.server.ADD : r.session.ADD_EXEC,
+        #               nsm.server.SAVE: r.session.SAVE,
+        #               nsm.server.OPEN: r.server.OPEN_SESSION,
+        #               nsm.server.NEW : r.server.NEW_SESSION,
+        #               nsm.server.DUPLICATE: r.session.DUPLICATE,
+        #               nsm.server.CLOSE: r.session.CLOSE,
+        #               nsm.server.ABORT: r.session.ABORT,
+        #               nsm.server.QUIT : r.server.QUIT}
+        #               # /nsm/server/list is not used here because it doesn't
+        #               # works as /ray/server/list_sessions
 
-        nsm_path = nsm_equivs.get(osp.path)
-        func_path = nsm_path if nsm_path else osp.path
+        # nsm_path = nsm_equivs.get(osp.path)
+        # func_path = nsm_path if nsm_path else osp.path
 
-        func_name = func_path.replace('/', '_')
-        if func_name in self.__dir__():
-            function = self.__getattribute__(func_name)
-            function(osp)
+        # func_name = func_path.replace('/', '_')
+        # if func_name in self.__dir__():
+        #     function = self.__getattribute__(func_name)
+        #     function(osp)
 
     def send_error_no_client(self, osp: OscPack, client_id: str):
         self.send(*osp.error(), ray.Err.CREATE_FAILED,
@@ -402,7 +426,7 @@ class SignaledSession(OperatingSession):
         template_names = set()
         filters: list[str] = osp.args
 
-        factory = bool(osp.path is r.server.LIST_FACTORY_CLIENT_TEMPLATES)
+        factory = bool(osp.path == r.server.LIST_FACTORY_CLIENT_TEMPLATES)
         base = 'factory' if factory else 'user'
 
         templates_database = self.get_client_templates_database(base)
@@ -585,7 +609,7 @@ class SignaledSession(OperatingSession):
 
         self.send(*osp.reply(), "")
 
-    @session_operation(r.server.NEW_SESSION, 's|ss')
+    @session_operation((r.server.NEW_SESSION, nsm.server.NEW), 's|ss')
     def _ray_server_new_session(self, osp: OscPack):
         if len(osp.args) == 2 and osp.args[1]:
             session_name: str
@@ -613,7 +637,7 @@ class SignaledSession(OperatingSession):
                             self.save,
                             self.new_done]
 
-    @session_operation(r.server.OPEN_SESSION, 's|si|sis')
+    @session_operation((r.server.OPEN_SESSION, nsm.server.OPEN), 's|si|sis')
     def _ray_server_open_session(self, osp: OscPack, open_off=False):
         session_name: str = osp.args[0]
         save_previous = True
@@ -800,7 +824,7 @@ class SignaledSession(OperatingSession):
     def _ray_server_ask_for_pretty_names(self, osp: OscPack):
         self.canvas_saver.send_pretty_names_to_patchbay_daemon(osp)
 
-    @session_operation(r.session.SAVE, '')
+    @session_operation((r.session.SAVE, nsm.server.SAVE), '')
     def _ray_session_save(self, osp: OscPack):        
         self.steps_order = [self.save, self.snapshot, self.save_done]
 
@@ -850,7 +874,7 @@ class SignaledSession(OperatingSession):
         self.steps_order += [(self.snapshot, snapshot_name, '', True),
                              self.snapshot_done]
 
-    @session_operation(r.session.CLOSE, '')
+    @session_operation((r.session.CLOSE, nsm.server.CLOSE), '')
     def _ray_session_close(self, osp: OscPack):
         self.steps_order = [(self.save, True),
                             self.close_no_save_clients,
@@ -858,7 +882,7 @@ class SignaledSession(OperatingSession):
                             (self.close, True),
                             self.close_done]
 
-    @manage(r.session.ABORT, '')
+    @manage((r.session.ABORT, nsm.server.ABORT), '')
     def _ray_session_abort(self, osp: OscPack):
         if self.path is None:
             self.file_copier.abort()
@@ -926,7 +950,7 @@ class SignaledSession(OperatingSession):
         else:
             self.next_function()
 
-    @manage(r.server.QUIT, '')
+    @manage((r.server.QUIT, nsm.server.QUIT), '')
     def _ray_server_quit(self, osp: OscPack):
         self.remember_osc_args(osp.path, osp.args, osp.src_addr)
         self.steps_order = [self.terminate_step_scripter,
@@ -958,7 +982,7 @@ class SignaledSession(OperatingSession):
         self._clean_expected()
         self.next_function()
 
-    @session_operation(r.session.DUPLICATE, 's')
+    @session_operation((r.session.DUPLICATE, nsm.server.DUPLICATE), 's')
     def _ray_session_duplicate(self, osp: OscPack):
         new_session_full_name: str = osp.args[0]
         spath = self.root / new_session_full_name
@@ -1105,7 +1129,7 @@ class SignaledSession(OperatingSession):
         self.send(*osp.reply(), self.notes)
         self.send(*osp.reply())
 
-    @manage(r.session.ADD_EXEC, 'siiissi|ss*')
+    @manage((r.session.ADD_EXEC, nsm.server.ADD), 'siiissi|ss*')
     def _ray_session_add_exec(self, osp: OscPack):
         self._ray_session_add_executable(osp, old_defaults=False)
 
