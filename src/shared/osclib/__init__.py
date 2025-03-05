@@ -3,7 +3,7 @@
 from .bases import (
     UDP, UNIX, TCP, Message, Bundle, Address, Server, ServerThread,
     ServerError, AddressError, make_method, send,
-    OscArg, MegaSend, OscPack
+    OscArg, MegaSend, OscPack, OscTypes, OscMulTypes
 )
 from .funcs import (
     get_machine_192, is_osc_port_free, get_free_osc_port, is_valid_osc_url,

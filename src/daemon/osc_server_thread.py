@@ -20,9 +20,9 @@ from patshared import GroupPos
 
 # Imports from src/shared
 from osclib import (
-    Address, BunServerThread, MegaSend, get_net_url, make_method, Message,
+    Address, BunServerThread, MegaSend, get_net_url, Message,
     OscPack, are_on_same_machine, are_same_osc_port, send, TCP,
-    verified_address)
+    verified_address, OscMulTypes)
 import ray
 from xml_tools import XmlElement
 import osc_paths
@@ -64,7 +64,7 @@ def _path_is_valid(path: str) -> bool:
     return True
 
 
-def validator(path: str, full_types: str, no_sess='', directos=False):
+def validator(path: str, multypes: OscMulTypes, no_sess='', directos=False):
     '''With this decorator, the OSC path method will continue
     its work in the main thread (in session_signaled module),
     except if the function returns False.
@@ -96,17 +96,17 @@ def validator(path: str, full_types: str, no_sess='', directos=False):
             return True
     
         _validators[path] = wrapper
-        _validators_types[path] = full_types
+        _validators_types[path] = multypes
 
         return wrapper
     return decorated
 
-def directos(path: str, full_types: str, no_sess=''):
+def directos(path: str, multypes: OscMulTypes, no_sess=''):
     '''This OSC path method decorated with this 
     does all its job directly in the thread of the server.
     No work will have to be done in the main thread.
     see `validator` doc.'''
-    return validator(path, full_types, no_sess=no_sess, directos=True)
+    return validator(path, multypes, no_sess=no_sess, directos=True)
 
 
 class Controller:
@@ -434,6 +434,8 @@ class OscServerThread(ClientCommunicating):
         else:
             self.terminal_command = shlex.join(
                 which_terminal(title='RAY_TERMINAL_TITLE'))
+        
+        self.patchbay_dmn_port: Optional[int] = None
         
         methods_dict = {
             r.server.ABORT_COPY: '',
@@ -1197,7 +1199,8 @@ class OscServerThread(ClientCommunicating):
         self.mega_send([gui.addr for gui in self.gui_list], mega_send)
         
     def mega_send_patchbay(self, mega_send: MegaSend):
-        self.mega_send(self.patchbay_dmn_port, mega_send)
+        if self.patchbay_dmn_port is not None:
+            self.mega_send(self.patchbay_dmn_port, mega_send)
 
     def set_server_status(self, server_status:ray.ServerStatus):
         self.server_status = server_status

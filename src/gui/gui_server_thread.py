@@ -1,13 +1,13 @@
 
 # Imports from standard library
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Callable
 import logging
 
 from patshared import GroupPos
 
 # Imports from src/shared
-from osclib import BunServerThread, make_method, Address
+from osclib import BunServerThread, OscMulTypes, OscPack, make_method, Address
 import ray
 import osc_paths
 import osc_paths.ray as r
@@ -23,30 +23,41 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 _instance = None
 
+_validators = dict[str, Callable]()
+_validators_types = dict[str, OscMulTypes]()
 
-def ray_method(path, types):
-    def decorated(func):
-        @make_method(path, types)
+def validator(path: str, full_types: str, directos=False):
+    '''With this decorator, the OSC path method will continue
+    its work in the main thread (in gui_session module),
+    except if the function returns False.
+    
+    `path`: OSC str path
+
+    `full_types`: str containing all accepted arg types
+    separated with '|'. It also accepts special characters:
+    - '.' for any arg type
+    - '*' for any number of args of type specified by the previous
+    character    
+    '''
+    def decorated(func: Callable):
         def wrapper(*args, **kwargs):
-            t_thread, t_path, t_args, t_types, src_addr, rest = args
-            if TYPE_CHECKING:
-                assert isinstance(t_thread, GuiServerThread)
+            response = func(*args, **kwargs)
+            if directos or response is False:
+                return False
+            return True
+    
+        _validators[path] = wrapper
+        _validators_types[path] = full_types
 
-            _logger.debug(
-                '\033[93mOSC::gui_receives\033[0m '
-                f'{t_path}, {t_types}, {t_args}, {src_addr.url}')
-
-            if t_thread.stopping:
-                return
-
-            response = func(*args[:-1], **kwargs)
-
-            if not response is False:
-                t_thread.signaler.osc_receive.emit(t_path, t_args)
-
-            return response
         return wrapper
     return decorated
+
+def directos(path: str, full_types: str, no_sess=''):
+    '''This OSC path method decorated with this 
+    does all its job directly in the thread of the server.
+    No work will have to be done in the main thread.
+    see `validator` doc.'''
+    return validator(path, full_types, no_sess=no_sess, directos=True)
 
 
 class GuiServerThread(BunServerThread):
@@ -80,97 +91,98 @@ class GuiServerThread(BunServerThread):
         # for example /ray/gui/session/name goes to
         # _ray_gui_session_name
 
-        for path_types in (
-            (osc_paths.ERROR, 'sis'),
-            (osc_paths.MINOR_ERROR, 'sis'),
-            (rg.server.DISANNOUNCE, ''),
-            (rg.server.NSM_LOCKED, 'i'),
-            (rg.server.OPTIONS, 'i'),
-            (rg.server.MESSAGE, 's'),
-            (rg.server.TERMINAL_COMMAND, 's'),
-            (rg.session.NAME, 'ss'),
-            (rg.session.NOTES, 's'),
-            (rg.session.NOTES_SHOWN, ''),
-            (rg.session.NOTES_HIDDEN, ''),
-            (rg.session.IS_NSM, ''),
-            (rg.session.RENAMEABLE, 'i'),
-            (rg.client.NEW, ray.ClientData.sisi()),
-            (rg.client.UPDATE, ray.ClientData.sisi()),
-            (rg.client.RAY_HACK_UPDATE, 's' + ray.RayHack.sisi()),
-            (rg.client.SWITCH, 'ss'),
-            (rg.client.STATUS, 'si'),
-            (rg.client.DIRTY, 'si'),
-            (rg.client.HAS_OPTIONAL_GUI, 's'),
-            (rg.client.GUI_VISIBLE, 'si'),
-            (rg.client.STILL_RUNNING, 's'),
-            (rg.trash.ADD, ray.ClientData.sisi()),
-            (rg.trash.RAY_HACK_UPDATE, 's' + ray.RayHack.sisi()),
-            (rg.trash.RAY_NET_UPDATE, 's' + ray.RayNet.sisi()),
-            (rg.trash.REMOVE, 's'),
-            (rg.trash.CLEAR, ''),
-            (rg.favorites.ADDED, 'ssis'),
-            (rg.favorites.REMOVED, 'si'),
-            (rg.SCRIPT_INFO, 's'),
-            (rg.HIDE_SCRIPT_INFO, ''),
-            (rg.SCRIPT_USER_ACTION, 's'),
-            (rg.HIDE_SCRIPT_USER_ACTION, ''),
-            
-            # patchbay related paths
-            (rg.patchbay.PORT_ADDED, 'siih'),
-            (rg.patchbay.PORT_RENAMED, 'ss'),
-            (rg.patchbay.PORT_RENAMED, 'ssi'),
-            (rg.patchbay.PORT_REMOVED, 's'),
-            (rg.patchbay.CONNECTION_ADDED, 'ss'),
-            (rg.patchbay.CONNECTION_REMOVED, 'ss'),
-            (rg.patchbay.SERVER_STOPPED, ''),
-            (rg.patchbay.METADATA_UPDATED, 'hss'),
-            (rg.patchbay.DSP_LOAD, 'i'),
-            (rg.patchbay.ADD_XRUN, ''),
-            (rg.patchbay.BUFFER_SIZE, 'i'),
-            (rg.patchbay.SAMPLE_RATE, 'i'),
-            (rg.patchbay.SERVER_STARTED, ''),
-            (rg.patchbay.BIG_PACKETS, 'i'),
-            (rg.patchbay.SERVER_LOSE, ''),
-            (rg.patchbay.FAST_TEMP_FILE_MEMORY, 's'),
-            (rg.patchbay.CLIENT_NAME_AND_UUID, 'sh'),
-            (rg.patchbay.TRANSPORT_POSITION, 'iiiiiif'),
-            (rg.patchbay.UPDATE_GROUP_POSITION, 'i' + GroupPos.args_types()),
-            (rg.patchbay.VIEWS_CHANGED, 's'),
-            (rg.patchbay.UPDATE_GROUP_PRETTY_NAME, 'ss'),
-            (rg.patchbay.UPDATE_PORT_PRETTY_NAME, 'ss'),
-            
-            # previews
-            (rg.preview.CLEAR, ''),
-            (rg.preview.NOTES, 's'),
-            (rg.preview.client.UPDATE, ray.ClientData.sisi()),
-            (rg.preview.client.RAY_HACK_UPDATE, 's' + ray.RayHack.sisi()),
-            (rg.preview.client.RAY_NET_UPDATE, 's' + ray.RayNet.sisi()),
-            (rg.preview.client.IS_STARTED, 'si'),
-            (rg.preview.SNAPSHOT, 's'),
-            (rg.preview.SESSION_SIZE, 'h')):
-                self.add_method(path_types[0], path_types[1],
-                                self._generic_callback)
+        path_types = {
+            osc_paths.ERROR: 'sis',
+            osc_paths.MINOR_ERROR: 'sis',
+            rg.server.DISANNOUNCE: '',
+            rg.server.NSM_LOCKED: 'i',
+            rg.server.OPTIONS: 'i',
+            rg.server.MESSAGE: 's',
+            rg.server.TERMINAL_COMMAND: 's',
+            rg.server.RECENT_SESSIONS: 's*',
+            rg.session.NAME: 'ss',
+            rg.session.NOTES: 's',
+            rg.session.NOTES_SHOWN: '',
+            rg.session.NOTES_HIDDEN: '',
+            rg.session.IS_NSM: '',
+            rg.session.RENAMEABLE: 'i',
+            rg.session.SORT_CLIENTS: 's*',
+            rg.client.NEW: ray.ClientData.sisi(),
+            rg.client.UPDATE: ray.ClientData.sisi(),
+            rg.client.RAY_HACK_UPDATE: 's' + ray.RayHack.sisi(),
+            rg.client.SWITCH: 'ss',
+            rg.client.STATUS: 'si',
+            rg.client.DIRTY: 'si',
+            rg.client.HAS_OPTIONAL_GUI: 's',
+            rg.client.GUI_VISIBLE: 'si',
+            rg.client.STILL_RUNNING: 's',
+            rg.trash.ADD: ray.ClientData.sisi(),
+            rg.trash.RAY_HACK_UPDATE: 's' + ray.RayHack.sisi(),
+            rg.trash.RAY_NET_UPDATE: 's' + ray.RayNet.sisi(),
+            rg.trash.REMOVE: 's',
+            rg.trash.CLEAR: '',
+            rg.favorites.ADDED: 'ssis',
+            rg.favorites.REMOVED: 'si',
+            rg.SCRIPT_INFO: 's',
+            rg.HIDE_SCRIPT_INFO: '',
+            rg.SCRIPT_USER_ACTION: 's',
+            rg.HIDE_SCRIPT_USER_ACTION: '',
+            rg.patchbay.PORT_ADDED: 'siih',
+            rg.patchbay.PORT_RENAMED: 'ss|ssi',
+            rg.patchbay.PORT_REMOVED: 's',
+            rg.patchbay.CONNECTION_ADDED: 'ss',
+            rg.patchbay.CONNECTION_REMOVED: 'ss',
+            rg.patchbay.SERVER_STOPPED: '',
+            rg.patchbay.METADATA_UPDATED: 'hss',
+            rg.patchbay.DSP_LOAD: 'i',
+            rg.patchbay.ADD_XRUN: '',
+            rg.patchbay.BUFFER_SIZE: 'i',
+            rg.patchbay.SAMPLE_RATE: 'i',
+            rg.patchbay.SERVER_STARTED: '',
+            rg.patchbay.BIG_PACKETS: 'i',
+            rg.patchbay.SERVER_LOSE: '',
+            rg.patchbay.FAST_TEMP_FILE_MEMORY: 's',
+            rg.patchbay.CLIENT_NAME_AND_UUID: 'sh',
+            rg.patchbay.TRANSPORT_POSITION: 'iiiiiif',
+            rg.patchbay.UPDATE_GROUP_POSITION: 'i' + GroupPos.args_types(),
+            rg.patchbay.VIEWS_CHANGED: 's',
+            rg.patchbay.UPDATE_PORTGROUP: 'siiiss*',
+            rg.patchbay.UPDATE_GROUP_PRETTY_NAME: 'ss',
+            rg.patchbay.UPDATE_PORT_PRETTY_NAME: 'ss',
+            rg.preview.CLEAR: '',
+            rg.preview.NOTES: 's',
+            rg.preview.client.UPDATE: ray.ClientData.sisi(),
+            rg.preview.client.RAY_HACK_UPDATE: 's' + ray.RayHack.sisi(),
+            rg.preview.client.RAY_NET_UPDATE: 's' + ray.RayNet.sisi(),
+            rg.preview.client.IS_STARTED: 'si',
+            rg.preview.SNAPSHOT: 's',
+            rg.preview.SESSION_SIZE: 'h',
+        }
+
+        self.add_nice_methods(path_types, self._generic_callback)
+        self.add_nice_methods(_validators_types, self._generic_callback)
 
     @staticmethod
     def instance():
         return _instance
 
-    def _generic_callback(self, path, args, types, src_addr):
+    def _generic_callback(self, osp: OscPack):
         if self.stopping:
             return
 
         _logger.debug(
             '\033[93mOSC::gui_receives\033[0m '
-            f'({path}, {args}, {types})')
+            f'({osp.path}, {osp.args}, {osp.types})')
+        
+        if osp.path in _validators:
+            if not _validators[osp.path](self, osp):
+                return
+        
+        self.signaler.osc_receive.emit(osp.path, osp.args)
 
-        self.signaler.osc_receive.emit(path, args)
-
-    @ray_method(osc_paths.REPLY, None)
-    def _reply(self, path, args: list, types: str, src_addr):
-        if not (types and ray.types_are_all_strings(types)):
-            return False
-
-        new_args = args.copy()
+    @validator(osc_paths.REPLY, 'ss*')
+    def _reply(self, osp: OscPack):
+        new_args: list[str] = osp.args.copy()
         reply_path = new_args.pop(0)
 
         if reply_path == r.server.LIST_SESSIONS:
@@ -195,10 +207,12 @@ class GuiServerThread(BunServerThread):
         elif reply_path == r.server.ABORT_PARRALLEL_COPY:
             self.signaler.parrallel_copy_aborted.emit()
 
-    @ray_method(rg.server.ANNOUNCE, 'siisis')
-    def _server_announce(self, path, args, types, src_addr):
+    @validator(rg.server.ANNOUNCE, 'siisis')
+    def _server_announce(self, osp: OscPack):
         if self.daemon_manager.is_announced():
             return
+
+        args: tuple[str, int, int, str, int, str] = osp.args
 
         (version, server_status_int, options,
          session_root, is_net_free, tcp_url) = args
@@ -206,30 +220,33 @@ class GuiServerThread(BunServerThread):
         if (self.session is not None
                 and self.session.main_win is not None
                 and self.session.main_win.waiting_for_patchbay):
-            self.send(src_addr, r.server.ASK_FOR_PATCHBAY, '')
+            self.send(osp.src_addr, r.server.ASK_FOR_PATCHBAY, '')
             self.session.main_win.waiting_for_patchbay = False
 
         self.signaler.daemon_announce.emit(
-            src_addr, version, ray.ServerStatus(server_status_int),
+            osp.src_addr, version, ray.ServerStatus(server_status_int),
             ray.Option(options), session_root, is_net_free)
 
-    @ray_method(rg.server.ROOT, 's')
-    def _server_root(self, path, args, types, src_addr):
-        session_root = args[0]
+    @validator(rg.server.ROOT, 's')
+    def _server_root(self, osp: OscPack):
+        session_root: str = osp.args[0]
         CommandLineArgs.change_session_root(session_root)
         self.signaler.root_changed.emit(session_root)
 
-    @ray_method(rg.server.STATUS, 'i')
-    def _server_status(self, path, args, types, src_addr):
-        self.signaler.server_status_changed.emit(ray.ServerStatus(args[0]))
+    @validator(rg.server.STATUS, 'i')
+    def _server_status(self, osp: OscPack):
+        status_int: int = osp.args[0]
+        self.signaler.server_status_changed.emit(
+            ray.ServerStatus(status_int))
 
-    @ray_method(rg.server.COPYING, 'i')
-    def _server_copying(self, path, args, types, src_addr):
-        copying = args[0]
+    @validator(rg.server.COPYING, 'i')
+    def _server_copying(self, osp: OscPack):
+        copying: int = osp.args[0]
         self.signaler.server_copying.emit(bool(copying))
 
-    @ray_method(rg.server.PARRALLEL_COPY_STATE, 'ii')
-    def _server_parrallel_copy_state(self, path, args, types, src_addr):
+    @validator(rg.server.PARRALLEL_COPY_STATE, 'ii')
+    def _server_parrallel_copy_state(self, osp: OscPack):
+        args: tuple[int, int] = osp.args
         session_id, state = args
 
         if state:
@@ -246,8 +263,9 @@ class GuiServerThread(BunServerThread):
                 self._parrallel_copy_id_queue.remove(session_id)
                 self.signaler.parrallel_copy_state.emit(*args)
 
-    @ray_method(rg.server.PARRALLEL_COPY_PROGRESS, 'if')
-    def _server_copy_progress(self, path, args, types, src_addr):
+    @validator(rg.server.PARRALLEL_COPY_PROGRESS, 'if')
+    def _server_copy_progress(self, osp: OscPack):
+        args: tuple[int, float] = osp.args
         session_id, progress = args
 
         if not self._parrallel_copy_id_queue:
@@ -256,69 +274,52 @@ class GuiServerThread(BunServerThread):
         if session_id == self._parrallel_copy_id_queue[0]:
             self.signaler.parrallel_copy_progress.emit(*args)
 
-    @ray_method(rg.server.PROGRESS, 'f')
-    def _server_progress(self, path, args, types, src_addr):
-        progress = args[0]
+    @validator(rg.server.PROGRESS, 'f')
+    def _server_progress(self, osp: OscPack):
+        progress: float = osp.args[0]
         self.signaler.server_progress.emit(progress)
 
-    @ray_method(rg.server.RECENT_SESSIONS, None)
-    def _server_recent_sessions(self, path, args, types, src_addr):
-        for t in types:
-            if t != 's':
-                return False
+    @validator(rg.session.AUTO_SNAPSHOT, 'i')
+    def _session_auto_snapshot(self, osp: OscPack):
+        auto_snapshot: int = osp.args[0]
+        self.signaler.reply_auto_snapshot.emit(bool(auto_snapshot))
 
-    @ray_method(rg.session.AUTO_SNAPSHOT, 'i')
-    def _session_auto_snapshot(self, path, args, types, src_addr):
-        self.signaler.reply_auto_snapshot.emit(bool(args[0]))
-
-    @ray_method(rg.session.SORT_CLIENTS, None)
-    def _session_sort_clients(self, path, args, types, src_addr):
-        if not ray.types_are_all_strings(types):
-            return False
-
-    @ray_method(rg.listed_session.DETAILS, 'sihi')
-    def _listed_session_details(self, path, args, types, src_addr):
+    @validator(rg.listed_session.DETAILS, 'sihi')
+    def _listed_session_details(self, osp: OscPack):
+        args: tuple[str, int, int, int] = osp.args
         self.signaler.session_details.emit(*args)
 
-    @ray_method(rg.listed_session.SCRIPTED_DIR, 'si')
-    def _listed_session_scripted_dir(self, path, args, types, src_addr):
+    @validator(rg.listed_session.SCRIPTED_DIR, 'si')
+    def _listed_session_scripted_dir(self, osp: OscPack):
+        args: tuple[str, int] = osp.args
         self.signaler.scripted_dir.emit(*args)
 
-    @ray_method(rg.CLIENT_TEMPLATE_UPDATE, 'iss' + ray.ClientData.sisi())
-    def _client_template_update(self, path, args, types, src_addr):
-        self.signaler.client_template_update.emit(args)
+    @validator(rg.CLIENT_TEMPLATE_UPDATE, 'iss' + ray.ClientData.sisi())
+    def _client_template_update(self, osp: OscPack):
+        self.signaler.client_template_update.emit(osp.args)
 
-    @ray_method(rg.CLIENT_TEMPLATE_RAY_HACK_UPDATE, 'is' + ray.RayHack.sisi())
-    def _client_template_ray_hack_update(self, path, args, types, src_addr):
-        self.signaler.client_template_ray_hack_update.emit(args)
+    @validator(rg.CLIENT_TEMPLATE_RAY_HACK_UPDATE, 'is' + ray.RayHack.sisi())
+    def _client_template_ray_hack_update(self, osp: OscPack):
+        self.signaler.client_template_ray_hack_update.emit(osp.args)
 
-    @ray_method(rg.CLIENT_TEMPLATE_RAY_NET_UPDATE, 'is' + ray.RayNet.sisi())
-    def _client_template_ray_net_update(self, path, args, types, src_addr):
-        self.signaler.client_template_ray_net_update.emit(args)
+    @validator(rg.CLIENT_TEMPLATE_RAY_NET_UPDATE, 'is' + ray.RayNet.sisi())
+    def _client_template_ray_net_update(self, osp: OscPack):
+        self.signaler.client_template_ray_net_update.emit(osp.args)
 
-    @ray_method(rg.client.PROGRESS, 'sf')
-    def _client_progress(self, path, args, types, src_addr):
+    @validator(rg.client.PROGRESS, 'sf')
+    def _client_progress(self, osp: OscPack):
+        args: tuple[str, float] = osp.args
         self.signaler.client_progress.emit(*args)
-        return True
 
-    @ray_method(rg.patchbay.ANNOUNCE, 'iiis')
-    def _ray_gui_patchbay_announce(self, path, args, types, src_addr):
+    @validator(rg.patchbay.ANNOUNCE, 'iiis')
+    def _ray_gui_patchbay_announce(self, osp: OscPack):
+        args: tuple[int, int, int, str] = osp.args
         self.patchbay_addr = Address(args[3])
     
-    @ray_method(rg.patchbay.UPDATE_PORTGROUP, None)
-    def _ray_gui_patchbay_update_portgroup(
-            self, path, args, types: str, src_addr: Address):
-        if not types.startswith('siiis'):
-            return False
-
-        types_end = types.replace('siiis', '', 1)
-        for c in types_end:
-            if c != 's':
-                return False
-    
-    @ray_method(rg.preview.STATE, 'i')
-    def _ray_gui_preview_state(self, path, args, types, src_addr):
-        self.signaler.session_preview_update.emit(args[0])
+    @validator(rg.preview.STATE, 'i')
+    def _ray_gui_preview_state(self, osp: OscPack):
+        pv_state: int = osp.args[0]
+        self.signaler.session_preview_update.emit(pv_state)
 
     def send(self, *args):
         _logger.debug(f'\033[95mOSC::gui sends\033[0m {args[1:]}')
@@ -344,7 +345,6 @@ class GuiServerThread(BunServerThread):
         #     _logger.error(str(e))
 
     def announce(self):
-        _logger.debug('raysession_sends announce')
         self.send(self.daemon_manager.address, r.server.GUI_ANNOUNCE,
                   ray.VERSION, int(CommandLineArgs.under_nsm),
                   os.getenv('NSM_URL', ''), os.getpid(),
@@ -355,7 +355,7 @@ class GuiServerThread(BunServerThread):
 
     def open_session(self, session_name, save_previous=1, session_template=''):
         self.to_daemon(r.server.OPEN_SESSION, session_name,
-                      save_previous, session_template)
+                       save_previous, session_template)
 
     def save_session(self):
         self.to_daemon(r.session.SAVE)
@@ -372,14 +372,14 @@ class GuiServerThread(BunServerThread):
                        session_name, new_session_name,
                        CommandLineArgs.session_root)
 
-    def get_parrallel_copy_id(self)->int:
-        ''' used by open session dialog to know
-        if a parrallel copy is running '''
+    def get_parrallel_copy_id(self) -> int:
+        '''Used by open session dialog to know
+        if a parrallel copy is running'''
         if not self._parrallel_copy_id_queue:
             return 0
 
         return self._parrallel_copy_id_queue[0]
 
-    def get_parrallel_new_session_name(self)->str:
+    def get_parrallel_new_session_name(self) -> str:
         return self._parrallel_new_session_name
 
