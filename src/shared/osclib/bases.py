@@ -1,24 +1,26 @@
 from dataclasses import dataclass
-import logging
 from types import NoneType
-from typing import TypeAlias, Union, Callable, Optional
+from typing import TYPE_CHECKING, TypeAlias, Union
 
-_logger = logging.getLogger(__name__)
-
-# Do not remove any imports here !!!
-try:
-    from liblo import (
+if TYPE_CHECKING:
+    from dum_imports import (
         UDP, UNIX, TCP, Message, Bundle, Address, Server, ServerThread,
         ServerError, AddressError, make_method, send)
-except ImportError:
+else:
+    # Do not remove any imports here !!!
     try:
-        from pyliblo3 import (
+        from liblo import (
             UDP, UNIX, TCP, Message, Bundle, Address, Server, ServerThread,
             ServerError, AddressError, make_method, send)
-    except BaseException as e:
-        _logger.error(
-            'Failed to find a liblo lib for OSC (liblo or pyliblo3)')
-        _logger.error(str(e))
+    except ImportError:
+        try:
+            from pyliblo3 import (
+                UDP, UNIX, TCP, Message, Bundle, Address, Server, ServerThread,
+                ServerError, AddressError, make_method, send)
+        except BaseException as e:
+            _logger.error(
+                'Failed to find a liblo lib for OSC (liblo or pyliblo3)')
+            _logger.error(str(e))
 
 
 OscArg: TypeAlias = Union[
@@ -34,20 +36,22 @@ OscMulTypes: TypeAlias = str
 all accepted arg types separated with '|'.
 
 It also accepts special characters:
-    - '.' for any arg type
-    - '*' for any number of args of type specified by the previous
+    - `'.'` for any arg type
+    - `'*'` for any number of args of type specified by the previous
     character
     
 for example:
-    - 's|si': will accept as arguments 1 str, or 1 str + 1 int
-    - 's*': will accept any number of string arguments (even 0)
-    - 'ii*': will accept any number of int arguments (at least 1)
-    - 's.*': first arg is a str, next are any number of args of any types
-    - '*': any number of arguments of any type
+    - `'s|si'`: will accept as arguments 1 str, or 1 str + 1 int
+    - `'s*'  `: will accept any number of string arguments (even 0)
+    - `'ii*' `: will accept any number of int arguments (at least 1)
+    - `'s.*' `: first arg is a str, next are any number of args of any types
+    - `'*'   `: any number of arguments of any type
     '''
 
 
 class MegaSend:
+    '''container for multiple messages to send
+    with `mega_send` method of a BunServer (or BunServerThread)'''
     messages: list[Message]
     def __init__(self, ref: str):
         self.ref = ref
@@ -74,6 +78,7 @@ class OscPack:
 
     @property
     def strings_only(self) -> bool:
+        '''False if at least one arg is not a str'''
         for c in self.types:
             if c != 's':
                 return False
@@ -81,6 +86,7 @@ class OscPack:
     
     @property
     def strict_strings(self) -> bool:
+        '''False if args is empty or at least one arg is not a str'''
         if not self.types:
             return False
         return self.strings_only

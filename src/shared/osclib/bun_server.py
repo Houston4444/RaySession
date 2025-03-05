@@ -20,6 +20,9 @@ _RESERVED_PORT = 47
 
 
 class BunServer(Server):
+    '''Class inheriting liblo.Server. Provides a server
+    with the mega_send feature, which allows to send massive
+    bundle of messages, in several sends if needed.'''
     def __init__(self, *args, **kwargs):
         self._methods_adder = MethodsAdder()
         self._director_methods = dict[
@@ -159,6 +162,10 @@ class BunServer(Server):
     def add_nice_method(
             self, path: str, multypes: OscMulTypes,
             func: Callable[[OscPack], None]):
+        '''Nice way to add an OSC method to the server,
+        
+        The function `func` MUST accept only one OscPack argument.
+        '''
         if path in self._director_methods:
             _logger.warning(
                 f'add_nice_method() already defined '
@@ -176,17 +183,30 @@ class BunServer(Server):
     def add_nice_methods(
             self, methods_dict: dict[str, OscMulTypes],
             func: Callable[[OscPack], None]):
+        '''Nice way to add several OSC methods to the server,
+        all routed to the same function.
+        
+        The function `func` MUST accept only one OscPack argument.
+        
+        `methods_dict` MUST be a dict where keys are osc paths
+        and value an OscMulTypes (str).        
+        '''
         for path, full_types in methods_dict.items():
             self.add_nice_method(path, full_types, func)
     
     def set_fallback_nice_method(self, func: Callable[[OscPack], None]):
-        '''set the fallback nice method'''
+        '''set the fallback function for all messages non matching with
+        any defined method.'''
         self._director_methods[''] = ('*', func)
         self.add_method(None, None, self.__director)
     
     def mega_send(self: 'Union[BunServer, BunServerThread]',
                url: Union[str, int, Address, list[str | int | Address]],
                mega_send: MegaSend, pack=10) -> bool:
+        '''send a undeterminated number of messages to another BunServer
+        (or BunServerThread).
+        
+        !!! the recepter MUST be a Bunserver or a BunServerThread !!!'''
         bundler_id = random.randrange(0x100, 0x100000)
         bundle_number_self = random.randrange(0x100, 0x100000)
         
@@ -308,6 +328,9 @@ class BunServer(Server):
  
  
 class BunServerThread(BunServer):
+    '''Class inheriting liblo.Server. Provides a server thread
+    with the mega_send feature, which allows to send massive
+    bundle of messages, in several sends if needed.'''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
