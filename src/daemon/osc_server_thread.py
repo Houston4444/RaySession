@@ -1237,7 +1237,7 @@ class OscServerThread(ClientCommunicating):
                   self.server_status.value)
 
         if self.session.path is None:
-            self.send(gui.addr, rg.session.NAME, '')
+            self.send(gui.addr, rg.session.NAME, '', '')
         else:
             self.send(gui.addr, rg.session.NAME,
                       self.session.name, str(self.session.path))
