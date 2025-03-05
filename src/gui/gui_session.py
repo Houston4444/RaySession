@@ -175,7 +175,6 @@ class SignaledSession(Session):
                         client.show_properties_dialog(second_tab=True)
                         break
 
-
     def _error(self, path, args):
         err_path, err_code, err_message = args
 
@@ -200,7 +199,6 @@ class SignaledSession(Session):
             return
 
         self.main_win.error_message(err_message)
-
 
     def _ray_gui_server_disannounce(self, path, args):
         QApplication.quit()

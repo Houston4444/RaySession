@@ -156,6 +156,7 @@ class GuiServerThread(BunServerThread):
 
         self.add_nice_methods(path_types, self._generic_callback)
         self.add_nice_methods(_validators_types, self._generic_callback)
+        self.set_fallback_nice_method(self._fallback_callback)
 
     @staticmethod
     def instance():
@@ -174,6 +175,20 @@ class GuiServerThread(BunServerThread):
                 return
         
         self.signaler.osc_receive.emit(osp.path, osp.args)
+
+    def _fallback_callback(self, osp: OscPack):
+        if osp.path == '/ping':
+            return
+
+        if (osp.path, osp.types) == (rg.patchbay.UPDATE_PORTGROUP, 'siii'):
+            # FIXME
+            # this message should not be send at start
+            # from canvas_saver (daemon)
+            return
+
+        _logger.warning(
+            f'unknown message received from {osp.src_addr.url} '
+            f'{osp.path}, {osp.types}')
 
     @validator(osc_paths.REPLY, 'ss*')
     def _reply(self, osp: OscPack):
@@ -348,7 +363,8 @@ class GuiServerThread(BunServerThread):
     def disannounce(self, src_addr):
         self.send(src_addr, r.server.GUI_DISANNOUNCE)
 
-    def open_session(self, session_name, save_previous=1, session_template=''):
+    def open_session(
+            self, session_name, save_previous=1, session_template=''):
         self.to_daemon(r.server.OPEN_SESSION, session_name,
                        save_previous, session_template)
 

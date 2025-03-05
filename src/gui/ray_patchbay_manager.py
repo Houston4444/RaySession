@@ -385,7 +385,7 @@ class RayPatchbayManager(PatchbayManager):
                 r.patchbay.ACTIVATE_DSP_LOAD,
                 int(bool(tools_displayed & ToolDisplayed.DSP_LOAD)))
 
-        #### added functions ####
+    #### added functions ####
     
     def select_client_box(self, jack_client_name: str, previous=False):
         if not jack_client_name:
