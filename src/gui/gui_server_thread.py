@@ -7,7 +7,7 @@ import logging
 from patshared import GroupPos
 
 # Imports from src/shared
-from osclib import BunServerThread, OscMulTypes, OscPack, make_method, Address
+from osclib import BunServerThread, OscMulTypes, OscPack, Address
 import ray
 import osc_paths
 import osc_paths.ray as r
@@ -86,11 +86,6 @@ class GuiServerThread(BunServerThread):
 
         # all theses OSC messages are directly treated by
         # SignaledSession in gui_session.py
-        # in the function with the the name of the message
-        # with '/' replaced with '_'
-        # for example /ray/gui/session/name goes to
-        # _ray_gui_session_name
-
         path_types = {
             osc_paths.ERROR: 'sis',
             osc_paths.MINOR_ERROR: 'sis',
@@ -185,27 +180,27 @@ class GuiServerThread(BunServerThread):
         new_args: list[str] = osp.args.copy()
         reply_path = new_args.pop(0)
 
-        if reply_path == r.server.LIST_SESSIONS:
-            self.signaler.add_sessions_to_list.emit(new_args)
-        elif reply_path == r.server.LIST_PATH:
-            self.signaler.new_executable.emit(new_args)
-        elif reply_path == r.server.LIST_SESSION_TEMPLATES:
-            self.signaler.session_template_found.emit(new_args)
-        elif reply_path == r.server.LIST_USER_CLIENT_TEMPLATES:
-            self.signaler.user_client_template_found.emit(new_args)
-        elif reply_path == r.server.LIST_FACTORY_CLIENT_TEMPLATES:
-            self.signaler.factory_client_template_found.emit(new_args)
-        elif reply_path in (r.session.LIST_SNAPSHOTS,
-                            r.client.LIST_SNAPSHOTS):
-            self.signaler.snapshots_found.emit(new_args)
-        elif reply_path == r.server.RENAME_SESSION:
-            self.signaler.other_session_renamed.emit()
-        elif reply_path == r.session.DUPLICATE_ONLY:
-            self.signaler.other_session_duplicated.emit()
-        elif reply_path == r.server.SAVE_SESSION_TEMPLATE:
-            self.signaler.other_session_templated.emit()
-        elif reply_path == r.server.ABORT_PARRALLEL_COPY:
-            self.signaler.parrallel_copy_aborted.emit()
+        match reply_path:
+            case r.server.LIST_SESSIONS:
+                self.signaler.add_sessions_to_list.emit(new_args)
+            case r.server.LIST_PATH:
+                self.signaler.new_executable.emit(new_args)
+            case r.server.LIST_SESSION_TEMPLATES:
+                self.signaler.session_template_found.emit(new_args)
+            case r.server.LIST_USER_CLIENT_TEMPLATES:
+                self.signaler.user_client_template_found.emit(new_args)
+            case r.server.LIST_FACTORY_CLIENT_TEMPLATES:
+                self.signaler.factory_client_template_found.emit(new_args)
+            case r.session.LIST_SNAPSHOTS|r.client.LIST_SNAPSHOTS:
+                self.signaler.snapshots_found.emit(new_args)
+            case r.server.RENAME_SESSION:
+                self.signaler.other_session_renamed.emit()
+            case r.session.DUPLICATE_ONLY:
+                self.signaler.other_session_duplicated.emit()
+            case r.server.SAVE_SESSION_TEMPLATE:
+                self.signaler.other_session_templated.emit()
+            case r.server.ABORT_PARRALLEL_COPY:
+                self.signaler.parrallel_copy_aborted.emit()
 
     @validator(rg.server.ANNOUNCE, 'siisis')
     def _server_announce(self, osp: OscPack):
