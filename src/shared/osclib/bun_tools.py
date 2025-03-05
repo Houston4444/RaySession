@@ -1,23 +1,18 @@
 import logging
 from typing import Callable, Optional
 
+from osclib import OscArg
+
+from .bases import OscTypes, OscMulTypes
 
 _logger = logging.getLogger(__name__)
 _AVAILABLE_TYPES = 'ihfdcsSmtTFNIb'
 
 
-def types_validator(input_types: str, avl_types_full: str) -> bool:
-    '''return True if input_types is compatible with avl_types_full,
-    
-    input_types is a regular liblo types,
-
-    avl_types_full is a string containing many types strings separated
-    by '|', all these types strings can contain specific characters
-    '.' and '*'.
-    Example: 'sis|ss*'
-    
-    '''
-    avl_typess = set(avl_types_full.split('|'))
+def types_validator(input_types: OscTypes, multypes: OscMulTypes) -> bool:
+    '''return True if `input_types` is compatible with `multypes`.
+    OscTypes and OscMulTypes are `str` aliases.'''
+    avl_typess = set(multypes.split('|'))
     if input_types in avl_typess:
         return True
     if '.*' in avl_typess or '*' in avl_typess:
@@ -94,8 +89,8 @@ class MethodsAdder:
         self._dict = dict[str | None, list[tuple[str | None, Callable]]]()
         
     def _already_associated_by(
-            self, path: str, typespec: str) \
-                -> Optional[tuple[str | None, str | None]]:
+            self, path: str, typespec: OscTypes) \
+                -> Optional[tuple[str | None, OscTypes | None]]:
         '''check if add_method path types association will be effective or
         already managed by a previous add_method.
         
@@ -120,8 +115,8 @@ class MethodsAdder:
         
         return None
         
-    def add(self, path: str, typespec: str, func: Callable[[], None],
-            user_data=None):
+    def add(self, path: Optional[str], typespec: Optional[OscTypes],
+            func: Callable[[], None], user_data=None):
         already_ass = self._already_associated_by(path, typespec)
         if already_ass is not None:
             ass_path, ass_types = already_ass
@@ -137,7 +132,7 @@ class MethodsAdder:
         else:
             type_funcs.append((typespec, func))
 
-    def _get_types_with_args(self, args: list) -> str:
+    def _get_types_with_args(self, args: list) -> OscTypes:
         'for funcs with "None" types in add_method, create the types string'
         types = ''
         for arg in args:
@@ -166,9 +161,9 @@ class MethodsAdder:
         return types
 
     def _get_func_in_list(
-            self, args: list[int | float | str | bytes],
-            type_funcs: list[tuple[str, Callable[[], None]]]) \
-                -> Optional[tuple[str, Callable[[], None]]]:
+            self, args: list[OscArg],
+            type_funcs: list[tuple[OscTypes, Callable[[], None]]]) \
+                -> Optional[tuple[OscTypes, Callable[[], None]]]:
         for types, func in type_funcs:
             if types is None:
                 return self._get_types_with_args(args), func
@@ -216,8 +211,8 @@ class MethodsAdder:
                 return types, func
 
     def get_func(
-            self, path: str, args: list[int | float | str | bytes]) \
-                -> Optional[tuple[str, Callable[[], None]]]:
+            self, path: str, args: list[OscArg]) \
+                -> Optional[tuple[OscTypes, Callable[[], None]]]:
         type_funcs = self._dict.get(path)
         if type_funcs is not None:
             types_func = self._get_func_in_list(args, type_funcs)
@@ -227,3 +222,4 @@ class MethodsAdder:
         none_type_funcs = self._dict.get(None)
         if none_type_funcs is not None:
             return self._get_func_in_list(args, none_type_funcs)
+

@@ -9,6 +9,27 @@ TCP: int
 
 OscArg: TypeAlias = Union[
     str, bytes, float, int, NoneType, bool, tuple[int, int, int, int]]
+'Generic type of an OSC argument'
+
+OscTypes: TypeAlias = str
+'''Types string of an OSC message, containing one letter per argument.
+Available letters are 'ihfdcsSmtTFNIb'.'''
+
+OscMulTypes: TypeAlias = str
+'''More flexible than OscTypes, used to add an OSC method. It contains
+all accepted arg types separated with '|'.
+
+It also accepts special characters:
+    - '.' for any arg type
+    - '*' for any number of args of type specified by the previous
+    character
+    
+for example:
+    - 's|si': will accept as arguments 1 str, or 1 str + 1 int
+    - 's*': will accept any number of string arguments (even 0)
+    - 'ii*': will accept any number of int arguments (at least 1)
+    - 's.*': first arg is a str, next are any number of args of any types
+    - '*': any number of arguments of any type'''
 
 
 class Message:
@@ -103,27 +124,11 @@ class BunServer(Server):
         ...
         
     def add_nice_method(
-            self, path: str, full_types: str,
+            self, path: str, multypes: OscMulTypes,
             func: Callable[[OscPack], None]):
         '''Nice way to add an OSC method to the server,
         
         The function `func` MUST accept only one OscPack argument.
-        
-        `full_types` is a string containing possible several types string
-        separated with '|' and accepting special characters '.' and '*'.
-        
-        '.' is used to accept any type of argument
-
-        '*' is used to accept any number of arguments of the type specified
-        by the previous character
-        
-        examples:
-            's|i' : will accept one argument of type str or int
-
-            's*' : will accept any number of arguments (even 0) in the condition
-             they all are strings.
-             
-             'ss*' : same but at least one argument is required
         '''
         ...
 
@@ -136,22 +141,13 @@ class BunServer(Server):
         The function `func` MUST accept only one OscPack argument.
         
         `methods_dict` MUST be a dict where keys are osc paths
-        and value a string containing possible several types string
-        separated with '|' and accepting special characters '.' and '*'.
-        
-        '.' is used to accept any type of argument
-
-        '*' is used to accept any number of arguments of the type specified
-        by the previous character
-        
-        examples:
-            's|i' : will accept one argument of type str or int
-
-            's*' : will accept any number of arguments (even 0) in the condition
-             they all are strings.
-             
-             'ss*' : same but at least one argument is required
+        and value an OscMulTypes (str).        
         '''
+        ...
+    
+    def set_fallback_nice_method(self, func: Callable[[OscPack], None]):
+        '''set the fallback function for all messages non matching with
+        any defined method.'''
         ...
 
 class BunServerThread(BunServer):
@@ -177,7 +173,7 @@ def send(target: Union[Address, int, tuple[str, int], str],
          *messages: tuple[Message]): ...
 
 def time() -> float: ...
-def make_method(path: str, typespec: str, user_data=None): ...
+def make_method(path: str, typespec: OscTypes, user_data=None): ...
 
 # Custom ADD ons
 
@@ -185,7 +181,7 @@ def make_method(path: str, typespec: str, user_data=None): ...
 class OscPack:
     path: str
     args: list[OscArg]
-    types: str
+    types: OscTypes
     src_addr: Address
     
     def reply(self) -> tuple[Address, str, str]:

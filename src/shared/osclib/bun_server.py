@@ -8,8 +8,10 @@ import time
 from threading import Thread
 from typing import Callable, Union, Optional
 
+from osclib import OscTypes
+
 from .bases import (
-    OscArg, OscPack, Server, Address, Message, Bundle, MegaSend)
+    OscArg, OscMulTypes, OscPack, Server, Address, Message, Bundle, MegaSend)
 from .funcs import are_on_same_machine
 from .bun_tools import MethodsAdder, _SemDict, types_validator
 
@@ -21,7 +23,7 @@ class BunServer(Server):
     def __init__(self, *args, **kwargs):
         self._methods_adder = MethodsAdder()
         self._director_methods = dict[
-            str, tuple[str, Callable[[OscPack], None]]]()
+            str, tuple[OscMulTypes, Callable[[OscPack], None]]]()
         super().__init__(*args, **kwargs)
 
         self.add_method('/_bundle_head', 'iii', self.__bundle_head)
@@ -31,21 +33,24 @@ class BunServer(Server):
         self._sem_dict = _SemDict()
     
     def add_method(
-            self, path: str, typespec: str, func: Callable[[], None],
-            user_data=None):
+            self, path: Optional[str], typespec: Optional[OscTypes],
+            func: Callable[[], None], user_data=None):
         self._methods_adder.add(path, typespec, func, user_data)
         return super().add_method(path, typespec, func, user_data=user_data)
     
     def __bundle_head(
-            self, path: str, args: list[int], types: str, src_addr: Address):
+            self, path: str, args: list[int],
+            types: OscTypes, src_addr: Address):
         self.send(src_addr, '/_bundle_head_reply', *args)
     
     def __bundle_head_reply(
-            self, path: str, args: list[int], types: str, src_addr: Address):
+            self, path: str, args: list[int],
+            types: OscTypes, src_addr: Address):
         self._sem_dict.head_received(args[0])
     
     def __local_mega_send(
-            self, path: str, args: list[str], types: str, src_addr: Address):
+            self, path: str, args: list[str],
+            types: OscTypes, src_addr: Address):
         def number_of_args(func: Callable) -> int:
             sig = signature(func)
             num = 0
@@ -116,32 +121,52 @@ class BunServer(Server):
                 case 5: func(path, nargs, types, src_addr, None)
     
     def __director(self, path: str, args: list[OscArg],
-                   types: str, src_addr: Address):
+                   types: OscTypes, src_addr: Address):
         '''transmit messages received from methods added
         with `add_nice_methods`'''
-        types_func = self._director_methods.get(path)
-        if types_func is None:
-            types_func_bis = self._methods_adder.get_func(path, args)
-            if types_func_bis is not None:
-                types, func_bis = types_func_bis
-                func_bis(path, args, types, src_addr)
+        multypes_func = self._director_methods.get(path)
+        if multypes_func is None:
+            any_rejected_m = self._director_methods.get('')
+            if any_rejected_m is not None:
+                wildcard, rejected_func = any_rejected_m
+                rejected_func(OscPack(path, args, types, src_addr))
+            # strange, this path/OscTypes was not added by
+            # `add_nice_method`, try to execute the defined func
+            
+            # types_func_def = self._methods_adder.get_func(path, args)
+            # if types_func_def is not None:
+            #     types_, func = types_func_def
+            #     func(path, args, types_, src_addr)
             return
-        
-        full_types, func = types_func
-        if not types_validator(types, full_types):
-            types_func_bis = self._methods_adder.get_func(path, args)
-            if types_func_bis is not None:
-                types, func_bis = types_func_bis
-                func_bis(path, args, types, src_addr)
+
+        multypes, func = multypes_func
+        if not types_validator(types, multypes):
+            any_rejected_m = self._director_methods.get('')
+            if any_rejected_m is not None:
+                wildcard, rejected_func = any_rejected_m
+                rejected_func(OscPack(path, args, types, src_addr))
+            # types_func_def = self._methods_adder.get_func(path, args)
+            # if types_func_def is not None:
+            #     # print('chichi', path, types, full_types)
+            #     types_, func = types_func_def
+            #     if func.__name__ is not '__director':
+            #         print('huhu', func, func.__name__)
+            #         func(path, args, types_, src_addr)
             return
 
         func(OscPack(path, args, types, src_addr))
     
     def add_nice_method(
-            self, path: str, full_types: str,
+            self, path: str, multypes: OscMulTypes,
             func: Callable[[OscPack], None]):
-        self._director_methods[path] = (full_types, func)
-        for types in full_types.split('|'):
+        if path in self._director_methods:
+            _logger.warning(
+                f'add_nice_method() already defined '
+                f'for path: {path}, {multypes} ignored')
+            return
+
+        self._director_methods[path] = (multypes, func)
+        for types in multypes.split('|'):
             if '.' in types or '*' in types:
                 self.add_method(path, None, self.__director)
                 break
@@ -149,10 +174,15 @@ class BunServer(Server):
                 self.add_method(path, types, self.__director)
         
     def add_nice_methods(
-            self, methods_dict: dict[str, str],
+            self, methods_dict: dict[str, OscMulTypes],
             func: Callable[[OscPack], None]):
         for path, full_types in methods_dict.items():
             self.add_nice_method(path, full_types, func)
+    
+    def set_fallback_nice_method(self, func: Callable[[OscPack], None]):
+        '''set the fallback nice method'''
+        self._director_methods[''] = ('*', func)
+        self.add_method(None, None, self.__director)
     
     def mega_send(self: 'Union[BunServer, BunServerThread]',
                url: Union[str, int, Address, list[str | int | Address]],

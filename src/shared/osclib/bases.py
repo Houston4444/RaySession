@@ -23,6 +23,28 @@ except ImportError:
 
 OscArg: TypeAlias = Union[
     str, bytes, float, int, NoneType, bool, tuple[int, int, int, int]]
+'Generic type of an OSC argument'
+
+OscTypes: TypeAlias = str
+'''Types string of an OSC message, containing one letter per argument.
+Available letters are 'ihfdcsSmtTFNIb'.'''
+
+OscMulTypes: TypeAlias = str
+'''More flexible than OscTypes, used to add an OSC method. It contains
+all accepted arg types separated with '|'.
+
+It also accepts special characters:
+    - '.' for any arg type
+    - '*' for any number of args of type specified by the previous
+    character
+    
+for example:
+    - 's|si': will accept as arguments 1 str, or 1 str + 1 int
+    - 's*': will accept any number of string arguments (even 0)
+    - 'ii*': will accept any number of int arguments (at least 1)
+    - 's.*': first arg is a str, next are any number of args of any types
+    - '*': any number of arguments of any type
+    '''
 
 
 class MegaSend:
@@ -41,7 +63,7 @@ class MegaSend:
 class OscPack:
     path: str
     args: list[OscArg]
-    types: str
+    types: OscTypes
     src_addr: Address
     
     def reply(self) -> tuple[Address, str, str]:
