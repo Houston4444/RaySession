@@ -219,39 +219,39 @@ class SignaledSession(Session):
         self.main_win.error_message(err_message)
 
     @manage(rg.server.DISANNOUNCE, '')
-    def _ray_gui_server_disannounce(self, osp: OscPack):
+    def _server_disannounce(self, osp: OscPack):
         QApplication.quit()
 
     @manage(rg.server.NSM_LOCKED, 'i')
-    def _ray_gui_server_nsm_locked(self, osp: OscPack):
+    def _server_nsm_locked(self, osp: OscPack):
         nsm_locked = bool(osp.args[0])
         self.main_win.set_nsm_locked(nsm_locked)
 
     @manage(rg.server.MESSAGE, 's')
-    def _ray_gui_server_message(self, osp: OscPack):
+    def _server_message(self, osp: OscPack):
         message: str = osp.args[0]
         self.main_win.print_message(message)
 
     @manage(rg.server.TERMINAL_COMMAND, 's')
-    def _ray_gui_server_terminal_command(self, osp: OscPack):
+    def _server_terminal_command(self, osp: OscPack):
         self.terminal_command: str= osp.args[0]
         if self.main_win.preferences_dialog is not None:
             self.main_win.preferences_dialog.set_terminal_command(
                 self.terminal_command)
 
     @manage(rg.server.OPTIONS, 'i')
-    def _ray_gui_server_options(self, osp: OscPack):
+    def _server_options(self, osp: OscPack):
         options_int = osp.args[0]
         self.set_daemon_options(ray.Option(options_int))
 
     @manage(rg.server.RECENT_SESSIONS, 's*')
-    def _ray_gui_server_recent_sessions(self, osp: OscPack):
+    def _server_recent_sessions(self, osp: OscPack):
         recent_sessions: list[str] = osp.args
         self.recent_sessions = recent_sessions
         self.main_win.update_recent_sessions_menu()
 
     @manage(rg.session.NAME, 'ss')
-    def _ray_gui_session_name(self, osp: OscPack):
+    def _session_name(self, osp: OscPack):
         args: tuple[str, str] = osp.args
         sname, spath = args
         self._set_name(sname)
@@ -259,11 +259,11 @@ class SignaledSession(Session):
         self.main_win.rename_session(sname, spath)
 
     @manage(rg.session.IS_NSM, '')
-    def _ray_gui_session_is_nsm(self, osp: OscPack):
+    def _session_is_nsm(self, osp: OscPack):
         self.main_win.opening_nsm_session()
 
     @manage(rg.session.RENAMEABLE, 'i')
-    def _ray_gui_session_renameable(self, osp: OscPack):
+    def _session_renameable(self, osp: OscPack):
         self.is_renameable = bool(osp.args[0])
 
         bool_set_edit = bool(
@@ -274,22 +274,22 @@ class SignaledSession(Session):
         self.main_win.set_session_name_editable(bool_set_edit)
 
     @manage(rg.session.NOTES, 's')
-    def _ray_gui_session_notes(self, osp: OscPack):
+    def _session_notes(self, osp: OscPack):
         notes: str = osp.args[0]
         self.notes = notes
         if self.main_win.notes_dialog is not None:
             self.main_win.notes_dialog.notes_updated()
         
     @manage(rg.session.NOTES_SHOWN, '')
-    def _ray_gui_session_notes_shown(self, osp: OscPack):
+    def _session_notes_shown(self, osp: OscPack):
         self.main_win.edit_notes()
 
     @manage(rg.session.NOTES_HIDDEN, '')
-    def _ray_gui_session_notes_hidden(self, osp: OscPack):
+    def _session_notes_hidden(self, osp: OscPack):
         self.main_win.edit_notes(close=True)
 
     @manage(rg.session.SORT_CLIENTS, 's*')
-    def _ray_gui_session_sort_clients(self, osp: OscPack):
+    def _session_sort_clients(self, osp: OscPack):
         args: list[str] = osp.args
         new_client_list = list[Client]()
 
@@ -314,34 +314,34 @@ class SignaledSession(Session):
             client.widget.update_status(client.status)
 
     @manage(rg.client.NEW, ray.ClientData.sisi())
-    def _ray_gui_client_new(self, osp: OscPack):
+    def _client_new(self, osp: OscPack):
         client = Client(self, *osp.args[:2])
         client.update_properties(*osp.args)
         self.client_list.append(client)
 
     @manage(rg.client.UPDATE, ray.ClientData.sisi())
-    def _ray_gui_client_update(self, osp: OscPack):
+    def _client_update(self, osp: OscPack):
         client_id: str = osp.args[0]
         client = self.get_client(client_id)
         if client:
             client.update_properties(*osp.args)
 
     @manage(rg.client.RAY_HACK_UPDATE, 's' + ray.RayHack.sisi())
-    def _ray_gui_client_ray_hack_update(self, osp: OscPack):
+    def _client_ray_hack_update(self, osp: OscPack):
         client_id: str = osp.args.pop(0)
         client = self.get_client(client_id)
         if client and client.protocol is ray.Protocol.RAY_HACK:
             client.update_ray_hack(*osp.args)
 
     @manage(rg.CLIENT_TEMPLATE_RAY_NET_UPDATE, 'is' + ray.RayNet.sisi())
-    def _ray_gui_client_ray_net_update(self, osp: OscPack):
+    def _client_ray_net_update(self, osp: OscPack):
         client_id: str = osp.args[0]
         client = self.get_client(client_id)
         if client and client.is_ray_net:
             client.update_ray_net(*osp.args[1:])
 
     @manage(rg.client.SWITCH, 'ss')
-    def  _ray_gui_client_switch(self, osp: OscPack):
+    def _client_switch(self, osp: OscPack):
         args: tuple[str, str] = osp.args
         old_id, new_id = args
         for client in self.client_list:
@@ -350,7 +350,7 @@ class SignaledSession(Session):
                 break
 
     @manage(rg.client.STATUS, 'si')
-    def _ray_gui_client_status(self, osp: OscPack):
+    def _client_status(self, osp: OscPack):
         args: tuple[str, int] = osp.args
         client_id: str = args[0]
         status = ray.ClientStatus(args[1])
@@ -370,7 +370,7 @@ class SignaledSession(Session):
         self.main_win.client_status_changed(client_id, status)
 
     @manage(rg.client.PROGRESS, 'sf')
-    def _ray_gui_client_progress(self, osp: OscPack):
+    def _client_progress(self, osp: OscPack):
         args: tuple[str, float] = osp.args
         client_id, progress = args
 
@@ -379,7 +379,7 @@ class SignaledSession(Session):
             client.set_progress(progress)
 
     @manage(rg.client.DIRTY, 'si')
-    def _ray_gui_client_dirty(self, osp: OscPack):
+    def _client_dirty(self, osp: OscPack):
         args: tuple[str, int] = osp.args
         client_id, int_dirty = args
         client = self.get_client(client_id)
@@ -387,7 +387,7 @@ class SignaledSession(Session):
             client.set_dirty_state(bool(int_dirty))
 
     @manage(rg.client.GUI_VISIBLE, 'si')
-    def _ray_gui_client_gui_visible(self, osp: OscPack):
+    def _client_gui_visible(self, osp: OscPack):
         args: tuple[str, int] = osp.args
         client_id, int_state = args
         client = self.get_client(client_id)
@@ -398,7 +398,7 @@ class SignaledSession(Session):
             client_id, bool(int_state))
 
     @manage(rg.client.STILL_RUNNING, 's')
-    def _ray_gui_client_still_running(self, osp: OscPack):
+    def _client_still_running(self, osp: OscPack):
         args: tuple[str, int] = osp.args
         client_id = args[0]
         client = self.get_client(client_id)
@@ -406,7 +406,7 @@ class SignaledSession(Session):
             client.allow_kill()
 
     @manage(rg.trash.ADD, ray.ClientData.sisi())
-    def _ray_gui_trash_add(self, osp: OscPack):
+    def _trash_add(self, osp: OscPack):
         trashed_client = TrashedClient(self)
         trashed_client.update(*osp.args)
         trash_action = self.main_win.trash_add(trashed_client)
@@ -414,7 +414,7 @@ class SignaledSession(Session):
         self.trashed_clients.append(trashed_client)
 
     @manage(rg.trash.RAY_HACK_UPDATE, 's' + ray.RayHack.sisi())
-    def _ray_gui_trash_ray_hack_update(self, osp: OscPack):
+    def _trash_ray_hack_update(self, osp: OscPack):
         client_id: str = osp.args[0]
         for trashed_client in self.trashed_clients:
             if trashed_client.client_id == client_id:
@@ -422,7 +422,7 @@ class SignaledSession(Session):
                 break
 
     @manage(rg.trash.RAY_NET_UPDATE, 's' + ray.RayNet.sisi())
-    def _ray_gui_trash_ray_net_update(self, osp: OscPack):
+    def _trash_ray_net_update(self, osp: OscPack):
         client_id: str = osp.args[0]
         for trashed_client in self.trashed_clients:
             if trashed_client.client_id == client_id:
@@ -430,7 +430,7 @@ class SignaledSession(Session):
                 break
 
     @manage(rg.trash.REMOVE, 's')
-    def _ray_gui_trash_remove(self, osp: OscPack):
+    def _trash_remove(self, osp: OscPack):
         client_id: str = osp.args[0]
 
         for trashed_client in self.trashed_clients:
@@ -443,12 +443,12 @@ class SignaledSession(Session):
         self.main_win.trash_remove(trashed_client.menu_action)
 
     @manage(rg.trash.CLEAR, '')
-    def _ray_gui_trash_clear(self, osp: OscPack):
+    def _trash_clear(self, osp: OscPack):
         self.trashed_clients.clear()
         self.main_win.trash_clear()
 
     @manage(rg.favorites.ADDED, 'ssis')
-    def _ray_gui_favorites_added(self, osp: OscPack):
+    def _favorites_added(self, osp: OscPack):
         args: tuple[str, str, int, str] = osp.args
         template_name, icon_name, int_factory, display_name = args
 
@@ -467,7 +467,7 @@ class SignaledSession(Session):
         self.main_win.update_favorites_menu()
 
     @manage(rg.favorites.REMOVED, 'si')
-    def _ray_gui_favorites_removed(self, osp: OscPack):
+    def _favorites_removed(self, osp: OscPack):
         args: tuple[str, int] = osp.args
         template_name, int_factory = args
 
@@ -483,7 +483,7 @@ class SignaledSession(Session):
         self.main_win.update_favorites_menu()
 
     @manage(rg.preview.CLEAR, '')
-    def _ray_gui_preview_clear(self, osp: OscPack):
+    def _preview_clear(self, osp: OscPack):
         self.preview_notes = ''
         self.preview_client_list.clear()
         self.preview_started_clients.clear()
@@ -491,12 +491,12 @@ class SignaledSession(Session):
         self.preview_size = -1
 
     @manage(rg.preview.NOTES, 's')
-    def _ray_gui_preview_notes(self, osp: OscPack):
+    def _preview_notes(self, osp: OscPack):
         preview_notes: str = osp.args[0]
         self.preview_notes = preview_notes
     
     @manage(rg.preview.client.UPDATE, ray.ClientData.sisi())
-    def _ray_gui_preview_client_update(self, osp: OscPack):
+    def _preview_client_update(self, osp: OscPack):
         client = ray.ClientData.new_from(*osp.args)
         for pv_client in self.preview_client_list:
             if pv_client.client_id == client.client_id:
@@ -506,7 +506,7 @@ class SignaledSession(Session):
             self.preview_client_list.append(client)
 
     @manage(rg.preview.client.RAY_HACK_UPDATE, 's' + ray.RayHack.sisi())
-    def _ray_gui_preview_client_ray_hack_update(self, osp: OscPack):
+    def _preview_client_ray_hack_update(self, osp: OscPack):
         client_id = osp.args[0]
         for pv_client in self.preview_client_list:
             if pv_client.client_id == client_id:
@@ -514,7 +514,7 @@ class SignaledSession(Session):
                 break
     
     @manage(rg.preview.client.RAY_NET_UPDATE, 's' + ray.RayNet.sisi())
-    def _ray_gui_preview_client_ray_net_update(self, osp: OscPack):
+    def _preview_client_ray_net_update(self, osp: OscPack):
         client_id: str = osp.args[0]
         for pv_client in self.preview_client_list:
             if pv_client.client_id == client_id:
@@ -522,7 +522,7 @@ class SignaledSession(Session):
                 break
 
     @manage(rg.preview.client.IS_STARTED, 'si')
-    def _ray_gui_preview_client_is_started(self, osp: OscPack):
+    def _preview_client_is_started(self, osp: OscPack):
         args: tuple[str, int] = osp.args
         client_id, is_started = args
 
@@ -533,133 +533,133 @@ class SignaledSession(Session):
                 break
 
     @manage(rg.preview.SNAPSHOT, 's')
-    def _ray_gui_preview_snapshot(self, osp: OscPack):
+    def _preview_snapshot(self, osp: OscPack):
         pv_snapshot: str = osp.args[0]
         self.preview_snapshots.append(pv_snapshot)
 
     @manage(rg.preview.SESSION_SIZE, 'h')
-    def _ray_gui_preview_session_size(self, osp: OscPack):
+    def _preview_session_size(self, osp: OscPack):
         pv_size: int = osp.args[0]
         self.preview_size = pv_size
 
     @manage(rg.SCRIPT_INFO, 's')
-    def _ray_gui_script_info(self, osp: OscPack):
+    def _script_info(self, osp: OscPack):
         text: str = osp.args[0]
         self.main_win.show_script_info(text)
 
     @manage(rg.HIDE_SCRIPT_INFO, '')
-    def _ray_gui_hide_script_info(self, osp: OscPack):
+    def _hide_script_info(self, osp: OscPack):
         self.main_win.hide_script_info_dialog()
 
     @manage(rg.SCRIPT_USER_ACTION, 's')
-    def _ray_gui_script_user_action(self, osp: OscPack):
+    def _script_user_action(self, osp: OscPack):
         text: str = osp.args[0]
         self.main_win.show_script_user_action_dialog(text)
 
     @manage(rg.HIDE_SCRIPT_USER_ACTION, '')
-    def _ray_gui_hide_script_user_action(self, osp: OscPack):
+    def _hide_script_user_action(self, osp: OscPack):
         self.main_win.hide_script_user_action_dialog()
 
     @manage(rg.patchbay.ANNOUNCE, 'iiis')
-    def _ray_gui_patchbay_announce(self, osp: OscPack):
+    def _patchbay_announce(self, osp: OscPack):
         args: tuple[int, int, int, str] = osp.args
         self.patchbay_manager.patchbay_announce(*args)
 
     @manage(rg.patchbay.CLIENT_NAME_AND_UUID, 'sh')
-    def _ray_gui_patchbay_client_name_and_uuid(self, osp: OscPack):
+    def _patchbay_client_name_and_uuid(self, osp: OscPack):
         args: tuple[str, int] = osp.args
         self.patchbay_manager.set_group_uuid_from_name(*args)
 
     @manage(rg.patchbay.PORT_ADDED, 'siih')
-    def _ray_gui_patchbay_port_added(self, osp: OscPack):
+    def _patchbay_port_added(self, osp: OscPack):
         args: tuple[str, int, int, int] = osp.args
         self.patchbay_manager.add_port(*args)
 
     @manage(rg.patchbay.PORT_REMOVED, 's')
-    def _ray_gui_patchbay_port_removed(self, osp: OscPack):
+    def _patchbay_port_removed(self, osp: OscPack):
         port_name: str = osp.args[0]
         self.patchbay_manager.remove_port(port_name)
 
     @manage(rg.patchbay.PORT_RENAMED, 'ss|ssi')
-    def _ray_gui_patchbay_port_renamed(self, osp: OscPack):
+    def _patchbay_port_renamed(self, osp: OscPack):
         self.patchbay_manager.rename_port(*osp.args)
         
     @manage(rg.patchbay.METADATA_UPDATED, 'hss')
-    def _ray_gui_patchbay_metadata_updated(self, osp: OscPack):
+    def _patchbay_metadata_updated(self, osp: OscPack):
         args: tuple[int, str, str] = osp.args
         self.patchbay_manager.metadata_update(*args)
 
     @manage(rg.patchbay.CONNECTION_ADDED, 'ss')
-    def _ray_gui_patchbay_connection_added(self, osp: OscPack):
+    def _patchbay_connection_added(self, osp: OscPack):
         args: tuple[str, str] = osp.args
         self.patchbay_manager.add_connection(*args)
 
     @manage(rg.patchbay.CONNECTION_REMOVED, 'ss')
-    def _ray_gui_patchbay_connection_removed(self, osp: OscPack):
+    def _patchbay_connection_removed(self, osp: OscPack):
         args: tuple[str, str] = osp.args
         self.patchbay_manager.remove_connection(*args)
 
     @manage(rg.patchbay.UPDATE_GROUP_POSITION, 'i' + GroupPos.args_types())
-    def _ray_gui_patchbay_update_group_position(self, osp: OscPack):
+    def _patchbay_update_group_position(self, osp: OscPack):
         self.patchbay_manager.update_group_position(*osp.args)
 
     @manage(rg.patchbay.UPDATE_PORTGROUP, 'siiiss*')
-    def _ray_gui_patchbay_update_portgroup(self, osp: OscPack):
+    def _patchbay_update_portgroup(self, osp: OscPack):
         self.patchbay_manager.update_portgroup(*osp.args)
 
     @manage(rg.patchbay.VIEWS_CHANGED, 's')
-    def _ray_gui_patchbay_views_changed(self, osp: OscPack):
+    def _patchbay_views_changed(self, osp: OscPack):
         json_dict: str = osp.args[0]
         self.patchbay_manager.views_changed(json_dict)
 
     @manage(rg.patchbay.UPDATE_GROUP_PRETTY_NAME, 'ss')
-    def _ray_gui_patchbay_update_group_pretty_name(self, osp: OscPack):
+    def _patchbay_update_group_pretty_name(self, osp: OscPack):
         args: tuple[str, str] = osp.args
         self.patchbay_manager.update_group_pretty_name(*args)
 
     @manage(rg.patchbay.UPDATE_PORT_PRETTY_NAME, 'ss')
-    def _ray_gui_patchbay_update_port_pretty_name(self, osp: OscPack):
+    def _patchbay_update_port_pretty_name(self, osp: OscPack):
         args: tuple[str, str] = osp.args
         self.patchbay_manager.update_port_pretty_name(*args)
 
     @manage(rg.patchbay.SERVER_STARTED, '')
-    def _ray_gui_patchbay_server_started(self, osp: OscPack):
+    def _patchbay_server_started(self, osp: OscPack):
         self.patchbay_manager.server_started()
 
     @manage(rg.patchbay.SERVER_STOPPED, '')
-    def _ray_gui_patchbay_server_stopped(self, osp: OscPack):
+    def _patchbay_server_stopped(self, osp: OscPack):
         self.patchbay_manager.server_stopped()
 
     @manage(rg.patchbay.SERVER_LOSE, '')
-    def _ray_gui_patchbay_server_lose(self, osp: OscPack):
+    def _patchbay_server_lose(self, osp: OscPack):
         self.patchbay_manager.server_lose()
 
     @manage(rg.patchbay.DSP_LOAD, 'i')
-    def _ray_gui_patchbay_dsp_load(self, osp: OscPack):
+    def _patchbay_dsp_load(self, osp: OscPack):
         dsp_load: int = osp.args[0]
         self.patchbay_manager.set_dsp_load(dsp_load)
 
     @manage(rg.patchbay.ADD_XRUN, '')
-    def _ray_gui_patchbay_add_xrun(self, osp: OscPack):
+    def _patchbay_add_xrun(self, osp: OscPack):
         self.patchbay_manager.add_xrun()
 
     @manage(rg.patchbay.BUFFER_SIZE, 'i')
-    def _ray_gui_patchbay_buffer_size(self, osp: OscPack):
+    def _patchbay_buffer_size(self, osp: OscPack):
         buffer_size: int = osp.args[0]
         self.patchbay_manager.buffer_size_changed(buffer_size)
 
     @manage(rg.patchbay.SAMPLE_RATE, 'i')
-    def _ray_gui_patchbay_sample_rate(self, osp: OscPack):
+    def _patchbay_sample_rate(self, osp: OscPack):
         samplerate: int = osp.args[0]
         self.patchbay_manager.sample_rate_changed(samplerate)
 
     @manage(rg.patchbay.TRANSPORT_POSITION, 'iiiiiif')
-    def _ray_gui_patchbay_transport_position(self, osp: OscPack):
+    def _patchbay_transport_position(self, osp: OscPack):
         args: tuple[int, int, int, int, int, int, float] = osp.args
         self.patchbay_manager.refresh_transport(TransportPosition(
             args[0], bool(args[1]), bool(args[2]), *args[3:]))
 
     @manage(rg.patchbay.BIG_PACKETS, 'i')
-    def _ray_gui_patchbay_big_packets(self, osp: OscPack):
+    def _patchbay_big_packets(self, osp: OscPack):
         state: int = osp.args[0]
         self.patchbay_manager.receive_big_packets(state)
