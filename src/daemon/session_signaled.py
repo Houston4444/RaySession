@@ -771,7 +771,7 @@ class SignaledSession(OperatingSession):
                     self.bookmarker.remove_all(self.path)
 
     @manage(r.server.patchbay.SAVE_GROUP_POSITION,
-            'i' + GroupPos.args_types())
+            'i' + GroupPos.ARG_TYPES)
     def _ray_server_patchbay_save_group_position(self, osp: OscPack):
         self.canvas_saver.save_group_position(*osp.args)
 
@@ -1570,20 +1570,20 @@ class SignaledSession(OperatingSession):
         client.send_to_self_address(nsm.client.HIDE_OPTIONAL_GUI)
         self.send(*osp.reply(), 'hide optional GUI asked')
 
-    @client_action(r.client.UPDATE_PROPERTIES, ray.ClientData.sisi())
+    @client_action(r.client.UPDATE_PROPERTIES, ray.ClientData.ARG_TYPES)
     def _ray_client_update_properties(self, osp: OscPack, client:Client):
         client.update_secure(*osp.args)
         client.send_gui_client_properties()
         self.send(*osp.reply(), 'client properties updated')
 
-    @client_action(r.client.UPDATE_RAY_HACK_PROPERTIES, 's' + ray.RayHack.sisi())
+    @client_action(r.client.UPDATE_RAY_HACK_PROPERTIES, 's' + ray.RayHack.ARG_TYPES)
     def _ray_client_update_ray_hack_properties(self, osp: OscPack, client:Client):
         if client.is_ray_hack:
             client.ray_hack.update(*osp.args[1:])
 
         self.send(*osp.reply(), 'ray_hack updated')
 
-    @client_action(r.client.UPDATE_RAY_NET_PROPERTIES, 's' + ray.RayNet.sisi())
+    @client_action(r.client.UPDATE_RAY_NET_PROPERTIES, 's' + ray.RayNet.ARG_TYPES)
     def _ray_client_update_ray_net_properties(self, osp: OscPack, client:Client):
         if client.is_ray_net:
             client.ray_net.update(*osp.args[1:])

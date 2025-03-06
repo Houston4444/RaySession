@@ -32,6 +32,14 @@ _logger = logging.getLogger(__name__)
 _managed_paths = dict[str, Callable[[OscPack], None]]()
 
 def manage(path: str, types: OscMulTypes):
+    '''This decorator indicates that the decorated function manages
+    the reception of the OSC path in the main thread.
+
+    `types` are here only for convenience.
+    
+    The function is added to `_managed_paths` at startup,
+    SessionSignaled._osc_receive execute it when a message is received.'''
+
     def decorated(func):
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
@@ -313,27 +321,27 @@ class SignaledSession(Session):
             client.re_create_widget()
             client.widget.update_status(client.status)
 
-    @manage(rg.client.NEW, ray.ClientData.sisi())
+    @manage(rg.client.NEW, ray.ClientData.ARG_TYPES)
     def _client_new(self, osp: OscPack):
         client = Client(self, *osp.args[:2])
         client.update_properties(*osp.args)
         self.client_list.append(client)
 
-    @manage(rg.client.UPDATE, ray.ClientData.sisi())
+    @manage(rg.client.UPDATE, ray.ClientData.ARG_TYPES)
     def _client_update(self, osp: OscPack):
         client_id: str = osp.args[0]
         client = self.get_client(client_id)
         if client:
             client.update_properties(*osp.args)
 
-    @manage(rg.client.RAY_HACK_UPDATE, 's' + ray.RayHack.sisi())
+    @manage(rg.client.RAY_HACK_UPDATE, 's' + ray.RayHack.ARG_TYPES)
     def _client_ray_hack_update(self, osp: OscPack):
         client_id: str = osp.args.pop(0)
         client = self.get_client(client_id)
         if client and client.protocol is ray.Protocol.RAY_HACK:
             client.update_ray_hack(*osp.args)
 
-    @manage(rg.CLIENT_TEMPLATE_RAY_NET_UPDATE, 'is' + ray.RayNet.sisi())
+    @manage(rg.CLIENT_TEMPLATE_RAY_NET_UPDATE, 'is' + ray.RayNet.ARG_TYPES)
     def _client_ray_net_update(self, osp: OscPack):
         client_id: str = osp.args[0]
         client = self.get_client(client_id)
@@ -405,7 +413,7 @@ class SignaledSession(Session):
         if client:
             client.allow_kill()
 
-    @manage(rg.trash.ADD, ray.ClientData.sisi())
+    @manage(rg.trash.ADD, ray.ClientData.ARG_TYPES)
     def _trash_add(self, osp: OscPack):
         trashed_client = TrashedClient(self)
         trashed_client.update(*osp.args)
@@ -413,7 +421,7 @@ class SignaledSession(Session):
         trashed_client.set_menu_action(trash_action)
         self.trashed_clients.append(trashed_client)
 
-    @manage(rg.trash.RAY_HACK_UPDATE, 's' + ray.RayHack.sisi())
+    @manage(rg.trash.RAY_HACK_UPDATE, 's' + ray.RayHack.ARG_TYPES)
     def _trash_ray_hack_update(self, osp: OscPack):
         client_id: str = osp.args[0]
         for trashed_client in self.trashed_clients:
@@ -421,7 +429,7 @@ class SignaledSession(Session):
                 trashed_client.ray_hack = ray.RayHack.new_from(*osp.args[1:])
                 break
 
-    @manage(rg.trash.RAY_NET_UPDATE, 's' + ray.RayNet.sisi())
+    @manage(rg.trash.RAY_NET_UPDATE, 's' + ray.RayNet.ARG_TYPES)
     def _trash_ray_net_update(self, osp: OscPack):
         client_id: str = osp.args[0]
         for trashed_client in self.trashed_clients:
@@ -495,7 +503,7 @@ class SignaledSession(Session):
         preview_notes: str = osp.args[0]
         self.preview_notes = preview_notes
     
-    @manage(rg.preview.client.UPDATE, ray.ClientData.sisi())
+    @manage(rg.preview.client.UPDATE, ray.ClientData.ARG_TYPES)
     def _preview_client_update(self, osp: OscPack):
         client = ray.ClientData.new_from(*osp.args)
         for pv_client in self.preview_client_list:
@@ -505,7 +513,7 @@ class SignaledSession(Session):
         else:
             self.preview_client_list.append(client)
 
-    @manage(rg.preview.client.RAY_HACK_UPDATE, 's' + ray.RayHack.sisi())
+    @manage(rg.preview.client.RAY_HACK_UPDATE, 's' + ray.RayHack.ARG_TYPES)
     def _preview_client_ray_hack_update(self, osp: OscPack):
         client_id = osp.args[0]
         for pv_client in self.preview_client_list:
@@ -513,7 +521,7 @@ class SignaledSession(Session):
                 pv_client.set_ray_hack(ray.RayHack.new_from(*osp.args[1:]))
                 break
     
-    @manage(rg.preview.client.RAY_NET_UPDATE, 's' + ray.RayNet.sisi())
+    @manage(rg.preview.client.RAY_NET_UPDATE, 's' + ray.RayNet.ARG_TYPES)
     def _preview_client_ray_net_update(self, osp: OscPack):
         client_id: str = osp.args[0]
         for pv_client in self.preview_client_list:
@@ -599,7 +607,7 @@ class SignaledSession(Session):
         args: tuple[str, str] = osp.args
         self.patchbay_manager.remove_connection(*args)
 
-    @manage(rg.patchbay.UPDATE_GROUP_POSITION, 'i' + GroupPos.args_types())
+    @manage(rg.patchbay.UPDATE_GROUP_POSITION, 'i' + GroupPos.ARG_TYPES)
     def _patchbay_update_group_position(self, osp: OscPack):
         self.patchbay_manager.update_group_position(*osp.args)
 
