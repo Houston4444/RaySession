@@ -463,8 +463,8 @@ class RayPatchbayManager(PatchbayManager):
         if group is not None:
             group.portgroup_memory_added(pg_mem)
     
-    def views_changed(self, *args):
-        views_data_json = args[0]
+    def views_changed(self, json_dict: str):
+        views_data_json = json_dict
         self.views.update_from_short_data_states(json.loads(views_data_json))
 
         if not self.views:

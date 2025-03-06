@@ -106,11 +106,12 @@ if True:
         contents = f.read()
 
     path_types = defaultdict[str, set[str]](set)
+    nw_path_types = dict[str, str]()
 
     read_ = 0
     for line in contents.splitlines():
         line = line.strip()
-        if line == "for path_types in (":
+        if line == "path_types = {":
             read_ = 1
             continue
         
@@ -118,20 +119,50 @@ if True:
             if not line or line.startswith('#'):
                 continue
 
-            if line.endswith(')):'):
+            if line == '}':
                 read_ = 0
-                path_types_str = line[1:-4]
-                path, _, types = path_types_str.partition(", ")
-                path_types[path].add(types)
-                break
-            path_types_str = line[1:-2]
-            path, _, types = path_types_str.partition(", ")
-            path_types[path].add(types)
+                continue
 
-    for path, types in path_types.items():
-        jtypes = '|'.join(types)
-        print(f'{path}: {jtypes},')
+            # print('add it', line[:-1])
+            path, types = line[:-1].split(': ')
+            nw_path_types[path] = types
+        
+        elif line.startswith('@validator('):
+            need = line.partition(')')[2].rpartition(')')[0]
+            path, _, types = need.partition(', ')
+            nw_path_types[path] = types
+    
+    func_paths = dict[str, str]()
+    # print('bien bien')
+    for path, types in nw_path_types.items():
+        # print(path, ':', types)
+        func_name = '_ray_gui_' + path[3:].lower().replace('.', '_')
+        # print(func_name)
+        func_paths[func_name] = path
 
+gui_sess = server_file.parent / 'gui_session.py'
+with open(gui_sess , 'r') as f:
+    gui_sess_contents = f.read()
+
+out_lines = list[str]()
+
+for line in gui_sess_contents.splitlines():
+    if line.strip().startswith('def '):
+        func_name = line.strip().partition(' ')[2].partition('(')[0]
+        if func_name in func_paths:
+            path = func_paths[func_name]
+            types = nw_path_types[path]
+            out_lines.append(f'    @manage({path}, {types})')
+            out_lines.append(f'    def {func_name}(self, osp: OscPack):')
+            continue
+    
+    out_lines.append(line)
+    
+print('\n'.join(out_lines))
+
+gui_sess2 = server_file.parent / 'gui_session2.py'
+with open(gui_sess2, 'w') as f:
+    f.write('\n'.join(out_lines))
     # for line in contents.splitlines():
     #     if not line.strip().startswith('@osp_method('):
     #         continue

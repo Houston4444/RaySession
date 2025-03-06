@@ -11,7 +11,7 @@ import ray
 
 
 class Signaler(QObject):
-    osc_receive = Signal(str, list)
+    osc_receive = Signal(object)
     daemon_announce = Signal(
         Address, str, ray.ServerStatus, ray.Option, str, int)
     daemon_announce_ok = Signal()

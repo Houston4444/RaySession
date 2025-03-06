@@ -168,13 +168,13 @@ class GuiServerThread(BunServerThread):
 
         _logger.debug(
             '\033[93mOSC::gui_receives\033[0m '
-            f'({osp.path}, {osp.args}, {osp.types})')
+            f'({osp.path}, {osp.args}, {osp.types})')        
         
         if osp.path in _validators:
             if not _validators[osp.path](self, osp):
                 return
         
-        self.signaler.osc_receive.emit(osp.path, osp.args)
+        self.signaler.osc_receive.emit(osp)
 
     def _fallback_callback(self, osp: OscPack):
         if osp.path == '/ping':
