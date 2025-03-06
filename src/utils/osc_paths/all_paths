@@ -85,7 +85,6 @@
 /ray/gui/hide_script_user_action
 /ray/gui/listed_session/details
 /ray/gui/listed_session/scripted_dir
-/ray/gui/notes
 /ray/gui/patchbay/add_xrun
 /ray/gui/patchbay/announce
 /ray/gui/patchbay/big_packets
