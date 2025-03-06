@@ -762,7 +762,7 @@ class OperatingSession(Session):
         self.clients.clear()
         self._set_path(None)
         self.send_gui(rg.session.NAME, '', '')
-        self.send_gui(rg.NOTES, '')
+        self.send_gui(rg.session.NOTES, '')
         self.send_gui(rg.session.NOTES_HIDDEN)
         self._no_future()
         self._send_reply("Aborted.")
