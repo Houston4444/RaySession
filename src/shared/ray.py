@@ -375,10 +375,7 @@ class ClientData:
     in_terminal = False
     ray_hack: 'Optional[RayHack]' = None
     ray_net: 'Optional[RayNet]' = None
-
-    @staticmethod
-    def sisi():
-        return 'sissssissssssisssii'
+    ARG_TYPES = 'sissssissssssisssii'
 
     @staticmethod
     def new_from(*args):
@@ -484,11 +481,7 @@ class RayHack:
     no_save_level = 0
     useless_str = ''
     useless_int = 0
-
-    @staticmethod
-    def sisi():
-        # the first 's' is for client_id, not stocked in RayHack
-        return 'siiiisi'
+    ARG_TYPES = 'siiiisi'
 
     @staticmethod
     def new_from(*args):
@@ -527,10 +520,7 @@ class RayNet:
     duplicate_state = -1
     running_daemon_url = ''
     running_session_root =''
-
-    @staticmethod
-    def sisi():
-        return 'sss'
+    ARG_TYPES = 'sss'
 
     @staticmethod
     def new_from(*args):

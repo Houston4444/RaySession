@@ -496,9 +496,9 @@ class OscServerThread(ClientCommunicating):
             r.client.START: 's',
             r.client.STOP: 's',
             r.client.TRASH: 's',
-            r.client.UPDATE_PROPERTIES: ray.ClientData.sisi(),
-            r.client.UPDATE_RAY_HACK_PROPERTIES: 's' + ray.RayHack.sisi(),
-            r.client.UPDATE_RAY_NET_PROPERTIES: 's' + ray.RayNet.sisi(),
+            r.client.UPDATE_PROPERTIES: ray.ClientData.ARG_TYPES,
+            r.client.UPDATE_RAY_HACK_PROPERTIES: 's' + ray.RayHack.ARG_TYPES,
+            r.client.UPDATE_RAY_NET_PROPERTIES: 's' + ray.RayNet.ARG_TYPES,
             r.trashed_client.REMOVE_DEFINITELY: 's',
             r.trashed_client.REMOVE_KEEP_FILES: 's',
             r.trashed_client.RESTORE: 's',
@@ -969,7 +969,7 @@ class OscServerThread(ClientCommunicating):
             dest_full_path.unlink(missing_ok=True)
 
     @validator(r.server.patchbay.SAVE_GROUP_POSITION,
-               'i' + GroupPos.args_types())
+               'i' + GroupPos.ARG_TYPES)
     def _srv_patchbay_save_group_position(self, osp: OscPack):
         # here send to others GUI the new group position
         for gui in self.gui_list:

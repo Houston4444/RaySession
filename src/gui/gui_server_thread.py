@@ -102,18 +102,18 @@ class GuiServerThread(BunServerThread):
             rg.session.IS_NSM: '',
             rg.session.RENAMEABLE: 'i',
             rg.session.SORT_CLIENTS: 's*',
-            rg.client.NEW: ray.ClientData.sisi(),
-            rg.client.UPDATE: ray.ClientData.sisi(),
-            rg.client.RAY_HACK_UPDATE: 's' + ray.RayHack.sisi(),
+            rg.client.NEW: ray.ClientData.ARG_TYPES,
+            rg.client.UPDATE: ray.ClientData.ARG_TYPES,
+            rg.client.RAY_HACK_UPDATE: 's' + ray.RayHack.ARG_TYPES,
             rg.client.SWITCH: 'ss',
             rg.client.STATUS: 'si',
             rg.client.DIRTY: 'si',
             rg.client.HAS_OPTIONAL_GUI: 's',
             rg.client.GUI_VISIBLE: 'si',
             rg.client.STILL_RUNNING: 's',
-            rg.trash.ADD: ray.ClientData.sisi(),
-            rg.trash.RAY_HACK_UPDATE: 's' + ray.RayHack.sisi(),
-            rg.trash.RAY_NET_UPDATE: 's' + ray.RayNet.sisi(),
+            rg.trash.ADD: ray.ClientData.ARG_TYPES,
+            rg.trash.RAY_HACK_UPDATE: 's' + ray.RayHack.ARG_TYPES,
+            rg.trash.RAY_NET_UPDATE: 's' + ray.RayNet.ARG_TYPES,
             rg.trash.REMOVE: 's',
             rg.trash.CLEAR: '',
             rg.favorites.ADDED: 'ssis',
@@ -139,16 +139,16 @@ class GuiServerThread(BunServerThread):
             rg.patchbay.FAST_TEMP_FILE_MEMORY: 's',
             rg.patchbay.CLIENT_NAME_AND_UUID: 'sh',
             rg.patchbay.TRANSPORT_POSITION: 'iiiiiif',
-            rg.patchbay.UPDATE_GROUP_POSITION: 'i' + GroupPos.args_types(),
+            rg.patchbay.UPDATE_GROUP_POSITION: 'i' + GroupPos.ARG_TYPES,
             rg.patchbay.VIEWS_CHANGED: 's',
             rg.patchbay.UPDATE_PORTGROUP: 'siiiss*',
             rg.patchbay.UPDATE_GROUP_PRETTY_NAME: 'ss',
             rg.patchbay.UPDATE_PORT_PRETTY_NAME: 'ss',
             rg.preview.CLEAR: '',
             rg.preview.NOTES: 's',
-            rg.preview.client.UPDATE: ray.ClientData.sisi(),
-            rg.preview.client.RAY_HACK_UPDATE: 's' + ray.RayHack.sisi(),
-            rg.preview.client.RAY_NET_UPDATE: 's' + ray.RayNet.sisi(),
+            rg.preview.client.UPDATE: ray.ClientData.ARG_TYPES,
+            rg.preview.client.RAY_HACK_UPDATE: 's' + ray.RayHack.ARG_TYPES,
+            rg.preview.client.RAY_NET_UPDATE: 's' + ray.RayNet.ARG_TYPES,
             rg.preview.client.IS_STARTED: 'si',
             rg.preview.SNAPSHOT: 's',
             rg.preview.SESSION_SIZE: 'h',
@@ -304,15 +304,15 @@ class GuiServerThread(BunServerThread):
         args: tuple[str, int] = osp.args
         self.signaler.scripted_dir.emit(*args)
 
-    @validator(rg.CLIENT_TEMPLATE_UPDATE, 'iss' + ray.ClientData.sisi())
+    @validator(rg.CLIENT_TEMPLATE_UPDATE, 'iss' + ray.ClientData.ARG_TYPES)
     def _client_template_update(self, osp: OscPack):
         self.signaler.client_template_update.emit(osp.args)
 
-    @validator(rg.CLIENT_TEMPLATE_RAY_HACK_UPDATE, 'is' + ray.RayHack.sisi())
+    @validator(rg.CLIENT_TEMPLATE_RAY_HACK_UPDATE, 'is' + ray.RayHack.ARG_TYPES)
     def _client_template_ray_hack_update(self, osp: OscPack):
         self.signaler.client_template_ray_hack_update.emit(osp.args)
 
-    @validator(rg.CLIENT_TEMPLATE_RAY_NET_UPDATE, 'is' + ray.RayNet.sisi())
+    @validator(rg.CLIENT_TEMPLATE_RAY_NET_UPDATE, 'is' + ray.RayNet.ARG_TYPES)
     def _client_template_ray_net_update(self, osp: OscPack):
         self.signaler.client_template_ray_net_update.emit(osp.args)
 
