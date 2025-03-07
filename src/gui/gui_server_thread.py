@@ -360,11 +360,13 @@ class GuiServerThread(BunServerThread):
                   os.getenv('NSM_URL', ''), os.getpid(),
                   CommandLineArgs.net_daemon_id, '')
 
-    def disannounce(self, src_addr):
+    def disannounce(self, src_addr: Address):
         self.send(src_addr, r.server.GUI_DISANNOUNCE)
+        if self.patchbay_addr is not None:
+            self.send(self.patchbay_addr, r.patchbay.GUI_DISANNOUNCE, '')
 
     def open_session(
-            self, session_name, save_previous=1, session_template=''):
+            self, session_name: str, save_previous=1, session_template=''):
         self.to_daemon(r.server.OPEN_SESSION, session_name,
                        save_previous, session_template)
 
