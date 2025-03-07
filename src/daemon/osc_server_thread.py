@@ -526,14 +526,13 @@ class OscServerThread(ClientCommunicating):
         # session_signaled will operate the message in the main thread
         signaler.osc_recv.emit(osp)
 
-    @directos(r.server.GUI_ANNOUNCE, 'sisiis')
+    @validator(r.server.GUI_ANNOUNCE, 'sisiis')
     def _srv_gui_announce(self, osp: OscPack):
         args: tuple[str, int, str, int, int, str] = osp.args
         (version, int_nsm_locked, net_master_daemon_url,
          gui_pid, net_daemon_id, tcp_url) = args
 
         nsm_locked = bool(int_nsm_locked)
-        is_net_free = True
 
         if nsm_locked:
             self._net_master_daemon_url = net_master_daemon_url
@@ -541,25 +540,21 @@ class OscServerThread(ClientCommunicating):
             self._nsm_locker_url = osp.src_addr.url
 
             for gui in self.gui_list:
-                if not are_same_osc_port(gui.addr.url, osp.src_addr.url):
+                if not are_same_osc_port(gui.addr, osp.src_addr):
                     self.send(gui.addr, rg.server.NSM_LOCKED, 1)
 
             self.net_daemon_id = net_daemon_id
 
-            is_net_free = multi_daemon_file.is_free_for_root(
-                self.net_daemon_id, self.session.root)
 
         tcp_addr = verified_address(tcp_url)
         if isinstance(tcp_addr, str):
             tcp_addr = None
 
-        self.announce_gui(
-            osp.src_addr.url, nsm_locked, is_net_free, gui_pid, tcp_addr)
 
     @directos(r.server.GUI_DISANNOUNCE, '')
     def _srv_gui_disannounce(self, osp: OscPack):
         for gui in self.gui_list:
-            if are_same_osc_port(gui.addr.url, osp.src_addr.url):
+            if are_same_osc_port(gui.addr, osp.src_addr):
                 break
         else:
             return False

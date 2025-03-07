@@ -334,6 +334,26 @@ class SignaledSession(OperatingSession):
             net_daemon_url, net_session_root = osp.args
             client.set_network_properties(net_daemon_url, net_session_root)
 
+    @manage(r.server.GUI_ANNOUNCE, 'sisiis')
+    def _ray_server_gui_announce(self, osp: OscPack):
+        args: tuple[str, int, str, int, int, str] = osp.args
+        (version, int_nsm_locked, net_master_daemon_url,
+         gui_pid, net_daemon_id, tcp_url) = args
+        
+        server = self.get_server()
+        if server is None:
+            return
+        
+        nsm_locked = bool(int_nsm_locked)
+        is_net_free = True
+        
+        if nsm_locked:
+            is_net_free = multi_daemon_file.is_free_for_root(
+                server.net_daemon_id, self.root)
+        
+        server.announce_gui(
+            osp.src_addr.url, nsm_locked, is_net_free, gui_pid, None)
+
     @manage(r.server.ASK_FOR_PATCHBAY, 's')
     def _ray_server_ask_for_patchbay(self, osp: OscPack):
         # if we are here, it means that we need a patchbay daemon to run
