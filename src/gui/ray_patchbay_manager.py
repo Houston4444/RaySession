@@ -231,8 +231,8 @@ class RayPatchbayManager(PatchbayManager):
             r.patchbay.SET_BUFFER_SIZE, buffer_size)
 
     def filter_groups(self, text: str, n_select=0) -> int:
-        ''' semi hides groups not matching with text
-            and returns number of matching boxes '''
+        '''semi hides groups not matching with text
+        and returns number of matching boxes '''
         opac_grp_ids = set()
         opac_conn_ids = set()
         

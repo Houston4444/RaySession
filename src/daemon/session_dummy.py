@@ -28,7 +28,7 @@ class DummySession(OperatingSession):
         self.next_function()
 
     def dummy_duplicate(self, osp: OscPack):
-        self.remember_osc_args(osp.path, osp.args, osp.src_addr)
+        self.steps_osp = osp
         session_to_load, new_session_full_name, sess_root = osp.args
         self.steps_order = [(self.preload, session_to_load),
                             self.take_place,
@@ -38,7 +38,7 @@ class DummySession(OperatingSession):
         self.next_function()
 
     def ray_server_save_session_template(self, osp: OscPack):
-        self.remember_osc_args(osp.path, osp.args, osp.src_addr)
+        self.steps_osp = osp
         session_name, template_name, net = osp.args
         self.steps_order = [(self.preload, session_name),
                             self.take_place,
@@ -47,7 +47,7 @@ class DummySession(OperatingSession):
         self.next_function()
 
     def ray_server_rename_session(self, osp: OscPack):
-        self.remember_osc_args(osp.path, osp.args, osp.src_addr)
+        self.steps_osp = osp
         full_session_name, new_session_name = osp.args
 
         self.steps_order = [(self.preload, full_session_name),

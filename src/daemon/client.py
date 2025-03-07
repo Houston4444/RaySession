@@ -39,7 +39,7 @@ from internal_client import InternalClient
 # 'Session' is not importable simply because it would be
 # a circular import.
 if TYPE_CHECKING:
-    from .session_signaled import SignaledSession
+    from .session_operating import OperatingSession
 
 
 class OscSrc(Enum):
@@ -118,7 +118,7 @@ class Client(ServerSender, ray.ClientData):
     ray_hack: ray.RayHack
     ray_net: ray.RayNet
 
-    def __init__(self, parent_session: 'SignaledSession'):
+    def __init__(self, parent_session: 'OperatingSession'):
         ServerSender.__init__(self)
         self.session = parent_session
         self.is_dummy = self.session.is_dummy
@@ -275,17 +275,20 @@ class Client(ServerSender, ray.ClientData):
             self.set_status(ray.ClientStatus.STOPPED)
             self.pending_command = ray.Command.NONE
 
-            if self.session.osc_src_addr:
+            if self.session.steps_osp.src_addr:
                 error_message = "Failed to launch process!"
-                if not self.session.osc_path.startswith('/nsm/server/'):
+                if (self.session.steps_osp is not None
+                        and not self.session.steps_osp.path.startswith('/nsm/server/')): 
+                # if not self.session.osc_path.startswith('/nsm/server/'):
                     error_message = _translate(
                         'client',
                         " %s: Failed to launch process !"
                             % self.gui_msg_style())
 
-                self.session.osc_reply(
-                    osc_paths.ERROR, self.session.osc_path,
-                    ray.Err.LAUNCH_FAILED, error_message)
+                self.session._send_error(ray.Err.LAUNCH_FAILED, error_message)
+                # self.session.osc_reply(
+                #     osc_paths.ERROR, self.session.osp_step.path,
+                #     ray.Err.LAUNCH_FAILED, error_message)
 
             for osc_slot in (OscSrc.START, OscSrc.OPEN):
                 self._send_error_to_caller(osc_slot, ray.Err.LAUNCH_FAILED,
@@ -1223,7 +1226,7 @@ class Client(ServerSender, ray.ClientData):
 
         return ''
 
-    def get_project_path(self) -> Path:
+    def get_project_path(self) -> Optional[Path]:
         if self.is_ray_net:
             return Path(self.session.get_short_path())
 

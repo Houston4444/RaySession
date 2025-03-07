@@ -70,15 +70,7 @@ class Session(ServerSender):
         self.step_scripter = StepScripter(self)
         self.canvas_saver = CanvasSaver(self)
         
-        self.osc_src_addr: Optional[Address] = None
-        
         self._time_at_open = 0
-
-    def osc_reply(self, *args):
-        if not self.osc_src_addr:
-            return
-
-        self.send(self.osc_src_addr, *args)
 
     def set_renameable(self, renameable:bool):
         server = self.get_server()

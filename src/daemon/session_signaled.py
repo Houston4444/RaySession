@@ -89,7 +89,7 @@ def session_operation(path: str | tuple[str, ...], types: str):
                             + "and restart operation !\n")
                 return
 
-            sess.remember_osc_args(osp.path, osp.args, osp.src_addr)
+            sess.steps_osp = osp
 
             response = func(*args, **kwargs)
             sess.next_function()
@@ -913,10 +913,11 @@ class SignaledSession(OperatingSession):
         # if an operation pending.
 
         if self.steps_order:
-            if self.osc_path.startswith('/nsm/server/'):
+            if (self.steps_osp is not None
+                    and self.steps_osp.path.startswith('/nsm/server/')):
                 ns = nsm.server
 
-                match self.osc_path:
+                match self.steps_osp.path:
                     case ns.SAVE:
                         self.save_error(ray.Err.CREATE_FAILED)
                     case ns.OPEN:
@@ -926,7 +927,7 @@ class SignaledSession(OperatingSession):
                             ray.Err.CREATE_FAILED,
                             "Could not create the session directory")
                     case ns.DUPLICATE:
-                        self.duplicate_aborted(self.osc_args[0])
+                        self.duplicate_aborted(self.steps_osp.args[0])
                     case ns.CLOSE|ns.ABORT|ns.QUIT:
                         # let the current close works here
                         self.send(*osp.error(),
@@ -955,7 +956,7 @@ class SignaledSession(OperatingSession):
                     _translate('GUIMSG',
                                'abort ordered from elsewhere, sorry !'))
 
-        self.remember_osc_args(osp.path, osp.args, osp.src_addr)
+        self.steps_osp = osp
         self.steps_order = [(self.close, True), self.abort_done]
 
         if self.file_copier.is_active():
@@ -965,7 +966,7 @@ class SignaledSession(OperatingSession):
 
     @manage((r.server.QUIT, nsm.server.QUIT), '')
     def _ray_server_quit(self, osp: OscPack):
-        self.remember_osc_args(osp.path, osp.args, osp.src_addr)
+        self.steps_osp = osp
         self.steps_order = [self.terminate_step_scripter,
                             self.close, self.exit_now]
 
@@ -1045,7 +1046,7 @@ class SignaledSession(OperatingSession):
                 self.send(osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1)
                 return
 
-            self.remember_osc_args(osp.path, osp.args, osp.src_addr)
+            self.steps_osp = osp
 
             self.steps_order = [self.save,
                                 self.snapshot,
@@ -1056,7 +1057,7 @@ class SignaledSession(OperatingSession):
 
         else:
             tmp_session = self._new_dummy_session(Path(sess_root))
-            tmp_session.osc_src_addr = osp.src_addr
+            tmp_session.steps_osp = osp
             tmp_session.dummy_duplicate(osp.path, osp.args, osp.src_addr)
 
     @session_operation(r.session.OPEN_SNAPSHOT, 's')
@@ -1308,10 +1309,11 @@ class SignaledSession(OperatingSession):
 
     @session_operation(r.session.ADD_OTHER_SESSION_CLIENT, 'ss')
     def _ray_session_add_other_session_client(self, osp: OscPack):
-        other_session, client_id = osp.args    
+        args: tuple[str, str] = osp.args
+        other_session, client_id = args    
 
-        # @session_operation remember them but this is not needed here
-        self._forget_osc_args()
+        # @session_operation remember this but this is not needed here
+        self.steps_osp = None
 
         dummy_session = DummySession(str(self.root))
         dummy_session.dummy_load(other_session)

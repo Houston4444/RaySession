@@ -116,10 +116,6 @@ PATHS:
 
     /ray/control/server/announce -> /ray/control/server_announce
 
-daemon/session remember_osc_args() should stock an OscPack
     same for answer() in server_sender
 
-
-_ray_gui_client_ray_net_update !!?
-_ray_gui_patchbay_announce
-_ray_gui_client_switch
+        osc_reply ?
