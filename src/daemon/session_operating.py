@@ -209,7 +209,8 @@ class OperatingSession(Session):
 
         if (self.has_server_option(ray.Option.SESSION_SCRIPTS)
                 and not self.step_scripter.is_running()
-                and self.path is not None and not from_run_step):
+                and self.path is not None
+                and not from_run_step):
             for step_string in ('load', 'save', 'close'):
                 if next_function == self.__getattribute__(step_string):
                     if (step_string == 'load'
