@@ -17,7 +17,7 @@ from daemon_tools import Terminal, highlight_text
 from server_sender import ServerSender
 
 if TYPE_CHECKING:
-    from session import OperatingSession
+    from session_operating import OperatingSession
     from client import Client
 
 
@@ -134,7 +134,7 @@ class StepScripter(Scripter):
         self.session.step_scripter_finished()
         self._stepper_has_call = False
 
-    def start(self, step_str: str, arguments, src_addr=None, src_path=''):
+    def start(self, step_str: str, arguments, src_addr=None, src_path='') -> bool:
         if self.is_running():
             return False
 
@@ -176,10 +176,11 @@ class StepScripter(Scripter):
         self._process.start(str(script_path), [str(a) for a in arguments])
         return True
 
-    def get_step(self):
+    def get_step(self) -> str:
+        "script step: 'load', 'save' or 'close'"
         return self._step_str
 
-    def stepper_has_called(self):
+    def stepper_has_called(self) -> bool:
         return self._stepper_has_call
 
     def set_stepper_has_call(self, call: bool):
