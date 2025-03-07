@@ -16,8 +16,6 @@ _logger = logging.getLogger(__name__)
 
 class OscJackPatch(BunServer):
     def __init__(self, main_object: 'MainObject'):
-        # tcp_port = get_free_osc_port(4444, TCP)
-        
         BunServer.__init__(self)
         self.add_method(r.patchbay.ADD_GUI, 's',
                         self._ray_patchbay_add_gui)
@@ -157,19 +155,19 @@ class OscJackPatch(BunServer):
     def send_distant_data(self, src_addrs: list[Address]):
         ms = MegaSend('patchbay_ports')        
         ms.add(rg.patchbay.BIG_PACKETS, 0)
-        
+
         for port in self.port_list:
             ms.add(rg.patchbay.PORT_ADDED,
                    port.name, port.type, port.flags, port.uuid)
-        
+
         for client_name, client_uuid in self.client_name_uuids.items():
             ms.add(rg.patchbay.CLIENT_NAME_AND_UUID,
                    client_name, client_uuid)
-        
+
         for connection in self.connection_list:
             ms.add(rg.patchbay.CONNECTION_ADDED,
                    connection[0], connection[1])
-        
+
         for uuid, key_dict in self.metadatas.items():
             for key, value in key_dict.items():
                 ms.add(rg.patchbay.METADATA_UPDATED,
