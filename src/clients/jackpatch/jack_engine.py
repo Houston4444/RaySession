@@ -89,10 +89,25 @@ class JackEngine(ProtoEngine):
                     connection_list.append((jack_port.name, oth_port.name))
 
     def connect_ports(self, port_out: str, port_in: str):
-        self._client.connect(port_out, port_in)
+        try:
+            self._client.connect(port_out, port_in)
+        except jack.JackErrorCode:
+            # Connection already exists
+            pass
+        except BaseException as e:
+            _logger.warning(
+                f"Failed to connect '{port_out}' to '{port_in}'\n{str(e)}")
+
 
     def disconnect_ports(self, port_out: str, port_in: str):
-        self._client.disconnect(port_out, port_in)
+        try:
+            self._client.disconnect(port_out, port_in)
+        except jack.JackErrorCode:
+            # Ports are already not connected
+            pass
+        except BaseException as e:
+            _logger.warning(
+                f"Failed to disconnect '{port_out}' from '{port_in}'\n{str(e)}")
 
     def quit(self):
         self._client.deactivate()

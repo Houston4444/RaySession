@@ -324,9 +324,25 @@ class MainObject:
             return
 
         if disconnect:
-            self.client.disconnect(port_out_name, port_in_name)
+            try:
+                self.client.disconnect(port_out_name, port_in_name)
+            except jack.JackErrorCode:
+                # ports already disconnected
+                ...
+            except BaseException as e:
+                _logger(
+                    f"Failed to disconnect '{port_out_name}' "
+                    f"from '{port_in_name}'\n{str(e)}")
         else:
-            self.client.connect(port_out_name, port_in_name)
+            try:
+                self.client.connect(port_out_name, port_in_name)
+            except jack.JackErrorCode:
+                # ports already connected
+                ...
+            except BaseException as e:
+                _logger(
+                    f"Failed to connect '{port_out_name}' "
+                    f"to '{port_in_name}'\n{str(e)}")
     
     def set_buffer_size(self, blocksize: int):
         if not self.jack_running:
