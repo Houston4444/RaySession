@@ -1802,7 +1802,7 @@ class SignaledSession(OperatingSession):
         client._rename_files(
             self.path,
             self.name, self.name,
-            client.get_prefix_string(), tmp_client.get_prefix_string(),
+            client.prefix, tmp_client.prefix,
             client.client_id, tmp_client.client_id,
             client.get_links_dirname(), tmp_client.get_links_dirname())
 
@@ -1862,7 +1862,7 @@ class SignaledSession(OperatingSession):
                           f'client_id {new_client_id} is not ready')
                 return
 
-            elif client.is_capable_of(':switch:'):
+            elif client.can_switch:
                 self.steps_order = [
                     (self.save_client_and_patchers, client),
                     (self.rename_full_client, client, new_client_name, new_client_id),
@@ -1908,7 +1908,7 @@ class SignaledSession(OperatingSession):
         ex_jack_name = client.get_jack_client_name()
         client.set_status(ray.ClientStatus.REMOVED)
 
-        prefix = client.get_prefix_string()
+        prefix = client.prefix
         links_dir = client.get_links_dirname()
 
         client._rename_files(

@@ -78,21 +78,10 @@ class OperatingSession(Session):
         self.window_waiter = QTimer()
         self.window_waiter.setInterval(200)
         self.window_waiter.timeout.connect(self._check_windows_appears)
-        #self.window_waiter_clients = []
 
         self.run_step_addr = None
 
         self.switching_session = False
-
-    # def remember_osc_args(self, path, args, src_addr):
-    #     self.osc_src_addr = src_addr
-    #     self.osc_path = path
-    #     self.osc_args = args
-
-    # def _forget_osc_args(self):
-    #     self.osc_src_addr = None
-    #     self.osc_path = ''
-    #     self.osc_args.clear()
 
     def _wait_and_go_to(
             self, duration: int,
@@ -1473,7 +1462,7 @@ for better organization.""")
                 self.send_initial_monitor(monitor_addr, False)
                 
             for client in self.clients:
-                if client.is_running() and client.is_capable_of(':monitor:'):
+                if client.is_running() and client.can_monitor:
                     self.send_initial_monitor(client.addr, True)
 
         self._no_future()
@@ -1555,7 +1544,7 @@ for better organization.""")
         if self.has_server_option(ray.Option.GUI_STATES):
             for client in self.clients:
                 if (client.is_running()
-                        and client.is_capable_of(':optional-gui:')
+                        and client.can_optional_gui
                         and not client.start_gui_hidden
                         and not client.gui_has_been_visible):
                     client.send_to_self_address(nsm.client.SHOW_OPTIONAL_GUI)
@@ -1674,7 +1663,7 @@ for better organization.""")
                     ard_tp_copyed = ardour_templates.copy_template_to_session(
                         ard_tp_path,
                         self.path,
-                        client.get_prefix_string(),
+                        client.prefix,
                         client.client_id
                     )
                     if not ard_tp_copyed:
@@ -1733,7 +1722,7 @@ for better organization.""")
         for oth_client in self.clients:
             if (oth_client is client or 
                     (oth_client.is_running()
-                        and oth_client.is_capable_of(':monitor:')
+                        and oth_client.can_monitor
                         and oth_client.executable_path.startswith('ray-')
                         and oth_client.executable_path.endswith('patch'))):
                 self.expected_clients.append(oth_client)
@@ -1752,7 +1741,7 @@ for better organization.""")
         client._rename_files(
             self.path,
             self.name, self.name,
-            client.get_prefix_string(), tmp_client.get_prefix_string(),
+            client.prefix, tmp_client.prefix,
             client.client_id, tmp_client.client_id,
             client.get_links_dirname(), tmp_client.get_links_dirname())
 

@@ -968,7 +968,7 @@ class Client(ServerSender, ray.ClientData):
             if self.prefix_mode is ray.PrefixMode.CUSTOM:
                 c.set_str('custom_prefix', self.custom_prefix)
 
-        if self.is_capable_of(':optional-gui:'):
+        if self.can_optional_gui:
             c.set_bool('gui_visible', not self.start_gui_hidden)
 
         if self.jack_naming is ray.JackNaming.LONG:
@@ -1143,7 +1143,7 @@ class Client(ServerSender, ray.ClientData):
 
                 if self.has_server_option(ray.Option.GUI_STATES):
                     if (self.session.wait_for is ray.WaitFor.NONE
-                            and self.is_capable_of(':optional-gui:')
+                            and self.can_optional_gui
                             and not self.start_gui_hidden
                             and not self.gui_visible
                             and not self.gui_has_been_visible):
@@ -1176,13 +1176,27 @@ class Client(ServerSender, ray.ClientData):
 
         return bool(not self.did_announce)
 
-    def is_capable_of(self, capability: str) -> bool:
-        return bool(capability in self.capabilities)
+    @property
+    def can_monitor(self):
+        return ':monitor:' in self.capabilities
+    
+    @property
+    def can_switch(self):
+        return ':switch:' in self.capabilities
+    
+    @property
+    def can_dirty(self):
+        return ':dirty:' in self.capabilities
+    
+    @property
+    def can_optional_gui(self):
+        return ':optional-gui' in self.capabilities
 
     def gui_msg_style(self) -> str:
         return "%s (%s)" % (self.name, self.client_id)
 
-    def set_network_properties(self, net_daemon_url: str, net_session_root: str):
+    def set_network_properties(
+            self, net_daemon_url: str, net_session_root: str):
         if not self.is_ray_net:
             return
 
@@ -1214,7 +1228,8 @@ class Client(ServerSender, ray.ClientData):
             self.send_gui(rg.client.STATUS, self.client_id,
                           ray.ClientStatus.COPY.value)
 
-    def get_prefix_string(self) -> str:
+    @property
+    def prefix(self) -> str:
         if self.prefix_mode is ray.PrefixMode.SESSION_NAME:
             return self.session.name
 
@@ -1607,7 +1622,7 @@ class Client(ServerSender, ray.ClientData):
             elif self.is_dumb_client():
                 self.set_status(ray.ClientStatus.NOOP)
 
-            if self.is_capable_of(':optional-gui:'):
+            if self.can_optional_gui:
                 self.start_gui_hidden = not bool(self.gui_visible)
 
     def stop(self, osp: Optional[OscPack]=None):
@@ -1706,7 +1721,7 @@ class Client(ServerSender, ray.ClientData):
         self.pending_command = ray.Command.OPEN
         
         self.set_status(ray.ClientStatus.SWITCH)
-        if self.is_capable_of(':optional-gui:'):
+        if self.can_optional_gui:
             self.send_gui(rg.client.GUI_VISIBLE,
                            self.client_id, int(self.gui_visible))
 
@@ -1717,7 +1732,7 @@ class Client(ServerSender, ray.ClientData):
         if self.protocol is not other_client.protocol:
             return False
 
-        if not ((self.nsm_active and self.is_capable_of(':switch:'))
+        if not ((self.nsm_active and self.can_switch)
                 or (self.is_dumb_client() and self.is_running())):
             return False
 
@@ -2104,7 +2119,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                                         client: 'Client', tmp_work_dir: str):
         self._rename_files(
             Path(tmp_work_dir), client.session.name, self.session.name,
-            client.get_prefix_string(), self.get_prefix_string(),
+            client.prefix, self.prefix,
             client.client_id, self.client_id,
             client.get_links_dirname(), self.get_links_dirname())
 

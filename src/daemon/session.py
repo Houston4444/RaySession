@@ -524,7 +524,7 @@ class Session(ServerSender):
         '''send an event message to clients capable of ":monitor:"'''
         for other_client in self.clients:
             if (other_client is not client
-                    and other_client.is_capable_of(':monitor:')):
+                    and other_client.can_monitor):
                 other_client.send_to_self_address(
                     nsm.client.monitor.CLIENT_UPDATED,
                     client.client_id,
@@ -545,7 +545,7 @@ class Session(ServerSender):
         '''send an event message to clients capable of ":monitor:"'''
         for client in self.clients:
             if (client.client_id != client_id
-                    and client.is_capable_of(':monitor:')):
+                    and client.can_monitor):
                 client.send_to_self_address(
                     nsm.client.monitor.CLIENT_EVENT, client_id, event)
         
