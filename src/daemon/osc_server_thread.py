@@ -2,7 +2,6 @@
 # Imports from standard library
 import logging
 import os
-from pickletools import optimize
 import shlex
 import random
 import shutil
@@ -50,6 +49,74 @@ _logger = logging.getLogger(__name__)
 _validators = dict[str, Callable[[OscPack], bool]]()
 _validators_types = dict[str, str]()
 
+METHODS_DICT = {
+    r.server.ABORT_COPY: '',
+    r.server.ABORT_PARRALLEL_COPY: 'i',
+    r.server.ABORT_SNAPSHOT: '',
+    r.server.LIST_FACTORY_CLIENT_TEMPLATES: 's*',
+    r.server.LIST_USER_CLIENT_TEMPLATES: 's*',
+    r.server.OPEN_SESSION: 's|si|sis',
+    r.server.OPEN_SESSION_OFF: 's|si',
+    r.server.QUIT: '',
+    r.server.RENAME_SESSION: 'ss',
+    r.server.patchbay.CLEAR_ABSENTS_IN_VIEW: 's',
+    r.server.patchbay.SAVE_GROUP_PRETTY_NAME: 'sssi',
+    r.server.patchbay.SAVE_PORT_PRETTY_NAME: 'sssi',
+    r.server.patchbay.SAVE_PORTGROUP: 'siiiss*',
+    r.server.patchbay.VIEW_NUMBER_CHANGED: 'ii',
+    r.server.patchbay.VIEW_PTV_CHANGED: 'ii',
+    r.server.patchbay.VIEWS_CHANGED: 's',
+    r.net_daemon.DUPLICATE_STATE: 'f',
+    r.session.ABORT: '',
+    r.session.ADD_CLIENT_TEMPLATE: 'isss',
+    r.session.ADD_FACTORY_CLIENT_TEMPLATE: 'ss*',
+    r.session.ADD_OTHER_SESSION_CLIENT: 'ss',
+    r.session.ADD_USER_CLIENT_TEMPLATE: 'ss*',
+    r.session.CLEAR_CLIENTS: 's*',
+    r.session.GET_NOTES: '',
+    r.session.LIST_CLIENTS: 's*',
+    r.session.LIST_SNAPSHOTS: '',
+    r.session.LIST_TRASHED_CLIENTS: '',
+    r.session.OPEN_SNAPSHOT: 's',
+    r.session.REORDER_CLIENTS: 'ss*',
+    r.session.RUN_STEP: 's*',
+    r.session.SET_AUTO_SNAPSHOT: 'i',
+    r.client.CHANGE_ADVANCED_PROPERTIES: 'ssisi',
+    r.client.CHANGE_ID: 'ss',
+    r.client.FULL_RENAME: 'ss',
+    r.client.GET_CUSTOM_DATA: 'ss',
+    r.client.GET_DESCRIPTION: 's',
+    r.client.GET_PID: 's',
+    r.client.GET_PROPERTIES: 's',
+    r.client.GET_TMP_DATA: 'ss',
+    r.client.HIDE_OPTIONAL_GUI: 's',
+    r.client.IS_STARTED: 's',
+    r.client.KILL: 's',
+    r.client.LIST_FILES: 's',
+    r.client.LIST_SNAPSHOTS: 's',
+    r.client.OPEN: 's',
+    r.client.OPEN_SNAPSHOT: 'ss',
+    r.client.RESUME: 's',
+    r.client.SAVE: 's',
+    r.client.SAVE_AS_TEMPLATE: 'ss',
+    r.client.SEND_SIGNAL: 'si',
+    r.client.SET_CUSTOM_DATA: 'sss',
+    r.client.SET_DESCRIPTION: 'ss',
+    r.client.SET_PROPERTIES: 'sss*',
+    r.client.SET_TMP_DATA: 'sss',
+    r.client.SHOW_OPTIONAL_GUI: 's',
+    r.client.START: 's',
+    r.client.STOP: 's',
+    r.client.TRASH: 's',
+    r.client.UPDATE_PROPERTIES: ray.ClientData.ARG_TYPES,
+    r.client.UPDATE_RAY_HACK_PROPERTIES: 's' + ray.RayHack.ARG_TYPES,
+    r.client.UPDATE_RAY_NET_PROPERTIES: 's' + ray.RayNet.ARG_TYPES,
+    r.trashed_client.REMOVE_DEFINITELY: 's',
+    r.trashed_client.REMOVE_KEEP_FILES: 's',
+    r.trashed_client.RESTORE: 's',
+}
+'''All theses osc paths will be directly managed by in the main thread
+in `session_signaled` module'''
 
 def _path_is_valid(path: str) -> bool:
     if path.startswith(('./', '../')):
@@ -433,74 +500,7 @@ class OscServerThread(ClientCommunicating):
         
         self.patchbay_dmn_port: Optional[int] = None
         
-        methods_dict = {
-            r.server.ABORT_COPY: '',
-            r.server.ABORT_PARRALLEL_COPY: 'i',
-            r.server.ABORT_SNAPSHOT: '',
-            r.server.LIST_FACTORY_CLIENT_TEMPLATES: 's*',
-            r.server.LIST_USER_CLIENT_TEMPLATES: 's*',
-            r.server.OPEN_SESSION: 's|si|sis',
-            r.server.OPEN_SESSION_OFF: 's|si',
-            r.server.QUIT: '',
-            r.server.RENAME_SESSION: 'ss',
-            r.server.patchbay.CLEAR_ABSENTS_IN_VIEW: 's',
-            r.server.patchbay.SAVE_GROUP_PRETTY_NAME: 'sssi',
-            r.server.patchbay.SAVE_PORT_PRETTY_NAME: 'sssi',
-            r.server.patchbay.SAVE_PORTGROUP: 'siiiss*',
-            r.server.patchbay.VIEW_NUMBER_CHANGED: 'ii',
-            r.server.patchbay.VIEW_PTV_CHANGED: 'ii',
-            r.server.patchbay.VIEWS_CHANGED: 's',
-            r.net_daemon.DUPLICATE_STATE: 'f',
-            r.session.ABORT: '',
-            r.session.ADD_CLIENT_TEMPLATE: 'isss',
-            r.session.ADD_FACTORY_CLIENT_TEMPLATE: 'ss*',
-            r.session.ADD_OTHER_SESSION_CLIENT: 'ss',
-            r.session.ADD_USER_CLIENT_TEMPLATE: 'ss*',
-            r.session.CLEAR_CLIENTS: 's*',
-            r.session.GET_NOTES: '',
-            r.session.LIST_CLIENTS: 's*',
-            r.session.LIST_SNAPSHOTS: '',
-            r.session.LIST_TRASHED_CLIENTS: '',
-            r.session.OPEN_SNAPSHOT: 's',
-            r.session.REORDER_CLIENTS: 'ss*',
-            r.session.RUN_STEP: 's*',
-            r.session.SET_AUTO_SNAPSHOT: 'i',
-            r.client.CHANGE_ADVANCED_PROPERTIES: 'ssisi',
-            r.client.CHANGE_ID: 'ss',
-            r.client.FULL_RENAME: 'ss',
-            r.client.GET_CUSTOM_DATA: 'ss',
-            r.client.GET_DESCRIPTION: 's',
-            r.client.GET_PID: 's',
-            r.client.GET_PROPERTIES: 's',
-            r.client.GET_TMP_DATA: 'ss',
-            r.client.HIDE_OPTIONAL_GUI: 's',
-            r.client.IS_STARTED: 's',
-            r.client.KILL: 's',
-            r.client.LIST_FILES: 's',
-            r.client.LIST_SNAPSHOTS: 's',
-            r.client.OPEN: 's',
-            r.client.OPEN_SNAPSHOT: 'ss',
-            r.client.RESUME: 's',
-            r.client.SAVE: 's',
-            r.client.SAVE_AS_TEMPLATE: 'ss',
-            r.client.SEND_SIGNAL: 'si',
-            r.client.SET_CUSTOM_DATA: 'sss',
-            r.client.SET_DESCRIPTION: 'ss',
-            r.client.SET_PROPERTIES: 'sss*',
-            r.client.SET_TMP_DATA: 'sss',
-            r.client.SHOW_OPTIONAL_GUI: 's',
-            r.client.START: 's',
-            r.client.STOP: 's',
-            r.client.TRASH: 's',
-            r.client.UPDATE_PROPERTIES: ray.ClientData.ARG_TYPES,
-            r.client.UPDATE_RAY_HACK_PROPERTIES: 's' + ray.RayHack.ARG_TYPES,
-            r.client.UPDATE_RAY_NET_PROPERTIES: 's' + ray.RayNet.ARG_TYPES,
-            r.trashed_client.REMOVE_DEFINITELY: 's',
-            r.trashed_client.REMOVE_KEEP_FILES: 's',
-            r.trashed_client.RESTORE: 's',
-        }
-        
-        self.add_nice_methods(methods_dict, self.generic_method)
+        self.add_nice_methods(METHODS_DICT, self.generic_method)
         self.add_nice_methods(_validators_types, self.generic_method)
         self.add_method(None, None, self.noneMethod)
         global instance

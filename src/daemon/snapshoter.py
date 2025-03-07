@@ -247,11 +247,11 @@ class Snapshoter(QObject):
 
                 if not extension in cext_list:
                     contents += "!%s.%s/**/*%s\n" % (
-                        git_stringer(client.get_prefix_string()),
+                        git_stringer(client.prefix),
                         git_stringer(client.client_id),
                         extension)
                     contents += "!%s.%s.**/*%s\n" % (
-                        git_stringer(client.get_prefix_string()),
+                        git_stringer(client.prefix),
                         git_stringer(client.client_id),
                         extension)
 
@@ -269,12 +269,12 @@ class Snapshoter(QObject):
                     continue
 
                 contents += "%s.%s/**/*%s\n" % (
-                    git_stringer(client.get_prefix_string()),
+                    git_stringer(client.prefix),
                     git_stringer(client.client_id),
                     extension)
 
                 contents += "%s.%s.**/*%s\n" % (
-                    git_stringer(client.get_prefix_string()),
+                    git_stringer(client.prefix),
                     git_stringer(client.client_id),
                     extension)
 
