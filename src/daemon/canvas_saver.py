@@ -152,7 +152,7 @@ class CanvasSaver(ServerSender):
         for gp_name, ptov in self.pretty_names_session.groups.items():
             ms_gui.add(rg.patchbay.UPDATE_GROUP_PRETTY_NAME,
                        gp_name, ptov.pretty)
-            ms_gui.add(r.patchbay.GROUP_PRETTY_NAME,
+            ms_patch.add(r.patchbay.GROUP_PRETTY_NAME,
                        gp_name, ptov.pretty, ptov.above_pretty)
         
         ms_patch.add(r.patchbay.GROUP_PRETTY_NAME, '', '', '')
@@ -160,7 +160,7 @@ class CanvasSaver(ServerSender):
         for port_name, ptov in self.pretty_names_session.ports.items():
             ms_gui.add(rg.patchbay.UPDATE_PORT_PRETTY_NAME,
                        port_name, ptov.pretty)
-            ms_gui.add(r.patchbay.PORT_PRETTY_NAME,
+            ms_patch.add(r.patchbay.PORT_PRETTY_NAME,
                        port_name, ptov.pretty, ptov.above_pretty)
 
         ms_patch.add(r.patchbay.PORT_PRETTY_NAME, '', '', '')

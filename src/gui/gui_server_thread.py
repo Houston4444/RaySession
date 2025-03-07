@@ -95,20 +95,16 @@ METHODS_DICT = {
 }
 '''all theses OSC messages are directly treated by
 SignaledSession in `gui_session`module'''
-        
 
-def validator(path: str, full_types: str, directos=False):
+
+def validator(path: str, multypes: OscMulTypes, directos=False):
     '''With this decorator, the OSC path method will continue
     its work in the main thread (in gui_session module),
     except if the function returns False.
     
     `path`: OSC str path
 
-    `full_types`: str containing all accepted arg types
-    separated with '|'. It also accepts special characters:
-    - '.' for any arg type
-    - '*' for any number of args of type specified by the previous
-    character    
+    `multypes`: str containing all accepted arg types (see OscMulTypes)
     '''
     def decorated(func: Callable):
         def wrapper(*args, **kwargs):
@@ -118,7 +114,7 @@ def validator(path: str, full_types: str, directos=False):
             return True
     
         _validators[path] = wrapper
-        _validators_types[path] = full_types
+        _validators_types[path] = multypes
 
         return wrapper
     return decorated
