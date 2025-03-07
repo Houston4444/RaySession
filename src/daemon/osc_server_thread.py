@@ -66,18 +66,14 @@ def _path_is_valid(path: str) -> bool:
 
 def validator(path: str, multypes: OscMulTypes, no_sess='', directos=False):
     '''With this decorator, the OSC path method will continue
-    its work in the main thread (in session_signaled module),
-    except if the function returns False.
+    its work in the main thread (in `session_signaled` module),
+    except if the function returns `False`.
     
     `path`: OSC str path
 
-    `full_types`: str containing all accepted arg types
-    separated with '|'. It also accepts special characters:
-    - '.' for any arg type
-    - '*' for any number of args of type specified by the previous
-    character
-    
-    `no_sess`: string message to send if no session is open 
+    `multypes`: str containing all accepted arg types
+    separated with '|'. see OscMulTypes
+    `no_sess`: string error message to send if no session is open 
     '''
     def decorated(func: Callable):
         def wrapper(*args, **kwargs):
