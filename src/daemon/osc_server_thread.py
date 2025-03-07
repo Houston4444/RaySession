@@ -1263,11 +1263,11 @@ class OscServerThread(ClientCommunicating):
             self.send(gui.addr, rg.client.STATUS,
                       client.client_id, client.status.value)
 
-            if client.is_capable_of(':optional-gui:'):
+            if client.can_optional_gui:
                 self.send(gui.addr, rg.client.GUI_VISIBLE,
                           client.client_id, int(client.gui_visible))
 
-            if client.is_capable_of(':dirty:'):
+            if client.can_dirty:
                 self.send(gui.addr, rg.client.DIRTY,
                           client.client_id, client.dirty)
 
