@@ -5,7 +5,7 @@ import os
 import random
 import tempfile
 import time
-from threading import Thread
+from threading import Thread, current_thread
 from typing import Callable, Union, Optional
 
 from osclib import OscTypes
@@ -224,7 +224,7 @@ class BunServer(Server):
 
         # first, try to send all in one bundle
         all_ok = True   
-        urls_done = set[str, int, Address]()
+        urls_done = set[str | int | Address]()
         for url in urls:
             try:
                 self.send(url, Bundle(*[head_msg]+messages))
@@ -251,7 +251,8 @@ class BunServer(Server):
                 is_local = True
             
             if is_local:
-                tmp_file = tempfile.NamedTemporaryFile(mode='w+t', delete=False)
+                tmp_file = tempfile.NamedTemporaryFile(
+                    mode='w+t', delete=False)
                 tmp_file.write(json.dumps(mega_send.tuples))
                 tmp_file.seek(0)
                 self.send(url, '/_local_mega_send', tmp_file.name)
@@ -360,11 +361,15 @@ class BunServerThread(BunServer):
         self._sem_dict.add_waiting(bundler_id)
 
         i = 0
+        recv = current_thread() is self._thread
         
         while self._sem_dict.count(bundler_id) >= 1:
-            time.sleep(0.001)
+            if recv:
+                self.recv(1)
+            else:
+                time.sleep(0.001)
             i += 1
-            if i >= 200:
+            if i >= 100:
                 _logger.warning(
                     f'too long wait for bundle '
                     f'recv confirmation {bundler_id}. {ref}')
