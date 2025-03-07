@@ -20,7 +20,7 @@ import osc_paths.ray.gui as rg
 from server_sender import ServerSender
 
 if TYPE_CHECKING:
-    from session import Session
+    from session_operating import OperatingSession
 
 
 _logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class CopyFile:
 
 
 class FileCopier(ServerSender):
-    def __init__(self, session: 'Session'):
+    def __init__(self, session: 'OperatingSession'):
         ServerSender.__init__(self)
         self.session = session
 
@@ -110,7 +110,9 @@ class FileCopier(ServerSender):
             else:
                 self.send_gui(rg.server.PROGRESS, progress)
 
-            self.session.osc_reply(r.net_daemon.DUPLICATE_STATE, progress)
+            if self.session.steps_osp is not None:
+                self.send(self.session.steps_osp.src_addr,
+                          r.net_daemon.DUPLICATE_STATE, progress)
 
         self._timer.start()
 

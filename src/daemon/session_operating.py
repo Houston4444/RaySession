@@ -6,7 +6,7 @@ import math
 import os
 import subprocess
 import time
-from typing import Callable, Any, Union
+from typing import Callable, Any, Union, Optional
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
@@ -15,6 +15,7 @@ from qtpy.QtCore import QCoreApplication, QTimer
 
 # Imports from src/shared
 from osclib import Address, MegaSend, is_valid_osc_url
+from osclib.bases import OscPack
 import ray
 from xml_tools import XmlElement
 import osc_paths
@@ -61,9 +62,8 @@ class OperatingSession(Session):
             self._timer_wait_user_progress_timeout)
         self.timer_wu_progress_n = 0
 
-        self.osc_src_addr = None
-        self.osc_path = ''
-        self.osc_args = []
+        self.steps_osp: Optional[OscPack] = None
+        'Stock the OscPack of the long operation running (if any).'
 
         self.steps_order = list[Union[Callable, list[Any]]]()
 
@@ -84,15 +84,15 @@ class OperatingSession(Session):
 
         self.switching_session = False
 
-    def remember_osc_args(self, path, args, src_addr):
-        self.osc_src_addr = src_addr
-        self.osc_path = path
-        self.osc_args = args
+    # def remember_osc_args(self, path, args, src_addr):
+    #     self.osc_src_addr = src_addr
+    #     self.osc_path = path
+    #     self.osc_args = args
 
-    def _forget_osc_args(self):
-        self.osc_src_addr = None
-        self.osc_path = ''
-        self.osc_args.clear()
+    # def _forget_osc_args(self):
+    #     self.osc_src_addr = None
+    #     self.osc_path = ''
+    #     self.osc_args.clear()
 
     def _wait_and_go_to(
             self, duration: int,
@@ -231,8 +231,8 @@ class OperatingSession(Session):
                         break
 
                     if self.step_scripter.start(step_string, arguments,
-                                                self.osc_src_addr,
-                                                self.osc_path):
+                                                self.steps_osp.src_addr,
+                                                self.steps_osp.path):
                         self.set_server_status(ray.ServerStatus.SCRIPT)
                         return
                     break
@@ -334,33 +334,30 @@ class OperatingSession(Session):
                         client.ray_hack_waiting_win = False
                         client.ray_hack_ready()
 
-    def _send_reply(self, *args):
-        if not (self.osc_src_addr and self.osc_path):
+    def _send_reply(self, *args: str):
+        if self.steps_osp is None:
             return
-
-        self.send_even_dummy(self.osc_src_addr, osc_paths.REPLY,
-                             self.osc_path, *args)
-
-    def _send_error(self, err, error_message):
-        #clear process order to allow other new operations
+        
+        self.send_even_dummy(*self.steps_osp.reply(), *args)
+        
+    def _send_error(self, err: ray.Err, error_message: str):
+        # clear process order to allow other new operations
         self.steps_order.clear()
 
         if self.run_step_addr:
             self.answer(self.run_step_addr, r.session.RUN_STEP,
                         error_message, err)
 
-        if not (self.osc_src_addr and self.osc_path):
+        if self.steps_osp is None:
             return
+        
+        self.send_even_dummy(*self.steps_osp.error(), err, error_message)
 
-        self.send_even_dummy(self.osc_src_addr, osc_paths.ERROR,
-                             self.osc_path, err, error_message)
-
-    def _send_minor_error(self, err, error_message):
-        if not (self.osc_src_addr and self.osc_path):
+    def _send_minor_error(self, err: ray.Err, error_message: str):
+        if self.steps_osp is None:
             return
-
-        self.send_even_dummy(self.osc_src_addr, osc_paths.MINOR_ERROR,
-                             self.osc_path, err, error_message)
+        
+        self.send_even_dummy(*self.steps_osp.error(), err, error_message)
 
     def step_scripter_finished(self):
         if self.wait_for is ray.WaitFor.SCRIPT_QUIT:
@@ -549,7 +546,7 @@ class OperatingSession(Session):
 
         self.set_server_status(ray.ServerStatus.READY)
         self.steps_order.clear()
-        self._forget_osc_args()
+        self.steps_osp = None
 
     def snapshot(self, snapshot_name='', rewind_snapshot='',
                  force=False, outing=False):
@@ -601,7 +598,7 @@ class OperatingSession(Session):
         # if operation is not snapshot (ex: close or save)
         if self.next_function.__name__ == 'snapshot_done':
             self._send_error(err_snapshot, m)
-            self._forget_osc_args()
+            self.steps_osp = None
             return
 
         self._send_minor_error(err_snapshot, m)
@@ -755,7 +752,7 @@ class OperatingSession(Session):
         self._send_reply("Closed.")
         self.message("Done")
         self.set_server_status(ray.ServerStatus.OFF)
-        self._forget_osc_args()
+        self.steps_osp = None
 
     def abort_done(self):
         self._clean_expected()
@@ -768,7 +765,7 @@ class OperatingSession(Session):
         self._send_reply("Aborted.")
         self.message("Done")
         self.set_server_status(ray.ServerStatus.OFF)
-        self._forget_osc_args()
+        self.steps_osp = None
 
     def new(self, new_session_name: str):
         self.send_gui_message(
@@ -800,7 +797,7 @@ for better organization.""")
         self.send_gui_message(_translate('GUIMSG', 'Session is ready'))
         self._send_reply("Created.")
         self.set_server_status(ray.ServerStatus.READY)
-        self._forget_osc_args()
+        self.steps_osp = None
 
     def init_snapshot(self, spath: Path, snapshot: str):
         self.set_server_status(ray.ServerStatus.REWIND)
@@ -910,17 +907,17 @@ for better organization.""")
         # unlock the directory of the aborted session
         multi_daemon_file.unlock_path(self.root / new_session_full_name)
 
-        if self.osc_path == nsm.server.DUPLICATE:
-            # for nsm server control API compatibility
-            # abort duplication is not possible in Non/New NSM
-            # so, send the only known error
-            self._send_error(ray.Err.NO_SUCH_FILE, "No such file.")
+        if self.steps_osp is not None:
+            if self.steps_osp.path == nsm.server.DUPLICATE:
+                # for nsm server control API compatibility
+                # abort duplication is not possible in Non/New NSM
+                # so, send the only known error
+                self._send_error(ray.Err.NO_SUCH_FILE, "No such file.")
 
-        if self.osc_src_addr is not None:
-            self.send(self.osc_src_addr, r.net_daemon.DUPLICATE_STATE, 1)
+            self.send(self.steps_osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1.0)
 
         self.set_server_status(ray.ServerStatus.READY)
-        self._forget_osc_args()
+        self.steps_osp = None
 
     def save_session_template(self, template_name: str, net=False):
         template_root = TemplateRoots.user_sessions
@@ -1104,7 +1101,7 @@ for better organization.""")
         self._send_reply(
             f"Session '{self.name}' has been renamed '"
             f"to '{new_session_name}'.")
-        self._forget_osc_args()
+        self.steps_osp = None
 
     def preload(self, session_full_name: str, auto_create=True):
         # load session data in self.future* (clients, trashed_clients,
@@ -1569,7 +1566,7 @@ for better organization.""")
         self._send_reply("Loaded.")
         self.message("Done")
         self.set_server_status(ray.ServerStatus.READY)
-        self._forget_osc_args()
+        self.steps_osp = None
 
     def load_error(self, err_loading):
         self.message("Failed")
@@ -1599,15 +1596,20 @@ for better organization.""")
         self.steps_order.clear()
 
     def duplicate_only_done(self):
-        self.send(self.osc_src_addr, r.net_daemon.DUPLICATE_STATE, 1)
+        if self.steps_osp is None:
+            _logger.warning(
+                'Impossible to reply duplicate_only_done '
+                'because OscPack is None')
+            return
+        self.send(self.steps_osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1)
         self._send_reply("Duplicated only done.")
-        self._forget_osc_args()
+        self.steps_osp = None
 
     def duplicate_done(self):
         self.message("Done")
         self._send_reply("Duplicated.")
         self.set_server_status(ray.ServerStatus.READY)
-        self._forget_osc_args()
+        self.steps_osp = None
 
     def exit_now(self):
         self.set_server_status(ray.ServerStatus.OFF)
@@ -1787,7 +1789,7 @@ for better organization.""")
         self.message("Done")
         self._send_reply("full client rename done.")
         self.set_server_status(ray.ServerStatus.READY)
-        self._forget_osc_args()
+        self.steps_osp = None
 
     def restart_client(self, client: Client):
         client.start()
@@ -1844,8 +1846,9 @@ for better organization.""")
         self.steps_order.clear()
 
     def load_client_snapshot_done(self):
-        self.send(self.osc_src_addr, osc_paths.REPLY, self.osc_path,
-                  'Client snapshot loaded')
+        if self.steps_osp is None:
+            return
+        self.send(*self.steps_osp.reply(), 'Client snapshot loaded')
 
     def start_client(self, client: Client):
         client.start()
