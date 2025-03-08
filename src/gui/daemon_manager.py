@@ -100,7 +100,8 @@ class DaemonManager(QObject):
             sys.stderr.write(
                 _translate(
                     'error',
-                    "No announce from ray-daemon. RaySession can't works. Sorry.\n"))
+                    "No announce from ray-daemon." 
+                    "RaySession can't works. Sorry.\n"))
             QApplication.quit()
 
     def _receive_announce(
