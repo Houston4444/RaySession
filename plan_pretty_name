@@ -69,6 +69,36 @@ Comportement mangeur prudent:
                 au deuxième lancement aucun pretty-name ne pourra être supprimé
                 puisqu'ils ont tous été défini de manière externe.
 
+Pour savoir si un pretty name est défini par soi, on peut checker l'apparition de pretty name
+
+
+Donc:
+    Internal pretty name:
+        Uniquement les noms définis par l'utilisateur dans l'application !
+    Défini/Non_défini config/session:
+        Si on change rien, un pretty-name défini restera défini at vitam aeternam,
+        et ce n'est pas grave.
+
+    Concurrence entre instances RS et Patchance:
+        C'est la grosse merde. Quoique.
+
+        RS démarré avant, patchance après:
+            Patchance arrive et 
+                ecrit tous les non-définis
+                remplace tous les pretty names qui ont un nom à se faire écraser.
+            Patchance repart en laissant tout en plan.
+                Tout nouveau chg sur les items définis par Patchance ne sera pas effectif
+                puisque le pretty_name écrasable aura changé.
+                    (pas de solution)
+    
+    Bouton: définir tous les Jolis noms internes avec les jolis noms JACK
+        enabled si des pretty_names JACK existent et sont différent du pretty name interne
+    Bouton: redéfinir tous jolis noms JACK avec les jolis noms internes
+        enabled si des ports ou groupes JACK ayant un prettyname interne et n'ayant pas de 
+        pretty_name JACK ou different.
+
+
+
 
 
 

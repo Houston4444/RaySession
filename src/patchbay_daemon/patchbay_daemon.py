@@ -61,13 +61,13 @@ class suppress_stdout_stderr(object):
 
     def __enter__(self):
         # Assign the null pointers to stdout and stderr.
-        os.dup2(self.null_fds[0],1)
-        os.dup2(self.null_fds[1],2)
+        os.dup2(self.null_fds[0], 1)
+        os.dup2(self.null_fds[1], 2)
 
     def __exit__(self, *_):
         # Re-assign the real stdout/stderr back to (1) and (2)
-        os.dup2(self.save_fds[0],1)
-        os.dup2(self.save_fds[1],2)
+        os.dup2(self.save_fds[0], 1)
+        os.dup2(self.save_fds[1], 2)
         # Close all file descriptors
         for fd in self.null_fds + self.save_fds:
             os.close(fd)
@@ -127,21 +127,27 @@ class MainObject:
     def __init__(self, daemon_port: str, daemon_tcp_port: str, gui_url: str):
         self._daemon_port = daemon_port
         self._daemon_tcp_port = int(daemon_tcp_port)
-        self.ALSA_LIB_OK = ALSA_LIB_OK
+
         self.last_sent_dsp_load = 0
         self.max_dsp_since_last_sent = 0.00
+
         self._waiting_jack_client_open = True
+
         self.last_transport_pos = TransportPosition(
             0, False, False, 0, 0, 0, 0.0)
 
-        self.exp_pretty_names = PrettyNames()
-        'Contains only the pretty names set by this in JACK metadatas'
-        self.uuid_pretty_names = dict[int, str]()
-        
         self.pretty_names = PrettyNames()
         '''Contains all internal pretty names,
         including some groups and ports not existing now'''
+
+        self.uuid_pretty_names = dict[int, str]()
+        '''Contains pairs of 'uuid: pretty_name' of all pretty_names
+        exported to JACK metadatas by this program.'''
         
+        self.uuid_waiting_pretty_names = dict[int, str]()
+        '''Contains pairs of 'uuid: pretty_name' of pretty_names just
+        set and waiting for the property change callback.'''
+
         self.pretty_tmp_path = (Path('/tmp/RaySession/')
                                 / f'pretty_names.{daemon_port}.json')
         
@@ -231,7 +237,7 @@ class MainObject:
             pretty_name = self.pretty_names.pretty_group(
                 client_name, mdata_pretty_name)
             if pretty_name:
-                self.set_pretty_name(True, client_name, client_uuid, pretty_name)
+                self.set_jack_pretty_name(True, client_name, client_uuid, pretty_name)
                 
         for port_name in port_names:
             try:
@@ -245,9 +251,9 @@ class MainObject:
             pretty_name = self.pretty_names.pretty_port(
                 port.name, mdata_pretty_name)
             if pretty_name:
-                self.set_pretty_name(False, port.name, port_uuid, pretty_name)
+                self.set_jack_pretty_name(False, port.name, port_uuid, pretty_name)
         
-        self.save_exp_pretty_names()
+        self.save_uuid_pretty_names()
     
     def check_jack_client_responding(self):
         for i in range(100): # JACK has 5s to answer
@@ -383,6 +389,8 @@ class MainObject:
         self.exit()
                 
     def exit(self):
+        self.save_uuid_pretty_names()
+        
         if self.jack_running:
             self.client.deactivate()
             self.client.close()
@@ -433,6 +441,8 @@ class MainObject:
             self.osc_server.server_restarted()
         
         if self.pretty_tmp_path.exists():
+            # read the contents of pretty names set by this program
+            # in a previous run (with same daemon osc port).
             try:
                 with open(self.pretty_tmp_path, 'r') as f:
                     pretty_dict = json.load(f)
@@ -440,8 +450,12 @@ class MainObject:
                         self.uuid_pretty_names.clear()
                         for key, value in pretty_dict.items():
                             self.uuid_pretty_names[int(key)] = value
+            except ValueError:
+                _logger.warning(
+                    f'{self.pretty_tmp_path} badly written, ignored.')
             except:
-                pass
+                _logger.warning(
+                    f'Failed to read {self.pretty_tmp_path}, ignored.')
 
     def is_terminate(self) -> bool:
         if self.terminate or self.osc_server.is_terminate():
@@ -526,6 +540,10 @@ class MainObject:
             @self.client.set_property_change_callback
             def property_change(subject: int, key: str, change: int):
                 if change == jack.PROPERTY_DELETED:
+                    if key == JackMetadata.PRETTY_NAME:
+                        if subject in self.uuid_waiting_pretty_names:
+                            self.uuid_waiting_pretty_names.pop(subject)
+
                     self.metadatas.add(subject, key, '')
                     self.osc_server.metadata_updated(subject, key, '')
                     return                            
@@ -534,6 +552,17 @@ class MainObject:
                 if value_type is None:
                     return
                 value = value_type[0].decode()
+                
+                if key == JackMetadata.PRETTY_NAME:
+                    if subject in self.uuid_waiting_pretty_names:
+                        if value != self.uuid_waiting_pretty_names[subject]:
+                            _logger.warning(
+                                f'Incoming pretty-name property does not '
+                                f'have the expected value\n'
+                                f'expected: {self.uuid_pretty_names[subject]}\n'
+                                f'value   : {value}')
+
+                        self.uuid_waiting_pretty_names.pop(subject)
                 
                 self.metadatas.add(subject, key, value)
                 self.osc_server.metadata_updated(subject, key, value)
@@ -605,15 +634,15 @@ class MainObject:
     def set_metadata(self, uuid: int, key: str, value: str):
         self.client.set_property(uuid, key, value, 'text/plain')
 
-    def save_exp_pretty_names(self):
-        'save the contents of exp_pretty_names in /tmp'
+    def save_uuid_pretty_names(self):
+        'save the contents of self.uuid_pretty_names in /tmp'
         try:
             with open(self.pretty_tmp_path, 'w') as f:
                 json.dump(self.uuid_pretty_names, f)
         except:
             _logger.warning(f'Failed to save {self.pretty_tmp_path}')
 
-    def set_pretty_name(
+    def set_jack_pretty_name(
             self, for_client: bool, name: str, uuid: int, pretty_name: str):
         'write pretty-name metadata, or remove it if value is empty'
         if pretty_name:
@@ -633,6 +662,9 @@ class MainObject:
                 _logger.warning(
                     f'Failed to set pretty-name-setter for {uuid}')
             
+            self.uuid_pretty_names[uuid] = pretty_name
+            self.uuid_waiting_pretty_names[uuid] = pretty_name
+
         else:
             try:
                 self.client.remove_property(uuid, JackMetadata.PRETTY_NAME)
@@ -648,17 +680,8 @@ class MainObject:
             
             if uuid in self.uuid_pretty_names:
                 self.uuid_pretty_names.pop(uuid)
-        
-        if pretty_name:
-            self.uuid_pretty_names[uuid] = pretty_name
-        else:
-            if uuid in self.uuid_pretty_names:
-                self.uuid_pretty_names.pop(uuid)
-
-        if for_client:
-            self.exp_pretty_names.save_group(name, pretty_name)
-        else:
-            self.exp_pretty_names.save_port(name, pretty_name)
+            if uuid in self.uuid_waiting_pretty_names:
+                self.uuid_waiting_pretty_names.pop(uuid)
 
     def jack_pretty_name_if_not_mine(self, uuid: int) -> str:
         mdata_pretty_name = jack_pretty_name(uuid)
@@ -679,7 +702,7 @@ class MainObject:
             pretty_name = self.pretty_names.pretty_group(
                 client_name, mdata_pretty_name)
             if pretty_name:
-                self.set_pretty_name(True, client_name, client_uuid, pretty_name)
+                self.set_jack_pretty_name(True, client_name, client_uuid, pretty_name)
                 
         for port in self.client.get_ports():
             port_uuid = port.uuid
@@ -688,9 +711,9 @@ class MainObject:
             pretty_name = self.pretty_names.pretty_port(
                 port_name, mdata_pretty_name)
             if pretty_name:
-                self.set_pretty_name(False, port_name, port_uuid, pretty_name)
+                self.set_jack_pretty_name(False, port_name, port_uuid, pretty_name)
                 
-        self.save_exp_pretty_names()
+        self.save_uuid_pretty_names()
 
     def write_group_pretty_name(self, client_name: str, pretty_name: str):
         if not self.jack_running:
@@ -704,8 +727,8 @@ class MainObject:
         self.pretty_names.save_group(
             client_name, pretty_name, mdata_pretty_name)
         
-        self.set_pretty_name(True, client_name, client_uuid, pretty_name)
-        self.save_exp_pretty_names()
+        self.set_jack_pretty_name(True, client_name, client_uuid, pretty_name)
+        self.save_uuid_pretty_names()
 
     def write_port_pretty_name(self, port_name: str, pretty_name: str):        
         if not self.jack_running:
@@ -725,8 +748,8 @@ class MainObject:
         port_uuid = port.uuid
         mdata_pretty_name = self.jack_pretty_name_if_not_mine(port_uuid)
         self.pretty_names.save_port(port_name, pretty_name, mdata_pretty_name)
-        self.set_pretty_name(False, port_name, port.uuid, pretty_name)
-        self.save_exp_pretty_names()
+        self.set_jack_pretty_name(False, port_name, port.uuid, pretty_name)
+        self.save_uuid_pretty_names()
 
     def transport_play(self, play: bool):
         if play:
