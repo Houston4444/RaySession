@@ -1243,7 +1243,7 @@ class Client(ServerSender, ray.ClientData):
 
     def get_project_path(self) -> Optional[Path]:
         if self.is_ray_net:
-            return Path(self.session.get_short_path())
+            return Path(self.session.short_path_name)
 
         spath = self.session.path
         if spath is None:
@@ -2327,7 +2327,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.jack_client_name = self.get_jack_client_name()
 
         if self.is_ray_net:
-            client_project_path = self.session.get_short_path()
+            client_project_path = self.session.short_path_name
             self.jack_client_name = self.ray_net.session_template
 
         self.send_gui_client_properties()

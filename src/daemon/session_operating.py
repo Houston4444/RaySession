@@ -453,7 +453,7 @@ class OperatingSession(Session):
             self.set_server_status(ray.ServerStatus.SAVE)
 
         self.send_gui_message(_translate('GUIMSG', '-- Saving session %s --')
-                                % highlight_text(self.get_short_path()))
+                                % highlight_text(self.short_path_name))
 
         if save_clients:
             for client in self.clients:
@@ -512,8 +512,8 @@ class OperatingSession(Session):
                 self.message("unable to remove %s" % full_notes_path)
 
         self.send_gui_message(_translate('GUIMSG', "Session '%s' saved.")
-                                % self.get_short_path())
-        self.message("Session %s saved." % self.get_short_path())
+                                % self.short_path_name)
+        self.message("Session %s saved." % self.short_path_name)
 
         self.next_function()
 
@@ -825,7 +825,7 @@ for better organization.""")
         self.send_gui(rg.trash.CLEAR)
         self.send_gui_message(
             _translate('GUIMSG', '-- Duplicating session %s to %s --')
-            % (highlight_text(self.get_short_path()),
+            % (highlight_text(self.short_path_name),
                highlight_text(new_session_full_name)))
 
         for client in self.clients:
@@ -835,7 +835,7 @@ for better organization.""")
                         and is_valid_osc_url(client.ray_net.daemon_url)):
                     self.send(Address(client.ray_net.daemon_url),
                               r.session.DUPLICATE_ONLY,
-                              self.get_short_path(),
+                              self.short_path_name,
                               new_session_full_name,
                               client.ray_net.session_root)
 
@@ -948,7 +948,7 @@ for better organization.""")
                     and client.ray_net.daemon_url):
                 self.send(Address(client.ray_net.daemon_url),
                           r.server.SAVE_SESSION_TEMPLATE,
-                          self.get_short_path(),
+                          self.short_path_name,
                           template_name,
                           client.ray_net.session_root)
 
@@ -1367,7 +1367,7 @@ for better organization.""")
 
         self.load_locked = False
         self.send_gui_message(_translate('GUIMSG', "-- Opening session %s --")
-                              % highlight_text(self.get_short_path()))
+                              % highlight_text(self.short_path_name))
 
         for trashed_client in self.future_trashed_clients:
             self.trashed_clients.append(trashed_client)
@@ -1536,7 +1536,7 @@ for better organization.""")
         self.message('Loaded')
         self.send_gui_message(
             _translate('GUIMSG', 'session %s is loaded.')
-            % highlight_text(self.get_short_path()))
+            % highlight_text(self.short_path_name))
         self.send_gui(rg.session.NAME, self.name, str(self.path))
 
         self.switching_session = False
@@ -1900,7 +1900,7 @@ for better organization.""")
         
         # prevent long list of OSC sends if preview order already changed
         server = self.get_server_even_dummy()
-        if server and server.session_to_preview != self.get_short_path():
+        if server and server.session_to_preview != self.short_path_name:
             return
         
         self.send_even_dummy(src_addr, rg.preview.CLEAR)        
@@ -1941,7 +1941,7 @@ for better organization.""")
         send_state(ray.PreviewState.SNAPSHOTS)
 
         # re check here if preview has not changed before calculate session size
-        if server and server.session_to_preview != self.get_short_path():
+        if server and server.session_to_preview != self.short_path_name:
             return
 
         total_size = 0
@@ -1964,7 +1964,7 @@ for better organization.""")
                 # check each loop if it is still pertinent to walk
                 if (server 
                         and (server.session_to_preview
-                             != self.get_short_path())):
+                             != self.short_path_name)):
                     return
 
                 # exclude symlinks directories from count

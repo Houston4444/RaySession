@@ -134,7 +134,11 @@ class Session(ServerSender):
         self.future_notes = ""
         self.future_notes_shown = False
 
-    def get_short_path(self) -> str:
+    @property
+    def short_path_name(self) -> str:
+        '''The session path relative to sessions root, as str.
+        Empty if no session is open,
+        Session name if session is not in session root.'''
         if self.path is None:
             return ''
         
