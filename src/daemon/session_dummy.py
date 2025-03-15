@@ -37,9 +37,9 @@ class DummySession(OperatingSession):
                             self.duplicate_only_done]
         self.next_function()
 
-    def ray_server_save_session_template(self, osp: OscPack):
+    def ray_server_save_session_template(
+            self, osp: OscPack, session_name: str, template_name: str, net: bool):
         self.steps_osp = osp
-        session_name, template_name, net = osp.args
         self.steps_order = [(self.preload, session_name),
                             self.take_place,
                             self.load,

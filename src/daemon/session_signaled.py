@@ -83,10 +83,11 @@ def session_operation(path: str | tuple[str, ...], types: str):
                     sess.send(*osp.error(), ray.Err.OPERATION_PENDING,
                         "An operation pending.")
                 else:
-                    sess.send(*osp.error(), ray.Err.COPY_RUNNING,
-                            "ray-daemon is copying files.\n"
-                            + "Wait copy finish or abort copy,\n"
-                            + "and restart operation !\n")
+                    sess.send(
+                        *osp.error(), ray.Err.COPY_RUNNING,
+                        "ray-daemon is copying files.\n"
+                        "Wait copy finish or abort copy,\n"
+                        "and restart operation !\n")
                 return
 
             sess.steps_osp = osp
@@ -742,23 +743,48 @@ class SignaledSession(OperatingSession):
 
     @manage(r.server.SAVE_SESSION_TEMPLATE, 'ss|sss')
     def _ray_server_save_session_template(self, osp: OscPack):
-        if len(osp.args) == 2:
-            session_name, template_name = osp.args
-            sess_root = str(self.root)
-            net = False
-        else:
-            session_name, template_name, sess_root = osp.args
-            net = True
+        net = bool(osp.types == 'sss')
+        session_name: str = osp.args[0]
+        template_name: str = osp.args[1]
 
-        if (sess_root != str(self.root)
-                or session_name != self.get_short_path()):
-            tmp_session = self._new_dummy_session(Path(sess_root))
-            tmp_session.ray_server_save_session_template(
-                osp.path, [session_name, template_name, net], osp.src_addr)
+        if net:
+            sess_root: str = osp.args[2]
+
+            if (sess_root != str(self.root)
+                    or session_name != self.short_path_name):
+                tmp_session = self._new_dummy_session(Path(sess_root))
+                tmp_session.ray_server_save_session_template(
+                    osp, session_name, template_name, net)
+                return
+
+        if self.steps_order:
+            self.send(*osp.error(), ray.Err.OPERATION_PENDING,
+                      "An operation pending.")
             return
 
-        self._ray_session_save_as_template(
-            osp.path, [template_name, net], osp.src_addr)
+        if self.file_copier.is_active():
+            if osp.path.startswith('/nsm/server/'):
+                self.send(*osp.error(), ray.Err.OPERATION_PENDING,
+                          "An operation pending.")
+            else:
+                self.send(
+                    *osp.error(), ray.Err.COPY_RUNNING,
+                    "ray-daemon is copying files.\n"
+                    "Wait copy finish or abort copy,\n"
+                    "and restart operation !\n")
+            return
+
+        self.steps_osp = osp
+
+        # response = func(*args, **kwargs)
+        # sess.next_function()
+
+        for client in self.clients:
+            if client.is_ray_net:
+                client.ray_net.session_template = template_name
+
+        self.steps_order = [self.save, self.snapshot,
+                            (self.save_session_template, template_name)]
 
     @manage(r.server.GET_SESSION_PREVIEW, 's')
     def _ray_server_get_session_preview(self, osp: OscPack):
@@ -844,15 +870,14 @@ class SignaledSession(OperatingSession):
     @session_operation(r.session.SAVE_AS_TEMPLATE, 's')
     def _ray_session_save_as_template(self, osp: OscPack):
         template_name: str = osp.args[0]
-        net = False if len(osp.args) < 2 else osp.args[1]
+        # net = False if len(osp.args) < 2 else osp.args[1]
 
         for client in self.clients:
             if client.is_ray_net:
                 client.ray_net.session_template = template_name
 
         self.steps_order = [self.save, self.snapshot,
-                            (self.save_session_template,
-                             template_name, net)]
+                            (self.save_session_template, template_name)]
 
     @session_operation(r.session.TAKE_SNAPSHOT, 's|si')
     def _ray_session_take_snapshot(self, osp: OscPack):
@@ -1040,7 +1065,7 @@ class SignaledSession(OperatingSession):
             return
 
         if (sess_root == str(self.root)
-                and session_to_load == self.get_short_path()):
+                and session_to_load == self.short_path_name):
             if (self.steps_order
                     or self.file_copier.is_active()):
                 self.send(osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1)
