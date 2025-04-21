@@ -104,6 +104,46 @@ fix: load session patch hides/restore boxes,
     check loop group move two guis
     test network session / child session
 
+    Boîtes cachées dans session existante, que faire ?
+    BVS_BHC : passer à session avec boîtes vues dans session, cachées dans config
+    BVS_BVC : vues dans les 2 cas
+    BHS_BHC : cachées dans les 2 cas
+    BHS_BVC : passer à session avec boites cachées dans session, vues dans config
+
+    CC_SC
+    CC_SV
+    SC_CC
+    SC_CV
+    SC_SC
+    SC_SV
+    légende: C: Config S: Session C: caché V: Vu
+
+    break
+
+    Tel quel:
+        CC_SC: C
+        CC_SV: V
+        SC_CC: C
+        SC_CV: ?? à vérifier
+        SC_SC: C
+        SC_SV: V
+        SV_CC: ?? à vérifier
+        SV_CV: V
+        SV_SC: C
+        SV_SV: V
+
+    si caché == caché_config|caché_session :
+        CC_SC: C
+        CC_SV: C
+        SC_CC: C
+        SC_CV: C
+        SC_SC: C
+        SC_SV: C
+        SV_CC: C
+        SV_CV: V
+        SV_SC: C
+        SV_SV: V
+
 PATHS: 
     import osc_paths as p
     import osc_paths.ray as r
