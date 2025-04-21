@@ -546,7 +546,6 @@ class OscServerThread(ClientCommunicating):
         if isinstance(tcp_addr, str):
             tcp_addr = None
 
-
     @directos(r.server.GUI_DISANNOUNCE, '')
     def _srv_gui_disannounce(self, osp: OscPack):
         for gui in self.gui_list:

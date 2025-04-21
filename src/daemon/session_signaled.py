@@ -356,7 +356,7 @@ class SignaledSession(OperatingSession):
             osp.src_addr.url, nsm_locked, is_net_free, gui_pid, None)
 
     @manage(r.server.ASK_FOR_PATCHBAY, 's')
-    def _ray_server_ask_for_patchbay(self, osp: OscPack):
+    def _ray_server_ask_for_patchbay(self, osp: OscPack):        
         # if we are here, it means that we need a patchbay daemon to run
         server = self.get_server()
         if server is None:
@@ -367,7 +367,6 @@ class SignaledSession(OperatingSession):
         #     (str(self.get_server_port()), str(tcp_server.port), osp.args[0]),
         #     '')
         # self._patchbay_internal.start()
-        
         from qtpy.QtCore import QProcess
         QProcess.startDetached(
             'ray-patch_dmn',
@@ -1549,7 +1548,7 @@ class SignaledSession(OperatingSession):
 
     @manage(r.client.START, 's')
     def _ray_client_start(self, osp: OscPack):
-        self._ray_client_resume(osp.path, osp.args, osp.src_addr)
+        self._ray_client_resume(osp)
 
     @client_action(r.client.RESUME, 's')
     def _ray_client_resume(self, osp: OscPack, client:Client):
