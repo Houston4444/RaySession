@@ -1416,6 +1416,8 @@ class Client(ServerSender, ray.ClientData):
             
             self._process_started()
         else:
+            if self.protocol is ray.Protocol.INTERNAL:
+                self.protocol = ray.Protocol.NSM
             self._process.start(prog, other_args)
 
     def load(self, osp: Optional[OscPack]=None):
