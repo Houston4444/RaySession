@@ -53,7 +53,8 @@ class OscSrc(Enum):
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
 
-INTERNAL_EXECS = {'ray-jackpatch', 'ray-alsapatch', 'ray-sooperlooper'}
+# INTERNAL_EXECS = {'ray-jackpatch', 'ray-alsapatch', 'ray-sooperlooper'}
+INTERNAL_EXECS = set()
 
 _logger = logging.getLogger(__name__)
 _logger.parent = logging.getLogger('__main__')
@@ -262,7 +263,7 @@ class Client(ServerSender, ray.ClientData):
         if self.scripter.pending_command() is ray.Command.STOP:
             return
 
-        if self.session.wait_for:
+        if self.session.wait_for is not ray.WaitFor.NONE:
             self.session.end_timer_if_last_expected(self)
 
     def _error_in_process(self, error: int):
@@ -295,7 +296,7 @@ class Client(ServerSender, ray.ClientData):
                     _translate('GUIMSG', '%s failed to launch')
                         % self.gui_msg_style())
 
-            if self.session.wait_for:
+            if self.session.wait_for is not ray.WaitFor.NONE:
                 self.session.end_timer_if_last_expected(self)
         self.session.set_renameable(True)
 
@@ -1406,7 +1407,7 @@ class Client(ServerSender, ray.ClientData):
         self._process.setProcessEnvironment(process_env)
         prog, *other_args = terminal_args + [self.executable_path] + arguments
         
-        if self.executable_path in ('ray-jackpatch', 'ray-alsapatch'):
+        if self.executable_path in INTERNAL_EXECS:
             self.protocol = ray.Protocol.INTERNAL
             self._internal = InternalClient(
                 self.executable_path, arguments, self.get_server_url())
@@ -1545,7 +1546,7 @@ class Client(ServerSender, ray.ClientData):
             # We must stop it, else it would prevent session close
             self.stop()
 
-        if self.session.wait_for:
+        if self.session.wait_for is not ray.WaitFor.NONE:
             self.session.end_timer_if_last_expected(self)
 
     def ray_hack_ready(self):
