@@ -488,14 +488,14 @@ class MainObject:
                 self.port_list.append(
                     JackPort(port_name, port_type_int, flags, port_uuid))
                 self.osc_server.port_added(
-                    port.name, port_type_int, flags, port.uuid)
-            else:
+                    port_name, port_type_int, flags, port.uuid)
+            else:                
                 for jport in self.port_list:
                     if jport.name == port_name and jport.uuid == port_uuid:
                         self.port_list.remove(jport)
                         break
 
-                self.osc_server.port_removed(jport.name)
+                self.osc_server.port_removed(port_name)
             
             self.pretty_events_queue.put(
                 (False, register, port_name, time.time()))
