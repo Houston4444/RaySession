@@ -32,7 +32,7 @@ class InternalClient:
                             + str(e))
             return
 
-        # run the internal_prepare function        
+        # run the internal_prepare function
         try:
             funcs = self._lib.internal_prepare(
                 *self.args, nsm_url=self.nsm_url)

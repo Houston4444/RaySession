@@ -124,9 +124,8 @@ class MainObject:
     dsp_wanted = True
     transport_wanted = TransportWanted.FULL
     
-    def __init__(self, daemon_port: str, daemon_tcp_port: str, gui_url: str):
+    def __init__(self, daemon_port: str, gui_url: str):
         self._daemon_port = daemon_port
-        self._daemon_tcp_port = int(daemon_tcp_port)
 
         self.last_sent_dsp_load = 0
         self.max_dsp_since_last_sent = 0.00
@@ -153,7 +152,7 @@ class MainObject:
         
         self.osc_server = OscJackPatch(self)
         self.osc_server.set_tmp_gui_url(gui_url)
-        self.osc_server.ask_pretty_names(self._daemon_tcp_port)
+        self.osc_server.ask_pretty_names(self._daemon_port)
         self.write_existence_file()
         self.start_jack_client()
         
@@ -766,7 +765,7 @@ class MainObject:
 
 
 def main_process(daemon_port: str, daemon_tcp_port: str, gui_tcp_url: str):
-    main_object = MainObject(daemon_port, daemon_tcp_port, gui_tcp_url)
+    main_object = MainObject(daemon_port, gui_tcp_url)
     main_object.osc_server.add_gui(gui_tcp_url)
     if main_object.osc_server.gui_list:
         main_object.start_loop()
@@ -796,9 +795,8 @@ def start():
     
     main_process(daemon_port, daemon_tcp_port, gui_tcp_url)
     
-def internal_prepare(daemon_port: str, daemon_tcp_port: str,
-                     gui_tcp_url: str, nsm_url=''):
-    main_object = MainObject(daemon_port, daemon_tcp_port, gui_tcp_url)
+def internal_prepare(daemon_port: str, gui_tcp_url: str, nsm_url=''):
+    main_object = MainObject(daemon_port, gui_tcp_url)
     main_object.osc_server.add_gui(gui_tcp_url)
     if not main_object.osc_server.gui_list:
         return 1
