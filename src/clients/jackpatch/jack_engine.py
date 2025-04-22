@@ -112,4 +112,3 @@ class JackEngine(ProtoEngine):
     def quit(self):
         self._client.deactivate()
         self._client.close()
-    
