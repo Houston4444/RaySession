@@ -67,7 +67,7 @@ class JackEngine(ProtoEngine):
         @self._client.set_shutdown_callback
         def on_shutdown(status: jack.Status, reason: str):
             self.ev_handler.add_event(Event.JACK_STOPPED)
-            
+        
         self._client.activate()
         return True
 

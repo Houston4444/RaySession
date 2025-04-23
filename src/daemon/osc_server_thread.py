@@ -484,6 +484,10 @@ class OscServerThread(ClientCommunicating):
         else:
             self.options &= ~ray.Option.HAS_GIT
 
+        self.internal_mode = ray.InternalMode.from_str(
+            RS.settings.value(
+                'daemon/internal_mode', 'FOLLOW_PROTOCOL', type=str))
+
         self.client_templates_database = {
             'factory': [], 'user': []}
 

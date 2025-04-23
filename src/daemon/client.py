@@ -53,8 +53,7 @@ class OscSrc(Enum):
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
 
-# INTERNAL_EXECS = {'ray-jackpatch', 'ray-alsapatch', 'ray-sooperlooper'}
-INTERNAL_EXECS = set()
+INTERNAL_EXECS = {'ray-jackpatch', 'ray-alsapatch', 'ray-sooperlooper'}
 
 _logger = logging.getLogger(__name__)
 _logger.parent = logging.getLogger('__main__')
@@ -80,6 +79,9 @@ class Client(ServerSender, ray.ClientData):
     pending_command = ray.Command.NONE
     nsm_active = False
     did_announce = False
+    protocol_orig = ray.Protocol.NSM
+    '''Only used when ray.InternalMode is not FOLLOW_PROTOCOL
+    to keep the protocol when saving'''
 
     status = ray.ClientStatus.STOPPED
 
@@ -981,7 +983,15 @@ class Client(ServerSender, ray.ClientData):
         if self.template_origin:
             c.set_str('template_origin', self.template_origin)
 
-        if self.protocol is not ray.Protocol.NSM:
+        protocol = self.protocol
+        internal_mode = ray.InternalMode.FOLLOW_PROTOCOL
+        server = self.get_server()
+        if server is not None:
+            internal_mode = server.internal_mode
+        if internal_mode is not ray.InternalMode.FOLLOW_PROTOCOL:
+            protocol = self.protocol_orig
+
+        if protocol is not ray.Protocol.NSM:
             c.set_str('protocol', self.protocol.to_string())
 
             if self.is_ray_hack:
@@ -1407,17 +1417,29 @@ class Client(ServerSender, ray.ClientData):
         self._process.setProcessEnvironment(process_env)
         prog, *other_args = terminal_args + [self.executable_path] + arguments
         
+        internal_mode = ray.InternalMode.FOLLOW_PROTOCOL
+        server = self.get_server()
+        if server is not None:
+            internal_mode = server.internal_mode
+
         if self.executable_path in INTERNAL_EXECS:
-            self.protocol = ray.Protocol.INTERNAL
-            self._internal = InternalClient(
-                self.executable_path, arguments, self.get_server_url())
-            self._internal.start()
-            self.session.externals_timer.start()
-            
-            self._process_started()
-        else:
-            if self.protocol is ray.Protocol.INTERNAL:
+            self.protocol_orig = self.protocol
+
+            if internal_mode is ray.InternalMode.FORCE_INTERNAL:
+                self.protocol = ray.Protocol.INTERNAL
+            elif internal_mode is ray.InternalMode.FORCE_NSM:
                 self.protocol = ray.Protocol.NSM
+
+            if self.protocol is ray.Protocol.INTERNAL:
+                self._internal = InternalClient(
+                    self.executable_path, arguments, self.get_server_url())
+                self._internal.start()
+                self.session.externals_timer.start()
+                
+                self._process_started()
+            else:
+                self._process.start(prog, other_args)
+        else:
             self._process.start(prog, other_args)
 
     def load(self, osp: Optional[OscPack]=None):
