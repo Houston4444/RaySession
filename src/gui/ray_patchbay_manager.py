@@ -448,12 +448,19 @@ class RayPatchbayManager(PatchbayManager):
                 
         ptv_dict[gpos.group_name] = gpos
 
-        if (view_number is self.view_number
-                and gpos.port_types_view is self.port_types_view):
-            group = self.get_group_from_name(gpos.group_name)
-            if group is not None:
-                group.set_group_position(
-                    gpos, redraw=PortMode.BOTH, restore=PortMode.BOTH)
+        # In the past, move a box in a GUI was moving this box in others GUIs.
+        # It takes finally no sense, because the theme can make very different
+        # boxes sizes. We should probably choose that position saver
+        # is the first GUI launched.
+        # Out of this case, if this code is executed, we can assume the view
+        # will be changed very soon and it will update the canvas.
+
+        # if (view_number is self.view_number
+        #         and gpos.port_types_view is self.port_types_view):
+        #     group = self.get_group_from_name(gpos.group_name)
+        #     if group is not None:
+        #         group.set_group_position(
+        #             gpos, redraw=PortMode.NULL, restore=PortMode.BOTH, move_now=False)
 
     def update_portgroup(self, *args):
         pg_mem = PortgroupMem.from_arg_list(args)

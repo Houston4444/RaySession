@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Union
 # Imports from HoustonPatchbay
 from patshared import (
     PortgroupsDict, from_json_to_str, PortTypesViewFlag, GroupPos,
-    PortgroupMem, ViewsDict, PrettyNames)
+    PortgroupMem, ViewsDict, PrettyNames, PortMode)
 
 # Imports from src/shared
 import ray
@@ -218,11 +218,17 @@ class CanvasSaver(ServerSender):
     def save_group_position(self, *args):
         '''Save a group position sent by GUI'''
         view_num = args[0]
+        gpos = GroupPos.from_arg_list(args[1:])
+        pv_gpos_ss = self.views_session.get_group_pos(
+            view_num, gpos.port_types_view, gpos.group_name)
+        gpos_cf = self.views_config.get_group_pos(
+            view_num, gpos.port_types_view, gpos.group_name)
+        if gpos_cf is not None:
+            gpos_cf.apply_only_diffs(pv_gpos_ss, gpos)
+        else:
+            self.views_config.add_group_pos(view_num, gpos)
 
-        self.views_session.add_group_pos(
-            view_num, GroupPos.from_arg_list(args[1:]))
-        self.views_config.add_group_pos(
-            view_num, GroupPos.from_arg_list(args[1:]))
+        self.views_session.add_group_pos(view_num, gpos)
 
     def clear_absents_in_view(self, *args):
         try:
@@ -303,6 +309,17 @@ class CanvasSaver(ServerSender):
 
     def unload_session(self):
         self._clear_config_from_unused_views()
+        
+        mega_send = MegaSend('cfg group poss after unload')
+        for view_number in self.views_config.keys():
+            for gpos in self.views_config.iter_group_poses(
+                    view_num=view_number):
+                mega_send.add(
+                    rg.patchbay.UPDATE_GROUP_POSITION,
+                    view_number, *gpos.to_arg_list())
+        
+        self.mega_send_gui(mega_send)
+        
         self.views_session.clear()
         self.pretty_names_session.clear()
         self.send_session_group_positions()
