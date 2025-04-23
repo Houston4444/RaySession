@@ -228,6 +228,21 @@ class Systray(Enum):
     ALWAYS = 2
 
 
+class InternalMode(Enum):
+    FOLLOW_PROTOCOL = 0
+    FORCE_INTERNAL = 1
+    FORCE_NSM = 2
+    
+    @classmethod
+    def from_str(cls, value: str):
+        match value.upper():
+            case 'FORCE_INTERNAL':
+                return cls.FORCE_INTERNAL
+            case 'FORCE_NSM':
+                return cls.FORCE_NSM
+        return cls.FOLLOW_PROTOCOL
+
+
 class ScriptFile(Flag):
     PREVENT = 0x0
     PARENT = 0x1
