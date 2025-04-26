@@ -246,7 +246,7 @@ class MainObject:
             
             port_uuid = port.uuid
             
-            mdata_pretty_name = self.jack_pretty_name_if_not_mine(port_uuid)            
+            mdata_pretty_name = self.jack_pretty_name_if_not_mine(port_uuid)
             pretty_name = self.pretty_names.pretty_port(
                 port.name, mdata_pretty_name)
             if pretty_name:
@@ -653,14 +653,6 @@ class MainObject:
                     f'Failed to set pretty-name "{pretty_name}" for {uuid}')
                 return
             
-            try:
-                self.client.set_property(
-                    uuid, '/Houston/pretty-name-setter',
-                    f'raysession.{self._daemon_port}:{pretty_name}')
-            except:
-                _logger.warning(
-                    f'Failed to set pretty-name-setter for {uuid}')
-            
             self.uuid_pretty_names[uuid] = pretty_name
             self.uuid_waiting_pretty_names[uuid] = pretty_name
 
@@ -671,11 +663,6 @@ class MainObject:
                 _logger.warning(
                     f'Failed to remove pretty-name for {uuid}')
                 return
-            
-            try:
-                self.client.remove_property(uuid, 'Houston/pretty-name-setter')
-            except:
-                pass
             
             if uuid in self.uuid_pretty_names:
                 self.uuid_pretty_names.pop(uuid)
@@ -711,7 +698,7 @@ class MainObject:
                 port_name, mdata_pretty_name)
             if pretty_name:
                 self.set_jack_pretty_name(False, port_name, port_uuid, pretty_name)
-                
+        
         self.save_uuid_pretty_names()
 
     def write_group_pretty_name(self, client_name: str, pretty_name: str):
