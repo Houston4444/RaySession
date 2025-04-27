@@ -188,6 +188,7 @@ class CanvasSaver(ServerSender):
 
         ms = MegaSend('all_group_positions')
 
+        # views (containing GroupPos)
         for view_index in self.views_config.keys():
             for gpos in self.views_config.iter_group_poses(
                     view_num=view_index):
@@ -200,10 +201,12 @@ class CanvasSaver(ServerSender):
                 ms.add(rg.patchbay.UPDATE_GROUP_POSITION,
                        view_index, *gpos.to_arg_list())
 
+        # portgroups
         for pg_mem in self.portgroups.iter_all_portgroups():
             ms.add(rg.patchbay.UPDATE_PORTGROUP,
                    *pg_mem.to_arg_list())
-        
+
+        # pretty names       
         for gp_name, pretty_group in self.pretty_names_config.groups.items():
             ms.add(rg.patchbay.UPDATE_GROUP_PRETTY_NAME,
                    gp_name, pretty_group.pretty)
@@ -222,7 +225,7 @@ class CanvasSaver(ServerSender):
 
         # send view datas
         view_data_mixed = (self.views_config.short_data_states()
-                           |self.views_session.short_data_states())
+                           | self.views_session.short_data_states())
 
         ms.add(rg.patchbay.VIEWS_CHANGED,
                json.dumps(view_data_mixed))
@@ -270,7 +273,6 @@ class CanvasSaver(ServerSender):
             if vdict.get(new_view_num) is not None:
                 vdict[ex_view_num], vdict[new_view_num] = \
                     vdict[new_view_num], vdict[ex_view_num]
-            
             else:
                 vdict[new_view_num] = vdict.pop(ex_view_num)
 
@@ -306,6 +308,21 @@ class CanvasSaver(ServerSender):
             if 'pretty_names' in json_contents.keys():
                 self.pretty_names_session.eat_json(
                     json_contents['pretty_names'])
+                
+                # add empty pretty name in config in case a key 
+                # existing in session does not exists in config.
+                # It avoids to have them still active
+                # when the session is closed. The patchbay daemon
+                # could remove them.
+                # It happens only if session json file has been
+                # written manually, or if session has been cleared.
+                for gp_name in self.pretty_names_session.groups.keys():
+                    if self.pretty_names_config.groups.get(gp_name) is None:
+                        self.pretty_names_config.save_group(gp_name, '')
+                
+                for port_name in self.pretty_names_session.ports.keys():
+                    if self.pretty_names_config.ports.get(port_name) is None:
+                        self.pretty_names_config.save_port(port_name, '')
 
         self.views_session_at_load = self.views_session.copy()
         self.views_config_at_load = self.views_config.copy()
