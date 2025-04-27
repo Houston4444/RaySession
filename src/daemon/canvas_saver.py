@@ -309,19 +309,37 @@ class CanvasSaver(ServerSender):
 
     def unload_session(self):
         self._clear_config_from_unused_views()
-        
-        mega_send = MegaSend('cfg group poss after unload')
+
+        # send to GUI the config poses to overwrite the session poses 
+        ms_gui = MegaSend('cfg group poss and pretty names after unload')
+        ms_pbay = MegaSend('config pretty names after unload')
+
         for view_number in self.views_config.keys():
             for gpos in self.views_config.iter_group_poses(
                     view_num=view_number):
-                mega_send.add(
+                ms_gui.add(
                     rg.patchbay.UPDATE_GROUP_POSITION,
                     view_number, *gpos.to_arg_list())
+
+        for gp_name, ptov in self.pretty_names_config.groups.items():
+            ms_gui.add(rg.patchbay.UPDATE_GROUP_PRETTY_NAME,
+                       gp_name, ptov.pretty)
+            ms_pbay.add(r.patchbay.GROUP_PRETTY_NAME,
+                        gp_name, ptov.pretty, ptov.above_pretty)
+
+        for pt_name, ptov in self.pretty_names_config.ports.items():
+            ms_gui.add(rg.patchbay.UPDATE_PORT_PRETTY_NAME,
+                       pt_name, ptov.pretty)
+            ms_pbay.add(r.patchbay.PORT_PRETTY_NAME,
+                        pt_name, ptov.pretty, ptov.above_pretty)
         
-        self.mega_send_gui(mega_send)
+        ms_pbay.add(r.patchbay.PORT_PRETTY_NAME, '', '', '')
+        self.mega_send_gui(ms_gui)
+        self.mega_send_patchbay(ms_pbay)
         
         self.views_session.clear()
         self.pretty_names_session.clear()
+        
         self.send_session_group_positions()
 
     def save_config_file(self):
