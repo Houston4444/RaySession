@@ -96,6 +96,8 @@ Pretty names dans RS:
         Rentrer dans la config et la session toute (ré)écriture via GUI de pretty-name
         Unload session:
             redéfinir en config les pretty-name session qui ont été juste ouverts
+            c.a.d.:
+                canvas_saver envoie au patch_dmn les pretty_name de config
         change session:
             redéfinir en config les pretty-name session qui ont été juste ouverts
 
