@@ -140,7 +140,7 @@ class CanvasSaver(ServerSender):
         mixed_views_str = json.dumps(mixed_views)
 
         ms_gui = MegaSend('session_group_pos')
-        ms_patch = MegaSend('session_pretty_names')
+        ms_pbay = MegaSend('session_pretty_names')
 
         for view_number in self.views_session.keys():
             for gpos in self.views_session.iter_group_poses(
@@ -149,24 +149,38 @@ class CanvasSaver(ServerSender):
                     rg.patchbay.UPDATE_GROUP_POSITION,
                     view_number, *gpos.to_arg_list())
 
+        # we send config pretty names, for the case we are switching session
+        # to be sure to clear pretty-names coming from previous session
+        for gp_name, ptov in self.pretty_names_config.groups.items():
+            ms_gui.add(rg.patchbay.UPDATE_GROUP_PRETTY_NAME,
+                       gp_name, ptov.pretty)
+            ms_pbay.add(r.patchbay.GROUP_PRETTY_NAME,
+                        gp_name, ptov.pretty, ptov.above_pretty)
+
+        for pt_name, ptov in self.pretty_names_config.ports.items():
+            ms_gui.add(rg.patchbay.UPDATE_PORT_PRETTY_NAME,
+                       pt_name, ptov.pretty)
+            ms_pbay.add(r.patchbay.PORT_PRETTY_NAME,
+                        pt_name, ptov.pretty, ptov.above_pretty)
+
         for gp_name, ptov in self.pretty_names_session.groups.items():
             ms_gui.add(rg.patchbay.UPDATE_GROUP_PRETTY_NAME,
                        gp_name, ptov.pretty)
-            ms_patch.add(r.patchbay.GROUP_PRETTY_NAME,
-                       gp_name, ptov.pretty, ptov.above_pretty)
+            ms_pbay.add(r.patchbay.GROUP_PRETTY_NAME,
+                        gp_name, ptov.pretty, ptov.above_pretty)
         
-        ms_patch.add(r.patchbay.GROUP_PRETTY_NAME, '', '', '')
+        ms_pbay.add(r.patchbay.GROUP_PRETTY_NAME, '', '', '')
 
         for port_name, ptov in self.pretty_names_session.ports.items():
             ms_gui.add(rg.patchbay.UPDATE_PORT_PRETTY_NAME,
                        port_name, ptov.pretty)
-            ms_patch.add(r.patchbay.PORT_PRETTY_NAME,
-                       port_name, ptov.pretty, ptov.above_pretty)
+            ms_pbay.add(r.patchbay.PORT_PRETTY_NAME,
+                        port_name, ptov.pretty, ptov.above_pretty)
 
-        ms_patch.add(r.patchbay.PORT_PRETTY_NAME, '', '', '')
+        ms_pbay.add(r.patchbay.PORT_PRETTY_NAME, '', '', '')
         ms_gui.add(rg.patchbay.VIEWS_CHANGED, mixed_views_str)
 
-        self.mega_send_patchbay(ms_patch)
+        self.mega_send_patchbay(ms_pbay)
         self.mega_send_gui(ms_gui)
 
     def send_all_group_positions(self, gui: 'Gui'):
@@ -312,7 +326,7 @@ class CanvasSaver(ServerSender):
 
         # send to GUI the config poses to overwrite the session poses 
         ms_gui = MegaSend('cfg group poss and pretty names after unload')
-        ms_pbay = MegaSend('config pretty names after unload')
+        # ms_pbay = MegaSend('config pretty names after unload')
 
         for view_number in self.views_config.keys():
             for gpos in self.views_config.iter_group_poses(
@@ -320,22 +334,10 @@ class CanvasSaver(ServerSender):
                 ms_gui.add(
                     rg.patchbay.UPDATE_GROUP_POSITION,
                     view_number, *gpos.to_arg_list())
-
-        for gp_name, ptov in self.pretty_names_config.groups.items():
-            ms_gui.add(rg.patchbay.UPDATE_GROUP_PRETTY_NAME,
-                       gp_name, ptov.pretty)
-            ms_pbay.add(r.patchbay.GROUP_PRETTY_NAME,
-                        gp_name, ptov.pretty, ptov.above_pretty)
-
-        for pt_name, ptov in self.pretty_names_config.ports.items():
-            ms_gui.add(rg.patchbay.UPDATE_PORT_PRETTY_NAME,
-                       pt_name, ptov.pretty)
-            ms_pbay.add(r.patchbay.PORT_PRETTY_NAME,
-                        pt_name, ptov.pretty, ptov.above_pretty)
         
-        ms_pbay.add(r.patchbay.PORT_PRETTY_NAME, '', '', '')
+        # ms_pbay.add(r.patchbay.PORT_PRETTY_NAME, '', '', '')
         self.mega_send_gui(ms_gui)
-        self.mega_send_patchbay(ms_pbay)
+        # self.mega_send_patchbay(ms_pbay)
         
         self.views_session.clear()
         self.pretty_names_session.clear()
