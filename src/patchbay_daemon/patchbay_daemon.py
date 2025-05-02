@@ -128,6 +128,12 @@ class MainObject:
     samplerate = 48000
     buffer_size = 1024
     
+    pretty_name_locked = False
+    '''True when another ray-patch_dmn instance
+    is already running on the same JACK server. In this case, 
+    this instance will NOT apply any pretty-name metadata, because
+    it could easily create conflicts with the other instance.'''
+    
     dsp_wanted = True
     transport_wanted = TransportWanted.FULL
     
@@ -595,10 +601,20 @@ class MainObject:
             try:
                 existant_uuid = self.client.get_uuid_for_client_name(
                     JACK_CLIENT_NAME)
-                locker_port: str = jack.get_property(
+                locker_port = jack.get_property(
                     existant_uuid, METADATA_LOCKER)
+                if locker_port is not None:
+                    locker_port = int(locker_port[0].decode())
+                self.pretty_name_locked = True
+                _logger.warning(
+                    f'This instance will NOT write any pretty-name metadata '
+                    f'because the patchbay daemon depending on daemon '
+                    f'at port {locker_port} is running '
+                    f'in the same JACK server')
             except:
-                print('ok y a personne qui gêne vraiment finalement')
+                _logger.warning(
+                    f'Strange, the {JACK_CLIENT_NAME} JACK client has been renamed '
+                    f'to {self.client.name}.')
         
         # set locker identifier
         # Multiple daemons can co-exist,
@@ -675,6 +691,10 @@ class MainObject:
     def set_jack_pretty_name(
             self, for_client: bool, name: str, uuid: int, pretty_name: str):
         'write pretty-name metadata, or remove it if value is empty'
+
+        if self.pretty_name_locked:
+            return
+        
         if pretty_name:
             try:
                 self.client.set_property(
