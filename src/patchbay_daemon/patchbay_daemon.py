@@ -40,6 +40,8 @@ PORT_TYPE_MIDI = 2
 
 EXISTENCE_PATH = Path('/tmp/RaySession/patchbay_daemons')
 
+JACK_CLIENT_NAME = 'ray-patch_dmn'
+METADATA_LOCKER = 'ray-patch_dmn.locker'
 
 
 # Define a context manager to suppress stdout and stderr.
@@ -85,9 +87,14 @@ class TransportPosition:
 
 
 class TransportWanted(IntEnum):
-    NO = 0         # do not send any transport info
-    STATE_ONLY = 1 # send info only when play/pause changed
-    FULL = 2       # send all Transport infos
+    NO = 0
+    'do not send any transport info'
+    
+    STATE_ONLY = 1
+    'send transport info only when play/pause changed'
+
+    FULL = 2
+    'send all transport infos'
 
 
 class JackPort:
@@ -417,7 +424,9 @@ class MainObject:
         with suppress_stdout_stderr():
             try:
                 self.client = jack.Client(
-                    'ray-patch_mng', no_start_server=True)
+                    JACK_CLIENT_NAME,
+                    no_start_server=True)
+
             except jack.JackOpenError:
                 fail_info = True
                 del self.client
@@ -581,6 +590,28 @@ class MainObject:
             self.osc_server.server_stopped()
             
         self.client.activate()
+        
+        if self.client.name != JACK_CLIENT_NAME:
+            try:
+                existant_uuid = self.client.get_uuid_for_client_name(
+                    JACK_CLIENT_NAME)
+                locker_port: str = jack.get_property(
+                    existant_uuid, METADATA_LOCKER)
+            except:
+                print('ok y a personne qui gêne vraiment finalement')
+        
+        # set locker identifier
+        # Multiple daemons can co-exist,
+        # But if we want things going right,
+        # we have to ensure that each daemon runs on a different JACK server
+        try:
+            self.client.set_property(
+                self.client.uuid, METADATA_LOCKER,
+                str(self._daemon_port))
+        except:
+            _logger.warning(
+                'Failed to set locker metadata for ray-patch_dmn, '
+                'could cause troubles if you start multiple daemons.')
     
     def get_all_ports_and_connections(self):
         self.port_list.clear()
