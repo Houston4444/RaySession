@@ -571,7 +571,6 @@ class OscServerThread(ClientCommunicating):
 
     @validator(r.server.ASK_FOR_PATCHBAY, 's')
     def _srv_ask_for_patchbay(self, osp: OscPack):
-        gui_tcp_url: str = osp.args[0]
         patchbay_file = \
             Path('/tmp/RaySession/patchbay_daemons') / str(self.port)
 
@@ -601,17 +600,17 @@ class OscServerThread(ClientCommunicating):
                     good_port = False
 
                     try:
-                        patchbay_addr = Address(f'osc.tcp://localhost:{port_str}/')
+                        patchbay_addr = Address(int(port_str))
+                        # patchbay_addr = Address(f'osc.tcp://localhost:{port_str}/')
                         good_port = True
                     except:
                         patchbay_addr = None
                         _logger.error(
                             f'port given for patchbay {port_str} '
-                            'is not a valid osc TCP port')
+                            'is not a valid osc UDP port')
 
                     if good_port:
-                        send(patchbay_addr, r.patchbay.ADD_GUI,
-                             gui_tcp_url)
+                        self.send(patchbay_addr, r.patchbay.ADD_GUI, osp.src_addr.url)
                         return False
                     break
 
