@@ -47,6 +47,8 @@ class OscJackPatch(BunServer):
                         self._ray_patchbay_set_group_pretty_name)
         self.add_method(r.patchbay.SAVE_PORT_PRETTY_NAME, 'ssi',
                         self._ray_patchbay_set_port_pretty_name)
+        self.add_method(r.patchbay.ENABLE_JACK_PRETTY_NAMING, 'i',
+                        self._ray_patchbay_enable_jack_pretty_naming)
 
         self.main_object = main_object
         self.port_list = main_object.port_list
@@ -133,6 +135,9 @@ class OscJackPatch(BunServer):
         self.pretty_names.save_port(port_name, pretty_name)
         if save_in_jack:
             self.main_object.write_port_pretty_name(port_name, pretty_name)
+
+    def _ray_patchbay_enable_jack_pretty_naming(self, path, args):
+        self.main_object.set_pretty_name_active(bool(args[0]))
 
     def send_gui(self, *args):
         rm_gui = list[Address]()
