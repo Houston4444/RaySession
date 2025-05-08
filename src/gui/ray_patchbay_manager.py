@@ -8,7 +8,7 @@ import logging
 
 # Imports from HoustonPatchbay
 from patshared import (
-    GroupPos, PortgroupMem, PortMode, ViewData)
+    GroupPos, PortgroupMem, PortMode, ViewData, Naming)
 from patchbay.bases.elements import ToolDisplayed
 from patchbay.bases.group import Group
 from patchbay import (
@@ -504,6 +504,13 @@ class RayPatchbayManager(PatchbayManager):
         port = self.get_port_from_name(port_name)
         if port is not None:
             port.rename_in_canvas()
+    
+    def change_jack_export_naming(self, naming: Naming):
+        super().change_jack_export_naming(naming)
+        
+        pretty_enable = Naming.INTERNAL_PRETTY in naming
+        self.send_to_patchbay_daemon(
+            r.patchbay.ENABLE_JACK_PRETTY_NAMING, int(pretty_enable))
     
     def receive_big_packets(self, state: int):
         self.optimize_operation(not bool(state))

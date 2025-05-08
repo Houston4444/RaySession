@@ -3,8 +3,8 @@
 # Do not edit it, edit 'all_paths' file and run 'path_makers.py'.
 
 from . import ray
-from . import osc
 from . import nsm
+from . import osc
 
 ERROR = '/error'
 MINOR_ERROR = '/minor_error'

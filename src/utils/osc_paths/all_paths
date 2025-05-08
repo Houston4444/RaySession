@@ -161,6 +161,7 @@
 /ray/patchbay/refresh
 /ray/patchbay/save_group_pretty_name
 /ray/patchbay/save_port_pretty_name
+/ray/patchbay/enable_jack_pretty_naming
 /ray/patchbay/set_buffer_size
 /ray/patchbay/transport_play
 /ray/patchbay/transport_relocate
