@@ -12,7 +12,7 @@ import logging
 from qtpy.QtCore import QCoreApplication
 
 # Imports from src/shared
-from patshared import GroupPos
+from patshared import GroupPos, Naming
 from osclib import Address, OscPack, are_same_osc_port
 import ray
 import xdg
@@ -362,11 +362,21 @@ class SignaledSession(OperatingSession):
         if server is None:
             return
         
+        pretty_names_active = True
+        pretty_names_value = RS.settings.value(
+            'jack_export_naming', 'INTERNAL_PRETTY', type=str)
+        
+        naming = Naming.from_config_str(pretty_names_value)
+        if not naming & Naming.INTERNAL_PRETTY:
+            pretty_names_active = False
+
         self._patchbay_internal = InternalClient(
             'ray-patchbay_daemon',
-            (str(self.get_server_port()), osp.src_addr.url),
+            (str(self.get_server_port()), osp.src_addr.url,
+             str(pretty_names_active)),
             '')
         self._patchbay_internal.start()
+
         # from qtpy.QtCore import QProcess
         # QProcess.startDetached(
         #     'ray-patch_dmn',

@@ -118,3 +118,7 @@ PATHS:
     same for answer() in server_sender
 
         osc_reply ?
+
+patchbay_daemon et pretty_names
+    lancement auto si option enclenchée + pretty_names présents
+    ray_control pour changer cette option en direct
