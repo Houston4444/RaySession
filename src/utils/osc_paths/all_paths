@@ -76,9 +76,9 @@
 /ray/gui/client/still_running
 /ray/gui/client/switch
 /ray/gui/client/update
-/ray/gui/client_template_ray_hack_update
-/ray/gui/client_template_ray_net_update
-/ray/gui/client_template_update
+/ray/gui/client_template/ray_hack_update
+/ray/gui/client_template/ray_net_update
+/ray/gui/client_template/update
 /ray/gui/favorites/added
 /ray/gui/favorites/removed
 /ray/gui/hide_script_info

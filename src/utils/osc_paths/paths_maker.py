@@ -47,9 +47,7 @@ class FilePrepare:
     @property
     def contents(self) -> str:
         imports = '\n'.join([
-            f'from . import {m}' for m in self.imports])
-        # defines = '\n'.join([
-        #     f"{k} = '{v}'" for k, v in self.defines.items()])
+            f'from . import {m}' for m in sorted(self.imports)])
         defines = '\n'.join([op.export() for op in self.osc_paths])
         return '\n\n'.join([HEADER, imports, defines])
 
@@ -84,8 +82,7 @@ if __name__ == '__main__':
 
         p = root / osc_str[1:]
         pdir = p.parent
-        
-        # file_prepares[pdir].defines[p.name.upper()] = osc_str
+
         current_osc_path = OscPath(osc_str)
         file_prepares[pdir].osc_paths.append(current_osc_path)
         

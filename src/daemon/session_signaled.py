@@ -484,18 +484,18 @@ class SignaledSession(OperatingSession):
                 display_name = app_template.display_name
                 
                 self.send_gui(
-                    rg.CLIENT_TEMPLATE_UPDATE,
+                    rg.client_template.UPDATE,
                     int(factory), template_name, display_name,
                     *template_client.spread())
 
                 if template_client.is_ray_hack:
                     self.send_gui(
-                        rg.CLIENT_TEMPLATE_RAY_HACK_UPDATE,
+                        rg.client_template.RAY_HACK_UPDATE,
                         int(factory), template_name,
                         *template_client.ray_hack.spread())
                 elif template_client.is_ray_net:
                     self.send_gui(
-                        rg.CLIENT_TEMPLATE_RAY_NET_UPDATE,
+                        rg.client_template.RAY_NET_UPDATE,
                         int(factory), template_name,
                         *template_client.ray_net.spread())
 
