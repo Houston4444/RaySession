@@ -870,9 +870,11 @@ class MainObject:
         self.client.transport_locate(frame)
 
 
-def main_process(daemon_port: str, daemon_tcp_port: str, gui_tcp_url: str):
+def main_process(daemon_port: str, gui_tcp_url: str,
+                 pretty_names_active: bool):
     main_object = MainObject(daemon_port, gui_tcp_url)
     main_object.osc_server.add_gui(gui_tcp_url)
+    main_object.pretty_name_active = pretty_names_active
     if main_object.osc_server.gui_list:
         main_object.start_loop()
     # main_object.exit()
@@ -889,23 +891,26 @@ def start():
     args = sys.argv.copy()
     daemon_port = ''
     gui_tcp_url = ''
+    pretty_names_enabled = True
 
     args.pop(0)
 
     if args:
         daemon_port = args.pop(0)
     if args:
-        daemon_tcp_port = args.pop(0)
-    if args:
         gui_tcp_url = args.pop(0)
+    if args:
+        pns = args.pop(0)
+        pretty_names_enabled = not bool(pns.lower() in ('0', 'false'))
     
-    main_process(daemon_port, daemon_tcp_port, gui_tcp_url)
+    main_process(daemon_port, gui_tcp_url, pretty_names_enabled)
     
-def internal_prepare(daemon_port: str, gui_tcp_url: str, nsm_url=''):
+def internal_prepare(daemon_port: str, gui_tcp_url: str,
+                     pretty_names_active: str, nsm_url=''):
     main_object = MainObject(daemon_port, gui_tcp_url)
     main_object.osc_server.add_gui(gui_tcp_url)
+    main_object.pretty_name_active = not bool(
+        pretty_names_active.lower() in ('0', 'false'))
     if not main_object.osc_server.gui_list:
         return 1
     return main_object.start_loop, main_object.internal_stop
-    
-    
