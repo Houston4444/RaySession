@@ -117,7 +117,8 @@
 /ray/gui/preview/session_size
 /ray/gui/preview/snapshot
 /ray/gui/preview/state
-/ray/gui/script_info
+/ray/gui/script_info    s
+    Ask the GUI to show a dialog with arg as text.
 /ray/gui/script_user_action
 /ray/gui/server/announce
 /ray/gui/server/copying
