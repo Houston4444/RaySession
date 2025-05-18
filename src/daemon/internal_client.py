@@ -17,7 +17,7 @@ class InternalClient:
         self._thread: Optional[Thread] = None
         self._start_func: Optional[Callable] = None
         self._stop_func: Optional[Callable] = None
-    
+
     def main_loop(self):
         'target of the _thread attribute'
 
