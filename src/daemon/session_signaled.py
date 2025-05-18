@@ -364,7 +364,7 @@ class SignaledSession(OperatingSession):
         
         pretty_names_active = True
         pretty_names_value = RS.settings.value(
-            'jack_export_naming', 'INTERNAL_PRETTY', type=str)
+            'Canvas/jack_export_naming', 'INTERNAL_PRETTY', type=str)
         
         naming = Naming.from_config_str(pretty_names_value)
         if not naming & Naming.INTERNAL_PRETTY:

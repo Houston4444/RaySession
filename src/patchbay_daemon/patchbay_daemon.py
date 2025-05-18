@@ -140,8 +140,9 @@ class MainObject:
     dsp_wanted = True
     transport_wanted = TransportWanted.FULL
     
-    def __init__(self, daemon_port: str, gui_url: str):
+    def __init__(self, daemon_port: str, gui_url: str, pretty_name_active=True):
         self._daemon_port = daemon_port
+        self.pretty_name_active = pretty_name_active
 
         self.last_sent_dsp_load = 0
         self.max_dsp_since_last_sent = 0.00
@@ -729,7 +730,7 @@ class MainObject:
         
         return mdata_pretty_name
 
-    def set_all_pretty_names(self):        
+    def set_all_pretty_names(self):
         if (not self.jack_running
                 or self.pretty_name_locked
                 or not self.pretty_name_active):
@@ -811,7 +812,6 @@ class MainObject:
     def set_pretty_name_active(self, active: bool):
         if active is self.pretty_name_active:
             return
-        
         self.pretty_name_active = True
         
         if active:
@@ -872,9 +872,8 @@ class MainObject:
 
 def main_process(daemon_port: str, gui_tcp_url: str,
                  pretty_names_active: bool):
-    main_object = MainObject(daemon_port, gui_tcp_url)
+    main_object = MainObject(daemon_port, gui_tcp_url, pretty_names_active)
     main_object.osc_server.add_gui(gui_tcp_url)
-    main_object.pretty_name_active = pretty_names_active
     if main_object.osc_server.gui_list:
         main_object.start_loop()
     # main_object.exit()
@@ -907,10 +906,11 @@ def start():
     
 def internal_prepare(daemon_port: str, gui_tcp_url: str,
                      pretty_names_active: str, nsm_url=''):
-    main_object = MainObject(daemon_port, gui_tcp_url)
-    main_object.osc_server.add_gui(gui_tcp_url)
-    main_object.pretty_name_active = not bool(
+    pretty_name_active_bool = not bool(
         pretty_names_active.lower() in ('0', 'false'))
+    main_object = MainObject(daemon_port, gui_tcp_url,
+                             pretty_name_active_bool)
+    main_object.osc_server.add_gui(gui_tcp_url)
     if not main_object.osc_server.gui_list:
         return 1
     return main_object.start_loop, main_object.internal_stop
