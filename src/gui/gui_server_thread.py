@@ -303,15 +303,15 @@ class GuiServerThread(BunServerThread):
         args: tuple[str, int] = osp.args
         self.signaler.scripted_dir.emit(*args)
 
-    @validator(rg.CLIENT_TEMPLATE_UPDATE, 'iss' + ray.ClientData.ARG_TYPES)
+    @validator(rg.client_template.UPDATE, 'iss' + ray.ClientData.ARG_TYPES)
     def _client_template_update(self, osp: OscPack):
         self.signaler.client_template_update.emit(osp.args)
 
-    @validator(rg.CLIENT_TEMPLATE_RAY_HACK_UPDATE, 'is' + ray.RayHack.ARG_TYPES)
+    @validator(rg.client_template.RAY_HACK_UPDATE, 'is' + ray.RayHack.ARG_TYPES)
     def _client_template_ray_hack_update(self, osp: OscPack):
         self.signaler.client_template_ray_hack_update.emit(osp.args)
 
-    @validator(rg.CLIENT_TEMPLATE_RAY_NET_UPDATE, 'is' + ray.RayNet.ARG_TYPES)
+    @validator(rg.client_template.RAY_NET_UPDATE, 'is' + ray.RayNet.ARG_TYPES)
     def _client_template_ray_net_update(self, osp: OscPack):
         self.signaler.client_template_ray_net_update.emit(osp.args)
 

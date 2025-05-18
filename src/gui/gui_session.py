@@ -341,7 +341,7 @@ class SignaledSession(Session):
         if client and client.protocol is ray.Protocol.RAY_HACK:
             client.update_ray_hack(*osp.args)
 
-    @manage(rg.CLIENT_TEMPLATE_RAY_NET_UPDATE, 'is' + ray.RayNet.ARG_TYPES)
+    @manage(rg.client.RAY_NET_UPDATE, 'is' + ray.RayNet.ARG_TYPES)
     def _client_ray_net_update(self, osp: OscPack):
         client_id: str = osp.args[0]
         client = self.get_client(client_id)
