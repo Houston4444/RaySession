@@ -209,6 +209,9 @@
 /ray/server/set_option
 /ray/server/set_options
 /ray/server/set_terminal_command
+/ray/server/export_pretty_names i
+    Enable/disable export of port and client pretty-names to JACK metadatas
+
 /ray/session/abort
 /ray/session/add_client_template
 /ray/session/add_exec

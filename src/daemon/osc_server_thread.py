@@ -601,7 +601,6 @@ class OscServerThread(ClientCommunicating):
 
                     try:
                         patchbay_addr = Address(int(port_str))
-                        # patchbay_addr = Address(f'osc.tcp://localhost:{port_str}/')
                         good_port = True
                     except:
                         patchbay_addr = None
@@ -610,7 +609,8 @@ class OscServerThread(ClientCommunicating):
                             'is not a valid osc UDP port')
 
                     if good_port:
-                        self.send(patchbay_addr, r.patchbay.ADD_GUI, osp.src_addr.url)
+                        self.send(patchbay_addr, r.patchbay.ADD_GUI,
+                                  osp.src_addr.url)
                         return False
                     break
 
@@ -961,6 +961,13 @@ class OscServerThread(ClientCommunicating):
         elif action == 'unset_jack_checker_autostart':
             dest_full_path.unlink(missing_ok=True)
 
+    @directos(r.server.EXPORT_PRETTY_NAMES, 'i')
+    def _srv_export_pretty_names(self, osp: OscPack):
+        export_pretty_names = bool(osp.args[0])
+        # TODO start patchbay daemon
+        # if not export pretty_names and patchbay_daemon not started
+        # patchbay daemon should only disable pretty names and quit
+
     @validator(r.server.patchbay.SAVE_GROUP_POSITION,
                'i' + GroupPos.ARG_TYPES)
     def _srv_patchbay_save_group_position(self, osp: OscPack):
@@ -1150,8 +1157,8 @@ class OscServerThread(ClientCommunicating):
 
         self.send_gui(rg.favorites.REMOVED, *osp.args)
 
-    @validator(r.server.ASK_FOR_PRETTY_NAMES, 'i')
-    def _srv_ask_for_pretty_names(self, osp: OscPack):
+    @validator(r.server.PATCHBAY_DAEMON_READY, 'i')
+    def _srv_patchbay_daemon_ready(self, osp: OscPack):
         args: tuple[int] = osp.args
         self.patchbay_dmn_port = args[0]
 
