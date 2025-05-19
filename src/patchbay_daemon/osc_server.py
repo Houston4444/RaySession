@@ -289,13 +289,13 @@ class OscJackPatch(BunServer):
     def send_samplerate(self):
         self.send_gui(rg.patchbay.SAMPLE_RATE,
                      self.main_object.samplerate)
-    
+
     def is_terminate(self):
         return self._terminate
     
     def send_server_lose(self):
         self.send_gui(rg.patchbay.SERVER_LOSE)
-        
+
         # In the case server is not responding
         # and gui has not yet been added to gui_list
         # but gui url stocked in self._tmp_gui_url
@@ -304,11 +304,11 @@ class OscJackPatch(BunServer):
                 addr = Address(self._tmp_gui_url)
             except:
                 return
-        
+
         self.send(addr, rg.patchbay.SERVER_LOSE)
 
     def ask_pretty_names(self, port: int):
         self.pretty_names.clear()
 
         addr = Address(port)
-        self.send(addr, r.server.ASK_FOR_PRETTY_NAMES, self.port)
+        self.send(addr, r.server.PATCHBAY_DAEMON_READY, self.port)

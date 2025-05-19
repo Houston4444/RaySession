@@ -171,7 +171,9 @@
 /ray/server/abort_parrallel_copy
 /ray/server/abort_snapshot
 /ray/server/ask_for_patchbay
-/ray/server/ask_for_pretty_names
+/ray/server/patchbay_daemon_ready i
+    The patchbay daemon sends this message to the daemon
+    when it is ready to receive pretty-names
 /ray/server/change_root
 /ray/server/clear_client_templates_database
 /ray/server/controller_announce
@@ -211,6 +213,8 @@
 /ray/server/set_option
 /ray/server/set_options
 /ray/server/set_terminal_command
+/ray/server/export_pretty_names i
+    Enable/disable export of ports and clients pretty-names to JACK metadatas
 /ray/session/abort
 /ray/session/add_client_template
 /ray/session/add_exec
