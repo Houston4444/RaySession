@@ -9,7 +9,7 @@ import osc_paths
 
 # Imports from HoustonPatchbay
 from patchbay.bases.elements import TransportPosition
-from patshared import GroupPos
+from patshared import GroupPos, Naming
 
 # Imports from src/shared
 from osclib import OscMulTypes, OscPack
@@ -257,6 +257,17 @@ class SignaledSession(Session):
         recent_sessions: list[str] = osp.args
         self.recent_sessions = recent_sessions
         self.main_win.update_recent_sessions_menu()
+
+    @manage(rg.server.EXPORT_PRETTY_NAMES, 'i')
+    def _server_export_pretty_names(self, osp: OscPack):
+        export = bool(osp.args[0])
+        if export:
+            self.patchbay_manager.jack_export_naming = Naming.INTERNAL_PRETTY
+        else:
+            self.patchbay_manager.jack_export_naming = Naming.TRUE_NAME
+            
+        self.patchbay_manager.options_dialog.export_pretty_names_changed(
+            export)
 
     @manage(rg.session.NAME, 'ss')
     def _session_name(self, osp: OscPack):

@@ -75,8 +75,9 @@ class OscJackPatch(BunServer):
                 self.gui_list.remove(gui_addr)
                 break
 
-        if not self.gui_list:
-            # no more GUI connected, no reason to exists anymore
+        if not self.gui_list and not self.main_object.pretty_name_active:
+            # no more GUI connected, and no pretty-names to export,
+            # no reason to exists anymore
             self._terminate = True
 
     def _ray_patchbay_connect(self, path, args):
@@ -137,7 +138,10 @@ class OscJackPatch(BunServer):
             self.main_object.write_port_pretty_name(port_name, pretty_name)
 
     def _ray_patchbay_enable_jack_pretty_naming(self, path, args):
-        self.main_object.set_pretty_name_active(bool(args[0]))
+        export_pretty_names = bool(args[0])
+        self.main_object.set_pretty_name_active(export_pretty_names)
+        if not export_pretty_names and not self.gui_list:
+            terminate = True
 
     def send_gui(self, *args):
         rm_gui = list[Address]()
@@ -215,7 +219,7 @@ class OscJackPatch(BunServer):
             self.gui_list.append(gui_addr)
 
         except OSError as e:
-            _logger.error(f'Failed to send TCP message to GUI at {gui_url}')
+            _logger.error(f'Failed to send message to GUI at {gui_url}')
             _logger.error(str(e))
         
         except BaseException as e:

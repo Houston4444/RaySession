@@ -434,7 +434,7 @@ class CanvasSaver(ServerSender):
                         view_num, *ptv_dict[new].to_arg_list()) 
 
     def send_pretty_names_to_patchbay_daemon(self, osp: OscPack):
-        pretty_names = self.pretty_names_config | self.pretty_names_session        
+        pretty_names = self.pretty_names_config | self.pretty_names_session
         ms = MegaSend('pretty_names_to_patchbaydmn')
         
         for group_name, ptov in pretty_names.groups.items():
@@ -450,3 +450,6 @@ class CanvasSaver(ServerSender):
         ms.add(r.patchbay.PORT_PRETTY_NAME, '', '', '')
         
         self.mega_send(osp.src_addr, ms)
+        
+    def has_pretty_names(self) -> bool:
+        return bool(self.pretty_names_config | self.pretty_names_session)

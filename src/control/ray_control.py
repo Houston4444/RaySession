@@ -76,7 +76,8 @@ SERVER_OPERATIONS = (
     'has_option',
     'script_info',
     'hide_script_info',
-    'script_user_action')
+    'script_user_action',
+    'export_pretty_names')
 
 
 def signal_handler(sig, frame):
