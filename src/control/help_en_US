@@ -1,3 +1,6 @@
+from socket import AF_NETROM
+
+
 control RaySession daemons
     --help
         Prints short help message
@@ -97,6 +100,9 @@ control RaySession daemons
     script_user_action TEXT
         Displays a question dialog on RaySession's GUI.
         Returns when user accepted or rejected it.
+    export_pretty_names YESNO
+        Export and auto-export internal pretty-names to JACK metadatas.
+        If YESNO is 'no', this option will be disabled.
 
 * SESSION_COMMANDS:
     All these commands work only when a session is loaded.

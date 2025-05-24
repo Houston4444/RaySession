@@ -571,48 +571,11 @@ class OscServerThread(ClientCommunicating):
 
     @validator(r.server.ASK_FOR_PATCHBAY, 's')
     def _srv_ask_for_patchbay(self, osp: OscPack):
-        patchbay_file = \
-            Path('/tmp/RaySession/patchbay_daemons') / str(self.port)
-
-        if not patchbay_file.exists():
-            return True
-
-        with open(patchbay_file, 'r') as file:
-            contents = file.read()
-            for line in contents.splitlines():
-                if line.startswith('pid:'):
-                    pid_str = line.rpartition(':')[2]
-                    if pid_str.isdigit():
-                        pid = int(pid_str)
-                        try:
-                            os.kill(pid, 0)
-                        except OSError:
-                            # go to main thread (session_signaled.py)
-                            return True
-                        else:
-                            # pid is okay, let check the osc port next
-                            continue
-                    else:
-                        return True
-
-                if line.startswith('port:'):
-                    port_str = line.rpartition(':')[2]
-                    good_port = False
-
-                    try:
-                        patchbay_addr = Address(int(port_str))
-                        good_port = True
-                    except:
-                        patchbay_addr = None
-                        _logger.error(
-                            f'port given for patchbay {port_str} '
-                            'is not a valid osc UDP port')
-
-                    if good_port:
-                        self.send(patchbay_addr, r.patchbay.ADD_GUI,
-                                  osp.src_addr.url)
-                        return False
-                    break
+        patchbay_dmn_port = self.get_patchbay_daemon_port()
+        if isinstance(patchbay_dmn_port, int):
+            self.send(
+                patchbay_dmn_port, r.patchbay.ADD_GUI, osp.src_addr.url)
+            return False
 
         # continue in main thread if patchbay_to_osc is not started yet
         # see session_signaled.py -> _ray_server_ask_for_patchbay
@@ -961,12 +924,27 @@ class OscServerThread(ClientCommunicating):
         elif action == 'unset_jack_checker_autostart':
             dest_full_path.unlink(missing_ok=True)
 
-    @directos(r.server.EXPORT_PRETTY_NAMES, 'i')
+    @directos(r.server.EXPORT_PRETTY_NAMES, 's')
     def _srv_export_pretty_names(self, osp: OscPack):
-        export_pretty_names = bool(osp.args[0])
-        # TODO start patchbay daemon
-        # if not export pretty_names and patchbay_daemon not started
-        # patchbay daemon should only disable pretty names and quit
+        export_pretty_names = bool(
+            osp.args[0].lower() not in ('0', 'false', 'no'))
+        patchbay_dmn_port = self.get_patchbay_daemon_port()
+
+        if export_pretty_names:
+            if patchbay_dmn_port is None:
+                # TODO start patchbay daemon
+                ...
+            else:
+                self.send(patchbay_dmn_port,
+                          r.patchbay.ENABLE_JACK_PRETTY_NAMING, 1)
+        else:
+            if patchbay_dmn_port is not None:
+                self.send(patchbay_dmn_port,
+                          r.patchbay.ENABLE_JACK_PRETTY_NAMING, 0)
+
+        self.send_gui(rg.server.EXPORT_PRETTY_NAMES, int(export_pretty_names))
+        self.send(osp.src_addr, osc_paths.REPLY, osp.path,
+                  'export pretty_names changed')
 
     @validator(r.server.patchbay.SAVE_GROUP_POSITION,
                'i' + GroupPos.ARG_TYPES)
@@ -1219,6 +1197,49 @@ class OscServerThread(ClientCommunicating):
                 return
 
         self.send_gui(rg.session.RENAMEABLE, 1)
+
+    def get_patchbay_daemon_port(self) -> Optional[int]:
+        patchbay_file = \
+            Path('/tmp/RaySession/patchbay_daemons') / str(self.port)
+
+        if not patchbay_file.exists():
+            return None
+
+        with open(patchbay_file, 'r') as file:
+            contents = file.read()
+            for line in contents.splitlines():
+                if line.startswith('pid:'):
+                    pid_str = line.rpartition(':')[2]
+                    if pid_str.isdigit():
+                        pid = int(pid_str)
+                        try:
+                            os.kill(pid, 0)
+                        except OSError:
+                            # pid is not OK,
+                            # consider patchbay_dmn as not started
+                            return None
+                        else:
+                            # pid is okay, let check the osc port next
+                            continue
+                    else:
+                        return None
+
+                if line.startswith('port:'):
+                    port_str = line.rpartition(':')[2]
+                    good_port = False
+
+                    try:
+                        patchbay_addr = Address(int(port_str))
+                        good_port = True
+                    except:
+                        patchbay_addr = None
+                        _logger.error(
+                            f'port given for patchbay {port_str} '
+                            'is not a valid osc UDP port')
+
+                    if good_port:
+                        return patchbay_addr.port
+                    break
 
     def announce_gui(
             self, url: str, nsm_locked=False,

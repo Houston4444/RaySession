@@ -35,6 +35,7 @@ METHODS_DICT = {
     rg.server.MESSAGE: 's',
     rg.server.TERMINAL_COMMAND: 's',
     rg.server.RECENT_SESSIONS: 's*',
+    rg.server.EXPORT_PRETTY_NAMES: 'i',
     rg.session.NAME: 'ss',
     rg.session.NOTES: 's',
     rg.session.NOTES_SHOWN: '',
