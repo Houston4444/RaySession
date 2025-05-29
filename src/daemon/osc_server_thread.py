@@ -931,7 +931,8 @@ class OscServerThread(ClientCommunicating):
     @directos(r.server.EXPORT_PRETTY_NAMES, 's')
     def _srv_export_pretty_names(self, osp: OscPack):
         export_pretty_names = bool(
-            osp.args[0].lower() not in ('0', 'false', 'no'))
+            osp.args[0].lower() not in (
+                '0', 'false', 'no', 'off', 'true_name'))
         patchbay_dmn_port = self.get_patchbay_daemon_port()
 
         if export_pretty_names:

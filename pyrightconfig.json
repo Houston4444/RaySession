@@ -1,3 +1,4 @@
 {
-    "exclude": ["src/control/help_*"]
+    "exclude": ["src/control/help_*"],
+    "ignore": ["src/control/help_*"]
 }
