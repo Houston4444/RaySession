@@ -140,7 +140,8 @@ class MainObject:
     dsp_wanted = True
     transport_wanted = TransportWanted.FULL
     
-    def __init__(self, daemon_port: str, gui_url: str, pretty_name_active=True):
+    def __init__(self, daemon_port: str, gui_url: str,
+                 pretty_name_active=True):
         self._daemon_port = daemon_port
         self.pretty_name_active = pretty_name_active
 
@@ -247,13 +248,16 @@ class MainObject:
         if not self.pretty_name_active:
             return
         
+        has_changes = False
+        
         for client_name in client_names:
             client_uuid = self.client_name_uuids.get(client_name)
             if client_uuid is None:
                 continue
             
-            self.set_jack_pretty_name_conditionally(
-                True, client_name, client_uuid)
+            if self.set_jack_pretty_name_conditionally(
+                    True, client_name, client_uuid):
+                has_changes = True
                 
         for port_name in port_names:
             try:
@@ -261,9 +265,12 @@ class MainObject:
             except:
                 continue
             
-            self.set_jack_pretty_name_conditionally(False, port_name, port.uuid)
+            if self.set_jack_pretty_name_conditionally(
+                    False, port_name, port.uuid):
+                has_changes = True
         
-        self.save_uuid_pretty_names()
+        if has_changes:
+            self.save_uuid_pretty_names()
     
     def check_jack_client_responding(self):
         for i in range(100): # JACK has 5s to answer
@@ -468,6 +475,12 @@ class MainObject:
             except:
                 _logger.warning(
                     f'Failed to read {self.pretty_tmp_path}, ignored.')
+                
+            if not self.pretty_name_active:
+                # clear pretty names if this patchbay daemon is started
+                # with not pretty_name_active
+                self.pretty_name_active = True
+                self.set_pretty_name_active(False)
 
     def is_terminate(self) -> bool:
         if self.terminate or self.osc_server.is_terminate():
@@ -782,7 +795,15 @@ class MainObject:
         self.save_uuid_pretty_names()
 
     def set_jack_pretty_name_conditionally(
-            self, for_client: bool, name: str, uuid: int):
+            self, for_client: bool, name: str, uuid: int) -> bool:
+        '''set jack pretty name if checks are ok.
+        checks are :
+        - an internal pretty name exists for this item
+        - this internal pretty name is not the current pretty name
+        - the current pretty name is empty or known to be overwritable
+        
+        return False if one of theses checks fails.'''
+
         mdata_pretty_name = jack_pretty_name(uuid)
         if for_client:
             ptov = self.pretty_names.groups.get(name)
@@ -792,7 +813,7 @@ class MainObject:
         if (ptov is None
                 or not ptov.pretty
                 or ptov.pretty == mdata_pretty_name):
-            return
+            return False
         
         if (mdata_pretty_name and ptov.above_pretty
                 and mdata_pretty_name != ptov.above_pretty
@@ -805,9 +826,10 @@ class MainObject:
                 f"  wanted   : '{ptov.pretty}'\n"
                 f"  above    : '{ptov.above_pretty}'\n"
                 f"  existing : '{mdata_pretty_name}'\n")
-            return
+            return False
         
         self.set_jack_pretty_name(uuid, ptov.pretty)
+        return True
 
     def set_pretty_name_active(self, active: bool):
         if active is self.pretty_name_active:
