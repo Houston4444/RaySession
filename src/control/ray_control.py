@@ -129,38 +129,39 @@ def get_daemon_list() -> list[Daemon]:
         l_daemon = Daemon()
 
         for key in child.attrib.keys():
-            if key == 'root':
-                l_daemon.root = child.attrib[key]
-            elif key == 'session_path':
-                l_daemon.session_path = child.attrib[key]
-            elif key == 'user':
-                l_daemon.user = child.attrib[key]
-            elif key == 'not_default':
-                l_daemon.not_default = bool(child.attrib[key] == '1')
-            elif key == 'net_daemon_id':
-                net_daemon_id = child.attrib[key]
-                if net_daemon_id.isdigit():
-                   l_daemon.net_daemon_id = int(net_daemon_id)
+            match key:
+                case 'root':
+                    l_daemon.root = child.attrib[key]
+                case 'session_path':
+                    l_daemon.session_path = child.attrib[key]
+                case 'user':
+                    l_daemon.user = child.attrib[key]
+                case 'not_default':
+                    l_daemon.not_default = bool(child.attrib[key] == '1')
+                case 'net_daemon_id':
+                    net_daemon_id = child.attrib[key]
+                    if net_daemon_id.isdigit():
+                        l_daemon.net_daemon_id = int(net_daemon_id)
 
-            elif key == 'pid':
-                pid = child.attrib[key]
-                if pid.isdigit() and pid_exists(pid):
-                    l_daemon.pid = int(pid)
+                case 'pid':
+                    pid = child.attrib[key]
+                    if pid.isdigit() and pid_exists(pid):
+                        l_daemon.pid = int(pid)
 
-            elif key == 'port':
-                l_port = child.attrib[key]
-                if l_port.isdigit():
-                    l_daemon.port = int(l_port)
+                case 'port':
+                    l_port = child.attrib[key]
+                    if l_port.isdigit():
+                        l_daemon.port = int(l_port)
 
-            elif key == 'has_gui':
-                l_daemon.has_local_gui = bool(child.attrib[key] == '3')
-                l_daemon.has_gui = bool(child.attrib[key] == '1')
-                
-            elif key == 'local_gui_pids':
-                gui_pids_str = child.attrib[key]
-                for pid_str in gui_pids_str.split(':'):
-                    if pid_str.isdigit():
-                        l_daemon.local_gui_pids.append(int(pid_str))
+                case 'has_gui':
+                    l_daemon.has_local_gui = bool(child.attrib[key] == '3')
+                    l_daemon.has_gui = bool(child.attrib[key] == '1')
+                    
+                case 'local_gui_pids':
+                    gui_pids_str = child.attrib[key]
+                    for pid_str in gui_pids_str.split(':'):
+                        if pid_str.isdigit():
+                            l_daemon.local_gui_pids.append(int(pid_str))
 
         if not (l_daemon.net_daemon_id
                 and l_daemon.pid
@@ -240,40 +241,43 @@ if True:
     while args and args[0].startswith('--'):
         option = args.pop(0)
 
-        if option.startswith('--help'):
-            if option == '--help':
-                print_help(True, OperationType.NULL)
-            elif option == '--help-all':
-                print_help(True, OperationType.ALL)
-            elif option == '--help-control':
-                print_help(True, OperationType.CONTROL)
-            elif option == '--help-server':
-                print_help(True, OperationType.SERVER)
-            elif option == '--help-session':
-                print_help(True, OperationType.SESSION)
-            elif option in ('--help-client', '--help-clients'):
-                print_help(True, OperationType.CLIENT)
-            else:
+        match option:
+            case opt if opt.startswith('--help'):
+                match opt:
+                    case '--help':
+                        print_help(True, OperationType.NULL)
+                    case '--help-all':
+                        print_help(True, OperationType.ALL)
+                    case '--help-control':
+                        print_help(True, OperationType.CONTROL)
+                    case '--help-server':
+                        print_help(True, OperationType.SERVER)
+                    case '--help-session':
+                        print_help(True, OperationType.SESSION)
+                    case '--help-client' | '--help-clients':
+                        print_help(True, OperationType.CLIENT)
+                    case _:
+                        print_help()
+                        sys.exit(100)
+
+                sys.exit(0)
+
+            case '--port':
+                if not args:
+                    print_help()
+                    sys.exit(100)
+                port = args.pop(0)
+                if not port.isdigit():
+                    sys.stderr.write('Invalid value for port: %s . Use digits !'
+                                    % port)
+                    sys.exit(100)
+                wanted_port = int(port)
+
+            case '--detach':
+                detach = True
+            case _:
                 print_help()
                 sys.exit(100)
-            sys.exit(0)
-
-        elif option == '--port':
-            if not args:
-                print_help()
-                sys.exit(100)
-            port = args.pop(0)
-            if not port.isdigit():
-                sys.stderr.write('Invalid value for port: %s . Use digits !'
-                                 % port)
-                sys.exit(100)
-            wanted_port = int(port)
-
-        elif option == '--detach':
-            detach = True
-        else:
-            print_help()
-            sys.exit(100)
 
     operation = args.pop(0)
     if operation in ('client', 'trashed_client'):
@@ -326,43 +330,48 @@ if True:
         daemon_started = False
 
     if operation_type is OperationType.CONTROL:
-        if operation == 'start':
-            if daemon_started:
-                sys.stderr.write('server already started.\n')
+        match operation:
+            
+            # global operations
+
+            case 'start':
+                if daemon_started:
+                    sys.stderr.write('server already started.\n')
+                    sys.exit(0)
+
+            case 'start_new' | 'start_new_hidden':
+                pass
+
+            case 'stop':
+                if not daemon_started:
+                    sys.stderr.write('No server started.\n')
+                    sys.exit(0)
+
+            case 'list_daemons':
+                for daemon in daemon_list:
+                    if daemon.not_default:
+                        continue
+                    sys.stdout.write('%s\n' % str(daemon.port))
                 sys.exit(0)
 
-        elif operation in ('start_new', 'start_new_hidden'):
-            pass
-
-        elif operation == 'stop':
-            if not daemon_started:
-                sys.stderr.write('No server started.\n')
-                sys.exit(0)
-
-        elif operation == 'list_daemons':
-            for daemon in daemon_list:
-                if daemon.not_default:
-                    continue
-                sys.stdout.write('%s\n' % str(daemon.port))
-            sys.exit(0)
-
-        else:
-            if not daemon_started:
+            case _ if not daemon_started:
                 sys.stderr.write(
                     'No server started. So impossible to %s\n' % operation)
                 sys.exit(100)
 
-            if operation == 'get_pid':
+            # operations needing a running daemon
+
+            case 'get_pid':
                 for daemon in daemon_list:
                     if daemon.port == daemon_port:
                         sys.stdout.write('%s\n' % str(daemon.pid))
                         sys.exit(0)
 
-            elif operation == 'get_port':
+            case 'get_port':
                 sys.stdout.write("%s\n" % str(daemon_port))
                 sys.exit(0)
 
-            elif operation == 'get_port_gui_free':
+            case 'get_port_gui_free':
                 wanted_session_root = ''
                 if args:
                     wanted_session_root = args[0]
@@ -370,7 +379,7 @@ if True:
                 for daemon in daemon_list:
                     if (daemon.user == os.environ['USER']
                             and (daemon.root == wanted_session_root
-                                 or not wanted_session_root)
+                                or not wanted_session_root)
                             and not daemon.not_default):
                         if not daemon.has_local_gui:
                             sys.stdout.write('%s\n' % daemon.port)
@@ -390,13 +399,13 @@ if True:
 
                 sys.exit(0)
 
-            elif operation == 'get_root':
+            case 'get_root':
                 for daemon in daemon_list:
                     if daemon.port == daemon_port:
                         sys.stdout.write('%s\n' % daemon.root)
                         sys.exit(0)
 
-            elif operation == 'get_session_path':
+            case 'get_session_path':
                 for daemon in daemon_list:
                     if daemon.port == daemon_port:
                         if not daemon.session_path:
@@ -404,14 +413,14 @@ if True:
                         sys.stdout.write('%s\n' % daemon.session_path)
                         sys.exit(0)
 
-            elif operation == 'has_local_gui':
+            case 'has_local_gui':
                 for daemon in daemon_list:
                     if daemon.port == daemon_port:
                         if daemon.has_local_gui:
                             sys.exit(0)
                 sys.exit(1)
 
-            elif operation == 'has_gui':
+            case 'has_gui':
                 for daemon in daemon_list:
                     if daemon.port == daemon_port:
                         if daemon.has_gui:
@@ -423,37 +432,41 @@ if True:
         if daemon_port:
             at_port = "at port %i" % daemon_port
 
-        if operation_type is OperationType.SERVER:
-            if operation == 'quit':
-                sys.stderr.write('No server %s to quit !\n' % at_port)
-                sys.exit(0)
+        match operation_type:
+            case OperationType.SERVER:
+                if operation == 'quit':
+                    sys.stderr.write(f'No server {at_port} to quit !\n')
+                    sys.exit(0)
 
-        elif operation_type is OperationType.SESSION:
-            sys.stderr.write("No server started %s. So no session to %s\n"
-                                 % (at_port, operation))
-            sys.exit(100)
-        elif operation_type is OperationType.CLIENT:
-            sys.stderr.write("No server started %s. So no client to %s\n"
-                                 % (at_port, operation))
-            sys.exit(100)
-        elif operation_type is OperationType.TRASHED_CLIENT:
-            sys.stderr.write(
-                "No server started %s. So no trashed client to %s\n"
-                                 % (at_port, operation))
-            sys.exit(100)
-        else:
-            print_help()
-            sys.exit(100)
+            case OperationType.SESSION:
+                sys.stderr.write(
+                    f"No server started {at_port}. "
+                    f"So no session to {operation}\n")
+                sys.exit(100)
+            case OperationType.CLIENT:
+                sys.stderr.write(
+                    f"No server started {at_port}. "
+                    f"So no client to {operation}\n")
+                sys.exit(100)
+            case OperationType.TRASHED_CLIENT:
+                sys.stderr.write(
+                    f"No server started {at_port}. "
+                    f"So no trashed client to {operation}\n")
+                sys.exit(100)
+            case _:
+                print_help()
+                sys.exit(100)
 
     osc_order_path = '/ray/'
-    if operation_type is OperationType.CLIENT:
-        osc_order_path += 'client/'
-    elif operation_type is OperationType.TRASHED_CLIENT:
-        osc_order_path += 'trashed_client/'
-    elif operation_type is OperationType.SERVER:
-        osc_order_path += 'server/'
-    elif operation_type is OperationType.SESSION:
-        osc_order_path += 'session/'
+    match operation_type:
+        case OperationType.CLIENT:
+            osc_order_path += 'client/'
+        case OperationType.TRASHED_CLIENT:
+            osc_order_path += 'trashed_client/'
+        case OperationType.SERVER:
+            osc_order_path += 'server/'
+        case OperationType.SESSION:
+            osc_order_path += 'session/'
 
     osc_order_path += operation
 
@@ -544,7 +557,7 @@ if True:
             exit_code = 103
             break
 
-        if daemon_process and not daemon_process.poll() is None:
+        if daemon_process and daemon_process.poll() is not None:
             sys.stderr.write('daemon terminates, sorry\n')
             exit_code = 104
             break
