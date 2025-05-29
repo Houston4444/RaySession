@@ -2081,6 +2081,8 @@ class SignaledSession(OperatingSession):
         if self.terminated_yet:
             return
 
+        self.send_patchbay_daemon(r.patchbay.QUIT)
+
         if self.file_copier.is_active():
             self.file_copier.abort()
 

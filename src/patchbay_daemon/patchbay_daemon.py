@@ -924,29 +924,32 @@ def start():
     
     args = sys.argv.copy()
     daemon_port = ''
-    gui_tcp_url = ''
-    pretty_names_enabled = True
+    gui_url = ''
+    pretty_names_active = True
 
     args.pop(0)
 
     if args:
         daemon_port = args.pop(0)
     if args:
-        gui_tcp_url = args.pop(0)
+        gui_url = args.pop(0)
     if args:
         pns = args.pop(0)
-        pretty_names_enabled = not bool(pns.lower() in ('0', 'false'))
+        pretty_names_active = not bool(pns.lower() in ('0', 'false'))
     
-    main_process(daemon_port, gui_tcp_url, pretty_names_enabled)
+    main_object = MainObject(daemon_port, gui_url, pretty_names_active)
+    if gui_url:
+        main_object.osc_server.add_gui(gui_url)
+    main_object.start_loop()
     
-def internal_prepare(daemon_port: str, gui_tcp_url: str,
+def internal_prepare(daemon_port: str, gui_url: str,
                      pretty_names_active: str, nsm_url=''):
     pretty_name_active_bool = not bool(
         pretty_names_active.lower() in ('0', 'false'))
-    main_object = MainObject(daemon_port, gui_tcp_url,
+    main_object = MainObject(daemon_port, gui_url,
                              pretty_name_active_bool)
-    if gui_tcp_url:
-        main_object.osc_server.add_gui(gui_tcp_url)
+    if gui_url:
+        main_object.osc_server.add_gui(gui_url)
         if not main_object.osc_server.gui_list:
             return 1
     return main_object.start_loop, main_object.internal_stop
