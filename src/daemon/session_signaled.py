@@ -982,6 +982,7 @@ class SignaledSession(OperatingSession):
 
     @manage((r.server.QUIT, nsm.server.QUIT), '')
     def _ray_server_quit(self, osp: OscPack):
+        self.send_patchbay_daemon(r.patchbay.QUIT)
         self.steps_osp = osp
         self.steps_order = [self.terminate_step_scripter,
                             self.close, self.exit_now]
