@@ -15,7 +15,7 @@ import xml.etree.ElementTree as ET
 from qtpy.QtCore import QCoreApplication
 
 # Imports from HoustonPatchbay
-from patshared import GroupPos
+from patshared import GroupPos, Naming
 
 # Imports from src/shared
 from osclib import (
@@ -484,6 +484,11 @@ class OscServerThread(ClientCommunicating):
         else:
             self.options &= ~ray.Option.HAS_GIT
 
+        self.jack_export_naming = Naming.from_config_str(
+            RS.settings.value('daemon/jack_export_naming',
+                              'INTERNAL_PRETTY',
+                              type=str))
+
         self.internal_mode = ray.InternalMode.from_str(
             RS.settings.value(
                 'daemon/internal_mode', 'FOLLOW_PROTOCOL', type=str))
@@ -544,7 +549,6 @@ class OscServerThread(ClientCommunicating):
                     self.send(gui.addr, rg.server.NSM_LOCKED, 1)
 
             self.net_daemon_id = net_daemon_id
-
 
         tcp_addr = verified_address(tcp_url)
         if isinstance(tcp_addr, str):
@@ -931,6 +935,8 @@ class OscServerThread(ClientCommunicating):
         patchbay_dmn_port = self.get_patchbay_daemon_port()
 
         if export_pretty_names:
+            self.jack_export_naming = Naming.INTERNAL_PRETTY
+            
             if patchbay_dmn_port is None:
                 # TODO start patchbay daemon
                 ...
@@ -938,11 +944,17 @@ class OscServerThread(ClientCommunicating):
                 self.send(patchbay_dmn_port,
                           r.patchbay.ENABLE_JACK_PRETTY_NAMING, 1)
         else:
+            self.jack_export_naming = Naming.TRUE_NAME
+            
             if patchbay_dmn_port is not None:
                 self.send(patchbay_dmn_port,
                           r.patchbay.ENABLE_JACK_PRETTY_NAMING, 0)
 
-        self.send_gui(rg.server.EXPORT_PRETTY_NAMES, int(export_pretty_names))
+        RS.settings.setValue('daemon/jack_export_naming',
+                             self.jack_export_naming.name)
+
+        self.send_gui(rg.server.EXPORT_PRETTY_NAMES,
+                      self.jack_export_naming.value)
         self.send(osp.src_addr, osc_paths.REPLY, osp.path,
                   'export pretty_names changed')
 
@@ -1256,6 +1268,9 @@ class OscServerThread(ClientCommunicating):
 
         self.send(gui.addr, rg.server.STATUS,
                   self.server_status.value)
+
+        self.send(gui.addr, rg.server.EXPORT_PRETTY_NAMES,
+                  self.jack_export_naming.value)
 
         if self.session.path is None:
             self.send(gui.addr, rg.session.NAME, '', '')

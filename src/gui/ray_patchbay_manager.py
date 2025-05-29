@@ -509,8 +509,7 @@ class RayPatchbayManager(PatchbayManager):
         super().change_jack_export_naming(naming)
         
         pretty_enable = Naming.INTERNAL_PRETTY in naming
-        self.send_to_patchbay_daemon(
-            r.patchbay.ENABLE_JACK_PRETTY_NAMING, int(pretty_enable))
+        self.send_to_daemon(r.server.EXPORT_PRETTY_NAMES, str(pretty_enable))
     
     def receive_big_packets(self, state: int):
         self.optimize_operation(not bool(state))

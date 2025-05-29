@@ -265,7 +265,7 @@ class SignaledSession(Session):
             self.patchbay_manager.jack_export_naming = Naming.INTERNAL_PRETTY
         else:
             self.patchbay_manager.jack_export_naming = Naming.TRUE_NAME
-            
+
         self.patchbay_manager.options_dialog.export_pretty_names_changed(
             export)
 
