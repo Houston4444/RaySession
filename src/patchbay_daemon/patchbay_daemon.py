@@ -565,9 +565,22 @@ class MainObject:
             @self.client.set_property_change_callback
             def property_change(subject: int, key: str, change: int):
                 if change == jack.PROPERTY_DELETED:
-                    if key == JackMetadata.PRETTY_NAME:
+                    if subject == 0 and key == '':
+                        for uuid, mdata_dict in self.metadatas.items():
+                            for k in mdata_dict:
+                                self.osc_server.metadata_updated(uuid, k, '') 
+                        self.metadatas.clear()
+                        self.uuid_pretty_names.clear()
+                        self.save_uuid_pretty_names()
+                        return
+                    
+                    if key in (JackMetadata.PRETTY_NAME, ''):
                         if subject in self.uuid_waiting_pretty_names:
                             self.uuid_waiting_pretty_names.pop(subject)
+                        
+                        if key == '':
+                            if subject in self.metadatas:
+                                self.metadatas.pop(subject)
 
                     self.metadatas.add(subject, key, '')
                     self.osc_server.metadata_updated(subject, key, '')
