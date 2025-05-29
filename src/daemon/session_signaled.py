@@ -358,29 +358,7 @@ class SignaledSession(OperatingSession):
     @manage(r.server.ASK_FOR_PATCHBAY, 's')
     def _ray_server_ask_for_patchbay(self, osp: OscPack):        
         # if we are here, it means that we need a patchbay daemon to run
-        server = self.get_server()
-        if server is None:
-            return
-        
-        pretty_names_active = True
-        pretty_names_value = RS.settings.value(
-            'daemon/jack_export_naming', 'INTERNAL_PRETTY', type=str)
-        
-        naming = Naming.from_config_str(pretty_names_value)
-        if not naming & Naming.INTERNAL_PRETTY:
-            pretty_names_active = False
-
-        self._patchbay_internal = InternalClient(
-            'ray-patchbay_daemon',
-            (str(self.get_server_port()), osp.src_addr.url,
-             str(pretty_names_active)),
-            '')
-        self._patchbay_internal.start()
-
-        # from qtpy.QtCore import QProcess
-        # QProcess.startDetached(
-        #     'ray-patch_dmn',
-        #     [str(server.port), str(server.port), osp.src_addr.url])
+        self.start_patchbay_daemon(osp.src_addr.url)
 
     @manage(r.server.ABORT_COPY, '')
     def _ray_server_abort_copy(self, osp: OscPack):
@@ -824,6 +802,10 @@ class SignaledSession(OperatingSession):
                     self.bookmarker.make_all(self.path)
                 else:
                     self.bookmarker.remove_all(self.path)
+
+    @manage(r.server.EXPORT_PRETTY_NAMES, 's')
+    def _ray_server_export_pretty_names(self, osp: OscPack):
+        self.start_patchbay_daemon()
 
     @manage(r.server.patchbay.SAVE_GROUP_POSITION,
             'i' + GroupPos.ARG_TYPES)

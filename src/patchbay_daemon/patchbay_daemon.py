@@ -945,7 +945,8 @@ def internal_prepare(daemon_port: str, gui_tcp_url: str,
         pretty_names_active.lower() in ('0', 'false'))
     main_object = MainObject(daemon_port, gui_tcp_url,
                              pretty_name_active_bool)
-    main_object.osc_server.add_gui(gui_tcp_url)
-    if not main_object.osc_server.gui_list:
-        return 1
+    if gui_tcp_url:
+        main_object.osc_server.add_gui(gui_tcp_url)
+        if not main_object.osc_server.gui_list:
+            return 1
     return main_object.start_loop, main_object.internal_stop

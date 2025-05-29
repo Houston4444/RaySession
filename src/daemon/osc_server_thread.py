@@ -928,28 +928,20 @@ class OscServerThread(ClientCommunicating):
         elif action == 'unset_jack_checker_autostart':
             dest_full_path.unlink(missing_ok=True)
 
-    @directos(r.server.EXPORT_PRETTY_NAMES, 's')
+    @validator(r.server.EXPORT_PRETTY_NAMES, 's')
     def _srv_export_pretty_names(self, osp: OscPack):
         export_pretty_names = bool(
             osp.args[0].lower() not in (
                 '0', 'false', 'no', 'off', 'true_name'))
-        patchbay_dmn_port = self.get_patchbay_daemon_port()
+        self.patchbay_dmn_port = self.get_patchbay_daemon_port()
 
         if export_pretty_names:
             self.jack_export_naming = Naming.INTERNAL_PRETTY
-            
-            if patchbay_dmn_port is None:
-                # TODO start patchbay daemon
-                ...
-            else:
-                self.send(patchbay_dmn_port,
-                          r.patchbay.ENABLE_JACK_PRETTY_NAMING, 1)
         else:
-            self.jack_export_naming = Naming.TRUE_NAME
-            
-            if patchbay_dmn_port is not None:
-                self.send(patchbay_dmn_port,
-                          r.patchbay.ENABLE_JACK_PRETTY_NAMING, 0)
+            self.jack_export_naming = Naming.TRUE_NAME            
+
+        self.send_patchbay_dmn(
+            r.patchbay.ENABLE_JACK_PRETTY_NAMING, int(export_pretty_names))
 
         RS.settings.setValue('daemon/jack_export_naming',
                              self.jack_export_naming.name)
@@ -958,6 +950,9 @@ class OscServerThread(ClientCommunicating):
                       self.jack_export_naming.value)
         self.send(osp.src_addr, osc_paths.REPLY, osp.path,
                   'export pretty_names changed')
+        
+        # start patchbay daemon in main thread if it is not started yet
+        return bool(self.patchbay_dmn_port is None)
 
     @validator(r.server.patchbay.SAVE_GROUP_POSITION,
                'i' + GroupPos.ARG_TYPES)
@@ -1184,7 +1179,8 @@ class OscServerThread(ClientCommunicating):
             self.send(gui.addr, *args)
 
     def send_patchbay_dmn(self, *args):
-        self.send(self.patchbay_dmn_port, *args)
+        if self.patchbay_dmn_port is not None:
+            self.send(self.patchbay_dmn_port, *args)
 
     def mega_send_gui(self, mega_send: MegaSend):
         self.mega_send([gui.addr for gui in self.gui_list], mega_send)
