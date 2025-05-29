@@ -49,6 +49,8 @@ class OscJackPatch(BunServer):
                         self._ray_patchbay_set_port_pretty_name)
         self.add_method(r.patchbay.ENABLE_JACK_PRETTY_NAMING, 'i',
                         self._ray_patchbay_enable_jack_pretty_naming)
+        self.add_method(r.patchbay.QUIT, '',
+                        self._ray_patchbay_quit)
 
         self.main_object = main_object
         self.port_list = main_object.port_list
@@ -141,7 +143,10 @@ class OscJackPatch(BunServer):
         export_pretty_names = bool(args[0])
         self.main_object.set_pretty_name_active(export_pretty_names)
         if not export_pretty_names and not self.gui_list:
-            terminate = True
+            self._terminate = True
+
+    def _ray_patchbay_quit(self, path, args):
+        self._terminate = True
 
     def send_gui(self, *args):
         rm_gui = list[Address]()
