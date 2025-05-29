@@ -1,6 +1,3 @@
-from socket import AF_NETROM
-
-
 control RaySession daemons
     --help
         Prints short help message
