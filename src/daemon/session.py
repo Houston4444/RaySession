@@ -9,6 +9,9 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 from io import BytesIO
 
+# Imports from HoustonPatchbay
+from patshared import Naming
+
 # Imports from src/shared
 from osclib import Address, are_same_osc_port
 import ray
@@ -29,9 +32,9 @@ from file_copier import FileCopier
 from client import Client
 from scripter import StepScripter
 from canvas_saver import CanvasSaver
-from daemon_tools import Terminal
+from daemon_tools import Terminal, RS
 import templates_database
-
+from internal_client import InternalClient
 
 _logger = logging.getLogger(__name__)
 signaler = Signaler.instance()
@@ -562,3 +565,27 @@ class Session(ServerSender):
     def _rebuild_templates_database(self, base: str):        
         templates_database.rebuild_templates_database(self, base)
 
+    def start_patchbay_daemon(self, src_url=''):
+        server = self.get_server()
+        if server is None:
+            return
+        
+        pretty_names_active = True
+        pretty_names_value = RS.settings.value(
+            'daemon/jack_export_naming', 'INTERNAL_PRETTY', type=str)
+        
+        naming = Naming.from_config_str(pretty_names_value)
+        if not naming & Naming.INTERNAL_PRETTY:
+            pretty_names_active = False
+
+        self._patchbay_internal = InternalClient(
+            'ray-patchbay_daemon',
+            (str(self.get_server_port()), src_url,
+             str(pretty_names_active)),
+            '')
+        self._patchbay_internal.start()
+
+        # from qtpy.QtCore import QProcess
+        # QProcess.startDetached(
+        #     'ray-patch_dmn',
+        #     [str(server.port), str(server.port), osp.src_addr.url])
