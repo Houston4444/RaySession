@@ -65,6 +65,13 @@ class OscJackPatch(BunServer):
     def set_tmp_gui_url(self, gui_url: str):
         self._tmp_gui_url = gui_url
     
+    def can_have_gui(self) -> bool:
+        if self._tmp_gui_url:
+            return True
+        if self.gui_list:
+            return True
+        return False
+    
     def _ray_patchbay_add_gui(self, path, args):
         self.add_gui(args[0])
 
