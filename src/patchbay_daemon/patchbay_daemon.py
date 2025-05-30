@@ -475,12 +475,6 @@ class MainObject:
             except:
                 _logger.warning(
                     f'Failed to read {self.pretty_tmp_path}, ignored.')
-                
-            if not self.pretty_name_active:
-                # clear pretty names if this patchbay daemon is started
-                # with not pretty_name_active
-                self.pretty_name_active = True
-                self.set_pretty_name_active(False)
 
     def is_terminate(self) -> bool:
         if self.terminate or self.osc_server.is_terminate():
@@ -757,19 +751,11 @@ class MainObject:
         return mdata_pretty_name
 
     def set_all_pretty_names(self):
-        if (not self.jack_running
-                or self.pretty_name_locked
-                or not self.pretty_name_active):
+        '''Set all pretty names once all pretty names are received'''
+        if not self.jack_running or self.pretty_name_locked:
             return
         
-        for client_name, client_uuid in self.client_name_uuids.items():
-            self.set_jack_pretty_name_conditionally(
-                True, client_name, client_uuid)
-                
-        for port in self.client.get_ports():
-            self.set_jack_pretty_name_conditionally(False, port.name, port.uuid)
-        
-        self.save_uuid_pretty_names()
+        self.set_pretty_name_active(self.pretty_name_active, force=True)
 
     def write_group_pretty_name(self, client_name: str, pretty_name: str):
         if not self.jack_running:
@@ -844,9 +830,10 @@ class MainObject:
         self.set_jack_pretty_name(uuid, ptov.pretty)
         return True
 
-    def set_pretty_name_active(self, active: bool):
-        if active is self.pretty_name_active:
+    def set_pretty_name_active(self, active: bool, force=False):
+        if not force and active is self.pretty_name_active:
             return
+
         self.pretty_name_active = True
         
         if active:
