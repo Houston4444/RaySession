@@ -751,11 +751,17 @@ class MainObject:
         return mdata_pretty_name
 
     def set_all_pretty_names(self):
-        '''Set all pretty names once all pretty names are received'''
+        '''Set all pretty names once all pretty names are received,
+        or clear them if self.pretty_name_active is False and some
+        pretty names have been written by a previous process.'''
         if not self.jack_running or self.pretty_name_locked:
             return
         
         self.set_pretty_name_active(self.pretty_name_active, force=True)
+        
+        if (not self.pretty_name_active
+                and not self.osc_server.can_have_gui()):
+            self.terminate = True
 
     def write_group_pretty_name(self, client_name: str, pretty_name: str):
         if not self.jack_running:
