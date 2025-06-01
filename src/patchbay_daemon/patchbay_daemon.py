@@ -171,7 +171,6 @@ class MainObject:
         self.osc_server = OscJackPatch(self)
         self.osc_server.set_tmp_gui_url(gui_url)
         self.write_existence_file()
-        self.osc_server.ask_pretty_names(self._daemon_port)
         self.start_jack_client()
         
         if ALSA_LIB_OK:
@@ -475,6 +474,8 @@ class MainObject:
             except:
                 _logger.warning(
                     f'Failed to read {self.pretty_tmp_path}, ignored.')
+        
+        self.osc_server.ask_pretty_names(self._daemon_port)
 
     def is_terminate(self) -> bool:
         if self.terminate or self.osc_server.is_terminate():

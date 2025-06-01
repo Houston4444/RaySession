@@ -2,8 +2,6 @@
 import logging
 from typing import TYPE_CHECKING
     
-from patshared.jack_metadata import JackMetadata
-
 from osclib import (BunServer, Address, MegaSend,
                     are_on_same_machine, are_same_osc_port)
 import osc_paths.ray as r
