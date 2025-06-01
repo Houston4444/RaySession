@@ -2,6 +2,8 @@
 import logging
 from typing import TYPE_CHECKING
     
+from patshared.jack_metadata import JackMetadata
+
 from osclib import (BunServer, Address, MegaSend,
                     are_on_same_machine, are_same_osc_port)
 import osc_paths.ray as r
@@ -226,9 +228,8 @@ class OscJackPatch(BunServer):
                       tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
                       tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
 
-            self.send_distant_data([gui_addr])
-            
             self.gui_list.append(gui_addr)
+            self.send_distant_data([gui_addr])
 
         except OSError as e:
             _logger.error(f'Failed to send message to GUI at {gui_url}')
