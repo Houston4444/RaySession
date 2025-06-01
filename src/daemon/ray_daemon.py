@@ -25,6 +25,9 @@ import signal
 from qtpy.QtCore import (
     QCoreApplication, QTimer, QLocale, QTranslator)
 
+# Imports from HoustonPatchbay
+from patshared import Naming
+
 # Imports from src/shared
 from osclib import get_free_osc_port, is_osc_port_free, get_net_url
 import ray
@@ -142,11 +145,14 @@ if True:
     elif CommandLineArgs.gui_port:
         server.announce_gui(CommandLineArgs.gui_port.url,
                             gui_pid=CommandLineArgs.gui_pid,
-                            tcp_addr=CommandLineArgs.gui_tcp_url)
+                            tcp_addr=CommandLineArgs.gui_tcp_url)        
 
     # announce to ray_control if launched from it.
     if CommandLineArgs.control_url:
         server.announce_controller(CommandLineArgs.control_url)
+
+    if server.jack_export_naming & Naming.INTERNAL_PRETTY:
+        session.start_patchbay_daemon()
 
     # create or update multi_daemon_file in /tmp
     multi_daemon_file.init(session, server)    

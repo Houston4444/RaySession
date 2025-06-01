@@ -12,7 +12,7 @@ import logging
 from qtpy.QtCore import QCoreApplication
 
 # Imports from src/shared
-from patshared import GroupPos, Naming
+from patshared import GroupPos
 from osclib import Address, OscPack, are_same_osc_port
 import ray
 import xdg
@@ -179,11 +179,6 @@ class SignaledSession(OperatingSession):
             except:
                 # cache file load failed and this is really not strong
                 pass
-            
-        self._patchbay_internal: Optional[InternalClient] = None
-        '''can contain the Internal patchbay daemon if it is launched
-        as a thread in the daemon process.
-        Use less RAM consumption than a separated process.'''
     
     def _get_new_dummy_session_id(self) -> int:
         to_return = self._next_dummy_id
@@ -358,7 +353,7 @@ class SignaledSession(OperatingSession):
     @manage(r.server.ASK_FOR_PATCHBAY, 's')
     def _ray_server_ask_for_patchbay(self, osp: OscPack):        
         # if we are here, it means that we need a patchbay daemon to run
-        self.start_patchbay_daemon(osp.src_addr.url)
+        self.start_patchbay_daemon(osp.src_addr.url, check_exists=False)
 
     @manage(r.server.ABORT_COPY, '')
     def _ray_server_abort_copy(self, osp: OscPack):
@@ -805,7 +800,7 @@ class SignaledSession(OperatingSession):
 
     @manage(r.server.EXPORT_PRETTY_NAMES, 's')
     def _ray_server_export_pretty_names(self, osp: OscPack):
-        self.start_patchbay_daemon()
+        self.start_patchbay_daemon(check_exists=False)
 
     @manage(r.server.patchbay.SAVE_GROUP_POSITION,
             'i' + GroupPos.ARG_TYPES)
@@ -853,6 +848,10 @@ class SignaledSession(OperatingSession):
     @manage(r.server.PATCHBAY_DAEMON_READY, 'i')
     def _ray_server_patchbay_daemon_ready(self, osp: OscPack):
         self.canvas_saver.send_pretty_names_to_patchbay_daemon(osp)
+
+        for url in self._patchbay_waiting_gui:
+            self.send(osp.src_addr, r.patchbay.ADD_GUI, url)
+        self._patchbay_waiting_gui.clear()
 
     @session_operation((r.session.SAVE, nsm.server.SAVE), '')
     def _ray_session_save(self, osp: OscPack):        

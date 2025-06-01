@@ -8,6 +8,7 @@ from typing import Optional
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from io import BytesIO
+import subprocess
 
 # Imports from HoustonPatchbay
 from patshared import Naming
@@ -74,6 +75,15 @@ class Session(ServerSender):
         self.canvas_saver = CanvasSaver(self)
         
         self._time_at_open = 0
+        
+        self._patchbay_internal: InternalClient | subprocess.Popen | None = None
+        '''can contain the Internal patchbay daemon if it is launched
+        as a thread in the daemon process.
+        Use less RAM consumption than a separated process.'''
+        self._patchbay_waiting_gui = set[str]()
+        '''If the patchbay daemon is started but not ready yet,
+        the GUI urls asking for patchbay are stocked here, they will
+        be sent once patchbay daemon is ready'''
 
     def set_renameable(self, renameable:bool):
         server = self.get_server()
@@ -565,11 +575,31 @@ class Session(ServerSender):
     def _rebuild_templates_database(self, base: str):        
         templates_database.rebuild_templates_database(self, base)
 
-    def start_patchbay_daemon(self, src_url=''):
+    def start_patchbay_daemon(self, src_url='', check_exists=True):
         server = self.get_server()
         if server is None:
-            return
+            return        
+
+        patchbay_running = False
+
+        if isinstance(self._patchbay_internal, InternalClient):
+            if self._patchbay_internal.running:
+                patchbay_running = True
         
+        elif isinstance(self._patchbay_internal, subprocess.Popen):
+            if self._patchbay_internal.poll() is None:
+                patchbay_running = True
+
+        patchbay_port = server.get_patchbay_daemon_port()
+
+        if patchbay_running:
+            if src_url:    
+                if patchbay_port is None:
+                    self._patchbay_waiting_gui.add(src_url)
+                else:
+                    self.send(patchbay_port, r.patchbay.ADD_GUI, src_url)
+            return
+
         pretty_names_active = True
         pretty_names_value = RS.settings.value(
             'daemon/jack_export_naming', 'INTERNAL_PRETTY', type=str)
@@ -578,6 +608,9 @@ class Session(ServerSender):
         if not naming & Naming.INTERNAL_PRETTY:
             pretty_names_active = False
 
+        # if check_exists and server.get_patchbay_daemon_port() is not None:
+        #     return
+
         # self._patchbay_internal = InternalClient(
         #     'ray-patchbay_daemon',
         #     (str(self.get_server_port()), src_url,
@@ -585,7 +618,11 @@ class Session(ServerSender):
         #     '')
         # self._patchbay_internal.start()
 
-        from qtpy.QtCore import QProcess
-        QProcess.startDetached(
-            'ray-patch_dmn',
-            [str(server.port), src_url, str(pretty_names_active), ''])
+        
+        try:
+            self._patchbay_internal = subprocess.Popen(
+                ['ray-patch_dmn', str(server.port),
+                src_url, str(pretty_names_active), ''])
+        except:
+            _logger.warning('Failed to launch ray-patch_dmn')
+            return
