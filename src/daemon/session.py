@@ -611,18 +611,21 @@ class Session(ServerSender):
         # if check_exists and server.get_patchbay_daemon_port() is not None:
         #     return
 
-        # self._patchbay_internal = InternalClient(
-        #     'ray-patchbay_daemon',
-        #     (str(self.get_server_port()), src_url,
-        #      str(pretty_names_active)),
-        #     '')
-        # self._patchbay_internal.start()
-
+        USE_PATCHBAY_INTERNAL = True
         
         try:
-            self._patchbay_internal = subprocess.Popen(
-                ['ray-patch_dmn', str(server.port),
-                src_url, str(pretty_names_active), ''])
+            if USE_PATCHBAY_INTERNAL:
+                self._patchbay_internal = InternalClient(
+                    'ray-patchbay_daemon',
+                    (str(self.get_server_port()), src_url,
+                     str(pretty_names_active)),
+                    '')
+                self._patchbay_internal.start()
+
+            else:
+                self._patchbay_internal = subprocess.Popen(
+                    ['ray-patch_dmn', str(server.port),
+                    src_url, str(pretty_names_active), ''])
         except:
             _logger.warning('Failed to launch ray-patch_dmn')
             return
