@@ -6,6 +6,7 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
+
 class InternalClient:
     def __init__(
             self, name: str, args: tuple[str, ...], nsm_url: str):

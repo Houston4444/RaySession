@@ -1,5 +1,7 @@
 #!/usr/bin/python3 -u
 
+print('ousjkrtt', __name__, __file__)
+
 # Needed imports to load HoustonPatchbay and src/shared
 import os
 import sys
@@ -12,6 +14,8 @@ sys.path.insert(1, str(Path(__file__).parents[1] / 'patchbay_daemon'))
 sys.path.insert(1, str(Path(__file__).parents[1] / 'clients'))
 sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
+sys.path[0] = str(Path(__file__).parent)
+
 # Set QT_API environment variable, to make qtpy knows
 # if it should use Qt5 or Qt6
 from qt_api import QT_API
@@ -20,6 +24,15 @@ os.environ['QT_API'] = QT_API
 # other imports from standard library
 import logging
 import signal
+
+# set logger
+_logger = logging.getLogger()
+_log_handler = logging.StreamHandler()
+_log_handler.setFormatter(logging.Formatter(
+    f"%(name)s - %(levelname)s - %(message)s"))
+_logger.setLevel(logging.WARNING)
+_logger.addHandler(_log_handler)
+print('rayde-amo', _logger.name, _logger.level)
 
 # third party imports
 from qtpy.QtCore import (
@@ -41,13 +54,7 @@ import multi_daemon_file
 from session_signaled import SignaledSession
 
 
-_logger = logging.getLogger(__name__)
-_log_handler = logging.StreamHandler()
-_log_handler.setFormatter(logging.Formatter(
-    f"%(name)s - %(levelname)s - %(message)s"))
-_logger.setLevel(logging.DEBUG)
-_logger.addHandler(_log_handler)
-
+_logger.debug('ray-daemon started')
 _terminate = False
 
 def signal_handler(sig, frame):

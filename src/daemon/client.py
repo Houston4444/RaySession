@@ -56,7 +56,6 @@ NSM_API_VERSION_MINOR = 0
 INTERNAL_EXECS = {'ray-jackpatch', 'ray-alsapatch', 'ray-sooperlooper'}
 
 _logger = logging.getLogger(__name__)
-_logger.parent = logging.getLogger('__main__')
 _translate = QCoreApplication.translate
 signaler = Signaler.instance()
 
