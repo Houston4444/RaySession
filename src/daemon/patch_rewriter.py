@@ -13,7 +13,7 @@ from jack_renaming_tools import (
     port_belongs_to_client, port_name_client_replaced)
 
 if TYPE_CHECKING:
-    from session import OperatingSession
+    from session_operating import OperatingSession
 
 _logger = logging.getLogger(__name__)
     

@@ -352,7 +352,7 @@ class MainObject:
                 # ports already disconnected
                 ...
             except BaseException as e:
-                _logger(
+                _logger.warning(
                     f"Failed to disconnect '{port_out_name}' "
                     f"from '{port_in_name}'\n{str(e)}")
         else:
@@ -362,7 +362,7 @@ class MainObject:
                 # ports already connected
                 ...
             except BaseException as e:
-                _logger(
+                _logger.warning(
                     f"Failed to connect '{port_out_name}' "
                     f"to '{port_in_name}'\n{str(e)}")
     
@@ -720,6 +720,7 @@ class MainObject:
             try:
                 self.client.set_property(
                     uuid, JackMetadata.PRETTY_NAME, pretty_name)
+                _logger.info(f'Pretty-name set to "{pretty_name}" on {uuid}')
             except:
                 _logger.warning(
                     f'Failed to set pretty-name "{pretty_name}" for {uuid}')
@@ -731,6 +732,7 @@ class MainObject:
         else:
             try:
                 self.client.remove_property(uuid, JackMetadata.PRETTY_NAME)
+                _logger.info(f'Pretty-name removed from {uuid}')
             except:
                 _logger.warning(
                     f'Failed to remove pretty-name for {uuid}')

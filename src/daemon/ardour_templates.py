@@ -6,7 +6,7 @@ import logging
 import xml.etree.ElementTree as ET
 
 
-_logger = logging.getLogger()
+_logger = logging.getLogger(__name__)
 
 
 def list_templates(templates_path: Path) -> Iterator[Path]:

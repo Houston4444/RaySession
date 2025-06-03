@@ -36,7 +36,6 @@ class Daemon:
 
 
 _logger = logging.getLogger(__name__)
-_instance = None
 _main = _Main()
 FILE_PATH = Path('/tmp/RaySession/multi-daemon.xml')
 
