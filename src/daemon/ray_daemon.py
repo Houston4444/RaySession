@@ -30,9 +30,7 @@ _logger = logging.getLogger()
 _log_handler = logging.StreamHandler()
 _log_handler.setFormatter(logging.Formatter(
     f"%(name)s - %(levelname)s - %(message)s"))
-_logger.setLevel(logging.WARNING)
 _logger.addHandler(_log_handler)
-print('rayde-amo', _logger.name, _logger.level)
 
 # third party imports
 from qtpy.QtCore import (
