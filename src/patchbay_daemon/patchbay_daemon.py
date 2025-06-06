@@ -14,6 +14,16 @@ import logging
 import json
 from queue import Queue
 
+is_internal = not Path(sys.path[0]).name == __name__
+if is_internal:
+    _logger = logging.getLogger(__name__)
+else:
+    _logger = logging.getLogger()
+    _log_handler = logging.StreamHandler()
+    _log_handler.setFormatter(logging.Formatter(
+        f"%(levelname)s - %(name)s - %(message)s"))
+    _logger.addHandler(_log_handler)    
+
 
 # check ALSA LIB
 try:
@@ -31,8 +41,7 @@ from proc_name import set_proc_name
 from patshared import JackMetadatas, JackMetadata, PrettyNames
 
 from osc_server import OscJackPatch
-
-_logger = logging.getLogger(__name__)
+    
 
 PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1
