@@ -27,7 +27,6 @@ from qtpy.QtCore import (
 
 # set logger
 _logger = logging.getLogger()
-_logger.setLevel(logging.DEBUG)
 
 # Imports from HoustonPatchbay
 from patshared import Naming
@@ -39,7 +38,7 @@ import ray
 # Local imports
 from daemon_tools import (
     get_code_root, init_daemon_tools, RS,
-    CommandLineArgs, ArgParser, Terminal, LogStreamHandler)
+    CommandLineArgs, ArgParser, LogStreamHandler)
 from osc_server_thread import OscServerThread
 import multi_daemon_file
 from session_signaled import SignaledSession
@@ -56,6 +55,7 @@ def signal_handler(sig, frame):
 
 # if __name__ == '__main__':
 if True:
+    # set logger handlers
     _log_handler = LogStreamHandler()
     _log_handler.setFormatter(logging.Formatter(
         f"%(levelname)s:%(name)s - %(message)s"))
@@ -84,42 +84,35 @@ if True:
     # check arguments
     parser = ArgParser()
 
-    # logging_file = Path(CommandLineArgs.config_dir) / 'logging.json'
-    # logging_dict = dict[str, list[str]]()
-
-    # if logging_file.exists():
-    #     try:
-    #         with open(logging_file, 'r') as f:
-    #             logging_dict = json.load(f)
-    #             assert isinstance(logging_dict, dict)
-    #     except:
-    #         _logger.warning(
-    #             f'Failed to read logging config file "{logging_file}".')
-
-    # manage session_root
-    session_root = CommandLineArgs.session_root
-    if not session_root:
-        session_root = str(
-            Path.home() / _translate('daemon', 'Ray Network Sessions'))
-    session_root_path = Path(session_root)
+    for module in CommandLineArgs.log.split(':'):
+        if not module:
+            continue
+        
+        if module in ('ray_daemon', 'daemon'):
+            _logger.setLevel(logging.INFO)
+            continue
+        
+        _mod_logger = logging.getLogger(module)
+        _mod_logger.setLevel(logging.INFO)
 
     # make session_root folder if needed
-    if not session_root_path.is_dir():
-        if session_root_path.exists():
+    if not CommandLineArgs.session_root.is_dir():
+        if CommandLineArgs.session_root.exists():
             _logger.error(
-                f'{session_root_path} exists and is not a dir, '
+                f'"{CommandLineArgs.session_root}" exists and is not a dir, '
                 'please choose another path !')
             sys.exit(1)
 
         try:
-            session_root_path.mkdir(parents=True)
+            CommandLineArgs.session_root.mkdir(parents=True)
         except:
             _logger.error(
-                "impossible to make dir {session_root_path} , aborted !")
+                f'impossible to make dir "{CommandLineArgs.session_root}", '
+                'aborted !')
             sys.exit(1)
 
     # create session
-    session = SignaledSession(session_root_path)
+    session = SignaledSession(CommandLineArgs.session_root)
 
     # create and start server
     if CommandLineArgs.findfreeport:
