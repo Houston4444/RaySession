@@ -371,7 +371,7 @@ class ClientCommunicating(BunServerThread):
         if not client:
             return False
 
-        Terminal.message("%s sends dirty" % client.client_id)
+        self.message("%s sends dirty" % client.client_id)
 
         client.dirty = 1
         client.last_dirty = time.time()
@@ -384,7 +384,7 @@ class ClientCommunicating(BunServerThread):
         if not client:
             return False
 
-        Terminal.message("%s sends clean" % client.client_id)
+        self.message("%s sends clean" % client.client_id)
 
         client.dirty = 0
 
@@ -406,7 +406,7 @@ class ClientCommunicating(BunServerThread):
         if not client:
             return False
 
-        Terminal.message("Client '%s' sends gui hidden" % client.client_id)
+        self.message("Client '%s' sends gui hidden" % client.client_id)
 
         client.gui_visible = False
 
@@ -419,7 +419,7 @@ class ClientCommunicating(BunServerThread):
         if not client:
             return False
 
-        Terminal.message("Client '%s' sends gui shown" % client.client_id)
+        self.message("Client '%s' sends gui shown" % client.client_id)
 
         client.gui_visible = True
         client.gui_has_been_visible = True
@@ -434,6 +434,12 @@ class ClientCommunicating(BunServerThread):
     @validator(nsm.client.NETWORK_PROPERTIES, 'ss')
     def _nsm_client_network_properties(self, osp: OscPack):
         ...
+
+    def message(self, msg: str):
+        '''write in the prompt, with the following syntax:
+        
+        `[ray-daemon] message`'''
+        self.session.message(msg)
 
     def _unknown_message(self, osp: OscPack):
         self.send(osp.src_addr, osc_paths.MINOR_ERROR, osp.path,
@@ -1338,7 +1344,7 @@ class OscServerThread(ClientCommunicating):
 
         multi_daemon_file.update()
 
-        Terminal.message(f"GUI connected at {gui.addr.url}")
+        self.message(f"GUI connected at {gui.addr.url}")
 
     def announce_controller(self, control_address: Address):
         controller = Controller()

@@ -104,7 +104,13 @@ class Session(ServerSender):
         self.is_renameable = True
         server.send_renameable(True)
 
-    def message(self, string, even_dummy=False):
+    def message(self, string: str, even_dummy=False):
+        '''write in the prompt, with the following syntax:
+        
+        `[ray-daemon] message`
+        
+        Also write in log files'''
+        
         if self.is_dummy and not even_dummy:
             return
 

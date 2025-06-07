@@ -2154,7 +2154,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                 os.rename("%s/%s" % (tmp_work_dir, file_path),
                           "%s/%s" % (self.session.path, file_path))
             except:
-                Terminal.message(
+                self.message(
                     _translate(
                         'client',
                         'failed to move %s/%s to %s/%s, sorry.')
@@ -2165,7 +2165,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             try:
                 shutil.rmtree(tmp_work_dir)
             except:
-                Terminal.message(
+                self.message(
                     'client'
                     'fail to remove temp directory %s. sorry.' % tmp_work_dir)
 
