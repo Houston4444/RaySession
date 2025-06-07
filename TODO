@@ -121,5 +121,6 @@ PATHS:
 
 
 
-Gérér Internal et stdout/stderr
+Gérér patchbay_daemon external stderr
+
 

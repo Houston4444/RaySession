@@ -165,11 +165,11 @@ class Terminal:
 
     @classmethod
     def message(cls, string: str, server_port=0):
-        if cls._last_client_name and cls._last_client_name != 'daemon':
-            sys.stderr.write('\n')
+        if cls._last_client_name != 'daemon':
+            sys.stderr.write(f'\n[\033[90mray-daemon\033[0m]\n')
 
         sys.stderr.write(
-            f'[\033[90mray-daemon\033[0m]\033[92m{string}\033[0m\n')
+            f'\033[92m{string}\033[0m\n')
 
         log_dir = get_app_config_path() / 'logs'
         

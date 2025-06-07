@@ -8,11 +8,10 @@ import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 
 if TYPE_CHECKING:
-    from src.patchbay_daemon.patchbay_daemon import MainObject, TransportPosition
+    from patchbay_daemon import MainObject, TransportPosition
 
 
 _logger = logging.getLogger(__name__)
-
 
 class OscJackPatch(BunServer):
     def __init__(self, main_object: 'MainObject'):
