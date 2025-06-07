@@ -497,7 +497,7 @@ class Snapshoter(QObject):
         self._error_function = error_function
 
         if not self._can_save():
-            Terminal.message("can't snapshot")
+            self.session.message("can't snapshot")
             return
 
         err = self._write_exclude_file()

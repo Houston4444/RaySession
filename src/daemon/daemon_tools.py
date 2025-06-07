@@ -164,7 +164,7 @@ class Terminal:
     _last_client_name = ''
 
     @classmethod
-    def message(cls, string, server_port=0):
+    def message(cls, string: str, server_port=0):
         if cls._last_client_name and cls._last_client_name != 'daemon':
             sys.stderr.write('\n')
 
@@ -193,36 +193,37 @@ class Terminal:
         cls._last_client_name = 'daemon'
 
     @classmethod
-    def snapshoter_message(cls, byte_string, command=''):
+    def snapshoter_message(cls, byte_str: bytes, command=''):
         snapshoter_str = "snapshoter:.%s" % command
 
         if cls._last_client_name != snapshoter_str:
             sys.stderr.write(f'\n[\033[90mray-daemon-git{command}\033[0m]\n')
-        sys.stderr.buffer.write(byte_string)
+        sys.stderr.buffer.write(byte_str)
 
         cls._last_client_name = snapshoter_str
 
     @classmethod
-    def scripter_message(cls, byte_string, command=''):
-        scripter_str = "scripter:.%s" % command
+    def scripter_message(cls, byte_str: bytes, command=''):
+        scripter_str = f'scripter:.{command}'
 
         if cls._last_client_name != scripter_str:
             sys.stderr.write(
                 f'\n[\033[90mray-daemon {command} script\033[0m]\n')
-        sys.stderr.buffer.write(byte_string)
+        sys.stderr.buffer.write(byte_str)
 
         cls._last_client_name = scripter_str
 
     @classmethod
-    def client_message(cls, byte_string, client_name, client_id):
-        client_str = "%s.%s" % (client_name, client_id)
+    def client_message(
+            cls, byte_str: bytes, client_name: str, client_id: str):
+        client_str = f'{client_name}.{client_id}'
 
         if (not CommandLineArgs.debug_only
                 and not CommandLineArgs.no_client_messages):
             if cls._last_client_name != client_str:
                 sys.stderr.write(
                     f'\n[\033[90m{client_name}-{client_id}\033[0m]\n')
-            sys.stderr.buffer.write(byte_string)
+            sys.stderr.buffer.write(byte_str)
 
         cls._last_client_name = client_str
 

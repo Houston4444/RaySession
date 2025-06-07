@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Union
 # Imports from HoustonPatchbay
 from patshared import (
     PortgroupsDict, from_json_to_str, PortTypesViewFlag, GroupPos,
-    PortgroupMem, ViewsDict, PrettyNames, PortMode)
+    PortgroupMem, ViewsDict, PrettyNames)
 
 # Imports from src/shared
 import ray
@@ -18,7 +18,7 @@ import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 
 # Local imports
-from daemon_tools import RS, Terminal
+from daemon_tools import RS
 from server_sender import ServerSender
 
 if TYPE_CHECKING:
@@ -69,7 +69,7 @@ class CanvasSaver(ServerSender):
             try:
                 json_contents = json.load(f)
             except json.JSONDecodeError:
-                Terminal.message(
+                self.session.message(
                     f"Failed to load patchcanvas config file {f}")
 
             if isinstance(json_contents, dict):
@@ -287,7 +287,8 @@ class CanvasSaver(ServerSender):
             try:
                 json_contents = json.load(f)
             except json.JSONDecodeError:
-                Terminal.message("Failed to load session canvas file %s" % f)
+                self.session.message(
+                    f"Failed to load session canvas file {f}")
 
         session_version = (0, 15, 0)
         self.views_session.clear()

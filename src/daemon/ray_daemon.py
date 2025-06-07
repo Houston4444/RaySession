@@ -1,14 +1,12 @@
 #!/usr/bin/python3 -u
 
-print('ousjkrtt', __name__, __file__)
-
 # Needed imports to load HoustonPatchbay and src/shared
 import os
 import sys
 from pathlib import Path
 
-# set HoustonPatchbay/patchbay and src/shared/* as libs
-# sys.path.insert(1, str(Path(__file__).parents[1] / 'patchbay_daemon'))
+# set HoustonPatchbay/patchbay, src/shared/* and 
+# modules usable as internal client as libs
 sys.path.insert(1, str(Path(__file__).parents[2] / 'HoustonPatchbay/source'))
 sys.path.insert(1, str(Path(__file__).parents[1] / 'patchbay_daemon'))
 sys.path.insert(1, str(Path(__file__).parents[1] / 'clients'))
@@ -52,7 +50,6 @@ import multi_daemon_file
 from session_signaled import SignaledSession
 
 
-_logger.debug('ray-daemon started')
 _terminate = False
 
 def signal_handler(sig, frame):
@@ -60,7 +57,6 @@ def signal_handler(sig, frame):
         session.terminate()
         global _terminate
         _terminate = True
-
 
 
 # if __name__ == '__main__':
@@ -134,9 +130,9 @@ if True:
     server.start()
 
     # print server url
-    Terminal.message('URL : %s' % get_net_url(server.port))
-    Terminal.message('      %s' % server.url)
-    Terminal.message('ROOT: %s' % CommandLineArgs.session_root)
+    session.message(f'URL : {get_net_url(server.port)}')
+    session.message(f'      {server.url}')
+    session.message(f'ROOT: {CommandLineArgs.session_root}')
 
     if CommandLineArgs.hidden:
         server.not_default = True
