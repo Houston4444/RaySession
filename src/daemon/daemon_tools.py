@@ -257,7 +257,7 @@ def verified_address_from_port_arg(arg: str) -> Address:
 
 
 class CommandLineArgs(argparse.Namespace):
-    session_root = ''
+    session_root = Path()
     hidden = False
     osc_port = 0
     findfreeport = True
@@ -272,6 +272,7 @@ class CommandLineArgs(argparse.Namespace):
     no_client_messages = False
     session = ''
     no_options = False
+    log = ''
 
     @classmethod
     def eat_attributes(cls, parsed_args: argparse.Namespace):
@@ -291,6 +292,10 @@ class CommandLineArgs(argparse.Namespace):
                 f'{cls.config_dir} is not a writable config dir, '
                 'try another one\n')
             sys.exit(1)
+        
+        if not cls.session_root.name:
+            cls.session_root = Path(
+                RS.settings.value('default_session_root', type=str))
 
 
 class ArgParser(argparse.ArgumentParser):
@@ -298,12 +303,11 @@ class ArgParser(argparse.ArgumentParser):
         argparse.ArgumentParser.__init__(self)
         _translate = QCoreApplication.translate
 
-        default_root = "%s/%s" % (
-            os.getenv('HOME'),
-            _translate('daemon', 'Ray Network Sessions'))
+        default_root = \
+            Path.home() / _translate('daemon', 'Ray Network Sessions')
 
         self.add_argument(
-            '--session-root', '-r', type=str, default=default_root,
+            '--session-root', '-r', type=Path, default=default_root,
             help='set root folder for sessions')
         self.add_argument(
             '--session', '-s', type=str, default='',
@@ -347,6 +351,9 @@ class ArgParser(argparse.ArgumentParser):
             help='do not print client messages')
         self.add_argument(
             '-v', '--version', action='version', version=ray.VERSION)
+        self.add_argument(
+            '-log', '--log', type=str, default='',
+            help='set the logs for specific modules')
 
         parsed_args = argparse.ArgumentParser.parse_args(self)
         CommandLineArgs.eat_attributes(parsed_args)

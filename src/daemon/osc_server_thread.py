@@ -1177,7 +1177,7 @@ class OscServerThread(ClientCommunicating):
         return False
 
     def send(self, *args):
-        _logger.debug('\033[96mOSC::daemon sends\033[0m ' + str(args[1:]))        
+        _logger.debug(f'\033[96mdaemon sends\033[0m {args[1:]}')        
         ClientCommunicating.send(self, *args)
 
     def send_gui(self, *args):
