@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union, Callable
 from pathlib import Path
 import logging
 
@@ -193,6 +193,12 @@ class Terminal:
         cls._last_client_name = 'daemon'
 
     @classmethod
+    def prepare_logging(cls):
+        if cls._last_client_name != 'daemon':
+            sys.stderr.write(f'\n[\033[90mray-daemon\033[0m]\n')
+            cls._last_client_name = 'daemon'
+
+    @classmethod
     def snapshoter_message(cls, byte_str: bytes, command=''):
         snapshoter_str = "snapshoter:.%s" % command
 
@@ -268,7 +274,7 @@ class CommandLineArgs(argparse.Namespace):
     no_options = False
 
     @classmethod
-    def eat_attributes(cls, parsed_args):
+    def eat_attributes(cls, parsed_args: argparse.Namespace):
         for attr_name in dir(parsed_args):
             if not attr_name.startswith('_'):
                 setattr(cls, attr_name, getattr(parsed_args, attr_name))
@@ -344,3 +350,15 @@ class ArgParser(argparse.ArgumentParser):
 
         parsed_args = argparse.ArgumentParser.parse_args(self)
         CommandLineArgs.eat_attributes(parsed_args)
+
+
+class LogStreamHandler(logging.StreamHandler):
+    '''Allows to write `[ray-daemon]` before logging something
+    if the previous message came from a client.'''
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def emit(self, record: logging.LogRecord):
+        Terminal.prepare_logging()
+        super().emit(record)
