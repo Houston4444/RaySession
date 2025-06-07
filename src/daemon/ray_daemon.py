@@ -1,9 +1,11 @@
 #!/usr/bin/python3 -u
 
-# Needed imports to load HoustonPatchbay and src/shared
+# Standard lib imports
 import os
 import sys
 from pathlib import Path
+import logging
+import signal
 
 # set HoustonPatchbay/patchbay, src/shared/* and 
 # modules usable as internal client as libs
@@ -19,20 +21,13 @@ sys.path[0] = str(Path(__file__).parent)
 from qt_api import QT_API
 os.environ['QT_API'] = QT_API
 
-# other imports from standard library
-import logging
-import signal
-
-# set logger
-_logger = logging.getLogger()
-_log_handler = logging.StreamHandler()
-_log_handler.setFormatter(logging.Formatter(
-    f"%(name)s - %(levelname)s - %(message)s"))
-_logger.addHandler(_log_handler)
-
 # third party imports
 from qtpy.QtCore import (
     QCoreApplication, QTimer, QLocale, QTranslator)
+
+# set logger
+_logger = logging.getLogger()
+_logger.setLevel(logging.DEBUG)
 
 # Imports from HoustonPatchbay
 from patshared import Naming
@@ -44,7 +39,7 @@ import ray
 # Local imports
 from daemon_tools import (
     get_code_root, init_daemon_tools, RS,
-    CommandLineArgs, ArgParser, Terminal)
+    CommandLineArgs, ArgParser, Terminal, LogStreamHandler)
 from osc_server_thread import OscServerThread
 import multi_daemon_file
 from session_signaled import SignaledSession
@@ -61,6 +56,11 @@ def signal_handler(sig, frame):
 
 # if __name__ == '__main__':
 if True:
+    _log_handler = LogStreamHandler()
+    _log_handler.setFormatter(logging.Formatter(
+        f"%(levelname)s:%(name)s - %(message)s"))
+    _logger.addHandler(_log_handler)
+    
     # add RaySession/src/bin to $PATH
     ray.add_self_bin_to_path()
 
@@ -70,7 +70,7 @@ if True:
     app.setOrganizationName("RaySession")
 
     init_daemon_tools()
-
+    
     # Translation process
     locale = QLocale.system().name()
     appTranslator = QTranslator()
@@ -84,13 +84,25 @@ if True:
     # check arguments
     parser = ArgParser()
 
+    # logging_file = Path(CommandLineArgs.config_dir) / 'logging.json'
+    # logging_dict = dict[str, list[str]]()
+
+    # if logging_file.exists():
+    #     try:
+    #         with open(logging_file, 'r') as f:
+    #             logging_dict = json.load(f)
+    #             assert isinstance(logging_dict, dict)
+    #     except:
+    #         _logger.warning(
+    #             f'Failed to read logging config file "{logging_file}".')
+
     # manage session_root
     session_root = CommandLineArgs.session_root
     if not session_root:
-        session_root = str(Path.home()
-                           / _translate('daemon', 'Ray Network Sessions'))
-
+        session_root = str(
+            Path.home() / _translate('daemon', 'Ray Network Sessions'))
     session_root_path = Path(session_root)
+
     # make session_root folder if needed
     if not session_root_path.is_dir():
         if session_root_path.exists():
@@ -105,7 +117,6 @@ if True:
             _logger.error(
                 "impossible to make dir {session_root_path} , aborted !")
             sys.exit(1)
-
 
     # create session
     session = SignaledSession(session_root_path)
