@@ -145,6 +145,8 @@ class CommandLineArgs(argparse.Namespace):
     session_root = ''
     start_session = ''
     force_new_daemon = False
+    log = ''
+    dbg = ''
 
     @classmethod
     def eat_attributes(cls, parsed_args):
@@ -191,41 +193,51 @@ class ArgParser(argparse.ArgumentParser):
                 'help',
                 'A session manager based on the Non-Session-Manager API '
                 + 'for sound applications.'))
-        self.add_argument('--daemon-url', '-u', type=verified_address_arg,
-                          help=_translate('help',
-                                          'connect to this daemon url'))
-        self.add_argument('--daemon-port', '-p',
-                          type=verified_address_from_port_arg,
-                          help=_translate('help',
-                                          'connect to this daemon port'))
-        self.add_argument('--out-daemon', action='store_true',
-                          help=argparse.SUPPRESS)
-        self.add_argument('--session-root', '-r', type=str,
-                          help=_translate(
-                              'help', 'Use this folder as root for sessions'))
-        self.add_argument('--start-session', '-s', type=str,
-                          help=_translate('help',
-                                          'Open this session at startup'))
-        self.add_argument('--config-dir', '-c', type=str, default='',
-                          help=_translate('help', 'use a custom config dir'))
-        self.add_argument('--debug', '-d', action='store_true',
-                          help=_translate('help', 'display OSC messages'))
-        self.add_argument('--debug-only', '-do', action='store_true',
-                          help=_translate('help',
-                                          'debug without client messages'))
-        self.add_argument('---no-client-messages', '-ncm', action='store_true',
-                          help=_translate('help',
-                                          'do not print client messages'))
+        self.add_argument(
+            '--daemon-url', '-u', type=verified_address_arg,
+            help=_translate('help', 'connect to this daemon url'))
+        self.add_argument(
+            '--daemon-port', '-p',
+            type=verified_address_from_port_arg,
+            help=_translate('help', 'connect to this daemon port'))
+        self.add_argument(
+            '--out-daemon', action='store_true', help=argparse.SUPPRESS)
+        self.add_argument(
+            '--session-root', '-r', type=str,
+            help=_translate('help', 'Use this folder as root for sessions'))
+        self.add_argument(
+            '--start-session', '-s', type=str,
+            help=_translate('help', 'Open this session at startup'))
+        self.add_argument(
+            '--config-dir', '-c', type=str, default='',
+            help=_translate('help', 'use a custom config dir'))
+        self.add_argument(
+            '--debug', '-d', action='store_true',
+            help=_translate('help', 'display OSC messages'))
+        self.add_argument(
+            '--debug-only', '-do', action='store_true',
+            help=_translate('help', 'debug without client messages'))
+        self.add_argument(
+            '---no-client-messages', '-ncm', action='store_true',
+            help=_translate('help', 'do not print client messages'))
+        self.add_argument(
+            '-log', '--log', type=str, default='',
+            help="set the log infos for specific modules, separated with ':'")
+        self.add_argument(
+            '-dbg', '--dbg', type=str, default='',
+            help="set the log debug for specific modules, separated with ':'")
         self.add_argument(
             '--force-new-daemon', '-fnd', action='store_true',
             help=_translate(
                 'help', 'prevent to attach to an already running daemon'))
-        self.add_argument('--net-session-root', type=str, default='',
-                          help=argparse.SUPPRESS)
-        self.add_argument('--net-daemon-id', type=int, default=0,
-                          help=argparse.SUPPRESS)
-        self.add_argument('-v', '--version', action='version',
-                          version=ray.VERSION)
+        self.add_argument(
+            '--net-session-root', type=str, default='',
+            help=argparse.SUPPRESS)
+        self.add_argument(
+            '--net-daemon-id', type=int, default=0,
+            help=argparse.SUPPRESS)
+        self.add_argument(
+            '-v', '--version', action='version', version=ray.VERSION)
 
         parsed_args = argparse.ArgumentParser.parse_args(self)
         CommandLineArgs.eat_attributes(parsed_args)

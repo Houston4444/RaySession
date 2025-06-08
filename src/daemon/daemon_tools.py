@@ -161,6 +161,7 @@ class TemplateRoots:
 
 
 class Terminal:
+    'Manage messages to stderr'
     _last_client_name = ''
 
     @classmethod
@@ -273,6 +274,7 @@ class CommandLineArgs(argparse.Namespace):
     session = ''
     no_options = False
     log = ''
+    dbg = ''
 
     @classmethod
     def eat_attributes(cls, parsed_args: argparse.Namespace):
@@ -353,7 +355,10 @@ class ArgParser(argparse.ArgumentParser):
             '-v', '--version', action='version', version=ray.VERSION)
         self.add_argument(
             '-log', '--log', type=str, default='',
-            help='set the logs for specific modules')
+            help="set the log infos for specific modules, separated with ':'")
+        self.add_argument(
+            '-dbg', '--dbg', type=str, default='',
+            help="set the log debug for specific modules, separated with ':'")
 
         parsed_args = argparse.ArgumentParser.parse_args(self)
         CommandLineArgs.eat_attributes(parsed_args)
