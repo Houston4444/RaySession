@@ -95,6 +95,17 @@ if True:
         _mod_logger = logging.getLogger(module)
         _mod_logger.setLevel(logging.INFO)
 
+    for module in CommandLineArgs.dbg.split(':'):
+        if not module:
+            continue
+        
+        if module in ('ray_daemon', 'daemon'):
+            _logger.setLevel(logging.DEBUG)
+            continue
+        
+        _mod_logger = logging.getLogger(module)
+        _mod_logger.setLevel(logging.DEBUG)
+
     # make session_root folder if needed
     if not CommandLineArgs.session_root.is_dir():
         if CommandLineArgs.session_root.exists():
