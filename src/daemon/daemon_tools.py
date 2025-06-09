@@ -235,6 +235,14 @@ class Terminal:
         cls._last_client_name = client_str
 
     @classmethod
+    def patchbay_message(cls, byte_str: bytes):
+        PATCHBAY_STR = 'patchbay daemon'
+        if cls._last_client_name != PATCHBAY_STR:
+            sys.stderr.write(f'\n[\033[90m{PATCHBAY_STR}\033[0m]\n')
+        sys.stderr.buffer.write(byte_str)
+        cls._last_client_name = PATCHBAY_STR
+
+    @classmethod
     def warning(cls, string):
         sys.stderr.write(
             f'[\033[90mray-daemon\033[0m]{string}\033[0m\n')

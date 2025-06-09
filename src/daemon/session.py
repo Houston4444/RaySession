@@ -4,11 +4,14 @@ import logging
 import os
 import random
 import string
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from io import BytesIO
 import subprocess
+
+# third party
+from qtpy.QtCore import QProcess
 
 # Imports from HoustonPatchbay
 from patshared import Naming
@@ -36,6 +39,9 @@ from canvas_saver import CanvasSaver
 from daemon_tools import Terminal, RS
 import templates_database
 from internal_client import InternalClient
+
+if TYPE_CHECKING:
+    from session_operating import OperatingSession
 
 _logger = logging.getLogger(__name__)
 signaler = Signaler.instance()
@@ -76,7 +82,7 @@ class Session(ServerSender):
         
         self._time_at_open = 0
         
-        self._patchbay_internal: InternalClient | subprocess.Popen | None = None
+        self._patchbay_internal: InternalClient | QProcess | None = None
         '''can contain the Internal patchbay daemon if it is launched
         as a thread in the daemon process.
         Use less RAM consumption than a separated process.'''
@@ -592,8 +598,8 @@ class Session(ServerSender):
             if self._patchbay_internal.running:
                 patchbay_running = True
         
-        elif isinstance(self._patchbay_internal, subprocess.Popen):
-            if self._patchbay_internal.poll() is None:
+        elif isinstance(self._patchbay_internal, QProcess):
+            if self._patchbay_internal.state() != QProcess.ProcessState.NotRunning:
                 patchbay_running = True
 
         patchbay_port = server.get_patchbay_daemon_port()
@@ -617,7 +623,7 @@ class Session(ServerSender):
         # if check_exists and server.get_patchbay_daemon_port() is not None:
         #     return
 
-        USE_PATCHBAY_INTERNAL = True
+        USE_PATCHBAY_INTERNAL = False
         
         try:
             if USE_PATCHBAY_INTERNAL:
@@ -629,9 +635,36 @@ class Session(ServerSender):
                 self._patchbay_internal.start()
 
             else:
-                self._patchbay_internal = subprocess.Popen(
-                    ['ray-patch_dmn', str(server.port),
-                    src_url, str(pretty_names_active), ''])
+                self._patchbay_internal = QProcess()
+                self._patchbay_internal.setProcessChannelMode(
+                    QProcess.ProcessChannelMode.MergedChannels)
+                self._patchbay_internal.readyReadStandardOutput.connect(
+                    self._patchbay_stdout)
+                self._patchbay_internal.finished.connect(
+                    self._patchbay_finished)
+                self._patchbay_internal.setProgram('ray-patch_dmn')
+                self._patchbay_internal.setArguments(
+                    [str(server.port), src_url, str(pretty_names_active), ''])
+                self._patchbay_internal.start()
+                # self._patchbay_internal = subprocess.Popen(
+                #     ['ray-patch_dmn', str(server.port),
+                #     src_url, str(pretty_names_active), ''])
         except:
             _logger.warning('Failed to launch ray-patch_dmn')
             return
+        
+    def _patchbay_stdout(self):
+        if not isinstance(self._patchbay_internal, QProcess):
+            return
+        Terminal.patchbay_message(
+            self._patchbay_internal.readAllStandardOutput().data())
+
+    def _patchbay_finished(self):
+        if TYPE_CHECKING:
+            assert isinstance(self, OperatingSession)
+
+        # TODO wrong place, no wait_for in simple session module
+        if self.wait_for is ray.WaitFor.PATCHBAY_QUIT:
+            self.timer.setSingleShot(True)
+            self.timer.stop()
+            self.timer.start(0)

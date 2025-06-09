@@ -11,7 +11,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 # third party imports
-from qtpy.QtCore import QCoreApplication, QTimer
+from qtpy.QtCore import QCoreApplication, QTimer, QProcess
 
 # Imports from src/shared
 from osclib import Address, MegaSend, is_valid_osc_url
@@ -112,6 +112,21 @@ class OperatingSession(Session):
                 self.timer.start(duration)
             else:
                 follow()
+            return
+
+        if wait_for is ray.WaitFor.PATCHBAY_QUIT:
+            if not isinstance(self._patchbay_internal, QProcess):
+                follow()
+                return
+            if (self._patchbay_internal.state()
+                    == QProcess.ProcessState.NotRunning):
+                follow()
+                return
+
+            self.wait_for = wait_for
+            self.timer.setSingleShot(True)
+            self.timer.timeout.connect(follow)
+            self.timer.start(duration)
             return
 
         if self.expected_clients:
@@ -1602,6 +1617,9 @@ for better organization.""")
         self.steps_osp = None
 
     def exit_now(self):
+        self._wait_and_go_to(1000, self.exit_now_step_2, ray.WaitFor.PATCHBAY_QUIT)
+        
+    def exit_now_step_2(self):
         self.set_server_status(ray.ServerStatus.OFF)
         self._set_path(None)
         self.message("Bye Bye...")
