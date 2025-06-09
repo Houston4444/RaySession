@@ -3,6 +3,7 @@ from typing import Union, Callable
 import os
 import signal
 import sys
+from pathlib import Path
 
 from osclib import Address
 from patcher.patcher import Patcher
@@ -11,12 +12,16 @@ from nsm_client import NsmServer
 
 from .engine import Engine
 
-_logger = logging.getLogger(__name__)
-_log_handler = logging.StreamHandler()
-_log_handler.setFormatter(logging.Formatter(
-    f"%(name)s - %(levelname)s - %(message)s"))
-_logger.setLevel(logging.WARNING)
-_logger.addHandler(_log_handler)
+
+is_internal = not Path(sys.path[0]).name == __name__
+if is_internal:
+    _logger = logging.getLogger(__name__)
+else:
+    _logger = logging.getLogger()
+    _log_handler = logging.StreamHandler()
+    _log_handler.setFormatter(logging.Formatter(
+        f"%(levelname)s:%(name)s - %(message)s"))
+    _logger.addHandler(_log_handler)
 
 
 def internal_prepare(
@@ -25,24 +30,27 @@ def internal_prepare(
     otherwise the start_func and the stop_func.'''
     # set log level with exec arguments
     if len(func_args) > 0:
-        read_log_level = False
-        log_level = logging.WARNING
+        log_dict = {logging.INFO: '', logging.DEBUG: ''}
+        read_level = 0
 
         for func_arg in func_args:
-            if func_arg in ('-log', '--log'):
-                read_log_level = True
-                log_level = logging.DEBUG
+            match func_args:
+                case '-log'|'--log':
+                    read_level = logging.INFO
+                    continue
+                case '-dbg'|'--dbg':
+                    read_level = logging.DEBUG
+                    continue
+            
+            if read_level == 0:
+                continue
+            
+            log_dict[read_level] = func_arg
 
-            elif read_log_level:
-                if func_arg.isdigit():
-                    log_level = int(func_arg)
-                else:
-                    uarg = func_arg.upper()
-                    if (uarg in logging.__dict__.keys()
-                            and isinstance(logging.__dict__[uarg], int)):
-                        log_level = logging.__dict__[uarg]
-
-        _logger.setLevel(log_level)
+        for lvl, modules in log_dict.items():
+            for module in modules.split(':'):
+                mod_logger = logging.getLogger(module)
+                mod_logger.setLevel(lvl)
 
     if not nsm_url:
         _logger.error('Could not register as NSM client.')
