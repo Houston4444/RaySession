@@ -13,7 +13,7 @@ from nsm_client import NsmServer
 from .engine import Engine
 
 
-is_internal = not Path(sys.path[0]).name == __name__
+is_internal = not Path(sys.argv[0]).name == 'ray-jackpatch'
 if is_internal:
     _logger = logging.getLogger(__name__)
 else:
