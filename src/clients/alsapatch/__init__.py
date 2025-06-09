@@ -13,7 +13,7 @@ from nsm_client import NsmServer
 from .engine import Engine
 
 
-is_internal = not Path(sys.path[0]).name == __name__
+is_internal = not Path(sys.argv[0]).name == 'ray-alsapatch'
 if is_internal:
     _logger = logging.getLogger(__name__)
 else:
@@ -22,7 +22,6 @@ else:
     _log_handler.setFormatter(logging.Formatter(
         f"%(levelname)s:%(name)s - %(message)s"))
     _logger.addHandler(_log_handler)
-
 
 def internal_prepare(
         *func_args: str, nsm_url='') -> Union[int, tuple[Callable, Callable]]:
