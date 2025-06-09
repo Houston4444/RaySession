@@ -5,6 +5,7 @@ import signal
 import sys
 import os
 from pathlib import Path
+import logging
 
 root_path = Path(__file__).parents[2]
 
@@ -33,6 +34,8 @@ from gui_session import SignaledSession
 # prevent to not find icon at startup
 import resources_rc
 
+_logger = logging.getLogger()
+
 
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
@@ -55,6 +58,12 @@ def signal_handler(sig, frame):
 
 
 if True:
+    # set logger handlers
+    _log_handler = logging.StreamHandler()
+    _log_handler.setFormatter(logging.Formatter(
+        f"%(levelname)s:%(name)s - %(message)s"))
+    _logger.addHandler(_log_handler)
+    
     set_proc_name(ray.APP_TITLE.lower())
     
     # set Qt Application
@@ -96,8 +105,22 @@ if True:
 
     # get arguments
     parser = ArgParser()
-
     init_gui_tools()
+    
+    log_dict = {logging.INFO: CommandLineArgs.log,
+                logging.DEBUG: CommandLineArgs.dbg}
+    
+    for log_level, multimodule in log_dict.items():
+        for module in multimodule.split(':'):
+            if not module:
+                continue
+
+            if module == 'raysession':
+                _logger.setLevel(log_level)
+                continue
+
+            _mod_logger = logging.getLogger(module)
+            _mod_logger.setLevel(log_level)
 
     # Add raysession/src/bin to $PATH
     # to can use raysession after make, without install
