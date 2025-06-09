@@ -42,7 +42,6 @@ def internal_prepare(
                             and isinstance(logging.__dict__[uarg], int)):
                         log_level = logging.__dict__[uarg]
         _logger.setLevel(log_level)
-        print('log lebel', log_level, __name__)
 
     if not nsm_url:
         _logger.error('Could not register as NSM client.')

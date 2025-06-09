@@ -21,7 +21,7 @@ _logger.addHandler(_log_handler)
 
 def internal_prepare(
         *func_args: str, nsm_url='') -> Union[int, tuple[Callable, Callable]]:
-    '''Prepare the client, return a int in case of error,
+    '''Prepare the client, return an integer in case of error,
     otherwise the start_func and the stop_func.'''
     # set log level with exec arguments
     if len(func_args) > 0:
@@ -41,8 +41,8 @@ def internal_prepare(
                     if (uarg in logging.__dict__.keys()
                             and isinstance(logging.__dict__[uarg], int)):
                         log_level = logging.__dict__[uarg]
+
         _logger.setLevel(log_level)
-        print('log lebel', log_level, __name__)
 
     if not nsm_url:
         _logger.error('Could not register as NSM client.')

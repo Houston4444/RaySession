@@ -84,27 +84,20 @@ if True:
     # check arguments
     parser = ArgParser()
 
-    for module in CommandLineArgs.log.split(':'):
-        if not module:
-            continue
-        
-        if module in ('ray_daemon', 'daemon'):
-            _logger.setLevel(logging.INFO)
-            continue
-        
-        _mod_logger = logging.getLogger(module)
-        _mod_logger.setLevel(logging.INFO)
+    log_dict = {logging.INFO: CommandLineArgs.log,
+                logging.DEBUG: CommandLineArgs.dbg}
+    
+    for log_level, multimodule in log_dict.items():
+        for module in multimodule.split(':'):
+            if not module:
+                continue
 
-    for module in CommandLineArgs.dbg.split(':'):
-        if not module:
-            continue
-        
-        if module in ('ray_daemon', 'daemon'):
-            _logger.setLevel(logging.DEBUG)
-            continue
-        
-        _mod_logger = logging.getLogger(module)
-        _mod_logger.setLevel(logging.DEBUG)
+            if module in ('ray_daemon', 'daemon'):
+                _logger.setLevel(log_level)
+                continue
+            
+            _mod_logger = logging.getLogger(module)
+            _mod_logger.setLevel(log_level)
 
     # make session_root folder if needed
     if not CommandLineArgs.session_root.is_dir():
