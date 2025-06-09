@@ -196,6 +196,7 @@ class WaitFor(Enum):
     DUPLICATE_START = 5
     DUPLICATE_FINISH = 6
     SCRIPT_QUIT = 7
+    PATCHBAY_QUIT = 8
 
 
 class Template(Enum):

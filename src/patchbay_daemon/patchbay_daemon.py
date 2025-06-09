@@ -21,8 +21,8 @@ else:
     _logger = logging.getLogger()
     _log_handler = logging.StreamHandler()
     _log_handler.setFormatter(logging.Formatter(
-        f"%(levelname)s - %(name)s - %(message)s"))
-    _logger.addHandler(_log_handler)    
+        f"%(levelname)s:%(name)s - %(message)s"))
+    _logger.addHandler(_log_handler)
 
 
 # check ALSA LIB
