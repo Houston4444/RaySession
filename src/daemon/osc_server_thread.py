@@ -513,8 +513,6 @@ class OscServerThread(ClientCommunicating):
             self.terminal_command = shlex.join(
                 which_terminal(title='RAY_TERMINAL_TITLE'))
         
-        self.patchbay_dmn_port: Optional[int] = None
-        
         self.add_nice_methods(METHODS_DICT, self.generic_method)
         self.add_nice_methods(_validators_types, self.generic_method)
         self.add_method(None, None, self.noneMethod)
@@ -939,7 +937,6 @@ class OscServerThread(ClientCommunicating):
         export_pretty_names = bool(
             osp.args[0].lower() not in (
                 '0', 'false', 'no', 'off', 'true_name'))
-        self.patchbay_dmn_port = patchbay_dmn_mng.get_port()
 
         if export_pretty_names:
             self.jack_export_naming = Naming.INTERNAL_PRETTY
@@ -958,7 +955,8 @@ class OscServerThread(ClientCommunicating):
                   'export pretty_names changed')
         
         # start patchbay daemon in main thread if it is not started yet
-        return bool(self.patchbay_dmn_port is None)
+        return bool(
+            patchbay_dmn_mng.state() is not patchbay_dmn_mng.State.LAUNCHED)
 
     @validator(r.server.patchbay.SAVE_GROUP_POSITION,
                'i' + GroupPos.ARG_TYPES)
@@ -1149,10 +1147,15 @@ class OscServerThread(ClientCommunicating):
 
         self.send_gui(rg.favorites.REMOVED, *osp.args)
 
-    @validator(r.server.PATCHBAY_DAEMON_READY, 'i')
+    @validator(r.server.PATCHBAY_DAEMON_READY, '')
     def _srv_patchbay_daemon_ready(self, osp: OscPack):
-        args: tuple[int] = osp.args
-        self.patchbay_dmn_port = args[0]
+        patchbay_port = patchbay_dmn_mng.get_port()
+        if patchbay_port != osp.src_addr.port:
+            _logger.warning(
+                f'receive {r.server.PATCHBAY_DAEMON_READY} '
+                f'from an invalid source address,\n'
+                f'  {osp.src_addr.port} != {patchbay_port}.')
+            return
 
     # cannot be decorated, else it is defined in priority to all methods
     # defined after
@@ -1185,15 +1188,17 @@ class OscServerThread(ClientCommunicating):
             self.send(gui.addr, *args)
 
     def send_patchbay_dmn(self, *args):
-        if self.patchbay_dmn_port is not None:
-            self.send(self.patchbay_dmn_port, *args)
+        patchbay_port = patchbay_dmn_mng.get_port()
+        if patchbay_port is not None:
+            self.send(patchbay_port, *args)
 
     def mega_send_gui(self, mega_send: MegaSend):
         self.mega_send([gui.addr for gui in self.gui_list], mega_send)
         
     def mega_send_patchbay(self, mega_send: MegaSend):
-        if self.patchbay_dmn_port is not None:
-            self.mega_send(self.patchbay_dmn_port, mega_send)
+        patchbay_port = patchbay_dmn_mng.get_port()
+        if patchbay_port is not None:
+            self.mega_send(patchbay_port, mega_send)
 
     def set_server_status(self, server_status:ray.ServerStatus):
         self.server_status = server_status

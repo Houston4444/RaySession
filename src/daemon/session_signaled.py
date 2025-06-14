@@ -845,7 +845,7 @@ class SignaledSession(OperatingSession):
             r.patchbay.SAVE_PORT_PRETTY_NAME,
             port_name, pretty_name, save_in_jack)
 
-    @manage(r.server.PATCHBAY_DAEMON_READY, 'i')
+    @manage(r.server.PATCHBAY_DAEMON_READY, '')
     def _ray_server_patchbay_daemon_ready(self, osp: OscPack):
         self.canvas_saver.send_pretty_names_to_patchbay_daemon(osp)
         patchbay_dmn_mng.set_ready()
