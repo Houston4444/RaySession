@@ -325,4 +325,4 @@ class OscJackPatch(BunServer):
         self.pretty_names.clear()
 
         addr = Address(port)
-        self.send(addr, r.server.PATCHBAY_DAEMON_READY, self.port)
+        self.send(addr, r.server.PATCHBAY_DAEMON_READY)

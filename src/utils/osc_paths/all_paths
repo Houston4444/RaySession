@@ -175,7 +175,7 @@
 /ray/server/abort_parrallel_copy
 /ray/server/abort_snapshot
 /ray/server/ask_for_patchbay
-/ray/server/patchbay_daemon_ready i
+/ray/server/patchbay_daemon_ready
     The patchbay daemon sends this message to the daemon
     when it is ready to receive pretty-names
 /ray/server/change_root

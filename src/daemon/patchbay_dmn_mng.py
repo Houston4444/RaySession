@@ -1,5 +1,6 @@
 
 # Standard lib imports
+from enum import Enum
 from typing import TYPE_CHECKING, Optional
 from pathlib import Path
 import os
@@ -40,6 +41,15 @@ class _MainObj:
     '''URLs of GUI asking for patchbay when patchbay daemon
     is started but not ready for OSC communication'''
 
+    ready = False
+    port = 0
+    
+    
+class State(Enum):
+    STOPPED = 0
+    LAUNCHED = 1
+    READY = 2
+
 
 def _send(*args, **kwargs):
     if _MainObj.daemon_server is None:
@@ -57,6 +67,9 @@ def _process_stdout():
 
 def _process_finished():
     _logger.info('Patchbay daemon process finished')
+    _MainObj.ready = False
+    _MainObj.port = 0
+
     if _MainObj.daemon_server is not None:
         _MainObj.daemon_server.patchbay_process_finished()
 
@@ -64,6 +77,9 @@ def set_daemon_server(daemon_server: int):
     _MainObj.daemon_server = daemon_server
 
 def get_port() -> Optional[int]:
+    if _MainObj.port:
+        return _MainObj.port
+
     patchbay_file = (Path('/tmp/RaySession/patchbay_daemons')
                      / str(_MainObj.daemon_server.port))
 
@@ -103,31 +119,20 @@ def get_port() -> Optional[int]:
                         'is not a valid osc UDP port')
 
                 if good_port:
+                    _MainObj.port = patchbay_addr.port
                     return patchbay_addr.port
                 break
 
-def start(src_url=''):    
-    _logger.debug(f'patchbay_dmn_mng.start(src_url={src_url})')
+def start(gui_url=''):    
+    _logger.debug(f'patchbay_dmn_mng.start(gui_url={gui_url})')
 
-    patchbay_running = False
-
-    if _MainObj.is_internal:
-        if _MainObj.internal_client is not None:
-            if _MainObj.internal_client.running:
-                patchbay_running = True
-    else:
-        if _MainObj.process is not None:
-            if _MainObj.process.state() != QProcess.ProcessState.NotRunning:
-                patchbay_running = True
-
-    patchbay_port = get_port()
-
-    if patchbay_running:
-        if src_url:    
+    if is_running():
+        if gui_url:    
+            patchbay_port = get_port()
             if patchbay_port is None:
-                _MainObj.waiting_guis.add(src_url)
+                _MainObj.waiting_guis.add(gui_url)
             else:
-                _send(patchbay_port, r.patchbay.ADD_GUI, src_url)
+                _send(patchbay_port, r.patchbay.ADD_GUI, gui_url)
         return
 
     pretty_names_active = True
@@ -138,16 +143,22 @@ def start(src_url=''):
     if not naming & Naming.INTERNAL_PRETTY:
         pretty_names_active = False
 
+    _MainObj.ready = False
+    _MainObj.port = 0
+
     if _MainObj.is_internal:
         try:
             _MainObj.internal_client = InternalClient(
                 'ray-patchbay_daemon',
                 (str(_MainObj.daemon_server.port),
-                    src_url,
+                    gui_url,
                     str(pretty_names_active)),
                 ''
             ) 
             _MainObj.internal_client.start()
+            
+            _logger.info('Patchbay daemon started internal')
+
         except:
             _logger.warning('Failed to launch ray-patch_dmn as internal')
 
@@ -162,11 +173,13 @@ def start(src_url=''):
             _MainObj.process.setProgram('ray-patch_dmn')
             _MainObj.process.setArguments(
                 [str(_MainObj.daemon_server.port),
-                    src_url,
+                    gui_url,
                     str(pretty_names_active),
                     '']
             )
             _MainObj.process.start()
+            
+            _logger.info('ray-patch_dmn process started')
 
         except:
             _logger.warning('Failed to launch ray-patch_dmn')
@@ -182,6 +195,7 @@ def set_ready():
         _send(port, r.patchbay.ADD_GUI, url)
     
     _MainObj.waiting_guis.clear()
+    _MainObj.ready = True
 
 def is_running() -> bool:
     if _MainObj.is_internal:
@@ -192,6 +206,13 @@ def is_running() -> bool:
     if _MainObj.process is None:
         return False
     return _MainObj.process.state() != QProcess.ProcessState.NotRunning
+
+def state() -> State:
+    if is_running():
+        if _MainObj.ready:
+            return State.READY
+        return State.LAUNCHED
+    return State.STOPPED
 
 def daemon_exit():
     if _MainObj.process is not None:
