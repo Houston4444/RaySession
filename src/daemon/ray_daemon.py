@@ -42,6 +42,7 @@ from daemon_tools import (
 from osc_server_thread import OscServerThread
 import multi_daemon_file
 from session_signaled import SignaledSession
+import patchbay_dmn_mng
 
 
 _terminate = False
@@ -135,6 +136,7 @@ if True:
                 % CommandLineArgs.osc_port)
             sys.exit()
 
+    patchbay_dmn_mng.set_daemon_server(server)
     server.start()
 
     # print server url
@@ -161,7 +163,7 @@ if True:
         server.announce_controller(CommandLineArgs.control_url)
 
     if server.jack_export_naming & Naming.INTERNAL_PRETTY:
-        session.start_patchbay_daemon()
+        patchbay_dmn_mng.start()
 
     # create or update multi_daemon_file in /tmp
     multi_daemon_file.init(session, server)    
@@ -210,6 +212,7 @@ if True:
 
     # save JSON config group positions
     session.canvas_saver.save_config_file()
+    patchbay_dmn_mng.daemon_exit()
     
     # save sessions infos in cache
     session.save_folder_sizes_cache_file()
