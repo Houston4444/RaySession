@@ -30,6 +30,7 @@ from daemon_tools import (
     TemplateRoots, RS, Terminal, highlight_text)
 import ardour_templates
 from patch_rewriter import rewrite_jack_patch_files
+import patchbay_dmn_mng
 from session import Session
 
 
@@ -115,11 +116,7 @@ class OperatingSession(Session):
             return
 
         if wait_for is ray.WaitFor.PATCHBAY_QUIT:
-            if not isinstance(self._patchbay_internal, QProcess):
-                follow()
-                return
-            if (self._patchbay_internal.state()
-                    == QProcess.ProcessState.NotRunning):
+            if not patchbay_dmn_mng.is_running():
                 follow()
                 return
 
@@ -338,6 +335,12 @@ class OperatingSession(Session):
                     if self.desktops_memory.has_window(client.pid):
                         client.ray_hack_waiting_win = False
                         client.ray_hack_ready()
+
+    def patchbay_process_finished(self):
+        if self.wait_for is ray.WaitFor.PATCHBAY_QUIT:
+            self.timer.setSingleShot(True)
+            self.timer.stop()
+            self.timer.start(0)
 
     def _send_reply(self, *args: str):
         if self.steps_osp is None:

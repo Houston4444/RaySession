@@ -28,7 +28,7 @@ from signaler import Signaler
 from daemon_tools import Terminal, RS, is_pid_child_of, highlight_text
 from session_operating import OperatingSession
 from patch_rewriter import rewrite_jack_patch_files
-from internal_client import InternalClient
+import patchbay_dmn_mng
 from session_dummy import DummySession
 
 
@@ -353,7 +353,7 @@ class SignaledSession(OperatingSession):
     @manage(r.server.ASK_FOR_PATCHBAY, 's')
     def _ray_server_ask_for_patchbay(self, osp: OscPack):        
         # if we are here, it means that we need a patchbay daemon to run
-        self.start_patchbay_daemon(osp.src_addr.url, check_exists=False)
+        patchbay_dmn_mng.start(osp.src_addr.url)
 
     @manage(r.server.ABORT_COPY, '')
     def _ray_server_abort_copy(self, osp: OscPack):
@@ -800,7 +800,7 @@ class SignaledSession(OperatingSession):
 
     @manage(r.server.EXPORT_PRETTY_NAMES, 's')
     def _ray_server_export_pretty_names(self, osp: OscPack):
-        self.start_patchbay_daemon(check_exists=False)
+        patchbay_dmn_mng.start()
 
     @manage(r.server.patchbay.SAVE_GROUP_POSITION,
             'i' + GroupPos.ARG_TYPES)
@@ -848,10 +848,8 @@ class SignaledSession(OperatingSession):
     @manage(r.server.PATCHBAY_DAEMON_READY, 'i')
     def _ray_server_patchbay_daemon_ready(self, osp: OscPack):
         self.canvas_saver.send_pretty_names_to_patchbay_daemon(osp)
+        patchbay_dmn_mng.set_ready()
 
-        for url in self._patchbay_waiting_gui:
-            self.send(osp.src_addr, r.patchbay.ADD_GUI, url)
-        self._patchbay_waiting_gui.clear()
 
     @session_operation((r.session.SAVE, nsm.server.SAVE), '')
     def _ray_session_save(self, osp: OscPack):        
