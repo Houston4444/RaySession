@@ -425,7 +425,11 @@ class MainObject:
             del self.alsa_mng
 
         self.remove_existence_file()
-        # del self.osc_server
+
+        # especially needed in case the patchbay daemon is internal
+        # else the OSC port will remain busy.
+        del self.osc_server
+        del self
     
     def start_jack_client(self):
         self._waiting_jack_client_open = True
@@ -919,6 +923,7 @@ def main_process(daemon_port: str, gui_tcp_url: str,
     # main_object.exit()
 
 def start():
+    '''launch the process when it is a process (not internal).'''
     set_proc_name('ray-patch_dmn')
     
     # prevent deprecation warnings python messages

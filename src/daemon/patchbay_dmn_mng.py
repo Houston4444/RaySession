@@ -73,7 +73,7 @@ def _process_finished():
     if _MainObj.daemon_server is not None:
         _MainObj.daemon_server.patchbay_process_finished()
 
-def set_daemon_server(daemon_server: int):
+def set_daemon_server(daemon_server: 'OscServerThread'):
     _MainObj.daemon_server = daemon_server
 
 def get_port() -> Optional[int]:
