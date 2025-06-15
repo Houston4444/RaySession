@@ -11,6 +11,7 @@ class Signaler(QObject):
     will be executed in the main thread.'''
     
     dummy_load_and_template = Signal(str, str, str)
+    patchbay_finished = Signal()
 
     @staticmethod
     def instance():

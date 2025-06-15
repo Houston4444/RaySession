@@ -52,6 +52,10 @@ class InternalClient:
         
         # run
         self._start_func()
+        
+        # finished
+        self._start_func = None
+        self._stop_func = None
     
     def start(self):
         if self.running:

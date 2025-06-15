@@ -425,11 +425,6 @@ class MainObject:
             del self.alsa_mng
 
         self.remove_existence_file()
-
-        # especially needed in case the patchbay daemon is internal
-        # else the OSC port will remain busy.
-        del self.osc_server
-        del self
     
     def start_jack_client(self):
         self._waiting_jack_client_open = True
