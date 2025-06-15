@@ -153,6 +153,7 @@ class SignaledSession(OperatingSession):
 
         signaler.osc_recv.connect(self.osc_receive)
         signaler.dummy_load_and_template.connect(self.dummy_load_and_template)
+        signaler.patchbay_finished.connect(self.patchbay_process_finished)
 
         # fill recent sessions
         recent_sessions: dict[str, list[str]] = RS.settings.value(

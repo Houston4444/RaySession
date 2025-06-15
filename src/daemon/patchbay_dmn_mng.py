@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Optional
 from pathlib import Path
 import os
 import logging
+import threading
+import time
 
 # Third party imports
 from qtpy.QtCore import QProcess
@@ -30,12 +32,13 @@ _logger = logging.getLogger(__name__)
 class _MainObj:
     daemon_server: 'Optional[OscServerThread]' = None
     
-    is_internal = False
+    is_internal = True
     '''True if the patchbay daemon is a thread of the daemon,
     False if it is an independant process'''
     
     internal_client: Optional[InternalClient] = None
     process: Optional[QProcess] = None
+    check_thread: Optional[threading.Thread] = None
     
     waiting_guis = set[str]()
     '''URLs of GUI asking for patchbay when patchbay daemon
@@ -50,6 +53,13 @@ class State(Enum):
     LAUNCHED = 1
     READY = 2
 
+def _check_thread_target():
+    while True:
+        time.sleep(0.020)
+        if not is_running():
+            break
+        
+    _process_finished()
 
 def _send(*args, **kwargs):
     if _MainObj.daemon_server is None:
@@ -66,7 +76,11 @@ def _process_stdout():
         _MainObj.process.readAllStandardOutput().data())
 
 def _process_finished():
-    _logger.info('Patchbay daemon process finished')
+    if _MainObj.is_internal:
+        _logger.info('Patchbay daemon internal thread finished')
+    else:
+        _logger.info('Patchbay daemon process finished')
+
     _MainObj.ready = False
     _MainObj.port = 0
 
@@ -145,6 +159,9 @@ def start(gui_url=''):
 
     _MainObj.ready = False
     _MainObj.port = 0
+
+    _MainObj.check_thread = threading.Thread(target=_check_thread_target)
+    _MainObj.check_thread.start()
 
     if _MainObj.is_internal:
         try:

@@ -1350,4 +1350,4 @@ class OscServerThread(ClientCommunicating):
 
     def patchbay_process_finished(self):
         'say to main session the patchbay process is finished.'
-        self.session.patchbay_process_finished()
+        signaler.patchbay_finished.emit()
