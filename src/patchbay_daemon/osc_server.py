@@ -19,9 +19,8 @@ _manage_types = dict[str, str]()
 
 
 def manage(path: str, multypes: OscMulTypes):
-    '''With this decorator, the OSC path method will continue
-    its work in the main thread (in `session_signaled` module),
-    except if the function returns `False`.
+    '''Decorator working like the @make_method decorator,
+    but send methods with OscPack as argument.
     
     `path`: OSC str path
 
