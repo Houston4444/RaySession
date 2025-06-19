@@ -4,6 +4,7 @@ from types import ModuleType
 from typing import Optional, Callable
 import logging
 
+
 _logger = logging.getLogger(__name__)
 
 
@@ -48,6 +49,10 @@ class InternalClient:
             funcs: tuple[Callable, Callable]
             self._start_func, self._stop_func = funcs
         else:
+            _logger.warning(
+                f'InternalClient {self.name}: '
+                f'internal_prepare did return {len(funcs)} args. '
+                f'2 are needed, the start_func and the stop_func')
             return
         
         # run
@@ -89,3 +94,4 @@ class InternalClient:
         if self._thread is None:
             return False
         return self._thread.is_alive()
+

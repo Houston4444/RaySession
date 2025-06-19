@@ -113,18 +113,25 @@ def verified_address_from_port(port: int) -> Union[Address, str]:
 def are_on_same_machine(
         url1: str | Address, url2: str | Address) -> bool:
     if isinstance(url1, Address):
-        url1 = url1.url
+        address1 = url1
+        url1 = address1.url
+    else:
+        try:
+            address1 = Address(url1)
+        except BaseException:
+            return False
+
     if isinstance(url2, Address):
-        url2 = url2.url
-    
+        address2 = url2
+        url2 = address2.url
+    else:
+        try:
+            address2 = Address(url2)
+        except BaseException:
+            return False
+
     if url1 == url2:
         return True
-
-    try:
-        address1 = Address(url1)
-        address2 = Address(url2)
-    except BaseException:
-        return False
 
     if address1.hostname == address2.hostname:
         return True

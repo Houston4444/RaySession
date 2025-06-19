@@ -1,67 +1,25 @@
+from inspect import signature, _ParameterKind
 import logging
 from typing import Callable, Optional
 
 from osclib import OscArg
 
-from .bases import OscTypes, OscMulTypes
+from .bases import OscTypes, OscMulTypes, get_types_with_args
 
 _logger = logging.getLogger(__name__)
-_AVAILABLE_TYPES = 'ihfdcsSmtTFNIb'
 
 
-def types_validator(input_types: OscTypes, multypes: OscMulTypes) -> bool:
-    '''return True if `input_types` is compatible with `multypes`.
-    OscTypes and OscMulTypes are `str` aliases.'''
-    avl_typess = set(multypes.split('|'))
-    if input_types in avl_typess:
-        return True
-    if '.*' in avl_typess or '*' in avl_typess:
-        return True
-    
-    for avl_types in avl_typess:
-        if not ('*' in avl_types or '.' in avl_types):
-            continue
-
-        wildcard = ''
-        mt = ''
-
-        for i in range(len(avl_types)):
-            mt = avl_types[i]
-            if i + 1 < len(avl_types) and avl_types[i+1] == '*':
-                if mt in ('', '.'):
-                    return True
-                wildcard = mt
-                
-            else:
-                wildcard = ''
-
-            if wildcard:
-                j = i
-                compat = True
-                while j < len(input_types):
-                    if input_types[j] != wildcard:
-                        compat = False
-                        break
-                    j += 1
-                
-                if compat:
-                    return True
-                else:
-                    break
-            
-            if i >= len(input_types):
-                break
-            
-            if mt == '.':
-                continue
-            
-            if input_types[i] != mt:
-                break
-        else:
-            # input_types is compatible with this avl_types
-            return True
-    
-    return False
+def number_of_args(func: Callable) -> int:
+    sig = signature(func)
+    num = 0
+    for param in sig.parameters.values():
+        match param.kind:
+            case _ParameterKind.VAR_POSITIONAL:
+                return 5
+            case (_ParameterKind.POSITIONAL_ONLY
+                    | _ParameterKind.POSITIONAL_OR_KEYWORD):
+                num += 1
+    return num
 
 
 class _SemDict(dict[int, int]):
@@ -132,41 +90,13 @@ class MethodsAdder:
         else:
             type_funcs.append((typespec, func))
 
-    def _get_types_with_args(self, args: list) -> OscTypes:
-        'for funcs with "None" types in add_method, create the types string'
-        types = ''
-        for arg in args:
-            if (isinstance(arg, tuple) 
-                    and len(arg) == 2
-                    and arg[0] in _AVAILABLE_TYPES):
-                types += arg[0]
-            elif isinstance(arg, str):
-                types += 's'
-            elif isinstance(arg, float):
-                types += 'f'
-            elif arg is True:
-                types += 'T'
-            elif arg is False:
-                types += 'F'
-            elif isinstance(arg, int):
-                if - 0x80000000 <= arg < 0x80000000:
-                    types += 'i'
-                else:
-                    types += 'h'
-            elif arg is None:
-                types += 'N'
-            else:
-                types += 'b'
-        
-        return types
-
     def _get_func_in_list(
             self, args: list[OscArg],
             type_funcs: list[tuple[OscTypes, Callable[[], None]]]) \
                 -> Optional[tuple[OscTypes, Callable[[], None]]]:
         for types, func in type_funcs:
             if types is None:
-                return self._get_types_with_args(args), func
+                return get_types_with_args(args), func
             
             if len(types) != len(args):
                 continue
