@@ -69,7 +69,7 @@ def internal_prepare(
     if not engine.init():
         return 2
 
-    nsm_server = NsmServer(daemon_address, total_fake=True)
+    nsm_server = NsmServer(daemon_address, total_fake=is_internal)
     patcher = Patcher(engine, nsm_server, _logger)
     return patcher.run_loop, patcher.stop
 

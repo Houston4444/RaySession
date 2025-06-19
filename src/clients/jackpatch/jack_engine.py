@@ -110,5 +110,7 @@ class JackEngine(ProtoEngine):
                 f"Failed to disconnect '{port_out}' from '{port_in}'\n{str(e)}")
 
     def quit(self):
+        _logger.info('closing JACK client')
         self._client.deactivate()
         self._client.close()
+        _logger.info('JACK client closed')
