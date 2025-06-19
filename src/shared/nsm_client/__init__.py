@@ -4,9 +4,32 @@ from enum import IntEnum
 import os
 from typing import Callable, Optional
 
-from osclib import Server, make_method, Address
+from osclib import BunServer, Address, OscMulTypes, OscPack
 import osc_paths
 import osc_paths.nsm as nsm
+
+
+_manage_wrappers = dict[str, Callable[[OscPack], bool]]()
+_manage_types = dict[str, str]()
+
+
+def manage(path: str, multypes: OscMulTypes):
+    '''Decorator working like the @make_method decorator,
+    but send methods with OscPack as argument.
+    
+    `path`: OSC str path
+
+    `multypes`: str containing all accepted arg types
+    '''
+    def decorated(func: Callable):
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+    
+        _manage_wrappers[path] = wrapper
+        _manage_types[path] = multypes
+
+        return wrapper
+    return decorated
 
 
 class Err(IntEnum):
@@ -36,71 +59,81 @@ class NsmCallback(IntEnum):
     MONITOR_CLIENT_UPDATED = 8
 
 
-class NsmServer(Server):
-    def __init__(self, daemon_address: Address):
-        Server.__init__(self)
+class NsmServer(BunServer):
+    def __init__(self, daemon_address: Address, total_fake=False):
+        super().__init__(total_fake=total_fake)
+        self.add_nice_methods(_manage_types, self._generic_method)
+
         self._daemon_address = daemon_address
         self._server_capabilities = ""
         
         self._callbacks = dict[NsmCallback, Callable]()
 
-    @make_method(osc_paths.REPLY, None)
-    def _reply(self, path, args):
-        if args:
-            reply_path = args[0]
+    def _generic_method(self, osp: OscPack):
+        '''Except the unknown messages, all messages received
+        go through here.'''
+        
+        # run the method decorated with @manage
+        if osp.path in _manage_wrappers:
+            _manage_wrappers[osp.path](self, osp)
+
+    @manage(osc_paths.REPLY, '.*')
+    def _reply(self, osp: OscPack):
+        if osp.args:
+            reply_path = osp.args[0]
         else:
             return
 
         if reply_path == nsm.server.ANNOUNCE:
-            self._server_capabilities = args[3]
+            self._server_capabilities = osp.args[3]
 
-    @make_method(nsm.client.OPEN, 'sss')
-    def _nsm_client_open(self, path, args):
-        ret = self._exec_callback(NsmCallback.OPEN, *args)
+    @manage(nsm.client.OPEN, 'sss')
+    def _nsm_client_open(self, osp: OscPack):
+        ret = self._exec_callback(NsmCallback.OPEN, *osp.args)
         if ret is None:
             return
         
         err, err_text = ret
         if err is Err.OK:
-            self._send_to_daemon(osc_paths.REPLY, path, 'Ready')
+            self._send_to_daemon(osc_paths.REPLY, osp.path, 'Ready')
         else:
-            self._send_to_daemon(osc_paths.ERROR, path, err, err_text)
+            self._send_to_daemon(osc_paths.ERROR, osp.path, err, err_text)
 
-    @make_method(nsm.client.SAVE, '')
-    def _nsm_client_save(self, path, args):
+    @manage(nsm.client.SAVE, '')
+    def _nsm_client_save(self, osp: OscPack):
         ret = self._exec_callback(NsmCallback.SAVE)
         if ret is None:
             return
         
         err, err_text = ret
         if err is Err.OK:
-            self._send_to_daemon(osc_paths.REPLY, path, 'Saved')
+            self._send_to_daemon(osc_paths.REPLY, osp.path, 'Saved')
         else:
-            self._send_to_daemon(osc_paths.ERROR, path, err_text)
+            self._send_to_daemon(osc_paths.ERROR, osp.path, err_text)
 
-    @make_method(nsm.client.SESSION_IS_LOADED, '')
-    def _nsm_client_session_is_loaded(self, path, args):
+    @manage(nsm.client.SESSION_IS_LOADED, '')
+    def _nsm_client_session_is_loaded(self, osp: OscPack):
         self._exec_callback(NsmCallback.SESSION_IS_LOADED)
 
-    @make_method(nsm.client.SHOW_OPTIONAL_GUI, '')
-    def _nsm_client_show_optional_gui(self, path, args):
+    @manage(nsm.client.SHOW_OPTIONAL_GUI, '')
+    def _nsm_client_show_optional_gui(self, osp: OscPack):
         self._exec_callback(NsmCallback.SHOW_OPTIONAL_GUI)
 
-    @make_method(nsm.client.HIDE_OPTIONAL_GUI, '')
-    def _nsm_client_hide_optional_gui(self, path, args):
+    @manage(nsm.client.HIDE_OPTIONAL_GUI, '')
+    def _nsm_client_hide_optional_gui(self, osp: OscPack):
         self._exec_callback(NsmCallback.HIDE_OPTIONAL_GUI)
     
-    @make_method(nsm.client.monitor.CLIENT_STATE, 'ssi')
-    def _nsm_client_monitor_client_state(self, path, args):
-        self._exec_callback(NsmCallback.MONITOR_CLIENT_STATE, *args)
+    @manage(nsm.client.monitor.CLIENT_STATE, 'ssi')
+    def _nsm_client_monitor_client_state(self, osp: OscPack):
+        self._exec_callback(NsmCallback.MONITOR_CLIENT_STATE, *osp.args)
     
-    @make_method(nsm.client.monitor.CLIENT_EVENT, 'ss')
-    def _nsm_client_monitor_client_event(self, path, args):
-        self._exec_callback(NsmCallback.MONITOR_CLIENT_EVENT, *args)
+    @manage(nsm.client.monitor.CLIENT_EVENT, 'ss')
+    def _nsm_client_monitor_client_event(self, osp: OscPack):
+        self._exec_callback(NsmCallback.MONITOR_CLIENT_EVENT, *osp.args)
 
-    @make_method(nsm.client.monitor.CLIENT_UPDATED, 'ssi')
-    def _nsm_client_monitor_client_properties(self, path, args):
-        self._exec_callback(NsmCallback.MONITOR_CLIENT_UPDATED, *args)
+    @manage(nsm.client.monitor.CLIENT_UPDATED, 'ssi')
+    def _nsm_client_monitor_client_properties(self, osp: OscPack):
+        self._exec_callback(NsmCallback.MONITOR_CLIENT_UPDATED, *osp.args)
     
     def set_callback(self, on_event: NsmCallback, func: Callable):
         self._callbacks[on_event] = func

@@ -25,24 +25,60 @@ this way, no risk that any OSC port can receive it.'''
 _process_port_queues = dict[int, Queue[OscPack]]()
 'Contains the port numbers of all BunServer instantiated in this process'
 
+_last_fake_num = 0x1000000
 
-class BunServer(Server):
+
+class BunServer:
     '''Class inheriting liblo.Server. Provides a server
     with the mega_send feature, which allows to send massive
     bundle of messages, in several sends if needed.'''
-    def __init__(self, *args, **kwargs):
+    def __init__(self, port: Union[int, str] =1, proto: int =UDP,
+                 reg_methods=True, total_fake=False):
         self._methods_adder = MethodsAdder()
         self._director_methods = dict[
             str, tuple[OscMulTypes, Callable[[OscPack], None]]]()
 
-        super().__init__(*args, **kwargs)
+        self._dummy_port = 0
 
-        self.add_method('/_bundle_head', 'iii', self.__bundle_head)
-        self.add_method('/_bundle_head_reply', 'iii', self.__bundle_head_reply)
-        self.add_method('/_local_mega_send', 's', self.__local_mega_send)
+        if not total_fake:
+            if port == 1:
+                self.sv = Server()
+            else:
+                self.sv = Server(port=port, proto=proto,
+                                 reg_methods=reg_methods)
+
+            self.add_method('/_bundle_head', 'iii',
+                            self.__bundle_head)
+            self.add_method('/_bundle_head_reply', 'iii',
+                            self.__bundle_head_reply)
+            self.add_method('/_local_mega_send', 's',
+                            self.__local_mega_send)
+        else:
+            global _last_fake_num
+            self.sv = None
+            _last_fake_num += 1
+            self._dummy_port = _last_fake_num
         
         self._sem_dict = _SemDict()
         _process_port_queues[self.port] = Queue()
+    
+    @property
+    def url(self) -> str:
+        if self.sv is None:
+            return f'osc.udp://localhost:{self.port}/'
+        return self.sv.url
+    
+    @property
+    def port(self) -> int | str:
+        if self.sv is None:
+            return self._dummy_port
+        return self.sv.port
+    
+    @property
+    def protocol(self) -> int:
+        if self.sv is None:
+            return UDP
+        return self.sv.protocol
     
     def _exec_func(self, func: Callable, osp: OscPack):
         'Used when OSC communication is fake, to execute the desired func'
@@ -64,7 +100,10 @@ class BunServer(Server):
             osp.types = types
             self._exec_func(func, osp)
         
-        return super().recv(timeout)
+        if self.sv is None:
+            return True
+        
+        return self.sv.recv(timeout)
     
     def send(self, *args, **kwargs):
         dest = args[0]
@@ -89,13 +128,17 @@ class BunServer(Server):
                         Address(self.port)))
             return
 
-        super().send(*args, **kwargs)
+        if self.sv is None:
+            return
+        self.sv.send(*args, **kwargs)
     
     def add_method(
             self, path: Optional[str], typespec: Optional[OscTypes],
             func: Callable[[], None], user_data=None):
         self._methods_adder.add(path, typespec, func, user_data)
-        return super().add_method(path, typespec, func, user_data=user_data)
+        if self.sv is None:
+            return
+        self.sv.add_method(path, typespec, func, user_data=user_data)
     
     def __bundle_head(
             self, path: str, args: list[int],
