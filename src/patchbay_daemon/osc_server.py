@@ -1,7 +1,8 @@
 
 import logging
+from queue import Queue
 from typing import TYPE_CHECKING, Callable
-    
+
 from osclib import (BunServer, Address, MegaSend,
                     are_on_same_machine, are_same_osc_port,
                     OscMulTypes, OscPack)
@@ -59,16 +60,6 @@ class OscJackPatch(BunServer):
         # run the method decorated with @manage
         if osp.path in _manage_wrappers:
             _manage_wrappers[osp.path](self, osp)
-
-    def set_tmp_gui_url(self, gui_url: str):
-        self._tmp_gui_url = gui_url
-    
-    def can_have_gui(self) -> bool:
-        if self._tmp_gui_url:
-            return True
-        if self.gui_list:
-            return True
-        return False
     
     @manage(r.patchbay.ADD_GUI, 's')
     def _ray_patchbay_add_gui(self, osp: OscPack):
@@ -169,6 +160,16 @@ class OscJackPatch(BunServer):
     @manage(r.patchbay.QUIT, '')
     def _ray_patchbay_quit(self, osp: OscPack):
         self._terminate = True
+
+    def set_tmp_gui_url(self, gui_url: str):
+        self._tmp_gui_url = gui_url
+
+    def can_have_gui(self) -> bool:
+        if self._tmp_gui_url:
+            return True
+        if self.gui_list:
+            return True
+        return False
 
     def send_gui(self, *args):
         rm_gui = list[Address]()

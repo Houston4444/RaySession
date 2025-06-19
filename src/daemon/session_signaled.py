@@ -851,7 +851,6 @@ class SignaledSession(OperatingSession):
         self.canvas_saver.send_pretty_names_to_patchbay_daemon(osp)
         patchbay_dmn_mng.set_ready()
 
-
     @session_operation((r.session.SAVE, nsm.server.SAVE), '')
     def _ray_session_save(self, osp: OscPack):        
         self.steps_order = [self.save, self.snapshot, self.save_done]

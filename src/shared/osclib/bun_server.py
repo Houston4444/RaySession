@@ -1,7 +1,7 @@
-from inspect import signature, _ParameterKind
 import json
 import logging
 import os
+from queue import Queue
 import random
 import tempfile
 import time
@@ -11,12 +11,19 @@ from typing import Callable, Union, Optional
 from osclib import OscTypes
 
 from .bases import (
-    OscArg, OscMulTypes, OscPack, Server, Address, Message, Bundle, MegaSend)
+    OscArg, OscMulTypes, OscPack, Server, Address, Message, Bundle, MegaSend,
+    get_types_with_args, types_validator, UDP)
 from .funcs import are_on_same_machine
-from .bun_tools import MethodsAdder, _SemDict, types_validator
+from .bun_tools import number_of_args, MethodsAdder, _SemDict
 
 _logger = logging.getLogger(__name__)
+
 _RESERVED_PORT = 47
+'''Port reserved in OSC, used to try to send message to,
+this way, no risk that any OSC port can receive it.'''
+
+_process_port_queues = dict[int, Queue[OscPack]]()
+'Contains the port numbers of all BunServer instantiated in this process'
 
 
 class BunServer(Server):
@@ -27,6 +34,7 @@ class BunServer(Server):
         self._methods_adder = MethodsAdder()
         self._director_methods = dict[
             str, tuple[OscMulTypes, Callable[[OscPack], None]]]()
+
         super().__init__(*args, **kwargs)
 
         self.add_method('/_bundle_head', 'iii', self.__bundle_head)
@@ -34,6 +42,54 @@ class BunServer(Server):
         self.add_method('/_local_mega_send', 's', self.__local_mega_send)
         
         self._sem_dict = _SemDict()
+        _process_port_queues[self.port] = Queue()
+    
+    def _exec_func(self, func: Callable, osp: OscPack):
+        'Used when OSC communication is fake, to execute the desired func'
+        match number_of_args(func):
+            case 1: func(osp.path)
+            case 2: func(osp.path, osp.args)
+            case 3: func(osp.path, osp.args, osp.types)
+            case 4: func(osp.path, osp.args, osp.types, osp.src_addr)
+            case 5: func(osp.path, osp.args, osp.types, osp.src_addr, None)
+    
+    def recv(self, timeout: Optional[int] = None) -> bool:
+        while _process_port_queues[self.port].qsize():
+            osp = _process_port_queues[self.port].get()
+            types_func = self._methods_adder.get_func(osp.path, osp.args)
+            if types_func is None:
+                continue
+            
+            types, func = types_func
+            osp.types = types
+            self._exec_func(func, osp)
+        
+        return super().recv(timeout)
+    
+    def send(self, *args, **kwargs):
+        dest = args[0]
+        dest_port = 0
+
+        if isinstance(dest, Address):
+            if (dest.port in _process_port_queues
+                    and are_on_same_machine(self.url, dest)
+                    and dest.protocol == UDP):
+                dest_port = dest.port
+        elif isinstance(dest, int):
+            if dest_port in _process_port_queues:
+                dest_port = dest
+        
+        if dest_port:
+            # communication between two BunServer in the same process
+            # avoid OSC communication, directly enqueue the message
+            # the receiver will take it at recv.
+            dest, path, *other_args = args
+            _process_port_queues[dest_port].put(
+                OscPack(path, other_args, get_types_with_args(other_args),
+                        Address(self.port)))
+            return
+
+        super().send(*args, **kwargs)
     
     def add_method(
             self, path: Optional[str], typespec: Optional[OscTypes],
@@ -54,18 +110,6 @@ class BunServer(Server):
     def __local_mega_send(
             self, path: str, args: list[str],
             types: OscTypes, src_addr: Address):
-        def number_of_args(func: Callable) -> int:
-            sig = signature(func)
-            num = 0
-            for param in sig.parameters.values():
-                match param.kind:
-                    case _ParameterKind.VAR_POSITIONAL:
-                        return 5
-                    case (_ParameterKind.POSITIONAL_ONLY
-                          | _ParameterKind.POSITIONAL_OR_KEYWORD):
-                        num += 1
-            return num
-
         ms_path = args[0]
         try:
             with open(ms_path, 'r') as f:
@@ -81,7 +125,7 @@ class BunServer(Server):
             return
         
         try:
-            os.path.remove(ms_path)
+            os.remove(ms_path)
         except:
             _logger.info(
                 f'__local_mega_send: Failed to remove tmp file {ms_path}')
@@ -115,13 +159,8 @@ class BunServer(Server):
                 else:
                     nargs.append(arg)
             
-            # execute function
-            match number_of_args(func):
-                case 1: func(path)
-                case 2: func(path, nargs)
-                case 3: func(path, nargs, types)
-                case 4: func(path, nargs, types, src_addr)
-                case 5: func(path, nargs, types, src_addr, None)
+            osp = OscPack(path, nargs, types, src_addr)
+            self._exec_func(func, osp)
     
     def __director(self, path: str, args: list[OscArg],
                    types: OscTypes, src_addr: Address):
@@ -133,13 +172,6 @@ class BunServer(Server):
             if any_rejected_m is not None:
                 wildcard, rejected_func = any_rejected_m
                 rejected_func(OscPack(path, args, types, src_addr))
-            # strange, this path/OscTypes was not added by
-            # `add_nice_method`, try to execute the defined func
-            
-            # types_func_def = self._methods_adder.get_func(path, args)
-            # if types_func_def is not None:
-            #     types_, func = types_func_def
-            #     func(path, args, types_, src_addr)
             return
 
         multypes, func = multypes_func
@@ -148,13 +180,6 @@ class BunServer(Server):
             if any_rejected_m is not None:
                 wildcard, rejected_func = any_rejected_m
                 rejected_func(OscPack(path, args, types, src_addr))
-            # types_func_def = self._methods_adder.get_func(path, args)
-            # if types_func_def is not None:
-            #     # print('chichi', path, types, full_types)
-            #     types_, func = types_func_def
-            #     if func.__name__ is not '__director':
-            #         print('huhu', func, func.__name__)
-            #         func(path, args, types_, src_addr)
             return
 
         func(OscPack(path, args, types, src_addr))
@@ -207,6 +232,29 @@ class BunServer(Server):
         (or BunServerThread).
         
         !!! the recepter MUST be a Bunserver or a BunServerThread !!!'''
+
+        # check first if we are sending something to the same process
+        dest = url
+        dest_port = 0
+
+        if isinstance(dest, Address):
+            if (dest.port in _process_port_queues
+                    and are_on_same_machine(self.url, dest)
+                    and dest.protocol == UDP):
+                dest_port = dest.port
+        elif isinstance(dest, int):
+            if dest_port in _process_port_queues:
+                dest_port = dest
+
+        if dest_port:
+            # we are sending a MegaSend to another instance 
+            # in the same process. No OSC communication is needed            
+            for path, *args in mega_send.tuples:
+                _process_port_queues[dest_port].put(
+                OscPack(path, args, get_types_with_args(args),
+                        Address(self.port)))
+            return
+        
         bundler_id = random.randrange(0x100, 0x100000)
         bundle_number_self = random.randrange(0x100, 0x100000)
         
@@ -296,7 +344,7 @@ class BunServer(Server):
 
         try:
             self.send(_RESERVED_PORT,
-                        Bundle(*[head_msg_self]+stocked_msgs+pending_msgs))
+                      Bundle(*[head_msg_self]+stocked_msgs+pending_msgs))
         except:
             success = False
             
