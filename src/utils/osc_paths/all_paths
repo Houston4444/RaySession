@@ -93,7 +93,6 @@
 /ray/gui/patchbay/connection_added
 /ray/gui/patchbay/connection_removed
 /ray/gui/patchbay/dsp_load
-/ray/gui/patchbay/fast_temp_file_memory
 /ray/gui/patchbay/metadata_updated
 /ray/gui/patchbay/port_added
 /ray/gui/patchbay/port_removed
