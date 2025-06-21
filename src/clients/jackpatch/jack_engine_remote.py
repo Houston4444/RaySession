@@ -1,18 +1,19 @@
+'''When this module is used, ray-jackpatch is internal and is a 
+remote for the patchbay daemon. This way, the client is not directly
+related to JACK, so it never fails to stop.
+'''
 
 # Imports from standard library
 from enum import IntFlag
 import logging
 import time
-from typing import TYPE_CHECKING, Callable, Optional
-
-# # Third party
-# import jack
+from typing import TYPE_CHECKING, Callable
 
 
 # imports from shared
 from patcher.bases import (
     EventHandler, Event, JackPort,
-    PortMode, PortType, ProtoEngine)
+    PortMode, PortType, ProtoEngine, FullPortName)
 from osclib import BunServerThread, OscMulTypes, OscPack
 import osc_paths.ray as r
 import osc_paths.ray.gui as rg
@@ -57,30 +58,14 @@ def manage(path: str, multypes: OscMulTypes):
         return wrapper
     return decorated
 
-# def mode_type(port: jack.Port) -> tuple[PortMode, PortType]:
-#     port_mode = PortMode.NULL    
-#     if port.is_input:
-#         port_mode = PortMode.INPUT
-#     elif port.is_output:
-#         port_mode = PortMode.OUTPUT
-    
-#     port_type = PortType.NULL
-#     if port.is_audio:
-#         port_type = PortType.AUDIO
-#     elif port.is_midi:
-#         port_type = PortType.MIDI
-
-#     return port_mode, port_type
-
-
 
 class PatchRemote(BunServerThread):
     def __init__(self, ev_handler: EventHandler):
         super().__init__(total_fake=True)
         self.ev = ev_handler
         self._patchbay_port = patchbay_dmn_mng.get_port()
-        self.ports = dict[str, JackPort]()
-        self.connections = list[tuple[str, str]]()
+        self.ports = dict[FullPortName, JackPort]()
+        self.connections = list[tuple[FullPortName, FullPortName]]()
         self.startup_received = False
         self.add_nice_methods(_manage_types, self._generic_method)
     
@@ -188,42 +173,9 @@ class JackEngine(ProtoEngine):
     def __init__(self, event_handler: EventHandler):
         super().__init__(event_handler)
         self.remote = PatchRemote(event_handler)
-        # self._client: Optional[jack.Client] = None
 
     def init(self) -> bool:
         self.remote.start()
-        # try:
-        #     self._client = jack.Client('ray-jackpatch', no_start_server=True)
-        # except jack.JackOpenError:
-        #     _logger.error('Unable to make a jack client !')
-        #     return False
-        
-        # if self._client is None:
-        #     return False
-        
-        # @self._client.set_port_registration_callback
-        # def port_registration(port: jack.Port, register: bool):
-        #     self.ev_handler.add_event(
-        #         Event.PORT_ADDED if register else Event.PORT_REMOVED,
-        #         port.name, *mode_type(port))
-        
-        # @self._client.set_port_rename_callback
-        # def port_rename(port: jack.Port, old: str, new: str):
-        #     self.ev_handler.add_event(
-        #         Event.PORT_RENAMED, old, new, *mode_type(port))
-            
-        # @self._client.set_port_connect_callback
-        # def port_connect(port_a: jack.Port, port_b: jack.Port, connect: bool):
-        #     self.ev_handler.add_event(
-        #         Event.CONNECTION_ADDED if connect
-        #         else Event.CONNECTION_REMOVED,
-        #         port_a.name, port_b.name)
-            
-        # @self._client.set_shutdown_callback
-        # def on_shutdown(status: jack.Status, reason: str):
-        #     self.ev_handler.add_event(Event.JACK_STOPPED)
-        
-        # self._client.activate()
         return True
 
     def fill_ports_and_connections(

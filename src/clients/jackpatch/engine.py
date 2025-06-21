@@ -2,7 +2,7 @@
 from patcher.bases import EventHandler
 
 # Local imports
-from .jack_engine_copy import JackEngine
+from .jack_engine_remote import JackEngine
 
 
 class Engine(JackEngine):
