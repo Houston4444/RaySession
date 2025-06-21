@@ -77,7 +77,6 @@ METHODS_DICT = {
     rg.patchbay.SERVER_STARTED: '',
     rg.patchbay.BIG_PACKETS: 'i',
     rg.patchbay.SERVER_LOSE: '',
-    rg.patchbay.FAST_TEMP_FILE_MEMORY: 's',
     rg.patchbay.CLIENT_NAME_AND_UUID: 'sh',
     rg.patchbay.TRANSPORT_POSITION: 'iiiiiif',
     rg.patchbay.UPDATE_GROUP_POSITION: 'i' + GroupPos.ARG_TYPES,
