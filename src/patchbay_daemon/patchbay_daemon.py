@@ -294,8 +294,7 @@ class MainObject:
             # JACK is not responding at all
             # probably it is started but totally bugged
             # finally kill this program from system
-            os.kill(os.getpid(), signal.SIGKILL)
-            # WARNING : do not do this internal !!!
+            self.terminate = True
     
     def refresh(self):
         if self.jack_running:
@@ -457,6 +456,8 @@ class MainObject:
         self._waiting_jack_client_open = False
 
         jack_waiter_thread.join()
+        if self.terminate:
+            return
 
         self.jack_running = bool(self.client is not None)
 
