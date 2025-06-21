@@ -24,9 +24,6 @@ class PortMode(IntEnum):
     INPUT = 2
 
 
-# It is here if we want to improve the saved file
-# with the type of the port.
-# At this stage, we only care about the port name.
 class PortType(IntEnum):
     NULL = 0
     AUDIO = 1
