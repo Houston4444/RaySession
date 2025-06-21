@@ -115,7 +115,7 @@ class BunServer:
                     and dest.protocol == UDP):
                 dest_port = dest.port
         elif isinstance(dest, int):
-            if dest_port in _process_port_queues:
+            if dest in _process_port_queues:
                 dest_port = dest
         
         if dest_port:
@@ -123,6 +123,19 @@ class BunServer:
             # avoid OSC communication, directly enqueue the message
             # the receiver will take it at recv.
             dest, path, *other_args = args
+
+            if other_args:
+                if isinstance(other_args[0], Bundle):
+                    _logger.warning(
+                        f'Attempting to send Bundle in '
+                        f'direct process communication, will not work. '
+                        f'path: {path}')
+                elif isinstance(other_args[0], Message):
+                    _logger.warning(
+                        f'Attempting to send Message in '
+                        f'direct process communication, will not work. '
+                        f'path: {path}')
+
             _process_port_queues[dest_port].put(
                 OscPack(path, other_args, get_types_with_args(other_args),
                         Address(self.port)))
@@ -276,27 +289,44 @@ class BunServer:
         
         !!! the recepter MUST be a Bunserver or a BunServerThread !!!'''
 
+        urls = url if isinstance(url, list) else [url]
+        if not urls:
+            return True
+
         # check first if we are sending something to the same process
-        dest = url
-        dest_port = 0
+        same_proc_urls = list[str | int | Address]()
 
-        if isinstance(dest, Address):
-            if (dest.port in _process_port_queues
-                    and are_on_same_machine(self.url, dest)
-                    and dest.protocol == UDP):
-                dest_port = dest.port
-        elif isinstance(dest, int):
-            if dest_port in _process_port_queues:
-                dest_port = dest
+        for url in urls:
+            dest = url
+            dest_port = 0
 
-        if dest_port:
-            # we are sending a MegaSend to another instance 
-            # in the same process. No OSC communication is needed            
-            for path, *args in mega_send.tuples:
-                _process_port_queues[dest_port].put(
-                OscPack(path, args, get_types_with_args(args),
-                        Address(self.port)))
-            return
+            if isinstance(dest, Address):
+                if (dest.port in _process_port_queues
+                        and are_on_same_machine(self.url, dest)
+                        and dest.protocol == UDP):
+                    dest_port = dest.port
+            elif isinstance(dest, int):
+                if dest in _process_port_queues:
+                    dest_port = dest
+            elif isinstance(dest, str):
+                dport = dest.rpartition(':')[2].partition('/')[0]
+                proto_str = dest.partition('.')[2].partition(':')[0]
+                if (dport in _process_port_queues
+                        and are_on_same_machine(self.url, dest)
+                        and proto_str.lower() == 'udp'):
+                    dest_port = dport
+
+            if dest_port:
+                # we are sending a MegaSend to another instance 
+                # in the same process. No OSC communication is needed            
+                for path, *args in mega_send.tuples:
+                    _process_port_queues[dest_port].put(
+                    OscPack(path, args, get_types_with_args(args),
+                            Address(self.port)))
+                same_proc_urls.append(url)
+        
+        for same_proc_url in same_proc_urls:
+            urls.remove(same_proc_url)
         
         bundler_id = random.randrange(0x100, 0x100000)
         bundle_number_self = random.randrange(0x100, 0x100000)
@@ -306,10 +336,6 @@ class BunServer:
         pending_msgs = list[Message]()
         head_msg_self = Message('/_bundle_head', bundle_number_self, 0, 0)
         head_msg = Message('/_bundle_head', bundler_id, 0, 0)
-        
-        urls = url if isinstance(url, list) else [url]
-        if not urls:
-            return True
 
         messages = mega_send.messages
 
