@@ -179,19 +179,17 @@ class OperatingSession(Session):
 
     def _clean_expected(self):
         if self.expected_clients:
-            client_names = []
-
-            for client in self.expected_clients:
-                client_names.append(client.gui_msg_style())
+            client_names = [c.gui_msg_style() for c in self.expected_clients]
 
             if self.wait_for is ray.WaitFor.ANNOUNCE:
                 self.send_gui_message(
                     _translate('GUIMSG', "%s didn't announce.")
-                        % ', '.join(client_names))
+                    % ', '.join(client_names))
 
             elif self.wait_for is ray.WaitFor.QUIT:
-                self.send_gui_message(_translate('GUIMSG', "%s still alive !")
-                                    % ', '.join(client_names))
+                self.send_gui_message(
+                    _translate('GUIMSG', "%s still alive !")
+                    % ', '.join(client_names))
 
             self.expected_clients.clear()
 
@@ -257,6 +255,7 @@ class OperatingSession(Session):
                     arguments = [False, False]
 
         self.steps_order.__delitem__(0)
+        _logger.debug(f'next_function: {next_function.__name__}')
         next_function(*arguments)
 
     def _timer_launch_timeout(self):
@@ -709,12 +708,12 @@ class OperatingSession(Session):
             if len(self.expected_clients) == 1:
                 self.send_gui_message(
                     _translate('GUIMSG',
-                            'waiting for %s to quit...')
+                               'waiting for %s to quit...')
                         % self.expected_clients[0].gui_msg_style())
             else:
                 self.send_gui_message(
                     _translate('GUIMSG',
-                            'waiting for %i clients to quit...')
+                               'waiting for %i clients to quit...')
                         % len(self.expected_clients))
 
             for client in self.expected_clients.__reversed__():

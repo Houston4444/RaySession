@@ -295,6 +295,7 @@ class MainObject:
             # probably it is started but totally bugged
             # finally kill this program from system
             os.kill(os.getpid(), signal.SIGKILL)
+            # WARNING : do not do this internal !!!
     
     def refresh(self):
         if self.jack_running:
