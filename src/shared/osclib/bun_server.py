@@ -3,7 +3,7 @@ import inspect
 import json
 import logging
 import os
-from queue import Queue
+from queue import Queue, Empty
 import random
 import tempfile
 import time
@@ -153,6 +153,26 @@ class BunServer:
             self._mw_path_wrap[osp.path].wrapper(self, osp)
     
     def recv(self, timeout: Optional[int] = None) -> bool:
+        if self.sv is None and timeout:
+            has_osp = False
+            while True:
+                try:
+                    osp = _process_port_queues[self.port].get(
+                        timeout=timeout*0.001)
+                    has_osp = True
+                except Empty:
+                    break
+
+                types_func = self._methods_adder.get_func(osp.path, osp.args)
+                if types_func is None:
+                    continue
+                
+                types, func = types_func
+                osp.types = types
+                self._exec_func(func, osp)
+            
+            return has_osp
+        
         while _process_port_queues[self.port].qsize():
             osp = _process_port_queues[self.port].get()
             types_func = self._methods_adder.get_func(osp.path, osp.args)
@@ -162,9 +182,6 @@ class BunServer:
             types, func = types_func
             osp.types = types
             self._exec_func(func, osp)
-        
-        if self.sv is None:
-            return True
         
         return self.sv.recv(timeout)
     
@@ -518,6 +535,7 @@ class BunServerThread(BunServer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
+        self.timeout = 50
         self._terminated = False
         self._thread: Optional[Thread] = None
     
@@ -538,7 +556,7 @@ class BunServerThread(BunServer):
     
     def _main_loop(self):
         while not self._terminated:
-            self.recv(10)
+            self.recv(self.timeout)
 
     def wait_mega_send_answer(self, bundler_id: int, ref: str) -> bool:
         self._sem_dict.add_waiting(bundler_id)
