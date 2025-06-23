@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Callable
 from patcher.bases import (
     EventHandler, Event, JackPort,
     PortMode, PortType, ProtoEngine, FullPortName)
-from osclib import BunServerThread, OscMulTypes, OscPack
+from osclib import BunServerThread, OscPack, bun_manage
 import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 
@@ -26,8 +26,6 @@ else:
 
 _logger = logging.getLogger(__name__)
 
-_manage_wrappers = dict[str, Callable[[OscPack], bool]]()
-_manage_types = dict[str, str]()
 
 
 class JackPortFlag(IntFlag):
@@ -40,41 +38,15 @@ class JackPortFlag(IntFlag):
     IS_CONTROL_VOLTAGE = 0x100
 
 
-def manage(path: str, multypes: OscMulTypes):
-    '''Decorator working like the @make_method decorator,
-    but send methods with OscPack as argument.
-    
-    `path`: OSC str path
-
-    `multypes`: str containing all accepted arg types
-    '''
-    def decorated(func: Callable):
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-    
-        _manage_wrappers[path] = wrapper
-        _manage_types[path] = multypes
-
-        return wrapper
-    return decorated
-
-
 class PatchRemote(BunServerThread):
     def __init__(self, ev_handler: EventHandler):
         super().__init__(total_fake=True)
+        self.add_managed_methods()
         self.ev = ev_handler
         self._patchbay_port = patchbay_dmn_mng.get_port()
         self.ports = dict[FullPortName, JackPort]()
         self.connections = list[tuple[FullPortName, FullPortName]]()
         self.startup_received = False
-        self.add_nice_methods(_manage_types, self._generic_method)
-    
-    def _generic_method(self, osp: OscPack):
-        '''Except the unknown messages, all messages received
-        go through here.'''
-        # run the method decorated with @manage
-        if osp.path in _manage_wrappers:
-            _manage_wrappers[osp.path](self, osp)
 
     def start(self):
         super().start()
@@ -83,13 +55,13 @@ class PatchRemote(BunServerThread):
     def send_patchbay(self, *args):
         self.send(self._patchbay_port, *args)
 
-    @manage(rg.patchbay.ANNOUNCE, 'iiis')
+    @bun_manage(rg.patchbay.ANNOUNCE, 'iiis')
     def _patchbay_announce(self, osp: OscPack):
         jack_running = osp.args[0]
         if not jack_running:
             self.ev.add_event(Event.JACK_STOPPED)
         
-    @manage(rg.patchbay.CONNECTION_ADDED, 'ss')
+    @bun_manage(rg.patchbay.CONNECTION_ADDED, 'ss')
     def _connection_added(self, osp: OscPack):
         port_out, port_in = osp.args
         if port_out not in self.ports:
@@ -99,7 +71,7 @@ class PatchRemote(BunServerThread):
         if self.startup_received:
             self.ev.add_event(Event.CONNECTION_ADDED, port_out, port_in)
     
-    @manage(rg.patchbay.CONNECTION_REMOVED, 'ss')
+    @bun_manage(rg.patchbay.CONNECTION_REMOVED, 'ss')
     def _connection_removed(self, osp: OscPack):
         conn = (*osp.args,)
         if conn not in self.connections:
@@ -108,7 +80,7 @@ class PatchRemote(BunServerThread):
         self.connections.remove(conn)
         self.ev.add_event(Event.CONNECTION_REMOVED, *conn)
 
-    @manage(rg.patchbay.PORT_ADDED, 'siih')
+    @bun_manage(rg.patchbay.PORT_ADDED, 'siih')
     def _port_added(self, osp: OscPack):
         name, type_, flags, uuid = osp.args
         if flags & JackPortFlag.IS_OUTPUT:
@@ -132,7 +104,7 @@ class PatchRemote(BunServerThread):
         if self.startup_received:
             self.ev.add_event(Event.PORT_ADDED, name, mode, port_type)
         
-    @manage(rg.patchbay.PORT_REMOVED, 's')
+    @bun_manage(rg.patchbay.PORT_REMOVED, 's')
     def _port_removed(self, osp: OscPack):
         name = osp.args[0]
         jack_port = self.ports.get(name)
@@ -144,7 +116,7 @@ class PatchRemote(BunServerThread):
         self.ev.add_event(Event.PORT_REMOVED, name,
                           jack_port.mode, jack_port.type)
     
-    @manage(rg.patchbay.PORT_RENAMED, 'ss|ssi')
+    @bun_manage(rg.patchbay.PORT_RENAMED, 'ss|ssi')
     def _port_renamed(self, osp: OscPack):
         old = osp.args[0]
         new = osp.args[1]
@@ -159,12 +131,12 @@ class PatchRemote(BunServerThread):
         self.ev.add_event(Event.PORT_RENAMED, old, new,
                           jack_port.mode, jack_port.type)
     
-    @manage(rg.patchbay.BIG_PACKETS, 'i')
+    @bun_manage(rg.patchbay.BIG_PACKETS, 'i')
     def _big_packets(self, osp: OscPack):
         if osp.args[0]:
             self.startup_received = True
     
-    @manage(rg.patchbay.SERVER_STOPPED, '')
+    @bun_manage(rg.patchbay.SERVER_STOPPED, '')
     def _server_stopped(self, osp: OscPack):
         self.ev.add_event(Event.JACK_STOPPED)
 
