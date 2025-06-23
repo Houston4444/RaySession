@@ -48,8 +48,9 @@ def internal_prepare(
 
         for lvl, modules in log_dict.items():
             for module in modules.split(':'):
-                mod_logger = logging.getLogger(module)
-                mod_logger.setLevel(lvl)
+                if module:
+                    mod_logger = logging.getLogger(module)
+                    mod_logger.setLevel(lvl)
 
     if not nsm_url:
         _logger.error('Could not register as NSM client.')
