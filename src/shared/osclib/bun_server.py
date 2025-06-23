@@ -387,7 +387,10 @@ class BunServer:
                     OscPack(path, args, get_types_with_args(args),
                             Address(self.port)))
                 same_proc_urls.append(url)
-        
+
+        if self.sv is None:
+            return
+
         for same_proc_url in same_proc_urls:
             urls.remove(same_proc_url)
         
@@ -407,7 +410,7 @@ class BunServer:
         urls_done = set[str | int | Address]()
         for url in urls:
             try:
-                self.send(url, Bundle(*[head_msg]+messages))
+                self.sv.send(url, Bundle(*[head_msg]+messages))
                 assert self.wait_mega_send_answer(bundler_id, mega_send.ref)
                 urls_done.add(url)
             except:
@@ -447,7 +450,7 @@ class BunServer:
             if (i+1) % pack == 0:
                 success = True
                 try:
-                    self.send(
+                    self.sv.send(
                         _RESERVED_PORT,
                         Bundle(*[head_msg_self]+stocked_msgs+pending_msgs))
                 except:
@@ -459,7 +462,7 @@ class BunServer:
                 else:
                     if stocked_msgs:
                         for url in urls:
-                            self.send(url, Bundle(*[head_msg]+stocked_msgs))
+                            self.sv.send(url, Bundle(*[head_msg]+stocked_msgs))
                             self.wait_mega_send_answer(
                                 bundler_id, mega_send.ref)
                         
@@ -475,20 +478,20 @@ class BunServer:
         success = True
 
         try:
-            self.send(_RESERVED_PORT,
-                      Bundle(*[head_msg_self]+stocked_msgs+pending_msgs))
+            self.sv.send(_RESERVED_PORT,
+                         Bundle(*[head_msg_self]+stocked_msgs+pending_msgs))
         except:
             success = False
             
         if success:
             for url in urls:
-                self.send(url, Bundle(*[head_msg]+stocked_msgs+pending_msgs))
+                self.sv.send(url, Bundle(*[head_msg]+stocked_msgs+pending_msgs))
                 self.wait_mega_send_answer(bundler_id, mega_send.ref)
         else:
             for url in urls:
-                self.send(url, Bundle(*[head_msg]+stocked_msgs))
+                self.sv.send(url, Bundle(*[head_msg]+stocked_msgs))
                 self.wait_mega_send_answer(bundler_id, mega_send.ref)
-                self.send(url, Bundle(*[head_msg]+pending_msgs))
+                self.sv.send(url, Bundle(*[head_msg]+pending_msgs))
                 self.wait_mega_send_answer(bundler_id)
         
         return True
