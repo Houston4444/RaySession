@@ -3,18 +3,17 @@ from typing import Union, Callable
 import os
 import signal
 import sys
-from pathlib import Path
 
 from osclib import Address
 from patcher.patcher import Patcher
 from patcher.bases import EventHandler
 from nsm_client import NsmServer
 
+from .check_internal import IS_INTERNAL
 from .engine import Engine
 
 
-is_internal = not Path(sys.argv[0]).name == 'ray-jackpatch'
-if is_internal:
+if IS_INTERNAL:
     _logger = logging.getLogger(__name__)
 else:
     _logger = logging.getLogger()
@@ -69,7 +68,7 @@ def internal_prepare(
     if not engine.init():
         return 2
 
-    nsm_server = NsmServer(daemon_address, total_fake=is_internal)
+    nsm_server = NsmServer(daemon_address, total_fake=IS_INTERNAL)
     patcher = Patcher(engine, nsm_server, _logger)
     return patcher.run_loop, patcher.stop
 

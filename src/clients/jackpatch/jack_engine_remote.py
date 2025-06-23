@@ -7,7 +7,7 @@ related to JACK, so it never fails to stop.
 from enum import IntFlag
 import logging
 import time
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 
 # imports from shared
@@ -43,14 +43,11 @@ class PatchRemote(BunServerThread):
         super().__init__(total_fake=True)
         self.add_managed_methods()
         self.ev = ev_handler
+        patchbay_dmn_mng.start(self.url)
         self._patchbay_port = patchbay_dmn_mng.get_port()
         self.ports = dict[FullPortName, JackPort]()
         self.connections = list[tuple[FullPortName, FullPortName]]()
         self.startup_received = False
-
-    def start(self):
-        super().start()
-        self.send(self._patchbay_port, r.patchbay.ADD_GUI, self.url)
 
     def send_patchbay(self, *args):
         self.send(self._patchbay_port, *args)
