@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+import inspect
 import json
 import logging
 import os
@@ -11,8 +13,8 @@ from typing import Callable, Union, Optional
 from osclib import OscTypes
 
 from .bases import (
-    OscArg, OscMulTypes, OscPack, Server, Address, Message, Bundle, MegaSend,
-    get_types_with_args, types_validator, UDP)
+    OscArg, OscMulTypes, OscPack, OscPath, Server, Address, Message, Bundle,
+    MegaSend, get_types_with_args, types_validator, UDP)
 from .funcs import are_on_same_machine
 from .bun_tools import number_of_args, MethodsAdder, _SemDict
 
@@ -22,21 +24,56 @@ _RESERVED_PORT = 47
 '''Port reserved in OSC, used to try to send message to,
 this way, no risk that any OSC port can receive it.'''
 
+_MANAGE_ATTR = '_manage_wrapper_num'
+
 _process_port_queues = dict[int, Queue[OscPack]]()
 'Contains the port numbers of all BunServer instantiated in this process'
 
 _last_fake_num = 0x1000000
 
 
+@dataclass()
+class ManageWrapper:
+    path: OscPath
+    multypes: OscMulTypes
+    wrapper: Callable[[OscPack], None]
+
+
+_manage_wrappers = list[ManageWrapper]()
+
+
+def bun_manage(path: OscPath, multypes: OscMulTypes):
+    '''Decorator working like the @make_method decorator,
+    but send methods with OscPack as argument.
+    
+    `path`: OSC str path
+
+    `multypes`: str containing all accepted arg types
+    '''
+    def decorated(func: Callable):
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+    
+        manage_wrapper = ManageWrapper(path, multypes, wrapper)
+        setattr(wrapper, _MANAGE_ATTR, len(_manage_wrappers))
+        _manage_wrappers.append(manage_wrapper)
+
+        return wrapper
+    return decorated
+
+
 class BunServer:
     '''Class inheriting liblo.Server. Provides a server
     with the mega_send feature, which allows to send massive
     bundle of messages, in several sends if needed.'''
-    def __init__(self, port: Union[int, str] =1, proto: int =UDP,
+    def __init__(self, port: Union[int, str] =1, proto=UDP,
                  reg_methods=True, total_fake=False):
         self._methods_adder = MethodsAdder()
         self._director_methods = dict[
             str, tuple[OscMulTypes, Callable[[OscPack], None]]]()
+        self._mw_path_wrap = dict[OscPath, ManageWrapper]()
+        '''will contain all ManageWrapper objects to be used by methods
+        decorated with @bun_manage'''
 
         self._dummy_port = 0
 
@@ -88,6 +125,32 @@ class BunServer:
             case 3: func(osp.path, osp.args, osp.types)
             case 4: func(osp.path, osp.args, osp.types, osp.src_addr)
             case 5: func(osp.path, osp.args, osp.types, osp.src_addr, None)
+    
+    def add_managed_methods(self):
+        for name, method in inspect.getmembers(self):
+            if not inspect.ismethod(method):
+                continue
+            
+            func = method.__func__
+            
+            if not hasattr(func, _MANAGE_ATTR):
+                continue
+            
+            meth_num = getattr(func, _MANAGE_ATTR, None)
+            if not isinstance(meth_num, int):
+                continue
+
+            mw = _manage_wrappers[meth_num]
+            self._mw_path_wrap[mw.path] = mw
+
+        for mw in self._mw_path_wrap.values():
+            self.add_nice_method(mw.path, mw.multypes, self.__generic_method)
+    
+    def __generic_method(self, osp: OscPack):
+        '''Except the unknown messages, all messages received
+        go through here.'''
+        if osp.path in self._mw_path_wrap:
+            self._mw_path_wrap[osp.path].wrapper(self, osp)
     
     def recv(self, timeout: Optional[int] = None) -> bool:
         while _process_port_queues[self.port].qsize():
@@ -221,7 +284,7 @@ class BunServer:
     def __director(self, path: str, args: list[OscArg],
                    types: OscTypes, src_addr: Address):
         '''transmit messages received from methods added
-        with `add_nice_methods`'''
+        with `add_nice_method`'''
         multypes_func = self._director_methods.get(path)
         if multypes_func is None:
             any_rejected_m = self._director_methods.get('')
@@ -262,7 +325,7 @@ class BunServer:
                 self.add_method(path, types, self.__director)
         
     def add_nice_methods(
-            self, methods_dict: dict[str, OscMulTypes],
+            self, methods_dict: dict[OscPath, OscMulTypes],
             func: Callable[[OscPack], None]):
         '''Nice way to add several OSC methods to the server,
         all routed to the same function.

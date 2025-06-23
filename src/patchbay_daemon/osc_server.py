@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Callable
 
 from osclib import (BunServer, Address, MegaSend,
                     are_on_same_machine, are_same_osc_port,
-                    OscMulTypes, OscPack)
+                    OscPath, OscMulTypes, OscPack)
 import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 
@@ -15,11 +15,11 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 
-_manage_wrappers = dict[str, Callable[[OscPack], bool]]()
-_manage_types = dict[str, str]()
+_manage_wrappers = dict[OscPath, Callable[[OscPack], None]]()
+_manage_types = dict[OscPath, OscMulTypes]()
 
 
-def manage(path: str, multypes: OscMulTypes):
+def manage(path: OscPath, multypes: OscMulTypes):
     '''Decorator working like the @make_method decorator,
     but send methods with OscPack as argument.
     

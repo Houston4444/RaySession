@@ -2,9 +2,10 @@ from inspect import signature, _ParameterKind
 import logging
 from typing import Callable, Optional
 
-from osclib import OscArg
 
-from .bases import OscTypes, OscMulTypes, get_types_with_args
+from .bases import (
+    OscPack, OscArg, OscTypes, OscMulTypes, get_types_with_args)
+
 
 _logger = logging.getLogger(__name__)
 
