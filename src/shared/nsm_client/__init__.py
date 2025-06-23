@@ -4,32 +4,9 @@ from enum import IntEnum
 import os
 from typing import Callable, Optional
 
-from osclib import BunServer, Address, OscMulTypes, OscPack
+from osclib import BunServer, Address, bun_manage, OscPack
 import osc_paths
 import osc_paths.nsm as nsm
-
-
-_manage_wrappers = dict[str, Callable[[OscPack], bool]]()
-_manage_types = dict[str, str]()
-
-
-def manage(path: str, multypes: OscMulTypes):
-    '''Decorator working like the @make_method decorator,
-    but send methods with OscPack as argument.
-    
-    `path`: OSC str path
-
-    `multypes`: str containing all accepted arg types
-    '''
-    def decorated(func: Callable):
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-    
-        _manage_wrappers[path] = wrapper
-        _manage_types[path] = multypes
-
-        return wrapper
-    return decorated
 
 
 class Err(IntEnum):
@@ -62,22 +39,14 @@ class NsmCallback(IntEnum):
 class NsmServer(BunServer):
     def __init__(self, daemon_address: Address, total_fake=False):
         super().__init__(total_fake=total_fake)
-        self.add_nice_methods(_manage_types, self._generic_method)
+        self.add_managed_methods()
 
         self._daemon_address = daemon_address
         self._server_capabilities = ""
         
         self._callbacks = dict[NsmCallback, Callable]()
 
-    def _generic_method(self, osp: OscPack):
-        '''Except the unknown messages, all messages received
-        go through here.'''
-        
-        # run the method decorated with @manage
-        if osp.path in _manage_wrappers:
-            _manage_wrappers[osp.path](self, osp)
-
-    @manage(osc_paths.REPLY, '.*')
+    @bun_manage(osc_paths.REPLY, '.*')
     def _reply(self, osp: OscPack):
         if osp.args:
             reply_path = osp.args[0]
@@ -87,7 +56,7 @@ class NsmServer(BunServer):
         if reply_path == nsm.server.ANNOUNCE:
             self._server_capabilities = osp.args[3]
 
-    @manage(nsm.client.OPEN, 'sss')
+    @bun_manage(nsm.client.OPEN, 'sss')
     def _nsm_client_open(self, osp: OscPack):
         ret = self._exec_callback(NsmCallback.OPEN, *osp.args)
         if ret is None:
@@ -99,7 +68,7 @@ class NsmServer(BunServer):
         else:
             self._send_to_daemon(osc_paths.ERROR, osp.path, err, err_text)
 
-    @manage(nsm.client.SAVE, '')
+    @bun_manage(nsm.client.SAVE, '')
     def _nsm_client_save(self, osp: OscPack):
         ret = self._exec_callback(NsmCallback.SAVE)
         if ret is None:
@@ -111,27 +80,27 @@ class NsmServer(BunServer):
         else:
             self._send_to_daemon(osc_paths.ERROR, osp.path, err_text)
 
-    @manage(nsm.client.SESSION_IS_LOADED, '')
+    @bun_manage(nsm.client.SESSION_IS_LOADED, '')
     def _nsm_client_session_is_loaded(self, osp: OscPack):
         self._exec_callback(NsmCallback.SESSION_IS_LOADED)
 
-    @manage(nsm.client.SHOW_OPTIONAL_GUI, '')
+    @bun_manage(nsm.client.SHOW_OPTIONAL_GUI, '')
     def _nsm_client_show_optional_gui(self, osp: OscPack):
         self._exec_callback(NsmCallback.SHOW_OPTIONAL_GUI)
 
-    @manage(nsm.client.HIDE_OPTIONAL_GUI, '')
+    @bun_manage(nsm.client.HIDE_OPTIONAL_GUI, '')
     def _nsm_client_hide_optional_gui(self, osp: OscPack):
         self._exec_callback(NsmCallback.HIDE_OPTIONAL_GUI)
     
-    @manage(nsm.client.monitor.CLIENT_STATE, 'ssi')
+    @bun_manage(nsm.client.monitor.CLIENT_STATE, 'ssi')
     def _nsm_client_monitor_client_state(self, osp: OscPack):
         self._exec_callback(NsmCallback.MONITOR_CLIENT_STATE, *osp.args)
     
-    @manage(nsm.client.monitor.CLIENT_EVENT, 'ss')
+    @bun_manage(nsm.client.monitor.CLIENT_EVENT, 'ss')
     def _nsm_client_monitor_client_event(self, osp: OscPack):
         self._exec_callback(NsmCallback.MONITOR_CLIENT_EVENT, *osp.args)
 
-    @manage(nsm.client.monitor.CLIENT_UPDATED, 'ssi')
+    @bun_manage(nsm.client.monitor.CLIENT_UPDATED, 'ssi')
     def _nsm_client_monitor_client_properties(self, osp: OscPack):
         self._exec_callback(NsmCallback.MONITOR_CLIENT_UPDATED, *osp.args)
     
