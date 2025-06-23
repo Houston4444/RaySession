@@ -23,6 +23,9 @@ else:
             _logger.error(str(e))
 
 
+OscPath: TypeAlias = str
+'an OSC path'
+
 OscArg: TypeAlias = Union[
     str, bytes, float, int, NoneType, bool, tuple[int, int, int, int]]
 'Generic type of an OSC argument'
