@@ -40,7 +40,7 @@ import jack
 from proc_name import set_proc_name
 from patshared import JackMetadatas, JackMetadata, PrettyNames
 
-from osc_server import OscJackPatch
+from osc_server import PatchbayDaemonServer
     
 
 PORT_TYPE_NULL = 0
@@ -177,7 +177,7 @@ class MainObject:
         self.pretty_tmp_path = (Path('/tmp/RaySession/')
                                 / f'pretty_names.{daemon_port}.json')
         
-        self.osc_server = OscJackPatch(self)
+        self.osc_server = PatchbayDaemonServer(self)
         self.osc_server.set_tmp_gui_url(gui_url)
         self.write_existence_file()
         self.start_jack_client()

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Callable
 
 from osclib import (BunServer, Address, MegaSend,
                     are_on_same_machine, are_same_osc_port,
-                    OscPath, OscMulTypes, OscPack)
+                    OscPack, bun_manage)
 import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 
@@ -15,33 +15,11 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 
-_manage_wrappers = dict[OscPath, Callable[[OscPack], None]]()
-_manage_types = dict[OscPath, OscMulTypes]()
 
-
-def manage(path: OscPath, multypes: OscMulTypes):
-    '''Decorator working like the @make_method decorator,
-    but send methods with OscPack as argument.
-    
-    `path`: OSC str path
-
-    `multypes`: str containing all accepted arg types
-    '''
-    def decorated(func: Callable):
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-    
-        _manage_wrappers[path] = wrapper
-        _manage_types[path] = multypes
-
-        return wrapper
-    return decorated
-
-
-class OscJackPatch(BunServer):
+class PatchbayDaemonServer(BunServer):
     def __init__(self, main_object: 'MainObject'):
         BunServer.__init__(self)
-        self.add_nice_methods(_manage_types, self._generic_method)
+        self.add_managed_methods()
 
         self.main_object = main_object
         self.port_list = main_object.port_list
@@ -52,20 +30,12 @@ class OscJackPatch(BunServer):
         self.gui_list = list[Address]()
         self._tmp_gui_url = ''
         self._terminate = False
-
-    def _generic_method(self, osp: OscPack):
-        '''Except the unknown messages, all messages received
-        go through here.'''
-        
-        # run the method decorated with @manage
-        if osp.path in _manage_wrappers:
-            _manage_wrappers[osp.path](self, osp)
     
-    @manage(r.patchbay.ADD_GUI, 's')
+    @bun_manage(r.patchbay.ADD_GUI, 's')
     def _ray_patchbay_add_gui(self, osp: OscPack):
         self.add_gui(osp.args[0])
 
-    @manage(r.patchbay.GUI_DISANNOUNCE, 's')
+    @bun_manage(r.patchbay.GUI_DISANNOUNCE, 's')
     def _ray_patchbay_gui_disannounce(self, osp: OscPack):
         url: str = osp.args[0]
 
@@ -80,54 +50,54 @@ class OscJackPatch(BunServer):
             # no reason to exists anymore
             self._terminate = True
 
-    @manage(r.patchbay.CONNECT, 'ss')
+    @bun_manage(r.patchbay.CONNECT, 'ss')
     def _ray_patchbay_connect(self, osp: OscPack):
         port_out_name, port_in_name = osp.args
         # connect here
         self.main_object.connect_ports(port_out_name, port_in_name)
     
-    @manage(r.patchbay.DISCONNECT, 'ss')
+    @bun_manage(r.patchbay.DISCONNECT, 'ss')
     def _ray_patchbay_disconnect(self, osp: OscPack):
         port_out_name, port_in_name = osp.args
         # disconnect here
         self.main_object.connect_ports(
             port_out_name, port_in_name, disconnect=True)
 
-    @manage(r.patchbay.SET_BUFFER_SIZE, 'i')
+    @bun_manage(r.patchbay.SET_BUFFER_SIZE, 'i')
     def _ray_patchbay_set_buffersize(self, osp: OscPack):
         buffer_size = osp.args[0]
         self.main_object.set_buffer_size(buffer_size)
 
-    @manage(r.patchbay.REFRESH, '')
+    @bun_manage(r.patchbay.REFRESH, '')
     def _ray_patchbay_refresh(self, osp: OscPack):
         self.main_object.refresh()
 
-    @manage(r.patchbay.TRANSPORT_PLAY, 'i')
+    @bun_manage(r.patchbay.TRANSPORT_PLAY, 'i')
     def _ray_patchbay_transport_play(self, osp: OscPack):
         self.main_object.transport_play(bool(osp.args[0]))
     
-    @manage(r.patchbay.TRANSPORT_STOP, '')
+    @bun_manage(r.patchbay.TRANSPORT_STOP, '')
     def _ray_patchbay_transport_stop(self, osp: OscPack):
         self.main_object.transport_stop()
     
-    @manage(r.patchbay.TRANSPORT_RELOCATE, 'i')
+    @bun_manage(r.patchbay.TRANSPORT_RELOCATE, 'i')
     def _ray_patchbay_transport_relocate(self, osp: OscPack):
         self.main_object.transport_relocate(osp.args[0])
 
-    @manage(r.patchbay.ACTIVATE_DSP_LOAD, 'i')
+    @bun_manage(r.patchbay.ACTIVATE_DSP_LOAD, 'i')
     def _ray_patchbay_activate_dsp_load(self, osp: OscPack):
         self.main_object.dsp_wanted = bool(osp.args[0])
     
-    @manage(r.patchbay.ACTIVATE_TRANSPORT, 'i')
+    @bun_manage(r.patchbay.ACTIVATE_TRANSPORT, 'i')
     def _ray_patchbay_activate_transport(self, osp: OscPack):
         self.main_object.set_transport_wanted(osp.args[0])
 
-    @manage(r.patchbay.GROUP_PRETTY_NAME, 'sss')
+    @bun_manage(r.patchbay.GROUP_PRETTY_NAME, 'sss')
     def _ray_patchbay_group_pretty_name(self, osp: OscPack):
         if osp.args[0]:
             self.pretty_names.save_group(*osp.args)
 
-    @manage(r.patchbay.PORT_PRETTY_NAME, 'sss')
+    @bun_manage(r.patchbay.PORT_PRETTY_NAME, 'sss')
     def _ray_patchbay_port_pretty_name(self, osp: OscPack):
         if osp.args[0]:
             self.pretty_names.save_port(*osp.args)
@@ -136,28 +106,28 @@ class OscJackPatch(BunServer):
             # listing is finished, lets apply pretty names to JACK
             self.main_object.set_all_pretty_names()
 
-    @manage(r.patchbay.SAVE_GROUP_PRETTY_NAME, 'ssi')
+    @bun_manage(r.patchbay.SAVE_GROUP_PRETTY_NAME, 'ssi')
     def _ray_patchbay_save_group_pretty_name(self, osp: OscPack):
         group_name, pretty_name, save_in_jack = osp.args
         self.pretty_names.save_group(group_name, pretty_name)
         if save_in_jack:
             self.main_object.write_group_pretty_name(group_name, pretty_name)
     
-    @manage(r.patchbay.SAVE_PORT_PRETTY_NAME, 'ssi')
+    @bun_manage(r.patchbay.SAVE_PORT_PRETTY_NAME, 'ssi')
     def _ray_patchbay_save_port_pretty_name(self, osp: OscPack):
         port_name, pretty_name, save_in_jack = osp.args
         self.pretty_names.save_port(port_name, pretty_name)
         if save_in_jack:
             self.main_object.write_port_pretty_name(port_name, pretty_name)
 
-    @manage(r.patchbay.ENABLE_JACK_PRETTY_NAMING, 'i')
+    @bun_manage(r.patchbay.ENABLE_JACK_PRETTY_NAMING, 'i')
     def _ray_patchbay_enable_jack_pretty_naming(self,  osp: OscPack):
         export_pretty_names = bool(osp.args[0])
         self.main_object.set_pretty_name_active(export_pretty_names)
         if not export_pretty_names and not self.gui_list:
             self._terminate = True
 
-    @manage(r.patchbay.QUIT, '')
+    @bun_manage(r.patchbay.QUIT, '')
     def _ray_patchbay_quit(self, osp: OscPack):
         self._terminate = True
 
