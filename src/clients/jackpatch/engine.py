@@ -1,8 +1,12 @@
 
 from patcher.bases import EventHandler
 
-# Local imports
-from .jack_engine_remote import JackEngine
+from .check_internal import IS_INTERNAL
+
+if IS_INTERNAL:
+    from .jack_engine_remote import JackEngine
+else:
+    from .jack_engine import JackEngine
 
 
 class Engine(JackEngine):
@@ -12,3 +16,6 @@ class Engine(JackEngine):
 
     def __init__(self, event_handler: EventHandler):
         super().__init__(event_handler)
+
+    def init(self) -> bool:
+        return super().init()
