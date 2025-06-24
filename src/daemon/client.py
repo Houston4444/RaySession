@@ -2292,6 +2292,8 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         minor: int
         pid: int
 
+        _logger.debug(f'Client server announce "{client_name}" {executable_path} {pid}')
+
         if self.pending_command is ray.Command.STOP:
             # assume to not answer to a dying client.
             # He will never know, or perhaps, it depends on beliefs.
