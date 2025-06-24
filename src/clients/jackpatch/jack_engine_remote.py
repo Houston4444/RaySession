@@ -18,6 +18,8 @@ from osclib import BunServerThread, OscPack, bun_manage
 import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 
+from .check_internal import IS_PATCHBAY_INTERNAL
+
 if TYPE_CHECKING:
     from daemon import patchbay_dmn_mng
 else:
@@ -25,7 +27,6 @@ else:
 
 
 _logger = logging.getLogger(__name__)
-
 
 
 class JackPortFlag(IntFlag):
@@ -40,7 +41,7 @@ class JackPortFlag(IntFlag):
 
 class PatchRemote(BunServerThread):
     def __init__(self, ev_handler: EventHandler):
-        super().__init__(total_fake=True)
+        super().__init__(total_fake=IS_PATCHBAY_INTERNAL)
         self.add_managed_methods()
         self.ev = ev_handler
         patchbay_dmn_mng.start(self.url)
@@ -152,8 +153,15 @@ class JackEngine(ProtoEngine):
             connection_list: list[tuple[str, str]]):
         '''get all current JACK ports and connections at startup'''
 
-        while not self.remote.startup_received:
-            time.sleep(0.001)
+        for i in range(100):
+            if self.remote.startup_received:
+                break
+            time.sleep(0.010)
+        else:
+            _logger.error(
+                'Failed to get ports and connections from patchbay_daemon, '
+                'will quit.')
+            return
 
         for jack_port in self.remote.ports.values():
             all_ports[jack_port.mode].append(jack_port)

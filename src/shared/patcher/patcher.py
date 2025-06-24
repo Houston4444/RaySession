@@ -64,6 +64,7 @@ class Patcher:
                 break
 
             self.nsm_server.recv(50)
+
             for event, args in self.engine.ev_handler.new_events():
                 if event is Event.PORT_ADDED:
                     self.port_added(*args)
