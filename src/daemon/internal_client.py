@@ -57,7 +57,6 @@ class InternalClient:
         if len(funcs) == 2:
             funcs: tuple[Callable, Callable]
             self._start_func, self._stop_func = funcs
-            self._start_func()
         elif len(funcs) == 4:
             funcs: tuple[Callable, Callable, Any, Any]
             self._start_func, self._stop_func, \

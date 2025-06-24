@@ -417,8 +417,11 @@ class MainObject:
         self.save_uuid_pretty_names()
         
         if self.jack_running:
+            _logger.debug('deactivate JACK client')
             self.client.deactivate()
+            _logger.debug('close JACK client')
             self.client.close()
+            _logger.debug('JACK client closed')
 
         if self.alsa_mng is not None:
             self.alsa_mng.stop_events_loop()
