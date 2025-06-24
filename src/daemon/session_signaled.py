@@ -243,7 +243,9 @@ class SignaledSession(OperatingSession):
             if pid == os.getpid():
                 for client in self.clients:
                     if (client.protocol is ray.Protocol.INTERNAL
+                            and client.executable_path == executable_path
                             and client._internal is not None
+                            and client._internal.running
                             and not client.nsm_active):
                         return client
             
@@ -260,6 +262,7 @@ class SignaledSession(OperatingSession):
 
         client = find_the_client()
         if client is not None:
+            print('client ifz', client.client_id)
             client.server_announce(osp, False)
         else:
             for client in self.clients:
@@ -272,6 +275,7 @@ class SignaledSession(OperatingSession):
                     # then, we may can say this stopped client is the good one,
                     # and we declare it as external because we won't check its process
                     # state with QProcess.state().
+                    print('client ifw', client.client_id)
                     client.server_announce(osp, True)
                     break
             else:
@@ -280,6 +284,7 @@ class SignaledSession(OperatingSession):
                 client = self._new_client(executable_path)
                 self.externals_timer.start()
                 self.send_monitor_event('joined', client.client_id)
+                print('client ext', client.client_id)
                 client.server_announce(osp, True)
 
         if self.wait_for is ray.WaitFor.ANNOUNCE:

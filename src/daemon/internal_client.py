@@ -50,9 +50,9 @@ class InternalClient:
             return
         
         # check if internal_prepare success
-        if len(funcs) == 1 and isinstance(funcs[0], int):
+        if isinstance(funcs, int):
             _logger.warning(f'InternalClient {self.name}: '
-                            f'internal_prepare return error code {funcs[0]}')
+                            f'internal_prepare return error code {funcs}')
             return
         if len(funcs) == 2:
             funcs: tuple[Callable, Callable]

@@ -302,7 +302,7 @@ class OperatingSession(Session):
             elif client._internal is not None:
                 if client._internal.running:
                     has_alives = True
-                elif client.nsm_active:
+                elif client.status is not ray.ClientStatus.STOPPED:
                     clients_to_finish.append(client)
 
             elif (client.is_running()
