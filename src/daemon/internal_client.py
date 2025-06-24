@@ -78,6 +78,8 @@ class InternalClient:
         # finished
         self._start_func = None
         self._stop_func = None
+        self._start_data = None
+        self._stop_data = None
     
     def start(self):
         if self.running:
