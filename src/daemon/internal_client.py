@@ -1,7 +1,7 @@
 import importlib
 from threading import Thread
 from types import ModuleType
-from typing import Optional, Callable
+from typing import Optional, Callable, Any
 import logging
 
 
@@ -18,11 +18,16 @@ class InternalClient:
         self._thread: Optional[Thread] = None
         self._start_func: Optional[Callable] = None
         self._stop_func: Optional[Callable] = None
+        self._start_data: Optional[Any] = None
+        self._stop_data: Optional[Any] = None
 
     def main_loop(self):
         'target of the _thread attribute'
 
-        module_name = self.name.replace('ray-', '')
+        if self.name == 'sooperlooper_nsm':
+            module_name = 'sooperlooper'
+        else:
+            module_name = self.name.replace('ray-', '')
 
         # import the client module
         try:
@@ -44,10 +49,19 @@ class InternalClient:
                 + str(e))
             return
         
-        # check if internal_prepare success 
+        # check if internal_prepare success
+        if len(funcs) == 1 and isinstance(funcs[0], int):
+            _logger.warning(f'InternalClient {self.name}: '
+                            f'internal_prepare return error code {funcs[0]}')
+            return
         if len(funcs) == 2:
             funcs: tuple[Callable, Callable]
             self._start_func, self._stop_func = funcs
+            self._start_func()
+        elif len(funcs) == 4:
+            funcs: tuple[Callable, Callable, Any, Any]
+            self._start_func, self._stop_func, \
+                self._start_data, self._stop_data = funcs
         else:
             _logger.warning(
                 f'InternalClient {self.name}: '
@@ -56,7 +70,10 @@ class InternalClient:
             return
         
         # run
-        self._start_func()
+        if self._start_data is None:
+            self._start_func()
+        else:
+            self._start_func(self._start_data)
         
         # finished
         self._start_func = None
@@ -79,7 +96,10 @@ class InternalClient:
                           'stop_func is not defined')
             return
 
-        self._stop_func()
+        if self._stop_data is None:
+            self._stop_func()
+        else:
+            self._stop_func(self._stop_data)
 
     def kill(self):
         '''Does not really kill the thread,

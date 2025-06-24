@@ -53,7 +53,7 @@ class OscSrc(Enum):
 NSM_API_VERSION_MAJOR = 1
 NSM_API_VERSION_MINOR = 0
 
-INTERNAL_EXECS = {'ray-jackpatch', 'ray-alsapatch', 'ray-sooperlooper'}
+INTERNAL_EXECS = {'ray-jackpatch', 'ray-alsapatch', 'sooperlooper_nsm'}
 
 _logger = logging.getLogger(__name__)
 _translate = QCoreApplication.translate
