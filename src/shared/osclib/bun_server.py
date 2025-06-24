@@ -64,8 +64,17 @@ def bun_manage(path: OscPath, multypes: OscMulTypes):
 
 class BunServer:
     '''Class inheriting liblo.Server. Provides a server
-    with the mega_send feature, which allows to send massive
-    bundle of messages, in several sends if needed.'''
+    with more features.
+    
+    - mega_send: send massive bundle of messages (in several sends
+    if needed)
+    
+    - direct communication: no OSC messages if the two instances are on the same
+    process
+    
+    - total_fake: No OSC port is created if argument total_fake=True,
+    possible if the goal of this server is to communicate only with servers
+    on the same process''' 
     def __init__(self, port: Union[int, str] =1, proto=UDP,
                  reg_methods=True, total_fake=False):
         self._methods_adder = MethodsAdder()

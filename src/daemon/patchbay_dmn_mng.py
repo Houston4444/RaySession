@@ -226,6 +226,9 @@ def is_running() -> bool:
         return False
     return _MainObj.process.state() != QProcess.ProcessState.NotRunning
 
+def is_internal() -> bool:
+    return _MainObj.is_internal
+
 def state() -> State:
     if is_running():
         if _MainObj.ready:
