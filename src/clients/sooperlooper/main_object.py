@@ -41,6 +41,7 @@ class MainObject:
         self.leaving = False
         
         # for transport workaround
+        self.transport_wk = False
         self.transport_playing = False
         self.will_trig = False
     
