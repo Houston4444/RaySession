@@ -502,6 +502,7 @@ class MainObject:
 
         @self.client.set_client_registration_callback
         def client_registration(name: str, register: bool):
+            _logger.debug(f'client registration {register} "{name}"')
             if register:
                 self.client_names_queue.put(name)
             self.pretty_events_queue.put(
@@ -517,6 +518,9 @@ class MainObject:
             flags = jack._lib.jack_port_flags(port._ptr)
             port_name = port.name
             port_uuid = port.uuid
+
+            _logger.debug(
+                f'port registration {register} "{port_name}" {port_uuid}')
 
             if register:                
                 self.port_list.append(
@@ -537,6 +541,7 @@ class MainObject:
         @self.client.set_port_connect_callback
         def port_connect(port_a: jack.Port, port_b: jack.Port, connect: bool):
             conn = (port_a.name, port_b.name)
+            _logger.debug(f'ports connected {connect} {conn}')
 
             if connect:
                 self.connection_list.append(conn)
@@ -548,6 +553,7 @@ class MainObject:
             
         @self.client.set_port_rename_callback
         def port_rename(port: jack.Port, old: str, new: str):
+            _logger.debug(f'port renamed "{old}" to "{new}"')
             for exist_port in self.port_list:
                 if exist_port.name == old:
                     exist_port.name = new

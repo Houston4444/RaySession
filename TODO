@@ -130,3 +130,4 @@ Gérér patchbay_daemon external stderr
 - Partage de serveur en internal (si oui ray-sl total_fake et patch_dmn peut utiliser)
 - Mais où est géré alsalib Ok dans canvas options ???
 // - no Terminal nor env vars for internals (GUI)
+- jackpatch doit stopper quand JACK Stop
