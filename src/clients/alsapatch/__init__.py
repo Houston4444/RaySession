@@ -11,6 +11,7 @@ from patcher.bases import EventHandler
 from nsm_client import NsmServer
 
 from .engine import Engine
+from .check_internal import IS_INTERNAL
 
 
 is_internal = not Path(sys.argv[0]).name == 'ray-alsapatch'
@@ -68,7 +69,7 @@ def internal_prepare(
     if not engine.init():
         return 2
 
-    nsm_server = NsmServer(daemon_address)
+    nsm_server = NsmServer(daemon_address, total_fake=IS_INTERNAL)
     patcher = Patcher(engine, nsm_server, _logger)
     return patcher.run_loop, patcher.stop
 
