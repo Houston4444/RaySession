@@ -113,12 +113,13 @@ class ClientPropertiesDialog(ChildDialog):
 
     @staticmethod
     def create(window, client: ray.ClientData) -> 'ClientPropertiesDialog':
-        if client.protocol in (ray.Protocol.NSM, ray.Protocol.INTERNAL):
-            return NsmClientPropertiesDialog(window, client)
-        if client.protocol is ray.Protocol.RAY_HACK:
-            return RayHackClientPropertiesDialog(window, client)
-        if client.protocol is ray.Protocol.RAY_NET:
-            return RayNetClientPropertiesDialog(window, client)
+        match client.protocol:
+            case ray.Protocol.NSM | ray.Protocol.INTERNAL:
+                return NsmClientPropertiesDialog(window, client)
+            case ray.Protocol.RAY_HACK:
+                return RayHackClientPropertiesDialog(window, client)
+            case ray.Protocol.RAY_NET:
+                return RayNetClientPropertiesDialog(window, client)
 
         return ClientPropertiesDialog(window, client)
 
@@ -163,12 +164,18 @@ class ClientPropertiesDialog(ChildDialog):
 class NsmClientPropertiesDialog(ClientPropertiesDialog):
     def __init__(self, parent, client):
         ClientPropertiesDialog.__init__(self, parent, client)
+        
         self.nsmui_frame = QFrame()
         self.nsmui = ui.nsm_properties.Ui_Frame()
         self.nsmui.setupUi(self.nsmui_frame)
         self.ui.verticalLayoutProtocol.addWidget(self.nsmui_frame)
 
-        self.ui.tabWidget.setTabText(1, 'NSM')
+        if self.client.protocol is ray.Protocol.INTERNAL:
+            self.ui.tabWidget.setTabText(1, 'Internal')
+            self.nsmui.groupBoxEnv.setVisible(False)
+            self.nsmui.checkBoxTerminal.setVisible(False)
+        else:
+            self.ui.tabWidget.setTabText(1, 'NSM')
 
     def _save_changes(self):
         self.client.executable_path = self.nsmui.lineEditExecutable.text()

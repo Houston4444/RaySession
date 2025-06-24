@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="groupBoxPresentation">
      <property name="title">
       <string/>
      </property>
@@ -142,7 +142,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_3">
+    <widget class="QGroupBox" name="groupBoxExecutable">
      <property name="title">
       <string/>
      </property>
@@ -203,7 +203,7 @@
     </spacer>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_4">
+    <widget class="QGroupBox" name="groupBoxArguments">
      <property name="title">
       <string/>
      </property>
@@ -261,7 +261,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_2">
+    <widget class="QGroupBox" name="groupBoxEnv">
      <property name="title">
       <string/>
      </property>
