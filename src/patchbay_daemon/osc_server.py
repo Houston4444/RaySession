@@ -179,7 +179,7 @@ class PatchbayDaemonServer(BunServer):
             for key, value in key_dict.items():
                 ms.add(rg.patchbay.METADATA_UPDATED,
                        uuid, key, value)
-            
+
         if self.main_object.alsa_mng is not None:
             alsa_mng = self.main_object.alsa_mng
             for port in alsa_mng.parse_ports_and_flags():
@@ -190,7 +190,6 @@ class PatchbayDaemonServer(BunServer):
                 ms.add(rg.patchbay.CONNECTION_ADDED, *conn)
         
         ms.add(rg.patchbay.BIG_PACKETS, 1)
-        
         self.mega_send(src_addrs, ms)
 
     def add_gui(self, gui_url: str):

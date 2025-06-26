@@ -138,6 +138,10 @@ class PatchRemote(BunServerThread):
     def _server_stopped(self, osp: OscPack):
         self.ev.add_event(Event.JACK_STOPPED)
 
+    def stop(self):
+        self.send_patchbay(r.patchbay.GUI_DISANNOUNCE, self.url)
+        super().stop()
+
 
 class JackEngine(ProtoEngine):
     def __init__(self, event_handler: EventHandler):
