@@ -69,18 +69,19 @@ def internal_prepare(
         return 2
 
     nsm_server = NsmServer(
-        daemon_address, total_fake=True)
+        daemon_address, total_fake=IS_INTERNAL)
     patcher = Patcher(engine, nsm_server, _logger)
-    return patcher.run_loop, patcher.stop
+    return patcher.run_loop, patcher.stop, True, None
 
 def run():
     ret = internal_prepare(*sys.argv[1:], nsm_url=os.getenv('NSM_URL', ''))
     if isinstance(ret, int):
         sys.exit(ret)
 
-    start_func, stop_func = ret
+    start_func, stop_func, stop_with_jack, none = ret
 
     signal.signal(signal.SIGINT, stop_func)
     signal.signal(signal.SIGTERM, stop_func)
-    start_func()
+
+    start_func(stop_with_jack=True)
 

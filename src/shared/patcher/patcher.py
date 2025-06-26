@@ -53,10 +53,9 @@ class Patcher:
         self.nsm_server.announce(
             self.engine.NSM_NAME, ':dirty:switch:monitor:', engine.EXECUTABLE)
 
-    def run_loop(self):
+    def run_loop(self, stop_with_jack=False):
         self.engine.fill_ports_and_connections(
             self.jack_ports, self.connection_list)
-        
         jack_stopped = False
 
         while True:
@@ -66,19 +65,23 @@ class Patcher:
             self.nsm_server.recv(50)
 
             for event, args in self.engine.ev_handler.new_events():
-                if event is Event.PORT_ADDED:
-                    self.port_added(*args)
-                elif event is Event.PORT_REMOVED:
-                    self.port_removed(*args)
-                elif event is Event.PORT_RENAMED:
-                    self.port_renamed(*args)
-                elif event is Event.CONNECTION_ADDED:
-                    self.connection_added(*args)
-                elif event is Event.CONNECTION_REMOVED:
-                    self.connection_removed(*args)
-                elif event is Event.JACK_STOPPED:
-                    jack_stopped = True
-                    break
+                match event:
+                    case Event.PORT_ADDED:
+                        self.port_added(*args)
+                    case Event.PORT_REMOVED:
+                        self.port_removed(*args)
+                    case Event.PORT_RENAMED:
+                        self.port_renamed(*args)
+                    case Event.CONNECTION_ADDED:
+                        self.connection_added(*args)
+                    case Event.CONNECTION_REMOVED:
+                        self.connection_removed(*args)
+                    case Event.JACK_STOPPED:
+                        jack_stopped = True
+                        break
+            
+            if jack_stopped and stop_with_jack:
+                break
             
             if self.timer_dirty_check.elapsed():
                 self.timer_dirty_finished()
@@ -86,8 +89,7 @@ class Patcher:
             if self.timer_connect_check.elapsed():
                 self.may_make_one_connection()
 
-        if not jack_stopped:
-            self.engine.quit()
+        self.engine.quit()
 
     def stop(self, *args):
         self.glob.terminate = True
