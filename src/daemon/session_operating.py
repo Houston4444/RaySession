@@ -230,9 +230,11 @@ class OperatingSession(Session):
                         # with open_session_off
                         break
 
-                    if self.step_scripter.start(step_string, arguments,
-                                                self.steps_osp.src_addr,
-                                                self.steps_osp.path):
+                    if (self.steps_osp is not None
+                            and self.step_scripter.start(
+                                step_string, arguments,
+                                self.steps_osp.src_addr,
+                                self.steps_osp.path)):
                         self.set_server_status(ray.ServerStatus.SCRIPT)
                         return
                     break

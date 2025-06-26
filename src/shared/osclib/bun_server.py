@@ -171,6 +171,8 @@ class BunServer:
                     has_osp = True
                 except Empty:
                     break
+                except BaseException as e:
+                    _logger.error(f'Unknown problem in fake recv {str(e)}')
 
                 types_func = self._methods_adder.get_func(osp.path, osp.args)
                 if types_func is None:

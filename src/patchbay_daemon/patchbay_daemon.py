@@ -195,10 +195,8 @@ class MainObject:
                 file.write(contents)
 
         except PermissionError:
-            sys.stderr.write(
-                'ray-patchbay_to_osc: Error, no permission for existence file\n')
-            sys.exit(1)
-    
+            _logger.critical('no permission for existence file')
+
     def remove_existence_file(self):
         existence_path = EXISTENCE_PATH / self._daemon_port
         if not existence_path.exists():
@@ -288,6 +286,8 @@ class MainObject:
                 break
         else:
             # server never answer
+            _logger.error(
+                'Server never answer when trying to open JACK client !')
             self.osc_server.send_server_lose()
             self.remove_existence_file()
             
@@ -297,6 +297,7 @@ class MainObject:
             self.terminate = True
     
     def refresh(self):
+        _logger.debug(f'refresh jack running {self.jack_running}')
         if self.jack_running:
             self.get_all_ports_and_connections()
             self.osc_server.server_restarted()
@@ -404,6 +405,15 @@ class MainObject:
 
             else:
                 if n % 10 == 0:
+                    if self.client is not None:
+                        _logger.debug(
+                            'deactivate JACK client after server shutdown')
+                        self.client.deactivate()
+                        _logger.debug('close JACK client after server shutdown')
+                        self.client.close()
+                        _logger.debug('close JACK client done')
+                        self.client = None
+                    _logger.debug('try to start JACK')
                     self.start_jack_client()
             n += 1
             
@@ -428,6 +438,7 @@ class MainObject:
             del self.alsa_mng
 
         self.remove_existence_file()
+        _logger.debug('Exit, bye bye.')
     
     def start_jack_client(self):
         self._waiting_jack_client_open = True
@@ -442,6 +453,8 @@ class MainObject:
         fail_info = False
         self.client = None
 
+        _logger.debug('Start JACK client')
+
         with suppress_stdout_stderr():
             try:
                 self.client = jack.Client(
@@ -455,6 +468,8 @@ class MainObject:
         
         if fail_info:
             _logger.info('Failed to connect client to JACK server')
+        else:
+            _logger.info('JACK client started successfully')
                 
         self._waiting_jack_client_open = False
 
@@ -627,6 +642,7 @@ class MainObject:
             
         @self.client.set_shutdown_callback
         def on_shutdown(status: jack.Status, reason: str):
+            _logger.debug('Jack shutdown')
             self.jack_running = False
             self.port_list.clear()
             self.connection_list.clear()
@@ -942,6 +958,8 @@ def start():
     daemon_port = ''
     gui_url = ''
     pretty_names_active = True
+    log = ''
+    dbg = ''
 
     args.pop(0)
 
@@ -952,6 +970,25 @@ def start():
     if args:
         pns = args.pop(0)
         pretty_names_active = not bool(pns.lower() in ('0', 'false'))
+        args.pop(0)
+    if args[0] == '--log':
+        args.pop(0)
+        log = args.pop(0)
+    if args[0] == '--dbg':
+        args.pop(0)
+        dbg = args.pop(0)
+    
+    level = logging.INFO
+    for lv_info in (log, dbg):
+        for module_name in lv_info.split(':'):
+            if module_name == 'patchbay_daemon':
+                _logger.setLevel(level)
+            elif module_name.startswith('patchbay_daemon.'):
+                sh_mod_name = module_name.partition('.')[2]
+                mod_logger = logging.getLogger(sh_mod_name)
+                mod_logger.setLevel(level)
+
+        level = logging.DEBUG
     
     main_object = MainObject(daemon_port, gui_url, pretty_names_active)
     if gui_url:
