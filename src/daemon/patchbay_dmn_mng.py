@@ -211,8 +211,8 @@ def start(gui_url=''):
                         '',
                         '--log', CommandLineArgs.log,
                         '--dbg', CommandLineArgs.dbg])
-                _MainObj.process.start()
-            
+
+            _MainObj.process.start()            
             _logger.info('ray-patch_dmn process started')
 
         except:
