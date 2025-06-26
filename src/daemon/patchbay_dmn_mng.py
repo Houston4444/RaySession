@@ -182,7 +182,7 @@ def start(gui_url=''):
             _logger.warning('Failed to launch ray-patch_dmn as internal')
 
     else:
-        START_IN_KONSOLE = True
+        START_IN_KONSOLE = False
 
         try:
             _MainObj.process = QProcess()
