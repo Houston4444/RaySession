@@ -20,7 +20,7 @@ import osc_paths.ray as r
 
 # local imports
 from internal_client import InternalClient
-from daemon_tools import RS, Terminal
+from daemon_tools import RS, CommandLineArgs, Terminal
 
 if TYPE_CHECKING:
     from osc_server_thread import OscServerThread
@@ -182,6 +182,8 @@ def start(gui_url=''):
             _logger.warning('Failed to launch ray-patch_dmn as internal')
 
     else:
+        START_IN_KONSOLE = True
+
         try:
             _MainObj.process = QProcess()
             _MainObj.process.setProcessChannelMode(
@@ -189,14 +191,27 @@ def start(gui_url=''):
             _MainObj.process.readyReadStandardOutput.connect(
                 _process_stdout)
             _MainObj.process.finished.connect(_process_finished)
-            _MainObj.process.setProgram('ray-patch_dmn')
-            _MainObj.process.setArguments(
-                [str(_MainObj.daemon_server.port),
-                    gui_url,
-                    str(pretty_names_active),
-                    '']
-            )
-            _MainObj.process.start()
+            
+            if START_IN_KONSOLE:
+                _MainObj.process.setProgram('konsole')
+                _MainObj.process.setArguments(
+                    ['--hold', '-e', 'ray-patch_dmn',
+                    str(_MainObj.daemon_server.port),
+                        gui_url,
+                        str(pretty_names_active),
+                        '',
+                        '--log', CommandLineArgs.log,
+                        '--dbg', CommandLineArgs.dbg])
+            else:
+                _MainObj.process.setProgram('ray-patch_dmn')
+                _MainObj.process.setArguments(
+                    [str(_MainObj.daemon_server.port),
+                        gui_url,
+                        str(pretty_names_active),
+                        '',
+                        '--log', CommandLineArgs.log,
+                        '--dbg', CommandLineArgs.dbg])
+                _MainObj.process.start()
             
             _logger.info('ray-patch_dmn process started')
 
