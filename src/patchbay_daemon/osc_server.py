@@ -160,6 +160,9 @@ class PatchbayDaemonServer(BunServer):
             self.send(src_addr, *args)
 
     def send_distant_data(self, src_addrs: list[Address]):
+        if not src_addrs:
+            return
+        
         ms = MegaSend('patchbay_ports')        
         ms.add(rg.patchbay.BIG_PACKETS, 0)
 
