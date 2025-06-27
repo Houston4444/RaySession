@@ -127,7 +127,6 @@ Gérér patchbay_daemon external stderr
 // - FIX retour IGU sur démon
 // - alsapatch internal: total_fake
 // - ray-sooperlooper internal
-- Partage de serveur en internal (si oui ray-sl total_fake et patch_dmn peut utiliser)
-- Mais où est géré alsalib Ok dans canvas options ???
+// - Mais où est géré alsalib Ok dans canvas options ???
 // - no Terminal nor env vars for internals (GUI)
 // - jackpatch doit stopper quand JACK Stop

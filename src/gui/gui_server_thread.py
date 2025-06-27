@@ -320,10 +320,10 @@ class GuiServerThread(BunServerThread):
         args: tuple[str, float] = osp.args
         self.signaler.client_progress.emit(*args)
 
-    @validator(rg.patchbay.ANNOUNCE, 'iiis')
+    @validator(rg.patchbay.ANNOUNCE, 'iiiis')
     def _ray_gui_patchbay_announce(self, osp: OscPack):
         args: tuple[int, int, int, str] = osp.args
-        self.patchbay_addr = Address(args[3])
+        self.patchbay_addr = Address(args[4])
     
     @validator(rg.preview.STATE, 'i')
     def _ray_gui_preview_state(self, osp: OscPack):

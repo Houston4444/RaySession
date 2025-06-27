@@ -53,10 +53,14 @@ class PatchRemote(BunServerThread):
     def send_patchbay(self, *args):
         self.send(self._patchbay_port, *args)
 
-    # @bun_manage(rg.patchbay.ANNOUNCE, 'iiis')
-    # def _patchbay_announce(self, osp: OscPack):
-    #     ...
-        
+    @bun_manage(rg.patchbay.ANNOUNCE, 'iiiis')
+    def _patchbay_announce(self, osp: OscPack):
+        alsa_lib_ok = osp.args[1]
+        if not alsa_lib_ok:
+            _logger.critical(
+                'python ALSA lib is not installed or too old, will quit.')
+            self.ev.add_event(Event.JACK_STOPPED)
+
     @bun_manage(rg.patchbay.CONNECTION_ADDED, 'ss')
     def _connection_added(self, osp: OscPack):
         port_out, port_in = osp.args
