@@ -73,6 +73,7 @@ class PatchRemote(BunServerThread):
             return
 
         self.connections.append((jport_out.name, jport_in.name))
+
         if self.startup_received:
             self.ev.add_event(
                 Event.CONNECTION_ADDED, jport_out.name, jport_in.name)
@@ -94,8 +95,10 @@ class PatchRemote(BunServerThread):
 
     @bun_manage(rg.patchbay.PORT_ADDED, 'siih')
     def _port_added(self, osp: OscPack):
-        name, type_, flags, uuid = osp.args
-        
+        name, type_, flags, uuid = osp.args        
+        if type_ != 4:
+            return
+
         if (name.count(':') < 5
                 and not (name.startswith(':ALSA_IN:')
                          or name.startswith(':ALSA_OUT:'))):
@@ -105,9 +108,6 @@ class PatchRemote(BunServerThread):
             mode = PortMode.OUTPUT
         else:
             mode = PortMode.INPUT
-
-        if type_ != 4:
-            return
 
         jack_port = JackPort()
         jack_port.name = ':'.join(name.split(':')[4:])

@@ -22,6 +22,7 @@ from .bases import (
     Event,
     debug_conn_str)
 
+_logger = logging.getLogger(__name__)
 
 class Patcher:
     def __init__(
@@ -83,11 +84,11 @@ class Patcher:
             if jack_stopped and stop_with_jack:
                 break
             
-            if self.timer_dirty_check.elapsed():
-                self.timer_dirty_finished()
-            
             if self.timer_connect_check.elapsed():
                 self.may_make_one_connection()
+
+            if self.timer_dirty_check.elapsed():
+                self.timer_dirty_finished()
 
         self.engine.quit()
 
@@ -116,7 +117,7 @@ class Patcher:
     def is_dirty_now(self) -> bool:
         for conn in self.connection_list:
             if not conn in self.saved_connections:
-                # There is at least a present connection unsaved
+                # There is at least one present connection unsaved                
                 return True
 
         for sv_con in self.saved_connections:
@@ -142,6 +143,11 @@ class Patcher:
 
         self.jack_ports[port.mode].append(port)
         self.timer_connect_check.start()
+        
+        # dirty checker timer is longer than timer connect
+        # prevent here that dirty check launched after open file
+        # found a not yet done connection.
+        self.timer_dirty_check.start()
 
     def port_removed(
             self, port_name: str, port_mode: PortMode, port_type: PortType):
@@ -235,6 +241,7 @@ class Patcher:
 
     def open_file(self, project_path: str, session_name: str,
                   full_client_id: str) -> tuple[Err, str]:
+        _logger.info(f'Open file "{project_path}"')
         self.saved_connections.clear()
 
         file_path = project_path + '.xml'
