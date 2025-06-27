@@ -2,7 +2,12 @@
 from patcher.bases import EventHandler
 
 # Local imports
-from .alsa_engine import AlsaEngine
+from .check_internal import IS_INTERNAL
+
+if IS_INTERNAL:
+    from .alsa_engine_remote import AlsaEngine
+else:
+    from .alsa_engine import AlsaEngine
 
 
 class Engine(AlsaEngine):
