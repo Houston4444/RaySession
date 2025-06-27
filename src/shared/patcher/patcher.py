@@ -53,7 +53,7 @@ class Patcher:
         self.nsm_server.announce(
             self.engine.NSM_NAME, ':dirty:switch:monitor:', engine.EXECUTABLE)
 
-    def run_loop(self, stop_with_jack=False):
+    def run_loop(self, stop_with_jack=True):
         self.engine.fill_ports_and_connections(
             self.jack_ports, self.connection_list)
         jack_stopped = False

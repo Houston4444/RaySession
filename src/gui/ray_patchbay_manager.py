@@ -525,8 +525,11 @@ class RayPatchbayManager(PatchbayManager):
         self.set_options_dialog(
             CanvasOptionsDialog(self.main_win, self))
 
-    def patchbay_announce(self, jack_running: int, samplerate: int,
-                          buffer_size: int, tcp_url: str):
+    def patchbay_announce(self, jack_running: int, alsa_lib_ok: int,
+                          samplerate: int, buffer_size: int, tcp_url: str):
+        if self.options_dialog is not None:
+            self.options_dialog.enable_alsa_midi(alsa_lib_ok)
+        
         if self._tools_widget is None:
             return
         

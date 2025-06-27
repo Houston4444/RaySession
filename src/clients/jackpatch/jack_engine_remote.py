@@ -53,7 +53,7 @@ class PatchRemote(BunServerThread):
     def send_patchbay(self, *args):
         self.send(self._patchbay_port, *args)
 
-    @bun_manage(rg.patchbay.ANNOUNCE, 'iiis')
+    @bun_manage(rg.patchbay.ANNOUNCE, 'iiiis')
     def _patchbay_announce(self, osp: OscPack):
         jack_running = osp.args[0]
         if not jack_running:

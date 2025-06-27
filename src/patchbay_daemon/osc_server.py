@@ -9,6 +9,8 @@ from osclib import (BunServer, Address, MegaSend,
 import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 
+from alsa_lib_check import ALSA_LIB_OK
+
 if TYPE_CHECKING:
     from patchbay_daemon import MainObject, TransportPosition
 
@@ -203,6 +205,7 @@ class PatchbayDaemonServer(BunServer):
         try:
             self.send(gui_addr, rg.patchbay.ANNOUNCE,
                       int(self.main_object.jack_running),
+                      int(ALSA_LIB_OK),
                       self.main_object.samplerate,
                       self.main_object.buffer_size,
                       self.url)

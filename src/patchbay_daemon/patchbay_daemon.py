@@ -14,8 +14,20 @@ import logging
 import json
 from queue import Queue
 
-is_internal = not Path(sys.path[0]).name == __name__
-if is_internal:
+import jack
+
+from proc_name import set_proc_name
+from patshared import JackMetadatas, JackMetadata, PrettyNames
+
+from osc_server import PatchbayDaemonServer
+
+from alsa_lib_check import ALSA_LIB_OK
+if ALSA_LIB_OK:
+    from alsa_manager import AlsaManager
+
+
+IS_INTERNAL = not Path(sys.path[0]).name == __name__
+if IS_INTERNAL:
     _logger = logging.getLogger(__name__)
 else:
     _logger = logging.getLogger()
@@ -23,25 +35,6 @@ else:
     _log_handler.setFormatter(logging.Formatter(
         f"%(levelname)s:%(name)s - %(message)s"))
     _logger.addHandler(_log_handler)
-
-
-# check ALSA LIB
-try:
-    from pyalsa.alsaseq import SEQ_LIB_VERSION_STR
-    ALSA_VERSION_LIST = [int(num) for num in SEQ_LIB_VERSION_STR.split('.')]
-    assert ALSA_VERSION_LIST >= [1, 2, 4]
-    ALSA_LIB_OK = True
-    from alsa_manager import AlsaManager
-except:
-    ALSA_LIB_OK = False
-
-import jack
-
-from proc_name import set_proc_name
-from patshared import JackMetadatas, JackMetadata, PrettyNames
-
-from osc_server import PatchbayDaemonServer
-    
 
 PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1

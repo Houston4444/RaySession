@@ -579,7 +579,7 @@ class SignaledSession(Session):
     def _hide_script_user_action(self, osp: OscPack):
         self.main_win.hide_script_user_action_dialog()
 
-    @manage(rg.patchbay.ANNOUNCE, 'iiis')
+    @manage(rg.patchbay.ANNOUNCE, 'iiiis')
     def _patchbay_announce(self, osp: OscPack):
         args: tuple[int, int, int, str] = osp.args
         self.patchbay_manager.patchbay_announce(*args)
