@@ -121,12 +121,18 @@ PATHS:
 
 
 
-Gérér patchbay_daemon external stderr
+- context manager pour optimize
+    verifier utilisation de add_port add_portgroup add_connection add_group
+    est-ce que ça existe sans optimize ?
+        vérifier si operation à la suite est toujours redraw groupes concernées
+            (peut être géré par patchcanvas)
+    Essayer départ en very_fast
+- fix hidden connection pas fiable
+- voir pretty_name et SIGTERM quand session chargée
 
-// - Patchbay_daemon externe et ray-jackpatch interne
-// - FIX retour IGU sur démon
-// - alsapatch internal: total_fake
-// - ray-sooperlooper internal
-// - Mais où est géré alsalib Ok dans canvas options ???
-// - no Terminal nor env vars for internals (GUI)
-// - jackpatch doit stopper quand JACK Stop
+Accélération du startup:
+    - multidaemon file en json (accès direct pour le GUI = -150ms au startup)
+    - 100ms pour le lancement de patchbay_dmn en interne (optimisable)
+    - start daemon avant main_win
+        - tous les messages du gui_server_thread doivent aller en session (main thread)
+        - stocker les messages reçus avant la fin de l initiation main_win 

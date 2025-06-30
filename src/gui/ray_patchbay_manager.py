@@ -9,7 +9,7 @@ import logging
 # Imports from HoustonPatchbay
 from patshared import (
     GroupPos, PortgroupMem, PortMode, ViewData, Naming)
-from patchbay.bases.elements import ToolDisplayed
+from patchbay.bases.elements import CanvasOptimize, CanvasOptimizeIt, ToolDisplayed
 from patchbay.bases.group import Group
 from patchbay import (
     PatchbayManager,
@@ -512,8 +512,21 @@ class RayPatchbayManager(PatchbayManager):
         self.send_to_daemon(r.server.EXPORT_PRETTY_NAMES, str(pretty_enable))
     
     def receive_big_packets(self, state: int):
-        self.optimize_operation(not bool(state))
         if state:
+            self._delayed_orders_timer.stop()
+            
+            with CanvasOptimizeIt(self, CanvasOptimize.VERY_FAST):
+                self._delayed_orders_timeout()
+
+            with CanvasOptimizeIt(self):
+                for group in self.groups:
+                    if group.is_in_port_types_view(self.port_types_view):
+                        group.add_to_canvas()
+                        group.add_all_ports_to_canvas()
+                
+                for connection in self.connections:
+                    connection.add_to_canvas()
+
             self.redraw_all_groups()
             
     def finish_init(self):

@@ -241,6 +241,7 @@ class SignaledSession(OperatingSession):
             # but if client announce a known PID,
             # we can be sure of which client is announcing
             if pid == os.getpid():
+                # this client is internal for sure
                 for client in self.clients:
                     if (client.protocol is ray.Protocol.INTERNAL
                             and client.executable_path == executable_path
