@@ -93,7 +93,7 @@ def add_self_bin_to_path():
     if not os.environ['PATH'].startswith("%s:" % bin_path):
         os.environ['PATH'] = "%s:%s" % (bin_path, os.environ['PATH'])
 
-def pid_exists(pid: int) -> bool:
+def pid_exists(pid: int | str) -> bool:
     if isinstance(pid, str):
         pid = int(pid)
 
