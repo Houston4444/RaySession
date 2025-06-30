@@ -5,7 +5,7 @@ import enum
 import os
 import signal
 import sys
-import xml.etree.ElementTree as ET
+import json
 import warnings
 from pathlib import Path
 
@@ -105,7 +105,7 @@ def pid_exists(pid: int | str) -> bool:
         return True
 
 def pid_is_stopped(pid: int) -> bool:
-    proc_file_path = '/proc/%i/status' % pid
+    proc_file_path = f'/proc/{pid}/status'
     if os.path.exists(proc_file_path):
         proc_file = open(proc_file_path)
         for line in proc_file.readlines():
@@ -118,50 +118,52 @@ def pid_is_stopped(pid: int) -> bool:
 
 def get_daemon_list() -> list[Daemon]:
     try:
-        tree = ET.parse('/tmp/RaySession/multi-daemon.xml')
+        with open('/tmp/RaySession/multi-daemon.json') as f:
+            json_list = json.load(f)
+    
     except:
-        return []
-
+        return list[Daemon]()
+    
+    if not isinstance(json_list, list):
+        return list[Daemon]()
+    
     l_daemon_list = list[Daemon]()
 
-    root = tree.getroot()
-    for child in root:
+    for dmn in json_list:
+        if not isinstance(dmn, dict):
+            continue
+        
         l_daemon = Daemon()
-
-        for key in child.attrib.keys():
+        
+        for key, value in dmn.items():
             match key:
                 case 'root':
-                    l_daemon.root = child.attrib[key]
+                    l_daemon.root = str(value)
                 case 'session_path':
-                    l_daemon.session_path = child.attrib[key]
+                    l_daemon.session_path = str(value)
                 case 'user':
-                    l_daemon.user = child.attrib[key]
+                    l_daemon.user = str(value)
                 case 'not_default':
-                    l_daemon.not_default = bool(child.attrib[key] == '1')
+                    l_daemon.not_default = bool(value)
                 case 'net_daemon_id':
-                    net_daemon_id = child.attrib[key]
-                    if net_daemon_id.isdigit():
-                        l_daemon.net_daemon_id = int(net_daemon_id)
-
+                    if isinstance(value, int):
+                        l_daemon.net_daemon_id = int(value)
                 case 'pid':
-                    pid = child.attrib[key]
-                    if pid.isdigit() and pid_exists(pid):
-                        l_daemon.pid = int(pid)
-
+                    if isinstance(value, int) and pid_exists(value):
+                        l_daemon.pid = value
                 case 'port':
-                    l_port = child.attrib[key]
-                    if l_port.isdigit():
-                        l_daemon.port = int(l_port)
-
+                    if isinstance(value, int):
+                        l_daemon.port = value
                 case 'has_gui':
-                    l_daemon.has_local_gui = bool(child.attrib[key] == '3')
-                    l_daemon.has_gui = bool(child.attrib[key] == '1')
+                    if isinstance(value, int):
+                        l_daemon.has_gui = bool(value == 1)
+                        l_daemon.has_local_gui = bool(value == 3)
                     
                 case 'local_gui_pids':
-                    gui_pids_str = child.attrib[key]
-                    for pid_str in gui_pids_str.split(':'):
-                        if pid_str.isdigit():
-                            l_daemon.local_gui_pids.append(int(pid_str))
+                    if isinstance(value, list):
+                        for pid in value:
+                            if isinstance(pid, int):
+                                l_daemon.local_gui_pids.append(pid)
 
         if not (l_daemon.net_daemon_id
                 and l_daemon.pid
