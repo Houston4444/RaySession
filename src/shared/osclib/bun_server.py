@@ -531,14 +531,14 @@ class BunServer:
         
         while self._sem_dict.count(bundler_id) >= 1:
             self.recv(1)
-            if time.time() - start >= 0.200:
+            if time.time() - start >= 1.000:
                 _logger.error(
                     f'too long wait for bundle '
                     f'recv confirmation {bundler_id}. {ref}')
                 return False 
         return True
  
- 
+
 class BunServerThread(BunServer):
     '''Class inheriting liblo.Server. Provides a server thread
     with the mega_send feature, which allows to send massive

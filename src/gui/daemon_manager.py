@@ -3,8 +3,9 @@
 import os
 import socket
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 import logging
+import json
 
 # third party imports
 from qtpy.QtCore import QObject, QProcess, QTimer
@@ -26,6 +27,49 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 
+
+def _get_port_gui_free() -> Optional[int]:
+    MULTI_DAEMON_FILE = '/tmp/RaySession/multi-daemon.json'
+    try:
+        with open(MULTI_DAEMON_FILE, 'r') as f:
+            json_list = json.load(f)
+    except:
+        return
+    
+    if not isinstance(json_list, list):
+        return
+    
+    for dmn in json_list:
+        if not isinstance(dmn, dict):
+            continue
+        
+        port = dmn.get('port')
+        if not isinstance(port, int):
+            continue
+        
+        if (dmn.get('root') == CommandLineArgs.session_root
+                and dmn.get('user') == os.getenv('USER')
+                # and not dmn.get('has_gui') == 3
+                and not dmn.get('not_default')):
+            if not dmn.get('has_gui') == 3:
+                return port
+
+            local_gui_pids = dmn.get('local_gui_pids')
+
+            has_local_gui = False
+            if isinstance(local_gui_pids, list):
+                for pid in local_gui_pids:
+                    if isinstance(pid, int):
+                        try:
+                            os.kill(pid, 0)
+                        except OSError:
+                            continue
+                        else:
+                            has_local_gui = True
+                            break
+            
+            if not has_local_gui:
+                return port
 
 class DaemonManager(QObject):
     def __init__(self, session: 'SignaledSession'):
@@ -193,37 +237,26 @@ class DaemonManager(QObject):
             return
 
         if not CommandLineArgs.force_new_daemon:
-            ray_control_process = QProcess()
-            ray_control_process.start(
-                "ray_control",
-                ['get_port_gui_free', CommandLineArgs.session_root])
-            ray_control_process.waitForFinished(2000)
+            port = _get_port_gui_free()
+            if port is not None:
+                self.address = Address(port)
+                self._port = self.address.port
+                self.url = self.address.url
+                self.launched_before = True
+                self.is_local = True
+                self._call_daemon()
+                sys.stderr.write(
+                    "\033[92m%s\033[0m\n" % (
+                        _translate('GUI_daemon',
+                                    "Connecting GUI to existing ray-daemon port %i")
+                        % self._port))
 
-            if ray_control_process.exitCode() == 0:
-                port_str_lines = \
-                    ray_control_process.readAllStandardOutput().\
-                        data().decode('utf-8')
-                port_str = port_str_lines.partition('\n')[0]
-
-                if port_str and port_str.isdigit():
-                    self.address = Address(int(port_str))
-                    self._port = self.address.port
-                    self.url = self.address.url
-                    self.launched_before = True
-                    self.is_local = True
-                    self._call_daemon()
-                    sys.stderr.write(
-                        "\033[92m%s\033[0m\n" % (
-                            _translate('GUI_daemon',
-                                       "Connecting GUI to existing ray-daemon port %i")
-                            % self._port))
-
-                    if CommandLineArgs.start_session:
-                        server = GuiServerThread.instance()
-                        if server:
-                            server.send(self.address, r.server.OPEN_SESSION,
-                                        CommandLineArgs.start_session)
-                    return
+                if CommandLineArgs.start_session:
+                    server = GuiServerThread.instance()
+                    if server:
+                        server.send(self.address, r.server.OPEN_SESSION,
+                                    CommandLineArgs.start_session)
+                return
 
         server = GuiServerThread.instance()
         if not server:
