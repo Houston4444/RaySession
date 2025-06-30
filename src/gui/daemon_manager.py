@@ -87,7 +87,7 @@ class DaemonManager(QObject):
                 'GUI can not call daemon, GUI OSC server is missing.')
             return
 
-        server.announce()
+        server.announce(self.address)
 
     def _show_daemon_url_window(self):
         self.signaler.daemon_url_request.emit(ErrDaemon.NO_ERROR, self.url)

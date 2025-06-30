@@ -90,10 +90,10 @@ class Session:
                 self.nsm_child = NsmChild(self)
 
         # build and show Main UI
+        self.daemon_manager.start()
         self.main_win = MainWindow(self)
         self.daemon_manager.finish_init()
         self.patchbay_manager.finish_init()
-        server.finish_init(self)
         self.main_win.show()
 
         # display donations dialog under breizh conditions
@@ -104,6 +104,8 @@ class Session:
 
             if coreff_counter % 44 == 29:
                 self.main_win.donate(True)
+
+        server.finish_init(self)
 
     def quit(self):
         self.patchbay_manager.clear_all()
@@ -169,7 +171,6 @@ class SignaledSession(Session):
     def __init__(self):
         Session.__init__(self)
         self.signaler.osc_receive.connect(self._osc_receive)
-        self.daemon_manager.start()
         
         self.preview_notes = ''
         self.preview_client_list = list[ray.ClientData]()
