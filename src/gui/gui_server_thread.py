@@ -140,35 +140,69 @@ class GuiServerThread(BunServerThread):
         
         self._parrallel_copy_id_queue = []
         self._parrallel_new_session_name = ''
+        
+        self.startup_osps = list[OscPack]()
+        
+        self.session = None
+        self.signaler = None
+        self.daemon_manager = None
+        self.patchbay_addr: Optional[Address] = None
+        
+        self._in_start_bundle = False
+
+        self.sv.add_bundle_handlers(
+            self._bundle_start, self._bundle_done, None)
+        self.add_nice_methods(METHODS_DICT, self._generic_callback)
+        self.add_nice_methods(_validators_types, self._generic_callback)
+        self.set_fallback_nice_method(self._fallback_callback)
+
+    def _bundle_start(self, *args):
+        if self.session is None:
+            self._in_start_bundle = True
+
+    def _bundle_done(self, *args):
+        self._in_start_bundle = False
 
     def stop(self):
         self.stopping = True
         super().stop()
 
     def finish_init(self, session: 'SignaledSession'):
+        self.signaler = session.signaler
+        self.daemon_manager = session.daemon_manager
         self.session = session
-        self.signaler = self.session.signaler
-        self.daemon_manager = self.session.daemon_manager
-        self.patchbay_addr: Optional[Address] = None
-
-        
-
-        self.add_nice_methods(METHODS_DICT, self._generic_callback)
-        self.add_nice_methods(_validators_types, self._generic_callback)
-        self.set_fallback_nice_method(self._fallback_callback)
 
     @staticmethod
     def instance():
         return _instance
 
+    def recv(self, timeout: Optional[int] = None) -> bool:
+        if self.startup_osps and self.session is not None:
+            # manage messages receved before main_win is init.
+            # It allows to start daemon while GUI is not ready yet
+            # to reduce noticeably the startup time.
+            for osp in self.startup_osps:
+                if osp.path in _validators:
+                    if not _validators[osp.path](self, osp):
+                        continue
+                self.signaler.osc_receive.emit(osp)
+            self.startup_osps.clear()
+
+        return super().recv(timeout)
+
     def _generic_callback(self, osp: OscPack):
         if self.stopping:
             return
-
+        import time
         _logger.debug(
             '\033[93mOSC::gui_receives\033[0m '
             f'({osp.path}, {osp.args}, {osp.types})')        
         
+        if self._in_start_bundle or self.session is None:
+            self.startup_osps.append(osp)
+            _logger.debug(f'more {len(self.startup_osps)} {osp.path}')
+            return
+
         if osp.path in _validators:
             if not _validators[osp.path](self, osp):
                 return
@@ -342,19 +376,9 @@ class GuiServerThread(BunServerThread):
             return
         
         self.send(self.patchbay_addr, *args)
-        
-        # try:
-        #     self.send(self.patchbay_addr, *args)
-        # except OSError:
-        #     _logger.warning(
-        #         'Failed to send message to patchbay daemon '
-        #         f'{self.patchbay_addr.url}')
-        #     self.patchbay_addr = None
-        # except BaseException as e:
-        #     _logger.error(str(e))
 
-    def announce(self):
-        self.send(self.daemon_manager.address, r.server.GUI_ANNOUNCE,
+    def announce(self, address: Address):
+        self.send(address, r.server.GUI_ANNOUNCE,
                   ray.VERSION, int(CommandLineArgs.under_nsm),
                   os.getenv('NSM_URL', ''), os.getpid(),
                   CommandLineArgs.net_daemon_id, '')

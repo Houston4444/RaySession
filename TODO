@@ -129,6 +129,7 @@ PATHS:
     Essayer départ en very_fast
 - fix hidden connection pas fiable
 - voir pretty_name et SIGTERM quand session chargée
+- problème unwrap save position
 
 Accélération du startup:
     - multidaemon file en json (accès direct pour le GUI = -150ms au startup)
