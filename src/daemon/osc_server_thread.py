@@ -1335,12 +1335,9 @@ class OscServerThread(ClientCommunicating):
 
         return 0
 
-    def get_local_gui_pid_list(self) -> str:
-        pid_list = list[str]()
-        for gui in self.gui_list:
-            if are_on_same_machine(gui.addr.url, self.url):
-                pid_list.append(str(gui.pid))
-        return ':'.join(pid_list)
+    def get_local_gui_pid_list(self) -> list[int]:
+        return [g.pid for g in self.gui_list
+                if are_on_same_machine(g.addr, self.url)]
 
     def is_gui_address(self, addr: Address) -> bool:
         for gui in self.gui_list:

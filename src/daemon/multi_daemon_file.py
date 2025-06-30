@@ -4,24 +4,21 @@ import logging
 import os
 from typing import TYPE_CHECKING, Union, Optional
 from pathlib import Path
-import xml.etree.ElementTree as ET
-from xml.etree.ElementTree import ElementTree
+import json
 
 # Imports from src/shared
 import ray
-from xml_tools import XmlElement
 
 if TYPE_CHECKING:
     from session import Session
     from osc_server_thread import OscServerThread
 
 
-
 class _Main:
     def __init__(self):
         self.session: 'Optional[Session]' = None
         self.server: 'Optional[OscServerThread]' = None
-        self.xml_tree: 'Optional[ElementTree]' = None
+        self.json_list: Optional[list[dict]] = None
         self.locked_sess_paths = set[str]()
 
 
@@ -37,9 +34,13 @@ class Daemon:
 
 _logger = logging.getLogger(__name__)
 _main = _Main()
-FILE_PATH = Path('/tmp/RaySession/multi-daemon.xml')
+FILE_PATH = Path('/tmp/RaySession/multi-daemon.json')
+
 
 def _pid_exists(pid: int) -> bool:
+    if not isinstance(pid, int):
+        return False
+    
     try:
         os.kill(pid, 0)
     except OSError:
@@ -65,61 +66,66 @@ def _open_file() -> bool:
         return False
 
     try:
-        _main.xml_tree = ET.parse(FILE_PATH)
+        with open(FILE_PATH, 'r') as f:
+            json_list = json.load(f)
+            assert isinstance(json_list, list)
+            for dmn in json_list:
+                assert isinstance(dmn, dict)
+            _main.json_list = json_list
         return True
 
     except:
         _remove_file()
-        _main.xml_tree = None
+        _main.json_list = None
         return False
 
 def _write_file():
-    if _main.xml_tree is None:
+    if _main.json_list is None:
         return
-    
+
     try:
-        ET.indent(_main.xml_tree.getroot(), space='  ', level=0)
-        _main.xml_tree.write(
-            FILE_PATH, encoding="UTF-8", xml_declaration=True)
-    except:
+        with open(FILE_PATH, 'w') as f:
+            json.dump(_main.json_list, f, indent=2)
+    except BaseException as e:
+        _logger.warning(f'failed to write {FILE_PATH}\n{str(e)}')
         return
 
-def _set_attributes(xel: XmlElement):
+def _get_dict_for_this() -> dict[str, str | int | bool]:
     if _main.server is None or _main.session is None:
-        return
+        return {}
     
-    xel.set_int('net_daemon_id', _main.server.net_daemon_id)
-    xel.set_str('root', _main.session.root)
-    xel.set_str('session_path', _main.session.path)
-    xel.set_int('pid', os.getpid())
-    xel.set_int('port', _main.server.port)
-    xel.set_str('user', os.getenv('USER', ''))
-    xel.set_bool('not_default',
-                    _main.server.is_nsm_locked or _main.server.not_default)
-    xel.set_bool('has_gui', _main.server.has_gui())
-    xel.set_str('version', ray.VERSION)
-    xel.set_str('local_gui_pids', _main.server.get_local_gui_pid_list())
-
+    ret_dict = {
+        'net_daemon_id': _main.server.net_daemon_id,
+        'root': str(_main.session.root),
+        'session_path': str(_main.session.path) if _main.session.path else '',
+        'pid': os.getpid(),
+        'port': _main.server.port,
+        'user': os.getenv('USER', ''),
+        'not_default': _main.server.is_nsm_locked or _main.server.not_default,
+        'has_gui': _main.server.has_gui(),
+        'version': ray.VERSION,
+        'local_gui_pids': _main.server.get_local_gui_pid_list()
+    }
+    
+    ret_dict['locked_sessions'] = list[str]()
     for locked_path in _main.locked_sess_paths:
-        lp_xml = ET.Element('locked_session')
-        lp_xml.attrib['path'] = locked_path
-        xel.el.append(lp_xml)
+        ret_dict['locked_sessions'].append(locked_path)
+    return ret_dict
 
 def _clean_dirty_pids():
-    if _main.xml_tree is None:
+    if _main.json_list is None:
+        print('perdu None')
         return
     
-    root = _main.xml_tree.getroot()
-    rm_childs = list[ET.Element]()
+    rm_dmns = list[dict]()
     
-    for child in root:
-        xchild = XmlElement(child)
-        pid = xchild.int('pid')
-        if not pid or not _pid_exists(pid):
-            rm_childs.append(child)
+    for dmn in _main.json_list:
+        pid = dmn.get('pid')        
+        if not isinstance(pid, int) or not pid or not _pid_exists(pid):
+            rm_dmns.append(dmn)
     
-    for child in rm_childs:
-        root.remove(child)
+    for dmn in rm_dmns:
+        _main.json_list.remove(dmn)
 
 def init(session :'Session', server: 'OscServerThread'):
     _main.session = session
@@ -127,106 +133,83 @@ def init(session :'Session', server: 'OscServerThread'):
 
 def update():
     if not _open_file():
-        root = ET.Element('Daemons')
-        dm_child = ET.Element('Daemon')
-
-        _set_attributes(XmlElement(dm_child))
-
-        root.append(dm_child)
-        _main.xml_tree = ET.ElementTree(element=root)
+        _main.json_list = [_get_dict_for_this()]
 
     else:
         has_dirty_pid = False
+        self_dmn: Optional[dict] = None
         
-        root = _main.xml_tree.getroot()
-        self_child: Optional[ET.Element] = None
-        
-        for child in root:
-            xchild = XmlElement(child)
-            pid = xchild.int('pid')
-            
+        for dmn in _main.json_list:
+            pid = dmn.get('pid')
             if pid == os.getpid():
-                self_child = child
-            elif pid and _pid_exists(pid):
+                self_dmn = dmn
+            elif pid and not _pid_exists(pid):
                 has_dirty_pid = True
         
-        if self_child is not None:
-            root.remove(self_child)
-            
-        dm_child = ET.Element('Daemon')            
-        _set_attributes(XmlElement(dm_child))
-        root.append(dm_child)
+        if self_dmn is not None:
+            _main.json_list.remove(self_dmn)
+        _main.json_list.append(_get_dict_for_this())
         
         if has_dirty_pid:
             _clean_dirty_pids()
-    
+        
     _write_file()
 
 def quit():
     if not _open_file():
         return
 
-    root = _main.xml_tree.getroot()
-    
-    for child in root:
-        xchild = XmlElement(child)
-        if xchild.int('pid') == os.getpid():
-            root.remove(child)
+    for dmn in _main.json_list:
+        if dmn.get('pid') == os.getpid():
+            _main.json_list.remove(dmn)
             _write_file()
             break
 
 def is_free_for_root(daemon_id: int, root_path: Path) -> bool:
-    if not _open_file() or _main.xml_tree is None:
+    if not _open_file() or _main.json_list is None:
         return True
 
-    root = _main.xml_tree.getroot()
-    
-    for child in root:
-        xchild = XmlElement(child)
-        if (xchild.int('net_daemon_id') == daemon_id
-                and xchild.str('root') == str(root_path)):
-            pid = xchild.int('pid')
+    for dmn in _main.json_list:
+        if (dmn.get('net_daemon_id') == daemon_id
+                and dmn.get('root') == str(root_path)):
+            pid = dmn.get('pid')
             if pid and _pid_exists(pid):
                 return False
-        
     return True
 
 def is_free_for_session(session_path: Union[str, Path]) -> bool:
         session_path = str(session_path)
         
-        if not _open_file() or _main.xml_tree is None:
+        if not _open_file() or _main.json_list is None:
             return True
 
-        root = _main.xml_tree.getroot()
-        
-        for child in root:
-            xchild = XmlElement(child)
-            pid = xchild.int('pid')
-            if xchild.str('session_path') == session_path:
+        for dmn in _main.json_list:
+            pid = dmn.get('pid')
+            if dmn.get('session_path') == str(session_path):
                 if pid and _pid_exists(pid):
                     return False
                 
-            for cchild in child:
-                xc_child = XmlElement(cchild)
-                if xc_child.str('path') == session_path:
+            locked_sessions = dmn.get('locked_sessions')
+            if not isinstance(locked_sessions, list):
+                continue
+            
+            for locked_session in locked_sessions:
+                if locked_session == str(session_path):
                     if pid and _pid_exists(pid):
                         return False
-                    
+
         return True
 
 def get_all_session_paths() -> list[str]:
     all_session_paths = list[str]()
 
-    if not _open_file() or _main.xml_tree is None:
+    if not _open_file() or _main.json_list is None:
         return all_session_paths
 
-    root = _main.xml_tree.getroot()
-    
-    for child in root:
-        xchild = XmlElement(child)
-        spath = xchild.str('session_path')
-        pid = xchild.int('pid')
-        if spath and pid and _pid_exists(pid):
+    for dmn in _main.json_list:
+        spath = dmn.get('session_path')
+        pid = dmn.get('pid')
+        if isinstance(spath, str) and pid and _pid_exists(pid):
             all_session_paths.append(spath)
     
     return all_session_paths
@@ -242,21 +225,18 @@ def unlock_path(path: Path):
 def get_daemon_list() -> list[Daemon]:
     daemon_list = list[Daemon]()
 
-    if not _open_file() or _main.xml_tree is None:
+    if not _open_file() or _main.json_list is None:
         return daemon_list
 
-    root = _main.xml_tree.getroot()
-    
-    for child in root:
-        xchild = XmlElement(child)
+    for dmn in _main.json_list:
         daemon = Daemon()
-        daemon.root = xchild.str('root')
-        daemon.session_path = xchild.str('session_path')
-        daemon.user = xchild.str('user')
-        daemon.not_default = xchild.bool('not_default')
-        daemon.net_daemon_id = xchild.int('net_daemon_id')
-        daemon.pid = xchild.int('pid')
-        daemon.port = xchild.int('port')
+        daemon.root = str(dmn.get('root'))
+        daemon.session_path = str(dmn.get('session_path'))
+        daemon.user = str(dmn.get('user'))
+        daemon.not_default = bool(dmn.get('not_default'))
+        daemon.net_daemon_id = int(dmn.get('net_daemon_id'))
+        daemon.pid = int(dmn.get('pid'))
+        daemon.port = int(dmn.get('port'))
         
         if not _pid_exists(daemon.pid):
             continue
@@ -265,7 +245,6 @@ def get_daemon_list() -> list[Daemon]:
                 and daemon.pid
                 and daemon.port):
             continue
-
-        daemon_list.append(daemon)
         
+        daemon_list.append(daemon)
     return daemon_list
