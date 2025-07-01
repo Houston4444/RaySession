@@ -49,8 +49,15 @@ def _get_port_gui_free() -> Optional[int]:
         
         if (dmn.get('root') == CommandLineArgs.session_root
                 and dmn.get('user') == os.getenv('USER')
-                # and not dmn.get('has_gui') == 3
                 and not dmn.get('not_default')):
+            pid = dmn.get('pid')
+            if not isinstance(pid, int) or not pid:
+                continue
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                continue
+            
             if not dmn.get('has_gui') == 3:
                 return port
 
@@ -62,7 +69,7 @@ def _get_port_gui_free() -> Optional[int]:
                     if isinstance(pid, int):
                         try:
                             os.kill(pid, 0)
-                        except OSError:
+                        except ProcessLookupError:
                             continue
                         else:
                             has_local_gui = True

@@ -131,9 +131,4 @@ PATHS:
 - voir pretty_name et SIGTERM quand session chargée
 - problème unwrap save position
 
-Accélération du startup:
-    - multidaemon file en json (accès direct pour le GUI = -150ms au startup)
-    - 100ms pour le lancement de patchbay_dmn en interne (optimisable)
-    - start daemon avant main_win
-        - tous les messages du gui_server_thread doivent aller en session (main thread)
-        - stocker les messages reçus avant la fin de l initiation main_win 
+problème serveur occupé pour /bundle_head_reply
