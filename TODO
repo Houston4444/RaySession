@@ -130,5 +130,8 @@ PATHS:
 - fix hidden connection pas fiable
 - voir pretty_name et SIGTERM quand session chargée
 - problème unwrap save position
+- GUI startup : ne pas s occuper de bundle mais fin recv
 
 problème serveur occupé pour /bundle_head_reply
+    coup d essai: si un seul receveur, pas d'attente
+

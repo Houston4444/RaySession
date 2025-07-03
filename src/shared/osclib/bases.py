@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import random
 from types import NoneType
 from typing import TYPE_CHECKING, TypeAlias, Union
 
@@ -60,6 +61,7 @@ class MegaSend:
         self.ref = ref
         self.tuples = list[tuple[OscArg | tuple[str, OscArg], ...]]()
         self.messages = list[Message]()
+        self.id = random.randrange(0x80000000, 0x7fffffffffffffff)
     
     def add(self, *args):
         self.tuples.append(args)

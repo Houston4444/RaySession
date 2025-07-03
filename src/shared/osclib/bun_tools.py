@@ -3,8 +3,7 @@ import logging
 from typing import Callable, Optional
 
 
-from .bases import (
-    OscPack, OscArg, OscTypes, OscMulTypes, get_types_with_args)
+from .bases import OscArg, OscTypes, get_types_with_args
 
 
 _logger = logging.getLogger(__name__)
@@ -23,24 +22,47 @@ def number_of_args(func: Callable) -> int:
     return num
 
 
-class _SemDict(dict[int, int]):
+class MegaSendChecker(dict[tuple[int, int], int]):
+    _NO_RECV = 0
+    _HEAD_RECV = 1
+    _QUEUE_RECV = 2
+    
     def __init__(self):
         super().__init__()
-    
-    def head_received(self, bundler_id: int):
+
+    def head_recv(self, mega_send_id: int, pack_num: int):
+        bundler_id = (mega_send_id, pack_num)
         if not bundler_id in self:
             return
         
-        if self[bundler_id] > 0:
-            self[bundler_id] -= 1
-            
-    def add_waiting(self, bundler_id: int):
-        if bundler_id not in self:
-            self[bundler_id] = 0
-        self[bundler_id] += 1
+        self[bundler_id] = self._HEAD_RECV
+
+    def tail_recv(self, mega_send_id: int, pack_num: int):
+        bundler_id = (mega_send_id, pack_num)
+        if not bundler_id in self:
+            return
         
-    def count(self, bundler_id: int) -> int:
-        return self.get(bundler_id, 0)
+        self[bundler_id] = self._QUEUE_RECV
+            
+    def add_waiting(self, mega_send_id: int, pack_num: int):
+        bundler_id = (mega_send_id, pack_num)
+        self[bundler_id] = self._NO_RECV
+
+    def head_received(self, mega_send_id: int, pack_num: int) -> bool:
+        bundler_id = (mega_send_id, pack_num)
+        if bundler_id not in self:
+            return True
+        
+        return self[bundler_id] != self._NO_RECV
+        
+    def previous_tail_received(
+            self, mega_send_id: int, pack_num: int) -> bool:
+        if pack_num == 0:
+            return True
+        bundler_id = (mega_send_id, pack_num - 1)
+        if bundler_id not in self:
+            return True
+        return self[bundler_id] == self._QUEUE_RECV
 
 
 class MethodsAdder:
