@@ -2,13 +2,14 @@ from dataclasses import dataclass
 import inspect
 import json
 import logging
+from operator import is_
 import os
 from queue import Queue, Empty
 import random
 import tempfile
 import time
 from threading import Thread, current_thread
-from typing import Callable, Union, Optional
+from typing import Callable, Type, Union, Optional
 
 from osclib import OscTypes
 
@@ -16,15 +17,18 @@ from .bases import (
     OscArg, OscMulTypes, OscPack, OscPath, Server, Address, Message, Bundle,
     MegaSend, get_types_with_args, types_validator, UDP)
 from .funcs import are_on_same_machine
-from .bun_tools import number_of_args, MethodsAdder, _SemDict
+from .bun_tools import number_of_args, MethodsAdder, MegaSendChecker
 
 _logger = logging.getLogger(__name__)
+
+_MANAGE_ATTR = '_manage_wrapper_num'
 
 _RESERVED_PORT = 47
 '''Port reserved in OSC, used to try to send message to,
 this way, no risk that any OSC port can receive it.'''
 
-_MANAGE_ATTR = '_manage_wrapper_num'
+IS_NOT_LAST = 0
+IS_LAST = 1
 
 _process_port_queues = dict[int, Queue[OscPack]]()
 'Contains the port numbers of all BunServer instantiated in this process'
@@ -93,11 +97,15 @@ class BunServer:
                 self.sv = Server(port=port, proto=proto,
                                  reg_methods=reg_methods)
 
-            self.add_method('/_bundle_head', 'iii',
+            self.add_method('/_bundle_head', 'hii',
                             self.__bundle_head)
-            self.add_method('/_bundle_head_reply', 'iii',
+            self.add_method('/_bundle_head_reply', 'hii',
                             self.__bundle_head_reply)
-            self.add_method('/_local_mega_send', 's',
+            self.add_method('/_bundle_tail', 'hii',
+                            self.__bundle_tail)
+            self.add_method('/_bundle_tail_reply', 'hii',
+                            self.__bundle_tail_reply)
+            self.add_method('/_local_mega_send', 'hs',
                             self.__local_mega_send)
         else:
             global _last_fake_num
@@ -105,7 +113,8 @@ class BunServer:
             _last_fake_num += 1
             self._dummy_port = _last_fake_num
         
-        self._sem_dict = _SemDict()
+        self._ms_checker = MegaSendChecker()
+        self._mega_send_recv = dict[int, int]()
         _process_port_queues[self.port] = Queue()
     
     @property
@@ -157,7 +166,7 @@ class BunServer:
     
     def __generic_method(self, osp: OscPack):
         '''Except the unknown messages, all messages received
-        go through here.'''
+         for functions decorated with @bun_manage go through here.'''
         if osp.path in self._mw_path_wrap:
             self._mw_path_wrap[osp.path].wrapper(self, osp)
     
@@ -197,6 +206,9 @@ class BunServer:
         return self.sv.recv(timeout)
     
     def send(self, *args, **kwargs):
+        if len(args) < 2:
+            raise TypeError
+
         dest = args[0]
         dest_port = 0
 
@@ -204,29 +216,26 @@ class BunServer:
             if (dest.port in _process_port_queues
                     and are_on_same_machine(self.url, dest)
                     and dest.protocol == UDP):
-                dest_port = dest.port
+                dest_port: int = dest.port
         elif isinstance(dest, int):
             if dest in _process_port_queues:
                 dest_port = dest
         
-        if dest_port:
+        if isinstance(args[1], (Message, Bundle)):
+            if self.sv is None:
+                raise TypeError(
+                    'Impossible to send Bundle or Message from a fake server')            
+
+            if dest_port >= 0x1000000:
+                raise TypeError(
+                    'Impossible to send Bundle or Message '
+                    'to a fake server')
+        
+        elif dest_port:
             # communication between two BunServer in the same process
             # avoid OSC communication, directly enqueue the message
             # the receiver will take it at recv.
             dest, path, *other_args = args
-
-            if other_args:
-                if isinstance(other_args[0], Bundle):
-                    _logger.warning(
-                        f'Attempting to send Bundle in '
-                        f'direct process communication, will not work. '
-                        f'path: {path}')
-                elif isinstance(other_args[0], Message):
-                    _logger.warning(
-                        f'Attempting to send Message in '
-                        f'direct process communication, will not work. '
-                        f'path: {path}')
-
             _process_port_queues[dest_port].put(
                 OscPack(path, other_args, get_types_with_args(other_args),
                         Address(self.port)))
@@ -234,6 +243,7 @@ class BunServer:
 
         if self.sv is None:
             return
+
         self.sv.send(*args, **kwargs)
     
     def add_method(
@@ -247,17 +257,48 @@ class BunServer:
     def __bundle_head(
             self, path: str, args: list[int],
             types: OscTypes, src_addr: Address):
+        mega_send_id, pack_num, is_last = args
         self.send(src_addr, '/_bundle_head_reply', *args)
+        if is_last:
+            if self._mega_send_recv.get(mega_send_id) is not None:
+                self._mega_send_recv.pop(mega_send_id)
+        else:
+            if pack_num != 0:
+                last_pack_num = self._mega_send_recv.get(mega_send_id)
+                if self._mega_send_recv.get(mega_send_id) != pack_num - 1:
+                    _logger.error(f'mega send id {mega_send_id} '
+                                  f'missing package between {last_pack_num} '
+                                  f'and {pack_num}')
+            self._mega_send_recv[mega_send_id] = pack_num
     
     def __bundle_head_reply(
             self, path: str, args: list[int],
             types: OscTypes, src_addr: Address):
-        self._sem_dict.head_received(args[0])
+        self._ms_checker.head_recv(args[0], args[1])
+    
+    def __bundle_tail(
+            self, path: str, args: list[int],
+            types: OscTypes, src_addr: Address):
+        self.send(src_addr, '/_bundle_tail_reply', *args)
+    
+    def __bundle_tail_reply(
+            self, path: str, args: list[int],
+            types: OscTypes, src_addr: Address):
+        mega_send_id, pack_num, is_last = args
+        self._ms_checker.tail_recv(mega_send_id, pack_num)
     
     def __local_mega_send(
-            self, path: str, args: list[str],
+            self, path: str, args: tuple[int, str],
             types: OscTypes, src_addr: Address):
-        ms_path = args[0]
+        mega_send_id, ms_path = args
+
+        if mega_send_id in self._mega_send_recv:
+            # this mega_send has been already received
+            # ignore it
+            _logger.info(
+                f'local mega send {mega_send_id} ignored, already received')
+            return
+
         try:
             with open(ms_path, 'r') as f:
                 events: list[tuple[str, float, int]] = json.load(f)
@@ -372,9 +413,85 @@ class BunServer:
         self._director_methods[''] = ('*', func)
         self.add_method(None, None, self.__director)
     
+    def _mega_send_same_process(self, urls: list[str | int | Address],
+                                mega_send: MegaSend):
+        same_proc_urls = list[str | int | Address]()
+
+        for url in urls:
+            dest_port = 0
+
+            if isinstance(url, Address):
+                if (url.port in _process_port_queues
+                        and are_on_same_machine(self.url, url)
+                        and url.protocol == UDP):
+                    dest_port = url.port
+            elif isinstance(url, int):
+                if url in _process_port_queues:
+                    dest_port = url
+            elif isinstance(url, str):
+                dport = url.rpartition(':')[2].partition('/')[0]
+                proto_str = url.partition('.')[2].partition(':')[0]
+                if (dport.isdigit() and int(dport) in _process_port_queues
+                        and are_on_same_machine(self.url, url)
+                        and proto_str.lower() == 'udp'):
+                    dest_port = int(dport)
+
+            if dest_port:
+                # we are sending a MegaSend to another instance 
+                # in the same process. No OSC communication is needed            
+                for path, *args in mega_send.tuples:
+                    _process_port_queues[dest_port].put(
+                        OscPack(path, args, get_types_with_args(args),
+                                Address(self.port)))
+                same_proc_urls.append(url)
+
+        for same_proc_url in same_proc_urls:
+            urls.remove(same_proc_url)
+    
+    def _mega_send_one_bundle(
+            self, urls: list[str | int | Address], mega_send: MegaSend):
+        head_msg = Message('/_bundle_head', mega_send.id, 0, IS_LAST)
+        urls_done = set[str | int | Address]()
+
+        for url in urls:
+            try:
+                self.sv.send(url, Bundle(*[head_msg]+mega_send.messages))
+            except:
+                break
+            else:
+                self.wait_mega_send_answer(mega_send, 0)
+                urls_done.add(url)
+        
+        for url in urls_done:
+            urls.remove(url)
+    
+    def _mega_send_local_json(
+            self, urls: list[str | int | Address], mega_send: MegaSend):
+        '''for url on the same machine, create a .json file and send 
+        a message linking to it.'''
+        urls_done = set[str | int | Address]()
+        
+        for url in urls:
+            is_local = False
+            if isinstance(url, int):
+                is_local = True
+            elif isinstance(url, (str, Address)):
+                is_local = are_on_same_machine(self.url, url)
+            
+            if is_local:
+                tmp_file = tempfile.NamedTemporaryFile(
+                    mode='w+t', delete=False)
+                tmp_file.write(json.dumps(mega_send.tuples))
+                tmp_file.seek(0)
+                self.send(url, '/_local_mega_send', mega_send.id, tmp_file.name)
+                urls_done.add(url)
+                
+        for url in urls_done:
+            urls.remove(url)
+    
     def mega_send(self: 'Union[BunServer, BunServerThread]',
                url: Union[str, int, Address, list[str | int | Address]],
-               mega_send: MegaSend, pack=10) -> bool:
+               mega_send: MegaSend) -> bool:
         '''send a undeterminated number of messages to another BunServer
         (or BunServerThread).
         
@@ -384,158 +501,97 @@ class BunServer:
         if not urls:
             return True
 
-        # check first if we are sending something to the same process
-        same_proc_urls = list[str | int | Address]()
-
-        for url in urls:
-            dest = url
-            dest_port = 0
-
-            if isinstance(dest, Address):
-                if (dest.port in _process_port_queues
-                        and are_on_same_machine(self.url, dest)
-                        and dest.protocol == UDP):
-                    dest_port = dest.port
-            elif isinstance(dest, int):
-                if dest in _process_port_queues:
-                    dest_port = dest
-            elif isinstance(dest, str):
-                dport = dest.rpartition(':')[2].partition('/')[0]
-                proto_str = dest.partition('.')[2].partition(':')[0]
-                if (dport in _process_port_queues
-                        and are_on_same_machine(self.url, dest)
-                        and proto_str.lower() == 'udp'):
-                    dest_port = dport
-
-            if dest_port:
-                # we are sending a MegaSend to another instance 
-                # in the same process. No OSC communication is needed            
-                for path, *args in mega_send.tuples:
-                    _process_port_queues[dest_port].put(
-                    OscPack(path, args, get_types_with_args(args),
-                            Address(self.port)))
-                same_proc_urls.append(url)
-
-        if self.sv is None:
-            return
-
-        for same_proc_url in same_proc_urls:
-            urls.remove(same_proc_url)
-        
-        bundler_id = random.randrange(0x100, 0x100000)
-        bundle_number_self = random.randrange(0x100, 0x100000)
-        
-        i = 0
-        stocked_msgs = list[Message]()
-        pending_msgs = list[Message]()
-        head_msg_self = Message('/_bundle_head', bundle_number_self, 0, 0)
-        head_msg = Message('/_bundle_head', bundler_id, 0, 0)
-
-        messages = mega_send.messages
-
-        # first, try to send all in one bundle
-        all_ok = True   
-        urls_done = set[str | int | Address]()
-        for url in urls:
-            try:
-                self.sv.send(url, Bundle(*[head_msg]+messages))
-                assert self.wait_mega_send_answer(bundler_id, mega_send.ref)
-                urls_done.add(url)
-            except:
-                all_ok = False
-                break
-        
-        if all_ok:
+        self._mega_send_same_process(urls, mega_send)
+        if self.sv is None or not urls:
             return True
         
-        for url in urls_done:
-            urls.remove(url)
-        urls_done.clear()
+        self._mega_send_one_bundle(urls, mega_send)
+        if not urls:
+            return True
         
+        self._mega_send_local_json(urls, mega_send)
+        if not urls:
+            return True
+
+        pack_len = min(len(mega_send.tuples) // 2, 100)
+        cutting = list[int]()
+        pack_can_grow = True
+
+        while True:
+            start = 0
+            if cutting:
+                start = cutting[-1] + 1
+            
+            end = min(start + pack_len, len(mega_send.messages)) - 1
+            
+            try:
+                self.sv.send(
+                    _RESERVED_PORT,
+                    Bundle(*[Message('/_bundle_head', 0x100000000, 0, 0)]
+                           + mega_send.messages[start:end]
+                           +[Message('/_bundle_tail', 0x100000000, 0, 0)]))
+            except:
+                if pack_len == 1:
+                    _logger.critical(
+                        f'One message is too big to be send'
+                        f'by the mega send {mega_send.ref}')
+                    break
+                
+                pack_len //= 2
+                pack_can_grow = False
+            else:
+                if pack_can_grow:
+                    pack_len *= 2
+                cutting.append(end)
+                if end == len(mega_send.messages) - 1:
+                    break
+        
+        if not cutting:
+            return False
+
         for url in urls:
-            is_local = False
-            if isinstance(url, Address):
-                is_local = are_on_same_machine(self.url, url.url)
-            elif isinstance(url, str):
-                is_local = are_on_same_machine(self.url, url)
-            elif isinstance(url, int):
-                is_local = True
-            
-            if is_local:
-                tmp_file = tempfile.NamedTemporaryFile(
-                    mode='w+t', delete=False)
-                tmp_file.write(json.dumps(mega_send.tuples))
-                tmp_file.seek(0)
-                self.send(url, '/_local_mega_send', tmp_file.name)
-                urls_done.add(url)
-                
-        for url in urls_done:
-            urls.remove(url)
-        
-        for message in messages:
-            pending_msgs.append(message)
+            start = 0
+            pack_num = 0
 
-            if (i+1) % pack == 0:
-                success = True
-                try:
-                    self.sv.send(
-                        _RESERVED_PORT,
-                        Bundle(*[head_msg_self]+stocked_msgs+pending_msgs))
-                except:
-                    success = False
-                
-                if success:
-                    stocked_msgs += pending_msgs
-                    pending_msgs.clear()
-                else:
-                    if stocked_msgs:
-                        for url in urls:
-                            self.sv.send(url, Bundle(*[head_msg]+stocked_msgs))
-                            self.wait_mega_send_answer(
-                                bundler_id, mega_send.ref)
-                        
-                        stocked_msgs.clear()
-                    else:
-                        _logger.error(
-                            f'pack of {pack} is too high '
-                            f'for mega_send {mega_send.ref}')
-                        return False
+            for c in cutting:
+                is_last = IS_LAST if c == cutting[-1] else IS_NOT_LAST
             
-            i += 1
-        
-        success = True
-
-        try:
-            self.sv.send(_RESERVED_PORT,
-                         Bundle(*[head_msg_self]+stocked_msgs+pending_msgs))
-        except:
-            success = False
+                self.sv.send(
+                    url,
+                    Bundle(
+                        *[Message('/_bundle_head', mega_send.id,
+                                  pack_num, is_last)]
+                        + mega_send.messages[start:c]
+                        +[Message('/_bundle_tail', mega_send.id,
+                                  pack_num, is_last)]))
+                regc = self.wait_mega_send_answer(mega_send, pack_num)
+                if not regc:
+                    break
             
-        if success:
-            for url in urls:
-                self.sv.send(url, Bundle(*[head_msg]+stocked_msgs+pending_msgs))
-                self.wait_mega_send_answer(bundler_id, mega_send.ref)
-        else:
-            for url in urls:
-                self.sv.send(url, Bundle(*[head_msg]+stocked_msgs))
-                self.wait_mega_send_answer(bundler_id, mega_send.ref)
-                self.sv.send(url, Bundle(*[head_msg]+pending_msgs))
-                self.wait_mega_send_answer(bundler_id)
+                start = c + 1
+                pack_num += 1
         
         return True
     
-    def wait_mega_send_answer(self, bundler_id: int, ref: str) -> bool:
-        self._sem_dict.add_waiting(bundler_id)
+    def wait_mega_send_answer(
+            self, mega_send: MegaSend, pack_num: int) -> bool:
+        self._ms_checker.add_waiting(mega_send.id, pack_num)
 
         start = time.time()
         
-        while self._sem_dict.count(bundler_id) >= 1:
-            self.recv(1)
-            if time.time() - start >= 1.000:
-                _logger.error(
+        while not self._ms_checker.head_received(mega_send.id, pack_num):
+            self.recv(10)
+            if time.time() - start >= 0.050:
+                break
+            
+        while not self._ms_checker.previous_tail_received(
+                mega_send.id, pack_num):
+            self.recv(100)
+            if time.time() - start >= 5.000:
+                _logger.info(
                     f'too long wait for bundle '
-                    f'recv confirmation {bundler_id}. {ref}')
-                return False 
+                    f'recv confirmation {mega_send.id}. {mega_send.ref}')
+                return False
         return True
  
 
@@ -568,22 +624,32 @@ class BunServerThread(BunServer):
     def _main_loop(self):
         while not self._terminated:
             self.recv(self.timeout)
+    
+    def wait_mega_send_answer(
+            self, mega_send: MegaSend, pack_num: int) -> bool:
+        self._ms_checker.add_waiting(mega_send.id, pack_num)
 
-    def wait_mega_send_answer(self, bundler_id: int, ref: str) -> bool:
-        self._sem_dict.add_waiting(bundler_id)
-
-        i = 0
+        start = time.time()
         recv = current_thread() is self._thread
         
-        while self._sem_dict.count(bundler_id) >= 1:
+        while not self._ms_checker.head_received(mega_send.id, pack_num):
             if recv:
-                self.recv(1)
+                self.sv.recv(10)
             else:
                 time.sleep(0.001)
-            i += 1
-            if i >= 100:
-                _logger.warning(
+            if time.time() - start >= 0.050:
+                break
+            
+        while not self._ms_checker.previous_tail_received(
+                mega_send.id, pack_num):
+            if recv:
+                self.sv.recv(100)
+            else:
+                time.sleep(0.001)
+
+            if time.time() - start >= 5.000:
+                _logger.info(
                     f'too long wait for bundle '
-                    f'recv confirmation {bundler_id}. {ref}')
-                return False 
+                    f'recv confirmation {mega_send.id}. {mega_send.ref}')
+                return False
         return True
