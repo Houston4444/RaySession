@@ -95,9 +95,6 @@ class CanvasSaver(ServerSender):
             
             self.views_config_at_load = self.views_config.copy()
         
-        self.current_view_num = 1
-        self.current_ptv = PortTypesViewFlag.ALL
-
     def _clear_config_from_unused_views(self):
         no_change_indexes = set[int]()
         
@@ -344,7 +341,6 @@ class CanvasSaver(ServerSender):
 
         # send to GUI the config poses to overwrite the session poses 
         ms_gui = MegaSend('cfg group poss and pretty names after unload')
-        # ms_pbay = MegaSend('config pretty names after unload')
 
         for view_number in self.views_config.keys():
             for gpos in self.views_config.iter_group_poses(
@@ -353,10 +349,7 @@ class CanvasSaver(ServerSender):
                     rg.patchbay.UPDATE_GROUP_POSITION,
                     view_number, *gpos.to_arg_list())
         
-        # ms_pbay.add(r.patchbay.PORT_PRETTY_NAME, '', '', '')
         self.mega_send_gui(ms_gui)
-        # self.mega_send_patchbay(ms_pbay)
-        
         self.views_session.clear()
         self.pretty_names_session.clear()
         
@@ -401,21 +394,18 @@ class CanvasSaver(ServerSender):
         self.views_session.update_from_short_data_states(views_list)
 
     def view_ptv_changed(self, view_num: int, ptv_int: int):
-        self.current_view_num = view_num
-        self.current_ptv = PortTypesViewFlag(ptv_int)
+        ptv = PortTypesViewFlag(ptv_int)
         
         for views in (self.views_config, self.views_session):
             view = views.get(view_num)
             if view is None:
                 views.add_view(
-                    view_num=view_num, default_ptv=self.current_ptv)
+                    view_num=view_num, default_ptv=ptv)
             else:
-                view.default_port_types_view = self.current_ptv
+                view.default_port_types_view = ptv
 
     def client_jack_name_changed(
             self, old_jack_name: str, new_jack_name: str):
-        server = self.session.get_server()
-        
         for view_num, view_data in self.views_session.items():
             for ptv_dict in view_data.ptvs.values():
                 group_name_change_list = list[tuple[str, str]]()
