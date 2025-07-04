@@ -148,20 +148,11 @@ class GuiServerThread(BunServerThread):
         self.daemon_manager = None
         self.patchbay_addr: Optional[Address] = None
         
-        self._in_start_bundle = False
+        self._session_ready = False
 
-        self.sv.add_bundle_handlers(
-            self._bundle_start, self._bundle_done, None)
         self.add_nice_methods(METHODS_DICT, self._generic_callback)
         self.add_nice_methods(_validators_types, self._generic_callback)
         self.set_fallback_nice_method(self._fallback_callback)
-
-    def _bundle_start(self, *args):
-        if self.session is None:
-            self._in_start_bundle = True
-
-    def _bundle_done(self, *args):
-        self._in_start_bundle = False
 
     def stop(self):
         self.stopping = True
@@ -177,30 +168,32 @@ class GuiServerThread(BunServerThread):
         return _instance
 
     def recv(self, timeout: Optional[int] = None) -> bool:
-        if self.startup_osps and self.session is not None:
-            # manage messages receved before main_win is init.
-            # It allows to start daemon while GUI is not ready yet
-            # to reduce noticeably the startup time.
-            for osp in self.startup_osps:
-                if osp.path in _validators:
-                    if not _validators[osp.path](self, osp):
-                        continue
-                self.signaler.osc_receive.emit(osp)
-            self.startup_osps.clear()
-
-        return super().recv(timeout)
+        ret = super().recv(timeout)
+        
+        if not self._session_ready and self.session is not None:
+            self._session_ready = True
+            if self.startup_osps:
+                # manage messages receved before main_win is init.
+                # It allows to start daemon while GUI is not ready yet
+                # to reduce noticeably the startup time.
+                for osp in self.startup_osps:
+                    if osp.path in _validators:
+                        if not _validators[osp.path](self, osp):
+                            continue
+                    self.signaler.osc_receive.emit(osp)
+                self.startup_osps.clear()
+        
+        return ret
 
     def _generic_callback(self, osp: OscPack):
         if self.stopping:
             return
-        import time
         _logger.debug(
             '\033[93mOSC::gui_receives\033[0m '
             f'({osp.path}, {osp.args}, {osp.types})')        
         
-        if self._in_start_bundle or self.session is None:
+        if not self._session_ready:
             self.startup_osps.append(osp)
-            _logger.debug(f'more {len(self.startup_osps)} {osp.path}')
             return
 
         if osp.path in _validators:
