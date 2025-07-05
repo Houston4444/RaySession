@@ -1312,7 +1312,7 @@ class OscServerThread(ClientCommunicating):
         controller = Controller()
         controller.addr = control_address
         self.controller_list.append(controller)
-        self.send(control_address, r.control.server.ANNOUNCE,
+        self.send(control_address, r.control.SERVER_ANNOUNCE,
                   ray.VERSION, self.server_status.value, self.options.value,
                   str(self.session.root), 1)
 

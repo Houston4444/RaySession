@@ -61,7 +61,7 @@
 /ray/client/update_ray_hack_properties
 /ray/client/update_ray_net_properties
 /ray/control/message
-/ray/control/server/announce
+/ray/control/server_announce
 /ray/favorites/add
 /ray/favorites/remove
 /ray/gui/client/dirty

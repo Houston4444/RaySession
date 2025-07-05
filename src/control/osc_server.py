@@ -33,7 +33,7 @@ class OscServer(Server):
         self.add_method(osc_paths.MINOR_ERROR, 'sis',
                         self.minor_error_message)
         self.add_method(r.control.MESSAGE, 's', self.ray_control_message)
-        self.add_method(r.control.server.ANNOUNCE, 'siisi',
+        self.add_method(r.control.SERVER_ANNOUNCE, 'siisi',
                         self.ray_control_server_announce)
         self._final_err = -1
         self._wait_for_announce = False
