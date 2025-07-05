@@ -735,13 +735,10 @@ class MainObject:
         except:
             _logger.warning(f'Failed to save {self.pretty_tmp_path}')
 
-    def set_jack_pretty_name(self, uuid: int, pretty_name: str, force=False):
+    def set_jack_pretty_name(self, uuid: int, pretty_name: str):
         'write pretty-name metadata, or remove it if value is empty'
 
         if self.pretty_name_locked:
-            return
-        
-        if not (self.pretty_name_active or force):
             return
         
         if pretty_name:
@@ -806,7 +803,7 @@ class MainObject:
         self.pretty_names.save_group(
             client_name, pretty_name, mdata_pretty_name)
         
-        self.set_jack_pretty_name(client_uuid, pretty_name, force=True)
+        self.set_jack_pretty_name(client_uuid, pretty_name)
         self.save_uuid_pretty_names()
 
     def write_port_pretty_name(self, port_name: str, pretty_name: str):        
@@ -827,7 +824,7 @@ class MainObject:
         port_uuid = port.uuid
         mdata_pretty_name = self.jack_pretty_name_if_not_mine(port_uuid)
         self.pretty_names.save_port(port_name, pretty_name, mdata_pretty_name)
-        self.set_jack_pretty_name(port.uuid, pretty_name, force=True)
+        self.set_jack_pretty_name(port.uuid, pretty_name)
         self.save_uuid_pretty_names()
 
     def set_jack_pretty_name_conditionally(
@@ -946,13 +943,13 @@ class MainObject:
         for client_name, uuid in self.client_name_uuids.items():
             pretty_name = self.pretty_names.pretty_group(client_name)
             if pretty_name:
-                self.set_jack_pretty_name(uuid, pretty_name, force=True)
+                self.set_jack_pretty_name(uuid, pretty_name)
         
         for jport in self.port_list:
             pretty_name = self.pretty_names.pretty_port(jport.name)
             print(jport.name, f'"{pretty_name}"')
             if pretty_name:
-                self.set_jack_pretty_name(jport.uuid, pretty_name, force=True)
+                self.set_jack_pretty_name(jport.uuid, pretty_name)
 
     def transport_play(self, play: bool):
         if play:
