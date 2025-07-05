@@ -127,3 +127,4 @@ PATHS:
 
 voir set_jack_pretty_name force (peut être pas nécessaire)
 enable/disable les nouveaux boutons import/export pretty name
+séparer jack_manager de patchbay_manager (trop gros et pas logique)
