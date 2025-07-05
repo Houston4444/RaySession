@@ -128,6 +128,31 @@ class PatchbayDaemonServer(BunServer):
         if not export_pretty_names and not self.gui_list:
             self._terminate = True
 
+    @bun_manage(r.patchbay.EXPORT_ALL_PRETTY_NAMES, '')
+    def _ray_patchbay_export_all_pretty_names(self, osp: OscPack):
+        self.main_object.export_all_pretty_names_to_jack_now()
+        
+    @bun_manage(r.patchbay.IMPORT_ALL_PRETTY_NAMES, '')
+    def _ray_patchbay_import_all_pretty_names(self, osp: OscPack):
+        clients_dict, ports_dict = \
+            self.main_object.import_all_pretty_names_from_jack()
+        
+        ms = MegaSend('send imported pretty names to daemon')
+        ms_gui = MegaSend('send imported pretty names to GUIs')
+
+        for client_name, pretty_name in clients_dict.items():
+            ms.add(r.server.patchbay.SAVE_GROUP_PRETTY_NAME,
+                   client_name, pretty_name, '', 0)
+            ms_gui.add(rpm.UPDATE_GROUP_PRETTY_NAME, client_name, pretty_name)
+        
+        for port_name, pretty_name in ports_dict.items():
+            ms.add(r.server.patchbay.SAVE_PORT_PRETTY_NAME,
+                   port_name, pretty_name, '', 0)
+            ms_gui.add(rpm.UPDATE_PORT_PRETTY_NAME, port_name, pretty_name)
+            
+        self.mega_send(self.main_object.daemon_port, ms)
+        self.mega_send(self.gui_list, ms_gui)
+
     @bun_manage(r.patchbay.QUIT, '')
     def _ray_patchbay_quit(self, osp: OscPack):
         self._terminate = True
@@ -312,8 +337,7 @@ class PatchbayDaemonServer(BunServer):
 
         self.send(addr, rpm.SERVER_LOSE)
 
-    def ask_pretty_names(self, port: int):
+    def set_ready_for_daemon(self):
         self.pretty_names.clear()
-
-        addr = Address(port)
-        self.send(addr, r.server.PATCHBAY_DAEMON_READY)
+        self.send(self.main_object.daemon_port,
+                  r.server.PATCHBAY_DAEMON_READY)
