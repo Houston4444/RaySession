@@ -16,6 +16,7 @@ from osclib import OscMulTypes, OscPack
 import ray
 import osc_paths.ray as r
 import osc_paths.ray.gui as rg
+import osc_paths.ray.patchbay.monitor as rpm
 
 # Local imports
 from daemon_manager import DaemonManager
@@ -580,106 +581,106 @@ class SignaledSession(Session):
     def _hide_script_user_action(self, osp: OscPack):
         self.main_win.hide_script_user_action_dialog()
 
-    @manage(rg.patchbay.ANNOUNCE, 'iiiis')
+    @manage(rpm.ANNOUNCE, 'iiiis')
     def _patchbay_announce(self, osp: OscPack):
         args: tuple[int, int, int, str] = osp.args
         self.patchbay_manager.patchbay_announce(*args)
 
-    @manage(rg.patchbay.CLIENT_NAME_AND_UUID, 'sh')
+    @manage(rpm.CLIENT_NAME_AND_UUID, 'sh')
     def _patchbay_client_name_and_uuid(self, osp: OscPack):
         args: tuple[str, int] = osp.args
         self.patchbay_manager.set_group_uuid_from_name(*args)
 
-    @manage(rg.patchbay.PORT_ADDED, 'siih')
+    @manage(rpm.PORT_ADDED, 'siih')
     def _patchbay_port_added(self, osp: OscPack):
         args: tuple[str, int, int, int] = osp.args
         self.patchbay_manager.add_port(*args)
 
-    @manage(rg.patchbay.PORT_REMOVED, 's')
+    @manage(rpm.PORT_REMOVED, 's')
     def _patchbay_port_removed(self, osp: OscPack):
         port_name: str = osp.args[0]
         self.patchbay_manager.remove_port(port_name)
 
-    @manage(rg.patchbay.PORT_RENAMED, 'ss|ssi')
+    @manage(rpm.PORT_RENAMED, 'ss|ssi')
     def _patchbay_port_renamed(self, osp: OscPack):
         self.patchbay_manager.rename_port(*osp.args)
         
-    @manage(rg.patchbay.METADATA_UPDATED, 'hss')
+    @manage(rpm.METADATA_UPDATED, 'hss')
     def _patchbay_metadata_updated(self, osp: OscPack):
         args: tuple[int, str, str] = osp.args
         self.patchbay_manager.metadata_update(*args)
 
-    @manage(rg.patchbay.CONNECTION_ADDED, 'ss')
+    @manage(rpm.CONNECTION_ADDED, 'ss')
     def _patchbay_connection_added(self, osp: OscPack):
         args: tuple[str, str] = osp.args
         self.patchbay_manager.add_connection(*args)
 
-    @manage(rg.patchbay.CONNECTION_REMOVED, 'ss')
+    @manage(rpm.CONNECTION_REMOVED, 'ss')
     def _patchbay_connection_removed(self, osp: OscPack):
         args: tuple[str, str] = osp.args
         self.patchbay_manager.remove_connection(*args)
 
-    @manage(rg.patchbay.UPDATE_GROUP_POSITION, 'i' + GroupPos.ARG_TYPES)
+    @manage(rpm.UPDATE_GROUP_POSITION, 'i' + GroupPos.ARG_TYPES)
     def _patchbay_update_group_position(self, osp: OscPack):
         self.patchbay_manager.update_group_position(*osp.args)
 
-    @manage(rg.patchbay.UPDATE_PORTGROUP, 'siiiss*')
+    @manage(rpm.UPDATE_PORTGROUP, 'siiiss*')
     def _patchbay_update_portgroup(self, osp: OscPack):
         self.patchbay_manager.update_portgroup(*osp.args)
 
-    @manage(rg.patchbay.VIEWS_CHANGED, 's')
+    @manage(rpm.VIEWS_CHANGED, 's')
     def _patchbay_views_changed(self, osp: OscPack):
         json_dict: str = osp.args[0]
         self.patchbay_manager.views_changed(json_dict)
 
-    @manage(rg.patchbay.UPDATE_GROUP_PRETTY_NAME, 'ss')
+    @manage(rpm.UPDATE_GROUP_PRETTY_NAME, 'ss')
     def _patchbay_update_group_pretty_name(self, osp: OscPack):
         args: tuple[str, str] = osp.args
         self.patchbay_manager.update_group_pretty_name(*args)
 
-    @manage(rg.patchbay.UPDATE_PORT_PRETTY_NAME, 'ss')
+    @manage(rpm.UPDATE_PORT_PRETTY_NAME, 'ss')
     def _patchbay_update_port_pretty_name(self, osp: OscPack):
         args: tuple[str, str] = osp.args
         self.patchbay_manager.update_port_pretty_name(*args)
 
-    @manage(rg.patchbay.SERVER_STARTED, '')
+    @manage(rpm.SERVER_STARTED, '')
     def _patchbay_server_started(self, osp: OscPack):
         self.patchbay_manager.server_started()
 
-    @manage(rg.patchbay.SERVER_STOPPED, '')
+    @manage(rpm.SERVER_STOPPED, '')
     def _patchbay_server_stopped(self, osp: OscPack):
         self.patchbay_manager.server_stopped()
 
-    @manage(rg.patchbay.SERVER_LOSE, '')
+    @manage(rpm.SERVER_LOSE, '')
     def _patchbay_server_lose(self, osp: OscPack):
         self.patchbay_manager.server_lose()
 
-    @manage(rg.patchbay.DSP_LOAD, 'i')
+    @manage(rpm.DSP_LOAD, 'i')
     def _patchbay_dsp_load(self, osp: OscPack):
         dsp_load: int = osp.args[0]
         self.patchbay_manager.set_dsp_load(dsp_load)
 
-    @manage(rg.patchbay.ADD_XRUN, '')
+    @manage(rpm.ADD_XRUN, '')
     def _patchbay_add_xrun(self, osp: OscPack):
         self.patchbay_manager.add_xrun()
 
-    @manage(rg.patchbay.BUFFER_SIZE, 'i')
+    @manage(rpm.BUFFER_SIZE, 'i')
     def _patchbay_buffer_size(self, osp: OscPack):
         buffer_size: int = osp.args[0]
         self.patchbay_manager.buffer_size_changed(buffer_size)
 
-    @manage(rg.patchbay.SAMPLE_RATE, 'i')
+    @manage(rpm.SAMPLE_RATE, 'i')
     def _patchbay_sample_rate(self, osp: OscPack):
         samplerate: int = osp.args[0]
         self.patchbay_manager.sample_rate_changed(samplerate)
 
-    @manage(rg.patchbay.TRANSPORT_POSITION, 'iiiiiif')
+    @manage(rpm.TRANSPORT_POSITION, 'iiiiiif')
     def _patchbay_transport_position(self, osp: OscPack):
         args: tuple[int, int, int, int, int, int, float] = osp.args
         self.patchbay_manager.refresh_transport(TransportPosition(
             args[0], bool(args[1]), bool(args[2]), *args[3:]))
 
-    @manage(rg.patchbay.BIG_PACKETS, 'i')
+    @manage(rpm.BIG_PACKETS, 'i')
     def _patchbay_big_packets(self, osp: OscPack):
         state: int = osp.args[0]
         self.patchbay_manager.receive_big_packets(state)

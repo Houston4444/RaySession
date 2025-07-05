@@ -1,13 +1,12 @@
 
 import logging
-from queue import Queue
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from osclib import (BunServer, Address, MegaSend,
                     are_on_same_machine, are_same_osc_port,
                     OscPack, bun_manage)
 import osc_paths.ray as r
-import osc_paths.ray.gui as rg
+import osc_paths.ray.patchbay.monitor as rpm
 
 from alsa_lib_check import ALSA_LIB_OK
 
@@ -166,35 +165,35 @@ class PatchbayDaemonServer(BunServer):
             return
         
         ms = MegaSend('patchbay_ports')        
-        ms.add(rg.patchbay.BIG_PACKETS, 0)
+        ms.add(rpm.BIG_PACKETS, 0)
 
         for port in self.port_list:
-            ms.add(rg.patchbay.PORT_ADDED,
+            ms.add(rpm.PORT_ADDED,
                    port.name, port.type, port.flags, port.uuid)
 
         for client_name, client_uuid in self.client_name_uuids.items():
-            ms.add(rg.patchbay.CLIENT_NAME_AND_UUID,
+            ms.add(rpm.CLIENT_NAME_AND_UUID,
                    client_name, client_uuid)
 
         for connection in self.connection_list:
-            ms.add(rg.patchbay.CONNECTION_ADDED,
+            ms.add(rpm.CONNECTION_ADDED,
                    connection[0], connection[1])
 
         for uuid, key_dict in self.metadatas.items():
             for key, value in key_dict.items():
-                ms.add(rg.patchbay.METADATA_UPDATED,
+                ms.add(rpm.METADATA_UPDATED,
                        uuid, key, value)
 
         if self.main_object.alsa_mng is not None:
             alsa_mng = self.main_object.alsa_mng
             for port in alsa_mng.parse_ports_and_flags():
-                ms.add(rg.patchbay.PORT_ADDED,
+                ms.add(rpm.PORT_ADDED,
                        port.name, port.type, port.flags, port.uuid)
                 
             for conn in alsa_mng.parse_connections():
-                ms.add(rg.patchbay.CONNECTION_ADDED, *conn)
+                ms.add(rpm.CONNECTION_ADDED, *conn)
         
-        ms.add(rg.patchbay.BIG_PACKETS, 1)
+        ms.add(rpm.BIG_PACKETS, 1)
         self.mega_send(src_addrs, ms)
 
     def add_gui(self, gui_url: str):
@@ -203,17 +202,17 @@ class PatchbayDaemonServer(BunServer):
             return
 
         try:
-            self.send(gui_addr, rg.patchbay.ANNOUNCE,
+            self.send(gui_addr, rpm.ANNOUNCE,
                       int(self.main_object.jack_running),
                       int(ALSA_LIB_OK),
                       self.main_object.samplerate,
                       self.main_object.buffer_size,
                       self.url)
-            self.send(gui_addr, rg.patchbay.DSP_LOAD,
+            self.send(gui_addr, rpm.DSP_LOAD,
                       self.main_object.last_sent_dsp_load)
 
             tpos = self.main_object.last_transport_pos
-            self.send(gui_addr, rg.patchbay.TRANSPORT_POSITION,
+            self.send(gui_addr, rpm.TRANSPORT_POSITION,
                       tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
                       tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
 
@@ -228,7 +227,7 @@ class PatchbayDaemonServer(BunServer):
             _logger.error(str(e))
 
     def server_restarted(self):
-        self.send_gui(rg.patchbay.SERVER_STARTED)
+        self.send_gui(rpm.SERVER_STARTED)
         self.send_samplerate()
         self.send_buffersize()
         
@@ -244,63 +243,63 @@ class PatchbayDaemonServer(BunServer):
         self.send_distant_data(self.gui_list)
 
     def client_name_and_uuid(self, client_name: str, uuid: int):
-        self.send_gui(rg.patchbay.CLIENT_NAME_AND_UUID,
+        self.send_gui(rpm.CLIENT_NAME_AND_UUID,
                       client_name, uuid)
 
     def port_added(self, pname: str, ptype: int, pflags: int, puuid: int):
-        self.send_gui(rg.patchbay.PORT_ADDED,
+        self.send_gui(rpm.PORT_ADDED,
                       pname, ptype, pflags, puuid) 
 
     def port_renamed(self, ex_name: str, new_name, uuid=0):
         if uuid:
             self.send_gui(
-                rg.patchbay.PORT_RENAMED, ex_name, new_name, uuid)
+                rpm.PORT_RENAMED, ex_name, new_name, uuid)
         else:
             self.send_gui(
-                rg.patchbay.PORT_RENAMED, ex_name, new_name)
+                rpm.PORT_RENAMED, ex_name, new_name)
     
     def port_removed(self, port_name: str):
-        self.send_gui(rg.patchbay.PORT_REMOVED, port_name)
+        self.send_gui(rpm.PORT_REMOVED, port_name)
     
     def metadata_updated(self, uuid: int, key: str, value: str):
-        self.send_gui(rg.patchbay.METADATA_UPDATED, uuid, key, value)
+        self.send_gui(rpm.METADATA_UPDATED, uuid, key, value)
     
     def connection_added(self, connection: tuple[str, str]):
-        self.send_gui(rg.patchbay.CONNECTION_ADDED,
+        self.send_gui(rpm.CONNECTION_ADDED,
                      connection[0], connection[1])
 
     def connection_removed(self, connection: tuple[str, str]):
-        self.send_gui(rg.patchbay.CONNECTION_REMOVED,
+        self.send_gui(rpm.CONNECTION_REMOVED,
                      connection[0], connection[1])
     
     def server_stopped(self):
         # here server is JACK (or Pipewire JACK)
-        self.send_gui(rg.patchbay.SERVER_STOPPED)
+        self.send_gui(rpm.SERVER_STOPPED)
     
     def send_transport_position(self, tpos: 'TransportPosition'):
-        self.send_gui(rg.patchbay.TRANSPORT_POSITION,
+        self.send_gui(rpm.TRANSPORT_POSITION,
                       tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
                       tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
     
     def send_dsp_load(self, dsp_load: int):
-        self.send_gui(rg.patchbay.DSP_LOAD, dsp_load)
+        self.send_gui(rpm.DSP_LOAD, dsp_load)
     
     def send_one_xrun(self):
-        self.send_gui(rg.patchbay.ADD_XRUN)
+        self.send_gui(rpm.ADD_XRUN)
     
     def send_buffersize(self):
-        self.send_gui(rg.patchbay.BUFFER_SIZE,
+        self.send_gui(rpm.BUFFER_SIZE,
                      self.main_object.buffer_size)
     
     def send_samplerate(self):
-        self.send_gui(rg.patchbay.SAMPLE_RATE,
+        self.send_gui(rpm.SAMPLE_RATE,
                      self.main_object.samplerate)
 
     def is_terminate(self):
         return self._terminate
     
     def send_server_lose(self):
-        self.send_gui(rg.patchbay.SERVER_LOSE)
+        self.send_gui(rpm.SERVER_LOSE)
 
         # In the case server is not responding
         # and gui has not yet been added to gui_list
@@ -311,7 +310,7 @@ class PatchbayDaemonServer(BunServer):
             except:
                 return
 
-        self.send(addr, rg.patchbay.SERVER_LOSE)
+        self.send(addr, rpm.SERVER_LOSE)
 
     def ask_pretty_names(self, port: int):
         self.pretty_names.clear()

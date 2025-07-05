@@ -6,7 +6,6 @@ from . import client
 from . import client_template
 from . import favorites
 from . import listed_session
-from . import patchbay
 from . import preview
 from . import server
 from . import session

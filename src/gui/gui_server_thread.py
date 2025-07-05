@@ -12,6 +12,7 @@ import ray
 import osc_paths
 import osc_paths.ray as r
 import osc_paths.ray.gui as rg
+import osc_paths.ray.patchbay.monitor as rpm
 
 # Local imports
 from gui_tools import CommandLineArgs
@@ -63,27 +64,27 @@ METHODS_DICT = {
     rg.HIDE_SCRIPT_INFO: '',
     rg.SCRIPT_USER_ACTION: 's',
     rg.HIDE_SCRIPT_USER_ACTION: '',
-    rg.patchbay.PORT_ADDED: 'siih',
-    rg.patchbay.PORT_RENAMED: 'ss|ssi',
-    rg.patchbay.PORT_REMOVED: 's',
-    rg.patchbay.CONNECTION_ADDED: 'ss',
-    rg.patchbay.CONNECTION_REMOVED: 'ss',
-    rg.patchbay.SERVER_STOPPED: '',
-    rg.patchbay.METADATA_UPDATED: 'hss',
-    rg.patchbay.DSP_LOAD: 'i',
-    rg.patchbay.ADD_XRUN: '',
-    rg.patchbay.BUFFER_SIZE: 'i',
-    rg.patchbay.SAMPLE_RATE: 'i',
-    rg.patchbay.SERVER_STARTED: '',
-    rg.patchbay.BIG_PACKETS: 'i',
-    rg.patchbay.SERVER_LOSE: '',
-    rg.patchbay.CLIENT_NAME_AND_UUID: 'sh',
-    rg.patchbay.TRANSPORT_POSITION: 'iiiiiif',
-    rg.patchbay.UPDATE_GROUP_POSITION: 'i' + GroupPos.ARG_TYPES,
-    rg.patchbay.VIEWS_CHANGED: 's',
-    rg.patchbay.UPDATE_PORTGROUP: 'siiiss*',
-    rg.patchbay.UPDATE_GROUP_PRETTY_NAME: 'ss',
-    rg.patchbay.UPDATE_PORT_PRETTY_NAME: 'ss',
+    rpm.PORT_ADDED: 'siih',
+    rpm.PORT_RENAMED: 'ss|ssi',
+    rpm.PORT_REMOVED: 's',
+    rpm.CONNECTION_ADDED: 'ss',
+    rpm.CONNECTION_REMOVED: 'ss',
+    rpm.SERVER_STOPPED: '',
+    rpm.METADATA_UPDATED: 'hss',
+    rpm.DSP_LOAD: 'i',
+    rpm.ADD_XRUN: '',
+    rpm.BUFFER_SIZE: 'i',
+    rpm.SAMPLE_RATE: 'i',
+    rpm.SERVER_STARTED: '',
+    rpm.BIG_PACKETS: 'i',
+    rpm.SERVER_LOSE: '',
+    rpm.CLIENT_NAME_AND_UUID: 'sh',
+    rpm.TRANSPORT_POSITION: 'iiiiiif',
+    rpm.UPDATE_GROUP_POSITION: 'i' + GroupPos.ARG_TYPES,
+    rpm.VIEWS_CHANGED: 's',
+    rpm.UPDATE_PORTGROUP: 'siiiss*',
+    rpm.UPDATE_GROUP_PRETTY_NAME: 'ss',
+    rpm.UPDATE_PORT_PRETTY_NAME: 'ss',
     rg.preview.CLEAR: '',
     rg.preview.NOTES: 's',
     rg.preview.client.UPDATE: ray.ClientData.ARG_TYPES,
@@ -206,7 +207,7 @@ class GuiServerThread(BunServerThread):
         if osp.path == '/ping':
             return
 
-        if (osp.path, osp.types) == (rg.patchbay.UPDATE_PORTGROUP, 'siii'):
+        if (osp.path, osp.types) == (rpm.UPDATE_PORTGROUP, 'siii'):
             # FIXME
             # this message should not be send at start
             # from canvas_saver (daemon)
@@ -347,7 +348,7 @@ class GuiServerThread(BunServerThread):
         args: tuple[str, float] = osp.args
         self.signaler.client_progress.emit(*args)
 
-    @validator(rg.patchbay.ANNOUNCE, 'iiiis')
+    @validator(rpm.ANNOUNCE, 'iiiis')
     def _ray_gui_patchbay_announce(self, osp: OscPack):
         args: tuple[int, int, int, str] = osp.args
         self.patchbay_addr = Address(args[4])

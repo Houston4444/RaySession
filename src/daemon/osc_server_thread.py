@@ -966,7 +966,7 @@ class OscServerThread(ClientCommunicating):
             if not are_same_osc_port(gui.addr.url, osp.src_addr.url):
                 self.send(
                     gui.addr,
-                    rg.patchbay.UPDATE_GROUP_POSITION,
+                    r.patchbay.monitor.UPDATE_GROUP_POSITION,
                     *osp.args)
 
     @validator(r.session.SAVE, '', no_sess='No session to save.')
