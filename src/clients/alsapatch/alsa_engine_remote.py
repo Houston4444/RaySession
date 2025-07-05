@@ -16,7 +16,7 @@ from patcher.bases import (
     PortMode, PortType, ProtoEngine, FullPortName)
 from osclib import BunServerThread, OscPack, bun_manage
 import osc_paths.ray as r
-import osc_paths.ray.gui as rg
+import osc_paths.ray.patchbay.monitor as rpm
 
 from .check_internal import IS_PATCHBAY_INTERNAL
 
@@ -53,7 +53,7 @@ class PatchRemote(BunServerThread):
     def send_patchbay(self, *args):
         self.send(self._patchbay_port, *args)
 
-    @bun_manage(rg.patchbay.ANNOUNCE, 'iiiis')
+    @bun_manage(rpm.ANNOUNCE, 'iiiis')
     def _patchbay_announce(self, osp: OscPack):
         alsa_lib_ok = osp.args[1]
         if not alsa_lib_ok:
@@ -61,7 +61,7 @@ class PatchRemote(BunServerThread):
                 'python ALSA lib is not installed or too old, will quit.')
             self.ev.add_event(Event.JACK_STOPPED)
 
-    @bun_manage(rg.patchbay.CONNECTION_ADDED, 'ss')
+    @bun_manage(rpm.CONNECTION_ADDED, 'ss')
     def _connection_added(self, osp: OscPack):
         port_out, port_in = osp.args
         if port_out not in self.ports:
@@ -78,7 +78,7 @@ class PatchRemote(BunServerThread):
             self.ev.add_event(
                 Event.CONNECTION_ADDED, jport_out.name, jport_in.name)
     
-    @bun_manage(rg.patchbay.CONNECTION_REMOVED, 'ss')
+    @bun_manage(rpm.CONNECTION_REMOVED, 'ss')
     def _connection_removed(self, osp: OscPack):
         port_out, port_in = osp.args
         jport_out = self.ports.get(port_out)
@@ -93,7 +93,7 @@ class PatchRemote(BunServerThread):
         self.connections.remove(conn)
         self.ev.add_event(Event.CONNECTION_REMOVED, *conn)
 
-    @bun_manage(rg.patchbay.PORT_ADDED, 'siih')
+    @bun_manage(rpm.PORT_ADDED, 'siih')
     def _port_added(self, osp: OscPack):
         name, type_, flags, uuid = osp.args        
         if type_ != 4:
@@ -121,7 +121,7 @@ class PatchRemote(BunServerThread):
             self.ev.add_event(
                 Event.PORT_ADDED, jack_port.name, mode, jack_port.type)
         
-    @bun_manage(rg.patchbay.PORT_REMOVED, 's')
+    @bun_manage(rpm.PORT_REMOVED, 's')
     def _port_removed(self, osp: OscPack):
         name = osp.args[0]
         jack_port = self.ports.get(name)
@@ -133,11 +133,11 @@ class PatchRemote(BunServerThread):
         self.ev.add_event(Event.PORT_REMOVED, jack_port.name,
                           jack_port.mode, jack_port.type)
     
-    # @bun_manage(rg.patchbay.PORT_RENAMED, 'ss|ssi')
+    # @bun_manage(rpm.PORT_RENAMED, 'ss|ssi')
     # def _port_renamed(self, osp: OscPack):
     #     ...
     
-    @bun_manage(rg.patchbay.BIG_PACKETS, 'i')
+    @bun_manage(rpm.BIG_PACKETS, 'i')
     def _big_packets(self, osp: OscPack):
         if osp.args[0]:
             self.startup_received = True
