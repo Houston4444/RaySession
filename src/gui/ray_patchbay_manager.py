@@ -511,6 +511,14 @@ class RayPatchbayManager(PatchbayManager):
         pretty_enable = Naming.INTERNAL_PRETTY in naming
         self.send_to_daemon(r.server.EXPORT_PRETTY_NAMES, str(pretty_enable))
     
+    def export_pretty_names_to_jack(self):
+        super().export_pretty_names_to_jack()
+        self.send_to_patchbay_daemon(r.patchbay.EXPORT_ALL_PRETTY_NAMES)
+    
+    def import_pretty_names_from_jack(self):
+        super().import_pretty_names_from_jack()
+        self.send_to_patchbay_daemon(r.patchbay.IMPORT_ALL_PRETTY_NAMES)
+    
     def receive_big_packets(self, state: int):
         if state:
             self._delayed_orders_timer.stop()

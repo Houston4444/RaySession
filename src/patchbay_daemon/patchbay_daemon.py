@@ -142,9 +142,9 @@ class MainObject:
     dsp_wanted = True
     transport_wanted = TransportWanted.FULL
     
-    def __init__(self, daemon_port: str, gui_url: str,
+    def __init__(self, daemon_port: int, gui_url: str,
                  pretty_name_active=True):
-        self._daemon_port = daemon_port
+        self.daemon_port = daemon_port
         self.pretty_name_active = pretty_name_active
 
         self.last_sent_dsp_load = 0
@@ -183,7 +183,7 @@ class MainObject:
         EXISTENCE_PATH.mkdir(parents=True, exist_ok=True)
         
         try:
-            with open(EXISTENCE_PATH / self._daemon_port, 'w') as file:
+            with open(EXISTENCE_PATH / str(self.daemon_port), 'w') as file:
                 contents = f'pid:{os.getpid()}\nport:{self.osc_server.port}\n'
                 file.write(contents)
 
@@ -191,7 +191,7 @@ class MainObject:
             _logger.critical('no permission for existence file')
 
     def remove_existence_file(self):
-        existence_path = EXISTENCE_PATH / self._daemon_port
+        existence_path = EXISTENCE_PATH / str(self.daemon_port)
         if not existence_path.exists():
             return 
 
@@ -496,7 +496,7 @@ class MainObject:
                 _logger.warning(
                     f'Failed to read {self.pretty_tmp_path}, ignored.')
         
-        self.osc_server.ask_pretty_names(self._daemon_port)
+        self.osc_server.set_ready_for_daemon()
 
     def is_terminate(self) -> bool:
         if self.terminate or self.osc_server.is_terminate():
@@ -670,7 +670,7 @@ class MainObject:
         try:
             self.client.set_property(
                 self.client.uuid, METADATA_LOCKER,
-                str(self._daemon_port))
+                str(self.daemon_port))
         except:
             _logger.warning(
                 'Failed to set locker metadata for ray-patch_dmn, '
@@ -735,13 +735,13 @@ class MainObject:
         except:
             _logger.warning(f'Failed to save {self.pretty_tmp_path}')
 
-    def set_jack_pretty_name(self, uuid: int, pretty_name: str):
+    def set_jack_pretty_name(self, uuid: int, pretty_name: str, force=False):
         'write pretty-name metadata, or remove it if value is empty'
 
         if self.pretty_name_locked:
             return
         
-        if not self.pretty_name_active:
+        if not (self.pretty_name_active or force):
             return
         
         if pretty_name:
@@ -806,7 +806,7 @@ class MainObject:
         self.pretty_names.save_group(
             client_name, pretty_name, mdata_pretty_name)
         
-        self.set_jack_pretty_name(client_uuid, pretty_name)
+        self.set_jack_pretty_name(client_uuid, pretty_name, force=True)
         self.save_uuid_pretty_names()
 
     def write_port_pretty_name(self, port_name: str, pretty_name: str):        
@@ -827,7 +827,7 @@ class MainObject:
         port_uuid = port.uuid
         mdata_pretty_name = self.jack_pretty_name_if_not_mine(port_uuid)
         self.pretty_names.save_port(port_name, pretty_name, mdata_pretty_name)
-        self.set_jack_pretty_name(port.uuid, pretty_name)
+        self.set_jack_pretty_name(port.uuid, pretty_name, force=True)
         self.save_uuid_pretty_names()
 
     def set_jack_pretty_name_conditionally(
@@ -915,6 +915,45 @@ class MainObject:
         self.pretty_name_active = active
         self.save_uuid_pretty_names()
 
+    def import_all_pretty_names_from_jack(
+            self) -> tuple[dict[str, str], dict[str, str]]:
+        clients_dict = dict[str, str]()
+        ports_dict = dict[str, str]()
+
+        for client_name, uuid in self.client_name_uuids.items():
+            jack_pretty = jack_pretty_name(uuid)
+            if not jack_pretty:
+                continue
+
+            pretty_name = self.pretty_names.pretty_group(client_name)
+            if pretty_name != jack_pretty:
+                self.pretty_names.save_group(client_name, jack_pretty)
+                clients_dict[client_name] = jack_pretty
+
+        for jport in self.port_list:
+            jack_pretty = jack_pretty_name(jport.uuid)
+            if not jack_pretty:
+                continue
+            
+            pretty_name = self.pretty_names.pretty_port(jport.name)
+            if pretty_name != jack_pretty:
+                self.pretty_names.save_port(jport.name, jack_pretty)
+                ports_dict[jport.name] = jack_pretty
+        
+        return clients_dict, ports_dict
+
+    def export_all_pretty_names_to_jack_now(self):
+        for client_name, uuid in self.client_name_uuids.items():
+            pretty_name = self.pretty_names.pretty_group(client_name)
+            if pretty_name:
+                self.set_jack_pretty_name(uuid, pretty_name, force=True)
+        
+        for jport in self.port_list:
+            pretty_name = self.pretty_names.pretty_port(jport.name)
+            print(jport.name, f'"{pretty_name}"')
+            if pretty_name:
+                self.set_jack_pretty_name(jport.uuid, pretty_name, force=True)
+
     def transport_play(self, play: bool):
         if play:
             self.client.transport_start()
@@ -929,8 +968,15 @@ class MainObject:
         self.client.transport_locate(frame)
 
 
-def main_process(daemon_port: str, gui_tcp_url: str,
+def main_process(daemon_port_str: str, gui_tcp_url: str,
                  pretty_names_active: bool):
+    try:
+        daemon_port = int(daemon_port_str)
+    except:
+        _logger.critical(
+            f'daemon port must be an integer, not "{daemon_port_str}"')
+        return
+        
     main_object = MainObject(daemon_port, gui_tcp_url, pretty_names_active)
     main_object.osc_server.add_gui(gui_tcp_url)
     if main_object.osc_server.gui_list:
@@ -948,7 +994,7 @@ def start():
     signal.signal(signal.SIGTERM, MainObject.signal_handler)
     
     args = sys.argv.copy()
-    daemon_port = ''
+    daemon_port_str = ''
     gui_url = ''
     pretty_names_active = True
     log = ''
@@ -957,7 +1003,7 @@ def start():
     args.pop(0)
 
     if args:
-        daemon_port = args.pop(0)
+        daemon_port_str = args.pop(0)
     if args:
         gui_url = args.pop(0)
     if args:
@@ -983,6 +1029,13 @@ def start():
 
         level = logging.DEBUG
     
+    try:
+        daemon_port = int(daemon_port_str)
+    except:
+        _logger.critical(
+            f'daemon port must be an integer, not "{daemon_port_str}"')
+        return
+    
     main_object = MainObject(daemon_port, gui_url, pretty_names_active)
     if gui_url:
         main_object.osc_server.add_gui(gui_url)
@@ -992,7 +1045,7 @@ def internal_prepare(daemon_port: str, gui_url: str,
                      pretty_names_active: str, nsm_url=''):
     pretty_name_active_bool = not bool(
         pretty_names_active.lower() in ('0', 'false'))
-    main_object = MainObject(daemon_port, gui_url,
+    main_object = MainObject(int(daemon_port), gui_url,
                              pretty_name_active_bool)
     if gui_url:
         main_object.osc_server.add_gui(gui_url)
