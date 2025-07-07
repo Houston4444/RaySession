@@ -15,6 +15,7 @@ import json
 from queue import Queue
 
 import jack
+from patshared.base_enums import PrettyDiff
 
 from proc_name import set_proc_name
 from patshared import JackMetadatas, JackMetadata, PrettyNames
@@ -166,6 +167,8 @@ class MainObject:
         self.uuid_waiting_pretty_names = dict[int, str]()
         '''Contains pairs of 'uuid: pretty_name' of pretty_names just
         set and waiting for the property change callback.'''
+
+        self._last_pretty_diff = PrettyDiff.NO_DIFF
 
         self.pretty_tmp_path = (Path('/tmp/RaySession/')
                                 / f'pretty_names.{daemon_port}.json')
@@ -626,6 +629,37 @@ class MainObject:
                 
                 self.metadatas.add(subject, key, value)
                 self.osc_server.metadata_updated(subject, key, value)
+                
+                # if key == JackMetadata.PRETTY_NAME:
+                    
+                #     bef = time.time()
+                #     pretty_diff = PrettyDiff.NO_DIFF
+
+                #     for client_name, uuid in self.client_name_uuids.items():
+                #         if uuid != subject:
+                #             continue
+                #         pretty_name = self.pretty_names.pretty_group(client_name)
+                #         jack_pretty_name = self.metadatas.pretty_name(uuid)
+                #         if pretty_name != jack_pretty_name:
+                #             if pretty_name:
+                #                 pretty_diff |= PrettyDiff.NON_EXPORTED
+                #             if jack_pretty_name:
+                #                 pretty_diff |= PrettyDiff.NON_IMPORTED
+                                
+                #     for port in self.port_list:
+                #         if port.uuid != subject:
+                #             continue
+                #         pretty_name = self.pretty_names.pretty_port(port.name)
+                #         jack_pretty_name = self.metadatas.pretty_name(port.uuid)
+                #         if pretty_name != jack_pretty_name:
+                #             if pretty_name:
+                #                 pretty_diff |= PrettyDiff.NON_EXPORTED
+                #             if jack_pretty_name:
+                #                 pretty_diff |= PrettyDiff.NON_IMPORTED
+                
+                #     aft = time.time()
+                #     print('pretty_diff', pretty_diff, aft - bef)
+                        
 
         except jack.JackError as e:
             _logger.warning(

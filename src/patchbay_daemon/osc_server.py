@@ -9,6 +9,7 @@ import osc_paths.ray as r
 import osc_paths.ray.patchbay.monitor as rpm
 
 from alsa_lib_check import ALSA_LIB_OK
+from patshared.base_enums import PrettyDiff
 
 if TYPE_CHECKING:
     from patchbay_daemon import MainObject, TransportPosition
@@ -319,6 +320,9 @@ class PatchbayDaemonServer(BunServer):
     def send_samplerate(self):
         self.send_gui(rpm.SAMPLE_RATE,
                      self.main_object.samplerate)
+
+    def send_pretty_diff(self, pretty_diff: PrettyDiff):
+        self.send_gui(rpm.HAS_PRETTY_NAMES_DIFF, pretty_diff.value)
 
     def is_terminate(self):
         return self._terminate
