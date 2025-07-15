@@ -125,6 +125,31 @@ PATHS:
 - voir pretty_name et SIGTERM quand session chargée
 
 
-voir set_jack_pretty_name force (peut être pas nécessaire)
 enable/disable les nouveaux boutons import/export pretty name
 séparer jack_manager de patchbay_manager (trop gros et pas logique)
+
+patchbay_daemon
+    .ports doit être écrit dans le thread principal uniquement
+    .connections pareil
+    .metadatas pareil
+
+
+CLIENT_ADD name
+CLIENT_REMOVE name
+PORT_ADD name
+PORT_REMOVE name
+PORT_RENAME (old, new)
+CONNECTION_ADD (port_a, port_b)
+CONNECTION_REMOVED (port_a, port_b)
+METADATA_CHANGED (uuid, key, value)
+
+
+    Events:
+        client/port/connection/metadata
+
+        client add/rm
+        port add/rm/rename
+        conn add/rm
+        metadata change
+
+

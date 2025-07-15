@@ -24,10 +24,6 @@ class PatchbayDaemonServer(BunServer):
         self.add_managed_methods()
 
         self.main_object = main_object
-        self.port_list = main_object.port_list
-        self.connection_list = main_object.connection_list
-        self.metadatas = main_object.metadatas
-        self.client_name_uuids = main_object.client_name_uuids
         self.pretty_names = main_object.pretty_names
         self.gui_list = list[Address]()
         self._tmp_gui_url = ''
@@ -47,7 +43,7 @@ class PatchbayDaemonServer(BunServer):
                 self.gui_list.remove(gui_addr)
                 break
 
-        if not self.gui_list and not self.main_object.pretty_name_active:
+        if not self.gui_list and not self.main_object.pretty_names_export:
             # no more GUI connected, and no pretty-names to export,
             # no reason to exists anymore
             self._terminate = True
@@ -193,19 +189,20 @@ class PatchbayDaemonServer(BunServer):
         ms = MegaSend('patchbay_ports')        
         ms.add(rpm.BIG_PACKETS, 0)
 
-        for port in self.port_list:
+        for port in self.main_object.ports:
             ms.add(rpm.PORT_ADDED,
                    port.name, port.type, port.flags, port.uuid)
 
-        for client_name, client_uuid in self.client_name_uuids.items():
+        for client_name, client_uuid \
+                in self.main_object.client_name_uuids.items():
             ms.add(rpm.CLIENT_NAME_AND_UUID,
                    client_name, client_uuid)
 
-        for connection in self.connection_list:
+        for connection in self.main_object.connections:
             ms.add(rpm.CONNECTION_ADDED,
                    connection[0], connection[1])
 
-        for uuid, key_dict in self.metadatas.items():
+        for uuid, key_dict in self.main_object.metadatas.items():
             for key, value in key_dict.items():
                 ms.add(rpm.METADATA_UPDATED,
                        uuid, key, value)
@@ -268,7 +265,7 @@ class PatchbayDaemonServer(BunServer):
         
         self.send_distant_data(self.gui_list)
 
-    def client_name_and_uuid(self, client_name: str, uuid: int):
+    def associate_client_name_and_uuid(self, client_name: str, uuid: int):
         self.send_gui(rpm.CLIENT_NAME_AND_UUID,
                       client_name, uuid)
 
