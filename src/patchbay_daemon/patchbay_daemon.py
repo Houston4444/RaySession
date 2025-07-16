@@ -1,12 +1,10 @@
 #!/usr/bin/python3 -u
 
 # standard lib imports
-from dataclasses import dataclass
-from enum import IntEnum, Enum, auto
 import os
 import signal
 import sys
-from typing import Optional, TypeAlias
+from typing import Optional
 import warnings
 import threading
 import time
@@ -17,7 +15,6 @@ from queue import Queue
 
 # third party imports
 import jack
-from osc_paths.ray.patchbay.monitor import CONNECTION_REMOVED
 
 # imports from shared/
 from proc_name import set_proc_name
@@ -27,6 +24,8 @@ from patshared import JackMetadatas, JackMetadata, PrettyNames, PrettyDiff
 
 # local imports
 from port_data import PortData, PortDataList
+from jack_bases import (
+    PatchEventQueue, TransportPosition, TransportWanted, PatchEvent)
 from osc_server import PatchbayDaemonServer
 from alsa_lib_check import ALSA_LIB_OK
 if ALSA_LIB_OK:
@@ -83,42 +82,6 @@ class SuppressStdoutStderr(object):
         for fd in self.null_fds + self.save_fds:
             os.close(fd)
 
-
-@dataclass
-class TransportPosition:
-    frame: int
-    rolling: bool
-    valid_bbt: bool
-    bar: int
-    beat: int
-    tick: int
-    beats_per_minutes: float
-
-
-class TransportWanted(IntEnum):
-    NO = 0
-    'do not send any transport info'
-    
-    STATE_ONLY = 1
-    'send transport info only when play/pause changed'
-
-    FULL = 2
-    'send all transport infos'
-
-
-class PatchEvent(Enum):
-    CLIENT_ADDED = auto()
-    CLIENT_REMOVED = auto()
-    PORT_ADDED = auto()
-    PORT_REMOVED = auto()
-    PORT_RENAMED = auto()
-    CONNECTION_ADDED = auto()
-    CONNECTION_REMOVED = auto()
-    METADATA_CHANGED = auto()
-
-
-PatchEventArg: TypeAlias = str | tuple[str, str] | tuple[int, str, str]
-    
 
 
 class PrettyDiffChecker:
@@ -262,13 +225,9 @@ class MainObject:
     'JACK metadatas, written in JACK callback thread'
 
     client_name_uuids = dict[str, int]()
-    cliports_events_queue = Queue[tuple[PatchEvent, PatchEventArg, float]]()
-    '''Clients and ports registration events: 
-    is_client, appears, name, time'''
-    delayed_events_queue = Queue[tuple[PatchEvent, PatchEventArg, float]]()
-    '''Clients and ports registration events: 
-    is_client, appears, name, time'''
-    mdata_events = Queue()
+    patch_event_queue = PatchEventQueue()
+    '''JACK events, clients and ports registrations,
+    connections, metadata changes'''
     jack_running = False
     osc_server = None
     alsa_mng: Optional['AlsaManager'] = None
@@ -362,9 +321,7 @@ class MainObject:
         self.terminate = True
     
     def eat_client_names_queue(self):
-        while self.cliports_events_queue.qsize():
-            event, event_arg, add_time = self.delayed_events_queue.put((event, event_arg, add_time))
-            
+        for event, event_arg in self.patch_event_queue:
             uuid: Optional[int] = None
 
             match event:
@@ -384,7 +341,7 @@ class MainObject:
                     uuid = self.client_name_uuids[event_arg]
 
                 case PatchEvent.PORT_ADDED | PatchEvent.PORT_REMOVED:
-                    port = self.ports.from_name(name)
+                    port = self.ports.from_name(event_arg)
                     if port is not None:
                         uuid = port.uuid
             
@@ -395,12 +352,7 @@ class MainObject:
         client_names = set[str]()
         port_names = set[str]()
         
-        while self.delayed_events_queue.qsize():
-            if time.time() - self.delayed_events_queue.queue[0][2] < 0.200:
-                break
-            
-            event, event_arg, add_time = self.cliports_events_queue.get()
-            
+        for event, event_arg in self.patch_event_queue.oldies():
             match event:
                 case PatchEvent.CLIENT_ADDED:
                     client_names.add(event_arg)
@@ -440,35 +392,7 @@ class MainObject:
         
         if has_changes:
             self.save_uuid_pretty_names()
-    
-    def _check_pretty_diff(self) -> PrettyDiff:
-        pretty_diff = PrettyDiff.NO_DIFF
 
-        for client_name, client_uuid in self.client_name_uuids.items():
-            jack_pretty = self.metadatas.pretty_name(client_uuid)
-            pretty_name = self.pretty_names.pretty_group(client_name)
-            if jack_pretty != pretty_name:
-                if jack_pretty:
-                    pretty_diff |= PrettyDiff.NON_IMPORTED
-                if pretty_name:
-                    pretty_diff |= PrettyDiff.NON_EXPORTED
-
-                if pretty_diff is PrettyDiff.NON_BOTH:
-                    return pretty_diff
-                
-        for port in self.ports:
-            jack_pretty = self.metadatas.pretty_name(port.uuid)
-            pretty_name = self.pretty_names.pretty_port(port.uuid)
-            if jack_pretty != pretty_name:
-                if jack_pretty:
-                    pretty_diff |= PrettyDiff.NON_IMPORTED
-                if pretty_name:
-                    pretty_diff |= PrettyDiff.NON_EXPORTED
-            
-                if pretty_diff is PrettyDiff.NON_BOTH:
-                    return pretty_diff
-
-        return pretty_diff
     
     def _check_jack_client_responding(self):
         for i in range(100): # JACK has 5s to answer
@@ -711,11 +635,11 @@ class MainObject:
         def client_registration(name: str, register: bool):
             _logger.debug(f'client registration {register} "{name}"')
             if register:
-                self.cliports_events_queue.put(
-                    (PatchEvent.CLIENT_ADDED, name, time.time()))
+                self.patch_event_queue.add(
+                    PatchEvent.CLIENT_ADDED, name)
             else:
-                self.cliports_events_queue.put(
-                    (PatchEvent.CLIENT_REMOVED, name, time.time()))
+                self.patch_event_queue.add(
+                    PatchEvent.CLIENT_REMOVED, name)
             
         @self.client.set_port_registration_callback
         def port_registration(port: jack.Port, register: bool):
@@ -736,13 +660,13 @@ class MainObject:
                     PortData(port_name, port_type_int, flags, port_uuid))
                 self.osc_server.port_added(
                     port_name, port_type_int, flags, port.uuid)
-                self.cliports_events_queue.put(
-                    (PatchEvent.PORT_ADDED, port_name, time.time()))
+                self.patch_event_queue.add(
+                    PatchEvent.PORT_ADDED, port_name)
             else:
                 self.ports.remove_from_name(port_name)
                 self.osc_server.port_removed(port_name)
-                self.cliports_events_queue.put(
-                    (PatchEvent.PORT_REMOVED, port_name, time.time()))
+                self.patch_event_queue.add(
+                    PatchEvent.PORT_REMOVED, port_name)
 
         @self.client.set_port_connect_callback
         def port_connect(port_a: jack.Port, port_b: jack.Port, connect: bool):
@@ -752,22 +676,22 @@ class MainObject:
             if connect:
                 self.connections.append(conn)
                 self.osc_server.connection_added(conn)
-                self.cliports_events_queue.put(
-                    (PatchEvent.CONNECTION_ADDED, conn, time.time()))
+                self.patch_event_queue.add(
+                    PatchEvent.CONNECTION_ADDED, conn)
             else:
                 if conn in self.connections:
                     self.connections.remove(conn)
                 self.osc_server.connection_removed(conn)
-                self.cliports_events_queue.put(
-                    (PatchEvent.CONNECTION_REMOVED, conn, time.time()))
+                self.patch_event_queue.add(
+                    PatchEvent.CONNECTION_REMOVED, conn)
             
         @self.client.set_port_rename_callback
         def port_rename(port: jack.Port, old: str, new: str):
             _logger.debug(f'port renamed "{old}" to "{new}"')
             self.ports.rename(old, new)
             self.osc_server.port_renamed(old, new, port.uuid)
-            self.cliports_events_queue.put(
-                (PatchEvent.PORT_RENAMED, (old, new), time.time()))
+            self.patch_event_queue.add(
+                PatchEvent.PORT_RENAMED, old, new)
 
         @self.client.set_xrun_callback
         def xrun(delayed_usecs: float):
@@ -794,9 +718,8 @@ class MainObject:
                         self.metadatas.clear()
                         self.uuid_pretty_names.clear()
                         self.save_uuid_pretty_names()
-                        self.cliports_events_queue.put(
-                            (PatchEvent.METADATA_CHANGED,
-                             (0, '', ''), time.time()))
+                        self.patch_event_queue.add(
+                            PatchEvent.METADATA_CHANGED, 0, '', '')
                         return
                     
                     if key in (JackMetadata.PRETTY_NAME, ''):
@@ -809,9 +732,8 @@ class MainObject:
 
                     self.metadatas.add(subject, key, '')
                     self.osc_server.metadata_updated(subject, key, '')
-                    self.cliports_events_queue.put(
-                        (PatchEvent.METADATA_CHANGED,
-                         (subject, '', ''), time.time()))
+                    self.patch_event_queue.add(
+                        PatchEvent.METADATA_CHANGED, subject, key, '')
                     return                            
                 
                 value_type = jack.get_property(subject, key)
@@ -832,8 +754,8 @@ class MainObject:
                 
                 self.metadatas.add(subject, key, value)
                 self.osc_server.metadata_updated(subject, key, value)
-                self.cliports_events_queue.put(
-                    (PatchEvent.METADATA_CHANGED, (subject, key, value), time.time()))
+                self.patch_event_queue.add(
+                    PatchEvent.METADATA_CHANGED, subject, key, value)
                 
                 if key == JackMetadata.PRETTY_NAME:
                     pretty_diff = PrettyDiff.NO_DIFF
@@ -1107,7 +1029,7 @@ class MainObject:
             for client_name, client_uuid in self.client_name_uuids.items():
                 self.set_jack_pretty_name_conditionally(
                     True, client_name, client_uuid)
-                    
+            
             for port_name in self.pretty_names.ports:
                 try:
                     port = self.client.get_port_by_name(port_name)
