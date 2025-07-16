@@ -172,6 +172,8 @@ if True:
         recent_sessions[str(root_path)] = sessions
 
     RS.settings.setValue('daemon/recent_sessions', recent_sessions)
+    
+    print('saving options', server.options, server.options.value, CommandLineArgs.no_options)
     if not CommandLineArgs.no_options:
         RS.settings.setValue('daemon/options', server.options.value)
 
@@ -187,6 +189,9 @@ if True:
     session.save_folder_sizes_cache_file()
 
     RS.settings.sync()
+
+    dmn_options = RS.settings.value('daemon/options', type=int)
+    print('settings synced', RS.settings.value('daemon/options', type=int))
 
     # stop the server
     server.stop()
