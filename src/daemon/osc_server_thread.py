@@ -338,6 +338,10 @@ class ClientCommunicating(BunServerThread):
             if not client.addr:
                 continue
 
+            if (client.protocol is not ray.Protocol.NSM
+                    or not client.is_running()):
+                continue
+
             if not are_same_osc_port(client.addr.url, osp.src_addr.url):
                 self.send(client.addr, Message(*osp.args))
 
