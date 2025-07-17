@@ -4,8 +4,10 @@ from queue import Queue
 import time
 from typing import Iterator, TypeAlias
 
+from port_data import PortData
 
-PatchEventArg: TypeAlias = str | tuple[str, str] | tuple[int, str, str]
+
+PatchEventArg: TypeAlias = str | PortData | tuple[str, str] | tuple[int, str, str]
 
 
 @dataclass
@@ -39,6 +41,7 @@ class PatchEvent(Enum):
     CONNECTION_ADDED = auto()
     CONNECTION_REMOVED = auto()
     METADATA_CHANGED = auto()
+    SHUTDOWN = auto()
 
 
 class PatchEventQueue(Queue[tuple[PatchEvent, PatchEventArg, float]]):
