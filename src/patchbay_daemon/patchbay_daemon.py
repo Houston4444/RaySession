@@ -11,7 +11,6 @@ import time
 from pathlib import Path
 import logging
 import json
-from queue import Queue
 
 # third party imports
 import jack
@@ -332,7 +331,7 @@ class MainObject:
                             self.client.get_uuid_for_client_name(name))
                     except:
                         ...
-                    finally:
+                    else:
                         self.client_name_uuids[name] = uuid
                         self.osc_server.associate_client_name_and_uuid(
                             name, uuid)
@@ -340,10 +339,42 @@ class MainObject:
                 case PatchEvent.CLIENT_REMOVED:
                     uuid = self.client_name_uuids[event_arg]
 
-                case PatchEvent.PORT_ADDED | PatchEvent.PORT_REMOVED:
+                case PatchEvent.PORT_ADDED:
+                    port: PortData = event_arg
+                    uuid = port.uuid
+                    self.ports.append(port)
+
+                case PatchEvent.PORT_REMOVED:
                     port = self.ports.from_name(event_arg)
                     if port is not None:
                         uuid = port.uuid
+
+                case PatchEvent.PORT_REMOVED:
+                    old, new = event_arg
+                    self.ports.rename(old, new)
+                
+                case PatchEvent.CONNECTION_ADDED:
+                    conn: tuple[str, str] = event_arg
+                    self.connections.append(conn)
+                
+                case PatchEvent.CLIENT_REMOVED:
+                    conn: tuple[str, str] = event_arg
+                    if conn in self.connections:
+                        self.connections.remove(conn)
+                
+                case PatchEvent.METADATA_CHANGED:
+                    uuid_key_value: tuple[int, str, str] = event_arg
+                    uuid_, key, value = uuid_key_value
+                    self.metadatas.add(uuid_, key, value)
+
+                    if uuid_ == 0 and key == '':
+                        for uuid, mdata_dict in self.metadatas.items():
+                            for k in mdata_dict:
+                                self.osc_server.metadata_updated(uuid, k, '') 
+                
+                case PatchEvent.SHUTDOWN:
+                    self.ports.clear()
+                    self.connections.clear()
             
             if uuid is not None:
                 self.pretty_diff_checker.uuid_change(uuid)
@@ -656,14 +687,12 @@ class MainObject:
                 f'port registration {register} "{port_name}" {port_uuid}')
 
             if register:                
-                self.ports.append(
-                    PortData(port_name, port_type_int, flags, port_uuid))
                 self.osc_server.port_added(
                     port_name, port_type_int, flags, port.uuid)
                 self.patch_event_queue.add(
-                    PatchEvent.PORT_ADDED, port_name)
+                    PatchEvent.PORT_ADDED,
+                    PortData(port_name, port_type_int, flags, port_uuid))
             else:
-                self.ports.remove_from_name(port_name)
                 self.osc_server.port_removed(port_name)
                 self.patch_event_queue.add(
                     PatchEvent.PORT_REMOVED, port_name)
@@ -674,13 +703,10 @@ class MainObject:
             _logger.debug(f'ports connected {connect} {conn}')
 
             if connect:
-                self.connections.append(conn)
                 self.osc_server.connection_added(conn)
                 self.patch_event_queue.add(
                     PatchEvent.CONNECTION_ADDED, conn)
             else:
-                if conn in self.connections:
-                    self.connections.remove(conn)
                 self.osc_server.connection_removed(conn)
                 self.patch_event_queue.add(
                     PatchEvent.CONNECTION_REMOVED, conn)
@@ -688,7 +714,6 @@ class MainObject:
         @self.client.set_port_rename_callback
         def port_rename(port: jack.Port, old: str, new: str):
             _logger.debug(f'port renamed "{old}" to "{new}"')
-            self.ports.rename(old, new)
             self.osc_server.port_renamed(old, new, port.uuid)
             self.patch_event_queue.add(
                 PatchEvent.PORT_RENAMED, old, new)
@@ -712,10 +737,6 @@ class MainObject:
             def property_change(subject: int, key: str, change: int):
                 if change == jack.PROPERTY_DELETED:
                     if subject == 0 and key == '':
-                        for uuid, mdata_dict in self.metadatas.items():
-                            for k in mdata_dict:
-                                self.osc_server.metadata_updated(uuid, k, '') 
-                        self.metadatas.clear()
                         self.uuid_pretty_names.clear()
                         self.save_uuid_pretty_names()
                         self.patch_event_queue.add(
@@ -725,22 +746,17 @@ class MainObject:
                     if key in (JackMetadata.PRETTY_NAME, ''):
                         if subject in self.uuid_waiting_pretty_names:
                             self.uuid_waiting_pretty_names.pop(subject)
-                        
-                        if key == '':
-                            if subject in self.metadatas:
-                                self.metadatas.pop(subject)
 
-                    self.metadatas.add(subject, key, '')
                     self.osc_server.metadata_updated(subject, key, '')
                     self.patch_event_queue.add(
                         PatchEvent.METADATA_CHANGED, subject, key, '')
                     return                            
-                
+
                 value_type = jack.get_property(subject, key)
                 if value_type is None:
                     return
                 value = value_type[0].decode()
-                
+
                 if key == JackMetadata.PRETTY_NAME:
                     if subject in self.uuid_waiting_pretty_names:
                         if value != self.uuid_waiting_pretty_names[subject]:
@@ -751,35 +767,10 @@ class MainObject:
                                 f'value   : {value}')
 
                         self.uuid_waiting_pretty_names.pop(subject)
-                
-                self.metadatas.add(subject, key, value)
+
                 self.osc_server.metadata_updated(subject, key, value)
                 self.patch_event_queue.add(
                     PatchEvent.METADATA_CHANGED, subject, key, value)
-                
-                if key == JackMetadata.PRETTY_NAME:
-                    pretty_diff = PrettyDiff.NO_DIFF
-
-                    for client_name, uuid in self.client_name_uuids.items():
-                        if uuid != subject:
-                            continue
-                        pretty_name = self.pretty_names.pretty_group(client_name)
-                        jack_pretty_name = self.metadatas.pretty_name(uuid)
-                        if pretty_name != jack_pretty_name:
-                            if pretty_name:
-                                pretty_diff |= PrettyDiff.NON_EXPORTED
-                            if jack_pretty_name:
-                                pretty_diff |= PrettyDiff.NON_IMPORTED
-                    
-                    port = self.ports.from_uuid(subject)
-                    if port is not None:
-                        pretty_name = self.pretty_names.pretty_port(port.name)
-                        jack_pretty_name = self.metadatas.pretty_name(port.uuid)
-                        if pretty_name != jack_pretty_name:
-                            if pretty_name:
-                                pretty_diff |= PrettyDiff.NON_EXPORTED
-                            if jack_pretty_name:
-                                pretty_diff |= PrettyDiff.NON_IMPORTED                                        
 
         except jack.JackError as e:
             _logger.warning(
@@ -791,10 +782,9 @@ class MainObject:
         def on_shutdown(status: jack.Status, reason: str):
             _logger.debug('Jack shutdown')
             self.jack_running = False
-            self.ports.clear()
-            self.connections.clear()
             self.metadatas.clear()
             self.osc_server.server_stopped()
+            self.patch_event_queue.add(PatchEvent.SHUTDOWN)
             
         self.client.activate()
         
@@ -882,7 +872,11 @@ class MainObject:
         self.client.set_property(uuid, key, value, 'text/plain')
 
     def save_uuid_pretty_names(self):
-        'save the contents of self.uuid_pretty_names in /tmp'
+        '''save the contents of self.uuid_pretty_names in /tmp
+        
+        In order to recognize which JACK pretty names have been set
+        by this program (in this process or not), pretty names are
+        saved somewhere in the /tmp directory.'''
         try:
             with open(self.pretty_tmp_path, 'w') as f:
                 json.dump(self.uuid_pretty_names, f)
