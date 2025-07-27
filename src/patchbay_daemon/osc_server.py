@@ -108,6 +108,8 @@ class PatchbayDaemonServer(BunServer):
     def _ray_patchbay_save_group_pretty_name(self, osp: OscPack):
         group_name, pretty_name, save_in_jack = osp.args
         self.pretty_names.save_group(group_name, pretty_name)
+        self.main_object.pretty_diff_checker.client_pretty_name_changed(
+            group_name)
         if save_in_jack:
             self.main_object.write_group_pretty_name(group_name, pretty_name)
     
@@ -115,13 +117,15 @@ class PatchbayDaemonServer(BunServer):
     def _ray_patchbay_save_port_pretty_name(self, osp: OscPack):
         port_name, pretty_name, save_in_jack = osp.args
         self.pretty_names.save_port(port_name, pretty_name)
+        self.main_object.pretty_diff_checker.port_pretty_name_changed(
+            port_name)
         if save_in_jack:
             self.main_object.write_port_pretty_name(port_name, pretty_name)
 
     @bun_manage(r.patchbay.ENABLE_JACK_PRETTY_NAMING, 'i')
     def _ray_patchbay_enable_jack_pretty_naming(self,  osp: OscPack):
         export_pretty_names = bool(osp.args[0])
-        self.main_object.set_pretty_name_active(export_pretty_names)
+        self.main_object.set_pretty_names_auto_export(export_pretty_names)
         if not export_pretty_names and not self.gui_list:
             self._terminate = True
 

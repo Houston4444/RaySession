@@ -23,6 +23,7 @@ from patshared import JackMetadatas, JackMetadata, PrettyNames, PrettyDiff
 
 # local imports
 from port_data import PortData, PortDataList
+from pretty_diff_checker import PrettyDiffChecker
 from jack_bases import (
     PatchEventQueue, TransportPosition, TransportWanted, PatchEvent)
 from osc_server import PatchbayDaemonServer
@@ -80,134 +81,6 @@ class SuppressStdoutStderr(object):
         # Close all file descriptors
         for fd in self.null_fds + self.save_fds:
             os.close(fd)
-
-
-
-class PrettyDiffChecker:
-    def __init__(self, metadatas: JackMetadatas,
-                 pretty_names: PrettyNames,
-                 client_name_uuids: dict[str, int],
-                 ports: PortDataList):
-        self.metadatas = metadatas
-        self.pretty_names = pretty_names
-        self.client_name_uuids = client_name_uuids
-        self.ports = ports
-        
-        self.clients_diff = dict[int, PrettyDiff]()
-        self.ports_diff = dict[int, PrettyDiff]()
-        self.pretty_diff = PrettyDiff.NO_DIFF
-        self.full_update()
-    
-    def uuid_change(self, uuid: int):
-        change_diff_old = PrettyDiff.NO_DIFF
-        change_diff_new = PrettyDiff.NO_DIFF
-        glob_diff_old = self.pretty_diff
-        glob_diff_new = PrettyDiff.NO_DIFF
-
-        if uuid in self.clients_diff:
-            change_diff_old = self.clients_diff[uuid]
-
-            for client_name, client_uuid in self.client_name_uuids.items():
-                if client_uuid != uuid:
-                    continue
-
-                self.clients_diff[uuid] = self._get_diff(
-                    self.pretty_names.pretty_group(client_name),
-                    self.metadatas.pretty_name(uuid))
-                change_diff_new = self.clients_diff[uuid]
-                break
-        
-        elif uuid in self.ports_diff:
-            change_diff_old = self.ports_diff[uuid]
-            port = self.ports.from_uuid(uuid)
-            if port is not None:
-                self.ports_diff[uuid] = self._get_diff(
-                    self.pretty_names.pretty_port(port.name),
-                    self.metadatas.pretty_name(uuid))
-                change_diff_new = self.ports_diff[uuid]
-        
-        else:
-            port = self.ports.from_uuid(uuid)
-            if port is None:
-                for client_name, client_uuid \
-                        in self.client_name_uuids.items():
-                    if client_uuid != uuid:
-                        continue
-                    
-                    self.clients_diff[uuid] = self._get_diff(
-                        self.pretty_names.pretty_group(client_name),
-                        self.metadatas.pretty_name(uuid))
-                    change_diff_new = self.clients_diff[uuid]
-                    break
-            else:
-                self.ports_diff[uuid] = self._get_diff(
-                    self.pretty_names.pretty_port(port.name),
-                    self.metadatas.pretty_name(uuid))
-                change_diff_new = self.ports_diff[uuid]
-        
-        # In many cases, no need to reevaluate all pretty names change states
-        # to know the diff state
-        match glob_diff_old:
-            case PrettyDiff.NO_DIFF:
-                glob_diff_new = change_diff_new
-            case PrettyDiff.NON_BOTH:
-                if change_diff_old is PrettyDiff.NO_DIFF:
-                    glob_diff_new = PrettyDiff.NON_BOTH
-                else:
-                    glob_diff_new = self.get_glob_diff()
-            case _:
-                if glob_diff_old in change_diff_old:
-                    glob_diff_new = self.get_glob_diff()
-                else:
-                    glob_diff_new = glob_diff_old | change_diff_new
-        
-        self.pretty_diff = glob_diff_new
-    
-    def _get_diff(self, pretty_name: str, jack_pretty_name: str):
-        if pretty_name == jack_pretty_name:
-            return PrettyDiff.NO_DIFF
-        
-        if pretty_name and jack_pretty_name:
-            return PrettyDiff.NON_BOTH
-        
-        if pretty_name:
-            return PrettyDiff.NON_EXPORTED
-        return PrettyDiff.NON_IMPORTED
-    
-    def full_update(self):
-        self.clients_diff.clear()
-        self.ports_diff.clear()
-
-        for client_name, client_uuid in self.client_name_uuids.items():
-            self.clients_diff[client_uuid] = self._get_diff(
-                self.pretty_names.pretty_group(client_name),
-                self.metadatas.pretty_name(client_uuid))
-                
-        for port in self.ports:
-            self.ports_diff[port.uuid] = self._get_diff(
-                self.pretty_names.pretty_port(port.name),
-                self.metadatas.pretty_name(port.uuid))
-            
-        self.pretty_diff = self.get_glob_diff()
-
-    def get_glob_diff(self) -> PrettyDiff:
-        glob_diff = PrettyDiff.NO_DIFF
-        for pretty_diff in self.clients_diff.values():
-            glob_diff |= pretty_diff
-            if glob_diff is PrettyDiff.NON_BOTH:
-                return glob_diff
-            
-        for pretty_diff in self.ports_diff.values():
-            glob_diff |= pretty_diff
-            if glob_diff is PrettyDiff.NON_BOTH:
-                return glob_diff
-        return glob_diff
-
-    def metadatas_cleared(self):
-        if self.pretty_diff in (PrettyDiff.NO_DIFF, PrettyDiff.NON_EXPORTED):
-            return
-
-        self.full_update()            
 
 
 def jack_pretty_name(uuid: int) -> str:
@@ -274,7 +147,8 @@ class MainObject:
 
         self.pretty_diff_checker = PrettyDiffChecker(
             self.metadatas, self.pretty_names,
-            self.client_name_uuids, self.ports)
+            self.client_name_uuids, self.ports,
+            self.pretty_diff_changed)
 
         self.pretty_tmp_path = (Path('/tmp/RaySession/')
                                 / f'pretty_names.{daemon_port}.json')
@@ -319,35 +193,37 @@ class MainObject:
     def internal_stop(self):
         self.terminate = True
     
-    def eat_client_names_queue(self):
+    def process_patch_events(self):
         for event, event_arg in self.patch_event_queue:
-            uuid: Optional[int] = None
+            pretty_uuid: Optional[int] = None
 
             match event:
                 case PatchEvent.CLIENT_ADDED:
                     name = event_arg
                     try:
-                        uuid = int(
+                        pretty_uuid = int(
                             self.client.get_uuid_for_client_name(name))
                     except:
                         ...
                     else:
-                        self.client_name_uuids[name] = uuid
+                        self.client_name_uuids[name] = pretty_uuid
                         self.osc_server.associate_client_name_and_uuid(
-                            name, uuid)
+                            name, pretty_uuid)
 
                 case PatchEvent.CLIENT_REMOVED:
-                    uuid = self.client_name_uuids[event_arg]
+                    name = event_arg
+                    if name in self.client_name_uuids:
+                        pretty_uuid = self.client_name_uuids.pop(event_arg)
 
                 case PatchEvent.PORT_ADDED:
                     port: PortData = event_arg
-                    uuid = port.uuid
+                    pretty_uuid = port.uuid
                     self.ports.append(port)
 
                 case PatchEvent.PORT_REMOVED:
                     port = self.ports.from_name(event_arg)
                     if port is not None:
-                        uuid = port.uuid
+                        pretty_uuid = port.uuid
 
                 case PatchEvent.PORT_REMOVED:
                     old, new = event_arg
@@ -364,20 +240,23 @@ class MainObject:
                 
                 case PatchEvent.METADATA_CHANGED:
                     uuid_key_value: tuple[int, str, str] = event_arg
-                    uuid_, key, value = uuid_key_value
-                    self.metadatas.add(uuid_, key, value)
+                    uuid, key, value = uuid_key_value
+                    self.metadatas.add(uuid, key, value)
 
-                    if uuid_ == 0 and key == '':
+                    if key == JackMetadata.PRETTY_NAME:
+                        pretty_uuid = uuid
+
+                    elif uuid == 0 and key == '':
                         for uuid, mdata_dict in self.metadatas.items():
                             for k in mdata_dict:
-                                self.osc_server.metadata_updated(uuid, k, '') 
-                
+                                self.osc_server.metadata_updated(uuid, k, '')
+
                 case PatchEvent.SHUTDOWN:
                     self.ports.clear()
                     self.connections.clear()
             
-            if uuid is not None:
-                self.pretty_diff_checker.uuid_change(uuid)
+            if pretty_uuid is not None:
+                self.pretty_diff_checker.uuid_change(pretty_uuid)
 
     def _check_pretty_names_export(self):
         client_names = set[str]()
@@ -424,6 +303,8 @@ class MainObject:
         if has_changes:
             self.save_uuid_pretty_names()
 
+    def pretty_diff_changed(self, pretty_diff: PrettyDiff):
+        self.osc_server.send_pretty_diff(pretty_diff)
     
     def _check_jack_client_responding(self):
         for i in range(100): # JACK has 5s to answer
@@ -544,7 +425,7 @@ class MainObject:
                     if self.dsp_wanted and n % 20 == 0:
                         self.send_dsp_load()
                 
-                self.eat_client_names_queue()
+                self.process_patch_events()
                 self._check_pretty_names_export()
 
                 if self.transport_wanted is not TransportWanted.NO:
@@ -868,9 +749,6 @@ class MainObject:
                 value = valuetype[0].decode()
                 self.metadatas.add(uuid, key, value)
 
-    def set_metadata(self, uuid: int, key: str, value: str):
-        self.client.set_property(uuid, key, value, 'text/plain')
-
     def save_uuid_pretty_names(self):
         '''save the contents of self.uuid_pretty_names in /tmp
         
@@ -885,7 +763,6 @@ class MainObject:
 
     def set_jack_pretty_name(self, uuid: int, pretty_name: str):
         'write pretty-name metadata, or remove it if value is empty'
-
         if self.pretty_name_locked:
             return
         
@@ -899,7 +776,8 @@ class MainObject:
                     f'Failed to set pretty-name "{pretty_name}" for {uuid}')
                 return
             
-            self.uuid_pretty_names[uuid] = pretty_name
+            if self.pretty_names_export:
+                self.uuid_pretty_names[uuid] = pretty_name
             self.uuid_waiting_pretty_names[uuid] = pretty_name
 
         else:
@@ -911,8 +789,9 @@ class MainObject:
                     f'Failed to remove pretty-name for {uuid}')
                 return
             
-            if uuid in self.uuid_pretty_names:
-                self.uuid_pretty_names.pop(uuid)
+            if self.pretty_names_export:
+                if uuid in self.uuid_pretty_names:
+                    self.uuid_pretty_names.pop(uuid)
             if uuid in self.uuid_waiting_pretty_names:
                 self.uuid_waiting_pretty_names.pop(uuid)
 
@@ -931,10 +810,11 @@ class MainObject:
         or clear them if self.pretty_name_active is False and some
         pretty names have been written by a previous process.'''
         self.pretty_diff_checker.full_update()
+        self.pretty_diff_changed(self.pretty_diff_checker.pretty_diff)
         if not self.jack_running or self.pretty_name_locked:
             return
         
-        self.set_pretty_name_active(self.pretty_names_export, force=True)
+        self.set_pretty_names_auto_export(self.pretty_names_export, force=True)
         
         if (not self.pretty_names_export
                 and not self.osc_server.can_have_gui()):
@@ -1013,7 +893,7 @@ class MainObject:
         self.set_jack_pretty_name(uuid, ptov.pretty)
         return True
 
-    def set_pretty_name_active(self, active: bool, force=False):
+    def set_pretty_names_auto_export(self, active: bool, force=False):
         if not force and active is self.pretty_names_export:
             return
 

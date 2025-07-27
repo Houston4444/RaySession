@@ -8,7 +8,7 @@ import logging
 
 # Imports from HoustonPatchbay
 from patshared import (
-    GroupPos, PortgroupMem, PortMode, ViewData, Naming)
+    GroupPos, PortgroupMem, PortMode, ViewData, Naming, PrettyDiff)
 from patchbay.bases.elements import CanvasOptimize, CanvasOptimizeIt, ToolDisplayed
 from patchbay.bases.group import Group
 from patchbay import (
@@ -518,6 +518,17 @@ class RayPatchbayManager(PatchbayManager):
     def import_pretty_names_from_jack(self):
         super().import_pretty_names_from_jack()
         self.send_to_patchbay_daemon(r.patchbay.IMPORT_ALL_PRETTY_NAMES)
+    
+    def has_pretty_name_diff(self, pretty_diff_int: int):
+        try:
+            pretty_diff = PrettyDiff(pretty_diff_int)
+        except:
+            _logger.warning(
+                f'received a wrong pretty_diff {pretty_diff_int}')
+            return
+        
+        if self.options_dialog is not None:
+            self.options_dialog.change_pretty_diff(pretty_diff)
     
     def receive_big_packets(self, state: int):
         if state:

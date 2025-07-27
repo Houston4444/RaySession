@@ -153,3 +153,13 @@ METADATA_CHANGED (uuid, key, value)
         metadata change
 
 
+ray_control pretty_names
+    export_all
+    import_all
+    clear_all
+
+locker metadata:
+    write/erase quand l'option change
+    réaction quand la métadata change
+        enable/disable l'option
+        réécriture directe si c'est celle du process
