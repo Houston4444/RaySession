@@ -88,11 +88,6 @@ class PrettyDiffChecker:
         if glob_diff_new is not glob_diff_old:
             self.change_callback(glob_diff_new)
         self.pretty_diff = glob_diff_new
-
-        print('ypoz', self.pretty_diff)
-        for uuid, pretty_diff in self.ports_diff.items():
-            if pretty_diff is not PrettyDiff.NO_DIFF:
-                print('', uuid, pretty_diff)
     
     def client_pretty_name_changed(self, client_name: str):
         client_uuid = self.client_name_uuids.get(client_name)

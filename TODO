@@ -157,6 +157,8 @@ ray_control pretty_names
     export_all
     import_all
     clear_all
+    list_non_imported
+    list_non_exported
 
 locker metadata:
     write/erase quand l'option change

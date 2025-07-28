@@ -530,6 +530,10 @@ class RayPatchbayManager(PatchbayManager):
         if self.options_dialog is not None:
             self.options_dialog.change_pretty_diff(pretty_diff)
     
+    def pretty_names_locked(self, locked: int):
+        if self.options_dialog is not None:
+            self.options_dialog.set_pretty_names_locked(bool(locked))
+    
     def receive_big_packets(self, state: int):
         if state:
             self._delayed_orders_timer.stop()
