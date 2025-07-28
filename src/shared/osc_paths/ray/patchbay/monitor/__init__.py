@@ -26,7 +26,9 @@ UPDATE_GROUP_PRETTY_NAME = '/ray/patchbay/monitor/update_group_pretty_name'
 UPDATE_PORT_PRETTY_NAME = '/ray/patchbay/monitor/update_port_pretty_name'
 UPDATE_PORTGROUP = '/ray/patchbay/monitor/update_portgroup'
 HAS_PRETTY_NAMES_DIFF = '/ray/patchbay/monitor/has_pretty_names_diff'
-'''the patchbay daemon sends this to GUI,
-arg has to be converted in PrettyDiff Flag. (arg types: i)'''
+'arg has to be converted in PrettyDiff Flag. (arg types: i)'
+
+PRETTY_NAMES_LOCKED = '/ray/patchbay/monitor/pretty_names_locked'
+'1 if pretty names are locked by another patchbay daemon (arg types: i)'
 
 VIEWS_CHANGED = '/ray/patchbay/monitor/views_changed'

@@ -25,7 +25,8 @@ from patshared import JackMetadatas, JackMetadata, PrettyNames, PrettyDiff
 from port_data import PortData, PortDataList
 from pretty_diff_checker import PrettyDiffChecker
 from jack_bases import (
-    PatchEventQueue, TransportPosition, TransportWanted, PatchEvent)
+    ClientNamesUuids, PatchEventQueue, TransportPosition,
+    TransportWanted, PatchEvent)
 from osc_server import PatchbayDaemonServer
 from alsa_lib_check import ALSA_LIB_OK
 if ALSA_LIB_OK:
@@ -49,7 +50,7 @@ PORT_TYPE_MIDI = 2
 EXISTENCE_PATH = Path('/tmp/RaySession/patchbay_daemons')
 
 JACK_CLIENT_NAME = 'ray-patch_dmn'
-METADATA_LOCKER = 'ray-patch_dmn.locker'
+METADATA_LOCKER = f'{JACK_CLIENT_NAME}.locker'
 
 
 # Define a context manager to suppress stdout and stderr.
@@ -96,7 +97,7 @@ class MainObject:
     metadatas = JackMetadatas()
     'JACK metadatas, written in JACK callback thread'
 
-    client_name_uuids = dict[str, int]()
+    client_name_uuids = ClientNamesUuids()
     patch_event_queue = PatchEventQueue()
     '''JACK events, clients and ports registrations,
     connections, metadata changes'''
@@ -108,7 +109,7 @@ class MainObject:
     samplerate = 48000
     buffer_size = 1024
     
-    pretty_name_locked = False
+    pretty_names_locked = False
     '''True when another ray-patch_dmn instance
     is already running on the same JACK server. In this case, 
     this instance will NOT apply any pretty-name metadata, because
@@ -153,6 +154,9 @@ class MainObject:
         self.pretty_tmp_path = (Path('/tmp/RaySession/')
                                 / f'pretty_names.{daemon_port}.json')
         
+        self._locker_written = False
+        self._client_uuid = 0
+        
         self.osc_server = PatchbayDaemonServer(self)
         self.osc_server.set_tmp_gui_url(gui_url)
         self.write_existence_file()
@@ -182,7 +186,7 @@ class MainObject:
             existence_path.unlink()
         except PermissionError:
             sys.stderr.write(
-                'ray-patchbay_to_osc: Error, '
+                f'{JACK_CLIENT_NAME}: Error, '
                 f'unable to remove {existence_path}\n')
     
     @classmethod
@@ -193,6 +197,32 @@ class MainObject:
     def internal_stop(self):
         self.terminate = True
     
+    def write_locker_mdata(self):
+        '''set locker identifier.
+        Multiple daemons can co-exist,
+        But if we want things going right,
+        we have to ensure that each daemon runs on a different JACK server'''
+        try:
+            self.client.set_property(
+                self.client.uuid, METADATA_LOCKER,
+                str(self.daemon_port))
+        except:
+            _logger.warning(
+                f'Failed to set locker metadata for {JACK_CLIENT_NAME}, '
+                'could cause troubles if you start multiple daemons.')
+        else:
+            self._locker_written = True
+    
+    def remove_locker_mdata(self):
+        if self._locker_written:
+            try:
+                self.client.remove_property(
+                    self.client.uuid, METADATA_LOCKER)
+            except:
+                _logger.warning(
+                    f'Failed to remove locker metadata for {JACK_CLIENT_NAME}')
+        self._locker_written = False
+        
     def process_patch_events(self):
         for event, event_arg in self.patch_event_queue:
             pretty_uuid: Optional[int] = None
@@ -201,14 +231,15 @@ class MainObject:
                 case PatchEvent.CLIENT_ADDED:
                     name = event_arg
                     try:
-                        pretty_uuid = int(
+                        client_uuid = int(
                             self.client.get_uuid_for_client_name(name))
                     except:
                         ...
                     else:
-                        self.client_name_uuids[name] = pretty_uuid
+                        self.client_name_uuids[name] = client_uuid
                         self.osc_server.associate_client_name_and_uuid(
-                            name, pretty_uuid)
+                            name, client_uuid)
+                        pretty_uuid = client_uuid
 
                 case PatchEvent.CLIENT_REMOVED:
                     name = event_arg
@@ -242,14 +273,40 @@ class MainObject:
                     uuid_key_value: tuple[int, str, str] = event_arg
                     uuid, key, value = uuid_key_value
                     self.metadatas.add(uuid, key, value)
-
-                    if key == JackMetadata.PRETTY_NAME:
-                        pretty_uuid = uuid
-
-                    elif uuid == 0 and key == '':
+                    
+                    if uuid == 0 and key == '':
+                        # all metadatas removed
                         for uuid, mdata_dict in self.metadatas.items():
                             for k in mdata_dict:
                                 self.osc_server.metadata_updated(uuid, k, '')
+                        
+                        self.uuid_pretty_names.clear()
+                        self.save_uuid_pretty_names()
+                        
+                        if self.pretty_names_export:
+                            self.write_locker_mdata()
+
+                    if key == METADATA_LOCKER:
+                        if uuid == self._client_uuid:
+                            if not value and self.pretty_names_export:
+                                # if the metadata locker has been removed
+                                # from an external client,
+                                # re-set it immediatly.
+                                self.write_locker_mdata()
+                        else:
+                            try:
+                                client_name = \
+                                    self.client.get_client_name_by_uuid(str(uuid))
+                            except:
+                                ...
+                            else:
+                                if (client_name == JACK_CLIENT_NAME
+                                        or client_name.startswith(f'{JACK_CLIENT_NAME}-')):
+                                    self.osc_server.send_pretty_names_locked(
+                                        bool(value))
+                            
+                    elif key == JackMetadata.PRETTY_NAME:
+                        pretty_uuid = uuid                        
 
                 case PatchEvent.SHUTDOWN:
                     self.ports.clear()
@@ -498,7 +555,12 @@ class MainObject:
             _logger.info('Failed to connect client to JACK server')
         else:
             _logger.info('JACK client started successfully')
-                
+        
+        try:
+            self._client_uuid = int(self.client.uuid)
+        except:
+            _logger.warning('JACK metadatas seems to not work correctly')
+        
         self._waiting_jack_client_open = False
 
         jack_waiter_thread.join()
@@ -618,8 +680,6 @@ class MainObject:
             def property_change(subject: int, key: str, change: int):
                 if change == jack.PROPERTY_DELETED:
                     if subject == 0 and key == '':
-                        self.uuid_pretty_names.clear()
-                        self.save_uuid_pretty_names()
                         self.patch_event_queue.add(
                             PatchEvent.METADATA_CHANGED, 0, '', '')
                         return
@@ -675,31 +735,22 @@ class MainObject:
                     JACK_CLIENT_NAME)
                 locker_port = jack.get_property(
                     existant_uuid, METADATA_LOCKER)
+            except:
+                _logger.warning(
+                    f'Strange, the {JACK_CLIENT_NAME} JACK client has been renamed '
+                    f'to {self.client.name}.')
+            else:
                 if locker_port is not None:
                     locker_port = int(locker_port[0].decode())
-                self.pretty_name_locked = True
+                self.pretty_names_locked = True
                 _logger.warning(
                     f'This instance will NOT write any pretty-name metadata '
                     f'because the patchbay daemon depending on daemon '
                     f'at port {locker_port} is running '
                     f'in the same JACK server')
-            except:
-                _logger.warning(
-                    f'Strange, the {JACK_CLIENT_NAME} JACK client has been renamed '
-                    f'to {self.client.name}.')
         
-        # set locker identifier.
-        # Multiple daemons can co-exist,
-        # But if we want things going right,
-        # we have to ensure that each daemon runs on a different JACK server
-        try:
-            self.client.set_property(
-                self.client.uuid, METADATA_LOCKER,
-                str(self.daemon_port))
-        except:
-            _logger.warning(
-                'Failed to set locker metadata for ray-patch_dmn, '
-                'could cause troubles if you start multiple daemons.')
+        if self.pretty_names_export:
+            self.write_locker_mdata()
     
     def get_all_ports_and_connections(self):
         self.ports.clear()
@@ -763,7 +814,7 @@ class MainObject:
 
     def set_jack_pretty_name(self, uuid: int, pretty_name: str):
         'write pretty-name metadata, or remove it if value is empty'
-        if self.pretty_name_locked:
+        if self.pretty_names_locked:
             return
         
         if pretty_name:
@@ -811,7 +862,7 @@ class MainObject:
         pretty names have been written by a previous process.'''
         self.pretty_diff_checker.full_update()
         self.pretty_diff_changed(self.pretty_diff_checker.pretty_diff)
-        if not self.jack_running or self.pretty_name_locked:
+        if not self.jack_running or self.pretty_names_locked:
             return
         
         self.set_pretty_names_auto_export(self.pretty_names_export, force=True)
@@ -900,6 +951,8 @@ class MainObject:
         self.pretty_names_export = True
         
         if active:
+            self.write_locker_mdata()
+            
             for client_name, client_uuid in self.client_name_uuids.items():
                 self.set_jack_pretty_name_conditionally(
                     True, client_name, client_uuid)
@@ -914,6 +967,8 @@ class MainObject:
                     False, port_name, port.uuid)
 
         else:
+            self.remove_locker_mdata()
+
             # clear pretty-name metadata created by this from JACK
 
             for client_name, client_uuid in self.client_name_uuids.items():

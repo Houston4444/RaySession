@@ -325,6 +325,9 @@ class PatchbayDaemonServer(BunServer):
     def send_pretty_diff(self, pretty_diff: PrettyDiff):
         self.send_gui(rpm.HAS_PRETTY_NAMES_DIFF, pretty_diff.value)
 
+    def send_pretty_names_locked(self, locked: bool):
+        self.send_gui(rpm.PRETTY_NAMES_LOCKED, int(locked))
+
     def is_terminate(self):
         return self._terminate
     

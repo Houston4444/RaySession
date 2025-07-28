@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import IntEnum, Enum, auto
 from queue import Queue
 import time
-from typing import Iterator, TypeAlias
+from typing import Iterator, TypeAlias, Optional
 
 from port_data import PortData
 
@@ -77,3 +77,20 @@ class PatchEventQueue(Queue[tuple[PatchEvent, PatchEventArg, float]]):
 
             event, event_arg, time_ = self.oldies_queue.get()
             yield (event, event_arg)
+
+
+class ClientNamesUuids(dict[str, int]):
+    def __init__(self):
+        super().__init__()
+        self._revd = dict[int, str]()
+        
+    def __setitem__(self, key: str, value: int):
+        super().__setitem__(key, value)
+        self._revd[value] = key
+        
+    def __delitem__(self, key):
+        self._revd.pop(self[key])
+        super().__delitem__(key)
+    
+    def name_from_uuid(self, uuid: int) -> Optional[str]:
+        return self._revd.get(uuid)
