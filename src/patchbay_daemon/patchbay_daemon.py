@@ -572,6 +572,9 @@ class MainObject:
         if self.jack_running:
             self.set_registrations()
             self.get_all_ports_and_connections()
+            if self.pretty_names_export:
+                self.write_locker_mdata()
+
             self.samplerate = self.client.samplerate
             self.buffer_size = self.client.blocksize
             self.osc_server.server_restarted()
@@ -748,9 +751,6 @@ class MainObject:
                     f'because the patchbay daemon depending on daemon '
                     f'at port {locker_port} is running '
                     f'in the same JACK server')
-        
-        if self.pretty_names_export:
-            self.write_locker_mdata()
     
     def get_all_ports_and_connections(self):
         self.ports.clear()
@@ -799,6 +799,11 @@ class MainObject:
             for key, valuetype in uuid_dict.items():
                 value = valuetype[0].decode()
                 self.metadatas.add(uuid, key, value)
+                
+                if (key == METADATA_LOCKER 
+                        and uuid != self._client_uuid and value.isdigit()):
+                    self.pretty_names_locked = True
+                    self.pretty_names_export = False
 
     def save_uuid_pretty_names(self):
         '''save the contents of self.uuid_pretty_names in /tmp

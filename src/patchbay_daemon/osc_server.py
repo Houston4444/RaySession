@@ -242,6 +242,8 @@ class PatchbayDaemonServer(BunServer):
             self.send(gui_addr, rpm.TRANSPORT_POSITION,
                       tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
                       tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
+            self.send(gui_addr, rpm.PRETTY_NAMES_LOCKED,
+                      int(self.main_object.pretty_names_locked))
 
             self.gui_list.append(gui_addr)
             self.send_distant_data([gui_addr])
