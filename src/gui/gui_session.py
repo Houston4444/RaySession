@@ -268,8 +268,9 @@ class SignaledSession(Session):
         else:
             self.patchbay_manager.jack_export_naming = Naming.TRUE_NAME
 
-        self.patchbay_manager.options_dialog.export_pretty_names_changed(
-            export)
+        if self.patchbay_manager.options_dialog is not None:
+            self.patchbay_manager.options_dialog.export_pretty_names_changed(
+                export)
 
     @manage(rg.session.NAME, 'ss')
     def _session_name(self, osp: OscPack):
