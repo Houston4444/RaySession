@@ -686,10 +686,6 @@ class SignaledSession(Session):
         state: int = osp.args[0]
         self.patchbay_manager.receive_big_packets(state)
         
-    @manage(rpm.HAS_PRETTY_NAMES_DIFF, 'i')
-    def _patchbay_has_pretty_names_diff(self, osp: OscPack):
-        self.patchbay_manager.has_pretty_name_diff(osp.args[0])
-        
     @manage(rpm.PRETTY_NAMES_LOCKED, 'i')
     def _patchbay_pretty_names_locked(self, osp: OscPack):
         self.patchbay_manager.pretty_names_locked(osp.args[0])
