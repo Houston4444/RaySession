@@ -50,7 +50,7 @@ PORT_TYPE_MIDI = 2
 EXISTENCE_PATH = Path('/tmp/RaySession/patchbay_daemons')
 
 JACK_CLIENT_NAME = 'ray-patch_dmn'
-METADATA_LOCKER = f'{JACK_CLIENT_NAME}.locker'
+METADATA_LOCKER = f'pretty-name-export.locker'
 
 
 # Define a context manager to suppress stdout and stderr.
@@ -296,14 +296,13 @@ class MainObject:
                         else:
                             try:
                                 client_name = \
-                                    self.client.get_client_name_by_uuid(str(uuid))
+                                    self.client.get_client_name_by_uuid(
+                                        str(uuid))
                             except:
                                 ...
                             else:
-                                if (client_name == JACK_CLIENT_NAME
-                                        or client_name.startswith(f'{JACK_CLIENT_NAME}-')):
-                                    self.osc_server.send_pretty_names_locked(
-                                        bool(value))
+                                self.osc_server.send_pretty_names_locked(
+                                    bool(value))
                             
                     elif key == JackMetadata.PRETTY_NAME:
                         pretty_uuid = uuid                        
@@ -733,24 +732,11 @@ class MainObject:
         self.client.activate()
         
         if self.client.name != JACK_CLIENT_NAME:
-            try:
-                existant_uuid = self.client.get_uuid_for_client_name(
-                    JACK_CLIENT_NAME)
-                locker_port = jack.get_property(
-                    existant_uuid, METADATA_LOCKER)
-            except:
-                _logger.warning(
-                    f'Strange, the {JACK_CLIENT_NAME} JACK client has been renamed '
-                    f'to {self.client.name}.')
-            else:
-                if locker_port is not None:
-                    locker_port = int(locker_port[0].decode())
-                self.pretty_names_locked = True
-                _logger.warning(
-                    f'This instance will NOT write any pretty-name metadata '
-                    f'because the patchbay daemon depending on daemon '
-                    f'at port {locker_port} is running '
-                    f'in the same JACK server')
+            _logger.warning(
+                f'This instance seems to not be the only one ' 
+                f'{JACK_CLIENT_NAME} instance in this JACK graph. '
+                f'It can easily create conflicts, especially for pretty-names'
+            )
     
     def get_all_ports_and_connections(self):
         self.ports.clear()
