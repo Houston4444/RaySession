@@ -332,6 +332,9 @@ class MainObject:
         if not self.jack_running:
             return
         
+        if self.pretty_names_locked:
+            return
+        
         if not self.pretty_names_export:
             return
         
@@ -805,9 +808,6 @@ class MainObject:
 
     def set_jack_pretty_name(self, uuid: int, pretty_name: str):
         'write pretty-name metadata, or remove it if value is empty'
-        if self.pretty_names_locked:
-            return
-        
         if pretty_name:
             try:
                 self.client.set_property(
