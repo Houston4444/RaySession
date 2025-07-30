@@ -20,7 +20,7 @@ class PrettyDiffChecker:
         self.clients_diff = dict[int, PrettyDiff]()
         self.ports_diff = dict[int, PrettyDiff]()
         self.pretty_diff = PrettyDiff.NO_DIFF
-        self.full_update()
+        self.full_update(startup=True)
     
     def uuid_change(self, uuid: int):
         change_diff_old = PrettyDiff.NO_DIFF
@@ -114,7 +114,7 @@ class PrettyDiffChecker:
             return PrettyDiff.NON_EXPORTED
         return PrettyDiff.NON_IMPORTED
     
-    def full_update(self):
+    def full_update(self, startup=False):
         self.clients_diff.clear()
         self.ports_diff.clear()
 
@@ -127,8 +127,20 @@ class PrettyDiffChecker:
             self.ports_diff[port.uuid] = self._get_diff(
                 self.pretty_names.pretty_port(port.name),
                 self.metadatas.pretty_name(port.uuid))
-            
+        
         self.pretty_diff = self.get_glob_diff()
+        self.change_callback(self.pretty_diff)
+        # self.print_diffs()
+
+    def print_diffs(self):
+        print('knilou', self.pretty_diff)
+        for uuid, diff in self.clients_diff.items():
+            if diff is not PrettyDiff.NO_DIFF:
+                print('cdiff', uuid, diff)
+        
+        for uuid, diff in self.ports_diff.items():
+            if diff is not PrettyDiff.NO_DIFF:
+                print('pdiff', uuid, diff)
 
     def get_glob_diff(self) -> PrettyDiff:
         glob_diff = PrettyDiff.NO_DIFF

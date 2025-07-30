@@ -363,7 +363,8 @@ class MainObject:
             self.save_uuid_pretty_names()
 
     def pretty_diff_changed(self, pretty_diff: PrettyDiff):
-        self.osc_server.send_pretty_diff(pretty_diff)
+        if self.osc_server is not None:
+            self.osc_server.send_pretty_diff(pretty_diff)
     
     def _check_jack_client_responding(self):
         for i in range(100): # JACK has 5s to answer
@@ -1011,6 +1012,8 @@ class MainObject:
             if pretty_name != jack_pretty:
                 self.pretty_names.save_port(jport.name, jack_pretty)
                 ports_dict[jport.name] = jack_pretty
+        
+        self.pretty_diff_checker.full_update()
         
         return clients_dict, ports_dict
 
