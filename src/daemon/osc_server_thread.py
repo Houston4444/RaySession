@@ -937,7 +937,7 @@ class OscServerThread(ClientCommunicating):
             dest_full_path.unlink(missing_ok=True)
 
     @validator(r.server.AUTO_EXPORT_PRETTY_NAMES, 's')
-    def _srv_export_pretty_names(self, osp: OscPack):
+    def _srv_auto_export_pretty_names(self, osp: OscPack):
         export_pretty_names = bool(
             osp.args[0].lower() not in (
                 '0', 'false', 'no', 'off', 'true_name'))
@@ -955,8 +955,44 @@ class OscServerThread(ClientCommunicating):
 
         self.send_gui(rg.server.AUTO_EXPORT_PRETTY_NAMES,
                       self.jack_export_naming.value)
-        self.send(osp.src_addr, osc_paths.REPLY, osp.path,
-                  'export pretty_names changed')
+        self.send(*osp.reply(), 'auto-export pretty_names changed')
+        
+        # start patchbay daemon in main thread if it is not started yet
+        return not patchbay_dmn_mng.is_running()
+        # return bool(
+        #     patchbay_dmn_mng.state() is not patchbay_dmn_mng.State.LAUNCHED)
+
+    @validator(r.server.EXPORT_PRETTY_NAMES, '')
+    def _srv_export_pretty_names(self, osp: OscPack):
+        
+        match patchbay_dmn_mng.state():
+            case patchbay_dmn_mng.State.READY:
+                self.send_patchbay_dmn(r.patchbay.EXPORT_ALL_PRETTY_NAMES)
+            case patchbay_dmn_mng.State.LAUNCHED:
+                patchbay_dmn_mng.enqueue_osc(
+                    r.patchbay.EXPORT_ALL_PRETTY_NAMES)
+            case patchbay_dmn_mng.State.STOPPED:
+                self.send(*osp.reply(), 'export pretty_names done')
+                # start patchbay daemon in main thread 
+                # if it is not started yet
+                return True
+
+        self.send(*osp.reply(), 'export pretty_names done')
+        return False
+        
+    @validator(r.server.IMPORT_PRETTY_NAMES, '')
+    def _srv_import_pretty_names(self, osp: OscPack):
+        self.send_patchbay_dmn(r.patchbay.IMPORT_ALL_PRETTY_NAMES)
+        self.send(*osp.reply(), 'import pretty_names done')
+        
+        # start patchbay daemon in main thread if it is not started yet
+        return bool(
+            patchbay_dmn_mng.state() is not patchbay_dmn_mng.State.LAUNCHED)
+        
+    @validator(r.server.CLEAR_PRETTY_NAMES, '')
+    def _srv_clear_pretty_names(self, osp: OscPack):
+        self.send_patchbay_dmn(r.patchbay.CLEAR_ALL_PRETTY_NAMES)
+        self.send(*osp.reply(), 'pretty_names cleared')
         
         # start patchbay daemon in main thread if it is not started yet
         return bool(

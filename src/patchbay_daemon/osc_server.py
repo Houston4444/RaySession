@@ -332,6 +332,16 @@ class PatchbayDaemonServer(BunServer):
 
         self.send(addr, rpm.SERVER_LOSE)
 
+    def make_one_shot_act(self, one_shot_act: str):
+        match one_shot_act:
+            case r.patchbay.EXPORT_ALL_PRETTY_NAMES:
+                self.main_object.export_all_pretty_names_to_jack_now()
+            case r.patchbay.IMPORT_ALL_PRETTY_NAMES:
+                ...
+            case r.patchbay.CLEAR_ALL_PRETTY_NAMES:
+                ...
+        
+
     def set_ready_for_daemon(self):
         self.pretty_names.clear()
         self.send(self.main_object.daemon_port,

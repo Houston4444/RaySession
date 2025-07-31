@@ -125,32 +125,7 @@ PATHS:
 - voir pretty_name et SIGTERM quand session chargée
 
 
-enable/disable les nouveaux boutons import/export pretty name
 séparer jack_manager de patchbay_manager (trop gros et pas logique)
-
-patchbay_daemon
-    .ports doit être écrit dans le thread principal uniquement
-    .connections pareil
-    .metadatas pareil
-
-
-CLIENT_ADD name
-CLIENT_REMOVE name
-PORT_ADD name
-PORT_REMOVE name
-PORT_RENAME (old, new)
-CONNECTION_ADD (port_a, port_b)
-CONNECTION_REMOVED (port_a, port_b)
-METADATA_CHANGED (uuid, key, value)
-
-
-    Events:
-        client/port/connection/metadata
-
-        client add/rm
-        port add/rm/rename
-        conn add/rm
-        metadata change
 
 
 ray_control pretty_names
@@ -160,3 +135,20 @@ ray_control pretty_names
     list_non_imported
     list_non_exported
 
+Metadatas GUI doit comprendre remove all driectement
+
+Import, export, clear pretty_names
+    si patchbay_daemon lancé:
+        appliquer
+    sinon:
+        patchbay_daemon start with one_shot action
+    
+    clear:
+        si auto-export:
+            clear all JACK pretty-names except ceux matching avec les internals
+            ceux qui matchent doivent être ajoutés à la mémoire d'écriture pour 
+                être éffacés quand on désactive l'option
+        sinon:
+            effacer tous les pretty-name de JACK 
+
+FIX: clear pretty name does not clear the metadata
