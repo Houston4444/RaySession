@@ -85,7 +85,6 @@ METHODS_DICT = {
     rpm.UPDATE_PORTGROUP: 'siiiss*',
     rpm.UPDATE_GROUP_PRETTY_NAME: 'ss',
     rpm.UPDATE_PORT_PRETTY_NAME: 'ss',
-    rpm.HAS_PRETTY_NAMES_DIFF: 'i',
     rpm.PRETTY_NAMES_LOCKED: 'i',
     rg.preview.CLEAR: '',
     rg.preview.NOTES: 's',
