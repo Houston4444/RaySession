@@ -23,7 +23,6 @@ from patshared import JackMetadatas, JackMetadata, PrettyNames, PrettyDiff
 
 # local imports
 from port_data import PortData, PortDataList
-from pretty_diff_checker import PrettyDiffChecker
 from jack_bases import (
     ClientNamesUuids, PatchEventQueue, TransportPosition,
     TransportWanted, PatchEvent)
@@ -146,11 +145,6 @@ class MainObject:
         '''Contains pairs of 'uuid: pretty_name' of pretty_names just
         set and waiting for the property change callback.'''
 
-        self.pretty_diff_checker = PrettyDiffChecker(
-            self.metadatas, self.pretty_names,
-            self.client_name_uuids, self.ports,
-            self.pretty_diff_changed)
-
         self.pretty_tmp_path = (Path('/tmp/RaySession/')
                                 / f'pretty_names.{daemon_port}.json')
         
@@ -225,8 +219,6 @@ class MainObject:
         
     def process_patch_events(self):
         for event, event_arg in self.patch_event_queue:
-            pretty_uuid: Optional[int] = None
-
             match event:
                 case PatchEvent.CLIENT_ADDED:
                     name = event_arg
@@ -239,22 +231,19 @@ class MainObject:
                         self.client_name_uuids[name] = client_uuid
                         self.osc_server.associate_client_name_and_uuid(
                             name, client_uuid)
-                        pretty_uuid = client_uuid
 
                 case PatchEvent.CLIENT_REMOVED:
                     name = event_arg
                     if name in self.client_name_uuids:
-                        pretty_uuid = self.client_name_uuids.pop(event_arg)
+                        self.client_name_uuids.pop(event_arg)
 
                 case PatchEvent.PORT_ADDED:
                     port: PortData = event_arg
-                    pretty_uuid = port.uuid
                     self.ports.append(port)
 
                 case PatchEvent.PORT_REMOVED:
                     port = self.ports.from_name(event_arg)
-                    if port is not None:
-                        pretty_uuid = port.uuid
+                    self.ports.remove(port)
 
                 case PatchEvent.PORT_REMOVED:
                     old, new = event_arg
@@ -303,16 +292,10 @@ class MainObject:
                             else:
                                 self.osc_server.send_pretty_names_locked(
                                     bool(value))
-                            
-                    elif key == JackMetadata.PRETTY_NAME:
-                        pretty_uuid = uuid                        
 
                 case PatchEvent.SHUTDOWN:
                     self.ports.clear()
                     self.connections.clear()
-            
-            if pretty_uuid is not None:
-                self.pretty_diff_checker.uuid_change(pretty_uuid)
 
     def _check_pretty_names_export(self):
         client_names = set[str]()
@@ -361,10 +344,6 @@ class MainObject:
         
         if has_changes:
             self.save_uuid_pretty_names()
-
-    def pretty_diff_changed(self, pretty_diff: PrettyDiff):
-        if self.osc_server is not None:
-            self.osc_server.send_pretty_diff(pretty_diff)
     
     def _check_jack_client_responding(self):
         for i in range(100): # JACK has 5s to answer
@@ -852,8 +831,6 @@ class MainObject:
         '''Set all pretty names once all pretty names are received,
         or clear them if self.pretty_name_active is False and some
         pretty names have been written by a previous process.'''
-        self.pretty_diff_checker.full_update()
-        self.pretty_diff_changed(self.pretty_diff_checker.pretty_diff)
         if not self.jack_running or self.pretty_names_locked:
             return
         
@@ -1012,8 +989,6 @@ class MainObject:
             if pretty_name != jack_pretty:
                 self.pretty_names.save_port(jport.name, jack_pretty)
                 ports_dict[jport.name] = jack_pretty
-        
-        self.pretty_diff_checker.full_update()
         
         return clients_dict, ports_dict
 
