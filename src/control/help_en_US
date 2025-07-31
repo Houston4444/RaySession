@@ -97,7 +97,7 @@ control RaySession daemons
     script_user_action TEXT
         Displays a question dialog on RaySession's GUI.
         Returns when user accepted or rejected it.
-    export_pretty_names YESNO
+    auto_export_pretty_names YESNO
         Export and auto-export internal pretty-names to JACK metadatas.
         If YESNO is 'no', this option will be disabled.
 

@@ -511,7 +511,8 @@ class RayPatchbayManager(PatchbayManager):
         super().change_jack_export_naming(naming)
         
         pretty_enable = Naming.INTERNAL_PRETTY in naming
-        self.send_to_daemon(r.server.EXPORT_PRETTY_NAMES, str(pretty_enable))
+        self.send_to_daemon(
+            r.server.AUTO_EXPORT_PRETTY_NAMES, str(pretty_enable))
     
     def export_pretty_names_to_jack(self):
         super().export_pretty_names_to_jack()
