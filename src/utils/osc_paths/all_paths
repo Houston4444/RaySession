@@ -171,8 +171,6 @@
 /ray/patchbay/monitor/update_group_pretty_name
 /ray/patchbay/monitor/update_port_pretty_name
 /ray/patchbay/monitor/update_portgroup
-/ray/patchbay/monitor/has_pretty_names_diff i
-    arg has to be converted in PrettyDiff Flag.
 /ray/patchbay/monitor/pretty_names_locked i
     1 if pretty names are locked by another patchbay daemon
 /ray/patchbay/monitor/views_changed
