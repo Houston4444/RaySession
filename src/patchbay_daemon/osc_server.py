@@ -27,7 +27,7 @@ class PatchbayDaemonServer(BunServer):
         self.pretty_names = main_object.pretty_names
         self.gui_list = list[Address]()
         self._tmp_gui_url = ''
-        self._terminate = False
+        self.terminate = False
     
     @bun_manage(r.patchbay.ADD_GUI, 's')
     def _ray_patchbay_add_gui(self, osp: OscPack):
@@ -46,7 +46,7 @@ class PatchbayDaemonServer(BunServer):
         if not self.gui_list and not self.main_object.pretty_names_export:
             # no more GUI connected, and no pretty-names to export,
             # no reason to exists anymore
-            self._terminate = True
+            self.terminate = True
 
     @bun_manage(r.patchbay.CONNECT, 'ss')
     def _ray_patchbay_connect(self, osp: OscPack):
@@ -123,7 +123,7 @@ class PatchbayDaemonServer(BunServer):
         export_pretty_names = bool(osp.args[0])
         self.main_object.set_pretty_names_auto_export(export_pretty_names)
         if not export_pretty_names and not self.gui_list:
-            self._terminate = True
+            self.terminate = True
 
     @bun_manage(r.patchbay.EXPORT_ALL_PRETTY_NAMES, '')
     def _ray_patchbay_export_all_pretty_names(self, osp: OscPack):
@@ -152,7 +152,7 @@ class PatchbayDaemonServer(BunServer):
 
     @bun_manage(r.patchbay.QUIT, '')
     def _ray_patchbay_quit(self, osp: OscPack):
-        self._terminate = True
+        self.terminate = True
 
     def set_tmp_gui_url(self, gui_url: str):
         self._tmp_gui_url = gui_url
@@ -314,9 +314,6 @@ class PatchbayDaemonServer(BunServer):
 
     def send_pretty_names_locked(self, locked: bool):
         self.send_gui(rpm.PRETTY_NAMES_LOCKED, int(locked))
-
-    def is_terminate(self):
-        return self._terminate
     
     def send_server_lose(self):
         self.send_gui(rpm.SERVER_LOSE)
