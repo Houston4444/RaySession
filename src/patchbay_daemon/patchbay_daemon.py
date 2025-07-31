@@ -592,7 +592,7 @@ class MainObject:
         self.osc_server.set_ready_for_daemon()
 
     def is_terminate(self) -> bool:
-        if self.terminate or self.osc_server.is_terminate():
+        if self.terminate or self.osc_server.terminate:
             return True
         
         return False
