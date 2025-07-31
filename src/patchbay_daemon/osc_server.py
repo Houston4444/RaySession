@@ -108,8 +108,6 @@ class PatchbayDaemonServer(BunServer):
     def _ray_patchbay_save_group_pretty_name(self, osp: OscPack):
         group_name, pretty_name, save_in_jack = osp.args
         self.pretty_names.save_group(group_name, pretty_name)
-        self.main_object.pretty_diff_checker.client_pretty_name_changed(
-            group_name)
         if save_in_jack:
             self.main_object.write_group_pretty_name(group_name, pretty_name)
     
@@ -117,8 +115,6 @@ class PatchbayDaemonServer(BunServer):
     def _ray_patchbay_save_port_pretty_name(self, osp: OscPack):
         port_name, pretty_name, save_in_jack = osp.args
         self.pretty_names.save_port(port_name, pretty_name)
-        self.main_object.pretty_diff_checker.port_pretty_name_changed(
-            port_name)
         if save_in_jack:
             self.main_object.write_port_pretty_name(port_name, pretty_name)
 
@@ -260,8 +256,8 @@ class PatchbayDaemonServer(BunServer):
         self.send_samplerate()
         self.send_buffersize()
         
-        local_guis = []
-        distant_guis = []
+        local_guis = list[Address]()
+        distant_guis = list[Address]()
         
         for gui_addr in self.gui_list:
             if are_on_same_machine(self.url, gui_addr.url):
@@ -272,20 +268,16 @@ class PatchbayDaemonServer(BunServer):
         self.send_distant_data(self.gui_list)
 
     def associate_client_name_and_uuid(self, client_name: str, uuid: int):
-        self.send_gui(rpm.CLIENT_NAME_AND_UUID,
-                      client_name, uuid)
+        self.send_gui(rpm.CLIENT_NAME_AND_UUID, client_name, uuid)
 
     def port_added(self, pname: str, ptype: int, pflags: int, puuid: int):
-        self.send_gui(rpm.PORT_ADDED,
-                      pname, ptype, pflags, puuid) 
+        self.send_gui(rpm.PORT_ADDED, pname, ptype, pflags, puuid) 
 
     def port_renamed(self, ex_name: str, new_name, uuid=0):
         if uuid:
-            self.send_gui(
-                rpm.PORT_RENAMED, ex_name, new_name, uuid)
+            self.send_gui(rpm.PORT_RENAMED, ex_name, new_name, uuid)
         else:
-            self.send_gui(
-                rpm.PORT_RENAMED, ex_name, new_name)
+            self.send_gui(rpm.PORT_RENAMED, ex_name, new_name)
     
     def port_removed(self, port_name: str):
         self.send_gui(rpm.PORT_REMOVED, port_name)
@@ -294,12 +286,10 @@ class PatchbayDaemonServer(BunServer):
         self.send_gui(rpm.METADATA_UPDATED, uuid, key, value)
     
     def connection_added(self, connection: tuple[str, str]):
-        self.send_gui(rpm.CONNECTION_ADDED,
-                     connection[0], connection[1])
+        self.send_gui(rpm.CONNECTION_ADDED, connection[0], connection[1])
 
     def connection_removed(self, connection: tuple[str, str]):
-        self.send_gui(rpm.CONNECTION_REMOVED,
-                     connection[0], connection[1])
+        self.send_gui(rpm.CONNECTION_REMOVED, connection[0], connection[1])
     
     def server_stopped(self):
         # here server is JACK (or Pipewire JACK)
@@ -317,15 +307,10 @@ class PatchbayDaemonServer(BunServer):
         self.send_gui(rpm.ADD_XRUN)
     
     def send_buffersize(self):
-        self.send_gui(rpm.BUFFER_SIZE,
-                     self.main_object.buffer_size)
+        self.send_gui(rpm.BUFFER_SIZE, self.main_object.buffer_size)
     
     def send_samplerate(self):
-        self.send_gui(rpm.SAMPLE_RATE,
-                     self.main_object.samplerate)
-
-    def send_pretty_diff(self, pretty_diff: PrettyDiff):
-        self.send_gui(rpm.HAS_PRETTY_NAMES_DIFF, pretty_diff.value)
+        self.send_gui(rpm.SAMPLE_RATE, self.main_object.samplerate)
 
     def send_pretty_names_locked(self, locked: bool):
         self.send_gui(rpm.PRETTY_NAMES_LOCKED, int(locked))
