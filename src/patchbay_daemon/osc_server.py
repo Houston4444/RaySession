@@ -131,6 +131,17 @@ class PatchbayDaemonServer(BunServer):
         
     @bun_manage(r.patchbay.IMPORT_ALL_PRETTY_NAMES, '')
     def _ray_patchbay_import_all_pretty_names(self, osp: OscPack):
+        self._import_all_pretty_names()
+
+    @bun_manage(r.patchbay.CLEAR_ALL_PRETTY_NAMES, '')
+    def _ray_patchbay_clear_all_pretty_names(self, osp: OscPack):
+        self.main_object.clear_all_pretty_names_from_jack()
+
+    @bun_manage(r.patchbay.QUIT, '')
+    def _ray_patchbay_quit(self, osp: OscPack):
+        self.terminate = True
+
+    def _import_all_pretty_names(self):
         clients_dict, ports_dict = \
             self.main_object.import_all_pretty_names_from_jack()
         
@@ -149,10 +160,6 @@ class PatchbayDaemonServer(BunServer):
             
         self.mega_send(self.main_object.daemon_port, ms)
         self.mega_send(self.gui_list, ms_gui)
-
-    @bun_manage(r.patchbay.QUIT, '')
-    def _ray_patchbay_quit(self, osp: OscPack):
-        self.terminate = True
 
     def set_tmp_gui_url(self, gui_url: str):
         self._tmp_gui_url = gui_url
@@ -334,9 +341,9 @@ class PatchbayDaemonServer(BunServer):
             case r.patchbay.EXPORT_ALL_PRETTY_NAMES:
                 self.main_object.export_all_pretty_names_to_jack_now()
             case r.patchbay.IMPORT_ALL_PRETTY_NAMES:
-                ...
+                self._import_all_pretty_names()
             case r.patchbay.CLEAR_ALL_PRETTY_NAMES:
-                ...
+                self.main_object.clear_all_pretty_names_from_jack()
         
 
     def set_ready_for_daemon(self):

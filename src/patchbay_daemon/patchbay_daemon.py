@@ -1017,6 +1017,14 @@ class MainObject:
             if pretty_name:
                 self.set_jack_pretty_name(jport.uuid, pretty_name)
 
+    def clear_all_pretty_names_from_jack(self):
+        for uuid, uuid_dict in self.metadatas.items():
+            if JackMetadata.PRETTY_NAME in uuid_dict:
+                self.set_jack_pretty_name(uuid, '')
+        
+        if self.pretty_names_export:
+            self.set_pretty_names_auto_export(True, force=True)
+
     def transport_play(self, play: bool):
         if play:
             self.client.transport_start()
