@@ -144,6 +144,7 @@
 /ray/patchbay/enable_jack_pretty_naming
 /ray/patchbay/export_all_pretty_names
 /ray/patchbay/import_all_pretty_names
+/ray/patchbay/clear_all_pretty_names
 /ray/patchbay/set_buffer_size
 /ray/patchbay/transport_play
 /ray/patchbay/transport_relocate
@@ -220,8 +221,16 @@
 /ray/server/set_option
 /ray/server/set_options
 /ray/server/set_terminal_command
+/ray/server/export_pretty_names
+    Export the internal pretty names of clients and ports to JACK metadatas
+/ray/server/import_pretty_names
+    Import the pretty names from JACK metadatas to internal pretty names.
+    Useful if you want to save in session metadatas written by another program.
+/ray/server/clear_pretty_names
+    Clear all the JACK pretty-name metadatas, except theses ones exported by
+    auto_export_pretty_names if it is set.
 /ray/server/auto_export_pretty_names i
-    Enable/disable export of ports and clients pretty-names to JACK metadatas
+    Enable/disable auto-export of ports and clients pretty-names to JACK metadatas
 /ray/session/abort
 /ray/session/add_client_template
 /ray/session/add_exec

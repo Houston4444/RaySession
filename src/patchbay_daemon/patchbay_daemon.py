@@ -120,10 +120,13 @@ class MainObject:
     dsp_wanted = True
     transport_wanted = TransportWanted.FULL
     
-    def __init__(self, daemon_port: int, gui_url: str,
-                 pretty_name_active=True):
+    def __init__(
+            self, daemon_port: int, gui_url: str,
+            pretty_name_active=True, one_shot_act=''):
         self.daemon_port = daemon_port
         self.pretty_names_export = pretty_name_active
+        self.pretty_names_ready = False
+        self.one_shot_act = one_shot_act
 
         self.last_sent_dsp_load = 0
         self.max_dsp_since_last_sent = 0.00
@@ -470,6 +473,13 @@ class MainObject:
                 if self.transport_wanted is not TransportWanted.NO:
                     self._send_transport_pos()
 
+                if self.pretty_names_ready and self.one_shot_act:
+                    self.osc_server.make_one_shot_act(self.one_shot_act)
+                    self.one_shot_act = ''
+                    
+                    if (not self.pretty_names_export
+                            and not self.osc_server.gui_list):
+                        break
             else:
                 if n % 10 == 0:
                     if self.client is not None:
@@ -482,6 +492,7 @@ class MainObject:
                         self.client = None
                     _logger.debug('try to start JACK')
                     self.start_jack_client()
+
             n += 1
             
             # for faster modulos
@@ -831,13 +842,16 @@ class MainObject:
         '''Set all pretty names once all pretty names are received,
         or clear them if self.pretty_name_active is False and some
         pretty names have been written by a previous process.'''
+        self.pretty_names_ready = True
+        
         if not self.jack_running or self.pretty_names_locked:
             return
         
         self.set_pretty_names_auto_export(self.pretty_names_export, force=True)
         
         if (not self.pretty_names_export
-                and not self.osc_server.can_have_gui()):
+                and not self.osc_server.can_have_gui()
+                and not self.one_shot_act):
             self.terminate = True
 
     def write_group_pretty_name(self, client_name: str, pretty_name: str):
@@ -1046,6 +1060,7 @@ def start():
     daemon_port_str = ''
     gui_url = ''
     pretty_names_active = True
+    one_shot_act = ''
     log = ''
     dbg = ''
 
@@ -1059,6 +1074,8 @@ def start():
         pns = args.pop(0)
         pretty_names_active = not bool(pns.lower() in ('0', 'false'))
         args.pop(0)
+    if args:
+        one_shot_act = args.pop(0)
     if args[0] == '--log':
         args.pop(0)
         log = args.pop(0)
@@ -1085,17 +1102,21 @@ def start():
             f'daemon port must be an integer, not "{daemon_port_str}"')
         return
     
-    main_object = MainObject(daemon_port, gui_url, pretty_names_active)
+    main_object = MainObject(
+        daemon_port, gui_url, pretty_names_active, one_shot_act)
+
     if gui_url:
         main_object.osc_server.add_gui(gui_url)
     main_object.start_loop()
     
-def internal_prepare(daemon_port: str, gui_url: str,
-                     pretty_names_active: str, nsm_url=''):
+def internal_prepare(
+        daemon_port: str, gui_url: str, pretty_names_active: str,
+        one_shot_act: str, nsm_url=''):
     pretty_name_active_bool = not bool(
         pretty_names_active.lower() in ('0', 'false'))
-    main_object = MainObject(int(daemon_port), gui_url,
-                             pretty_name_active_bool)
+    main_object = MainObject(
+        int(daemon_port), gui_url, pretty_name_active_bool, one_shot_act)
+
     if gui_url:
         main_object.osc_server.add_gui(gui_url)
         if not main_object.osc_server.gui_list:

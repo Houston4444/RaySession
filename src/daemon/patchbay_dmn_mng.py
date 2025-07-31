@@ -46,12 +46,14 @@ class _MainObj:
 
     ready = False
     port = 0
+    waiting_msgs = list[list]()
     
     
 class State(Enum):
     STOPPED = 0
     LAUNCHED = 1
     READY = 2
+
 
 def _check_thread_target():
     while True:
@@ -139,7 +141,7 @@ def get_port() -> Optional[int]:
                     return patchbay_addr.port
                 break
 
-def start(gui_url=''):    
+def start(gui_url='', one_shot_act=''):    
     _logger.debug(f'patchbay_dmn_mng.start(gui_url={gui_url})')
 
     if is_running():
@@ -170,8 +172,9 @@ def start(gui_url=''):
             _MainObj.internal_client = InternalClient(
                 'ray-patchbay_daemon',
                 (str(_MainObj.daemon_server.port),
-                    gui_url,
-                    str(pretty_names_active)),
+                 gui_url,
+                 str(pretty_names_active),
+                 one_shot_act),
                 ''
             ) 
             _MainObj.internal_client.start()
@@ -228,7 +231,11 @@ def set_ready():
     for url in _MainObj.waiting_guis:
         _send(port, r.patchbay.ADD_GUI, url)
     
+    for waiting_msg in _MainObj.waiting_msgs:
+        _send(port, *waiting_msg)
+    
     _MainObj.waiting_guis.clear()
+    _MainObj.waiting_msgs.clear()
     _MainObj.ready = True
 
 def is_running() -> bool:
@@ -250,6 +257,10 @@ def state() -> State:
             return State.READY
         return State.LAUNCHED
     return State.STOPPED
+
+def enqueue_osc(*args):
+    '''Enqueue OSC messages to send to patchbay daemon once it is ready'''
+    _MainObj.waiting_msgs.append(args)
 
 def daemon_exit():
     if _MainObj.process is not None:
