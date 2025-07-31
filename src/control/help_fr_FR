@@ -102,7 +102,7 @@ contrôle les démons de RaySession
         Retourne quand l'utilisateur l'a acceptée ou refusée.
     has_attached_gui
         Retourne un code d'erreur si aucune IGU n'est attachée à ce démon
-    export_pretty_names YESNO
+    auto_export_pretty_names YESNO
         Exporter et auto-exporter les jolis noms internes vers les métadonnées de JACK.
         Si YESNO est 'no', cette option sera désactivée.
 

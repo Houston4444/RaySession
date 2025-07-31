@@ -160,8 +160,3 @@ ray_control pretty_names
     list_non_imported
     list_non_exported
 
-locker metadata:
-    write/erase quand l'option change
-    réaction quand la métadata change
-        enable/disable l'option
-        réécriture directe si c'est celle du process

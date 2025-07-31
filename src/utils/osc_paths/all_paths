@@ -110,7 +110,7 @@
 /ray/gui/server/root
 /ray/gui/server/status
 /ray/gui/server/terminal_command
-/ray/gui/server/export_pretty_names i
+/ray/gui/server/auto_export_pretty_names i
     informs the GUI that "export pretty names" option has changed 
 /ray/gui/session/auto_snapshot
 /ray/gui/session/duplicate_only
@@ -220,7 +220,7 @@
 /ray/server/set_option
 /ray/server/set_options
 /ray/server/set_terminal_command
-/ray/server/export_pretty_names i
+/ray/server/auto_export_pretty_names i
     Enable/disable export of ports and clients pretty-names to JACK metadatas
 /ray/session/abort
 /ray/session/add_client_template
