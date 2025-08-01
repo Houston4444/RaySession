@@ -19,7 +19,7 @@ import jack
 from proc_name import set_proc_name
 
 # imports from HoustonPatchbay
-from patshared import JackMetadatas, JackMetadata, PrettyNames, PrettyDiff
+from patshared import JackMetadatas, JackMetadata, PrettyNames
 
 # local imports
 from port_data import PortData, PortDataList
@@ -49,7 +49,7 @@ PORT_TYPE_MIDI = 2
 EXISTENCE_PATH = Path('/tmp/RaySession/patchbay_daemons')
 
 JACK_CLIENT_NAME = 'ray-patch_dmn'
-METADATA_LOCKER = f'pretty-name-export.locker'
+METADATA_LOCKER = 'pretty-name-export.locker'
 
 
 # Define a context manager to suppress stdout and stderr.
@@ -110,9 +110,15 @@ class MainObject:
     
     pretty_names_locked = False
     '''True when another ray-patch_dmn instance
-    is already running on the same JACK server. In this case, 
-    this instance will NOT apply any pretty-name metadata, because
-    it could easily create conflicts with the other instance.'''
+    is already running on the same JACK server with 
+    'auto_export_pretty_names' option action.
+    In this case,  this instance will NOT auto export pretty-names
+    to JACK metadatas, because it could easily create conflicts
+    with the other instance.
+    
+    The existence of another instance is managed by a metadata
+    set on the client'''
+
     auto_export_pretty_names = True
     '''True if the patchbay option 'Auto-Export pretty names to JACK' is activated
     (True by default).'''
@@ -248,7 +254,7 @@ class MainObject:
                     port = self.ports.from_name(event_arg)
                     self.ports.remove(port)
 
-                case PatchEvent.PORT_REMOVED:
+                case PatchEvent.PORT_RENAMED:
                     old, new = event_arg
                     self.ports.rename(old, new)
                 
@@ -256,7 +262,7 @@ class MainObject:
                     conn: tuple[str, str] = event_arg
                     self.connections.append(conn)
                 
-                case PatchEvent.CLIENT_REMOVED:
+                case PatchEvent.CONNECTION_REMOVED:
                     conn: tuple[str, str] = event_arg
                     if conn in self.connections:
                         self.connections.remove(conn)
@@ -270,6 +276,10 @@ class MainObject:
                         self.uuid_pretty_names.clear()
                         self.save_uuid_pretty_names()
                         
+                        if self.auto_export_pretty_names:
+                            self.write_locker_mdata()
+                    
+                    elif uuid == self._client_uuid and key == '':
                         if self.auto_export_pretty_names:
                             self.write_locker_mdata()
 
@@ -344,6 +354,9 @@ class MainObject:
             self.save_uuid_pretty_names()
     
     def _check_jack_client_responding(self):
+        '''Launched in self._zeo thread,
+        checks that JACK client creation finish.'''
+
         for i in range(100): # JACK has 5s to answer
             time.sleep(0.050)
 
@@ -415,7 +428,8 @@ class MainObject:
     
     def connect_ports(self, port_out_name: str, port_in_name: str,
                       disconnect=False):
-        if self.alsa_mng is not None and port_out_name.startswith(':ALSA_OUT:'):
+        if (self.alsa_mng is not None
+                and port_out_name.startswith(':ALSA_OUT:')):
             self.alsa_mng.connect_ports(
                 port_out_name, port_in_name, disconnect=disconnect)
             return
