@@ -249,28 +249,35 @@ class MainObject:
                 case PatchEvent.PORT_ADDED:
                     port: PortData = event_arg
                     self.ports.append(port)
+                    self.osc_server.port_added(
+                        port.name, port.type, port.flags, port.uuid)
 
                 case PatchEvent.PORT_REMOVED:
                     port = self.ports.from_name(event_arg)
                     self.ports.remove(port)
+                    self.osc_server.port_removed(port.name)
 
                 case PatchEvent.PORT_RENAMED:
                     old, new = event_arg
                     self.ports.rename(old, new)
+                    self.osc_server.port_renamed(old, new, port.uuid)
                 
                 case PatchEvent.CONNECTION_ADDED:
                     conn: tuple[str, str] = event_arg
                     self.connections.append(conn)
+                    self.osc_server.connection_added(conn)
                 
                 case PatchEvent.CONNECTION_REMOVED:
                     conn: tuple[str, str] = event_arg
                     if conn in self.connections:
                         self.connections.remove(conn)
+                    self.osc_server.connection_removed(conn)
                 
                 case PatchEvent.METADATA_CHANGED:
                     uuid_key_value: tuple[int, str, str] = event_arg
                     uuid, key, value = uuid_key_value
                     self.metadatas.add(uuid, key, value)
+                    self.osc_server.metadata_updated(uuid, key, '')
                     
                     if uuid == 0 and key == '':
                         self.uuid_pretty_names.clear()
@@ -635,13 +642,10 @@ class MainObject:
                 f'port registration {register} "{port_name}" {port_uuid}')
 
             if register:                
-                self.osc_server.port_added(
-                    port_name, port_type_int, flags, port.uuid)
                 self.patch_event_queue.add(
                     PatchEvent.PORT_ADDED,
                     PortData(port_name, port_type_int, flags, port_uuid))
             else:
-                self.osc_server.port_removed(port_name)
                 self.patch_event_queue.add(
                     PatchEvent.PORT_REMOVED, port_name)
 
@@ -651,18 +655,15 @@ class MainObject:
             _logger.debug(f'ports connected {connect} {conn}')
 
             if connect:
-                self.osc_server.connection_added(conn)
                 self.patch_event_queue.add(
                     PatchEvent.CONNECTION_ADDED, conn)
             else:
-                self.osc_server.connection_removed(conn)
                 self.patch_event_queue.add(
                     PatchEvent.CONNECTION_REMOVED, conn)
             
         @self.client.set_port_rename_callback
         def port_rename(port: jack.Port, old: str, new: str):
             _logger.debug(f'port renamed "{old}" to "{new}"')
-            self.osc_server.port_renamed(old, new, port.uuid)
             self.patch_event_queue.add(
                 PatchEvent.PORT_RENAMED, old, new)
 
@@ -684,7 +685,6 @@ class MainObject:
             @self.client.set_property_change_callback
             def property_change(subject: int, key: str, change: int):
                 if change == jack.PROPERTY_DELETED:
-                    self.osc_server.metadata_updated(subject, key, '')
                     self.patch_event_queue.add(
                         PatchEvent.METADATA_CHANGED, subject, key, '')
                     
@@ -709,7 +709,6 @@ class MainObject:
 
                         self.uuid_waiting_pretty_names.pop(subject)
 
-                self.osc_server.metadata_updated(subject, key, value)
                 self.patch_event_queue.add(
                     PatchEvent.METADATA_CHANGED, subject, key, value)
 
