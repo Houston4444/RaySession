@@ -9,7 +9,6 @@ import osc_paths.ray as r
 import osc_paths.ray.patchbay.monitor as rpm
 
 from alsa_lib_check import ALSA_LIB_OK
-from patshared.base_enums import PrettyDiff
 
 if TYPE_CHECKING:
     from patchbay_daemon import MainObject, TransportPosition
