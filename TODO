@@ -1,12 +1,7 @@
-client noSavelLevel gardé comme ça pour l'instant parce client.no_save_level existe
-
--> Déprecier no_save_level de l'exterieur, uniquement en RayHack
 
 afficher le sous dossier -> preview ; session en cours
 
 Display server address in window title (network session).
-Icons with multiple possibilities ???
-Start/Stop all clients f
 
 
 ray_control doc /ray/server/clear_client_templates_database
@@ -19,136 +14,15 @@ Damn connections (with ray-jackpatch)
 icons in theme
 
 etree pour le renommage de modèles (daemon)
-barre d'outils sur 2 lignes possible
 outil pour session récentes
 régler le nb de sessions récentes dans les préfs
 favoriser le démon unique
 
 
-# NEW PATCHBAY
-Default port types view : Qu'en faire ?
-la liste des vues proposées dans config
-clear absents à gérer
-
-vues et sessions
-    si vue modifiée (nom, ptv, white_list):
-        change dans config
-    sinon:
-        si inexistante dans config:
-            suppr de la conf
-        sinon:
-            retour à la conf
-
-Plan de fonctionnement:
-    côté démon:
-        Connexion de l'IGU:
-            envoi de tout du démon à l'IGU
-                pas de retour
-        chargement de session:
-            envoi des positions + vues mixées
-                oublier tout, recharger
-                pas de retour
-        décharge de session:
-            envoie des vues config  
-                pas de retour
-
-    côté IGU:
-        Modification d'une/des vues
-            envoi vues
-                pas de retour du démon
-        changement vue et/ou ptv
-            envoi vue+ptv
-                pas de retour
-    
-
-Qt6:
-    Bookmark file picker Qt6
-    QFontMetrics.width ?
-    suppr refs à PyXml dans le démon (...)
-
-
-
-
-Pretty names dans RS:
-    nécessite un patchbay daemon permanent, un soupçon plus de ressources sans GUI,
-    mais tellement plus simple et fiable.
-
-    action:
-        sauvegarder direct dans la base du patchbay
-        Envoyer au démon de quoi mettre à jour sa base
-            Le démon:
-                enregistre dans sa base
-                update la base du patchbay daemon
-
-    nouveau port dans patchbay:
-        appliquer le pretty_name contenu dans la base du patchbay
-
-    nouveau port dans patchbay_daemon:
-        (nécessite une communication TCP ou UNIX directe avec le démon)
-        appliquer les métadonnées par rapport à la base
-            après la liste du graphe
-            Xms après l'apparition d'un port ou d'un client (200ms ?)
-
-    réception d'un pretty name dans le patchbay_daemon depuis le démon:
-        appliquer les métadonnées immédiatement
-
-    config vs session:
-        Rentrer dans la config et la session toute (ré)écriture via GUI de pretty-name
-        Unload session:
-            redéfinir en config les pretty-name session qui ont été juste ouverts
-            c.a.d.:
-                canvas_saver envoie au patch_dmn les pretty_name de config
-        change session:
-            redéfinir en config les pretty-name session qui ont été juste ouverts
-
-review server_sender and called methods
 
 Priorité:
     Recent sessions widget
 
-PATHS: 
-    import osc_paths as p
-    import osc_paths.ray as r
-    import osc_paths.ray.gui as rg
-    import osc_paths.ray.gui as rgp
-    import osc_paths.nsm as nsm
-
-    /ray/control/server/announce -> /ray/control/server_announce
-
-    same for answer() in server_sender
-
-        osc_reply ?
-
-
-
-
 - voir pretty_name et SIGTERM quand session chargée
 
-
 séparer jack_manager de patchbay_manager (trop gros et pas logique)
-
-
-ray_control pretty_names
-    export_all
-    import_all
-    clear_all
-    list_non_imported
-    list_non_exported
-
-Metadatas GUI doit comprendre remove all driectement
-
-Import, export, clear pretty_names
-    si patchbay_daemon lancé:
-        appliquer
-    sinon:
-        patchbay_daemon start with one_shot action
-    
-    clear:
-        si auto-export:
-            clear all JACK pretty-names except ceux matching avec les internals
-            ceux qui matchent doivent être ajoutés à la mémoire d'écriture pour 
-                être éffacés quand on désactive l'option
-        sinon:
-            effacer tous les pretty-name de JACK 
-
-FIX: clear pretty name does not clear the metadata
