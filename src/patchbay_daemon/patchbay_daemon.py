@@ -113,8 +113,8 @@ class MainObject:
     is already running on the same JACK server. In this case, 
     this instance will NOT apply any pretty-name metadata, because
     it could easily create conflicts with the other instance.'''
-    pretty_names_export = True
-    '''True if the patchbay option 'Export pretty names to JACK' is activated
+    auto_export_pretty_names = True
+    '''True if the patchbay option 'Auto-Export pretty names to JACK' is activated
     (True by default).'''
     
     dsp_wanted = True
@@ -122,9 +122,9 @@ class MainObject:
     
     def __init__(
             self, daemon_port: int, gui_url: str,
-            pretty_name_active=True, one_shot_act=''):
+            auto_export_pretty_names=True, one_shot_act=''):
         self.daemon_port = daemon_port
-        self.pretty_names_export = pretty_name_active
+        self.auto_export_pretty_names = auto_export_pretty_names
         self.pretty_names_ready = False
         self.one_shot_act = one_shot_act
 
@@ -267,20 +267,15 @@ class MainObject:
                     self.metadatas.add(uuid, key, value)
                     
                     if uuid == 0 and key == '':
-                        # all metadatas removed
-                        for uuid, mdata_dict in self.metadatas.items():
-                            for k in mdata_dict:
-                                self.osc_server.metadata_updated(uuid, k, '')
-                        
                         self.uuid_pretty_names.clear()
                         self.save_uuid_pretty_names()
                         
-                        if self.pretty_names_export:
+                        if self.auto_export_pretty_names:
                             self.write_locker_mdata()
 
                     if key == METADATA_LOCKER:
                         if uuid == self._client_uuid:
-                            if not value and self.pretty_names_export:
+                            if not value and self.auto_export_pretty_names:
                                 # if the metadata locker has been removed
                                 # from an external client,
                                 # re-set it immediatly.
@@ -321,7 +316,7 @@ class MainObject:
         if self.pretty_names_locked:
             return
         
-        if not self.pretty_names_export:
+        if not self.auto_export_pretty_names:
             return
         
         has_changes = False
@@ -477,7 +472,7 @@ class MainObject:
                     self.osc_server.make_one_shot_act(self.one_shot_act)
                     self.one_shot_act = ''
                     
-                    if (not self.pretty_names_export
+                    if (not self.auto_export_pretty_names
                             and not self.osc_server.gui_list):
                         break
             else:
@@ -565,7 +560,7 @@ class MainObject:
         if self.jack_running:
             self.set_registrations()
             self.get_all_ports_and_connections()
-            if self.pretty_names_export:
+            if self.auto_export_pretty_names:
                 self.write_locker_mdata()
 
             self.samplerate = self.client.samplerate
@@ -675,18 +670,13 @@ class MainObject:
             @self.client.set_property_change_callback
             def property_change(subject: int, key: str, change: int):
                 if change == jack.PROPERTY_DELETED:
-                    if subject == 0 and key == '':
-                        self.patch_event_queue.add(
-                            PatchEvent.METADATA_CHANGED, 0, '', '')
-                        return
+                    self.osc_server.metadata_updated(subject, key, '')
+                    self.patch_event_queue.add(
+                        PatchEvent.METADATA_CHANGED, subject, key, '')
                     
                     if key in (JackMetadata.PRETTY_NAME, ''):
                         if subject in self.uuid_waiting_pretty_names:
                             self.uuid_waiting_pretty_names.pop(subject)
-
-                    self.osc_server.metadata_updated(subject, key, '')
-                    self.patch_event_queue.add(
-                        PatchEvent.METADATA_CHANGED, subject, key, '')
                     return                            
 
                 value_type = jack.get_property(subject, key)
@@ -783,7 +773,7 @@ class MainObject:
                 if (key == METADATA_LOCKER 
                         and uuid != self._client_uuid and value.isdigit()):
                     self.pretty_names_locked = True
-                    self.pretty_names_export = False
+                    self.auto_export_pretty_names = False
 
     def save_uuid_pretty_names(self):
         '''save the contents of self.uuid_pretty_names in /tmp
@@ -809,7 +799,7 @@ class MainObject:
                     f'Failed to set pretty-name "{pretty_name}" for {uuid}')
                 return
             
-            if self.pretty_names_export:
+            if self.auto_export_pretty_names:
                 self.uuid_pretty_names[uuid] = pretty_name
             self.uuid_waiting_pretty_names[uuid] = pretty_name
 
@@ -822,7 +812,7 @@ class MainObject:
                     f'Failed to remove pretty-name for {uuid}')
                 return
             
-            if self.pretty_names_export:
+            if self.auto_export_pretty_names:
                 if uuid in self.uuid_pretty_names:
                     self.uuid_pretty_names.pop(uuid)
             if uuid in self.uuid_waiting_pretty_names:
@@ -847,9 +837,9 @@ class MainObject:
         if not self.jack_running or self.pretty_names_locked:
             return
         
-        self.set_pretty_names_auto_export(self.pretty_names_export, force=True)
+        self.set_pretty_names_auto_export(self.auto_export_pretty_names, force=True)
         
-        if (not self.pretty_names_export
+        if (not self.auto_export_pretty_names
                 and not self.osc_server.can_have_gui()
                 and not self.one_shot_act):
             self.terminate = True
@@ -928,10 +918,10 @@ class MainObject:
         return True
 
     def set_pretty_names_auto_export(self, active: bool, force=False):
-        if not force and active is self.pretty_names_export:
+        if not force and active is self.auto_export_pretty_names:
             return
 
-        self.pretty_names_export = True
+        self.auto_export_pretty_names = True
         
         if active:
             self.write_locker_mdata()
@@ -976,7 +966,7 @@ class MainObject:
 
             self.uuid_pretty_names.clear()
         
-        self.pretty_names_export = active
+        self.auto_export_pretty_names = active
         self.save_uuid_pretty_names()
 
     def import_all_pretty_names_from_jack(
@@ -1022,7 +1012,7 @@ class MainObject:
             if JackMetadata.PRETTY_NAME in uuid_dict:
                 self.set_jack_pretty_name(uuid, '')
         
-        if self.pretty_names_export:
+        if self.auto_export_pretty_names:
             self.set_pretty_names_auto_export(True, force=True)
 
     def transport_play(self, play: bool):

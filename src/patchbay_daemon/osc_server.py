@@ -43,7 +43,7 @@ class PatchbayDaemonServer(BunServer):
                 self.gui_list.remove(gui_addr)
                 break
 
-        if not self.gui_list and not self.main_object.pretty_names_export:
+        if not self.gui_list and not self.main_object.auto_export_pretty_names:
             # no more GUI connected, and no pretty-names to export,
             # no reason to exists anymore
             self.terminate = True
