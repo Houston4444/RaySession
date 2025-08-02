@@ -2,6 +2,8 @@
 import logging
 from typing import TYPE_CHECKING
 
+from patshared import TransportPosition
+
 from osclib import (BunServer, Address, MegaSend,
                     are_on_same_machine, are_same_osc_port,
                     OscPack, bun_manage)
@@ -11,7 +13,7 @@ import osc_paths.ray.patchbay.monitor as rpm
 from alsa_lib_check import ALSA_LIB_OK
 
 if TYPE_CHECKING:
-    from patchbay_daemon import MainObject, TransportPosition
+    from patchbay_daemon import MainObject
 
 
 _logger = logging.getLogger(__name__)
@@ -261,16 +263,6 @@ class PatchbayDaemonServer(BunServer):
         self.send_gui(rpm.SERVER_STARTED)
         self.send_samplerate()
         self.send_buffersize()
-        
-        local_guis = list[Address]()
-        distant_guis = list[Address]()
-        
-        for gui_addr in self.gui_list:
-            if are_on_same_machine(self.url, gui_addr.url):
-                local_guis.append(gui_addr)
-            else:
-                distant_guis.append(gui_addr)
-        
         self.send_distant_data(self.gui_list)
 
     def associate_client_name_and_uuid(self, client_name: str, uuid: int):
@@ -279,7 +271,7 @@ class PatchbayDaemonServer(BunServer):
     def port_added(self, pname: str, ptype: int, pflags: int, puuid: int):
         self.send_gui(rpm.PORT_ADDED, pname, ptype, pflags, puuid) 
 
-    def port_renamed(self, ex_name: str, new_name, uuid=0):
+    def port_renamed(self, ex_name: str, new_name: str, uuid=0):
         if uuid:
             self.send_gui(rpm.PORT_RENAMED, ex_name, new_name, uuid)
         else:
@@ -343,7 +335,6 @@ class PatchbayDaemonServer(BunServer):
                 self._import_all_pretty_names()
             case r.patchbay.CLEAR_ALL_PRETTY_NAMES:
                 self.main_object.clear_all_pretty_names_from_jack()
-        
 
     def set_ready_for_daemon(self):
         self.pretty_names.clear()
