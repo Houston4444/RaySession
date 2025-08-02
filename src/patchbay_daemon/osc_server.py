@@ -2,11 +2,8 @@
 import logging
 from typing import TYPE_CHECKING
 
-from patshared import TransportPosition
-
 from osclib import (BunServer, Address, MegaSend,
-                    are_on_same_machine, are_same_osc_port,
-                    OscPack, bun_manage)
+                    are_same_osc_port, OscPack, bun_manage)
 import osc_paths.ray as r
 import osc_paths.ray.patchbay.monitor as rpm
 
@@ -44,7 +41,8 @@ class PatchbayDaemonServer(BunServer):
                 self.gui_list.remove(gui_addr)
                 break
 
-        if not self.gui_list and not self.main_object.auto_export_pretty_names:
+        if (not self.gui_list
+                and not self.main_object.auto_export_pretty_names):
             # no more GUI connected, and no pretty-names to export,
             # no reason to exists anymore
             self.terminate = True
@@ -264,54 +262,12 @@ class PatchbayDaemonServer(BunServer):
         self.send_samplerate()
         self.send_buffersize()
         self.send_distant_data(self.gui_list)
-
-    def associate_client_name_and_uuid(self, client_name: str, uuid: int):
-        self.send_gui(rpm.CLIENT_NAME_AND_UUID, client_name, uuid)
-
-    def port_added(self, pname: str, ptype: int, pflags: int, puuid: int):
-        self.send_gui(rpm.PORT_ADDED, pname, ptype, pflags, puuid) 
-
-    def port_renamed(self, ex_name: str, new_name: str, uuid=0):
-        if uuid:
-            self.send_gui(rpm.PORT_RENAMED, ex_name, new_name, uuid)
-        else:
-            self.send_gui(rpm.PORT_RENAMED, ex_name, new_name)
-    
-    def port_removed(self, port_name: str):
-        self.send_gui(rpm.PORT_REMOVED, port_name)
-    
-    def metadata_updated(self, uuid: int, key: str, value: str):
-        self.send_gui(rpm.METADATA_UPDATED, uuid, key, value)
-    
-    def connection_added(self, connection: tuple[str, str]):
-        self.send_gui(rpm.CONNECTION_ADDED, connection[0], connection[1])
-
-    def connection_removed(self, connection: tuple[str, str]):
-        self.send_gui(rpm.CONNECTION_REMOVED, connection[0], connection[1])
-    
-    def server_stopped(self):
-        # here server is JACK (or Pipewire JACK)
-        self.send_gui(rpm.SERVER_STOPPED)
-    
-    def send_transport_position(self, tpos: 'TransportPosition'):
-        self.send_gui(rpm.TRANSPORT_POSITION,
-                      tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
-                      tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
-    
-    def send_dsp_load(self, dsp_load: int):
-        self.send_gui(rpm.DSP_LOAD, dsp_load)
-    
-    def send_one_xrun(self):
-        self.send_gui(rpm.ADD_XRUN)
     
     def send_buffersize(self):
         self.send_gui(rpm.BUFFER_SIZE, self.main_object.buffer_size)
     
     def send_samplerate(self):
         self.send_gui(rpm.SAMPLE_RATE, self.main_object.samplerate)
-
-    def send_pretty_names_locked(self, locked: bool):
-        self.send_gui(rpm.PRETTY_NAMES_LOCKED, int(locked))
     
     def send_server_lose(self):
         self.send_gui(rpm.SERVER_LOSE)
