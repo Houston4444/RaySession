@@ -23,6 +23,7 @@ from patshared import (
     JackMetadatas, JackMetadata, PrettyNames, TransportPosition)
 
 # local imports
+from suppress_stdout_stderr import SuppressStdoutStderr
 from port_data import PortData, PortDataList
 from jack_bases import (
     ClientNamesUuids, PatchEventQueue,
@@ -52,37 +53,6 @@ EXISTENCE_PATH = Path('/tmp/RaySession/patchbay_daemons')
 
 JACK_CLIENT_NAME = 'ray-patch_dmn'
 METADATA_LOCKER = 'pretty-name-export.locker'
-
-
-# Define a context manager to suppress stdout and stderr.
-class SuppressStdoutStderr(object):
-    '''
-    A context manager for doing a "deep suppression" of stdout and stderr in 
-    Python, i.e. will suppress all print, even if the print originates in a 
-    compiled C/Fortran sub-function.
-       This will not suppress raised exceptions, since exceptions are printed
-    to stderr just before a script exits, and after the context manager has
-    exited (at least, I think that is why it lets exceptions through).      
-
-    '''
-    def __init__(self):
-        # Open a pair of null files
-        self.null_fds =  [os.open(os.devnull,os.O_RDWR) for x in range(2)]
-        # Save the actual stdout (1) and stderr (2) file descriptors.
-        self.save_fds = [os.dup(1), os.dup(2)]
-
-    def __enter__(self):
-        # Assign the null pointers to stdout and stderr.
-        os.dup2(self.null_fds[0], 1)
-        os.dup2(self.null_fds[1], 2)
-
-    def __exit__(self, *_):
-        # Re-assign the real stdout/stderr back to (1) and (2)
-        os.dup2(self.save_fds[0], 1)
-        os.dup2(self.save_fds[1], 2)
-        # Close all file descriptors
-        for fd in self.null_fds + self.save_fds:
-            os.close(fd)
 
 
 def jack_pretty_name(uuid: int) -> str:
@@ -401,7 +371,7 @@ class MainObject:
         _logger.debug(f'refresh jack running {self.jack_running}')
         if self.jack_running:
             self.get_all_ports_and_connections()
-            self.osc_server.server_restarted()
+            self.pbe.server_restarted()
             
         if self.alsa_mng is not None:
             self.alsa_mng.add_all_ports()
@@ -602,7 +572,7 @@ class MainObject:
 
             self.samplerate = self.client.samplerate
             self.buffer_size = self.client.blocksize
-            self.osc_server.server_restarted()
+            self.pbe.server_restarted()
         
         if self.pretty_tmp_path.exists():
             # read the contents of pretty names set by this program
