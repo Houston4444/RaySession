@@ -244,7 +244,12 @@ class MainObject:
                 case PatchEvent.CLIENT_REMOVED:
                     name = event_arg
                     if name in self.client_name_uuids:
-                        self.client_name_uuids.pop(event_arg)
+                        uuid = self.client_name_uuids.pop(event_arg)
+                        if uuid in self.metadatas:
+                            uuid_dict = self.metadatas.pop(uuid)
+                            if uuid_dict.get(METADATA_LOCKER) is not None:
+                                self.pretty_names_locked = False
+                                self.osc_server.send_pretty_names_locked(True)
 
                 case PatchEvent.PORT_ADDED:
                     port: PortData = event_arg
@@ -276,19 +281,28 @@ class MainObject:
                 case PatchEvent.METADATA_CHANGED:
                     uuid_key_value: tuple[int, str, str] = event_arg
                     uuid, key, value = uuid_key_value
+                    
+                    if key == '':
+                        if uuid == 0:
+                            self.uuid_pretty_names.clear()
+                            self.save_uuid_pretty_names()
+                            
+                            if self.auto_export_pretty_names:
+                                self.write_locker_mdata()
+
+                        elif uuid == self._client_uuid :
+                            if self.auto_export_pretty_names:
+                                self.write_locker_mdata()
+                        
+                        else:
+                            uuid_dict = self.metadatas.get(uuid)
+                            if uuid_dict is not None:
+                                if METADATA_LOCKER in uuid_dict.keys():
+                                    self.pretty_names_locked = False
+                                    self.osc_server.send_pretty_names_locked(False)
+                            
                     self.metadatas.add(uuid, key, value)
                     self.osc_server.metadata_updated(uuid, key, '')
-                    
-                    if uuid == 0 and key == '':
-                        self.uuid_pretty_names.clear()
-                        self.save_uuid_pretty_names()
-                        
-                        if self.auto_export_pretty_names:
-                            self.write_locker_mdata()
-                    
-                    elif uuid == self._client_uuid and key == '':
-                        if self.auto_export_pretty_names:
-                            self.write_locker_mdata()
 
                     if key == METADATA_LOCKER:
                         if uuid == self._client_uuid:
@@ -741,6 +755,7 @@ class MainObject:
         self.metadatas.clear()
 
         client_names = set[str]()
+        known_uuids = set[int]()
 
         #get all currents Jack ports and connections
         for port in self.client.get_ports():
@@ -752,6 +767,8 @@ class MainObject:
                 port_type = PORT_TYPE_AUDIO
             elif port.is_midi:
                 port_type = PORT_TYPE_MIDI
+
+            known_uuids.add(port_uuid)
 
             self.ports.append(
                 PortData(port_name, port_type, flags, port_uuid))
@@ -777,8 +794,21 @@ class MainObject:
                 continue
 
             self.client_name_uuids[client_name] = client_uuid
+            known_uuids.add(client_uuid)
         
         for uuid, uuid_dict in jack.get_all_properties().items():
+            if uuid not in known_uuids:
+                # uuid seems to not belong to a port, 
+                # or to a client containing ports.
+                # It very probably belongs to a client without ports.
+                try:
+                    client_name = \
+                        self.client.get_client_name_by_uuid(str(uuid))
+                except:
+                    ...
+                else:
+                    self.client_name_uuids[client_name] = uuid
+            
             for key, valuetype in uuid_dict.items():
                 value = valuetype[0].decode()
                 self.metadatas.add(uuid, key, value)
