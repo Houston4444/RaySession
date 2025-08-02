@@ -302,7 +302,7 @@ class MainObject:
                                     self.osc_server.send_pretty_names_locked(False)
                             
                     self.metadatas.add(uuid, key, value)
-                    self.osc_server.metadata_updated(uuid, key, '')
+                    self.osc_server.metadata_updated(uuid, key, value)
 
                     if key == METADATA_LOCKER:
                         if uuid == self._client_uuid:
