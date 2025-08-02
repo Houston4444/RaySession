@@ -48,6 +48,9 @@ class RayPatchEngine(PatchEngine):
         # here server is JACK (or Pipewire JACK)
         self.send_gui(rpm.SERVER_STOPPED)
     
+    def server_restarted(self):
+        self.osc_server.server_restarted()
+    
     def send_transport_position(self, tpos: 'TransportPosition'):
         self.send_gui(rpm.TRANSPORT_POSITION,
                       tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
