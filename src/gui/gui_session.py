@@ -8,8 +8,7 @@ from qtpy.QtWidgets import QApplication
 import osc_paths
 
 # Imports from HoustonPatchbay
-from patchbay.bases.elements import TransportPosition
-from patshared import GroupPos, Naming
+from patshared import GroupPos, Naming, TransportPosition
 
 # Imports from src/shared
 from osclib import OscMulTypes, OscPack

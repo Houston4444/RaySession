@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from enum import IntEnum, Enum, auto
 from queue import Queue
 import time
@@ -8,17 +7,6 @@ from port_data import PortData
 
 
 PatchEventArg: TypeAlias = str | PortData | tuple[str, str] | tuple[int, str, str]
-
-
-@dataclass
-class TransportPosition:
-    frame: int
-    rolling: bool
-    valid_bbt: bool
-    bar: int
-    beat: int
-    tick: int
-    beats_per_minutes: float
 
 
 class TransportWanted(IntEnum):

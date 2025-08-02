@@ -19,12 +19,13 @@ import jack
 from proc_name import set_proc_name
 
 # imports from HoustonPatchbay
-from patshared import JackMetadatas, JackMetadata, PrettyNames
+from patshared import (
+    JackMetadatas, JackMetadata, PrettyNames, TransportPosition)
 
 # local imports
 from port_data import PortData, PortDataList
 from jack_bases import (
-    ClientNamesUuids, PatchEventQueue, TransportPosition,
+    ClientNamesUuids, PatchEventQueue,
     TransportWanted, PatchEvent)
 from osc_server import PatchbayDaemonServer
 from alsa_lib_check import ALSA_LIB_OK
@@ -230,7 +231,7 @@ class MainObject:
         for event, event_arg in self.patch_event_queue:
             match event:
                 case PatchEvent.CLIENT_ADDED:
-                    name = event_arg
+                    name: str = event_arg
                     try:
                         client_uuid = int(
                             self.client.get_uuid_for_client_name(name))
@@ -242,7 +243,7 @@ class MainObject:
                             name, client_uuid)
 
                 case PatchEvent.CLIENT_REMOVED:
-                    name = event_arg
+                    name: str = event_arg
                     if name in self.client_name_uuids:
                         uuid = self.client_name_uuids.pop(event_arg)
                         if uuid in self.metadatas:
