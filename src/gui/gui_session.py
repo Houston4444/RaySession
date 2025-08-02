@@ -269,7 +269,7 @@ class SignaledSession(Session):
             self.patchbay_manager.jack_export_naming = Naming.TRUE_NAME
 
         if self.patchbay_manager.options_dialog is not None:
-            self.patchbay_manager.options_dialog.export_pretty_names_changed(
+            self.patchbay_manager.options_dialog.auto_export_pretty_names_changed(
                 export)
 
     @manage(rg.session.NAME, 'ss')
