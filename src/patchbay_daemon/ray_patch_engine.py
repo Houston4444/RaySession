@@ -59,34 +59,17 @@ class RayPatchEngine(PatchEngine):
     def send_one_xrun(self):
         self.send_gui(rpm.ADD_XRUN)
     
-    def send_buffersize(self):
-        self.send_gui(rpm.BUFFER_SIZE, self.main_object.buffer_size)
+    def send_buffersize(self, buffer_size: int):
+        self.send_gui(rpm.BUFFER_SIZE, buffer_size)
     
-    def send_samplerate(self):
-        self.send_gui(rpm.SAMPLE_RATE, self.main_object.samplerate)
+    def send_samplerate(self, samplerate: int):
+        self.send_gui(rpm.SAMPLE_RATE, samplerate)
 
     def send_pretty_names_locked(self, locked: bool):
         self.send_gui(rpm.PRETTY_NAMES_LOCKED, int(locked))
     
     def send_server_lose(self):
-        self.send_gui(rpm.SERVER_LOSE)
-
-        # In the case server is not responding
-        # and gui has not yet been added to gui_list
-        # but gui url stocked in self._tmp_gui_url
-        if not self.gui_list and self._tmp_gui_url:
-            try:
-                addr = Address(self._tmp_gui_url)
-            except:
-                return
-
-        self.send(addr, rpm.SERVER_LOSE)
+        self.osc_server.send_server_lose()
 
     def make_one_shot_act(self, one_shot_act: str):
-        match one_shot_act:
-            case r.patchbay.EXPORT_ALL_PRETTY_NAMES:
-                self.main_object.export_all_pretty_names_to_jack_now()
-            case r.patchbay.IMPORT_ALL_PRETTY_NAMES:
-                self._import_all_pretty_names()
-            case r.patchbay.CLEAR_ALL_PRETTY_NAMES:
-                self.main_object.clear_all_pretty_names_from_jack()
+        self.osc_server.make_one_shot_act(one_shot_act)

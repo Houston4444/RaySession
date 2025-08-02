@@ -28,6 +28,7 @@ from jack_bases import (
     ClientNamesUuids, PatchEventQueue,
     TransportWanted, PatchEvent)
 from osc_server import PatchbayDaemonServer
+from ray_patch_engine import RayPatchEngine
 from alsa_lib_check import ALSA_LIB_OK
 if ALSA_LIB_OK:
     from alsa_manager import AlsaManager
@@ -102,7 +103,6 @@ class MainObject:
     '''JACK events, clients and ports registrations,
     connections, metadata changes'''
     jack_running = False
-    osc_server = None
     alsa_mng: Optional['AlsaManager'] = None
     terminate = False
     client = None
@@ -163,6 +163,7 @@ class MainObject:
         
         self.osc_server = PatchbayDaemonServer(self)
         self.osc_server.set_tmp_gui_url(gui_url)
+        self.pbe = RayPatchEngine(self.osc_server)
         self.write_existence_file()
         self.start_jack_client()
         
@@ -239,7 +240,7 @@ class MainObject:
                         ...
                     else:
                         self.client_name_uuids[name] = client_uuid
-                        self.osc_server.associate_client_name_and_uuid(
+                        self.pbe.associate_client_name_and_uuid(
                             name, client_uuid)
 
                 case PatchEvent.CLIENT_REMOVED:
@@ -250,34 +251,34 @@ class MainObject:
                             uuid_dict = self.metadatas.pop(uuid)
                             if uuid_dict.get(METADATA_LOCKER) is not None:
                                 self.pretty_names_locked = False
-                                self.osc_server.send_pretty_names_locked(True)
+                                self.pbe.send_pretty_names_locked(True)
 
                 case PatchEvent.PORT_ADDED:
                     port: PortData = event_arg
                     self.ports.append(port)
-                    self.osc_server.port_added(
+                    self.pbe.port_added(
                         port.name, port.type, port.flags, port.uuid)
 
                 case PatchEvent.PORT_REMOVED:
                     port = self.ports.from_name(event_arg)
                     self.ports.remove(port)
-                    self.osc_server.port_removed(port.name)
+                    self.pbe.port_removed(port.name)
 
                 case PatchEvent.PORT_RENAMED:
                     old, new = event_arg
                     self.ports.rename(old, new)
-                    self.osc_server.port_renamed(old, new, port.uuid)
+                    self.pbe.port_renamed(old, new, port.uuid)
                 
                 case PatchEvent.CONNECTION_ADDED:
                     conn: tuple[str, str] = event_arg
                     self.connections.append(conn)
-                    self.osc_server.connection_added(conn)
+                    self.pbe.connection_added(conn)
                 
                 case PatchEvent.CONNECTION_REMOVED:
                     conn: tuple[str, str] = event_arg
                     if conn in self.connections:
                         self.connections.remove(conn)
-                    self.osc_server.connection_removed(conn)
+                    self.pbe.connection_removed(conn)
                 
                 case PatchEvent.METADATA_CHANGED:
                     uuid_key_value: tuple[int, str, str] = event_arg
@@ -300,10 +301,10 @@ class MainObject:
                             if uuid_dict is not None:
                                 if METADATA_LOCKER in uuid_dict.keys():
                                     self.pretty_names_locked = False
-                                    self.osc_server.send_pretty_names_locked(False)
+                                    self.pbe.send_pretty_names_locked(False)
                             
                     self.metadatas.add(uuid, key, value)
-                    self.osc_server.metadata_updated(uuid, key, value)
+                    self.pbe.metadata_updated(uuid, key, value)
 
                     if key == METADATA_LOCKER:
                         if uuid == self._client_uuid:
@@ -320,7 +321,7 @@ class MainObject:
                             except:
                                 ...
                             else:
-                                self.osc_server.send_pretty_names_locked(
+                                self.pbe.send_pretty_names_locked(
                                     bool(value))
 
                 case PatchEvent.SHUTDOWN:
@@ -388,7 +389,7 @@ class MainObject:
             # server never answer
             _logger.error(
                 'Server never answer when trying to open JACK client !')
-            self.osc_server.send_server_lose()
+            self.pbe.send_server_lose()
             self.remove_existence_file()
             
             # JACK is not responding at all
@@ -413,7 +414,7 @@ class MainObject:
     def send_dsp_load(self):
         current_dsp = int(self.max_dsp_since_last_sent + 0.5)
         if current_dsp != self.last_sent_dsp_load:
-            self.osc_server.send_dsp_load(current_dsp)
+            self.pbe.send_dsp_load(current_dsp)
             self.last_sent_dsp_load = current_dsp
         self.max_dsp_since_last_sent = 0.00
     
@@ -446,7 +447,7 @@ class MainObject:
             return
         
         self.last_transport_pos = transport_position
-        self.osc_server.send_transport_position(transport_position)
+        self.pbe.send_transport_position(transport_position)
     
     def connect_ports(self, port_out_name: str, port_in_name: str,
                       disconnect=False):
@@ -505,7 +506,7 @@ class MainObject:
                     self._send_transport_pos()
 
                 if self.pretty_names_ready and self.one_shot_act:
-                    self.osc_server.make_one_shot_act(self.one_shot_act)
+                    self.pbe.make_one_shot_act(self.one_shot_act)
                     self.one_shot_act = ''
                     
                     if (not self.auto_export_pretty_names
@@ -684,17 +685,17 @@ class MainObject:
 
         @self.client.set_xrun_callback
         def xrun(delayed_usecs: float):
-            self.osc_server.send_one_xrun()
+            self.pbe.send_one_xrun()
             
         @self.client.set_blocksize_callback
         def blocksize(size: int):
             self.buffer_size = size
-            self.osc_server.send_buffersize()
+            self.pbe.send_buffersize(self.buffer_size)
             
         @self.client.set_samplerate_callback
         def samplerate(samplerate: int):
             self.samplerate = samplerate
-            self.osc_server.send_samplerate()
+            self.pbe.send_samplerate(self.samplerate)
             
         try:
             @self.client.set_property_change_callback
@@ -738,7 +739,7 @@ class MainObject:
             _logger.debug('Jack shutdown')
             self.jack_running = False
             self.metadatas.clear()
-            self.osc_server.server_stopped()
+            self.pbe.server_stopped()
             self.patch_event_queue.add(PatchEvent.SHUTDOWN)
             
         self.client.activate()
