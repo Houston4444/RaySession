@@ -103,8 +103,7 @@ class AlsaClient:
 
 class AlsaManager:
     def __init__(self, jack_mng: 'MainObject'):
-        self._jack_mng = jack_mng
-        self._osc_server = self._jack_mng.osc_server
+        self.pbe = jack_mng.pbe
         self.seq = alsaseq.Sequencer(clientname='raysession')
 
         self._all_alsa_connections = list[AlsaConn]()
@@ -158,14 +157,14 @@ class AlsaManager:
             port_flags = PORT_IS_PHYSICAL
         
         if port.caps & _PORT_READS == _PORT_READS:
-            self._osc_server.port_added(
+            self.pbe.port_added(
                 port.pb_name('OUT', client),
                 PORT_TYPE_MIDI_ALSA,
                 port_flags | PORT_IS_OUTPUT,
                 client.id * 0x10000 + port.id)
 
         if port.caps & _PORT_WRITES == _PORT_WRITES:
-            self._osc_server.port_added(
+            self.pbe.port_added(
                 port.pb_name('IN', client),
                 PORT_TYPE_MIDI_ALSA,
                 port_flags | PORT_IS_INPUT,
@@ -173,10 +172,10 @@ class AlsaManager:
 
     def remove_port_from_patchbay(self, client: AlsaClient, port: AlsaPort):
         if port.caps & _PORT_READS == _PORT_READS:
-            self._osc_server.port_removed(
+            self.pbe.port_removed(
                 port.pb_name('OUT', client))
         if port.caps & _PORT_WRITES == _PORT_WRITES:
-            self._osc_server.port_removed(
+            self.pbe.port_removed(
                 port.pb_name('IN', client))
 
     def add_all_ports(self):        
@@ -206,7 +205,7 @@ class AlsaManager:
             
             self._connections.append(conn)
             
-            self._osc_server.connection_added(
+            self.pbe.connection_added(
                 (source_port.pb_name('OUT', source_client),
                  dest_port.pb_name('IN', dest_client))
             )
@@ -359,7 +358,7 @@ class AlsaManager:
                     for conn in to_rm_conns:
                         port_names = conn.as_port_names(self._clients)
                         if port_names is not None:
-                            self._osc_server.connection_removed(port_names)
+                            self.pbe.connection_removed(port_names)
                     
                     self.remove_port_from_patchbay(client, port)
                     
@@ -379,7 +378,7 @@ class AlsaManager:
                         AlsaConn(sender_client.id, sender_port.id,
                                  dest_client.id, dest_port.id))
 
-                    self._osc_server.connection_added(
+                    self.pbe.connection_added(
                         (sender_port.pb_name('OUT', sender_client),
                          dest_port.pb_name('IN', dest_client)))
 
@@ -403,7 +402,7 @@ class AlsaManager:
                             self._connections.remove(conn)
                             break 
 
-                    self._osc_server.connection_removed(
+                    self.pbe.connection_removed(
                         (sender_port.pb_name('OUT', sender_client),
                          dest_port.pb_name('IN', dest_client))
                     )
