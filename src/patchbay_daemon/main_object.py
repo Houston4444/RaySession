@@ -1,9 +1,7 @@
 #!/usr/bin/python3 -u
 
 # standard lib imports
-import os
 import signal
-import sys
 from typing import Optional
 import threading
 import time
@@ -37,8 +35,6 @@ PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1
 PORT_TYPE_MIDI = 2
 
-EXISTENCE_PATH = Path('/tmp/RaySession/patchbay_daemons')
-
 JACK_CLIENT_NAME = 'ray-patch_dmn'
 METADATA_LOCKER = 'pretty-name-export.locker'
 
@@ -54,7 +50,7 @@ class MainObject:
     ports = PortDataList()
     connections = list[tuple[str, str]]()
     metadatas = JackMetadatas()
-    'JACK metadatas, written in JACK callback thread'
+    'JACK metadatas, r/w in main thread only'
 
     client_name_uuids = ClientNamesUuids()
     patch_event_queue = PatchEventQueue()
@@ -68,19 +64,19 @@ class MainObject:
     buffer_size = 1024
     
     pretty_names_locked = False
-    '''True when another ray-patch_dmn instance
+    '''True when another instance
     is already running on the same JACK server with 
     'auto_export_pretty_names' option action.
-    In this case,  this instance will NOT auto export pretty-names
+    In this case, this instance will NOT auto export pretty-names
     to JACK metadatas, because it could easily create conflicts
     with the other instance.
     
     The existence of another instance is managed by a metadata
-    set on the client'''
+    METADATA_LOCKER set on the client'''
 
     auto_export_pretty_names = True
-    '''True if the patchbay option 'Auto-Export pretty names to JACK' is activated
-    (True by default).'''
+    '''True if the patchbay option 'Auto-Export pretty names to JACK'
+    is activated (True by default).'''
     
     dsp_wanted = True
     transport_wanted = TransportWanted.FULL
@@ -121,8 +117,8 @@ class MainObject:
         
         self.osc_server = PatchbayDaemonServer(self)
         self.osc_server.set_tmp_gui_url(gui_url)
-        self.pbe = RayPatchEngine(self.osc_server)
-        self.write_existence_file()
+        self.pbe = RayPatchEngine(self.osc_server, daemon_port)
+        self.pbe.write_existence_file()
         self.start_jack_client()
         
         if ALSA_LIB_OK:
@@ -141,29 +137,6 @@ class MainObject:
         if self.one_shot_act:
             return False
         return self.pbe.can_leave
-    
-    def write_existence_file(self):
-        EXISTENCE_PATH.mkdir(parents=True, exist_ok=True)
-        
-        try:
-            with open(EXISTENCE_PATH / str(self.daemon_port), 'w') as file:
-                contents = f'pid:{os.getpid()}\nport:{self.osc_server.port}\n'
-                file.write(contents)
-
-        except PermissionError:
-            _logger.critical('no permission for existence file')
-
-    def remove_existence_file(self):
-        existence_path = EXISTENCE_PATH / str(self.daemon_port)
-        if not existence_path.exists():
-            return 
-
-        try:
-            existence_path.unlink()
-        except PermissionError:
-            sys.stderr.write(
-                f'{JACK_CLIENT_NAME}: Error, '
-                f'unable to remove {existence_path}\n')
     
     @classmethod
     def signal_handler(cls, sig: int, frame):
@@ -361,7 +334,7 @@ class MainObject:
             _logger.error(
                 'Server never answer when trying to open JACK client !')
             self.pbe.send_server_lose()
-            self.remove_existence_file()
+            self.pbe.remove_existence_file()
             
             # JACK is not responding at all
             # probably it is started but totally bugged
@@ -396,6 +369,9 @@ class MainObject:
             self.transport_wanted = TransportWanted.FULL
 
     def _send_transport_pos(self):
+        if self.transport_wanted is TransportWanted.NO:
+            return
+        
         if not self.jack_running:
             return
         
@@ -472,9 +448,7 @@ class MainObject:
                 
                 self.process_patch_events()
                 self._check_pretty_names_export()
-
-                if self.transport_wanted is not TransportWanted.NO:
-                    self._send_transport_pos()
+                self._send_transport_pos()
 
                 if self.pretty_names_ready and self.one_shot_act:
                     self.pbe.make_one_shot_act(self.one_shot_act)
@@ -516,7 +490,7 @@ class MainObject:
             self.alsa_mng.stop_events_loop()
             del self.alsa_mng
 
-        self.remove_existence_file()
+        self.pbe.remove_existence_file()
         _logger.debug('Exit, bye bye.')
     
     def start_jack_client(self):
@@ -590,7 +564,7 @@ class MainObject:
                 _logger.warning(
                     f'Failed to read {self.pretty_tmp_path}, ignored.')
         
-        self.osc_server.set_ready_for_daemon()
+        self.pbe.is_now_ready()
     
     def set_registrations(self):
         if self.client is None:
@@ -838,8 +812,8 @@ class MainObject:
 
     def set_all_pretty_names(self):
         '''Set all pretty names once all pretty names are received,
-        or clear them if self.pretty_name_active is False and some
-        pretty names have been written by a previous process.'''
+        or clear them if self.auto_export_pretty_names is False 
+        and some pretty names have been written by a previous process.'''
         self.pretty_names_ready = True
         
         if not self.jack_running or self.pretty_names_locked:

@@ -74,7 +74,7 @@ class InternalClient:
         else:
             self._start_func(self._start_data)
         
-        # finished
+        # finished, allow garbage to clear memory
         self._start_func = None
         self._stop_func = None
         self._start_data = None
