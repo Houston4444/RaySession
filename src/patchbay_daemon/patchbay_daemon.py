@@ -136,7 +136,10 @@ def start():
             f'daemon port must be an integer, not "{daemon_port_str}"')
         return
     
-    main_object = MainObject(daemon_port)
+    pretty_tmp_path = (Path('/tmp/RaySession/')
+                       / f'pretty_names.{daemon_port}.json')
+
+    main_object = MainObject('ray-patch_dmn', pretty_tmp_path)
     main_object.mdata_locker_value = daemon_port_str
     main_object.auto_export_pretty_names = auto_export_pretty_names
     main_object.one_shot_act = one_shot_act
@@ -147,7 +150,10 @@ def start():
 def internal_prepare(
         daemon_port: str, gui_url: str, pretty_names_active: str,
         one_shot_act: str, nsm_url=''):
-    main_object = MainObject(int(daemon_port))
+    pretty_tmp_path = (Path('/tmp/RaySession/')
+                       / f'pretty_names.{daemon_port}.json')
+    
+    main_object = MainObject('ray-patch_dmn', pretty_tmp_path)
     main_object.mdata_locker_value = daemon_port
     main_object.one_shot_act = one_shot_act
     main_object.auto_export_pretty_names = not bool(

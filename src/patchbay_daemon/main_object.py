@@ -34,7 +34,6 @@ PORT_TYPE_NULL = 0
 PORT_TYPE_AUDIO = 1
 PORT_TYPE_MIDI = 2
 
-JACK_CLIENT_NAME = 'ray-patch_dmn'
 METADATA_LOCKER = 'pretty-name-export.locker'
 
 
@@ -89,8 +88,8 @@ class MainObject:
     dsp_wanted = True
     transport_wanted = TransportWanted.FULL
     
-    def __init__(self, daemon_port: int):
-        self.daemon_port = daemon_port
+    def __init__(self, client_name: str, pretty_tmp_path: Path):
+        self.wanted_client_name = client_name
         self.pretty_names_ready = False
 
         self.last_sent_dsp_load = 0
@@ -113,11 +112,11 @@ class MainObject:
         '''Contains pairs of 'uuid: pretty_name' of pretty_names just
         set and waiting for the property change callback.'''
 
-        self.pretty_tmp_path = (Path('/tmp/RaySession/')
-                                / f'pretty_names.{daemon_port}.json')
+        self.pretty_tmp_path = pretty_tmp_path
         
         self._locker_written = False
         self._client_uuid = 0
+        self._client_name = ''
         
         self.pbe: Optional[PatchEngine] = None
         
@@ -159,7 +158,7 @@ class MainObject:
                 self.mdata_locker_value)
         except:
             _logger.warning(
-                f'Failed to set locker metadata for {JACK_CLIENT_NAME}, '
+                f'Failed to set locker metadata for {self._client_name}, '
                 'could cause troubles if you start multiple daemons.')
         else:
             self._locker_written = True
@@ -171,7 +170,7 @@ class MainObject:
                     self.client.uuid, METADATA_LOCKER)
             except:
                 _logger.warning(
-                    f'Failed to remove locker metadata for {JACK_CLIENT_NAME}')
+                    f'Failed to remove locker metadata for {self._client_name}')
         self._locker_written = False
         
     def process_patch_events(self):
@@ -323,7 +322,7 @@ class MainObject:
             self.save_uuid_pretty_names()
     
     def _check_jack_client_responding(self):
-        '''Launched in self._zeo thread,
+        '''Launched in parrallel thread,
         checks that JACK client creation finish.'''
 
         for i in range(100): # JACK has 5s to answer
@@ -462,7 +461,7 @@ class MainObject:
         with SuppressStdoutStderr():
             try:
                 self.client = jack.Client(
-                    JACK_CLIENT_NAME,
+                    self.wanted_client_name,
                     no_start_server=True)
 
             except jack.JackOpenError:
@@ -474,6 +473,11 @@ class MainObject:
             _logger.info('Failed to connect client to JACK server')
         else:
             _logger.info('JACK client started successfully')
+        
+        try:
+            self._client_name = self.client.name
+        except:
+            _logger.warning('Failed to get client name, very strange.')
         
         try:
             self._client_uuid = int(self.client.uuid)
@@ -632,10 +636,10 @@ class MainObject:
             
         self.client.activate()
         
-        if self.client.name != JACK_CLIENT_NAME:
+        if self.client.name != self.wanted_client_name:
             _logger.warning(
                 f'This instance seems to not be the only one ' 
-                f'{JACK_CLIENT_NAME} instance in this JACK graph. '
+                f'{self.wanted_client_name} instance in this JACK graph. '
                 f'It can easily create conflicts, especially for pretty-names'
             )
     
