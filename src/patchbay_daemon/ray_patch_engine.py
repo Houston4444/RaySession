@@ -17,6 +17,10 @@ class RayPatchEngine(PatchEngine):
         super().__init__()
         self.osc_server = osc_server
     
+    @property
+    def can_leave(self) -> bool:
+        return self.osc_server.can_leave
+    
     def send_gui(self, *args):
         self.osc_server.send_gui(*args)
     

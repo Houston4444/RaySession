@@ -2,6 +2,9 @@ from patshared import TransportPosition
 
 
 class PatchEngine:
+    @property
+    def can_leave(self) -> bool:
+        return False
     def associate_client_name_and_uuid(self, client_name: str, uuid: int):...
     def port_added(self, pname: str, ptype: int, pflags: int, puuid: int):...
     def port_renamed(self, ex_name: str, new_name: str, uuid=0):...

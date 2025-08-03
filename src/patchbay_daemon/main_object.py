@@ -30,6 +30,7 @@ from alsa_lib_check import ALSA_LIB_OK
 if ALSA_LIB_OK:
     from alsa_manager import AlsaManager
 
+
 _logger = logging.getLogger(__name__)
 
 PORT_TYPE_NULL = 0
@@ -127,6 +128,19 @@ class MainObject:
         if ALSA_LIB_OK:
             self.alsa_mng = AlsaManager(self)
             self.alsa_mng.add_all_ports()
+        
+        if gui_url:
+            self.osc_server.add_gui(gui_url)
+    
+    @property
+    def can_leave(self) -> bool:
+        if self.terminate:
+            return True
+        if self.auto_export_pretty_names:
+            return False
+        if self.one_shot_act:
+            return False
+        return self.pbe.can_leave
     
     def write_existence_file(self):
         EXISTENCE_PATH.mkdir(parents=True, exist_ok=True)
@@ -447,7 +461,7 @@ class MainObject:
         while True:
             self.osc_server.recv(50)
             
-            if self.is_terminate():
+            if self.can_leave:
                 break
 
             if self.jack_running:
@@ -465,9 +479,7 @@ class MainObject:
                 if self.pretty_names_ready and self.one_shot_act:
                     self.pbe.make_one_shot_act(self.one_shot_act)
                     self.one_shot_act = ''
-                    
-                    if (not self.auto_export_pretty_names
-                            and not self.osc_server.gui_list):
+                    if self.can_leave:
                         break
             else:
                 if n % 10 == 0:
@@ -579,12 +591,6 @@ class MainObject:
                     f'Failed to read {self.pretty_tmp_path}, ignored.')
         
         self.osc_server.set_ready_for_daemon()
-
-    def is_terminate(self) -> bool:
-        if self.terminate or self.osc_server.terminate:
-            return True
-        
-        return False
     
     def set_registrations(self):
         if self.client is None:
@@ -840,11 +846,6 @@ class MainObject:
             return
         
         self.set_pretty_names_auto_export(self.auto_export_pretty_names, force=True)
-        
-        if (not self.auto_export_pretty_names
-                and not self.osc_server.can_have_gui()
-                and not self.one_shot_act):
-            self.terminate = True
 
     def write_group_pretty_name(self, client_name: str, pretty_name: str):
         if not self.jack_running:
