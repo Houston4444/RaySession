@@ -1,7 +1,9 @@
 from enum import Enum, auto
 from queue import Queue
+from tarfile import BLOCKSIZE
 import time
 from typing import Iterator, TypeAlias, Optional
+from osc_paths.ray.patchbay.monitor import SAMPLE_RATE
 
 from port_data import PortData
 
@@ -19,6 +21,9 @@ class PatchEvent(Enum):
     CONNECTION_REMOVED = auto()
     METADATA_CHANGED = auto()
     SHUTDOWN = auto()
+    XRUN = auto()
+    BLOCKSIZE_CHANGED = auto()
+    SAMPLERATE_CHANGED = auto()
 
 
 class PatchEventQueue(Queue[tuple[PatchEvent, PatchEventArg, float]]):
