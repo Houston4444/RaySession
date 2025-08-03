@@ -19,13 +19,13 @@ _logger = logging.getLogger(__name__)
 
 
 class PatchbayDaemonServer(BunServer):
-    def __init__(self, main_object: 'PatchEngine', daemon_port: int):
+    def __init__(self, patch_engine: 'PatchEngine', daemon_port: int):
         BunServer.__init__(self)
         self.add_managed_methods()
 
-        self.main_object = main_object
+        self.pe = patch_engine
         self.daemon_port = daemon_port
-        self.pretty_names = main_object.pretty_names
+        self.pretty_names = patch_engine.pretty_names
         self.gui_list = list[Address]()
         self._tmp_gui_url = ''
     
@@ -47,39 +47,39 @@ class PatchbayDaemonServer(BunServer):
     def _ray_patchbay_connect(self, osp: OscPack):
         port_out_name, port_in_name = osp.args
         # connect here
-        self.main_object.connect_ports(port_out_name, port_in_name)
+        self.pe.connect_ports(port_out_name, port_in_name)
     
     @bun_manage(r.patchbay.DISCONNECT, 'ss')
     def _ray_patchbay_disconnect(self, osp: OscPack):
         port_out_name, port_in_name = osp.args
         # disconnect here
-        self.main_object.connect_ports(
+        self.pe.connect_ports(
             port_out_name, port_in_name, disconnect=True)
 
     @bun_manage(r.patchbay.SET_BUFFER_SIZE, 'i')
     def _ray_patchbay_set_buffersize(self, osp: OscPack):
         buffer_size = osp.args[0]
-        self.main_object.set_buffer_size(buffer_size)
+        self.pe.set_buffer_size(buffer_size)
 
     @bun_manage(r.patchbay.REFRESH, '')
     def _ray_patchbay_refresh(self, osp: OscPack):
-        self.main_object.refresh()
+        self.pe.refresh()
 
     @bun_manage(r.patchbay.TRANSPORT_PLAY, 'i')
     def _ray_patchbay_transport_play(self, osp: OscPack):
-        self.main_object.transport_play(bool(osp.args[0]))
+        self.pe.transport_play(bool(osp.args[0]))
     
     @bun_manage(r.patchbay.TRANSPORT_STOP, '')
     def _ray_patchbay_transport_stop(self, osp: OscPack):
-        self.main_object.transport_stop()
+        self.pe.transport_stop()
     
     @bun_manage(r.patchbay.TRANSPORT_RELOCATE, 'i')
     def _ray_patchbay_transport_relocate(self, osp: OscPack):
-        self.main_object.transport_relocate(osp.args[0])
+        self.pe.transport_relocate(osp.args[0])
 
     @bun_manage(r.patchbay.ACTIVATE_DSP_LOAD, 'i')
     def _ray_patchbay_activate_dsp_load(self, osp: OscPack):
-        self.main_object.dsp_wanted = bool(osp.args[0])
+        self.pe.dsp_wanted = bool(osp.args[0])
     
     @bun_manage(r.patchbay.ACTIVATE_TRANSPORT, 'i')
     def _ray_patchbay_activate_transport(self, osp: OscPack):
@@ -87,7 +87,7 @@ class PatchbayDaemonServer(BunServer):
             transport_wanted = TransportWanted(osp.args[0])
         except:
             transport_wanted = TransportWanted.FULL
-        self.main_object.transport_wanted = transport_wanted
+        self.pe.transport_wanted = transport_wanted
 
     @bun_manage(r.patchbay.GROUP_PRETTY_NAME, 'sss')
     def _ray_patchbay_group_pretty_name(self, osp: OscPack):
@@ -101,30 +101,30 @@ class PatchbayDaemonServer(BunServer):
         else:
             # empty string received,
             # listing is finished, lets apply pretty names to JACK
-            self.main_object.apply_pretty_names_export()
+            self.pe.apply_pretty_names_export()
 
     @bun_manage(r.patchbay.SAVE_GROUP_PRETTY_NAME, 'ssi')
     def _ray_patchbay_save_group_pretty_name(self, osp: OscPack):
         group_name, pretty_name, save_in_jack = osp.args
         self.pretty_names.save_group(group_name, pretty_name)
         if save_in_jack:
-            self.main_object.write_group_pretty_name(group_name, pretty_name)
+            self.pe.write_group_pretty_name(group_name, pretty_name)
     
     @bun_manage(r.patchbay.SAVE_PORT_PRETTY_NAME, 'ssi')
     def _ray_patchbay_save_port_pretty_name(self, osp: OscPack):
         port_name, pretty_name, save_in_jack = osp.args
         self.pretty_names.save_port(port_name, pretty_name)
         if save_in_jack:
-            self.main_object.write_port_pretty_name(port_name, pretty_name)
+            self.pe.write_port_pretty_name(port_name, pretty_name)
 
     @bun_manage(r.patchbay.ENABLE_JACK_PRETTY_NAMING, 'i')
     def _ray_patchbay_enable_jack_pretty_naming(self,  osp: OscPack):
         export_pretty_names = bool(osp.args[0])
-        self.main_object.set_pretty_names_auto_export(export_pretty_names)
+        self.pe.set_pretty_names_auto_export(export_pretty_names)
 
     @bun_manage(r.patchbay.EXPORT_ALL_PRETTY_NAMES, '')
     def _ray_patchbay_export_all_pretty_names(self, osp: OscPack):
-        self.main_object.export_all_pretty_names_to_jack_now()
+        self.pe.export_all_pretty_names_to_jack_now()
         
     @bun_manage(r.patchbay.IMPORT_ALL_PRETTY_NAMES, '')
     def _ray_patchbay_import_all_pretty_names(self, osp: OscPack):
@@ -132,7 +132,7 @@ class PatchbayDaemonServer(BunServer):
 
     @bun_manage(r.patchbay.CLEAR_ALL_PRETTY_NAMES, '')
     def _ray_patchbay_clear_all_pretty_names(self, osp: OscPack):
-        self.main_object.clear_all_pretty_names_from_jack()
+        self.pe.clear_all_pretty_names_from_jack()
 
     @property
     def can_leave(self) -> bool:
@@ -144,7 +144,7 @@ class PatchbayDaemonServer(BunServer):
 
     def _import_all_pretty_names(self):
         clients_dict, ports_dict = \
-            self.main_object.import_all_pretty_names_from_jack()
+            self.pe.import_all_pretty_names_from_jack()
         
         ms = MegaSend('send imported pretty names to daemon')
         ms_gui = MegaSend('send imported pretty names to GUIs')
@@ -186,26 +186,26 @@ class PatchbayDaemonServer(BunServer):
         ms = MegaSend('patchbay_ports')        
         ms.add(rpm.BIG_PACKETS, 0)
 
-        for port in self.main_object.ports:
+        for port in self.pe.ports:
             ms.add(rpm.PORT_ADDED,
                    port.name, port.type, port.flags, port.uuid)
 
         for client_name, client_uuid \
-                in self.main_object.client_name_uuids.items():
+                in self.pe.client_name_uuids.items():
             ms.add(rpm.CLIENT_NAME_AND_UUID,
                    client_name, client_uuid)
 
-        for connection in self.main_object.connections:
+        for connection in self.pe.connections:
             ms.add(rpm.CONNECTION_ADDED,
                    connection[0], connection[1])
 
-        for uuid, key_dict in self.main_object.metadatas.items():
+        for uuid, key_dict in self.pe.metadatas.items():
             for key, value in key_dict.items():
                 ms.add(rpm.METADATA_UPDATED,
                        uuid, key, value)
 
-        if self.main_object.alsa_mng is not None:
-            alsa_mng = self.main_object.alsa_mng
+        if self.pe.alsa_mng is not None:
+            alsa_mng = self.pe.alsa_mng
             for port in alsa_mng.parse_ports_and_flags():
                 ms.add(rpm.PORT_ADDED,
                        port.name, port.type, port.flags, port.uuid)
@@ -222,20 +222,20 @@ class PatchbayDaemonServer(BunServer):
             self._tmp_gui_url = ''
 
             self.send(gui_addr, rpm.ANNOUNCE,
-                      int(self.main_object.jack_running),
+                      int(self.pe.jack_running),
                       int(ALSA_LIB_OK),
-                      self.main_object.samplerate,
-                      self.main_object.buffer_size,
+                      self.pe.samplerate,
+                      self.pe.buffer_size,
                       self.url)
             self.send(gui_addr, rpm.DSP_LOAD,
-                      self.main_object.last_sent_dsp_load)
+                      self.pe.last_sent_dsp_load)
 
-            tpos = self.main_object.last_transport_pos
+            tpos = self.pe.last_transport_pos
             self.send(gui_addr, rpm.TRANSPORT_POSITION,
                       tpos.frame, int(tpos.rolling), int(tpos.valid_bbt),
                       tpos.bar, tpos.beat, tpos.tick, tpos.beats_per_minutes)
             self.send(gui_addr, rpm.PRETTY_NAMES_LOCKED,
-                      int(self.main_object.pretty_names_locked))
+                      int(self.pe.pretty_names_locked))
 
             self.gui_list.append(gui_addr)
             self.send_distant_data([gui_addr])
@@ -254,10 +254,10 @@ class PatchbayDaemonServer(BunServer):
         self.send_distant_data(self.gui_list)
     
     def send_buffersize(self):
-        self.send_gui(rpm.BUFFER_SIZE, self.main_object.buffer_size)
+        self.send_gui(rpm.BUFFER_SIZE, self.pe.buffer_size)
     
     def send_samplerate(self):
-        self.send_gui(rpm.SAMPLE_RATE, self.main_object.samplerate)
+        self.send_gui(rpm.SAMPLE_RATE, self.pe.samplerate)
     
     def send_server_lose(self):
         self.send_gui(rpm.SERVER_LOSE)
@@ -276,11 +276,11 @@ class PatchbayDaemonServer(BunServer):
     def make_one_shot_act(self, one_shot_act: OscPath):
         match one_shot_act:
             case r.patchbay.EXPORT_ALL_PRETTY_NAMES:
-                self.main_object.export_all_pretty_names_to_jack_now()
+                self.pe.export_all_pretty_names_to_jack_now()
             case r.patchbay.IMPORT_ALL_PRETTY_NAMES:
                 self._import_all_pretty_names()
             case r.patchbay.CLEAR_ALL_PRETTY_NAMES:
-                self.main_object.clear_all_pretty_names_from_jack()
+                self.pe.clear_all_pretty_names_from_jack()
 
     def set_ready_for_daemon(self):
         self.pretty_names.clear()
