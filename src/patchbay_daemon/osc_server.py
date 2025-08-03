@@ -12,14 +12,14 @@ import osc_paths.ray.patchbay.monitor as rpm
 from alsa_lib_check import ALSA_LIB_OK
 
 if TYPE_CHECKING:
-    from patchbay_daemon import MainObject
+    from patchbay_daemon import PatchEngine
 
 
 _logger = logging.getLogger(__name__)
 
 
 class PatchbayDaemonServer(BunServer):
-    def __init__(self, main_object: 'MainObject', daemon_port: int):
+    def __init__(self, main_object: 'PatchEngine', daemon_port: int):
         BunServer.__init__(self)
         self.add_managed_methods()
 
