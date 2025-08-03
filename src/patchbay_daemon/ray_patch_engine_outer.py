@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING
 from pathlib import Path
 import sys
 
+from patch_engine import PatchEngineOuter
 from patshared import TransportPosition
 
 import osc_paths.ray.patchbay.monitor as rpm
 
-from patch_engine_outer import PatchEngineOuter
 
 if TYPE_CHECKING:
     from osc_server import PatchbayDaemonServer
