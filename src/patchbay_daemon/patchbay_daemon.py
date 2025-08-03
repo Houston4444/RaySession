@@ -92,7 +92,7 @@ def start():
     args = sys.argv.copy()
     daemon_port_str = ''
     gui_url = ''
-    pretty_names_active = True
+    auto_export_pretty_names = True
     one_shot_act = ''
     log = ''
     dbg = ''
@@ -105,7 +105,7 @@ def start():
         gui_url = args.pop(0)
     if args:
         pns = args.pop(0)
-        pretty_names_active = not bool(pns.lower() in ('0', 'false'))
+        auto_export_pretty_names = not bool(pns.lower() in ('0', 'false'))
         args.pop(0)
     if args:
         one_shot_act = args.pop(0)
@@ -135,19 +135,21 @@ def start():
             f'daemon port must be an integer, not "{daemon_port_str}"')
         return
     
-    main_object = MainObject(
-        daemon_port, gui_url, pretty_names_active, one_shot_act)
+    main_object = MainObject(daemon_port)
+    main_object.auto_export_pretty_names = auto_export_pretty_names
+    main_object.one_shot_act = one_shot_act
     osc_server = PatchbayDaemonServer(main_object)
     osc_server.set_tmp_gui_url(gui_url)
-    main_loop(main_object, osc_server)
+    main_loop((main_object, osc_server))
 
 def internal_prepare(
         daemon_port: str, gui_url: str, pretty_names_active: str,
         one_shot_act: str, nsm_url=''):
-    pretty_name_active_bool = not bool(
+    main_object = MainObject(int(daemon_port))
+    main_object.auto_export_pretty_names = not bool(
         pretty_names_active.lower() in ('0', 'false'))
-    main_object = MainObject(
-        int(daemon_port), gui_url, pretty_name_active_bool, one_shot_act)
+    main_object.one_shot_act = one_shot_act
+
     osc_server = PatchbayDaemonServer(main_object)
     osc_server.set_tmp_gui_url(gui_url)
 

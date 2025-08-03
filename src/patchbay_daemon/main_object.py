@@ -77,16 +77,17 @@ class MainObject:
     '''True if the patchbay option 'Auto-Export pretty names to JACK'
     is activated (True by default).'''
     
+    one_shot_act = ''
+    '''can be an OSC path in case if this object is instantiated
+    only to make one action about pretty names
+    (import, export, clear)'''
+    
     dsp_wanted = True
     transport_wanted = TransportWanted.FULL
     
-    def __init__(
-            self, daemon_port: int, gui_url: str,
-            auto_export_pretty_names=True, one_shot_act=''):
+    def __init__(self, daemon_port: int):
         self.daemon_port = daemon_port
-        self.auto_export_pretty_names = auto_export_pretty_names
         self.pretty_names_ready = False
-        self.one_shot_act = one_shot_act
 
         self.last_sent_dsp_load = 0
         self.max_dsp_since_last_sent = 0.00
@@ -114,7 +115,7 @@ class MainObject:
         self._locker_written = False
         self._client_uuid = 0
         
-        self.pbe = None
+        self.pbe: Optional[PatchEngine] = None
         
     def start(self, patchbay_engine: PatchEngine):
         self.pbe = patchbay_engine
