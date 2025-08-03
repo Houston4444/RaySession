@@ -9,7 +9,7 @@ from patshared import TransportPosition
 
 import osc_paths.ray.patchbay.monitor as rpm
 
-from patch_engine import PatchEngine
+from patch_engine_outer import PatchEngineOuter
 
 if TYPE_CHECKING:
     from osc_server import PatchbayDaemonServer
@@ -21,7 +21,7 @@ EXISTENCE_PATH = Path('/tmp/RaySession/patchbay_daemons')
 JACK_CLIENT_NAME = 'ray-patch_dmn'
 
 
-class RayPatchEngine(PatchEngine):
+class RayPatchEngineOuter(PatchEngineOuter):
     def __init__(self, osc_server: 'PatchbayDaemonServer'):
         super().__init__()
         self.osc_server = osc_server

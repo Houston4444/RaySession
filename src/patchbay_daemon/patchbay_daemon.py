@@ -13,7 +13,7 @@ from proc_name import set_proc_name
 # local imports
 from main_object import MainObject
 from osc_server import PatchbayDaemonServer
-from ray_patch_engine import RayPatchEngine
+from ray_patch_engine_outer import RayPatchEngineOuter
 
 
 IS_INTERNAL = not Path(sys.path[0]).name == __name__
@@ -32,7 +32,7 @@ def main_loop(args):
     osc_server: PatchbayDaemonServer
     mo, osc_server = args
 
-    mo.start(RayPatchEngine(osc_server))
+    mo.start(RayPatchEngineOuter(osc_server))
     if osc_server._tmp_gui_url:
         osc_server.add_gui(osc_server._tmp_gui_url)
 
