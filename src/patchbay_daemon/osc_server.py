@@ -41,12 +41,6 @@ class PatchbayDaemonServer(BunServer):
                 self.gui_list.remove(gui_addr)
                 break
 
-        if (not self.gui_list
-                and not self.main_object.auto_export_pretty_names):
-            # no more GUI connected, and no pretty-names to export,
-            # no reason to exists anymore
-            self.terminate = True
-
     @bun_manage(r.patchbay.CONNECT, 'ss')
     def _ray_patchbay_connect(self, osp: OscPack):
         port_out_name, port_in_name = osp.args
@@ -121,8 +115,6 @@ class PatchbayDaemonServer(BunServer):
     def _ray_patchbay_enable_jack_pretty_naming(self,  osp: OscPack):
         export_pretty_names = bool(osp.args[0])
         self.main_object.set_pretty_names_auto_export(export_pretty_names)
-        if not export_pretty_names and not self.gui_list:
-            self.terminate = True
 
     @bun_manage(r.patchbay.EXPORT_ALL_PRETTY_NAMES, '')
     def _ray_patchbay_export_all_pretty_names(self, osp: OscPack):
@@ -139,6 +131,16 @@ class PatchbayDaemonServer(BunServer):
     @bun_manage(r.patchbay.QUIT, '')
     def _ray_patchbay_quit(self, osp: OscPack):
         self.terminate = True
+
+    @property
+    def can_leave(self) -> bool:
+        if self.terminate:
+            return True
+        if self._tmp_gui_url:
+            return False
+        if self.gui_list:
+            return False
+        return True
 
     def _import_all_pretty_names(self):
         clients_dict, ports_dict = \
@@ -226,11 +228,10 @@ class PatchbayDaemonServer(BunServer):
         self.mega_send(src_addrs, ms)
 
     def add_gui(self, gui_url: str):
-        gui_addr = Address(gui_url)
-        if gui_addr is None:
-            return
-
         try:
+            gui_addr = Address(gui_url)
+            self._tmp_gui_url = ''
+
             self.send(gui_addr, rpm.ANNOUNCE,
                       int(self.main_object.jack_running),
                       int(ALSA_LIB_OK),

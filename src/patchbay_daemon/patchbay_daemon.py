@@ -25,21 +25,6 @@ else:
     _logger.addHandler(_log_handler)
 
 
-def main_process(daemon_port_str: str, gui_tcp_url: str,
-                 pretty_names_active: bool):
-    try:
-        daemon_port = int(daemon_port_str)
-    except:
-        _logger.critical(
-            f'daemon port must be an integer, not "{daemon_port_str}"')
-        return
-        
-    main_object = MainObject(daemon_port, gui_tcp_url, pretty_names_active)
-    main_object.osc_server.add_gui(gui_tcp_url)
-    if main_object.osc_server.gui_list:
-        main_object.start_loop()
-    # main_object.exit()
-
 def start():
     '''launch the process when it is a process (not internal).'''
     set_proc_name('ray-patch_dmn')
@@ -99,8 +84,6 @@ def start():
     main_object = MainObject(
         daemon_port, gui_url, pretty_names_active, one_shot_act)
 
-    if gui_url:
-        main_object.osc_server.add_gui(gui_url)
     main_object.start_loop()
     
 def internal_prepare(
@@ -111,8 +94,4 @@ def internal_prepare(
     main_object = MainObject(
         int(daemon_port), gui_url, pretty_name_active_bool, one_shot_act)
 
-    if gui_url:
-        main_object.osc_server.add_gui(gui_url)
-        if not main_object.osc_server.gui_list:
-            return 1
     return main_object.start_loop, main_object.internal_stop
