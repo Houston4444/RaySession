@@ -19,11 +19,12 @@ _logger = logging.getLogger(__name__)
 
 
 class PatchbayDaemonServer(BunServer):
-    def __init__(self, main_object: 'MainObject'):
+    def __init__(self, main_object: 'MainObject', daemon_port: int):
         BunServer.__init__(self)
         self.add_managed_methods()
 
         self.main_object = main_object
+        self.daemon_port = daemon_port
         self.pretty_names = main_object.pretty_names
         self.gui_list = list[Address]()
         self._tmp_gui_url = ''
@@ -158,7 +159,7 @@ class PatchbayDaemonServer(BunServer):
                    port_name, pretty_name, '', 0)
             ms_gui.add(rpm.UPDATE_PORT_PRETTY_NAME, port_name, pretty_name)
             
-        self.mega_send(self.main_object.daemon_port, ms)
+        self.mega_send(self.daemon_port, ms)
         self.mega_send(self.gui_list, ms_gui)
 
     def set_tmp_gui_url(self, gui_url: str):
@@ -283,5 +284,4 @@ class PatchbayDaemonServer(BunServer):
 
     def set_ready_for_daemon(self):
         self.pretty_names.clear()
-        self.send(self.main_object.daemon_port,
-                  r.server.PATCHBAY_DAEMON_READY)
+        self.send(self.daemon_port, r.server.PATCHBAY_DAEMON_READY)

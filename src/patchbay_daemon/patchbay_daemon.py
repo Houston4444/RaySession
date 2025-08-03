@@ -32,9 +32,10 @@ def main_loop(args):
     osc_server: PatchbayDaemonServer
     mo, osc_server = args
 
-    mo.start(RayPatchEngine(osc_server, mo.daemon_port))
-    osc_server.add_gui(osc_server._tmp_gui_url)
-    
+    mo.start(RayPatchEngine(osc_server))
+    if osc_server._tmp_gui_url:
+        osc_server.add_gui(osc_server._tmp_gui_url)
+
     n = 0
 
     while True:
@@ -136,6 +137,7 @@ def start():
         return
     
     main_object = MainObject(daemon_port)
+    main_object.mdata_locker_value = daemon_port_str
     main_object.auto_export_pretty_names = auto_export_pretty_names
     main_object.one_shot_act = one_shot_act
     osc_server = PatchbayDaemonServer(main_object)
@@ -146,11 +148,12 @@ def internal_prepare(
         daemon_port: str, gui_url: str, pretty_names_active: str,
         one_shot_act: str, nsm_url=''):
     main_object = MainObject(int(daemon_port))
+    main_object.mdata_locker_value = daemon_port
+    main_object.one_shot_act = one_shot_act
     main_object.auto_export_pretty_names = not bool(
         pretty_names_active.lower() in ('0', 'false'))
-    main_object.one_shot_act = one_shot_act
 
-    osc_server = PatchbayDaemonServer(main_object)
+    osc_server = PatchbayDaemonServer(main_object, int(daemon_port))
     osc_server.set_tmp_gui_url(gui_url)
 
     return (main_loop, main_object.internal_stop,

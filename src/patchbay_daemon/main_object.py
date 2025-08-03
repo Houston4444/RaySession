@@ -82,6 +82,10 @@ class MainObject:
     only to make one action about pretty names
     (import, export, clear)'''
     
+    mdata_locker_value = '1'
+    '''The value of the locker metadata, has no real effect.
+    Ideally the daemon port for a Session Manager.'''
+
     dsp_wanted = True
     transport_wanted = TransportWanted.FULL
     
@@ -152,7 +156,7 @@ class MainObject:
         try:
             self.client.set_property(
                 self.client.uuid, METADATA_LOCKER,
-                str(self.daemon_port))
+                self.mdata_locker_value)
         except:
             _logger.warning(
                 f'Failed to set locker metadata for {JACK_CLIENT_NAME}, '
