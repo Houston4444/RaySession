@@ -25,6 +25,51 @@ else:
     _logger.addHandler(_log_handler)
 
 
+def main_loop(mo: MainObject):
+    n = 0
+
+    while True:
+        mo.osc_server.recv(50)
+        
+        if mo.can_leave:
+            break
+
+        if mo.jack_running:
+            if n % 4 == 0:
+                mo.remember_dsp_load()
+                if mo.dsp_wanted and n % 20 == 0:
+                    mo.send_dsp_load()
+            
+            mo.process_patch_events()
+            mo.check_pretty_names_export()
+            mo.send_transport_pos()
+
+            if mo.pretty_names_ready and mo.one_shot_act:
+                mo.pbe.make_one_shot_act(mo.one_shot_act)
+                mo.one_shot_act = ''
+                if mo.can_leave:
+                    break
+        else:
+            if n % 10 == 0:
+                if mo.client is not None:
+                    _logger.debug(
+                        'deactivate JACK client after server shutdown')
+                    mo.client.deactivate()
+                    _logger.debug('close JACK client after server shutdown')
+                    mo.client.close()
+                    _logger.debug('close JACK client done')
+                    mo.client = None
+                _logger.debug('try to start JACK')
+                mo.start_jack_client()
+
+        n += 1
+        
+        # for faster modulos
+        if n == 20:
+            n = 0
+
+    mo.exit()
+
 def start():
     '''launch the process when it is a process (not internal).'''
     set_proc_name('ray-patch_dmn')
@@ -83,9 +128,8 @@ def start():
     
     main_object = MainObject(
         daemon_port, gui_url, pretty_names_active, one_shot_act)
+    main_loop(main_object)
 
-    main_object.start_loop()
-    
 def internal_prepare(
         daemon_port: str, gui_url: str, pretty_names_active: str,
         one_shot_act: str, nsm_url=''):
@@ -94,4 +138,4 @@ def internal_prepare(
     main_object = MainObject(
         int(daemon_port), gui_url, pretty_name_active_bool, one_shot_act)
 
-    return main_object.start_loop, main_object.internal_stop
+    return main_loop, main_object.internal_stop, main_object, None

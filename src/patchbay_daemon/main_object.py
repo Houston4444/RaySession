@@ -272,7 +272,7 @@ class MainObject:
                     self.ports.clear()
                     self.connections.clear()
 
-    def _check_pretty_names_export(self):
+    def check_pretty_names_export(self):
         client_names = set[str]()
         port_names = set[str]()
         
@@ -362,7 +362,7 @@ class MainObject:
             self.last_sent_dsp_load = current_dsp
         self.max_dsp_since_last_sent = 0.00
 
-    def _send_transport_pos(self):
+    def send_transport_pos(self):
         if self.transport_wanted is TransportWanted.NO:
             return
         
@@ -424,52 +424,7 @@ class MainObject:
             return
         
         self.client.blocksize = blocksize
-    
-    def start_loop(self):
-        n = 0
-
-        while True:
-            self.osc_server.recv(50)
-            
-            if self.can_leave:
-                break
-
-            if self.jack_running:
-                if n % 4 == 0:
-                    self.remember_dsp_load()
-                    if self.dsp_wanted and n % 20 == 0:
-                        self.send_dsp_load()
-                
-                self.process_patch_events()
-                self._check_pretty_names_export()
-                self._send_transport_pos()
-
-                if self.pretty_names_ready and self.one_shot_act:
-                    self.pbe.make_one_shot_act(self.one_shot_act)
-                    self.one_shot_act = ''
-                    if self.can_leave:
-                        break
-            else:
-                if n % 10 == 0:
-                    if self.client is not None:
-                        _logger.debug(
-                            'deactivate JACK client after server shutdown')
-                        self.client.deactivate()
-                        _logger.debug('close JACK client after server shutdown')
-                        self.client.close()
-                        _logger.debug('close JACK client done')
-                        self.client = None
-                    _logger.debug('try to start JACK')
-                    self.start_jack_client()
-
-            n += 1
-            
-            # for faster modulos
-            if n == 20:
-                n = 0
-
-        self.exit()
-                
+             
     def exit(self):
         self.save_uuid_pretty_names()
         
@@ -804,16 +759,17 @@ class MainObject:
         
         return mdata_pretty_name
 
-    def set_all_pretty_names(self):
+    def apply_pretty_names_export(self):
         '''Set all pretty names once all pretty names are received,
         or clear them if self.auto_export_pretty_names is False 
         and some pretty names have been written by a previous process.'''
         self.pretty_names_ready = True
-        
+
         if not self.jack_running or self.pretty_names_locked:
             return
-        
-        self.set_pretty_names_auto_export(self.auto_export_pretty_names, force=True)
+
+        self.set_pretty_names_auto_export(
+            self.auto_export_pretty_names, force=True)
 
     def write_group_pretty_name(self, client_name: str, pretty_name: str):
         if not self.jack_running:
