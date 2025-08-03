@@ -8,7 +8,8 @@ import logging
 
 # Imports from HoustonPatchbay
 from patshared import (
-    GroupPos, PortgroupMem, PortMode, ViewData, Naming, PrettyDiff)
+    GroupPos, PortgroupMem, PortMode, ViewData, Naming,
+    PrettyDiff, TransportWanted)
 from patchbay.bases.elements import CanvasOptimize, CanvasOptimizeIt, ToolDisplayed
 from patchbay.bases.group import Group
 from patchbay import (
@@ -17,8 +18,7 @@ from patchbay import (
     PatchbayToolsWidget,
     CanvasOptionsDialog,
     CanvasMenu,
-    patchcanvas
-)
+    patchcanvas)
 
 # Imports from src/shared
 import ray
@@ -370,14 +370,14 @@ class RayPatchbayManager(PatchbayManager):
 
         if transport_disp != ex_transport_disp:
             if transport_disp & ToolDisplayed.TRANSPORT_CLOCK:
-                int_transp = 2
+                transp_wanted = TransportWanted.FULL
             elif transport_disp & ToolDisplayed.TRANSPORT_PLAY_STOP:
-                int_transp = 1
+                transp_wanted = TransportWanted.STATE_ONLY
             else:
-                int_transp = 0
+                transp_wanted = TransportWanted.NO
 
-            self.send_to_patchbay_daemon(r.patchbay.ACTIVATE_TRANSPORT,
-                                          int_transp)
+            self.send_to_patchbay_daemon(
+                r.patchbay.ACTIVATE_TRANSPORT, transp_wanted.value)
              
         if (ex_tool_displayed & ToolDisplayed.DSP_LOAD
                 != tools_displayed & ToolDisplayed.DSP_LOAD):

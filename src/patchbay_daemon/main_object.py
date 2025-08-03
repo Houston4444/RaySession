@@ -14,14 +14,14 @@ import jack
 
 # imports from HoustonPatchbay
 from patshared import (
-    JackMetadatas, JackMetadata, PrettyNames, TransportPosition)
+    JackMetadatas, JackMetadata, PrettyNames,
+    TransportPosition, TransportWanted)
 
 # local imports
 from suppress_stdout_stderr import SuppressStdoutStderr
 from port_data import PortData, PortDataList
 from jack_bases import (
-    ClientNamesUuids, PatchEventQueue,
-    TransportWanted, PatchEvent)
+    ClientNamesUuids, PatchEventQueue, PatchEvent)
 from osc_server import PatchbayDaemonServer
 from ray_patch_engine import RayPatchEngine
 from alsa_lib_check import ALSA_LIB_OK
@@ -361,12 +361,6 @@ class MainObject:
             self.pbe.send_dsp_load(current_dsp)
             self.last_sent_dsp_load = current_dsp
         self.max_dsp_since_last_sent = 0.00
-    
-    def set_transport_wanted(self, transport_wanted: int):
-        try:
-            self.transport_wanted = TransportWanted(transport_wanted)
-        except:
-            self.transport_wanted = TransportWanted.FULL
 
     def _send_transport_pos(self):
         if self.transport_wanted is TransportWanted.NO:

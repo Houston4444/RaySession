@@ -1,4 +1,4 @@
-from enum import IntEnum, Enum, auto
+from enum import Enum, auto
 from queue import Queue
 import time
 from typing import Iterator, TypeAlias, Optional
@@ -7,17 +7,6 @@ from port_data import PortData
 
 
 PatchEventArg: TypeAlias = str | PortData | tuple[str, str] | tuple[int, str, str]
-
-
-class TransportWanted(IntEnum):
-    NO = 0
-    'do not send any transport info'
-    
-    STATE_ONLY = 1
-    'send transport info only when play/pause changed'
-
-    FULL = 2
-    'send all transport infos'
 
 
 class PatchEvent(Enum):
