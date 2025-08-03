@@ -100,7 +100,7 @@ class PatchbayDaemonServer(BunServer):
         else:
             # empty string received,
             # listing is finished, lets apply pretty names to JACK
-            self.main_object.set_all_pretty_names()
+            self.main_object.apply_pretty_names_export()
 
     @bun_manage(r.patchbay.SAVE_GROUP_PRETTY_NAME, 'ssi')
     def _ray_patchbay_save_group_pretty_name(self, osp: OscPack):
