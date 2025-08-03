@@ -997,7 +997,7 @@ class SignaledSession(OperatingSession):
 
     @manage((r.server.QUIT, nsm.server.QUIT), '')
     def _ray_server_quit(self, osp: OscPack):
-        self.send_patchbay_daemon(r.patchbay.QUIT)
+        patchbay_dmn_mng.daemon_exit()
         self.steps_osp = osp
         self.steps_order = [self.terminate_step_scripter,
                             self.close, self.exit_now]
@@ -2097,7 +2097,8 @@ class SignaledSession(OperatingSession):
         if self.terminated_yet:
             return
 
-        self.send_patchbay_daemon(r.patchbay.QUIT)
+        # self.send_patchbay_daemon(r.patchbay.QUIT)
+        patchbay_dmn_mng.daemon_exit()
 
         if self.file_copier.is_active():
             self.file_copier.abort()

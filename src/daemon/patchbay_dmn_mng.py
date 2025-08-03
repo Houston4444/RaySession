@@ -263,5 +263,8 @@ def enqueue_osc(*args):
     _MainObj.waiting_msgs.append(args)
 
 def daemon_exit():
-    if _MainObj.process is not None:
-        _MainObj.process.waitForFinished(500)
+    if _MainObj.is_internal:
+        _MainObj.internal_client.stop()
+    else:
+        if _MainObj.process is not None:
+            _MainObj.process.waitForFinished(500)
