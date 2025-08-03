@@ -12,6 +12,8 @@ from proc_name import set_proc_name
 
 # local imports
 from main_object import MainObject
+from osc_server import PatchbayDaemonServer
+from ray_patch_engine import RayPatchEngine
 
 
 IS_INTERNAL = not Path(sys.path[0]).name == __name__
@@ -25,11 +27,18 @@ else:
     _logger.addHandler(_log_handler)
 
 
-def main_loop(mo: MainObject):
+def main_loop(args):
+    mo: MainObject
+    osc_server: PatchbayDaemonServer
+    mo, osc_server = args
+
+    mo.start(RayPatchEngine(osc_server, mo.daemon_port))
+    osc_server.add_gui(osc_server._tmp_gui_url)
+    
     n = 0
 
     while True:
-        mo.osc_server.recv(50)
+        osc_server.recv(50)
         
         if mo.can_leave:
             break
@@ -128,7 +137,9 @@ def start():
     
     main_object = MainObject(
         daemon_port, gui_url, pretty_names_active, one_shot_act)
-    main_loop(main_object)
+    osc_server = PatchbayDaemonServer(main_object)
+    osc_server.set_tmp_gui_url(gui_url)
+    main_loop(main_object, osc_server)
 
 def internal_prepare(
         daemon_port: str, gui_url: str, pretty_names_active: str,
@@ -137,5 +148,8 @@ def internal_prepare(
         pretty_names_active.lower() in ('0', 'false'))
     main_object = MainObject(
         int(daemon_port), gui_url, pretty_name_active_bool, one_shot_act)
+    osc_server = PatchbayDaemonServer(main_object)
+    osc_server.set_tmp_gui_url(gui_url)
 
-    return main_loop, main_object.internal_stop, main_object, None
+    return (main_loop, main_object.internal_stop,
+            (main_object, osc_server), None)

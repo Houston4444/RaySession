@@ -18,12 +18,11 @@ from patshared import (
     TransportPosition, TransportWanted)
 
 # local imports
-from suppress_stdout_stderr import SuppressStdoutStderr
-from port_data import PortData, PortDataList
 from jack_bases import (
     ClientNamesUuids, PatchEventQueue, PatchEvent)
-from osc_server import PatchbayDaemonServer
-from ray_patch_engine import RayPatchEngine
+from patch_engine import PatchEngine
+from port_data import PortData, PortDataList
+from suppress_stdout_stderr import SuppressStdoutStderr
 from alsa_lib_check import ALSA_LIB_OK
 if ALSA_LIB_OK:
     from alsa_manager import AlsaManager
@@ -115,19 +114,17 @@ class MainObject:
         self._locker_written = False
         self._client_uuid = 0
         
-        self.osc_server = PatchbayDaemonServer(self)
-        self.osc_server.set_tmp_gui_url(gui_url)
-        self.pbe = RayPatchEngine(self.osc_server, daemon_port)
+        self.pbe = None
+        
+    def start(self, patchbay_engine: PatchEngine):
+        self.pbe = patchbay_engine
         self.pbe.write_existence_file()
         self.start_jack_client()
         
         if ALSA_LIB_OK:
             self.alsa_mng = AlsaManager(self)
             self.alsa_mng.add_all_ports()
-        
-        if gui_url:
-            self.osc_server.add_gui(gui_url)
-    
+            
     @property
     def can_leave(self) -> bool:
         if self.terminate:
