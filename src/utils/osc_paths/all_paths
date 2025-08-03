@@ -149,8 +149,6 @@
 /ray/patchbay/transport_play
 /ray/patchbay/transport_relocate
 /ray/patchbay/transport_stop
-/ray/patchbay/quit
-    ask the patchbay daemon to quit
 /ray/patchbay/monitor/add_xrun
 /ray/patchbay/monitor/announce
 /ray/patchbay/monitor/big_packets

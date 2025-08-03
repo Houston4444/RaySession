@@ -26,3 +26,8 @@ Priorité:
 - voir pretty_name et SIGTERM quand session chargée
 
 séparer jack_manager de patchbay_manager (trop gros et pas logique)
+
+osc_server
+    recv
+    set_ready_for_daemon
+    add_gui()
