@@ -22,10 +22,10 @@ JACK_CLIENT_NAME = 'ray-patch_dmn'
 
 
 class RayPatchEngine(PatchEngine):
-    def __init__(self, osc_server: 'PatchbayDaemonServer', daemon_port: int):
+    def __init__(self, osc_server: 'PatchbayDaemonServer'):
         super().__init__()
         self.osc_server = osc_server
-        self.daemon_port = daemon_port
+        self.daemon_port = osc_server.daemon_port
     
     @property
     def can_leave(self) -> bool:
