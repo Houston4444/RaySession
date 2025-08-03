@@ -10,8 +10,10 @@ import logging
 # imports from shared/
 from proc_name import set_proc_name
 
-# local imports
+# imports from HoustonPatchbay
 from patch_engine import PatchEngine
+
+# local imports
 from osc_server import PatchbayDaemonServer
 from ray_patch_engine_outer import RayPatchEngineOuter
 

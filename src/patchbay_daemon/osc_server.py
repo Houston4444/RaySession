@@ -2,14 +2,14 @@
 import logging
 from typing import TYPE_CHECKING
 
+from patch_engine import ALSA_LIB_OK
 from patshared import TransportWanted
 
 from osclib import (BunServer, Address, MegaSend,
-                    are_same_osc_port, OscPack, bun_manage)
+                    are_same_osc_port, OscPack, bun_manage, OscPath)
 import osc_paths.ray as r
 import osc_paths.ray.patchbay.monitor as rpm
 
-from alsa_lib_check import ALSA_LIB_OK
 
 if TYPE_CHECKING:
     from patchbay_daemon import PatchEngine
@@ -273,7 +273,7 @@ class PatchbayDaemonServer(BunServer):
 
         self.send(addr, rpm.SERVER_LOSE)
 
-    def make_one_shot_act(self, one_shot_act: str):
+    def make_one_shot_act(self, one_shot_act: OscPath):
         match one_shot_act:
             case r.patchbay.EXPORT_ALL_PRETTY_NAMES:
                 self.main_object.export_all_pretty_names_to_jack_now()
