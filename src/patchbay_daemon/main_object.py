@@ -225,6 +225,17 @@ class MainObject:
                         self.connections.remove(conn)
                     self.pbe.connection_removed(conn)
                 
+                case PatchEvent.XRUN:
+                    self.pbe.send_one_xrun()
+                
+                case PatchEvent.BLOCKSIZE_CHANGED:
+                    self.buffer_size = event_arg
+                    self.pbe.send_buffersize(self.buffer_size)
+                
+                case PatchEvent.SAMPLERATE_CHANGED:
+                    self.samplerate = event_arg
+                    self.pbe.send_samplerate(self.samplerate)
+                
                 case PatchEvent.METADATA_CHANGED:
                     uuid_key_value: tuple[int, str, str] = event_arg
                     uuid, key, value = uuid_key_value
@@ -577,17 +588,16 @@ class MainObject:
 
         @self.client.set_xrun_callback
         def xrun(delayed_usecs: float):
-            self.pbe.send_one_xrun()
+            self.patch_event_queue.add(PatchEvent.XRUN)
             
         @self.client.set_blocksize_callback
         def blocksize(size: int):
-            self.buffer_size = size
-            self.pbe.send_buffersize(self.buffer_size)
+            self.patch_event_queue.add(PatchEvent.BLOCKSIZE_CHANGED, size)
             
         @self.client.set_samplerate_callback
         def samplerate(samplerate: int):
-            self.samplerate = samplerate
-            self.pbe.send_samplerate(self.samplerate)
+            self.patch_event_queue.add(
+                PatchEvent.SAMPLERATE_CHANGED, samplerate)
             
         try:
             @self.client.set_property_change_callback
