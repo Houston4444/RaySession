@@ -33,3 +33,4 @@ osc_server
     add_gui()
 
 réduire les msgs notamment dsp_load et transport_position pour les patchers
+one_shot_act et server arrêté !

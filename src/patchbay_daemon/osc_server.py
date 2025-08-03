@@ -2,6 +2,8 @@
 import logging
 from typing import TYPE_CHECKING
 
+from patshared import TransportWanted
+
 from osclib import (BunServer, Address, MegaSend,
                     are_same_osc_port, OscPack, bun_manage)
 import osc_paths.ray as r
@@ -80,7 +82,11 @@ class PatchbayDaemonServer(BunServer):
     
     @bun_manage(r.patchbay.ACTIVATE_TRANSPORT, 'i')
     def _ray_patchbay_activate_transport(self, osp: OscPack):
-        self.main_object.set_transport_wanted(osp.args[0])
+        try:
+            transport_wanted = TransportWanted(osp.args[0])
+        except:
+            transport_wanted = TransportWanted.FULL
+        self.main_object.transport_wanted = transport_wanted
 
     @bun_manage(r.patchbay.GROUP_PRETTY_NAME, 'sss')
     def _ray_patchbay_group_pretty_name(self, osp: OscPack):
