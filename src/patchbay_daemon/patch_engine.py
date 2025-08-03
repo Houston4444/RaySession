@@ -44,7 +44,7 @@ def jack_pretty_name(uuid: int) -> str:
     return value_type[0].decode()
 
 
-class MainObject:
+class PatchEngine:
     ports = PortDataList()
     connections = list[tuple[str, str]]()
     metadatas = JackMetadatas()
@@ -118,11 +118,11 @@ class MainObject:
         self._client_uuid = 0
         self._client_name = ''
         
-        self.pbe: Optional[PatchEngineOuter] = None
+        self.peo: Optional[PatchEngineOuter] = None
         
     def start(self, patchbay_engine: PatchEngineOuter):
-        self.pbe = patchbay_engine
-        self.pbe.write_existence_file()
+        self.peo = patchbay_engine
+        self.peo.write_existence_file()
         self.start_jack_client()
         
         if ALSA_LIB_OK:
@@ -137,7 +137,7 @@ class MainObject:
             return False
         if self.one_shot_act:
             return False
-        return self.pbe.can_leave
+        return self.peo.can_leave
     
     @classmethod
     def signal_handler(cls, sig: int, frame):
@@ -185,7 +185,7 @@ class MainObject:
                         ...
                     else:
                         self.client_name_uuids[name] = client_uuid
-                        self.pbe.associate_client_name_and_uuid(
+                        self.peo.associate_client_name_and_uuid(
                             name, client_uuid)
 
                 case PatchEvent.CLIENT_REMOVED:
@@ -196,45 +196,45 @@ class MainObject:
                             uuid_dict = self.metadatas.pop(uuid)
                             if uuid_dict.get(METADATA_LOCKER) is not None:
                                 self.pretty_names_locked = False
-                                self.pbe.send_pretty_names_locked(True)
+                                self.peo.send_pretty_names_locked(True)
 
                 case PatchEvent.PORT_ADDED:
                     port: PortData = event_arg
                     self.ports.append(port)
-                    self.pbe.port_added(
+                    self.peo.port_added(
                         port.name, port.type, port.flags, port.uuid)
 
                 case PatchEvent.PORT_REMOVED:
                     port = self.ports.from_name(event_arg)
                     self.ports.remove(port)
-                    self.pbe.port_removed(port.name)
+                    self.peo.port_removed(port.name)
 
                 case PatchEvent.PORT_RENAMED:
                     old, new = event_arg
                     self.ports.rename(old, new)
-                    self.pbe.port_renamed(old, new, port.uuid)
+                    self.peo.port_renamed(old, new, port.uuid)
                 
                 case PatchEvent.CONNECTION_ADDED:
                     conn: tuple[str, str] = event_arg
                     self.connections.append(conn)
-                    self.pbe.connection_added(conn)
+                    self.peo.connection_added(conn)
                 
                 case PatchEvent.CONNECTION_REMOVED:
                     conn: tuple[str, str] = event_arg
                     if conn in self.connections:
                         self.connections.remove(conn)
-                    self.pbe.connection_removed(conn)
+                    self.peo.connection_removed(conn)
                 
                 case PatchEvent.XRUN:
-                    self.pbe.send_one_xrun()
+                    self.peo.send_one_xrun()
                 
                 case PatchEvent.BLOCKSIZE_CHANGED:
                     self.buffer_size = event_arg
-                    self.pbe.send_buffersize(self.buffer_size)
+                    self.peo.send_buffersize(self.buffer_size)
                 
                 case PatchEvent.SAMPLERATE_CHANGED:
                     self.samplerate = event_arg
-                    self.pbe.send_samplerate(self.samplerate)
+                    self.peo.send_samplerate(self.samplerate)
                 
                 case PatchEvent.METADATA_CHANGED:
                     uuid_key_value: tuple[int, str, str] = event_arg
@@ -257,10 +257,10 @@ class MainObject:
                             if uuid_dict is not None:
                                 if METADATA_LOCKER in uuid_dict.keys():
                                     self.pretty_names_locked = False
-                                    self.pbe.send_pretty_names_locked(False)
+                                    self.peo.send_pretty_names_locked(False)
                             
                     self.metadatas.add(uuid, key, value)
-                    self.pbe.metadata_updated(uuid, key, value)
+                    self.peo.metadata_updated(uuid, key, value)
 
                     if key == METADATA_LOCKER:
                         if uuid == self._client_uuid:
@@ -277,7 +277,7 @@ class MainObject:
                             except:
                                 ...
                             else:
-                                self.pbe.send_pretty_names_locked(
+                                self.peo.send_pretty_names_locked(
                                     bool(value))
 
                 case PatchEvent.SHUTDOWN:
@@ -345,8 +345,8 @@ class MainObject:
             # server never answer
             _logger.error(
                 'Server never answer when trying to open JACK client !')
-            self.pbe.send_server_lose()
-            self.pbe.remove_existence_file()
+            self.peo.send_server_lose()
+            self.peo.remove_existence_file()
             
             # JACK is not responding at all
             # probably it is started but totally bugged
@@ -357,7 +357,7 @@ class MainObject:
         _logger.debug(f'refresh jack running {self.jack_running}')
         if self.jack_running:
             self.get_all_ports_and_connections()
-            self.pbe.server_restarted()
+            self.peo.server_restarted()
             
         if self.alsa_mng is not None:
             self.alsa_mng.add_all_ports()
@@ -370,7 +370,7 @@ class MainObject:
     def send_dsp_load(self):
         current_dsp = int(self.max_dsp_since_last_sent + 0.5)
         if current_dsp != self.last_sent_dsp_load:
-            self.pbe.send_dsp_load(current_dsp)
+            self.peo.send_dsp_load(current_dsp)
             self.last_sent_dsp_load = current_dsp
         self.max_dsp_since_last_sent = 0.00
 
@@ -400,7 +400,7 @@ class MainObject:
             return
         
         self.last_transport_pos = transport_position
-        self.pbe.send_transport_position(transport_position)
+        self.peo.send_transport_position(transport_position)
     
     def connect_ports(self, port_out_name: str, port_in_name: str,
                       disconnect=False):
@@ -451,7 +451,7 @@ class MainObject:
             self.alsa_mng.stop_events_loop()
             del self.alsa_mng
 
-        self.pbe.remove_existence_file()
+        self.peo.remove_existence_file()
         _logger.debug('Exit, bye bye.')
     
     def start_jack_client(self):
@@ -511,7 +511,7 @@ class MainObject:
 
             self.samplerate = self.client.samplerate
             self.buffer_size = self.client.blocksize
-            self.pbe.server_restarted()
+            self.peo.server_restarted()
         
         if self.pretty_tmp_path.exists():
             # read the contents of pretty names set by this program
@@ -530,7 +530,7 @@ class MainObject:
                 _logger.warning(
                     f'Failed to read {self.pretty_tmp_path}, ignored.')
         
-        self.pbe.is_now_ready()
+        self.peo.is_now_ready()
     
     def set_registrations(self):
         if self.client is None:
@@ -641,7 +641,7 @@ class MainObject:
             _logger.debug('Jack shutdown')
             self.jack_running = False
             self.metadatas.clear()
-            self.pbe.server_stopped()
+            self.peo.server_stopped()
             self.patch_event_queue.add(PatchEvent.SHUTDOWN)
             
         self.client.activate()

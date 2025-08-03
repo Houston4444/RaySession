@@ -26,7 +26,7 @@ from pyalsa.alsaseq import (
 from port_data import PortData
 
 if TYPE_CHECKING:
-    from src.patchbay_daemon.patchbay_daemon import MainObject
+    from patch_engine import PatchEngine
 
 
 PORT_IS_INPUT = 0x1
@@ -102,8 +102,8 @@ class AlsaClient:
 
 
 class AlsaManager:
-    def __init__(self, jack_mng: 'MainObject'):
-        self.pbe = jack_mng.pbe
+    def __init__(self, jack_mng: 'PatchEngine'):
+        self.pbe = jack_mng.peo
         self.seq = alsaseq.Sequencer(clientname='raysession')
 
         self._all_alsa_connections = list[AlsaConn]()

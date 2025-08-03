@@ -11,7 +11,7 @@ import logging
 from proc_name import set_proc_name
 
 # local imports
-from main_object import MainObject
+from patch_engine import PatchEngine
 from osc_server import PatchbayDaemonServer
 from ray_patch_engine_outer import RayPatchEngineOuter
 
@@ -28,11 +28,11 @@ else:
 
 
 def main_loop(args):
-    mo: MainObject
+    pe: PatchEngine
     osc_server: PatchbayDaemonServer
-    mo, osc_server = args
+    pe, osc_server = args
 
-    mo.start(RayPatchEngineOuter(osc_server))
+    pe.start(RayPatchEngineOuter(osc_server))
     if osc_server._tmp_gui_url:
         osc_server.add_gui(osc_server._tmp_gui_url)
 
@@ -41,36 +41,36 @@ def main_loop(args):
     while True:
         osc_server.recv(50)
         
-        if mo.can_leave:
+        if pe.can_leave:
             break
 
-        if mo.jack_running:
+        if pe.jack_running:
             if n % 4 == 0:
-                mo.remember_dsp_load()
-                if mo.dsp_wanted and n % 20 == 0:
-                    mo.send_dsp_load()
+                pe.remember_dsp_load()
+                if pe.dsp_wanted and n % 20 == 0:
+                    pe.send_dsp_load()
             
-            mo.process_patch_events()
-            mo.check_pretty_names_export()
-            mo.send_transport_pos()
+            pe.process_patch_events()
+            pe.check_pretty_names_export()
+            pe.send_transport_pos()
 
-            if mo.pretty_names_ready and mo.one_shot_act:
-                mo.pbe.make_one_shot_act(mo.one_shot_act)
-                mo.one_shot_act = ''
-                if mo.can_leave:
+            if pe.pretty_names_ready and pe.one_shot_act:
+                pe.peo.make_one_shot_act(pe.one_shot_act)
+                pe.one_shot_act = ''
+                if pe.can_leave:
                     break
         else:
             if n % 10 == 0:
-                if mo.client is not None:
+                if pe.client is not None:
                     _logger.debug(
                         'deactivate JACK client after server shutdown')
-                    mo.client.deactivate()
+                    pe.client.deactivate()
                     _logger.debug('close JACK client after server shutdown')
-                    mo.client.close()
+                    pe.client.close()
                     _logger.debug('close JACK client done')
-                    mo.client = None
+                    pe.client = None
                 _logger.debug('try to start JACK')
-                mo.start_jack_client()
+                pe.start_jack_client()
 
         n += 1
         
@@ -78,7 +78,7 @@ def main_loop(args):
         if n == 20:
             n = 0
 
-    mo.exit()
+    pe.exit()
 
 def start():
     '''launch the process when it is a process (not internal).'''
@@ -87,8 +87,8 @@ def start():
     # prevent deprecation warnings python messages
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     
-    signal.signal(signal.SIGINT, MainObject.signal_handler)
-    signal.signal(signal.SIGTERM, MainObject.signal_handler)
+    signal.signal(signal.SIGINT, PatchEngine.signal_handler)
+    signal.signal(signal.SIGTERM, PatchEngine.signal_handler)
     
     args = sys.argv.copy()
     daemon_port_str = ''
@@ -139,13 +139,13 @@ def start():
     pretty_tmp_path = (Path('/tmp/RaySession/')
                        / f'pretty_names.{daemon_port}.json')
 
-    main_object = MainObject('ray-patch_dmn', pretty_tmp_path)
-    main_object.mdata_locker_value = daemon_port_str
-    main_object.auto_export_pretty_names = auto_export_pretty_names
-    main_object.one_shot_act = one_shot_act
-    osc_server = PatchbayDaemonServer(main_object)
+    patch_engine = PatchEngine('ray-patch_dmn', pretty_tmp_path)
+    patch_engine.mdata_locker_value = daemon_port_str
+    patch_engine.auto_export_pretty_names = auto_export_pretty_names
+    patch_engine.one_shot_act = one_shot_act
+    osc_server = PatchbayDaemonServer(patch_engine)
     osc_server.set_tmp_gui_url(gui_url)
-    main_loop((main_object, osc_server))
+    main_loop((patch_engine, osc_server))
 
 def internal_prepare(
         daemon_port: str, gui_url: str, pretty_names_active: str,
@@ -153,14 +153,14 @@ def internal_prepare(
     pretty_tmp_path = (Path('/tmp/RaySession/')
                        / f'pretty_names.{daemon_port}.json')
     
-    main_object = MainObject('ray-patch_dmn', pretty_tmp_path)
-    main_object.mdata_locker_value = daemon_port
-    main_object.one_shot_act = one_shot_act
-    main_object.auto_export_pretty_names = not bool(
+    patch_engine = PatchEngine('ray-patch_dmn', pretty_tmp_path)
+    patch_engine.mdata_locker_value = daemon_port
+    patch_engine.one_shot_act = one_shot_act
+    patch_engine.auto_export_pretty_names = not bool(
         pretty_names_active.lower() in ('0', 'false'))
 
-    osc_server = PatchbayDaemonServer(main_object, int(daemon_port))
+    osc_server = PatchbayDaemonServer(patch_engine, int(daemon_port))
     osc_server.set_tmp_gui_url(gui_url)
 
-    return (main_loop, main_object.internal_stop,
-            (main_object, osc_server), None)
+    return (main_loop, patch_engine.internal_stop,
+            (patch_engine, osc_server), None)
