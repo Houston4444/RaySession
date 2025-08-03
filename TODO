@@ -31,3 +31,5 @@ osc_server
     recv
     set_ready_for_daemon
     add_gui()
+
+réduire les msgs notamment dsp_load et transport_position pour les patchers
