@@ -20,7 +20,7 @@ from patshared import (
 # local imports
 from jack_bases import (
     ClientNamesUuids, PatchEventQueue, PatchEvent)
-from patch_engine import PatchEngine
+from patch_engine_outer import PatchEngineOuter
 from port_data import PortData, PortDataList
 from suppress_stdout_stderr import SuppressStdoutStderr
 from alsa_lib_check import ALSA_LIB_OK
@@ -118,9 +118,9 @@ class MainObject:
         self._client_uuid = 0
         self._client_name = ''
         
-        self.pbe: Optional[PatchEngine] = None
+        self.pbe: Optional[PatchEngineOuter] = None
         
-    def start(self, patchbay_engine: PatchEngine):
+    def start(self, patchbay_engine: PatchEngineOuter):
         self.pbe = patchbay_engine
         self.pbe.write_existence_file()
         self.start_jack_client()

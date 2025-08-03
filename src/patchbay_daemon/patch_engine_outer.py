@@ -1,7 +1,7 @@
 from patshared import TransportPosition
 
 
-class PatchEngine:
+class PatchEngineOuter:
     @property
     def can_leave(self) -> bool:
         return False
