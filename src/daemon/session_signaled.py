@@ -813,7 +813,7 @@ class SignaledSession(OperatingSession):
         match osp.path:
             case r.server.EXPORT_PRETTY_NAMES:
                 patchbay_dmn_mng.start(
-                    one_shot_act=r.patchbay.EXPORT_ALL_PRETTY_NAMES)
+                    one_shot_act=r.patchbay.EXPORT_ALL_CUSTOM_NAMES)
             case r.server.IMPORT_PRETTY_NAMES:
                 patchbay_dmn_mng.start(
                     one_shot_act=r.patchbay.IMPORT_ALL_PRETTY_NAMES)
@@ -852,7 +852,7 @@ class SignaledSession(OperatingSession):
         self.canvas_saver.save_group_pretty_name(
             group_name, pretty_name, over_pretty)
         self.send_patchbay_daemon(
-            r.patchbay.SAVE_GROUP_PRETTY_NAME,
+            r.patchbay.SAVE_GROUP_CUSTOM_NAME,
             group_name, pretty_name, save_in_jack)
         
     @manage(r.server.patchbay.SAVE_PORT_PRETTY_NAME, 'sssi')
@@ -861,7 +861,7 @@ class SignaledSession(OperatingSession):
         self.canvas_saver.save_port_pretty_name(
             port_name, pretty_name, over_pretty)
         self.send_patchbay_daemon(
-            r.patchbay.SAVE_PORT_PRETTY_NAME,
+            r.patchbay.SAVE_PORT_CUSTOM_NAME,
             port_name, pretty_name, save_in_jack)
 
     @manage(r.server.PATCHBAY_DAEMON_READY, '')

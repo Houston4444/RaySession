@@ -151,30 +151,30 @@ class CanvasSaver(ServerSender):
         for gp_name, ptov in self.custom_names_config.groups.items():
             ms_gui.add(rpm.UPDATE_GROUP_PRETTY_NAME,
                        gp_name, ptov.custom)
-            ms_pbay.add(r.patchbay.GROUP_PRETTY_NAME,
+            ms_pbay.add(r.patchbay.GROUP_CUSTOM_NAME,
                         gp_name, ptov.custom, ptov.above_pretty)
 
         for pt_name, ptov in self.custom_names_config.ports.items():
             ms_gui.add(rpm.UPDATE_PORT_PRETTY_NAME,
                        pt_name, ptov.custom)
-            ms_pbay.add(r.patchbay.PORT_PRETTY_NAME,
+            ms_pbay.add(r.patchbay.PORT_CUSTOM_NAME,
                         pt_name, ptov.custom, ptov.above_pretty)
 
         for gp_name, ptov in self.custom_names_session.groups.items():
             ms_gui.add(rpm.UPDATE_GROUP_PRETTY_NAME,
                        gp_name, ptov.custom)
-            ms_pbay.add(r.patchbay.GROUP_PRETTY_NAME,
+            ms_pbay.add(r.patchbay.GROUP_CUSTOM_NAME,
                         gp_name, ptov.custom, ptov.above_pretty)
         
-        ms_pbay.add(r.patchbay.GROUP_PRETTY_NAME, '', '', '')
+        ms_pbay.add(r.patchbay.GROUP_CUSTOM_NAME, '', '', '')
 
         for port_name, ptov in self.custom_names_session.ports.items():
             ms_gui.add(rpm.UPDATE_PORT_PRETTY_NAME,
                        port_name, ptov.custom)
-            ms_pbay.add(r.patchbay.PORT_PRETTY_NAME,
+            ms_pbay.add(r.patchbay.PORT_CUSTOM_NAME,
                         port_name, ptov.custom, ptov.above_pretty)
 
-        ms_pbay.add(r.patchbay.PORT_PRETTY_NAME, '', '', '')
+        ms_pbay.add(r.patchbay.PORT_CUSTOM_NAME, '', '', '')
         ms_gui.add(rpm.VIEWS_CHANGED, mixed_views_str)
 
         self.mega_send_patchbay(ms_pbay)
@@ -429,16 +429,16 @@ class CanvasSaver(ServerSender):
         ms = MegaSend('pretty_names_to_patchbaydmn')
         
         for group_name, ptov in pretty_names.groups.items():
-            ms.add(r.patchbay.GROUP_PRETTY_NAME,
+            ms.add(r.patchbay.GROUP_CUSTOM_NAME,
                    group_name, ptov.custom, ptov.above_pretty)
         
-        ms.add(r.patchbay.GROUP_PRETTY_NAME, '', '', '')
+        ms.add(r.patchbay.GROUP_CUSTOM_NAME, '', '', '')
 
         for port_name, ptov in pretty_names.ports.items():
-            ms.add(r.patchbay.PORT_PRETTY_NAME,
+            ms.add(r.patchbay.PORT_CUSTOM_NAME,
                    port_name, ptov.custom, ptov.above_pretty)
         
-        ms.add(r.patchbay.PORT_PRETTY_NAME, '', '', '')
+        ms.add(r.patchbay.PORT_CUSTOM_NAME, '', '', '')
         
         self.mega_send(osp.src_addr, ms)
         
