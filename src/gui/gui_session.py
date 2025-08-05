@@ -259,7 +259,7 @@ class SignaledSession(Session):
         self.recent_sessions = recent_sessions
         self.main_win.update_recent_sessions_menu()
 
-    @manage(rg.server.AUTO_EXPORT_PRETTY_NAMES, 'i')
+    @manage(rg.server.AUTO_EXPORT_CUSTOM_NAMES, 'i')
     def _server_export_pretty_names(self, osp: OscPack):
         export = bool(osp.args[0])
         if export:

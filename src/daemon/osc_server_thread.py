@@ -936,7 +936,7 @@ class OscServerThread(ClientCommunicating):
         elif action == 'unset_jack_checker_autostart':
             dest_full_path.unlink(missing_ok=True)
 
-    @validator(r.server.AUTO_EXPORT_PRETTY_NAMES, 's')
+    @validator(r.server.AUTO_EXPORT_CUSTOM_NAMES, 's')
     def _srv_auto_export_pretty_names(self, osp: OscPack):
         export_pretty_names = bool(
             osp.args[0].lower() not in (
@@ -953,7 +953,7 @@ class OscServerThread(ClientCommunicating):
         RS.settings.setValue('daemon/jack_export_naming',
                              self.jack_export_naming.name)
 
-        self.send_gui(rg.server.AUTO_EXPORT_PRETTY_NAMES,
+        self.send_gui(rg.server.AUTO_EXPORT_CUSTOM_NAMES,
                       self.jack_export_naming.value)
         self.send(*osp.reply(), 'auto-export pretty_names changed')
         
@@ -962,7 +962,7 @@ class OscServerThread(ClientCommunicating):
         # return bool(
         #     patchbay_dmn_mng.state() is not patchbay_dmn_mng.State.LAUNCHED)
 
-    @validator(r.server.EXPORT_PRETTY_NAMES, '')
+    @validator(r.server.EXPORT_CUSTOM_NAMES, '')
     def _srv_export_pretty_names(self, osp: OscPack):
         
         match patchbay_dmn_mng.state():
@@ -1274,7 +1274,7 @@ class OscServerThread(ClientCommunicating):
         self.send(gui.addr, rg.server.STATUS,
                   self.server_status.value)
 
-        self.send(gui.addr, rg.server.AUTO_EXPORT_PRETTY_NAMES,
+        self.send(gui.addr, rg.server.AUTO_EXPORT_CUSTOM_NAMES,
                   self.jack_export_naming.value)
 
         if self.session.path is None:

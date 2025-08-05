@@ -110,8 +110,8 @@
 /ray/gui/server/root
 /ray/gui/server/status
 /ray/gui/server/terminal_command
-/ray/gui/server/auto_export_pretty_names i
-    informs the GUI that "export pretty names" option has changed 
+/ray/gui/server/auto_export_custom_names i
+    informs the GUI that "auto export custom names" option has changed 
 /ray/gui/session/auto_snapshot
 /ray/gui/session/duplicate_only
 /ray/gui/session/is_nsm
@@ -219,16 +219,17 @@
 /ray/server/set_option
 /ray/server/set_options
 /ray/server/set_terminal_command
-/ray/server/export_pretty_names
-    Export the internal pretty names of clients and ports to JACK metadatas
+/ray/server/export_custom_names
+    Export the custom names of clients and ports to JACK pretty-name metadatas
 /ray/server/import_pretty_names
-    Import the pretty names from JACK metadatas to internal pretty names.
+    Import the pretty names from JACK metadatas to custom names.
     Useful if you want to save in session metadatas written by another program.
 /ray/server/clear_pretty_names
     Clear all the JACK pretty-name metadatas, except theses ones exported by
-    auto_export_pretty_names if it is set.
-/ray/server/auto_export_pretty_names i
-    Enable/disable auto-export of ports and clients pretty-names to JACK metadatas
+    auto_export_custom_names if it is set.
+/ray/server/auto_export_custom_names i
+    Enable/disable auto-export of ports and clients custom names 
+    to JACK pretty-name metadatas
 /ray/session/abort
 /ray/session/add_client_template
 /ray/session/add_exec

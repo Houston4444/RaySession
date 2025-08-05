@@ -1,3 +1,6 @@
+from osc_paths.ray.server import EXPORT_CUSTOM_NAMES
+
+
 control RaySession daemons
     --help
         Prints short help message
@@ -97,9 +100,18 @@ control RaySession daemons
     script_user_action TEXT
         Displays a question dialog on RaySession's GUI.
         Returns when user accepted or rejected it.
-    auto_export_pretty_names YESNO
-        Export and auto-export internal pretty-names to JACK metadatas.
+    auto_export_custom_names YESNO
+        Export and auto-export custom names to JACK pretty-name metadatas.
         If YESNO is 'no', this option will be disabled.
+        Can fail for some items if it already has an unknown pretty-name.
+    export_custom_names
+        Export all custom names to JACK pretty-name metadatas
+    import_pretty_names
+        Import all pretty-name JACK metadatas to custom names
+    clear_pretty_names
+        Clear all JACK pretty-name metadatas.
+        If auto_export_custom_names is on, all custom names will be exported then.
+
 
 * SESSION_COMMANDS:
     All these commands work only when a session is loaded.
