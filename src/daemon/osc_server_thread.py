@@ -967,10 +967,10 @@ class OscServerThread(ClientCommunicating):
         
         match patchbay_dmn_mng.state():
             case patchbay_dmn_mng.State.READY:
-                self.send_patchbay_dmn(r.patchbay.EXPORT_ALL_PRETTY_NAMES)
+                self.send_patchbay_dmn(r.patchbay.EXPORT_ALL_CUSTOM_NAMES)
             case patchbay_dmn_mng.State.LAUNCHED:
                 patchbay_dmn_mng.enqueue_osc(
-                    r.patchbay.EXPORT_ALL_PRETTY_NAMES)
+                    r.patchbay.EXPORT_ALL_CUSTOM_NAMES)
             case patchbay_dmn_mng.State.STOPPED:
                 self.send(*osp.reply(), 'export pretty_names done')
                 # start patchbay daemon in main thread 

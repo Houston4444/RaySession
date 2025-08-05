@@ -89,12 +89,12 @@ class PatchbayDaemonServer(BunServer):
             transport_wanted = TransportWanted.FULL
         self.pe.transport_wanted = transport_wanted
 
-    @bun_manage(r.patchbay.GROUP_PRETTY_NAME, 'sss')
+    @bun_manage(r.patchbay.GROUP_CUSTOM_NAME, 'sss')
     def _ray_patchbay_group_pretty_name(self, osp: OscPack):
         if osp.args[0]:
             self.pretty_names.save_group(*osp.args)
 
-    @bun_manage(r.patchbay.PORT_PRETTY_NAME, 'sss')
+    @bun_manage(r.patchbay.PORT_CUSTOM_NAME, 'sss')
     def _ray_patchbay_port_pretty_name(self, osp: OscPack):
         if osp.args[0]:
             self.pretty_names.save_port(*osp.args)
@@ -103,14 +103,14 @@ class PatchbayDaemonServer(BunServer):
             # listing is finished, lets apply pretty names to JACK
             self.pe.apply_pretty_names_export()
 
-    @bun_manage(r.patchbay.SAVE_GROUP_PRETTY_NAME, 'ssi')
+    @bun_manage(r.patchbay.SAVE_GROUP_CUSTOM_NAME, 'ssi')
     def _ray_patchbay_save_group_pretty_name(self, osp: OscPack):
         group_name, pretty_name, save_in_jack = osp.args
         self.pretty_names.save_group(group_name, pretty_name)
         if save_in_jack:
             self.pe.write_group_pretty_name(group_name, pretty_name)
     
-    @bun_manage(r.patchbay.SAVE_PORT_PRETTY_NAME, 'ssi')
+    @bun_manage(r.patchbay.SAVE_PORT_CUSTOM_NAME, 'ssi')
     def _ray_patchbay_save_port_pretty_name(self, osp: OscPack):
         port_name, pretty_name, save_in_jack = osp.args
         self.pretty_names.save_port(port_name, pretty_name)
@@ -122,7 +122,7 @@ class PatchbayDaemonServer(BunServer):
         export_pretty_names = bool(osp.args[0])
         self.pe.set_pretty_names_auto_export(export_pretty_names)
 
-    @bun_manage(r.patchbay.EXPORT_ALL_PRETTY_NAMES, '')
+    @bun_manage(r.patchbay.EXPORT_ALL_CUSTOM_NAMES, '')
     def _ray_patchbay_export_all_pretty_names(self, osp: OscPack):
         self.pe.export_all_pretty_names_to_jack_now()
         
@@ -275,7 +275,7 @@ class PatchbayDaemonServer(BunServer):
 
     def make_one_shot_act(self, one_shot_act: OscPath):
         match one_shot_act:
-            case r.patchbay.EXPORT_ALL_PRETTY_NAMES:
+            case r.patchbay.EXPORT_ALL_CUSTOM_NAMES:
                 self.pe.export_all_pretty_names_to_jack_now()
             case r.patchbay.IMPORT_ALL_PRETTY_NAMES:
                 self._import_all_pretty_names()

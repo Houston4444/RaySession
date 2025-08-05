@@ -516,7 +516,7 @@ class RayPatchbayManager(PatchbayManager):
     
     def export_pretty_names_to_jack(self):
         super().export_pretty_names_to_jack()
-        self.send_to_patchbay_daemon(r.patchbay.EXPORT_ALL_PRETTY_NAMES)
+        self.send_to_patchbay_daemon(r.patchbay.EXPORT_ALL_CUSTOM_NAMES)
     
     def import_pretty_names_from_jack(self):
         super().import_pretty_names_from_jack()
