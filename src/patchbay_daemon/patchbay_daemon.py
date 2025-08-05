@@ -56,7 +56,7 @@ def main_loop(args):
             pe.check_pretty_names_export()
             pe.send_transport_pos()
 
-            if pe.pretty_names_ready and pe.one_shot_act:
+            if pe.custom_names_ready and pe.one_shot_act:
                 pe.peo.make_one_shot_act(pe.one_shot_act)
                 pe.one_shot_act = ''
                 if pe.can_leave:
