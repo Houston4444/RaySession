@@ -8,7 +8,7 @@ from qtpy.QtWidgets import QApplication
 import osc_paths
 
 # Imports from HoustonPatchbay
-from patshared import GroupPos, Naming, TransportPosition
+from patshared import GroupPos, Naming, TransportPosition, PortType
 
 # Imports from src/shared
 from osclib import OscMulTypes, OscPack
@@ -594,7 +594,10 @@ class SignaledSession(Session):
     @manage(rpm.PORT_ADDED, 'siih')
     def _patchbay_port_added(self, osp: OscPack):
         args: tuple[str, int, int, int] = osp.args
-        self.patchbay_manager.add_port(*args)
+        name, port_type_int, port_flags, uuid = args
+        port_type = PortType(port_type_int)
+        self.patchbay_manager.add_port(
+            name, port_type, port_flags, uuid)
 
     @manage(rpm.PORT_REMOVED, 's')
     def _patchbay_port_removed(self, osp: OscPack):

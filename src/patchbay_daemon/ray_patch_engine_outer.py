@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 from patch_engine import PatchEngineOuter
-from patshared import TransportPosition
+from patshared import TransportPosition, PortType
 
 import osc_paths.ray.patchbay.monitor as rpm
 
@@ -60,8 +60,9 @@ class RayPatchEngineOuter(PatchEngineOuter):
     def associate_client_name_and_uuid(self, client_name: str, uuid: int):
         self._send_gui(rpm.CLIENT_NAME_AND_UUID, client_name, uuid)
 
-    def port_added(self, pname: str, ptype: int, pflags: int, puuid: int):
-        self._send_gui(rpm.PORT_ADDED, pname, ptype, pflags, puuid) 
+    def port_added(
+            self, pname: str, ptype: PortType, pflags: int, puuid: int):
+        self._send_gui(rpm.PORT_ADDED, pname, ptype.value, pflags, puuid) 
 
     def port_renamed(self, ex_name: str, new_name: str, uuid=0):
         if uuid:
