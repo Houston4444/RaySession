@@ -77,8 +77,8 @@ SERVER_OPERATIONS = (
     'script_info',
     'hide_script_info',
     'script_user_action',
-    'auto_export_pretty_names',
-    'export_pretty_names',
+    'auto_export_custom_names',
+    'export_custom_names',
     'import_pretty_names',
     'clear_pretty_names')
 

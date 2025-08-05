@@ -102,9 +102,18 @@ contrôle les démons de RaySession
         Retourne quand l'utilisateur l'a acceptée ou refusée.
     has_attached_gui
         Retourne un code d'erreur si aucune IGU n'est attachée à ce démon
-    auto_export_pretty_names YESNO
-        Exporter et auto-exporter les jolis noms internes vers les métadonnées de JACK.
+    auto_export_custom_names YESNO
+        Exporter et auto-exporter les noms personnalisés vers les métadonnées de JACK.
         Si YESNO est 'no', cette option sera désactivée.
+        Peut échouer pour certains éléments s'ils ont déjà
+        une métadonnée pretty-name inconnue.
+    export_custom_names
+        Export tous les noms personnalisés vers les métadonnées de joli nom JACK.
+    import_pretty_names
+        Importer toutes les métadonnées de joli nom JACK vers les noms personnalisés.
+    clear_pretty_names
+        Effacer toutes les métadonnées de joli nom JACK.
+        Si auto_export_custom_names est actif, tous les noms personnalisés seront exportés ensuite.
 
 * COMMANDES DE LA SESSION:
     Toutes ces commandes fonctionne uniquement quand une session est chargée.

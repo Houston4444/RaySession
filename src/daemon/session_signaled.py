@@ -802,16 +802,16 @@ class SignaledSession(OperatingSession):
                 else:
                     self.bookmarker.remove_all(self.path)
 
-    @manage(r.server.AUTO_EXPORT_PRETTY_NAMES, 's')
+    @manage(r.server.AUTO_EXPORT_CUSTOM_NAMES, 's')
     def _ray_server_auto_export_pretty_names(self, osp: OscPack):
         patchbay_dmn_mng.start()
 
-    @manage((r.server.EXPORT_PRETTY_NAMES,
+    @manage((r.server.EXPORT_CUSTOM_NAMES,
              r.server.IMPORT_PRETTY_NAMES,
              r.server.CLEAR_PRETTY_NAMES), '')
     def _ray_server_export_pretty_names(self, osp: OscPack):
         match osp.path:
-            case r.server.EXPORT_PRETTY_NAMES:
+            case r.server.EXPORT_CUSTOM_NAMES:
                 patchbay_dmn_mng.start(
                     one_shot_act=r.patchbay.EXPORT_ALL_CUSTOM_NAMES)
             case r.server.IMPORT_PRETTY_NAMES:

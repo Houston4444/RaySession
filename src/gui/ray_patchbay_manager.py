@@ -512,7 +512,7 @@ class RayPatchbayManager(PatchbayManager):
         
         pretty_enable = Naming.CUSTOM in naming
         self.send_to_daemon(
-            r.server.AUTO_EXPORT_PRETTY_NAMES, str(pretty_enable))
+            r.server.AUTO_EXPORT_CUSTOM_NAMES, str(pretty_enable))
     
     def export_pretty_names_to_jack(self):
         super().export_pretty_names_to_jack()

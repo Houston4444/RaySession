@@ -43,16 +43,17 @@ SET_NSM_LOCKED = '/ray/server/set_nsm_locked'
 SET_OPTION = '/ray/server/set_option'
 SET_OPTIONS = '/ray/server/set_options'
 SET_TERMINAL_COMMAND = '/ray/server/set_terminal_command'
-EXPORT_PRETTY_NAMES = '/ray/server/export_pretty_names'
-'Export the internal pretty names of clients and ports to JACK metadatas'
+EXPORT_CUSTOM_NAMES = '/ray/server/export_custom_names'
+'Export the custom names of clients and ports to JACK pretty-name metadatas'
 
 IMPORT_PRETTY_NAMES = '/ray/server/import_pretty_names'
-'''Import the pretty names from JACK metadatas to internal pretty names.
+'''Import the pretty names from JACK metadatas to custom names.
 Useful if you want to save in session metadatas written by another program.'''
 
 CLEAR_PRETTY_NAMES = '/ray/server/clear_pretty_names'
 '''Clear all the JACK pretty-name metadatas, except theses ones exported by
-auto_export_pretty_names if it is set.'''
+auto_export_custom_names if it is set.'''
 
-AUTO_EXPORT_PRETTY_NAMES = '/ray/server/auto_export_pretty_names'
-'Enable/disable auto-export of ports and clients pretty-names to JACK metadatas (arg types: i)'
+AUTO_EXPORT_CUSTOM_NAMES = '/ray/server/auto_export_custom_names'
+'''Enable/disable auto-export of ports and clients custom names
+to JACK pretty-name metadatas (arg types: i)'''
