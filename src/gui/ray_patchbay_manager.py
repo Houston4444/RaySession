@@ -494,14 +494,14 @@ class RayPatchbayManager(PatchbayManager):
                 break
     
     def update_group_pretty_name(self, group_name: str, pretty_name: str):
-        self.pretty_names.save_group(group_name, pretty_name, '')
+        self.custom_names.save_group(group_name, pretty_name, '')
         group = self.get_group_from_name(group_name)
         if group is not None:
             group.rename_in_canvas()
         self.pretty_diff_checker.client_pretty_name_changed(group_name)
     
     def update_port_pretty_name(self, port_name: str, pretty_name: str):
-        self.pretty_names.save_port(port_name, pretty_name, '')
+        self.custom_names.save_port(port_name, pretty_name, '')
         port = self.get_port_from_name(port_name)
         if port is not None:
             port.rename_in_canvas()
@@ -510,7 +510,7 @@ class RayPatchbayManager(PatchbayManager):
     def change_jack_export_naming(self, naming: Naming):
         super().change_jack_export_naming(naming)
         
-        pretty_enable = Naming.INTERNAL_PRETTY in naming
+        pretty_enable = Naming.CUSTOM in naming
         self.send_to_daemon(
             r.server.AUTO_EXPORT_PRETTY_NAMES, str(pretty_enable))
     

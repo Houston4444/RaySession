@@ -943,7 +943,7 @@ class OscServerThread(ClientCommunicating):
                 '0', 'false', 'no', 'off', 'true_name'))
 
         if export_pretty_names:
-            self.jack_export_naming = Naming.INTERNAL_PRETTY
+            self.jack_export_naming = Naming.CUSTOM
         else:
             self.jack_export_naming = Naming.TRUE_NAME            
 

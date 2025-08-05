@@ -263,7 +263,7 @@ class SignaledSession(Session):
     def _server_export_pretty_names(self, osp: OscPack):
         export = bool(osp.args[0])
         if export:
-            self.patchbay_manager.jack_export_naming = Naming.INTERNAL_PRETTY
+            self.patchbay_manager.jack_export_naming = Naming.CUSTOM
         else:
             self.patchbay_manager.jack_export_naming = Naming.TRUE_NAME
 

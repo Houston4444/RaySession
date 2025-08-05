@@ -162,7 +162,7 @@ if True:
     if CommandLineArgs.control_url:
         server.announce_controller(CommandLineArgs.control_url)
 
-    if server.jack_export_naming & Naming.INTERNAL_PRETTY:
+    if server.jack_export_naming & Naming.CUSTOM:
         patchbay_dmn_mng.start()
 
     # create or update multi_daemon_file in /tmp
