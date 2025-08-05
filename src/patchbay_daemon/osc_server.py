@@ -25,7 +25,7 @@ class PatchbayDaemonServer(BunServer):
 
         self.pe = patch_engine
         self.daemon_port = daemon_port
-        self.pretty_names = patch_engine.pretty_names
+        self.pretty_names = patch_engine.custom_names
         self.gui_list = list[Address]()
         self._tmp_gui_url = ''
     

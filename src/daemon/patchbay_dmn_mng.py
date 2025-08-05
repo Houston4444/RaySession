@@ -158,7 +158,7 @@ def start(gui_url='', one_shot_act=''):
         'daemon/jack_export_naming', 'INTERNAL_PRETTY', type=str)
     
     naming = Naming.from_config_str(pretty_names_value)
-    if not naming & Naming.INTERNAL_PRETTY:
+    if not naming & Naming.CUSTOM:
         pretty_names_active = False
 
     _MainObj.ready = False
