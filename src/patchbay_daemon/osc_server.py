@@ -124,7 +124,7 @@ class PatchbayDaemonServer(BunServer):
 
     @bun_manage(r.patchbay.EXPORT_ALL_CUSTOM_NAMES, '')
     def _ray_patchbay_export_all_pretty_names(self, osp: OscPack):
-        self.pe.export_all_pretty_names_to_jack_now()
+        self.pe.export_all_custom_names_to_jack_now()
         
     @bun_manage(r.patchbay.IMPORT_ALL_PRETTY_NAMES, '')
     def _ray_patchbay_import_all_pretty_names(self, osp: OscPack):
