@@ -141,9 +141,9 @@ def start():
     pretty_tmp_path = (Path('/tmp/RaySession/')
                        / f'pretty_names.{daemon_port}.json')
 
-    patch_engine = PatchEngine('ray-patch_dmn', pretty_tmp_path)
+    patch_engine = PatchEngine('ray-patch_dmn', pretty_tmp_path,
+                               auto_export_pretty_names)
     patch_engine.mdata_locker_value = daemon_port_str
-    patch_engine.auto_export_pretty_names = auto_export_pretty_names
     patch_engine.one_shot_act = one_shot_act
     osc_server = PatchbayDaemonServer(patch_engine)
     osc_server.set_tmp_gui_url(gui_url)
@@ -154,12 +154,12 @@ def internal_prepare(
         one_shot_act: str, nsm_url=''):
     pretty_tmp_path = (Path('/tmp/RaySession/')
                        / f'pretty_names.{daemon_port}.json')
-    
-    patch_engine = PatchEngine('ray-patch_dmn', pretty_tmp_path)
+    auto_export_pretty_names = not bool(
+        pretty_names_active.lower() in ('0', 'false'))
+    patch_engine = PatchEngine('ray-patch_dmn', pretty_tmp_path,
+                               auto_export_pretty_names)
     patch_engine.mdata_locker_value = daemon_port
     patch_engine.one_shot_act = one_shot_act
-    patch_engine.auto_export_pretty_names = not bool(
-        pretty_names_active.lower() in ('0', 'false'))
 
     osc_server = PatchbayDaemonServer(patch_engine, int(daemon_port))
     osc_server.set_tmp_gui_url(gui_url)
