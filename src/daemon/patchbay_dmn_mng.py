@@ -203,7 +203,7 @@ def start(gui_url='', one_shot_act=''):
                         gui_url,
                         str(pretty_names_active),
                         '',
-                        '--log', CommandLineArgs.log,
+                        '--info', CommandLineArgs.info,
                         '--dbg', CommandLineArgs.dbg])
             else:
                 _MainObj.process.setProgram('ray-patch_dmn')
@@ -212,7 +212,7 @@ def start(gui_url='', one_shot_act=''):
                         gui_url,
                         str(pretty_names_active),
                         '',
-                        '--log', CommandLineArgs.log,
+                        '--info', CommandLineArgs.info,
                         '--dbg', CommandLineArgs.dbg])
 
             _MainObj.process.start()            

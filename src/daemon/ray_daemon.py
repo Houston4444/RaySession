@@ -85,7 +85,7 @@ if True:
     # check arguments
     parser = ArgParser()
 
-    log_dict = {logging.INFO: CommandLineArgs.log,
+    log_dict = {logging.INFO: CommandLineArgs.info,
                 logging.DEBUG: CommandLineArgs.dbg}
     
     for log_level, multimodule in log_dict.items():

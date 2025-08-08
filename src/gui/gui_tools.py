@@ -145,7 +145,7 @@ class CommandLineArgs(argparse.Namespace):
     session_root = ''
     start_session = ''
     force_new_daemon = False
-    log = ''
+    info = ''
     dbg = ''
 
     @classmethod
@@ -221,7 +221,7 @@ class ArgParser(argparse.ArgumentParser):
             '---no-client-messages', '-ncm', action='store_true',
             help=_translate('help', 'do not print client messages'))
         self.add_argument(
-            '-log', '--log', type=str, default='',
+            '-info', '--info', type=str, default='',
             help="set the log infos for specific modules, separated with ':'")
         self.add_argument(
             '-dbg', '--dbg', type=str, default='',
