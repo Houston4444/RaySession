@@ -281,7 +281,7 @@ class CommandLineArgs(argparse.Namespace):
     no_client_messages = False
     session = ''
     no_options = False
-    log = ''
+    info = ''
     dbg = ''
 
     @classmethod
@@ -362,7 +362,7 @@ class ArgParser(argparse.ArgumentParser):
         self.add_argument(
             '-v', '--version', action='version', version=ray.VERSION)
         self.add_argument(
-            '-log', '--log', type=str, default='',
+            '-info', '--info', type=str, default='',
             help="set the log infos for specific modules, separated with ':'")
         self.add_argument(
             '-dbg', '--dbg', type=str, default='',

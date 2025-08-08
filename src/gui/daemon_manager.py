@@ -287,8 +287,8 @@ class DaemonManager(QObject):
         elif CommandLineArgs.no_client_messages:
             arguments.append('--no-client-messages')
         
-        if CommandLineArgs.log:
-            arguments += ['--log', CommandLineArgs.log]
+        if CommandLineArgs.info:
+            arguments += ['--info', CommandLineArgs.info]
         if CommandLineArgs.dbg:
             arguments += ['--dbg', CommandLineArgs.dbg]
 
