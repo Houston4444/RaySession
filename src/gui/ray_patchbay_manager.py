@@ -391,7 +391,8 @@ class RayPatchbayManager(PatchbayManager):
         if not jack_client_name:
             self._last_selected_client_name = ''
             self._last_selected_box_n = 0
-            patchcanvas.canvas.scene.clearSelection()
+            if patchcanvas.canvas.scene is not None:
+                patchcanvas.canvas.scene.clearSelection()
             return
         
         box_n = 0
@@ -568,7 +569,7 @@ class RayPatchbayManager(PatchbayManager):
     def patchbay_announce(self, jack_running: int, alsa_lib_ok: int,
                           samplerate: int, buffer_size: int, tcp_url: str):
         if self.options_dialog is not None:
-            self.options_dialog.enable_alsa_midi(alsa_lib_ok)
+            self.options_dialog.enable_alsa_midi(bool(alsa_lib_ok))
         
         if self._tools_widget is None:
             return
@@ -579,5 +580,5 @@ class RayPatchbayManager(PatchbayManager):
 
         self._tools_widget.set_samplerate(samplerate)
         self._tools_widget.set_buffer_size(buffer_size)
-        self._tools_widget.set_jack_running(jack_running)
+        self._tools_widget.set_jack_running(bool(jack_running))
         self._tools_widget.set_patchbay_manager(self)
