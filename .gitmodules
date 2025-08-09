@@ -1,6 +1,3 @@
 [submodule "HoustonPatchbay"]
 	path = HoustonPatchbay
 	url = https://github.com/Houston4444/HoustonPatchbay
-[submodule "pyjacklib"]
-	path = pyjacklib
-	url = https://github.com/Houston4444/pyjacklib.git
