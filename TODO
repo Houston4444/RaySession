@@ -35,4 +35,3 @@ réduire les msgs notamment dsp_load et transport_position pour les patchers
 one_shot_act et server arrêté !
 share more in PatchEngine (routine)
 ALSA manager not logical.
-CustomNames: many erasable mdatas

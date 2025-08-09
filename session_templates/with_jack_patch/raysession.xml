@@ -2,7 +2,7 @@
 <!DOCTYPE RAYSESSION>
 <RAYSESSION VERSION='0.17.0' name='withJACKPATCH'>
   <Clients>
-    <client id="patch" executable="ray-jackpatch" name="JACK Patch Memory" prefix_mode="1" launched="1" icon="curve-connector"/>
+    <client protocol="Internal" id="patch" executable="ray-jackpatch" name="JACK Patch Memory" prefix_mode="1" launched="1" icon="curve-connector"/>
   </Clients>
   <RemovedClients>
   </RemovedClients>

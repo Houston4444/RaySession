@@ -2323,10 +2323,10 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if self.executable_path in RS.non_active_clients:
             RS.non_active_clients.remove(self.executable_path)
 
-        self.message("Process has pid: %i" % pid)
-        self.message(
-            f"The client \"{self.name}\" at \"{self.addr.url}\" "
-            "informs us it's ready to receive commands.")
+        if self.protocol is ray.Protocol.NSM:
+            self.message( 
+                f"'{self.client_id}' has announced itself "
+                f"(name: {client_name}, port: {self.addr.port}, pid: {pid})")
 
         server = self.get_server()
         if not server:
