@@ -21,11 +21,11 @@ dependencies:
 
 - for Qt5 build:
 
-`$ [sudo] apt-get install python3-qtpy python3-pyqt5 pyqt5-dev-tools qtchooser qttools5-dev-tools python3-liblo python3-pyqt5.qtsvg`
+`$ [sudo] apt-get install python3-qtpy python3-pyqt5 pyqt5-dev-tools qtchooser qttools5-dev-tools python3-liblo python3-pyqt5.qtsvg python3-jack-client`
 
 - for Qt6 build:
 
-`$ [sudo] apt-get install python3-qtpy python3-pyqt6 pyqt6-dev-tools qtchooser python3-liblo python3-pyqt6.qtsvg`
+`$ [sudo] apt-get install python3-qtpy python3-pyqt6 pyqt6-dev-tools qtchooser python3-liblo python3-pyqt6.qtsvg python3-jack-client`
 
 To build RaySession, simply run as usual:
 
@@ -64,8 +64,8 @@ You can run RaySession without install, by using:
 `$ ./src/bin/raysession`
 
 To run it, you'll additionally need:
-
-   - python3-liblo
+   - python3-jack-client
+   - python3-pyliblo3
    - python3-pyqt5.qtsvg or python3-pyqt6.qtsvg
 
 
