@@ -53,7 +53,7 @@ class RayPatchbayCallbacker(Callbacker):
             save_in_jack = False
 
         self.mng.send_to_daemon(
-            r.server.patchbay.SAVE_GROUP_PRETTY_NAME,
+            r.server.patchbay.SAVE_GROUP_CUSTOM_NAME,
             group.name, pretty_name, group.mdata_pretty_name,
             int(save_in_jack))
         
@@ -67,7 +67,7 @@ class RayPatchbayCallbacker(Callbacker):
             save_in_jack = False
         
         self.mng.send_to_daemon(
-            r.server.patchbay.SAVE_PORT_PRETTY_NAME,
+            r.server.patchbay.SAVE_PORT_CUSTOM_NAME,
             port.full_name_id_free, pretty_name,
             port.mdata_pretty_name, int(save_in_jack))
 

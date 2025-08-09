@@ -30,6 +30,10 @@ _logger = logging.getLogger(__name__)
 
 
 JSON_PATH = 'ray_canvas.json'
+VIEWS = 'views'
+PORTGROUPS = 'portgroups'
+CUSTOM_NAMES = 'custom_names'
+
 
 def _get_version_tuple_json_dict(json_contents: dict) -> tuple[int, int, int]:
     if 'version' in json_contents.keys():
@@ -73,8 +77,8 @@ class CanvasSaver(ServerSender):
                     f"Failed to load patchcanvas config file {f}")
 
             if isinstance(json_contents, dict):
-                if 'views' in json_contents.keys():
-                    self.views_config.eat_json_list(json_contents['views'])
+                if VIEWS in json_contents.keys():
+                    self.views_config.eat_json_list(json_contents[VIEWS])
 
                 elif 'group_positions' in json_contents.keys():
                     # config file older than 0.15.0
@@ -86,12 +90,12 @@ class CanvasSaver(ServerSender):
                         self.views_config.add_old_json_gpos(
                             gpos_dict, gpos_version)
 
-                if 'portgroups' in json_contents.keys():
-                    self.portgroups.eat_json(json_contents['portgroups'])
+                if PORTGROUPS in json_contents.keys():
+                    self.portgroups.eat_json(json_contents[PORTGROUPS])
                     
-                if 'pretty_names' in json_contents.keys():
+                if CUSTOM_NAMES in json_contents.keys():
                     self.custom_names_config.eat_json(
-                        json_contents['pretty_names'])
+                        json_contents[CUSTOM_NAMES])
             
             self.views_config_at_load = self.views_config.copy()
         
@@ -149,32 +153,32 @@ class CanvasSaver(ServerSender):
         # we send config pretty names, for the case we are switching session
         # to be sure to clear pretty-names coming from previous session
         for gp_name, ptov in self.custom_names_config.groups.items():
-            ms_gui.add(rpm.UPDATE_GROUP_PRETTY_NAME,
+            ms_gui.add(rpm.UPDATE_GROUP_CUSTOM_NAME,
                        gp_name, ptov.custom)
             ms_pbay.add(r.patchbay.GROUP_CUSTOM_NAME,
-                        gp_name, ptov.custom, ptov.above_pretty)
+                        gp_name, *ptov.to_list())
 
         for pt_name, ptov in self.custom_names_config.ports.items():
-            ms_gui.add(rpm.UPDATE_PORT_PRETTY_NAME,
+            ms_gui.add(rpm.UPDATE_PORT_CUSTOM_NAME,
                        pt_name, ptov.custom)
             ms_pbay.add(r.patchbay.PORT_CUSTOM_NAME,
-                        pt_name, ptov.custom, ptov.above_pretty)
+                        pt_name, *ptov.to_list())
 
         for gp_name, ptov in self.custom_names_session.groups.items():
-            ms_gui.add(rpm.UPDATE_GROUP_PRETTY_NAME,
+            ms_gui.add(rpm.UPDATE_GROUP_CUSTOM_NAME,
                        gp_name, ptov.custom)
             ms_pbay.add(r.patchbay.GROUP_CUSTOM_NAME,
-                        gp_name, ptov.custom, ptov.above_pretty)
+                        gp_name, *ptov.to_list())
         
-        ms_pbay.add(r.patchbay.GROUP_CUSTOM_NAME, '', '', '')
+        ms_pbay.add(r.patchbay.GROUP_CUSTOM_NAME, '', '')
 
         for port_name, ptov in self.custom_names_session.ports.items():
-            ms_gui.add(rpm.UPDATE_PORT_PRETTY_NAME,
+            ms_gui.add(rpm.UPDATE_PORT_CUSTOM_NAME,
                        port_name, ptov.custom)
             ms_pbay.add(r.patchbay.PORT_CUSTOM_NAME,
-                        port_name, ptov.custom, ptov.above_pretty)
+                        port_name, *ptov.to_list())
 
-        ms_pbay.add(r.patchbay.PORT_CUSTOM_NAME, '', '', '')
+        ms_pbay.add(r.patchbay.PORT_CUSTOM_NAME, '', '')
         ms_gui.add(rpm.VIEWS_CHANGED, mixed_views_str)
 
         self.mega_send_patchbay(ms_pbay)
@@ -205,19 +209,19 @@ class CanvasSaver(ServerSender):
 
         # pretty names       
         for gp_name, pretty_group in self.custom_names_config.groups.items():
-            ms.add(rpm.UPDATE_GROUP_PRETTY_NAME,
+            ms.add(rpm.UPDATE_GROUP_CUSTOM_NAME,
                    gp_name, pretty_group.custom)
             
         for gp_name, pretty_group in self.custom_names_session.groups.items():
-            ms.add(rpm.UPDATE_GROUP_PRETTY_NAME,
+            ms.add(rpm.UPDATE_GROUP_CUSTOM_NAME,
                    gp_name, pretty_group.custom)
 
         for pt_name, pretty_port in self.custom_names_config.ports.items():
-            ms.add(rpm.UPDATE_PORT_PRETTY_NAME,
+            ms.add(rpm.UPDATE_PORT_CUSTOM_NAME,
                    pt_name, pretty_port.custom)
 
         for pt_name, pretty_port in self.custom_names_session.ports.items():
-            ms.add(rpm.UPDATE_PORT_PRETTY_NAME,
+            ms.add(rpm.UPDATE_PORT_CUSTOM_NAME,
                    pt_name, pretty_port.custom)
 
         # send view datas
@@ -291,8 +295,8 @@ class CanvasSaver(ServerSender):
         self.views_session.clear()
 
         if isinstance(json_contents, dict):
-            if 'views' in json_contents.keys():
-                self.views_session.eat_json_list(json_contents['views'])
+            if VIEWS in json_contents.keys():
+                self.views_session.eat_json_list(json_contents[VIEWS])
             
             elif 'group_positions' in json_contents.keys():
                 gpos_list : list[dict] = json_contents['group_positions']
@@ -303,9 +307,9 @@ class CanvasSaver(ServerSender):
                     self.views_session.add_old_json_gpos(
                         gpos_dict, session_version)
                     
-            if 'pretty_names' in json_contents.keys():
+            if CUSTOM_NAMES in json_contents.keys():
                 self.custom_names_session.eat_json(
-                    json_contents['pretty_names'])
+                    json_contents[CUSTOM_NAMES])
                 
                 # add empty pretty name in config in case a key 
                 # existing in session does not exists in config.
@@ -329,8 +333,8 @@ class CanvasSaver(ServerSender):
         session_json_path = session_path / f'.{JSON_PATH}'
 
         json_contents = {}
-        json_contents['views'] = self.views_session.to_json_list()
-        json_contents['pretty_names'] = self.custom_names_session.to_json()
+        json_contents[VIEWS] = self.views_session.to_json_list()
+        json_contents[CUSTOM_NAMES] = self.custom_names_session.to_json()
         json_contents['version'] = ray.VERSION
 
         with open(session_json_path, 'w+') as f:
@@ -340,7 +344,7 @@ class CanvasSaver(ServerSender):
         self._clear_config_from_unused_views()
 
         # send to GUI the config poses to overwrite the session poses 
-        ms_gui = MegaSend('cfg group poss and pretty names after unload')
+        ms_gui = MegaSend('cfg group poss and custom names after unload')
 
         for view_number in self.views_config.keys():
             for gpos in self.views_config.iter_group_poses(
@@ -357,9 +361,9 @@ class CanvasSaver(ServerSender):
 
     def save_config_file(self):
         json_contents = {
-            'views': self.views_config.to_json_list(),
-            'portgroups': self.portgroups.to_json(),
-            'pretty_names': self.custom_names_config.to_json(),
+            VIEWS: self.views_config.to_json_list(),
+            PORTGROUPS: self.portgroups.to_json(),
+            CUSTOM_NAMES: self.custom_names_config.to_json(),
             'version': ray.VERSION
         }
 
@@ -369,14 +373,14 @@ class CanvasSaver(ServerSender):
     def save_portgroup(self, *args):
         self.portgroups.save_portgroup(PortgroupMem.from_arg_list(args))
 
-    def save_group_pretty_name(
+    def save_group_custom_name(
             self, group_name: str, pretty_name: str, over_pretty: str):
         self.custom_names_config.save_group(
             group_name, pretty_name, over_pretty)
         self.custom_names_session.save_group(
             group_name, pretty_name, over_pretty)
         
-    def save_port_pretty_name(
+    def save_port_custom_name(
             self, port_name: str, pretty_name: str, over_pretty: str):
         self.custom_names_config.save_port(
             port_name, pretty_name, over_pretty)
@@ -424,23 +428,23 @@ class CanvasSaver(ServerSender):
                         rpm.UPDATE_GROUP_POSITION,
                         view_num, *ptv_dict[new].to_arg_list()) 
 
-    def send_pretty_names_to_patchbay_daemon(self, osp: OscPack):
-        pretty_names = self.custom_names_config | self.custom_names_session
-        ms = MegaSend('pretty_names_to_patchbaydmn')
+    def send_custom_names_to_patchbay_daemon(self, osp: OscPack):
+        custom_names = self.custom_names_config | self.custom_names_session
+        ms = MegaSend('custom_names_to_patchbaydmn')
         
-        for group_name, ptov in pretty_names.groups.items():
+        for group_name, ctov in custom_names.groups.items():
             ms.add(r.patchbay.GROUP_CUSTOM_NAME,
-                   group_name, ptov.custom, ptov.above_pretty)
+                   group_name, *ctov.to_list())
         
-        ms.add(r.patchbay.GROUP_CUSTOM_NAME, '', '', '')
+        ms.add(r.patchbay.GROUP_CUSTOM_NAME, '', '')
 
-        for port_name, ptov in pretty_names.ports.items():
+        for port_name, ctov in custom_names.ports.items():
             ms.add(r.patchbay.PORT_CUSTOM_NAME,
-                   port_name, ptov.custom, ptov.above_pretty)
+                   port_name, *ctov.to_list())
         
-        ms.add(r.patchbay.PORT_CUSTOM_NAME, '', '', '')
+        ms.add(r.patchbay.PORT_CUSTOM_NAME, '', '')
         
         self.mega_send(osp.src_addr, ms)
         
-    def has_pretty_names(self) -> bool:
+    def has_custom_names(self) -> bool:
         return bool(self.custom_names_config | self.custom_names_session)

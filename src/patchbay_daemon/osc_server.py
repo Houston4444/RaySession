@@ -89,12 +89,12 @@ class PatchbayDaemonServer(BunServer):
             transport_wanted = TransportWanted.FULL
         self.pe.transport_wanted = transport_wanted
 
-    @bun_manage(r.patchbay.GROUP_CUSTOM_NAME, 'sss')
+    @bun_manage(r.patchbay.GROUP_CUSTOM_NAME, 'sss*')
     def _ray_patchbay_group_pretty_name(self, osp: OscPack):
         if osp.args[0]:
             self.pretty_names.save_group(*osp.args)
 
-    @bun_manage(r.patchbay.PORT_CUSTOM_NAME, 'sss')
+    @bun_manage(r.patchbay.PORT_CUSTOM_NAME, 'sss*')
     def _ray_patchbay_port_pretty_name(self, osp: OscPack):
         if osp.args[0]:
             self.pretty_names.save_port(*osp.args)
@@ -150,14 +150,14 @@ class PatchbayDaemonServer(BunServer):
         ms_gui = MegaSend('send imported pretty names to GUIs')
 
         for client_name, pretty_name in clients_dict.items():
-            ms.add(r.server.patchbay.SAVE_GROUP_PRETTY_NAME,
+            ms.add(r.server.patchbay.SAVE_GROUP_CUSTOM_NAME,
                    client_name, pretty_name, '', 0)
-            ms_gui.add(rpm.UPDATE_GROUP_PRETTY_NAME, client_name, pretty_name)
+            ms_gui.add(rpm.UPDATE_GROUP_CUSTOM_NAME, client_name, pretty_name)
         
         for port_name, pretty_name in ports_dict.items():
-            ms.add(r.server.patchbay.SAVE_PORT_PRETTY_NAME,
+            ms.add(r.server.patchbay.SAVE_PORT_CUSTOM_NAME,
                    port_name, pretty_name, '', 0)
-            ms_gui.add(rpm.UPDATE_PORT_PRETTY_NAME, port_name, pretty_name)
+            ms_gui.add(rpm.UPDATE_PORT_CUSTOM_NAME, port_name, pretty_name)
             
         self.mega_send(self.daemon_port, ms)
         self.mega_send(self.gui_list, ms_gui)

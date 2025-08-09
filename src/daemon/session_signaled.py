@@ -846,19 +846,19 @@ class SignaledSession(OperatingSession):
     def _ray_server_patchbay_view_ptv_changed(self, osp: OscPack):
         self.canvas_saver.view_ptv_changed(*osp.args)
 
-    @manage(r.server.patchbay.SAVE_GROUP_PRETTY_NAME, 'sssi')
-    def _ray_server_patchbay_save_group_pretty_name(self, osp: OscPack):
+    @manage(r.server.patchbay.SAVE_GROUP_CUSTOM_NAME, 'sssi')
+    def _ray_server_patchbay_save_group_custom_name(self, osp: OscPack):
         group_name, pretty_name, over_pretty, save_in_jack = osp.args
-        self.canvas_saver.save_group_pretty_name(
+        self.canvas_saver.save_group_custom_name(
             group_name, pretty_name, over_pretty)
         self.send_patchbay_daemon(
             r.patchbay.SAVE_GROUP_CUSTOM_NAME,
             group_name, pretty_name, save_in_jack)
         
-    @manage(r.server.patchbay.SAVE_PORT_PRETTY_NAME, 'sssi')
-    def _ray_server_patchbay_save_port_pretty_name(self, osp: OscPack):
+    @manage(r.server.patchbay.SAVE_PORT_CUSTOM_NAME, 'sssi')
+    def _ray_server_patchbay_save_port_custom_name(self, osp: OscPack):
         port_name, pretty_name, over_pretty, save_in_jack = osp.args
-        self.canvas_saver.save_port_pretty_name(
+        self.canvas_saver.save_port_custom_name(
             port_name, pretty_name, over_pretty)
         self.send_patchbay_daemon(
             r.patchbay.SAVE_PORT_CUSTOM_NAME,
@@ -866,7 +866,7 @@ class SignaledSession(OperatingSession):
 
     @manage(r.server.PATCHBAY_DAEMON_READY, '')
     def _ray_server_patchbay_daemon_ready(self, osp: OscPack):
-        self.canvas_saver.send_pretty_names_to_patchbay_daemon(osp)
+        self.canvas_saver.send_custom_names_to_patchbay_daemon(osp)
         patchbay_dmn_mng.set_ready()
 
     @session_operation((r.session.SAVE, nsm.server.SAVE), '')

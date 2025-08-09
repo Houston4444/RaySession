@@ -6,8 +6,8 @@
 
 CLEAR_ABSENTS_IN_VIEW = '/ray/server/patchbay/clear_absents_in_view'
 SAVE_GROUP_POSITION = '/ray/server/patchbay/save_group_position'
-SAVE_GROUP_PRETTY_NAME = '/ray/server/patchbay/save_group_pretty_name'
-SAVE_PORT_PRETTY_NAME = '/ray/server/patchbay/save_port_pretty_name'
+SAVE_GROUP_CUSTOM_NAME = '/ray/server/patchbay/save_group_custom_name'
+SAVE_PORT_CUSTOM_NAME = '/ray/server/patchbay/save_port_custom_name'
 SAVE_PORTGROUP = '/ray/server/patchbay/save_portgroup'
 VIEW_NUMBER_CHANGED = '/ray/server/patchbay/view_number_changed'
 VIEW_PTV_CHANGED = '/ray/server/patchbay/view_ptv_changed'

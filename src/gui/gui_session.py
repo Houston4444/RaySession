@@ -636,13 +636,13 @@ class SignaledSession(Session):
         json_dict: str = osp.args[0]
         self.patchbay_manager.views_changed(json_dict)
 
-    @manage(rpm.UPDATE_GROUP_PRETTY_NAME, 'ss')
-    def _patchbay_update_group_pretty_name(self, osp: OscPack):
+    @manage(rpm.UPDATE_GROUP_CUSTOM_NAME, 'ss')
+    def _patchbay_update_group_custom_name(self, osp: OscPack):
         args: tuple[str, str] = osp.args
         self.patchbay_manager.update_group_pretty_name(*args)
 
-    @manage(rpm.UPDATE_PORT_PRETTY_NAME, 'ss')
-    def _patchbay_update_port_pretty_name(self, osp: OscPack):
+    @manage(rpm.UPDATE_PORT_CUSTOM_NAME, 'ss')
+    def _patchbay_update_port_custom_name(self, osp: OscPack):
         args: tuple[str, str] = osp.args
         self.patchbay_manager.update_port_pretty_name(*args)
 

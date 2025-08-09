@@ -167,8 +167,8 @@
 /ray/patchbay/monitor/server_stopped
 /ray/patchbay/monitor/transport_position
 /ray/patchbay/monitor/update_group_position
-/ray/patchbay/monitor/update_group_pretty_name
-/ray/patchbay/monitor/update_port_pretty_name
+/ray/patchbay/monitor/update_group_custom_name
+/ray/patchbay/monitor/update_port_custom_name
 /ray/patchbay/monitor/update_portgroup
 /ray/patchbay/monitor/pretty_names_locked i
     1 if pretty names are locked by another patchbay daemon
@@ -179,7 +179,7 @@
 /ray/server/ask_for_patchbay
 /ray/server/patchbay_daemon_ready
     The patchbay daemon sends this message to the daemon
-    when it is ready to receive pretty-names
+    when it is ready to receive custom names
 /ray/server/change_root
 /ray/server/clear_client_templates_database
 /ray/server/controller_announce
@@ -203,8 +203,8 @@
 /ray/server/open_session_off
 /ray/server/patchbay/clear_absents_in_view
 /ray/server/patchbay/save_group_position
-/ray/server/patchbay/save_group_pretty_name
-/ray/server/patchbay/save_port_pretty_name
+/ray/server/patchbay/save_group_custom_name
+/ray/server/patchbay/save_port_custom_name
 /ray/server/patchbay/save_portgroup
 /ray/server/patchbay/view_number_changed
 /ray/server/patchbay/view_ptv_changed
