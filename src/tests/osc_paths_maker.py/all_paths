@@ -105,8 +105,8 @@
 /ray/gui/patchbay/server_stopped
 /ray/gui/patchbay/transport_position
 /ray/gui/patchbay/update_group_position
-/ray/gui/patchbay/update_group_pretty_name
-/ray/gui/patchbay/update_port_pretty_name
+/ray/gui/patchbay/update_group_custom_name
+/ray/gui/patchbay/update_port_custom_name
 /ray/gui/patchbay/update_portgroup
 /ray/gui/patchbay/views_changed
 /ray/gui/preview/clear

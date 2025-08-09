@@ -10,7 +10,7 @@ ABORT_SNAPSHOT = '/ray/server/abort_snapshot'
 ASK_FOR_PATCHBAY = '/ray/server/ask_for_patchbay'
 PATCHBAY_DAEMON_READY = '/ray/server/patchbay_daemon_ready'
 '''The patchbay daemon sends this message to the daemon
-when it is ready to receive pretty-names'''
+when it is ready to receive custom names'''
 
 CHANGE_ROOT = '/ray/server/change_root'
 CLEAR_CLIENT_TEMPLATES_DATABASE = '/ray/server/clear_client_templates_database'
