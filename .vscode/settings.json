@@ -1,9 +1,7 @@
 {
     "python.analysis.extraPaths": [
         "HoustonPatchbay/source",
-        "pyjacklib",
         "src/shared"
     ],
-    "python.analysis.typeCheckingMode": "basic",
     "python.analysis.autoSearchPaths": false
 }
