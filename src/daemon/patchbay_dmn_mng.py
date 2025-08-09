@@ -92,7 +92,7 @@ def _process_finished():
 def set_daemon_server(daemon_server: 'OscServerThread'):
     _MainObj.daemon_server = daemon_server
     _MainObj.is_internal = RS.settings.value(
-        'daemon/internal_patchbay', False, type=bool)
+        'daemon/internal_patchbay', True, type=bool)
 
 def get_port() -> Optional[int]:
     if _MainObj.port:

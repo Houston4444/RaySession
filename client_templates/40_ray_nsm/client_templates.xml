@@ -23,7 +23,7 @@
  <Client-Template template-name="Carla" executable="carla-jack-multi" client_id="Carla" label="Carla" jack_naming="1" prefix_mode="1"/>
  <Client-Template template-name="Carla-Rack" executable="carla-rack" client_id="rack" prefix_mode="1" jack_naming="1"/>
  <Client-Template template-name="Carla-Patchbay" executable="carla-patchbay" client_id="patchbay" prefix_mode="1"/>
- <Client-Template template-name="Non-Mixer" executable="non-mixer" client_id="nonmixer" prefix_mode="1"/>
+ <Client-Template template-name="Non-Mixer" executable="non-mixer" client_id="nonmixer" prefix_mode="1" jack_naming="1"/>
  <Client-Template template-name="Qtractor" executable="qtractor" client_id="qtractor" jack_naming="1"/>
  <Client-Template template-name="Guitarix" client_id="guitarix" executable="guitarix" check_nsm_bin="1" prefix_mode="1"/>
  <Client-Template template-name="Non-Timeline" executable="non-timeline" client_id="timeline" jack_naming="1"/>
@@ -37,8 +37,8 @@
  <Client-Template template-name="SooperLooper" desktop_file="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" try-exec="sooperlooper;slgui" unignored_extensions=".wav" arguments="--follow-jack-naming" prefix_mode="1" jack_naming="1"/>
  <Client-Template template-name="SooperLooper + Transport" desktop_file="sooperlooper" client_id="sooperlooper" executable="sooperlooper_nsm" try-exec="sooperlooper;slgui" arguments="--transport_workaround --follow-jack-naming" unignored_extensions=".wav" prefix_mode="1" jack_naming="1"/>
  <Client-Template template-name="Non-Sequencer" executable="non-sequencer" client_id="sequencer" prefix_mode="1" jack_naming="1"/>
- <Client-Template template-name="JACK Connections" tp_display_name_is_label="true" client_id="patch" executable="ray-jackpatch" name="Jack Connections" prefix_mode="1"/>
- <Client-Template template-name="ALSA Connections" tp_display_name_is_label="true" client_id="alsapatch" executable="ray-alsapatch" name="ALSA Connections" prefix_mode="1"/>
+ <Client-Template protocol="Internal" template-name="JACK Connections" tp_display_name_is_label="true" client_id="patch" executable="ray-jackpatch" name="Jack Connections" prefix_mode="1"/>
+ <Client-Template protocol="Internal" template-name="ALSA Connections" tp_display_name_is_label="true" client_id="alsapatch" executable="ray-alsapatch" name="ALSA Connections" prefix_mode="1"/>
  <Client-Template template-name="Network Session" protocol="ray_net" tp_display_name_is_label="true" client_id="network" desktop_file="ray-network"/>
  <Client-Template template-name="ADLjack" executable="adljack" client_id="adl" prefix_mode="1" jack_naming="1"/>
  <Client-Template template-name="ADLplug" executable="ADLplug" client_id="adlplug" prefix_mode="1" jack_naming="1"/>

@@ -375,7 +375,7 @@ class ClientCommunicating(BunServerThread):
         if not client:
             return False
 
-        self.message("%s sends dirty" % client.client_id)
+        self.message(f"'{client.client_id}' sends dirty")
 
         client.dirty = 1
         client.last_dirty = time.time()
@@ -388,7 +388,7 @@ class ClientCommunicating(BunServerThread):
         if not client:
             return False
 
-        self.message("%s sends clean" % client.client_id)
+        self.message(f"'{client.client_id}' sends clean")
 
         client.dirty = 0
 
