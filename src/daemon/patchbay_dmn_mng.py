@@ -46,7 +46,7 @@ class _MainObj:
 
     ready = False
     port = 0
-    waiting_msgs = list[list]()
+    waiting_msgs = list[tuple]()
     
     
 class State(Enum):
@@ -98,6 +98,9 @@ def get_port() -> Optional[int]:
     if _MainObj.port:
         return _MainObj.port
 
+    if _MainObj.daemon_server is None:
+        return None
+
     patchbay_file = (Path('/tmp/RaySession/patchbay_daemons')
                      / str(_MainObj.daemon_server.port))
 
@@ -125,20 +128,18 @@ def get_port() -> Optional[int]:
 
             if line.startswith('port:'):
                 port_str = line.rpartition(':')[2]
-                good_port = False
 
                 try:
                     patchbay_addr = Address(int(port_str))
-                    good_port = True
                 except:
                     patchbay_addr = None
                     _logger.error(
                         f'port given for patchbay {port_str} '
                         'is not a valid osc UDP port')
-
-                if good_port:
-                    _MainObj.port = patchbay_addr.port
-                    return patchbay_addr.port
+                else:
+                    if isinstance(patchbay_addr.port, int):
+                        _MainObj.port = patchbay_addr.port
+                        return patchbay_addr.port
                 break
 
 def start(gui_url='', one_shot_act=''):    
@@ -166,8 +167,11 @@ def start(gui_url='', one_shot_act=''):
 
     _MainObj.check_thread = threading.Thread(target=_check_thread_target)
     _MainObj.check_thread.start()
+    if _MainObj.daemon_server is None:
+        raise Exception
 
     if _MainObj.is_internal:
+
         try:
             _MainObj.internal_client = InternalClient(
                 'ray-patchbay_daemon',
@@ -264,7 +268,8 @@ def enqueue_osc(*args):
 
 def daemon_exit():
     if _MainObj.is_internal:
-        _MainObj.internal_client.stop()
+        if _MainObj.internal_client is not None:
+            _MainObj.internal_client.stop()
     else:
         if _MainObj.process is not None:
             _MainObj.process.waitForFinished(500)

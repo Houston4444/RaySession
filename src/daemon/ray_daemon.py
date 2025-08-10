@@ -32,7 +32,7 @@ _logger = logging.getLogger()
 from patshared import Naming
 
 # Imports from src/shared
-from osclib import get_free_osc_port, is_osc_port_free, get_net_url
+from osclib import get_free_osc_port, is_osc_port_free, get_net_url, Address
 import ray
 
 # Local imports
@@ -154,7 +154,7 @@ if True:
                             tcp_addr=CommandLineArgs.gui_tcp_url)
 
     elif CommandLineArgs.gui_port:
-        server.announce_gui(CommandLineArgs.gui_port.url,
+        server.announce_gui(Address(CommandLineArgs.gui_port).url,
                             gui_pid=CommandLineArgs.gui_pid,
                             tcp_addr=CommandLineArgs.gui_tcp_url)        
 

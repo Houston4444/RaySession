@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, Union, Callable
+from typing import TYPE_CHECKING, Optional, Union
 from pathlib import Path
 import logging
 
@@ -97,6 +97,11 @@ def get_git_default_un_and_ignored(
         unignored = ['.wav', '.flac', '.ogg', '.mp3']
 
     return (ignored, unignored)
+
+
+class NoSessionPath(Exception):
+    def __init__(self) -> None:
+        super().__init__(f"Impossible operation, no session path !!!")
 
 
 @dataclass

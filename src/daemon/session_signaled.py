@@ -25,12 +25,12 @@ import osc_paths.nsm as nsm
 from client import Client
 import multi_daemon_file
 from signaler import Signaler
-from daemon_tools import Terminal, RS, is_pid_child_of, highlight_text
+from daemon_tools import NoSessionPath, Terminal, RS, is_pid_child_of, highlight_text
 from session_operating import OperatingSession
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session_dummy import DummySession
-
+from canvas_saver import CanvasSaver
 
 _logger = logging.getLogger(__name__)
 _translate = QCoreApplication.translate
@@ -123,7 +123,7 @@ def client_action(path: str, types: str):
                 sess: SignaledSession
                 osp: OscPack
 
-            client_id: str = osp.args[0]
+            client_id: str = osp.args[0] # type:ignore
             client: Client
 
             for client in sess.clients:
@@ -142,11 +142,11 @@ def client_action(path: str, types: str):
     return decorated
 
 
-# There is only one possible instance of SignaledSession
-# This is not the case for Session and OperatingSession.
-# This session receives signals from OSC server.
 class SignaledSession(OperatingSession):
-    steps_order: list[Callable | tuple[Callable, Any]]
+    '''There is only one possible instance of SignaledSession
+    This is not the case for Session and OperatingSession.
+    This session receives signals from OSC server.'''
+    steps_order: list[Callable | tuple[Callable | Any, ...]]
     
     def __init__(self, root: Path):
         OperatingSession.__init__(self, root)
@@ -176,7 +176,7 @@ class SignaledSession(OperatingSession):
         if self._cache_folder_sizes_path.is_file():
             try:
                 self._folder_sizes_and_dates = json.load(
-                    self._cache_folder_sizes_path)
+                    self._cache_folder_sizes_path) # type:ignore : Path works here !
             except:
                 # cache file load failed and this is really not strong
                 pass
@@ -224,7 +224,8 @@ class SignaledSession(OperatingSession):
 
     @manage(nsm.server.ANNOUNCE, 'sssiii')
     def _nsm_server_announce(self, osp: OscPack):
-        client_name, capabilities, executable_path, major, minor, pid = osp.args
+        client_name, capabilities, executable_path, major, minor, pid = \
+            osp.args # type:ignore
         executable_path: str
         pid: int
 
@@ -293,7 +294,7 @@ class SignaledSession(OperatingSession):
         if self.wait_for is ray.WaitFor.QUIT:
             return
 
-        message: str = osp.args[1]
+        message: str = osp.args[1] # type:ignore
         client = self.get_client_by_address(osp.src_addr)
         if client:
             client.set_reply(ray.Err.OK, message)
@@ -308,7 +309,7 @@ class SignaledSession(OperatingSession):
 
     @manage(osc_paths.ERROR, 'sis')
     def _error(self, osp: OscPack):
-        path, errcode, message = osp.args
+        path, errcode, message = osp.args # type:ignore
         errcode: int
         message: str
 
@@ -325,18 +326,19 @@ class SignaledSession(OperatingSession):
     def _nsm_client_label(self, osp: OscPack):
         client = self.get_client_by_address(osp.src_addr)
         if client:
-            client.set_label(osp.args[0])
+            client.set_label(osp.args[0]) # type:ignore
 
     @manage(nsm.client.NETWORK_PROPERTIES, 'ss')
     def _nsm_client_network_properties(self, osp: OscPack):
+        osp_args: tuple[str, str] = osp.args # type:ignore
         client = self.get_client_by_address(osp.src_addr)
         if client:
-            net_daemon_url, net_session_root = osp.args
+            net_daemon_url, net_session_root = osp_args
             client.set_network_properties(net_daemon_url, net_session_root)
 
     @manage(r.server.GUI_ANNOUNCE, 'sisiis')
     def _ray_server_gui_announce(self, osp: OscPack):
-        args: tuple[str, int, str, int, int, str] = osp.args
+        args: tuple[str, int, str, int, int, str] = osp.args # type:ignore
         (version, int_nsm_locked, net_master_daemon_url,
          gui_pid, net_daemon_id, tcp_url) = args
         
@@ -379,7 +381,7 @@ class SignaledSession(OperatingSession):
 
     @manage(r.server.CHANGE_ROOT, 's')
     def _ray_server_change_root(self, osp: OscPack):
-        new_root_str: str = osp.args[0]
+        new_root_str: str = osp.args[0] # type:ignore
         if self.path:
             self.send(*osp.error(), ray.Err.SESSION_LOCKED,
                       "impossible to change root. session %s is loaded"
@@ -424,7 +426,7 @@ class SignaledSession(OperatingSession):
             src_addr_is_gui = server.is_gui_address(osp.src_addr)
 
         template_names = set()
-        filters: list[str] = osp.args
+        filters: list[str] = osp.args # type:ignore
 
         factory = bool(osp.path == r.server.LIST_FACTORY_CLIENT_TEMPLATES)
         base = 'factory' if factory else 'user'
@@ -613,7 +615,7 @@ class SignaledSession(OperatingSession):
     def _ray_server_new_session(self, osp: OscPack):
         if len(osp.args) == 2 and osp.args[1]:
             session_name: str
-            session_name, template_name = osp.args
+            session_name, template_name = osp.args # type:ignore
 
             spath = self.root / session_name
 
@@ -639,14 +641,14 @@ class SignaledSession(OperatingSession):
 
     @session_operation((r.server.OPEN_SESSION, nsm.server.OPEN), 's|si|sis')
     def _ray_server_open_session(self, osp: OscPack, open_off=False):
-        session_name: str = osp.args[0]
+        session_name: str = osp.args[0] # type:ignore
         save_previous = True
         template_name = ''
 
         if len(osp.args) >= 2:
             save_previous = bool(osp.args[1])
         if len(osp.args) >= 3:
-            template_name = osp.args[2]
+            template_name: str = osp.args[2] # type:ignore
 
         if (not session_name
                 or '//' in session_name
@@ -708,7 +710,8 @@ class SignaledSession(OperatingSession):
 
     @manage(r.server.RENAME_SESSION, 'ss')
     def _ray_server_rename_session(self, osp: OscPack):
-        old_session_name, new_session_name = osp.args
+        osp_args : tuple[str, str] = osp.args  # type:ignore
+        old_session_name, new_session_name = osp_args
         spath = self.root / old_session_name
 
         for f in 'raysession.xml', 'session.nsm':
@@ -725,16 +728,16 @@ class SignaledSession(OperatingSession):
             return False
 
         tmp_session = self._new_dummy_session(self.root)
-        tmp_session.ray_server_rename_session(osp.path, osp.args, osp.src_addr)
+        tmp_session.ray_server_rename_session(osp)
 
     @manage(r.server.SAVE_SESSION_TEMPLATE, 'ss|sss')
     def _ray_server_save_session_template(self, osp: OscPack):
         net = bool(osp.types == 'sss')
-        session_name: str = osp.args[0]
-        template_name: str = osp.args[1]
+        session_name: str = osp.args[0] # type:ignore
+        template_name: str = osp.args[1] # type:ignore
 
         if net:
-            sess_root: str = osp.args[2]
+            sess_root: str = osp.args[2] # type:ignore
 
             if (sess_root != str(self.root)
                     or session_name != self.short_path_name):
@@ -787,17 +790,18 @@ class SignaledSession(OperatingSession):
             return
 
         del self.preview_dummy_session
-        self.preview_dummy_session = DummySession(str(self.root))
+        self.preview_dummy_session = DummySession(self.root)
         self.preview_dummy_session.ray_server_get_session_preview(
             osp, self._folder_sizes_and_dates)
 
     @manage(r.server.SET_OPTION, 'i')
     def _ray_server_set_option(self, osp: OscPack):
-        option = ray.Option(abs(osp.args[0]))
+        opt_int: int = osp.args[0] # type:ignore
+        option = ray.Option(abs(opt_int)) 
         
         if option is ray.Option.BOOKMARK_SESSION:
             if self.path:
-                if osp.args[0] > 0:
+                if opt_int > 0:
                     self.bookmarker.make_all(self.path)
                 else:
                     self.bookmarker.remove_all(self.path)
@@ -840,15 +844,18 @@ class SignaledSession(OperatingSession):
         
     @manage(r.server.patchbay.VIEW_NUMBER_CHANGED, 'ii')
     def _ray_server_patchbay_view_number_changed(self, osp: OscPack):
-        self.canvas_saver.change_view_number(*osp.args)
+        osp_args: tuple[int, int] = osp.args # type:ignore
+        self.canvas_saver.change_view_number(*osp_args)
         
     @manage(r.server.patchbay.VIEW_PTV_CHANGED, 'ii')
     def _ray_server_patchbay_view_ptv_changed(self, osp: OscPack):
-        self.canvas_saver.view_ptv_changed(*osp.args)
+        osp_args: tuple[int, int] = osp.args # type:ignore
+        self.canvas_saver.view_ptv_changed(*osp_args)
 
     @manage(r.server.patchbay.SAVE_GROUP_CUSTOM_NAME, 'sssi')
     def _ray_server_patchbay_save_group_custom_name(self, osp: OscPack):
-        group_name, pretty_name, over_pretty, save_in_jack = osp.args
+        osp_args : tuple[str, str, str, int] = osp.args # type:ignore
+        group_name, pretty_name, over_pretty, save_in_jack = osp_args
         self.canvas_saver.save_group_custom_name(
             group_name, pretty_name, over_pretty)
         self.send_patchbay_daemon(
@@ -857,7 +864,8 @@ class SignaledSession(OperatingSession):
         
     @manage(r.server.patchbay.SAVE_PORT_CUSTOM_NAME, 'sssi')
     def _ray_server_patchbay_save_port_custom_name(self, osp: OscPack):
-        port_name, pretty_name, over_pretty, save_in_jack = osp.args
+        osp_args : tuple[str, str, str, int] = osp.args # type:ignore
+        port_name, pretty_name, over_pretty, save_in_jack = osp_args
         self.canvas_saver.save_port_custom_name(
             port_name, pretty_name, over_pretty)
         self.send_patchbay_daemon(
@@ -875,8 +883,7 @@ class SignaledSession(OperatingSession):
 
     @session_operation(r.session.SAVE_AS_TEMPLATE, 's')
     def _ray_session_save_as_template(self, osp: OscPack):
-        template_name: str = osp.args[0]
-        # net = False if len(osp.args) < 2 else osp.args[1]
+        template_name: str = osp.args[0] #type:ignore
 
         for client in self.clients:
             if client.is_ray_net:
@@ -892,24 +899,10 @@ class SignaledSession(OperatingSession):
                       'No session is loaded, impossible to take snapshot')
             return
         
+        snapshot_name: str = osp.args[0] #type:ignore
         with_save = 0
-        snapshot_name = ''
-        args = osp.args
-        
-        match osp.types:
-            case 's':
-                args: tuple[str]
-                snapshot_name, = args
-            case 'si':
-                args: tuple[str, int]
-                snapshot_name, with_save = args
-            case _:
-                return
-        
-        # if len(osp.args) == 2:
-        #     snapshot_name, with_save = osp.args
-        # else:
-        #     snapshot_name = osp.args[0]
+        if len(osp.args) >= 2:
+            with_save: int = osp.args[1] #type:ignore
 
         self.steps_order.clear()
 
@@ -958,29 +951,15 @@ class SignaledSession(OperatingSession):
                             ray.Err.CREATE_FAILED,
                             "Could not create the session directory")
                     case ns.DUPLICATE:
-                        self.duplicate_aborted(self.steps_osp.args[0])
+                        new_session_full_name: str = \
+                            self.steps_osp.args[0] #type:ignore
+                        self.duplicate_aborted(new_session_full_name)
                     case ns.CLOSE|ns.ABORT|ns.QUIT:
                         # let the current close works here
                         self.send(*osp.error(),
                                 ray.Err.OPERATION_PENDING,
                                 "An operation pending.")
                         return
-                    
-                # if short_path == 'save':
-                #     self.save_error(ray.Err.CREATE_FAILED)
-                # elif short_path == 'open':
-                #     self.load_error(ray.Err.SESSION_LOCKED)
-                # elif short_path == 'new':
-                #     self._send_error(ray.Err.CREATE_FAILED,
-                #                 "Could not create the session directory")
-                # elif short_path == 'duplicate':
-                #     self.duplicate_aborted(self.osc_args[0])
-                # elif short_path in ('close', 'abort', 'quit'):
-                #     # let the current close works here
-                #     self.send(*osp.error(),
-                #               ray.Err.OPERATION_PENDING,
-                #               "An operation pending.")
-                #     return
             else:
                 self._send_error(
                     ray.Err.ABORT_ORDERED,
@@ -1030,7 +1009,7 @@ class SignaledSession(OperatingSession):
 
     @session_operation((r.session.DUPLICATE, nsm.server.DUPLICATE), 's')
     def _ray_session_duplicate(self, osp: OscPack):
-        new_session_full_name: str = osp.args[0]
+        new_session_full_name: str = osp.args[0] #type:ignore
         spath = self.root / new_session_full_name
 
         if spath.exists():
@@ -1060,7 +1039,7 @@ class SignaledSession(OperatingSession):
 
     @manage(r.session.DUPLICATE_ONLY, 'sss')
     def _ray_session_duplicate_only(self, osp: OscPack):
-        osp_args: tuple[str, str, str] = osp.args
+        osp_args: tuple[str, str, str] = osp.args #type:ignore
         session_to_load, new_session, sess_root = osp_args
         spath = Path(sess_root) / new_session
 
@@ -1090,7 +1069,7 @@ class SignaledSession(OperatingSession):
         else:
             tmp_session = self._new_dummy_session(Path(sess_root))
             tmp_session.steps_osp = osp
-            tmp_session.dummy_duplicate(osp.path, osp.args, osp.src_addr)
+            tmp_session.dummy_duplicate(osp)
 
     @session_operation(r.session.OPEN_SNAPSHOT, 's')
     def _ray_session_open_snapshot(self, osp: OscPack):
@@ -1112,7 +1091,7 @@ class SignaledSession(OperatingSession):
 
     @manage(r.session.RENAME, 's')
     def _ray_session_rename(self, osp: OscPack):
-        new_session_name = osp.args[0]
+        new_session_name: str = osp.args[0] #type:ignore
 
         if self.steps_order:
             return
@@ -1181,7 +1160,7 @@ class SignaledSession(OperatingSession):
 
     @manage(r.session.ADD_EXECUTABLE, 'siiissi|ss*')
     def _ray_session_add_executable(self, osp: OscPack, old_defaults=True):
-        executable = osp.args[0]
+        executable: str = osp.args[0] #type:ignore
         protocol = ray.Protocol.NSM
 
         if old_defaults:
@@ -1204,8 +1183,8 @@ class SignaledSession(OperatingSession):
             if 'ray_hack' in osp.args[1:]:
                 protocol = ray.Protocol.RAY_HACK
 
-            arg: str
-            for arg in osp.args[1:]:
+            args: tuple[str, ...] = osp.args  #type:ignore
+            for arg in args:
                 if arg == 'prefix_mode:client_name':
                     prefix_mode = ray.PrefixMode.CLIENT_NAME
 
@@ -1244,8 +1223,10 @@ class SignaledSession(OperatingSession):
                         jack_naming = 1
 
         else:
+            osp_args: tuple[str, int, int, int, str, str, int] = \
+                osp.args  #type:ignore
             executable, start_it, protocol_int, \
-                prefix_mode_int, custom_prefix, client_id, jack_naming = osp.args
+                prefix_mode_int, custom_prefix, client_id, jack_naming = osp_args
 
             protocol = ray.Protocol(protocol_int)
             prefix_mode = ray.PrefixMode(prefix_mode_int)
@@ -1309,9 +1290,10 @@ class SignaledSession(OperatingSession):
             return
 
         factory = bool(osp.args[0])
-        template_name: str = osp.args[1]
-        auto_start = bool(len(osp.args) <= 2 or osp.args[2] != 'not_start')
-        unique_id: str = osp.args[3] if len(osp.args) > 3 else ''
+        template_name: str = osp.args[1] #type:ignore
+        auto_start = \
+            bool(len(osp.args) <= 2 or osp.args[2] != 'not_start') #type:ignore
+        unique_id: str = osp.args[3] if len(osp.args) > 3 else '' #type:ignore
 
         if unique_id:
             if not unique_id.replace('_', '').isalnum():
@@ -1333,21 +1315,23 @@ class SignaledSession(OperatingSession):
 
     @manage(r.session.ADD_FACTORY_CLIENT_TEMPLATE, 'ss*')
     def _ray_session_add_factory_client_template(self, osp: OscPack):
-        self._ray_session_add_client_template(osp.path, [1] + osp.args, osp.src_addr)
+        osp.args = [1] + osp.args #type:ignore
+        self._ray_session_add_client_template(osp)
 
     @manage(r.session.ADD_USER_CLIENT_TEMPLATE, 'ss*')
     def _ray_session_add_user_client_template(self, osp: OscPack):
-        self._ray_session_add_client_template(osp.path, [0] + osp.args, osp.src_addr)
+        osp.args = [0] + osp.args #type:ignore
+        self._ray_session_add_client_template(osp)
 
     @session_operation(r.session.ADD_OTHER_SESSION_CLIENT, 'ss')
     def _ray_session_add_other_session_client(self, osp: OscPack):
-        args: tuple[str, str] = osp.args
-        other_session, client_id = args    
+        osp_args: tuple[str, str] = osp.args #type:ignore
+        other_session, client_id = osp_args    
 
         # @session_operation remember this but this is not needed here
         self.steps_osp = None
 
-        dummy_session = DummySession(str(self.root))
+        dummy_session = DummySession(self.root)
         dummy_session.dummy_load(other_session)
         
         # hopefully for a dummy session,
@@ -1381,7 +1365,7 @@ class SignaledSession(OperatingSession):
 
     @manage(r.session.REORDER_CLIENTS, 'ss*')
     def _ray_session_reorder_clients(self, osp: OscPack):
-        client_ids_list = osp.args
+        client_ids_list: list[str, ...] = osp.args  #type:ignore
 
         if self.path is None:
             self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
@@ -1391,7 +1375,7 @@ class SignaledSession(OperatingSession):
             self.send(*osp.reply(), "clients reordered")
             return
 
-        self._re_order_clients(client_ids_list, osp.src_addr, osp.path)
+        self._re_order_clients(client_ids_list, osp)
 
     @manage(r.session.CLEAR_CLIENTS, 's*')
     def _ray_session_clear_clients(self, osp: OscPack):
@@ -1400,7 +1384,7 @@ class SignaledSession(OperatingSession):
                 "clear_clients has to be used only during the load script !")
             return
 
-        self.clear_clients(osp.src_addr, osp.path, *osp.args)
+        self.clear_clients(osp)
 
     @manage(r.session.LIST_SNAPSHOTS, '')
     def _ray_session_list_snapshots(self, osp: OscPack, client_id=""):
@@ -1449,7 +1433,8 @@ class SignaledSession(OperatingSession):
 
         search_properties = list[tuple[int, str]]()
 
-        for arg in osp.args:
+        osp_args: tuple[str, ...] = osp.args #type:ignore
+        for arg in osp_args:
             cape = 1
             if arg.startswith('not_'):
                 cape = 0
@@ -1556,7 +1541,7 @@ class SignaledSession(OperatingSession):
 
     @manage(r.client.START, 's')
     def _ray_client_start(self, osp: OscPack):
-        self._ray_client_resume(osp)
+        self._ray_client_resume(osp) #type:ignore
 
     @client_action(r.client.RESUME, 's')
     def _ray_client_resume(self, osp: OscPack, client:Client):
@@ -1605,7 +1590,7 @@ class SignaledSession(OperatingSession):
 
     @client_action(r.client.SAVE_AS_TEMPLATE, 'ss')
     def _ray_client_save_as_template(self, osp: OscPack, client:Client):
-        template_name: str = osp.args[1]
+        template_name: str = osp.args[1] #type:ignore
 
         if self.file_copier.is_active():
             self.send_error_copy_running(osp)
@@ -1666,7 +1651,7 @@ class SignaledSession(OperatingSession):
 
     @client_action(r.client.SET_DESCRIPTION, 'ss')
     def _ray_client_set_description(self, osp: OscPack, client:Client):
-        description: str = osp.args[1]
+        description: str = osp.args[1] #type:ignore
         client.description = description
         self.send(*osp.reply(), 'Description updated')
 
@@ -1687,11 +1672,13 @@ class SignaledSession(OperatingSession):
 
     @manage(r.client.LIST_SNAPSHOTS, 's')
     def _ray_client_list_snapshots(self, osp: OscPack):
-        self._ray_session_list_snapshots(osp, osp.args[0])
+        client_id: str = osp.args[0] #type:ignore
+        self._ray_session_list_snapshots(osp, client_id)
 
     @session_operation(r.client.OPEN_SNAPSHOT, 'ss')
     def _ray_client_open_snapshot(self, osp: OscPack):
-        client_id, snapshot = osp.args
+        osp_args: tuple[str, str] = osp.args #type:ignore
+        client_id, snapshot = osp_args
 
         for client in self.clients:
             if client.client_id == client_id:
@@ -1725,18 +1712,19 @@ class SignaledSession(OperatingSession):
 
     @client_action(r.client.SEND_SIGNAL, 'si')
     def _ray_client_send_signal(self, osp: OscPack, client:Client):
-        sig: int = osp.args[1]
+        sig: int = osp.args[1] #type:ignore
         client.send_signal(sig, osp.src_addr, osp.path)
 
     @client_action(r.client.SET_CUSTOM_DATA, 'sss')
     def _ray_client_set_custom_data(self, osp: OscPack, client:Client):
-        client_id, data, value = osp.args
+        osp_args: tuple[str, str, str] = osp.args #type:ignore
+        client_id, data, value = osp_args
         client.custom_data[data] = value
         self.send(*osp.reply(), 'custom data set')
 
     @client_action(r.client.GET_CUSTOM_DATA, 'ss')
     def _ray_client_get_custom_data(self, osp: OscPack, client:Client):
-        data = osp.args[1]
+        data: str = osp.args[1] #type:ignore
 
         if data not in client.custom_data:
             self.send(*osp.error(), ray.Err.NO_SUCH_FILE,
@@ -1777,7 +1765,7 @@ class SignaledSession(OperatingSession):
         custom_prefix = ''
 
         if prefix_mode is ray.PrefixMode.CUSTOM:
-            custom_prefix = osp.args[2]
+            custom_prefix: str = osp.args[2] #type:ignore
             if not custom_prefix:
                 self.send(
                     *osp.error(), ray.Err.GENERAL_ERROR,
@@ -1801,12 +1789,9 @@ class SignaledSession(OperatingSession):
                       "impossible to change id while client is running")
             return
 
-        new_client_id: str
-        prefix_mode_int: int
-        custom_prefix: str
-        jack_naming: int
-
-        client_id, new_client_id, prefix_mode_int, custom_prefix, jack_naming = osp.args
+        osp_args: tuple[str, str, int, str, int] = osp.args #type:ignore
+        client_id, new_client_id, prefix_mode_int, \
+            custom_prefix, jack_naming =  osp_args
 
         if new_client_id != client.client_id:
             if new_client_id in [c.client_id for c in
@@ -1830,6 +1815,9 @@ class SignaledSession(OperatingSession):
         tmp_client.jack_naming = ray.JackNaming(jack_naming)
         
         client.set_status(ray.ClientStatus.REMOVED)
+        
+        if self.path is None:
+            raise NoSessionPath
         
         client._rename_files(
             self.path,
@@ -1875,7 +1863,7 @@ class SignaledSession(OperatingSession):
                       "Session is not ready for full client rename")
             return
         
-        new_client_name: str = osp.args[1]
+        new_client_name: str = osp.args[1] # type:ignore
         new_client_id = new_client_name.replace(' ', '_')
 
         if not new_client_id or not new_client_id.replace('_', '').isalnum():
@@ -1923,7 +1911,7 @@ class SignaledSession(OperatingSession):
                       "impossible to change id while client is running")
             return
 
-        new_client_id: str = osp.args[1]
+        new_client_id: str = osp.args[1] #type:ignore
         
         if new_client_id in [c.client_id for c in
                              self.clients + self.trashed_clients]:
@@ -1942,6 +1930,9 @@ class SignaledSession(OperatingSession):
 
         prefix = client.prefix
         links_dir = client.get_links_dirname()
+
+        if self.path is None:
+            raise NoSessionPath
 
         client._rename_files(
             self.path,
@@ -1999,7 +1990,7 @@ class SignaledSession(OperatingSession):
                       "Nothing in trash because no session is loaded.")
             return
 
-        client_id = osp.args[0]
+        client_id: str = osp.args[0] #type:ignore
 
         for client in self.trashed_clients:
             if client.client_id == client_id:
@@ -2031,7 +2022,7 @@ class SignaledSession(OperatingSession):
                       "Nothing in trash because no session is loaded.")
             return
 
-        client_id: str = osp.args[0]
+        client_id: str = osp.args[0] #type:ignore
 
         for client in self.trashed_clients:
             if client.client_id == client_id:
@@ -2049,7 +2040,7 @@ class SignaledSession(OperatingSession):
 
     @manage(r.net_daemon.DUPLICATE_STATE, 'f')
     def _ray_net_daemon_duplicate_state(self, osp: OscPack):
-        state: int = osp.args[0]
+        state: int = osp.args[0] #type:ignore
         for client in self.clients:
             if (client.is_ray_net
                     and client.ray_net.daemon_url

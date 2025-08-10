@@ -314,8 +314,11 @@ class AlsaManager:
                             
                     for conn in to_rm_conns:
                         self._connections.remove(conn)
-                        self.ev_handler.add_event(
-                            Event.CONNECTION_REMOVED, *conn.as_port_names(self._clients))
+                        port_names = conn.as_port_names(self._clients)
+                        if port_names is not None:
+                            self.ev_handler.add_event(
+                                Event.CONNECTION_REMOVED, *port_names)
+
                     if port.caps & _PORT_READS == _PORT_READS:
                         self.ev_handler.add_event(
                             Event.PORT_REMOVED, f'{client.name}:{port.name}',
@@ -366,8 +369,10 @@ class AlsaManager:
                                 and conn.source_port_id == sender_port.id
                                 and conn.dest_client_id == dest_client.id
                                 and conn.dest_port_id == dest_port.id):
-                            self.ev_handler.add_event(
-                                Event.CONNECTION_REMOVED, *conn.as_port_names(self._clients))
+                            port_names = conn.as_port_names(self._clients)
+                            if port_names is not None:
+                                self.ev_handler.add_event(
+                                    Event.CONNECTION_REMOVED, *port_names)
                             self._connections.remove(conn)
                             break
                         

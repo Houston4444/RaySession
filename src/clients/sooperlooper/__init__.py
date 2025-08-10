@@ -67,10 +67,11 @@ def run():
 
                 case _:
                     if arg_read is ArgRead.LOG:
+                        uarg = arg.upper()
+
                         if arg.isdigit():
                             log_level = int(uarg)
                         else:
-                            uarg = arg.upper()
                             if (uarg in logging.__dict__.keys()
                                     and isinstance(
                                         logging.__dict__[uarg], int)):
@@ -145,7 +146,8 @@ def run():
     
     # stop GUI
     if main.gui_running:
-        main.gui_process.terminate()
+        if main.gui_process is not None:
+            main.gui_process.terminate()
 
     # stop sooperlooper
     if main.sl_running:
@@ -156,14 +158,17 @@ def run():
                 break
         
         if main.sl_running:
-            main.sl_process.terminate()
+            if main.sl_process is not None:
+                main.sl_process.terminate()
+
             for i in range(1000):
                 time.sleep(0.0010)
                 if not main.sl_running:
                     break
 
             if main.sl_running:
-                main.sl_process.kill()
+                if main.sl_process is not None:
+                    main.sl_process.kill()
 
     sys.exit(0)
 

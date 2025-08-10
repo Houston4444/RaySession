@@ -104,7 +104,7 @@ class EventHandler:
     def __init__(self):
         self._event_queue = Queue()
     
-    def add_event(self, event: Event, *args: tuple):
+    def add_event(self, event: Event, *args):
         self._event_queue.put((event, args))
 
     def new_events(self) -> Iterator[tuple[Event, tuple]]:

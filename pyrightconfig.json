@@ -1,4 +1,5 @@
 {
     "exclude": ["src/control/help_*"],
-    "ignore": ["src/control/help_*"]
+    "ignore": ["src/control/help_*"],
+    "python.analysis.typeCheckingMode": "basic"
 }

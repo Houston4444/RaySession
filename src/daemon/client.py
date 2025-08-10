@@ -69,7 +69,7 @@ class Client(ServerSender, ray.ClientData):
     gui_has_been_visible = False
     show_gui_ordered = False
     dirty = 0
-    progress = 0
+    progress = 0.0
 
     # have to be modified by main thread for security
     addr: Optional[Address] = None
@@ -277,20 +277,16 @@ class Client(ServerSender, ray.ClientData):
             self.set_status(ray.ClientStatus.STOPPED)
             self.pending_command = ray.Command.NONE
 
-            if self.session.steps_osp.src_addr:
+            if (self.session.steps_osp is not None
+                    and self.session.steps_osp.src_addr): 
                 error_message = "Failed to launch process!"
-                if (self.session.steps_osp is not None
-                        and not self.session.steps_osp.path.startswith('/nsm/server/')): 
-                # if not self.session.osc_path.startswith('/nsm/server/'):
+                if not self.session.steps_osp.path.startswith('/nsm/server/'): 
                     error_message = _translate(
                         'client',
                         " %s: Failed to launch process !"
                             % self.gui_msg_style())
 
                 self.session._send_error(ray.Err.LAUNCH_FAILED, error_message)
-                # self.session.osc_reply(
-                #     osc_paths.ERROR, self.session.osp_step.path,
-                #     ray.Err.LAUNCH_FAILED, error_message)
 
             for osc_slot in (OscSrc.START, OscSrc.OPEN):
                 self._send_error_to_caller(osc_slot, ray.Err.LAUNCH_FAILED,
@@ -1035,7 +1031,7 @@ class Client(ServerSender, ray.ClientData):
         if self.custom_data:
             sub_child = ET.SubElement(c.el, 'custom_data')
             for data in self.custom_data:
-                sub_child[data] = self.custom_data[data]
+                sub_child[data] = self.custom_data[data] # type:ignore
             ET.dump(c.el)
 
     def transform_from_proxy_to_hack(
@@ -1049,7 +1045,7 @@ class Client(ServerSender, ray.ClientData):
         sess_name: the future session name'''
 
         if self.executable_path != 'ray-proxy':
-            return
+            return False
         
         if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
             project_path = spath / f'{self.name}.{self.client_id}'
@@ -1065,12 +1061,12 @@ class Client(ServerSender, ray.ClientData):
         except:
             _logger.warning(
                 f'Failed to find {proxy_file} for client {self.client_id}')
-            return
+            return False
         
         root = proxy_tree.getroot()
         if root.tag != 'RAY-PROXY':
             _logger.warning(f'wrong RAY-PROXY xml document: {proxy_file}')
-            return
+            return False
 
         xroot = XmlElement(root)
         executable = xroot.str('executable')
@@ -1314,6 +1310,7 @@ class Client(ServerSender, ray.ClientData):
             return
 
         if (self.is_ray_net
+                and self.session.path is not None
                 and not self.session.root in self.session.path.parents):
             self._send_error_to_caller(OscSrc.START, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG',
@@ -1368,6 +1365,7 @@ class Client(ServerSender, ray.ClientData):
             return
 
         arguments_line = self.arguments
+        ray_hack_pwd = None
 
         if self.is_ray_hack:
             env = os.environ.copy()
@@ -1378,6 +1376,12 @@ class Client(ServerSender, ray.ClientData):
             env['PWD'] = str(self.get_project_path())
             
             ray_hack_pwd = self.get_project_path()
+            if ray_hack_pwd is None:
+                _logger.error(
+                    f"Ray-Hack client {self.client_id} can not have "
+                    "project path, won't start")
+                return
+
             env['PWD'] = str(ray_hack_pwd)
             
             arguments_line = expand_vars(env, self.arguments)
@@ -1431,7 +1435,8 @@ class Client(ServerSender, ray.ClientData):
 
             if self.protocol is ray.Protocol.INTERNAL:
                 self._internal = InternalClient(
-                    self.executable_path, arguments, self.get_server_url())
+                    self.executable_path, tuple(arguments),
+                    self.get_server_url())
                 self._internal.start()
                 self.session.externals_timer.start()
                 
@@ -1467,7 +1472,7 @@ class Client(ServerSender, ray.ClientData):
 
         if not self.is_running():
             if self.executable_path in RS.non_active_clients:
-                if osp.src_addr:
+                if osp is not None and osp.src_addr:
                     self._osc_srcs[OscSrc.START] = osp
                     self._osc_srcs[OscSrc.OPEN] = None
 
@@ -1523,7 +1528,7 @@ class Client(ServerSender, ray.ClientData):
         return self._process.state() == QProcess.ProcessState.Running
 
     def external_finished(self):
-        self._process_finished(0, 0)
+        self._process_finished(0, 0) # type:ignore
 
     def nsm_finished_terminal_alive(self):
         # the client is not more alive
@@ -1935,6 +1940,9 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
     def get_project_files(self) -> list[Path]:
         client_files = list[Path]()
         project_path = self.get_project_path()
+        if project_path is None:
+            return []
+
         spath = self.session.path
         if spath is None:
             return []
@@ -2184,7 +2192,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.send(src_addr, osc_paths.ERROR, osc_path, ray.Err.COPY_ABORTED,
                   "Copy was aborted by user")
 
-    def change_prefix(self, prefix_mode: int, custom_prefix: str):
+    def change_prefix(self, prefix_mode: ray.PrefixMode, custom_prefix: str):
         if self.is_running():
             return
 
@@ -2201,6 +2209,12 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             new_prefix = custom_prefix
 
         links_dir = self.get_links_dirname()
+
+        if self.session.path is None:
+            _logger.warning(
+                f'Attempting to change prefix of client {self.client_id} '
+                'while there is no session path')
+            return
 
         self._rename_files(
             self.session.path,
@@ -2227,52 +2241,62 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         X_SESSION_X = "XXX_SESSION_NAME_XXX"
         X_CLIENT_ID_X = "XXX_CLIENT_ID_XXX"
         X_CLIENT_LINKS_DIR_X = "XXX_CLIENT_LINKS_DIR_XXX"
-        # used for Carla links dir
+        'used for Carla links dir'
 
-        if template_save is ray.Template.NONE:
-            spath = self.session.root / new_session_full_name
+        match template_save:
+            case ray.Template.NONE:
+                spath = self.session.root / new_session_full_name
 
-        elif template_save is ray.Template.RENAME:
-            pass
+            case ray.Template.RENAME:
+                ...
 
-        elif template_save is ray.Template.SESSION_SAVE:
-            spath = Path(new_session_full_name)
-            if not spath.is_absolute():
-                spath = TemplateRoots.user_sessions / new_session_full_name
-            new_session_name = X_SESSION_X
+            case ray.Template.SESSION_SAVE:
+                spath = Path(new_session_full_name)
+                if not spath.is_absolute():
+                    spath = TemplateRoots.user_sessions / new_session_full_name
+                new_session_name = X_SESSION_X
 
-        elif template_save is ray.Template.SESSION_SAVE_NET:
-            spath = (self.session.root
-                     / TemplateRoots.net_session_name
-                     / new_session_full_name)
-            new_session_name = X_SESSION_X
+            case ray.Template.SESSION_SAVE_NET:
+                spath = (self.session.root
+                        / TemplateRoots.net_session_name
+                        / new_session_full_name)
+                new_session_name = X_SESSION_X
 
-        elif template_save is ray.Template.SESSION_LOAD:
-            spath = self.session.root / new_session_full_name
-            old_session_name = X_SESSION_X
+            case ray.Template.SESSION_LOAD:
+                spath = self.session.root / new_session_full_name
+                old_session_name = X_SESSION_X
 
-        elif template_save is ray.Template.SESSION_LOAD_NET:
-            spath = self.session.root / new_session_full_name
-            old_session_name = X_SESSION_X
+            case ray.Template.SESSION_LOAD_NET:
+                spath = self.session.root / new_session_full_name
+                old_session_name = X_SESSION_X
 
-        elif template_save is ray.Template.CLIENT_SAVE:
-            spath = TemplateRoots.user_clients / new_session_full_name
-            new_session_name = X_SESSION_X
-            new_client_id = X_CLIENT_ID_X
-            new_client_links_dir = X_CLIENT_LINKS_DIR_X
+            case ray.Template.CLIENT_SAVE:
+                spath = TemplateRoots.user_clients / new_session_full_name
+                new_session_name = X_SESSION_X
+                new_client_id = X_CLIENT_ID_X
+                new_client_links_dir = X_CLIENT_LINKS_DIR_X
 
-        elif template_save is ray.Template.CLIENT_LOAD:
-            spath = self.session.path
-            old_session_name = X_SESSION_X
-            old_client_id = X_CLIENT_ID_X
-            old_client_links_dir = X_CLIENT_LINKS_DIR_X
+            case ray.Template.CLIENT_LOAD:
+                spath = self.session.path
+                old_session_name = X_SESSION_X
+                old_client_id = X_CLIENT_ID_X
+                old_client_links_dir = X_CLIENT_LINKS_DIR_X
+
+        if spath is None:
+            _logger.error(
+                f'Impossible to adjust files after copy '
+                f'for client {self.client_id} : '
+                f'spath is None')
+            return
 
         old_prefix = old_session_name
         new_prefix = new_session_name
-        if self.prefix_mode is ray.PrefixMode.CLIENT_NAME:
-            old_prefix = new_prefix = self.name
-        elif self.prefix_mode is ray.PrefixMode.CUSTOM:
-            old_prefix = new_prefix = self.custom_prefix
+        
+        match self.prefix_mode:
+            case ray.PrefixMode.CLIENT_NAME:
+                old_prefix = new_prefix = self.name
+            case ray.PrefixMode.CUSTOM:
+                old_prefix = new_prefix = self.custom_prefix
 
         self._rename_files(
             spath,
@@ -2283,7 +2307,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
     def server_announce(self, osp: OscPack, is_new: bool):
         client_name, capabilities, executable_path, \
-            major, minor, pid = osp.args
+            major, minor, pid = osp.args # type:ignore
 
         client_name: str
         capabilities: str

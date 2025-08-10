@@ -1,6 +1,7 @@
 
 # Imports from standard library
 import functools
+from io import TextIOWrapper
 import logging
 import math
 import os
@@ -15,7 +16,7 @@ from qtpy.QtCore import QCoreApplication, QTimer, QProcess
 
 # Imports from src/shared
 from osclib import Address, MegaSend, is_valid_osc_url
-from osclib.bases import OscPack
+from osclib.bases import OscPack, OscPath
 import ray
 from xml_tools import XmlElement
 import osc_paths
@@ -27,11 +28,14 @@ import osc_paths.nsm as nsm
 import multi_daemon_file
 from client import Client
 from daemon_tools import (
-    TemplateRoots, RS, Terminal, highlight_text)
+    NoSessionPath, TemplateRoots, RS, Terminal, highlight_text)
 import ardour_templates
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session import Session
+from file_copier import FileCopier
+from scripter import StepScripter
+from canvas_saver import CanvasSaver
 
 
 _logger = logging.getLogger(__name__)
@@ -42,6 +46,10 @@ class OperatingSession(Session):
     def __init__(self, root: Path, session_id=0):
         Session.__init__(self, root, session_id)
         self.wait_for = ray.WaitFor.NONE
+
+        self.file_copier = FileCopier(self)
+        self.step_scripter = StepScripter(self)
+        self.canvas_saver = CanvasSaver(self)
 
         self.timer = QTimer()
         self.timer_redondant = False
@@ -66,7 +74,7 @@ class OperatingSession(Session):
         self.steps_osp: Optional[OscPack] = None
         'Stock the OscPack of the long operation running (if any).'
 
-        self.steps_order = list[Union[Callable, list[Any]]]()
+        self.steps_order = list[Callable| tuple[Callable | Any, ...]]()
 
         self.terminated_yet = False
 
@@ -86,7 +94,7 @@ class OperatingSession(Session):
 
     def _wait_and_go_to(
             self, duration: int,
-            follow: Union[tuple[Callable], list[Callable], Callable],
+            follow: tuple[Callable, Any] | list[Callable] | Callable,
             wait_for: ray.WaitFor, redondant=False):
         self.timer.stop()
 
@@ -257,8 +265,8 @@ class OperatingSession(Session):
                     arguments = [False, False]
 
         self.steps_order.__delitem__(0)
-        _logger.debug(f'next_function: {next_function.__name__}')
-        next_function(*arguments)
+        _logger.debug(f'next_function: {next_function.__name__}')  # type: ignore
+        next_function(*arguments) # type: ignore
 
     def _timer_launch_timeout(self):
         if self.clients_to_launch:
@@ -393,6 +401,17 @@ class OperatingSession(Session):
                 self.steps_order.__delitem__(0)
 
         self.next_function()
+
+    def _new_client(self, executable: str, client_id=None) -> Client:
+        client = Client(self)
+        client.executable_path = executable
+        client.name = Path(executable).name
+        client.client_id = client_id
+        if not client_id:
+            client.client_id = self.generate_client_id(executable)
+
+        self.clients.append(client)
+        return client
 
     def adjust_files_after_copy(self, new_session_full_name: str,
                                 template_mode: ray.Template):
@@ -871,6 +890,9 @@ for better organization.""")
             ray.WaitFor.DUPLICATE_START)
 
     def duplicate_substep1(self, new_session_full_name: str):
+        if self.path is None:
+            raise NoSessionPath
+        
         spath = self.root / new_session_full_name
         self.set_server_status(ray.ServerStatus.COPY)
         self.send_gui_message(_translate('GUIMSG', 'start session copy...'))
@@ -929,6 +951,9 @@ for better organization.""")
         self.steps_osp = None
 
     def save_session_template(self, template_name: str, net=False):
+        if self.path is None:
+            raise NoSessionPath
+
         template_root = TemplateRoots.user_sessions
 
         if net:
@@ -1073,6 +1098,9 @@ for better organization.""")
             self.send_gui(rg.session.NAME, '', '')
 
     def rename(self, new_session_name: str):
+        if self.path is None:
+            raise NoSessionPath
+
         spath = self.path.parent / new_session_name
         if spath.exists():        
             self._send_error(
@@ -1113,8 +1141,8 @@ for better organization.""")
         self.steps_osp = None
 
     def preload(self, session_full_name: str, auto_create=True):
-        # load session data in self.future* (clients, trashed_clients,
-        #                                    session_path, session_name)
+        '''load session data in self.future*
+        (clients, trashed_clients, session_path, session_name)'''
 
         session_short_path = Path(session_full_name)
         if session_short_path.is_absolute():
@@ -1147,8 +1175,8 @@ for better organization.""")
                     if root == str(spath):
                         continue
 
-                    for nsm_file in files:
-                        if nsm_file in ('raysession.xml', 'session.nsm'):
+                    for file_ in files:
+                        if file_ in ('raysession.xml', 'session.nsm'):
                             # dir contains a session inside,
                             # do not try to load it
                             self.load_error(ray.Err.SESSION_IN_SESSION_DIR)
@@ -1187,6 +1215,7 @@ for better organization.""")
         if self.is_nsm_locked() and os.getenv('NSM_URL'):
             session_ray_file = spath / 'raysubsession.xml'
 
+        nsm_file: Optional[TextIOWrapper] = None
         is_ray_file = True
         
         try:
@@ -1201,22 +1230,21 @@ for better organization.""")
             except BaseException as e:
                 _logger.info(str(e))
 
-                try:
-                    root = ET.Element('RAYSESSION')
-                    root.attrib['VERSION'] = ray.VERSION
-                    if self.is_nsm_locked():
-                        name = spath.name.rpartition('.')[0]
-                        root.attrib['name'] = name
-                        
-                    tree = ET.ElementTree(root)
-                    tree.write(session_ray_file)
+                root = ET.Element('RAYSESSION')
+                root.attrib['VERSION'] = ray.VERSION
+                if self.is_nsm_locked():
+                    root.attrib['name'] = spath.name.rpartition('.')[0]
                     
-                    is_ray_file = True
+                tree = ET.ElementTree(root)
 
+                try:
+                    tree.write(session_ray_file)                    
                 except BaseException as e:
                     _logger.error(str(e))
                     self.load_error(ray.Err.CREATE_FAILED)
                     return
+                else:
+                    is_ray_file = True
 
         self._no_future()
         sess_name = ""
@@ -1227,6 +1255,7 @@ for better organization.""")
             except BaseException as e:
                 _logger.error(str(e))
                 self.load_error(ray.Err.BAD_PROJECT)
+                return
             
             root = tree.getroot()
             if root.tag != 'RAYSESSION':
@@ -1281,20 +1310,21 @@ for better organization.""")
                 self.load_error(ray.Err.SESSION_LOCKED)
                 return
 
-            for line in nsm_file.read().split('\n'):
-                elements = line.split(':')
-                if len(elements) >= 3:
-                    client = Client(self)
-                    client.name = elements[0]
-                    client.executable_path = elements[1]
-                    client.client_id = elements[2]
-                    client.prefix_mode = ray.PrefixMode.CLIENT_NAME
-                    client.auto_start = True
-                    client.jack_naming = ray.JackNaming.LONG
+            if nsm_file is not None:
+                for line in nsm_file.read().splitlines():
+                    elements = line.split(':')
+                    if len(elements) >= 3:
+                        client = Client(self)
+                        client.name = elements[0]
+                        client.executable_path = elements[1]
+                        client.client_id = elements[2]
+                        client.prefix_mode = ray.PrefixMode.CLIENT_NAME
+                        client.auto_start = True
+                        client.jack_naming = ray.JackNaming.LONG
 
-                    self.future_clients.append(client)
+                        self.future_clients.append(client)
 
-            nsm_file.close()
+                nsm_file.close()
             self.send_gui(rg.session.IS_NSM)
 
         if not self.is_dummy:
@@ -1318,6 +1348,9 @@ for better organization.""")
     def take_place(self):
         self._set_path(self.future_session_path,
                        self.future_session_name)
+
+        if self.path is None:
+            raise NoSessionPath
 
         if self.name and self.name != self.path.name:
             # session folder has been renamed
@@ -1373,15 +1406,17 @@ for better organization.""")
                 client.switch_state = ray.SwitchState.NEEDED
 
         self.timer_quit.start()
-        self._wait_and_go_to(5000, (self.load_substep2, open_off), ray.WaitFor.QUIT)
+        self._wait_and_go_to(
+            5000, (self.load_substep2, open_off), ray.WaitFor.QUIT)
 
-    def load_substep2(self, open_off):
+    def load_substep2(self, open_off: bool):
         for client in self.expected_clients:
             client.kill()
 
-        self._wait_and_go_to(1000, (self.load_substep3, open_off), ray.WaitFor.QUIT)
+        self._wait_and_go_to(
+            1000, (self.load_substep3, open_off), ray.WaitFor.QUIT)
 
-    def load_substep3(self, open_off):
+    def load_substep3(self, open_off: bool):
         self._clean_expected()
 
         self.load_locked = False
@@ -1482,7 +1517,7 @@ for better organization.""")
                 self.send_initial_monitor(monitor_addr, False)
                 
             for client in self.clients:
-                if client.is_running() and client.can_monitor:
+                if client.addr and client.is_running() and client.can_monitor:
                     self.send_initial_monitor(client.addr, True)
 
         self._no_future()
@@ -1753,7 +1788,12 @@ for better organization.""")
         
         self._wait_and_go_to(10000, self.next_function, ray.WaitFor.REPLY)
 
-    def rename_full_client(self, client: Client, new_name: str, new_client_id: str):
+    def rename_full_client(
+            self, client: Client, new_name: str, new_client_id: str):
+        if self.path is None:
+            _logger.error('Impossible to rename full client, no path !!!')
+            return
+        
         tmp_client = Client(self)
         tmp_client.eat_attributes(client)
         tmp_client.client_id = new_client_id
@@ -1827,7 +1867,7 @@ for better organization.""")
 
     def switch_client(self, client: Client):
         client.switch()
-        self.next_function(client)
+        self.next_function()
 
     def load_client_snapshot(self, client_id, snapshot):
         self.set_server_status(ray.ServerStatus.REWIND)
@@ -1883,7 +1923,8 @@ for better organization.""")
     def terminate_step_scripter_substep3(self):
         self.next_function()
 
-    def clear_clients(self, src_addr, src_path, *client_ids):
+    def clear_clients(self, osp: OscPack):
+        client_ids: list[str] = osp.args # type:ignore
         self.clients_to_quit.clear()
         self.expected_clients.clear()
 
@@ -1896,20 +1937,18 @@ for better organization.""")
 
         self._wait_and_go_to(
             5000,
-            (self.clear_clients_substep2, src_addr, src_path),
+            (self.clear_clients_substep2, osp),
             ray.WaitFor.QUIT)
 
-    def clear_clients_substep2(self, src_addr, src_path):
+    def clear_clients_substep2(self, osp: OscPack):
         for client in self.expected_clients:
             client.kill()
 
         self._wait_and_go_to(
-            1000,
-            (self.clear_clients_substep3, src_addr, src_path),
-            ray.WaitFor.QUIT)
+            1000, (self.clear_clients_substep3, osp), ray.WaitFor.QUIT)
 
-    def clear_clients_substep3(self, src_addr, src_path):
-        self.answer(src_addr, src_path, 'Clients cleared')
+    def clear_clients_substep3(self, osp: OscPack):
+        self.send(*osp.reply(), 'Clients cleared')
         
     def send_preview(self, src_addr: Address, folder_sizes: list):
         def send_state(preview_state: ray.PreviewState):

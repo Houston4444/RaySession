@@ -1,3 +1,22 @@
+0.17.0 / 2025-09-XX
+    Mainly a patchbay features release. There are important structural changes in the code, here are mentionned only the most important new features.
+
+    RaySession itself:
+        New protocol: Internal. Used by ray-jackpatch, ray-alsapatch and ray-sooperlooper.
+            Avoid some UDP ports, some JACK clients, use less RAM.
+            (in config: daemon/internal_mode can be FORCE_INTERNAL, FORCE_NSM or FOLLOW_PROTOCOL)
+        Patchbay daemon now runs in the daemon process
+            (in config: daemon/internal_patchbay can be 'true' or 'false')
+    
+    Patchbay:
+        Views: you can now use as much views as you want, switching them with Alt+Num
+        Hide: Boxes are now hideable
+        Arrange: two scripts can be now arrange the graph, "follow the signal chain" or "two rows facing each other"
+        Custom Names: Clients and ports are now renamable in the canvas,
+            it can optionnally set this name as JACK metadata and auto-export custom names to JACK pretty names.
+        Undo/Redo: all box move, wrap/unwrap, hide/restore, arrange, change view events can be undone/redone
+
+
 0.14.4 / 2024-11-11
     Bug fix release.
 

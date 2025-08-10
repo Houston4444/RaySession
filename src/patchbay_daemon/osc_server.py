@@ -270,13 +270,13 @@ class PatchbayDaemonServer(BunServer):
                 addr = Address(self._tmp_gui_url)
             except:
                 return
-
-        self.send(addr, rpm.SERVER_LOSE)
+            else:
+                self.send(addr, rpm.SERVER_LOSE)
 
     def make_one_shot_act(self, one_shot_act: OscPath):
         match one_shot_act:
             case r.patchbay.EXPORT_ALL_CUSTOM_NAMES:
-                self.pe.export_all_pretty_names_to_jack_now()
+                self.pe.export_all_custom_names_to_jack_now()
             case r.patchbay.IMPORT_ALL_PRETTY_NAMES:
                 self._import_all_pretty_names()
             case r.patchbay.CLEAR_ALL_PRETTY_NAMES:

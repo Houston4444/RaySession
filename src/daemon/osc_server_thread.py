@@ -217,7 +217,7 @@ class ClientCommunicating(BunServerThread):
 
     @validator(osc_paths.REPLY, 'ss*')
     def reply(self, osp: OscPack):
-        reply_path: str = osp.args[0]
+        reply_path: str = osp.args[0] # type:ignore
 
         if reply_path == r.server.LIST_SESSIONS:
             # this reply is only used here for reply from net_daemon
@@ -264,7 +264,7 @@ class ClientCommunicating(BunServerThread):
     @validator(nsm.server.ADD, 's',
                no_sess="Cannot add to session because no session is loaded.")
     def _nsm_server_add(self, osp: OscPack):
-        executable_path: str = osp.args[0]
+        executable_path: str = osp.args[0] # type:ignore
 
         if '/' in executable_path:
             self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
@@ -284,7 +284,7 @@ class ClientCommunicating(BunServerThread):
         if self.is_nsm_locked:
             return False
 
-        new_session_name: str = osp.args[0]
+        new_session_name: str = osp.args[0] # type:ignore
 
         if not _path_is_valid(new_session_name):
             self.send(*osp.error(), ray.Err.CREATE_FAILED,
@@ -298,7 +298,9 @@ class ClientCommunicating(BunServerThread):
                       "No session to duplicate.")
             return False
 
-        if not _path_is_valid(osp.args[0]):
+        session_name: str = osp.args[0] # type:ignore
+
+        if not _path_is_valid(session_name):
             self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
@@ -330,7 +332,7 @@ class ClientCommunicating(BunServerThread):
     @validator(nsm.server.BROADCAST, 's.*')
     def _nsm_server_broadcast(self, osp: OscPack):
         # don't allow clients to broadcast NSM commands
-        follow_path: str = osp.args[0]
+        follow_path: str = osp.args[0] # type:ignore
         if follow_path.startswith(('/nsm/', '/ray/')):
             return False
 
@@ -343,7 +345,7 @@ class ClientCommunicating(BunServerThread):
                 continue
 
             if not are_same_osc_port(client.addr.url, osp.src_addr.url):
-                self.send(client.addr, Message(*osp.args))
+                self.send(client.addr, Message(osp.path, *osp.args)) # type:ignore
 
             # TODO broadcast to slave daemons
             #for gui_addr in self.gui_list:
@@ -364,7 +366,7 @@ class ClientCommunicating(BunServerThread):
         if not client:
             return False
 
-        progress: float = osp.args[0]
+        progress: float = osp.args[0] # type:ignore
         client.progress = progress
         self.send_gui(rg.client.PROGRESS, client.client_id,
                       client.progress)
@@ -519,7 +521,7 @@ class OscServerThread(ClientCommunicating):
         
         self.add_nice_methods(METHODS_DICT, self.generic_method)
         self.add_nice_methods(_validators_types, self.generic_method)
-        self.add_method(None, None, self.noneMethod)
+        self.add_method(None, None, self.noneMethod) # type:ignore
         global instance
         instance = self
 
@@ -533,7 +535,7 @@ class OscServerThread(ClientCommunicating):
         
         # run the method decorated with @validator or @directos
         if osp.path in _validators:
-            if not _validators[osp.path](self, osp):
+            if not _validators[osp.path](self, osp): # type:ignore
                 return
 
         # session_signaled will operate the message in the main thread
@@ -541,9 +543,9 @@ class OscServerThread(ClientCommunicating):
 
     @validator(r.server.GUI_ANNOUNCE, 'sisiis')
     def _srv_gui_announce(self, osp: OscPack):
-        args: tuple[str, int, str, int, int, str] = osp.args
+        osp_args: tuple[str, int, str, int, int, str] = osp.args # type:ignore
         (version, int_nsm_locked, net_master_daemon_url,
-         gui_pid, net_daemon_id, tcp_url) = args
+         gui_pid, net_daemon_id, tcp_url) = osp_args
 
         nsm_locked = bool(int_nsm_locked)
 
@@ -594,16 +596,18 @@ class OscServerThread(ClientCommunicating):
 
     @directos(r.server.CONTROLLER_ANNOUNCE, 'i')
     def _srv_controller_announce(self, osp: OscPack):
+        pid: int = osp.args[0] # type:ignore
         controller = Controller()
         controller.addr = osp.src_addr
-        controller.pid = osp.args[0]
+        controller.pid = pid
         self.controller_list.append(controller)
         self.send(*osp.reply(), 'announced')
 
     @directos(r.server.CONTROLLER_DISANNOUNCE, '')
     def _srv_controller_disannonce(self, osp: OscPack):
         for controller in self.controller_list:
-            if controller.addr.port == osp.src_addr.port:
+            if (controller.addr is not None
+                    and controller.addr.port == osp.src_addr.port):
                 break
         else:
             return
@@ -641,7 +645,7 @@ class OscServerThread(ClientCommunicating):
 
     @validator(r.server.CHANGE_ROOT, 's')
     def _srv_change_root(self, osp: OscPack):
-        new_root: str = osp.args[0]
+        new_root: str = osp.args[0] # type:ignore
         if not(new_root.startswith('/') and _path_is_valid(new_root)):
             self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "invalid session root !")
@@ -669,7 +673,12 @@ class OscServerThread(ClientCommunicating):
         tmp_exec_list = list[str]()
         n = 0
 
-        pathlist = os.getenv('PATH').split(':')
+        path = os.getenv('PATH')
+        if path is None:
+            self.send(*osp.reply())
+            return
+
+        pathlist = path.split(':')
         for pathdir in pathlist:
             if os.path.isdir(pathdir):
                 listexe = os.listdir(pathdir)
@@ -714,7 +723,7 @@ class OscServerThread(ClientCommunicating):
 
     @directos(r.server.REMOVE_CLIENT_TEMPLATE, 's')
     def _srv_remove_client_template(self, osp: OscPack):
-        template_name: str = osp.args[0]
+        template_name: str = osp.args[0] # type:ignore
         templates_root = TemplateRoots.user_clients
         templates_file = templates_root / 'client_templates.xml'
 
@@ -781,15 +790,17 @@ class OscServerThread(ClientCommunicating):
         if self.is_nsm_locked:
             return False
 
-        if not _path_is_valid(osp.args[0]):
+        session_name: str = osp.args[0] # type:ignore
+
+        if not _path_is_valid(session_name):
             self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Invalid session name.")
             return False
 
     @validator(r.server.SAVE_SESSION_TEMPLATE, 'ss|sss')
     def _srv_save_session_template(self, osp: OscPack):
-        session_name: str = osp.args[0]
-        template_name: str = osp.args[1]
+        session_name: str = osp.args[0] # type:ignore
+        template_name: str = osp.args[1] # type:ignore
 
         #save as template an not loaded session
         if not _path_is_valid(session_name):
@@ -804,12 +815,12 @@ class OscServerThread(ClientCommunicating):
 
     @validator(r.server.GET_SESSION_PREVIEW, 's')
     def _srv_get_session_preview(self, osp: OscPack):
-        sess_prev: str = osp.args[0]
+        sess_prev: str = osp.args[0] # type:ignore
         self.session_to_preview = sess_prev
     
     @directos(r.server.SCRIPT_INFO, 's')
     def _srv_script_info(self, osp: OscPack):
-        info: str = osp.args[0]
+        info: str = osp.args[0] # type:ignore
         self.send_gui(rg.SCRIPT_INFO, info)
         self.send(*osp.reply(), "Info sent")
 
@@ -824,13 +835,13 @@ class OscServerThread(ClientCommunicating):
             self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
                       "This server has no attached GUI")
             return
-        user_act: str = osp.args[0]
+        user_act: str = osp.args[0] # type:ignore
         self.send_gui(rg.SCRIPT_USER_ACTION, user_act)
 
     @validator(r.server.SET_OPTION, 'i')
     def _srv_set_option(self, osp: OscPack):
         'set option from GUI'
-        option_int: int = osp.args[0]
+        option_int: int = osp.args[0] # type:ignore
         try:
             option = ray.Option(abs(option_int))
         except:
@@ -851,9 +862,9 @@ class OscServerThread(ClientCommunicating):
     @directos(r.server.SET_OPTIONS, 'ss*')
     def _srv_set_options(self, osp: OscPack):
         'set options from ray_control'
-        args: list[str] = osp.args
+        osp_args: tuple[str, ...] = osp.args # type:ignore
 
-        for option_str in args:
+        for option_str in osp_args:
             option_value = True
             if option_str.startswith('not_'):
                 option_value = False
@@ -890,7 +901,7 @@ class OscServerThread(ClientCommunicating):
 
     @directos(r.server.HAS_OPTION, 's')
     def _srv_has_option(self, osp: OscPack):
-        option_str = osp.args[0]
+        option_str: str = osp.args[0] # type:ignore
 
         if option_str not in self._OPTIONS_DICT:
             self.send(*osp.error(), ray.Err.GENERAL_ERROR,
@@ -911,14 +922,14 @@ class OscServerThread(ClientCommunicating):
 
     @directos(r.server.OPEN_FILE_MANAGER_AT, 's')
     def _srv_open_file_manager_at(self, osp: OscPack):
-        folder_path: str = osp.args[0]
+        folder_path: str = osp.args[0] # type:ignore
         if os.path.isdir(folder_path):
             subprocess.Popen(['xdg-open', folder_path])
         self.send(*osp.reply(), '')
 
     @directos(r.server.EXOTIC_ACTION, 's')
     def _srv_exotic_action(self, osp: OscPack):
-        action: str = osp.args[0]
+        action: str = osp.args[0] # type:ignore
         autostart_dir = Path.home() / '.config' / 'autostart'
         desk_file = "ray-jack_checker.desktop"
         dest_full_path = autostart_dir / desk_file
@@ -938,8 +949,9 @@ class OscServerThread(ClientCommunicating):
 
     @validator(r.server.AUTO_EXPORT_CUSTOM_NAMES, 's')
     def _srv_auto_export_pretty_names(self, osp: OscPack):
+        yesno: str = osp.args[0] # type:ignore
         export_pretty_names = bool(
-            osp.args[0].lower() not in (
+            yesno.lower() not in (
                 '0', 'false', 'no', 'off', 'true_name'))
 
         if export_pretty_names:
@@ -959,12 +971,9 @@ class OscServerThread(ClientCommunicating):
         
         # start patchbay daemon in main thread if it is not started yet
         return not patchbay_dmn_mng.is_running()
-        # return bool(
-        #     patchbay_dmn_mng.state() is not patchbay_dmn_mng.State.LAUNCHED)
 
     @validator(r.server.EXPORT_CUSTOM_NAMES, '')
     def _srv_export_pretty_names(self, osp: OscPack):
-        
         match patchbay_dmn_mng.state():
             case patchbay_dmn_mng.State.READY:
                 self.send_patchbay_dmn(r.patchbay.EXPORT_ALL_CUSTOM_NAMES)
@@ -1015,7 +1024,7 @@ class OscServerThread(ClientCommunicating):
 
     @validator(r.session.SAVE_AS_TEMPLATE, 's')
     def _sess_save_as_template(self, osp: OscPack):
-        template_name: str = osp.args[0]
+        template_name: str = osp.args[0] # type:ignore
         if '/' in template_name or template_name == '.':
             self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Invalid session template name.")
@@ -1052,7 +1061,7 @@ class OscServerThread(ClientCommunicating):
         if self.is_nsm_locked:
             return False
 
-        new_name: str = osp.args[0]
+        new_name: str = osp.args[0] # type:ignore
 
         if not _path_is_valid(new_name):
             self.send(*osp.error(), ray.Err.CREATE_FAILED,
@@ -1065,7 +1074,7 @@ class OscServerThread(ClientCommunicating):
 
     @validator(r.session.RENAME, 's', no_sess="No session to rename.")
     def _sess_rename(self, osp: OscPack):
-        new_session_name: str = osp.args[0]
+        new_session_name: str = osp.args[0] # type:ignore
 
         #prevent rename session in network session
         if self._nsm_locker_url:
@@ -1095,11 +1104,12 @@ class OscServerThread(ClientCommunicating):
 
     def _add_exec(self, osp: OscPack) -> Optional[bool]:
         # used because the same check exists for 2 differents paths.
-        match osp.args:
+        match osp.types:
             case 'siiissi':
-                args: tuple[str, int, int, int, str, str, int] = osp.args
+                osp_args: tuple[str, int, int, int, str, str, int] = \
+                    osp.args # type:ignore
                 executable_path, auto_start, protocol, \
-                    prefix_mode, prefix_pattern, client_id, jack_naming = args
+                    prefix_mode, prefix_pattern, client_id, jack_naming = osp_args
                     
                 try:
                     protocol = ray.Protocol(protocol)
@@ -1109,11 +1119,13 @@ class OscServerThread(ClientCommunicating):
                     return False
 
             case _:
-                args: tuple[str, ...] = osp.args
-                executable_path = args[0]
-                ray_hack = bool(len(args) > 1 and 'ray_hack' in args[1:])
-                if ray_hack: protocol = ray.Protocol.RAY_HACK
-                else: protocol = ray.Protocol.NSM
+                osp_args_: tuple[str, ...] = osp.args # type:ignore
+                executable_path = osp_args_[0]
+                ray_hack = bool(len(osp_args_) > 1 and 'ray_hack' in osp_args_[1:])
+                if ray_hack:
+                    protocol = ray.Protocol.RAY_HACK
+                else:
+                    protocol = ray.Protocol.NSM
 
         if protocol is ray.Protocol.NSM and '/' in executable_path:
             self.send(*osp.error(), ray.Err.LAUNCH_FAILED,
@@ -1159,8 +1171,8 @@ class OscServerThread(ClientCommunicating):
 
     @directos(r.favorites.ADD, 'ssis')
     def _ray_favorites_add(self, osp: OscPack):
-        args: tuple[str, str, int, str] = osp.args
-        name, icon, int_factory, display_name = args
+        osp_args: tuple[str, str, int, str] = osp.args # type:ignore
+        name, icon, int_factory, display_name = osp_args
 
         for favorite in RS.favorites:
             if (favorite.name == name
@@ -1176,8 +1188,8 @@ class OscServerThread(ClientCommunicating):
 
     @directos(r.favorites.REMOVE, 'si')
     def _ray_favorites_remove(self, osp: OscPack):
-        args: tuple[str, int] = osp.args
-        name, int_factory = args
+        osp_args: tuple[str, int] = osp.args # type:ignore
+        name, int_factory = osp_args
 
         for favorite in RS.favorites:
             if (favorite.name == name

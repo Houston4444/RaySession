@@ -95,7 +95,8 @@ class PatchRemote(BunServerThread):
 
     @bun_manage(rpm.PORT_ADDED, 'siih')
     def _port_added(self, osp: OscPack):
-        name, type_, flags, uuid = osp.args        
+        osp_args: tuple[str, int, int, int] = osp.args
+        name, type_, flags, uuid = osp_args
         if type_ != 4:
             return
 
@@ -123,7 +124,7 @@ class PatchRemote(BunServerThread):
         
     @bun_manage(rpm.PORT_REMOVED, 's')
     def _port_removed(self, osp: OscPack):
-        name = osp.args[0]
+        name: str = osp.args[0]
         jack_port = self.ports.get(name)
         if jack_port is None:
             return
@@ -132,10 +133,6 @@ class PatchRemote(BunServerThread):
         
         self.ev.add_event(Event.PORT_REMOVED, jack_port.name,
                           jack_port.mode, jack_port.type)
-    
-    # @bun_manage(rpm.PORT_RENAMED, 'ss|ssi')
-    # def _port_renamed(self, osp: OscPack):
-    #     ...
     
     @bun_manage(rpm.BIG_PACKETS, 'i')
     def _big_packets(self, osp: OscPack):

@@ -114,7 +114,6 @@ def _get_dict_for_this() -> dict[str, str | int | bool]:
 
 def _clean_dirty_pids():
     if _main.json_list is None:
-        print('perdu None')
         return
     
     rm_dmns = list[dict]()
@@ -139,16 +138,17 @@ def update():
         has_dirty_pid = False
         self_dmn: Optional[dict] = None
         
-        for dmn in _main.json_list:
-            pid = dmn.get('pid')
-            if pid == os.getpid():
-                self_dmn = dmn
-            elif pid and not _pid_exists(pid):
-                has_dirty_pid = True
+        if _main.json_list is not None:
+            for dmn in _main.json_list:
+                pid = dmn.get('pid')
+                if pid == os.getpid():
+                    self_dmn = dmn
+                elif pid and not _pid_exists(pid):
+                    has_dirty_pid = True
         
-        if self_dmn is not None:
-            _main.json_list.remove(self_dmn)
-        _main.json_list.append(_get_dict_for_this())
+            if self_dmn is not None:
+                _main.json_list.remove(self_dmn)
+            _main.json_list.append(_get_dict_for_this())
         
         if has_dirty_pid:
             _clean_dirty_pids()
@@ -157,6 +157,9 @@ def update():
 
 def quit():
     if not _open_file():
+        return
+
+    if _main.json_list is None:
         return
 
     for dmn in _main.json_list:

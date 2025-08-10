@@ -145,7 +145,7 @@ def start():
                                auto_export_pretty_names)
     patch_engine.mdata_locker_value = daemon_port_str
     patch_engine.one_shot_act = one_shot_act
-    osc_server = PatchbayDaemonServer(patch_engine)
+    osc_server = PatchbayDaemonServer(patch_engine, daemon_port)
     osc_server.set_tmp_gui_url(gui_url)
     main_loop((patch_engine, osc_server))
 

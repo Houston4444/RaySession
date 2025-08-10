@@ -4,22 +4,16 @@ import logging
 import os
 import random
 import string
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from io import BytesIO
 
-# third party
-from qtpy.QtCore import QProcess
-
-# Imports from HoustonPatchbay
-from patshared import Naming
-
 # Imports from src/shared
 from osclib import Address, are_same_osc_port
+from osclib.bases import OscPack
 import ray
 from xml_tools import XmlElement
-import osc_paths
 import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 import osc_paths.nsm as nsm
@@ -31,13 +25,9 @@ from snapshoter import Snapshoter
 import multi_daemon_file
 from signaler import Signaler
 from server_sender import ServerSender
-from file_copier import FileCopier
 from client import Client
-from scripter import StepScripter
-from canvas_saver import CanvasSaver
-from daemon_tools import Terminal, RS
+from daemon_tools import NoSessionPath, Terminal
 import templates_database
-from internal_client import InternalClient
 
 
 _logger = logging.getLogger(__name__)
@@ -70,12 +60,9 @@ class Session(ServerSender):
         self.is_renameable = True
         self.forbidden_ids_set = set[str]()
 
-        self.file_copier = FileCopier(self)
         self.bookmarker = BookMarker()
         self.desktops_memory = DesktopsMemory(self)
         self.snapshoter = Snapshoter(self)
-        self.step_scripter = StepScripter(self)
-        self.canvas_saver = CanvasSaver(self)
         
         self._time_at_open = 0
 
@@ -110,7 +97,7 @@ class Session(ServerSender):
 
         server = self.get_server()
         if server is not None:
-            Terminal.message(string, server.port)
+            Terminal.message(string, server.port) #type:ignore
         else:
             Terminal.message(string)
 
@@ -179,31 +166,20 @@ class Session(ServerSender):
             self.send_gui(rg.server.RECENT_SESSIONS,
                           *self.recent_sessions[self.root])
 
-    def get_client(self, client_id: str) -> Client:
+    def get_client(self, client_id: str) -> Optional[Client]:
         for client in self.clients:
             if client.client_id == client_id:
                 return client
 
         _logger.error(f'client_id {client_id} is not in ray-daemon session')
 
-    def get_client_by_address(self, addr: Address) -> Client:
+    def get_client_by_address(self, addr: Address) -> Optional[Client]:
         if not addr:
             return None
 
         for client in self.clients:
             if client.addr and client.addr.url == addr.url:
                 return client
-
-    def _new_client(self, executable: str, client_id=None)->Client:
-        client = Client(self)
-        client.executable_path = executable
-        client.name = Path(executable).name
-        client.client_id = client_id
-        if not client_id:
-            client.client_id = self.generate_client_id(executable)
-
-        self.clients.append(client)
-        return client
 
     def _trash_client(self, client:Client):
         if not client in self.clients:
@@ -288,10 +264,10 @@ class Session(ServerSender):
 
         return client_id
 
-    def _save_session_file(self) -> int:
+    def _save_session_file(self) -> ray.Err:
         if self.path is None:
-            return
-        
+            return ray.Err.NO_SESSION_OPEN
+
         session_path = self.path
         session_file = session_path / 'raysession.xml'
 
@@ -446,6 +422,8 @@ class Session(ServerSender):
 
         if client.is_ray_hack:
             project_path = client.get_project_path()
+            if project_path is None:
+                raise NoSessionPath
             if not project_path.is_dir():
                 try:
                     project_path.mkdir(parents=True)
@@ -460,8 +438,8 @@ class Session(ServerSender):
         
         return True
 
-    def _re_order_clients(self, client_ids_list: list[str],
-                          src_addr=None, src_path=''):
+    def _re_order_clients(
+            self, client_ids_list: list[str], osp: Optional[OscPack]=None):
         client_newlist = list[Client]()
 
         for client_id in client_ids_list:
@@ -471,9 +449,9 @@ class Session(ServerSender):
                     break
 
         if len(client_newlist) != len(self.clients):
-            if src_addr:
+            if osp is not None:
                 self.send(
-                    src_addr, osc_paths.ERROR, src_path, 
+                    *osp.error(),
                     ray.Err.GENERAL_ERROR,
                     "%s clients are missing or incorrect" \
                         % (len(self.clients) - len(client_ids_list)))
@@ -483,8 +461,8 @@ class Session(ServerSender):
         for client in client_newlist:
             self.clients.append(client)
 
-        if src_addr:
-            self.answer(src_addr, src_path, "clients reordered")
+        if osp is not None:
+            self.send(*osp.reply(), "clients reordered")
 
         self.send_gui(rg.session.SORT_CLIENTS,
                       *[c.client_id for c in self.clients])

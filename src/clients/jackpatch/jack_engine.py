@@ -75,6 +75,9 @@ class JackEngine(ProtoEngine):
             self, all_ports: dict[PortMode, list[JackPort]],
             connection_list: list[tuple[str, str]]):
         '''get all current JACK ports and connections at startup'''
+        if self._client is None:
+            return
+        
         for port in self._client.get_ports():
             jack_port = JackPort()
             jack_port.name = port.name
@@ -89,6 +92,9 @@ class JackEngine(ProtoEngine):
                     connection_list.append((jack_port.name, oth_port.name))
 
     def connect_ports(self, port_out: str, port_in: str):
+        if self._client is None:
+            return
+
         try:
             self._client.connect(port_out, port_in)
         except jack.JackErrorCode:
@@ -98,8 +104,10 @@ class JackEngine(ProtoEngine):
             _logger.warning(
                 f"Failed to connect '{port_out}' to '{port_in}'\n{str(e)}")
 
-
     def disconnect_ports(self, port_out: str, port_in: str):
+        if self._client is None:
+            return
+        
         try:
             self._client.disconnect(port_out, port_in)
         except jack.JackErrorCode:
@@ -110,6 +118,9 @@ class JackEngine(ProtoEngine):
                 f"Failed to disconnect '{port_out}' from '{port_in}'\n{str(e)}")
 
     def quit(self):
+        if self._client is None:
+            return
+
         _logger.info('closing JACK client')
         self._client.deactivate()
         self._client.close()

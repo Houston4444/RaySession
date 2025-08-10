@@ -22,7 +22,7 @@ from daemon_tools import RS
 from server_sender import ServerSender
 
 if TYPE_CHECKING:
-    from session_signaled import SignaledSession
+    from session_operating import OperatingSession
     from osc_server_thread import Gui
 
 
@@ -49,7 +49,7 @@ def _get_version_tuple_json_dict(json_contents: dict) -> tuple[int, int, int]:
 
 
 class CanvasSaver(ServerSender):
-    def __init__(self, session: 'SignaledSession'):
+    def __init__(self, session: 'OperatingSession'):
         ServerSender.__init__(self)
         self.session = session
 
@@ -252,9 +252,9 @@ class CanvasSaver(ServerSender):
         try:
             json_dict: dict[str, Union[int, str, list[str]]] = \
                 json.loads(args[0])
-            view_num: int = json_dict['view_num']
-            ptv = PortTypesViewFlag.from_config_str(json_dict['ptv'])
-            presents = set(json_dict['presents'])
+            view_num: int = json_dict['view_num'] # type:ignore
+            ptv = PortTypesViewFlag.from_config_str(json_dict['ptv']) # type:ignore
+            presents = set(json_dict['presents']) # type:ignore
         except BaseException as e:
             _logger.warning(
                 f'failed to clear absents in canvas view\n{str(e)}')
