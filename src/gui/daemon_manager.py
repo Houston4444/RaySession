@@ -12,8 +12,7 @@ from qtpy.QtCore import QObject, QProcess, QTimer
 from qtpy.QtWidgets import QApplication
 
 # Imports from src/shared
-from osclib import (TCP, Address, get_free_osc_port,
-                    get_net_url, verified_address)
+from osclib import Address, get_free_osc_port, verified_address
 import ray
 import osc_paths.ray as r
 
@@ -200,12 +199,14 @@ class DaemonManager(QObject):
                 self.main_win.set_nsm_locked(True)
         elif CommandLineArgs.under_nsm:
             server = GuiServerThread.instance()
-            server.to_daemon(r.server.SET_NSM_LOCKED)
+            if server is not None:
+                server.to_daemon(r.server.SET_NSM_LOCKED)
 
         if self.main_win is not None and self.main_win.waiting_for_patchbay:
             self.main_win.waiting_for_patchbay = False
             server = GuiServerThread.instance()
-            server.to_daemon(r.server.ASK_FOR_PATCHBAY, '')
+            if server is not None:
+                server.to_daemon(r.server.ASK_FOR_PATCHBAY, '')
 
         self.signaler.daemon_announce_ok.emit()
         self.session.set_daemon_options(options)
@@ -219,7 +220,8 @@ class DaemonManager(QObject):
 
         if address:
             server = GuiServerThread.instance()
-            server.disannounce(address)
+            if server is not None:
+                server.disannounce(address)
 
         self._port = None
         self.url = ''
@@ -266,9 +268,10 @@ class DaemonManager(QObject):
                 return
 
         server = GuiServerThread.instance()
-        if not server:
+        if server is None:
             _logger.error(
                 "impossible for GUI to launch daemon. server is missing.")
+            return
 
         # start process
         arguments = ['--gui-url', str(server.url),
@@ -306,7 +309,8 @@ class DaemonManager(QObject):
             return
 
         server = GuiServerThread.instance()
-        server.to_daemon(r.server.QUIT)
+        if server is not None:
+            server.to_daemon(r.server.QUIT)
         QTimer.singleShot(50, QApplication.quit)
 
     def set_new_osc_address(self):

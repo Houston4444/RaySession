@@ -63,7 +63,8 @@ class PatchRemote(BunServerThread):
 
     @bun_manage(rpm.CONNECTION_ADDED, 'ss')
     def _connection_added(self, osp: OscPack):
-        port_out, port_in = osp.args
+        osp_args: tuple[str, str] = osp.args # type:ignore
+        port_out, port_in = osp_args
         if port_out not in self.ports:
             return
 
@@ -80,7 +81,8 @@ class PatchRemote(BunServerThread):
     
     @bun_manage(rpm.CONNECTION_REMOVED, 'ss')
     def _connection_removed(self, osp: OscPack):
-        port_out, port_in = osp.args
+        osp_args: tuple[str, str] = osp.args # type:ignore
+        port_out, port_in = osp_args
         jport_out = self.ports.get(port_out)
         jport_in = self.ports.get(port_in)
         if jport_out is None or jport_in is None:
@@ -95,7 +97,7 @@ class PatchRemote(BunServerThread):
 
     @bun_manage(rpm.PORT_ADDED, 'siih')
     def _port_added(self, osp: OscPack):
-        osp_args: tuple[str, int, int, int] = osp.args
+        osp_args: tuple[str, int, int, int] = osp.args # type:ignore
         name, type_, flags, uuid = osp_args
         if type_ != 4:
             return
@@ -124,7 +126,7 @@ class PatchRemote(BunServerThread):
         
     @bun_manage(rpm.PORT_REMOVED, 's')
     def _port_removed(self, osp: OscPack):
-        name: str = osp.args[0]
+        name: str = osp.args[0] # type:ignore
         jack_port = self.ports.get(name)
         if jack_port is None:
             return

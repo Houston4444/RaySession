@@ -1,6 +1,7 @@
 
 # Imports from standard library
 from enum import IntEnum
+from typing import Optional
 
 # third party imports
 from qtpy.QtCore import Qt, QDateTime, QDate
@@ -19,6 +20,13 @@ import ui.list_snapshots
 import ui.snapshots_info
 
 
+class InvalidSnapshot(Exception):
+    def __init__(
+            self, 
+            message='Can not access to this func for an invalid snapshot'):
+        super().__init__(message)
+
+
 class SnGroup(IntEnum):
     ELEMENT = 0
     DAY = 1
@@ -33,14 +41,13 @@ class Snapshot:
     sub_type = SnGroup.ELEMENT
     item = None
     before_rewind_to = ''
-    date_time: QDateTime = None
-    rewind_date_time: QDateTime = None
+    rewind_date_time: Optional[QDateTime] = None
     session_name = ""
     label = ''
     rewind_label = ''
     ref = ''
 
-    def __init__(self, date_time):
+    def __init__(self, date_time: Optional[QDateTime]):
         self.date_time = date_time
 
     def __lt__(self, other: 'Snapshot'):
@@ -49,11 +56,16 @@ class Snapshot:
 
         if not self.is_valid():
             return False
+        
+        if self.date_time is None:
+            return False
+        if other.date_time is None:
+            return True
 
         return self.date_time < other.date_time
 
     @staticmethod
-    def new_from_snaptext(snaptext:str):
+    def new_from_snaptext(snaptext: str) -> 'Snapshot':
         time_str_full, line_change, rw_time_str_full_sess = \
             snaptext.partition('\n')
         rw_time_str_full, line_change, session_name = \
@@ -85,41 +97,44 @@ class Snapshot:
         snapshot.session_name = session_name
         return snapshot
 
-    def year(self):
+    def year(self) -> int:
+        if self.date_time is None:
+            raise InvalidSnapshot
         return self.date_time.date().year()
 
-    def month(self):
+    def month(self) -> int:
+        if self.date_time is None:
+            raise InvalidSnapshot
         return self.date_time.date().month()
 
-    def day(self):
+    def day(self) -> int:
+        if self.date_time is None:
+            raise InvalidSnapshot
         return self.date_time.date().day()
 
-    def is_valid(self):
-        if not self.date_time:
+    def is_valid(self) -> bool:
+        if self.date_time is None:
             return False
 
         return self.date_time.isValid()
 
-    def is_today(self):
+    def is_today(self) -> bool:
         if not self.date_time:
             return False
 
         return bool(self.date_time.date() == QDate.currentDate())
 
-    def is_yesterday(self):
+    def is_yesterday(self) -> bool:
         if not self.date_time:
             return False
 
         return bool(self.date_time.date() == QDate.currentDate().addDays(-1))
 
-    def can_take(self, other):
+    def can_take(self, other) -> bool:
         return False
 
-    def sort(self):
-        pass
-
-    def add(self, other):
-        pass
+    def sort(self):...
+    def add(self, other):...
 
     def common_group(self, other: 'Snapshot') -> SnGroup:
         if not (self.is_valid() and other.is_valid()):
@@ -135,24 +150,23 @@ class Snapshot:
                     common_group = SnGroup.DAY
 
         if common_group <= self.sub_type:
-            return self.sub_type + 1
+            return SnGroup(self.sub_type + 1)
 
         return common_group
 
     def make_item(self, sub_type):
-        if self.is_today():
-            day_string = _translate('snapshots', 'Today')
-        elif self.is_yesterday():
-            day_string = _translate('snapshots', 'Yesterday')
-        elif self.is_valid():
-            day_string = self.date_time.toString('dddd d MMMM yyyy')
-
-        if not self.is_valid():
+        if self.date_time is None:
             display_text = self.text
         else:
+            if self.is_today():
+                day_string = _translate('snapshots', 'Today')
+            elif self.is_yesterday():
+                day_string = _translate('snapshots', 'Yesterday')
+            else:
+                day_string = self.date_time.toString('dddd d MMMM yyyy')
+            
             display_text = _translate('snapshots', "%s at %s") % (
-                            day_string,
-                            self.date_time.toString('HH:mm'))
+                                day_string, self.date_time.toString('HH:mm'))
 
             if sub_type in (SnGroup.YEAR, SnGroup.MONTH):
                 if not self.is_today() or self.is_yesterday():
@@ -401,11 +415,13 @@ class SnapshotsDialog(ChildDialog):
         self.ui.snapshotsList.currentItemChanged.connect(
             self._current_item_changed)
 
-        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        self.ui.buttonBox.button(
+            QDialogButtonBox.StandardButton.Ok).setEnabled(False) # type:ignore
 
     def _current_item_changed(self, current, previous):
-        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(
-           bool(current and current.data(0, Qt.ItemDataRole.UserRole)))
+        self.ui.buttonBox.button(
+            QDialogButtonBox.StandardButton.Ok).setEnabled( # type:ignore
+                bool(current and current.data(0, Qt.ItemDataRole.UserRole)))
 
     def _add_snapshots(self, snaptexts):
         if not snaptexts and not self.main_snap_group.snapshots:
@@ -428,14 +444,17 @@ class SnapshotsDialog(ChildDialog):
             item = snapshot.make_item(SnGroup.MAIN)
             self.ui.snapshotsList.addTopLevelItem(item)
 
-        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        self.ui.buttonBox.button(
+            QDialogButtonBox.StandardButton.Ok).setEnabled(False) # type:ignore
         self.ui.snapshotsList.clearSelection()
 
     def _no_snapshot_found(self):
         pass
 
-    def get_selected_snapshot(self):
+    def get_selected_snapshot(self) -> Optional[str]:
         item = self.ui.snapshotsList.currentItem()
+        if item is None:
+            return None
         full_str: str = item.data(0, Qt.ItemDataRole.UserRole)
         snapshot_ref = full_str.partition('\n')[0].partition(':')[0]
 

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     # FIX : QAction not found by pylance
     from qtpy.QtGui import QAction, QShortcut
 from qtpy.QtWidgets import (QDialogButtonBox, QListWidget, QListWidgetItem,
-                             QFrame, QMenu, QAction, QShortcut)
+                             QFrame, QMenu, QAction, QShortcut) # type:ignore
 
 # Imports from src/shared
 import ray
@@ -59,7 +59,7 @@ class TemplateSlot(QFrame):
                                       self._user_menu)
         act_remove_template.triggered.connect(self.remove_template)
         self._user_menu.addAction(act_remove_template)
-        self.ui.toolButtonUser.setMenu(self._user_menu)
+        self.ui.toolButtonUser.setMenu(self._user_menu) # type:ignore
 
         self.ui.toolButtonFavorite.set_session(self.session)
         self.ui.toolButtonFavorite.set_template(
@@ -68,7 +68,7 @@ class TemplateSlot(QFrame):
 
         if is_dark_theme(self):
             self.ui.toolButtonUser.setIcon(
-                QIcon(':scalable/breeze-dark/im-user.svg'))
+                QIcon(':scalable/breeze-dark/im-user.svg')) # type:ignore
             self.ui.toolButtonFavorite.set_dark_theme()
 
     def update_client_data(self, *args):
@@ -96,14 +96,15 @@ class TemplateSlot(QFrame):
         return self.ui.label.text()
 
     def remove_template(self):
-        add_app_dialog: AddApplicationDialog = self._list_widget.parent()        
+        add_app_dialog: AddApplicationDialog = \
+            self._list_widget.parent() # type:ignore
         add_app_dialog.remove_template(self._name, self._factory)
 
     def set_as_favorite(self, yesno: bool):
         self.ui.toolButtonFavorite.set_as_favorite(yesno)
 
     def mouseDoubleClickEvent(self, event):
-        self._list_widget.parent().accept()
+        self._list_widget.parent().accept() # type:ignore
 
 
 class TemplateItem(QListWidgetItem):
@@ -210,11 +211,11 @@ class AddApplicationDialog(ChildDialog):
 
         self.ui.templateList.currentItemChanged.connect(
             self._current_item_changed)
-        self.ui.templateList.setFocus(Qt.FocusReason.OtherFocusReason)
+        self.ui.templateList.setFocus(Qt.FocusReason.OtherFocusReason) # type:ignore
         self.ui.filterBar.textEdited.connect(self._update_filtered_list)
         self.ui.filterBar.up_down_pressed.connect(self._up_down_pressed)
 
-        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False) # type:ignore
 
         self.user_menu = QMenu()
         act_remove_template = QAction(QIcon.fromTheme('edit-delete-remove'),
@@ -222,7 +223,7 @@ class AddApplicationDialog(ChildDialog):
                                       self.user_menu)
         act_remove_template.triggered.connect(self._remove_current_template)
         self.user_menu.addAction(act_remove_template)
-        self.ui.toolButtonUser.setMenu(self.user_menu)
+        self.ui.toolButtonUser.setMenu(self.user_menu) # type:ignore
         self.ui.toolButtonFavorite.set_session(self.session)
         self.ui.widgetNonSaveable.setVisible(False)
         self.ui.toolButtonAdvanced.clicked.connect(
@@ -231,7 +232,7 @@ class AddApplicationDialog(ChildDialog):
 
         if is_dark_theme(self):
             self.ui.toolButtonUser.setIcon(
-                QIcon(':scalable/breeze-dark/im-user.svg'))
+                QIcon(':scalable/breeze-dark/im-user.svg')) # type:ignore
             self.ui.toolButtonFavorite.set_dark_theme()
             self.ui.toolButtonNoSave.setIcon(
                 QIcon(':scalable/breeze-dark/document-nosave.svg'))
@@ -266,7 +267,7 @@ class AddApplicationDialog(ChildDialog):
     def _favorite_added(self, template_name: str, template_icon: str,
                         factory: bool, display_name: str):
         for i in range(self.ui.templateList.count()):
-            item: TemplateItem = self.ui.templateList.item(i)
+            item: TemplateItem = self.ui.templateList.item(i) # type:ignore
             if item is None:
                 continue
 
@@ -279,7 +280,7 @@ class AddApplicationDialog(ChildDialog):
 
     def _favorite_removed(self, template_name: str, factory: bool):
         for i in range(self.ui.templateList.count()):
-            item: TemplateItem = self.ui.templateList.item(i)
+            item: TemplateItem = self.ui.templateList.item(i) # type:ignore
             if item is None:
                 continue
 
@@ -336,7 +337,7 @@ class AddApplicationDialog(ChildDialog):
             if self.session.is_favorite(template_name, False):
                 item.set_as_favorite(True)
 
-            self.ui.templateList.addItem(item)
+            self.ui.templateList.addItem(item) # type:ignore
 
         self.ui.templateList.sortItems()
 
@@ -355,7 +356,7 @@ class AddApplicationDialog(ChildDialog):
             if self.session.is_favorite(template_name, True):
                 item.set_as_favorite(True)
 
-            self.ui.templateList.addItem(item)
+            self.ui.templateList.addItem(item) # type:ignore
 
         self.ui.templateList.sortItems()
 
@@ -370,7 +371,7 @@ class AddApplicationDialog(ChildDialog):
         display_name = args[2]
 
         for i in range(self.ui.templateList.count()):
-            item: TemplateItem = self.ui.templateList.item(i)
+            item: TemplateItem = self.ui.templateList.item(i) # type:ignore
 
             if item.matches_with(factory, template_name):
                 if display_name:
@@ -385,7 +386,7 @@ class AddApplicationDialog(ChildDialog):
         template_name = args[1]
 
         for i in range(self.ui.templateList.count()):
-            item: TemplateItem = self.ui.templateList.item(i)
+            item: TemplateItem = self.ui.templateList.item(i) # type:ignore
 
             if item.matches_with(factory, template_name):
                 item.update_ray_hack_data(*args[2:])
@@ -398,7 +399,7 @@ class AddApplicationDialog(ChildDialog):
         template_name = args[1]
 
         for i in range(self.ui.templateList.count()):
-            item: TemplateItem = self.ui.templateList.item(i)
+            item: TemplateItem = self.ui.templateList.item(i) # type:ignore
 
             if item.matches_with(factory, template_name):
                 item.update_ray_net_data(*args[2:])
@@ -415,7 +416,7 @@ class AddApplicationDialog(ChildDialog):
 
         # hide all non matching items
         for i in range(self.ui.templateList.count()):
-            item: TemplateItem = self.ui.templateList.item(i)
+            item: TemplateItem = self.ui.templateList.item(i) # type:ignore
             template_name: str = item.data(TEMPLATE_NAME_DATA)
 
             if not filter_text.lower() in template_name.lower():
@@ -449,7 +450,7 @@ class AddApplicationDialog(ChildDialog):
             if self.ui.filterBar.text():
                 self.ui.filterBar.setStyleSheet(
                     "QLineEdit { background-color: red}")
-            self.ui.templateList.setCurrentItem(None)
+            self.ui.templateList.setCurrentItem(None) # type:ignore
         else:
             self.ui.filterBar.setStyleSheet("")
             self.ui.templateList.scrollTo(self.ui.templateList.currentIndex())
@@ -477,7 +478,7 @@ class AddApplicationDialog(ChildDialog):
 
         self.ui.templateList.setCurrentRow(row)
 
-    def _update_template_infos(self, item: TemplateItem):
+    def _update_template_infos(self, item: TemplateItem | None):
         self.ui.widgetTemplateInfos.setVisible(bool(item))
         self.ui.widgetNoTemplate.setVisible(not bool(item))
 
@@ -539,7 +540,7 @@ class AddApplicationDialog(ChildDialog):
         self._prevent_ok()
 
     def _tool_button_advanced_clicked(self):
-        item: TemplateItem = self.ui.templateList.currentItem()
+        item: TemplateItem = self.ui.templateList.currentItem() # type:ignore
         if item is None:
             return
 
@@ -553,7 +554,7 @@ class AddApplicationDialog(ChildDialog):
         self.ui.lineEditUniqueId.setText(text.replace(' ', '_'))
 
     def _prevent_ok(self):
-        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled( # type:ignore
             bool(self._server_will_accept and self.has_selection))
 
     def _remove_current_template(self):
@@ -571,10 +572,11 @@ class AddApplicationDialog(ChildDialog):
             and not self.server_copying)
         self._prevent_ok()
 
-    def get_selected_template(self) -> tuple:
-        item: TemplateItem = self.ui.templateList.currentItem()
+    def get_selected_template(self) -> tuple[str, bool]:
+        item: TemplateItem = self.ui.templateList.currentItem() # type:ignore
         if item:
             return (item.data(TEMPLATE_NAME_DATA), item.is_factory)
+        return ('', False)
 
     def get_selected_unique_id(self) -> str:
         return self.ui.lineEditUniqueId.text()
@@ -588,14 +590,14 @@ class AddApplicationDialog(ChildDialog):
         self.to_daemon(r.server.REMOVE_CLIENT_TEMPLATE, template_name)
 
         for i in range(self.ui.templateList.count()):
-            item: TemplateItem = self.ui.templateList.item(i)
+            item: TemplateItem = self.ui.templateList.item(i) # type:ignore
 
             if (not item.is_factory
                     and template_name == item.data(TEMPLATE_NAME_DATA)):
                 item.setHidden(True)
                 if item == self.ui.templateList.currentItem():
                     self._update_template_infos(None)
-                self.ui.templateList.removeItemWidget(item)
+                self.ui.templateList.removeItemWidget(item) # type:ignore
                 break
 
     def save_check_boxes(self):

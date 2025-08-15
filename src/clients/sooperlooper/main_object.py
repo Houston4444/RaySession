@@ -65,6 +65,9 @@ class MainObject:
         if self.jack_client is None:
             return
 
+        if self.nsm_server is None:
+            return
+
         # if this method is called, it means jack is already imported.
         if TYPE_CHECKING:
             import jack
@@ -123,7 +126,7 @@ class MainObject:
                     continue
                 
                 xc_child = XmlElement(c_child)
-                audio_file_name = Path(xc_child.str('loop_audio'))
+                audio_file_name = Path(xc_child.string('loop_audio'))
                 if self.project_path in audio_file_name.parents:
                     xc_child.set_str(
                         'loop_audio',
@@ -138,6 +141,9 @@ class MainObject:
     def open_file(
             self, project_path: str, session_name: str,
             full_client_id: str) -> tuple[Err, str]:
+        if self.nsm_server is None:
+            raise Exception
+        
         self.project_path = Path(project_path)
         self.session_file = self.project_path / 'session.slsess'
         self.session_bak = self.project_path / 'session.slsess.bak'
@@ -150,11 +156,15 @@ class MainObject:
 
         # STOP GUI
         if self.gui_running:
-            self.gui_process.terminate()
+            if self.gui_process is not None:
+                self.gui_process.terminate()
         
         # STOP sooperlooper
         if self.sl_running:
             self.nsm_server.send_sl('/quit')
+            
+            if self.sl_process is None:
+                raise Exception
             
             for i in range(100):
                 time.sleep(0.050)
@@ -253,6 +263,9 @@ class MainObject:
         return Err.OK, f'Session {self.session_file} loaded'
 
     def save_file(self):
+        if self.nsm_server is None:
+            raise Exception
+
         self.session_bak.unlink(missing_ok=True)
 
         if self.session_file.exists():
@@ -285,14 +298,21 @@ class MainObject:
         return (Err.OK, f'Session {self.session_file} saved')
 
     def show_optional_gui(self):
+        if self.nsm_server is None:
+            raise Exception
+        
         if not self.gui_running:
             self.gui_process = subprocess.Popen(
                 ['slgui', '-P', str(self.nsm_server.sl_addr.port)])
         self.nsm_server.send_gui_state(True)
         
     def hide_optional_gui(self):
+        if self.nsm_server is None:
+            raise Exception
+        
         if self.gui_running:
-            self.gui_process.terminate()
+            if self.gui_process is not None:
+                self.gui_process.terminate()
         self.nsm_server.send_gui_state(False)
         
     def signal_handler(self, sig, frame):

@@ -9,7 +9,7 @@ else:
     from .jack_engine import JackEngine
 
 
-class Engine(JackEngine):
+class Engine(JackEngine): # type:ignore
     XML_TAG = 'RAY-JACKPATCH'
     EXECUTABLE = 'ray-jackpatch'
     NSM_NAME = 'JACK Connections'

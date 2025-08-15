@@ -1263,8 +1263,8 @@ for better organization.""")
                 return
 
             xroot = XmlElement(root)
-            sess_name = xroot.str('name')
-            sess_version = xroot.str('VERSION', '0.9.0')
+            sess_name = xroot.string('name')
+            sess_version = xroot.string('VERSION', '0.9.0')
             old_mode = ray.version_to_tuple(sess_version) < (0, 17, 0)
             
             if xroot.bool('notes_shown'):

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 # third party imports
 from qtpy.QtWidgets import QApplication, QAbstractButton, QDialogButtonBox
-from qtpy.QtCore import Slot
+from qtpy.QtCore import Slot # type:ignore
 
 # Imports from src/shared
 import ray
@@ -29,7 +29,7 @@ _translate = QApplication.translate
 class AdvancedPropertiesDialog(ChildDialog):
     def __init__(self, parent: 'ClientPropertiesDialog',
                  client: ray.ClientData):
-        super().__init__(parent)
+        super().__init__(parent) # type:ignore
         self.ui = ui.client_advanced_properties.Ui_Dialog()
         self.ui.setupUi(self)
         
@@ -71,7 +71,7 @@ class AdvancedPropertiesDialog(ChildDialog):
     
     # Slot(int)
     def _client_status_changed(self, status: ray.ClientStatus):
-        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply).setEnabled(
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply).setEnabled( # type:ignore
             status is ray.ClientStatus.STOPPED)
     
     @Slot()
@@ -112,7 +112,8 @@ class AdvancedPropertiesDialog(ChildDialog):
         self._update_preview()
 
     def _button_box_clicked(self, button: QAbstractButton):
-        if button is self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply):
+        if button is self.ui.buttonBox.button(
+                QDialogButtonBox.StandardButton.Apply): # type:ignore
             server = GuiServerThread.instance()
             if server is not None:
                 server.to_daemon(
@@ -130,4 +131,5 @@ class AdvancedPropertiesDialog(ChildDialog):
         self.ui.comboBoxPrefixMode.setEnabled(False)
         self.ui.lineEditCustomPrefix.setReadOnly(True)
         self.ui.checkBoxLongJackNaming.setEnabled(False)
-        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply).setEnabled(False)
+        self.ui.buttonBox.button(
+            QDialogButtonBox.StandardButton.Apply).setEnabled(False) # type:ignore

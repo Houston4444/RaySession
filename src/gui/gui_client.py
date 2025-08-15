@@ -5,11 +5,11 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 # third party imports
-from qtpy.QtCore import QObject, Signal
+from qtpy.QtCore import QObject, Signal # type:ignore
 if TYPE_CHECKING:
     # FIX : QAction not found by pylance
     from qtpy.QtGui import QAction
-from qtpy.QtWidgets import QAction
+from qtpy.QtWidgets import QAction # type:ignore
 
 # Imports from src/shared
 import ray
@@ -52,7 +52,7 @@ class Client(QObject, ray.ClientData):
         self.no_save_level = 0
         self.last_save = time.time()
         self.widget = self.main_win.create_client_widget(self)
-        self._properties_dialog: ClientPropertiesDialog = None
+        self._properties_dialog: Optional[ClientPropertiesDialog] = None
 
     def set_status(self, status: ray.ClientStatus):
         self._previous_status = self.status
@@ -98,16 +98,22 @@ class Client(QObject, ray.ClientData):
         self.widget.update_client_data()
 
     def update_ray_hack(self, *args):
+        if self.ray_hack is None:
+            return
+        
         self.ray_hack.update(*args)
         self.widget.update_client_data()
 
     def update_ray_net(self, *args):
+        if self.ray_net is None:
+            return
+        
         self.ray_net.update(*args)
         self.widget.update_client_data()
 
     def send_properties_to_daemon(self):
         server = GuiServerThread.instance()
-        if not server:
+        if server is None:
             _logger.error(
                 'Server not found. '
                 f'Client {self.client_id} can not send its properties')
@@ -117,11 +123,11 @@ class Client(QObject, ray.ClientData):
                          *ray.ClientData.spread_client(self))
 
     def send_ray_hack(self):
-        if self.protocol is not ray.Protocol.RAY_HACK:
+        if self.ray_hack is None:
             return
 
         server = GuiServerThread.instance()
-        if not server:
+        if server is None:
             return
 
         server.to_daemon(r.client.UPDATE_RAY_HACK_PROPERTIES,
@@ -129,11 +135,11 @@ class Client(QObject, ray.ClientData):
                          *self.ray_hack.spread())
 
     def send_ray_net(self):
-        if not self.is_ray_net:
+        if self.ray_net is None:
             return
 
         server = GuiServerThread.instance()
-        if not server:
+        if server is None:
             return
 
         server.to_daemon(r.client.UPDATE_RAY_NET_PROPERTIES,
@@ -184,24 +190,6 @@ class Client(QObject, ray.ClientData):
             prefix = self.custom_prefix
 
         return f'{self.session.path}/{prefix}.{self.client_id}'
-
-    # method not used yet
-    def get_icon_search_path(self) -> list[str]:
-        if not self.session.daemon_manager.is_local:
-            return []
-
-        project_path = self.get_project_path()
-        if not project_path:
-            return []
-
-        search_list = []
-        main_icon_path = '.local/share/icons'
-        search_list.append("%s/%s" % (search_list, main_icon_path))
-
-        for path in ('16x16', '24x24', '32x32', '64x64', 'scalable'):
-            search_list.append("%s/%s/%s" % (project_path,
-                                             main_icon_path, path))
-        return search_list
 
 
 class TrashedClient(ray.ClientData):

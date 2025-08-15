@@ -10,7 +10,7 @@ else:
     from .alsa_engine import AlsaEngine
 
 
-class Engine(AlsaEngine):
+class Engine(AlsaEngine): # type:ignore
     XML_TAG = 'RAY-ALSAPATCH'
     EXECUTABLE = 'ray-alsapatch'
     NSM_NAME = 'ALSA Connections'

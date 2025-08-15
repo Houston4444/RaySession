@@ -1,7 +1,7 @@
 
 # Imports from standard library
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 # third party imports
 from qtpy.QtWidgets import (
@@ -10,7 +10,7 @@ from qtpy.QtWidgets import (
     QDialog, QApplication, QWidget)
 from qtpy.QtGui import (QFont, QFontDatabase, QFontMetrics, QPalette,
                          QIcon, QKeyEvent, QMouseEvent)
-from qtpy.QtCore import Qt, QTimer, Signal
+from qtpy.QtCore import Qt, QTimer, Signal # type:ignore
 
 # Imports from HoustonPatchbay
 from patchbay import PatchGraphicsView
@@ -295,7 +295,7 @@ class FavoriteToolButton(QToolButton):
         self._favicon_not = QIcon(':scalable/breeze/draw-star.svg')
         self._favicon_yes = QIcon(':scalable/breeze/star-yellow.svg')
 
-        self.session: Session = None
+        self.session: 'Optional[Session]' = None
 
         self.setIcon(self._favicon_not)
 
@@ -358,7 +358,7 @@ class CanvasSplitter(QSplitter):
 
     def handle(self, index: int) -> CanvasSplitterHandle:
         # just for output type redefinition
-        return super().handle(index)
+        return super().handle(index) # type:ignore
 
     def set_active(self, yesno: bool):
         handle = self.handle(1)

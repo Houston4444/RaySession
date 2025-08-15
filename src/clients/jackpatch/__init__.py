@@ -1,5 +1,4 @@
 import logging
-from types import NoneType
 from typing import Union, Callable
 import os
 import signal
@@ -26,7 +25,7 @@ else:
 
 def internal_prepare(
         *func_args: str, nsm_url='') -> \
-            Union[int, tuple[Callable, Callable, bool, NoneType]]:
+            int | tuple[Callable, Callable, bool, None]:
     '''Prepare the client, return an integer in case of error,
     otherwise the start_func and the stop_func.'''
     # set log level with exec arguments

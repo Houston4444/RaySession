@@ -12,9 +12,9 @@ class SlServer(NsmServer):
         
         self.sl_addr = Address(9951)
 
-        self.add_method('/sl_pong', 'ssi', self.sl_pong)
-        self.add_method('/sl_save_error', None, self.sl_save_error)
-        self.add_method('/sl_load_error', None, self.sl_load_error)
+        self.add_method('/sl_pong', 'ssi', self.sl_pong) # type:ignore
+        self.add_method('/sl_save_error', None, self.sl_save_error) # type:ignore
+        self.add_method('/sl_load_error', None, self.sl_load_error) # type:ignore
 
     def sl_pong(self, path: str, args: list, types: str, src_adrr: Address):
         self.wait_pong = False

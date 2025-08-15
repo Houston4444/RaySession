@@ -156,7 +156,7 @@ def _should_rewrite_user_templates_file(
         return False
 
     xroot = XmlElement(root)
-    file_version = xroot.str('VERSION')
+    file_version = xroot.string('VERSION')
 
     if (ray.version_to_tuple(file_version)
             >= ray.version_to_tuple(ray.VERSION)):
@@ -171,7 +171,7 @@ def _should_rewrite_user_templates_file(
         if child.tag != 'Client-Template':
             continue
 
-        executable = XmlElement(child).str('executable')
+        executable = XmlElement(child).string('executable')
         if not executable:
             continue
 
@@ -249,22 +249,22 @@ def rebuild_templates_database(session: 'Session', base: str):
     template_execs = set[str]()
     
     for search_path, c, old_mode in _list_xml_elements(base):
-        template_execs.add(c.str('executable'))
+        template_execs.add(c.string('executable'))
 
     from_desktop_execs = list[NsmDesktopExec]()
     if base == 'factory':
         from_desktop_execs = _first_desktops_scan()
 
     for search_path, c, old_mode in _list_xml_elements(base):
-        template_name = c.str('template-name')
+        template_name = c.string('template-name')
 
         if (not template_name
                 or '/' in template_name
                 or template_name in template_names):
             continue
 
-        executable = c.str('executable')
-        protocol = ray.Protocol.from_string(c.str('protocol'))
+        executable = c.string('executable')
+        protocol = ray.Protocol.from_string(c.string('protocol'))
 
         # check if we wan't this template to be erased by a .desktop file
         # with X-NSM-Capable=true
@@ -305,7 +305,7 @@ def rebuild_templates_database(session: 'Session', base: str):
             if not executable:
                 continue
             
-            try_exec_line = c.str('try-exec')
+            try_exec_line = c.string('try-exec')
             try_exec_list = try_exec_line.split(';') if try_exec_line else []
             
             if not has_nsm_desktop:
@@ -338,7 +338,7 @@ def rebuild_templates_database(session: 'Session', base: str):
 
             # check if a version is at least required for this template
             # don't use needed-version without check how the program acts !
-            needed_version = c.str('needed-version')
+            needed_version = c.string('needed-version')
 
             if (needed_version.startswith('.')
                     or needed_version.endswith('.')
@@ -388,7 +388,7 @@ def rebuild_templates_database(session: 'Session', base: str):
 
         template_client = Client(session)
         template_client.read_xml_properties(c, old_mode=old_mode)
-        template_client.client_id = c.str('client_id')        
+        template_client.client_id = c.string('client_id')        
         if not template_client.client_id:
             template_client.client_id == session.generate_abstract_client_id(
                 template_client.executable_path)

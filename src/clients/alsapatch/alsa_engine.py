@@ -1,4 +1,6 @@
 
+from typing import Optional
+
 # imports from shared
 from patcher.bases import EventHandler, ProtoEngine
 
@@ -9,7 +11,7 @@ from .alsa_thread import AlsaManager
 class AlsaEngine(ProtoEngine):
     def __init__(self, event_handler: EventHandler):
         super().__init__(event_handler)
-        self._alsa_mng: AlsaManager = None
+        self._alsa_mng: AlsaManager = None # type:ignore
         
     def init(self) -> bool:
         self._alsa_mng = AlsaManager(self.ev_handler)

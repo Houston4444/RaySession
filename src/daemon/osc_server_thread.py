@@ -751,7 +751,7 @@ class OscServerThread(ClientCommunicating):
             if c.el.tag != 'Client-Template':
                 continue
             
-            if c.str('template-name') == template_name:
+            if c.string('template-name') == template_name:
                 break
         else:
             self.send(*osp.error(), ray.Err.NO_SUCH_FILE,

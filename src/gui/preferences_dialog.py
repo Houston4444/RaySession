@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 # third party imports
 from qtpy.QtWidgets import QApplication, QMessageBox
-from qtpy.QtCore import Slot
+from qtpy.QtCore import Slot # type:ignore
 
 # Imports from src/shared
 import ray

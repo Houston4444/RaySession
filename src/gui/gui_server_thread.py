@@ -19,6 +19,7 @@ from gui_tools import CommandLineArgs
 
 if TYPE_CHECKING:
     from gui_session import SignaledSession
+    from gui_signaler import Signaler
 
 
 _logger = logging.getLogger(__name__)
@@ -121,13 +122,6 @@ def validator(path: str, multypes: OscMulTypes, directos=False):
         return wrapper
     return decorated
 
-def directos(path: str, full_types: str, no_sess=''):
-    '''This OSC path method decorated with this 
-    does all its job directly in the thread of the server.
-    No work will have to be done in the main thread.
-    see `validator` doc.'''
-    return validator(path, full_types, no_sess=no_sess, directos=True)
-
 
 class GuiServerThread(BunServerThread):
     def __init__(self):
@@ -140,13 +134,13 @@ class GuiServerThread(BunServerThread):
         # while receiving messages
         self.stopping = False
         
-        self._parrallel_copy_id_queue = []
+        self._parrallel_copy_id_queue = list[int]()
         self._parrallel_new_session_name = ''
         
         self.startup_osps = list[OscPack]()
         
         self.session = None
-        self.signaler = None
+        self.signaler: 'Signaler' = None # type:ignore
         self.daemon_manager = None
         self.patchbay_addr: Optional[Address] = None
         
@@ -220,7 +214,10 @@ class GuiServerThread(BunServerThread):
 
     @validator(osc_paths.REPLY, 'ss*')
     def _reply(self, osp: OscPack):
-        new_args: list[str] = osp.args.copy()
+        if self.signaler is None:
+            return
+        
+        new_args: list[str] = osp.args.copy() # type:ignore
         reply_path = new_args.pop(0)
 
         match reply_path:
@@ -247,10 +244,11 @@ class GuiServerThread(BunServerThread):
 
     @validator(rg.server.ANNOUNCE, 'siisis')
     def _server_announce(self, osp: OscPack):
-        if self.daemon_manager.is_announced():
+        if (self.daemon_manager is not None 
+                and self.daemon_manager.is_announced()):
             return
 
-        args: tuple[str, int, int, str, int, str] = osp.args
+        args: tuple[str, int, int, str, int, str] = osp.args # type:ignore
 
         (version, server_status_int, options,
          session_root, is_net_free, tcp_url) = args
@@ -261,30 +259,31 @@ class GuiServerThread(BunServerThread):
             self.send(osp.src_addr, r.server.ASK_FOR_PATCHBAY, '')
             self.session.main_win.waiting_for_patchbay = False
 
-        self.signaler.daemon_announce.emit(
-            osp.src_addr, version, ray.ServerStatus(server_status_int),
-            ray.Option(options), session_root, is_net_free)
+        if self.signaler is not None:
+            self.signaler.daemon_announce.emit(
+                osp.src_addr, version, ray.ServerStatus(server_status_int),
+                ray.Option(options), session_root, is_net_free)
 
     @validator(rg.server.ROOT, 's')
     def _server_root(self, osp: OscPack):
-        session_root: str = osp.args[0]
+        session_root: str = osp.args[0] # type:ignore
         CommandLineArgs.change_session_root(session_root)
         self.signaler.root_changed.emit(session_root)
 
     @validator(rg.server.STATUS, 'i')
     def _server_status(self, osp: OscPack):
-        status_int: int = osp.args[0]
+        status_int: int = osp.args[0] # type:ignore
         self.signaler.server_status_changed.emit(
             ray.ServerStatus(status_int))
 
     @validator(rg.server.COPYING, 'i')
     def _server_copying(self, osp: OscPack):
-        copying: int = osp.args[0]
+        copying: int = osp.args[0] # type:ignore
         self.signaler.server_copying.emit(bool(copying))
 
     @validator(rg.server.PARRALLEL_COPY_STATE, 'ii')
     def _server_parrallel_copy_state(self, osp: OscPack):
-        args: tuple[int, int] = osp.args
+        args: tuple[int, int] = osp.args # type:ignore
         session_id, state = args
 
         if state:
@@ -299,11 +298,11 @@ class GuiServerThread(BunServerThread):
             # copy is finished
             if session_id in self._parrallel_copy_id_queue:
                 self._parrallel_copy_id_queue.remove(session_id)
-                self.signaler.parrallel_copy_state.emit(*args)
+                self.signaler.parrallel_copy_state.emit(*args) # type:ignore
 
     @validator(rg.server.PARRALLEL_COPY_PROGRESS, 'if')
     def _server_copy_progress(self, osp: OscPack):
-        args: tuple[int, float] = osp.args
+        args: tuple[int, float] = osp.args # type:ignore
         session_id, progress = args
 
         if not self._parrallel_copy_id_queue:
@@ -314,22 +313,22 @@ class GuiServerThread(BunServerThread):
 
     @validator(rg.server.PROGRESS, 'f')
     def _server_progress(self, osp: OscPack):
-        progress: float = osp.args[0]
+        progress: float = osp.args[0] # type:ignore
         self.signaler.server_progress.emit(progress)
 
     @validator(rg.session.AUTO_SNAPSHOT, 'i')
     def _session_auto_snapshot(self, osp: OscPack):
-        auto_snapshot: int = osp.args[0]
+        auto_snapshot: int = osp.args[0] # type:ignore
         self.signaler.reply_auto_snapshot.emit(bool(auto_snapshot))
 
     @validator(rg.listed_session.DETAILS, 'sihi')
     def _listed_session_details(self, osp: OscPack):
-        args: tuple[str, int, int, int] = osp.args
+        args: tuple[str, int, int, int] = osp.args # type:ignore
         self.signaler.session_details.emit(*args)
 
     @validator(rg.listed_session.SCRIPTED_DIR, 'si')
     def _listed_session_scripted_dir(self, osp: OscPack):
-        args: tuple[str, int] = osp.args
+        args: tuple[str, int] = osp.args # type:ignore
         self.signaler.scripted_dir.emit(*args)
 
     @validator(rg.client_template.UPDATE, 'iss' + ray.ClientData.ARG_TYPES)
@@ -346,17 +345,17 @@ class GuiServerThread(BunServerThread):
 
     @validator(rg.client.PROGRESS, 'sf')
     def _client_progress(self, osp: OscPack):
-        args: tuple[str, float] = osp.args
+        args: tuple[str, float] = osp.args # type:ignore
         self.signaler.client_progress.emit(*args)
 
     @validator(rpm.ANNOUNCE, 'iiiis')
     def _ray_gui_patchbay_announce(self, osp: OscPack):
-        args: tuple[int, int, int, str] = osp.args
+        args: tuple[int, int, int, int, str] = osp.args # type:ignore
         self.patchbay_addr = Address(args[4])
     
     @validator(rg.preview.STATE, 'i')
     def _ray_gui_preview_state(self, osp: OscPack):
-        pv_state: int = osp.args[0]
+        pv_state: int = osp.args[0] # type:ignore
         self.signaler.session_preview_update.emit(pv_state)
 
     def send(self, *args):
@@ -364,6 +363,8 @@ class GuiServerThread(BunServerThread):
         super().send(*args)
 
     def to_daemon(self, *args):
+        if self.daemon_manager is None:
+            return
         self.send(self.daemon_manager.address, *args)
 
     def send_patchbay_daemon(self, *args):

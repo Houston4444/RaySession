@@ -173,7 +173,8 @@ def run():
     sys.exit(0)
 
 def internal_prepare(
-        *func_args: str, nsm_url='') -> int | tuple[Callable, Callable]:
+        *func_args: str, nsm_url='') -> \
+            int | tuple[Callable, Callable, MainObject, MainObject]:
     if not shutil.which('sooperlooper'):
         _logger.critical('SooperLooper is not installed.')
         return 1
@@ -185,6 +186,7 @@ def internal_prepare(
     if func_args:
         arg_read = ArgRead.NONE
         log_level = logging.WARNING
+        uarg = logging.WARNING
 
         for arg in func_args:
             match arg: 
@@ -244,6 +246,8 @@ def internal_prepare(
 
 def internal_start(data: MainObject):
     main = data
+    if main.nsm_server is None:
+        return 1
     main.nsm_server.announce(
         'SooperLooper', ':optional-gui:switch:', Path(sys.argv[0]).name)
 
@@ -284,7 +288,8 @@ def internal_start(data: MainObject):
     
     # stop GUI
     if main.gui_running:
-        main.gui_process.terminate()
+        if main.gui_process is not None:
+            main.gui_process.terminate()
 
     # stop sooperlooper
     if main.sl_running:
@@ -295,14 +300,16 @@ def internal_start(data: MainObject):
                 break
         
         if main.sl_running:
-            main.sl_process.terminate()
+            if main.sl_process is not None:
+                main.sl_process.terminate()
             for i in range(1000):
                 time.sleep(0.0010)
                 if not main.sl_running:
                     break
 
             if main.sl_running:
-                main.sl_process.kill()
+                if main.sl_process is not None:
+                    main.sl_process.kill()
                 
 def internal_stop(data: MainObject):
     main = data

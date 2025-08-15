@@ -10,7 +10,7 @@ import logging
 
 # third party imports
 from qtpy.QtCore import (
-    QCoreApplication, QStandardPaths, QSettings, QDateTime, QLocale)
+    QCoreApplication, QStandardPaths, QSettings, QDateTime, QLocale) # type:ignore
 
 # Imports from src/shared
 from osclib import (

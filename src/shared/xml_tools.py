@@ -1,3 +1,5 @@
+from pathlib import Path
+from typing import Union
 import xml.etree.ElementTree as ET
 
 
@@ -12,7 +14,7 @@ class XmlElement:
     def new_child(self, tag: str) -> 'XmlElement':
         return XmlElement(ET.SubElement(self.el, tag))
     
-    def str(self, attribute: str, default='') -> str:
+    def string(self, attribute: str, default='') -> str:
         ret_value = self.el.attrib.get(attribute)
         if ret_value is None:
             return default
@@ -59,18 +61,18 @@ class XmlElement:
         
         return 0.0
     
-    def set_str(self, attribute: str, value: str):
+    def set_str(self, attribute: str, value: str|Path):
         self.el.attrib[attribute] = str(value)
         
-    def set_bool(self, attribute: str, yesno: bool):
+    def set_bool(self, attribute: str, yesno: bool): # type:ignore
         self.el.attrib[attribute] = 'true' if yesno else 'false'
     
-    def set_int(self, attribute: str, value: int):
+    def set_int(self, attribute: str, value: int): # type:ignore
         self.el.attrib[attribute] = str(int(value))
         
-    def set_float(self, attribute: str, value: float):
+    def set_float(self, attribute: str, value: float): # type:ignore
         self.el.attrib[attribute] = str(float(value))
         
     def remove_attr(self, attribute: str):
         if attribute in self.el:
-            self.el.pop(attribute)
+            self.el.pop(attribute) # type:ignore

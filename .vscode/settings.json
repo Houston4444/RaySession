@@ -4,5 +4,5 @@
         "src/shared"
     ],
     "python.analysis.autoSearchPaths": false,
-    "python.analysis.typeCheckingMode": "basic"
+    "python.analysis.typeCheckingMode": "basic",
 }

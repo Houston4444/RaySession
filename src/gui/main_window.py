@@ -5,16 +5,16 @@ import time
 import subprocess
 
 # third party imports
-from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt
+from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt, PYQT5, PYQT6 # type:ignore
 from qtpy.QtGui import (QIcon, QDesktopServices, QFontMetrics,
                          QCloseEvent, QKeyEvent)
 if TYPE_CHECKING:
     # FIX : QAction not found by pylance
-    from qtpy.QtGui import QAction, QShortcut
+    from qtpy.QtGui import QAction, QShortcut # type:ignore
 from qtpy.QtWidgets import (
     QApplication, QMainWindow, QMenu, QDialog,
     QMessageBox, QToolButton, QAbstractItemView,
-    QBoxLayout, QSystemTrayIcon, QShortcut, QAction)
+    QBoxLayout, QSystemTrayIcon, QShortcut, QAction) # type:ignore
 
 # Imports from HoustonPatchbay
 from patchbay.bases.elements import ToolDisplayed
@@ -103,7 +103,8 @@ class MainWindow(QMainWindow):
         self._tool_bar_main_actions_width = 0
         for action in (self.ui.actionNewSession, self.ui.actionOpenSession,
                        self.ui.actionControlMenu):
-            button : QToolButton = self.ui.toolBar.widgetForAction(action)
+            button : QToolButton = \
+                self.ui.toolBar.widgetForAction(action) # type:ignore
             self._tool_bar_main_actions_width += button.iconSize().width()
             self._tool_bar_main_actions_width += \
                 QFontMetrics(button.font()).horizontalAdvance(button.text())
@@ -195,7 +196,7 @@ class MainWindow(QMainWindow):
             self.util_script_launcher.convert_ray_hack_to_nsm_jack_mixer)
         self.ui.actionConvertToNsmFileFormat.triggered.connect(
             self.util_script_launcher.convert_to_nsm_file_format)
-        self.ui.actionQuit.triggered.connect(self._quit_app)
+        self.ui.actionQuit.triggered.connect(self._quit_app) # type:ignore
         self.ui.actionSaveSession.triggered.connect(self._save_session)
         self.ui.actionCloseSession.triggered.connect(self._close_session)
         self.ui.actionAbortSession.triggered.connect(self._abort_session)
@@ -258,8 +259,8 @@ class MainWindow(QMainWindow):
         self._session_menu.addAction(self.ui.actionDuplicateSession_2)
         self._session_menu.addAction(self.ui.actionRenameSession_2)
         self.ui.toolButtonSessionMenu.setPopupMode(
-            QToolButton.ToolButtonPopupMode.InstantPopup)
-        self.ui.toolButtonSessionMenu.setMenu(self._session_menu)
+            QToolButton.ToolButtonPopupMode.InstantPopup) # type:ignore
+        self.ui.toolButtonSessionMenu.setMenu(self._session_menu) # type:ignore
 
         # set control menu
         self._control_menu = QMenu()
@@ -282,25 +283,25 @@ class MainWindow(QMainWindow):
         
         self._control_tool_button.setPopupMode(
             QToolButton.ToolButtonPopupMode.InstantPopup)
-        self._control_tool_button.setMenu(self._control_menu)
+        self._control_tool_button.setMenu(self._control_menu) # type:ignore
 
         self.ui.toolButtonControl2.setPopupMode(
-            QToolButton.ToolButtonPopupMode.InstantPopup)
-        self.ui.toolButtonControl2.setMenu(self._control_menu)
+            QToolButton.ToolButtonPopupMode.InstantPopup) # type:ignore
+        self.ui.toolButtonControl2.setMenu(self._control_menu) # type:ignore
 
         # set favorites menu
         self._favorites_menu = QMenu(_translate('menu', 'Favorites'))
         self._favorites_menu.setIcon(QIcon(':scalable/breeze/star-yellow'))
         self.ui.toolButtonFavorites.setPopupMode(
-            QToolButton.ToolButtonPopupMode.InstantPopup)
-        self.ui.toolButtonFavorites.setMenu(self._favorites_menu)
-        self.ui.menuAdd.addMenu(self._favorites_menu)
+            QToolButton.ToolButtonPopupMode.InstantPopup) # type:ignore
+        self.ui.toolButtonFavorites.setMenu(self._favorites_menu) # type:ignore
+        self.ui.menuAdd.addMenu(self._favorites_menu) # type:ignore
 
         # set trash menu
         self._trash_menu = QMenu()
         self.ui.trashButton.setPopupMode(
-            QToolButton.ToolButtonPopupMode.InstantPopup)
-        self.ui.trashButton.setMenu(self._trash_menu)
+            QToolButton.ToolButtonPopupMode.InstantPopup) # type:ignore
+        self.ui.trashButton.setMenu(self._trash_menu) # type:ignore
 
         # connect OSC signals from daemon
         sg = self.session.signaler
@@ -310,61 +311,74 @@ class MainWindow(QMainWindow):
         sg.daemon_url_request.connect(self._show_daemon_url_window)
         sg.client_properties_state_changed.connect(
             self._client_properties_state_changed)
-        sg.canvas_callback.connect(
-            self.session.patchbay_manager.callbacker.receive)
 
         # set spare icons if system icons not available
         dark = is_dark_theme(self)
 
         if self.ui.actionNewSession.icon().isNull():
-            self.ui.actionNewSession.setIcon(ray_icon('folder-new', dark))
+            self.ui.actionNewSession.setIcon(
+                ray_icon('folder-new', dark)) # type:ignore
         if self.ui.actionOpenSession.icon().isNull():
-            self.ui.actionOpenSession.setIcon(ray_icon('document-open', dark))
+            self.ui.actionOpenSession.setIcon(
+                ray_icon('document-open', dark)) # type:ignore
 
         if self.ui.actionControlMenu.icon().isNull():
             self.ui.actionControlMenu.setIcon(
-                QIcon.fromTheme('configuration_section'))
+                QIcon.fromTheme('configuration_section')) # type:ignore
             if self.ui.actionControlMenu.icon().isNull():
-                self.ui.actionControlMenu.setIcon(ray_icon('configure', dark))
+                self.ui.actionControlMenu.setIcon(
+                    ray_icon('configure', dark)) # type:ignore
 
         if self.ui.actionOpenSessionFolder.icon().isNull():
             self.ui.actionOpenSessionFolder.setIcon(
-                ray_icon('system-file-manager', dark))
+                ray_icon('system-file-manager', dark)) # type:ignore
 
         if self.ui.actionAddApplication.icon().isNull():
-            self.ui.actionAddApplication.setIcon(ray_icon('list-add', dark))
+            self.ui.actionAddApplication.setIcon(
+                ray_icon('list-add', dark)) # type:ignore
 
         if self.ui.actionAddExecutable.icon().isNull():
-            self.ui.actionAddExecutable.setIcon(QIcon.fromTheme('system-run'))
+            self.ui.actionAddExecutable.setIcon(
+                QIcon.fromTheme('system-run')) # type:ignore
             if self.ui.actionAddExecutable.icon().isNull():
-                self.ui.actionAddExecutable.setIcon(ray_icon('run-install'))
+                self.ui.actionAddExecutable.setIcon(
+                    ray_icon('run-install')) # type:ignore
 
         self.ui.actionReturnToAPreviousState.setIcon(
-            ray_icon('media-seek-backward', dark))
+            ray_icon('media-seek-backward', dark)) # type:ignore
 
         self.ui.actionRememberOptionalGuiStates.setIcon(
-            ray_icon('visibility', dark))
-        self.ui.trashButton.setIcon(ray_icon('trash-empty', dark))
+            ray_icon('visibility', dark)) # type:ignore
+        self.ui.trashButton.setIcon(
+            ray_icon('trash-empty', dark)) # type:ignore
         if self.ui.trashButton.icon().isNull():
-            self.ui.trashButton.setIcon(ray_icon('trash'), dark)
+            self.ui.trashButton.setIcon(
+                ray_icon('trash'), dark) # type:ignore
 
         self.ui.actionDuplicateSession.setIcon(
-            ray_icon('xml-node-duplicate', dark))
+            ray_icon('xml-node-duplicate', dark)) # type:ignore
         self.ui.actionDuplicateSession_2.setIcon(
-            ray_icon('xml-node-duplicate', dark))
+            ray_icon('xml-node-duplicate', dark)) # type:ignore
         self.ui.actionSaveTemplateSession.setIcon(
-            ray_icon('document-save-as-template', dark))
+            ray_icon('document-save-as-template', dark)) # type:ignore
         self.ui.actionSaveTemplateSession_2.setIcon(
-            ray_icon('document-save-as-template', dark))
-        self.ui.actionCloseSession.setIcon(ray_icon('window-close', dark))
-        self.ui.actionAbortSession.setIcon(ray_icon('list-remove', dark))
-        self.ui.actionSaveSession.setIcon(ray_icon('document-save', dark))
-        self.ui.toolButtonSaveSession.setIcon(ray_icon('document-save', dark))
-        self.ui.actionSessionNotes.setIcon(ray_icon('notes', dark))
-        self.ui.toolButtonNotes.setIcon(ray_icon('notes', dark))
-        self.ui.actionDesktopsMemory.setIcon(ray_icon('view-list-icons', dark))
+            ray_icon('document-save-as-template', dark)) # type:ignore
+        self.ui.actionCloseSession.setIcon(
+            ray_icon('window-close', dark)) # type:ignore
+        self.ui.actionAbortSession.setIcon(
+            ray_icon('list-remove', dark)) # type:ignore
+        self.ui.actionSaveSession.setIcon(
+            ray_icon('document-save', dark)) # type:ignore
+        self.ui.toolButtonSaveSession.setIcon(
+            ray_icon('document-save', dark)) # type:ignore
+        self.ui.actionSessionNotes.setIcon(
+            ray_icon('notes', dark)) # type:ignore
+        self.ui.toolButtonNotes.setIcon(
+            ray_icon('notes', dark)) # type:ignore
+        self.ui.actionDesktopsMemory.setIcon(
+            ray_icon('view-list-icons', dark)) # type:ignore
         self.ui.toolButtonSessionMenu.setIcon(
-            ray_icon('application-menu', dark))
+            ray_icon('application-menu', dark)) # type:ignore
         self.ui.listWidget.set_session(self.session)
         self.ui.listWidget.currentItemChanged.connect(
             self._list_widget_item_changed)
@@ -374,15 +388,15 @@ class MainWindow(QMainWindow):
             self.session.patchbay_manager)
         self.ui.framePatchbayFilters.setVisible(False)
         filter_bar_shortcut = QShortcut('Ctrl+F', self)
-        filter_bar_shortcut.setContext(Qt.ApplicationShortcut)
+        filter_bar_shortcut.setContext(Qt.ApplicationShortcut) # type:ignore
         filter_bar_shortcut.activated.connect(
             self.toggle_patchbay_filters_bar)
         refresh_shortcut = QShortcut('Ctrl+R', self)
-        refresh_shortcut.setContext(Qt.ApplicationShortcut)
+        refresh_shortcut.setContext(Qt.ApplicationShortcut) # type:ignore
         refresh_shortcut.activated.connect(
             self.session.patchbay_manager.refresh)
         refresh_shortcut_alt = QShortcut('F5', self)
-        refresh_shortcut_alt.setContext(Qt.ApplicationShortcut)
+        refresh_shortcut_alt.setContext(Qt.ApplicationShortcut) # type:ignore
         refresh_shortcut_alt.activated.connect(
             self.session.patchbay_manager.refresh)
 
@@ -443,7 +457,8 @@ class MainWindow(QMainWindow):
                         and self.session.server_status is not ray.ServerStatus.OFF))):
             self._systray.show()
 
-        self.preferences_dialog: preferences_dialog.PreferencesDialog = None
+        self.preferences_dialog: \
+            Optional[preferences_dialog.PreferencesDialog] = None
 
         self._startup_time = time.time()
 
@@ -456,13 +471,14 @@ class MainWindow(QMainWindow):
 
         if width <= 283:
             # reorganize the window because session frame is not large
-            self.ui.layoutSessionDown.setDirection(QBoxLayout.Direction.TopToBottom)
+            self.ui.layoutSessionDown.setDirection(
+                QBoxLayout.Direction.TopToBottom) # type:ignore
 
             # move down the session name label
             self.ui.layoutTopSession.removeWidget(
-                self.ui.stackedWidgetSessionName)
+                self.ui.stackedWidgetSessionName) # type:ignore
             self.ui.layoutSessionDown.insertWidget(
-                0, self.ui.stackedWidgetSessionName)
+                0, self.ui.stackedWidgetSessionName) # type:ignore
 
             # keep the file manager tool button at bottom left
             # of the session header
@@ -475,11 +491,12 @@ class MainWindow(QMainWindow):
             # and snapshots buttons
             self.ui.widgetPreRewindSpacer.setVisible(True)
         else:
-            self.ui.layoutSessionDown.setDirection(QBoxLayout.Direction.LeftToRight)
+            self.ui.layoutSessionDown.setDirection(
+                QBoxLayout.Direction.LeftToRight) # type:ignore
             self.ui.layoutSessionDown.removeWidget(
-                self.ui.stackedWidgetSessionName)
+                self.ui.stackedWidgetSessionName) # type:ignore
             self.ui.layoutTopSession.insertWidget(
-                4, self.ui.stackedWidgetSessionName)
+                4, self.ui.stackedWidgetSessionName) # type:ignore
             self.ui.layoutSessionToolsRight.removeWidget(
                 self.ui.fullButtonFolder)
             self.ui.layoutSessionToolsLeft.insertWidget(
@@ -490,20 +507,30 @@ class MainWindow(QMainWindow):
         add_exe = self.ui.toolButtonAddExecutable
 
         if width >= 419:
-            add_app.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-            add_exe.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+            add_app.setToolButtonStyle(
+                Qt.ToolButtonStyle.ToolButtonTextBesideIcon) # type:ignore
+            add_exe.setToolButtonStyle(
+                Qt.ToolButtonStyle.ToolButtonTextBesideIcon) # type:ignore
         elif width >= 350:
-            add_app.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-            add_exe.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+            add_app.setToolButtonStyle(
+                Qt.ToolButtonStyle.ToolButtonTextBesideIcon) # type:ignore
+            add_exe.setToolButtonStyle(
+                Qt.ToolButtonStyle.ToolButtonIconOnly) # type:ignore
         elif width > 283:
-            add_app.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
-            add_exe.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+            add_app.setToolButtonStyle(
+                Qt.ToolButtonStyle.ToolButtonIconOnly) # type:ignore
+            add_exe.setToolButtonStyle(
+                Qt.ToolButtonStyle.ToolButtonIconOnly) # type:ignore
         elif width > 260:
-            add_app.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-            add_exe.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+            add_app.setToolButtonStyle(
+                Qt.ToolButtonStyle.ToolButtonTextBesideIcon) # type:ignore
+            add_exe.setToolButtonStyle(
+                Qt.ToolButtonStyle.ToolButtonTextBesideIcon) # type:ignore
         else:
-            add_app.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-            add_exe.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+            add_app.setToolButtonStyle(
+                Qt.ToolButtonStyle.ToolButtonTextBesideIcon) # type:ignore
+            add_exe.setToolButtonStyle(
+                Qt.ToolButtonStyle.ToolButtonIconOnly) # type:ignore
 
     @classmethod
     def to_daemon(cls, *args):
@@ -681,6 +708,8 @@ class MainWindow(QMainWindow):
             return
 
         session_name = dialog.get_selected_session()
+        if session_name is None:
+            return
         save_previous = int(dialog.want_to_save_previous())
 
         self.to_daemon(r.server.OPEN_SESSION, session_name, save_previous)
@@ -734,6 +763,8 @@ class MainWindow(QMainWindow):
             return
 
         snapshot = dialog.get_selected_snapshot()
+        if snapshot is None:
+            return
         self.to_daemon(r.session.OPEN_SNAPSHOT, snapshot)
 
     def _about_raysession(self):
@@ -1121,7 +1152,7 @@ class MainWindow(QMainWindow):
             self._systray_menu.addAction(self.ui.actionSystemTrayIconOptions)
             self._systray_menu.addSeparator()
             self._systray_menu.addAction(self.ui.actionQuit)
-        self._systray.setContextMenu(self._systray_menu)
+        self._systray.setContextMenu(self._systray_menu) # type:ignore
 
         if is_shown:
             self._systray.show()
@@ -1238,7 +1269,7 @@ class MainWindow(QMainWindow):
         # It has to be modified when ui_raysession is modified.
 
         self.ui.listWidget.clear()
-        self.ui.verticalLayout.removeWidget(self.ui.listWidget)
+        self.ui.verticalLayout.removeWidget(self.ui.listWidget) # type:ignore
         del self.ui.listWidget
         self.ui.listWidget = list_widget_clients.ListWidgetClients(
             self.ui.frameCurrentSession)
@@ -1253,7 +1284,7 @@ class MainWindow(QMainWindow):
         self.ui.listWidget.setBatchSize(80)
         self.ui.listWidget.setObjectName("listWidget")
         self.ui.listWidget.set_session(self.session)
-        self.ui.verticalLayout.addWidget(self.ui.listWidget)
+        self.ui.verticalLayout.addWidget(self.ui.listWidget) # type:ignore
         self.ui.listWidget.currentItemChanged.connect(
             self._list_widget_item_changed)
 
@@ -1348,7 +1379,7 @@ class MainWindow(QMainWindow):
             icon_str = 'notes-editing'
 
         self.ui.actionSessionNotes.setIcon(
-            ray_icon(icon_str, is_dark_theme(self)))
+            ray_icon(icon_str, is_dark_theme(self))) # type:ignore
 
     def stop_client(self, client_id):
         client = self.session.get_client(client_id)
@@ -1357,6 +1388,7 @@ class MainWindow(QMainWindow):
 
         if client.check_last_save:
             if (client.protocol is ray.Protocol.RAY_HACK
+                    and client.ray_hack is not None
                     and client.ray_hack.relevant_no_save_level()):
                 dialog = child_dialogs.StopClientNoSaveDialog(self, client_id)
                 dialog.exec()
@@ -1449,6 +1481,8 @@ class MainWindow(QMainWindow):
 
         for sess in self.session.recent_sessions:
             sess_action = self.ui.menuRecentSessions.addAction(sess)
+            if sess_action is None:
+                continue
 
             if sess == self.session.get_short_path():
                 # disable running session
@@ -1509,7 +1543,7 @@ class MainWindow(QMainWindow):
 
         return act_x_trashed
 
-    def trash_remove(self, menu_action):
+    def trash_remove(self, menu_action: QAction):
         self._trash_menu.removeAction(menu_action)
 
         if not self.session.trashed_clients:
@@ -1522,7 +1556,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def launch_recent_session(self):
         try:
-            session_name = str(self.sender().data())
+            session_name = str(self.sender().data()) # type:ignore
         except BaseException:
             return
 
@@ -1531,7 +1565,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def show_client_trash_dialog(self):
         try:
-            client_id = str(self.sender().data())
+            client_id = str(self.sender().data()) # type:ignore
         except BaseException:
             return
 
@@ -1550,7 +1584,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def launch_favorite(self):
-        template_name, factory = self.sender().data()
+        template_name, factory = self.sender().data() # type:ignore
         self.to_daemon(r.session.ADD_CLIENT_TEMPLATE,
                        int(factory), template_name, 'start', '')
 
@@ -1700,11 +1734,11 @@ class MainWindow(QMainWindow):
     def leaveEvent(self, event):
         if self.isActiveWindow():
             self.mouse_is_inside = False
-        QDialog.leaveEvent(self, event)
+        super().leaveEvent(event)
 
     def enterEvent(self, event):
         self.mouse_is_inside = True
-        QDialog.enterEvent(self, event)
+        super().enterEvent(event)
 
     def showEvent(self, event):
         if CommandLineArgs.under_nsm:

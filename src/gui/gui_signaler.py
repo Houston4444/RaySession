@@ -3,7 +3,7 @@
 import enum
 
 # third party imports
-from qtpy.QtCore import QObject, Signal
+from qtpy.QtCore import QObject, Signal # type:ignore
 
 # Imports from src/shared
 from osclib import Address

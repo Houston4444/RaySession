@@ -728,7 +728,7 @@ class Client(ServerSender, ray.ClientData):
                 continue
             
             c = XmlElement(child)
-            if c.str('template-name') == template_name:
+            if c.string('template-name') == template_name:
                 to_rm_childs.append(child)
                 
         for child in to_rm_childs:
@@ -822,27 +822,27 @@ class Client(ServerSender, ray.ClientData):
         return jack_client_name
 
     def read_xml_properties(self, c: XmlElement, old_mode=False):
-        self.executable_path = c.str('executable')
-        self.arguments = c.str('arguments')
-        self.pre_env = c.str('pre_env')
-        self.name = c.str('name')
-        self.desktop_file = c.str('desktop_file')
-        self.label = c.str('label')
-        self.description = c.str('description')
-        self.icon = c.str('icon')
+        self.executable_path = c.string('executable')
+        self.arguments = c.string('arguments')
+        self.pre_env = c.string('pre_env')
+        self.name = c.string('name')
+        self.desktop_file = c.string('desktop_file')
+        self.label = c.string('label')
+        self.description = c.string('description')
+        self.icon = c.string('icon')
         self.in_terminal = c.bool('in_terminal')
         self.auto_start = c.bool('launched', True)
         self.check_last_save = c.bool('check_last_save', True)
         self.start_gui_hidden = not c.bool('gui_visible', True)
-        self.template_origin = c.str('template_origin')
+        self.template_origin = c.string('template_origin')
 
         if old_mode:
             self.jack_naming = ray.JackNaming.SHORT
             self.prefix_mode = ray.PrefixMode.SESSION_NAME
 
-        if c.str('jack_naming'):
+        if c.string('jack_naming'):
             self.jack_naming = ray.JackNaming(int(c.bool('jack_naming')))
-        elif c.str('from_nsm_file'):
+        elif c.string('from_nsm_file'):
             self.jack_naming = ray.JackNaming(int(c.bool('from_nsm_file')))
 
         # ensure client has a name
@@ -851,8 +851,8 @@ class Client(ServerSender, ray.ClientData):
 
         self.update_infos_from_desktop_file()
 
-        ign_exts = c.str('ignored_extensions').split(' ')
-        unign_exts = c.str('unignored_extensions').split(' ')
+        ign_exts = c.string('ignored_extensions').split(' ')
+        unign_exts = c.string('unignored_extensions').split(' ')
 
         global_exts = ray.GIT_IGNORED_EXTENSIONS.split(' ')
         self.ignored_extensions = ""
@@ -865,7 +865,7 @@ class Client(ServerSender, ray.ClientData):
             if ext and not ext in global_exts:
                 self.ignored_extensions += " %s" % ext
 
-        open_duration = c.str('last_open_duration')
+        open_duration = c.string('last_open_duration')
         if open_duration.replace('.', '', 1).isdigit():
             self.last_open_duration = float(open_duration)
 
@@ -873,12 +873,12 @@ class Client(ServerSender, ray.ClientData):
             c.int('prefix_mode', ray.PrefixMode.SESSION_NAME.value))
 
         if self.prefix_mode is ray.PrefixMode.CUSTOM:
-            self.custom_prefix = c.str('custom_prefix')
+            self.custom_prefix = c.string('custom_prefix')
 
-        self.protocol = ray.Protocol.from_string(c.str('protocol'))
+        self.protocol = ray.Protocol.from_string(c.string('protocol'))
 
         if self.protocol is ray.Protocol.RAY_HACK:
-            self.ray_hack.config_file = c.str('config_file')
+            self.ray_hack.config_file = c.string('config_file')
             self.ray_hack.save_sig = c.int('save_signal')
             self.ray_hack.stop_sig = c.int('stop_signal')
             self.ray_hack.wait_win = c.bool('wait_window')
@@ -912,15 +912,15 @@ class Client(ServerSender, ray.ClientData):
                     elif eat_root:
                         self.ray_net.session_root = arg
                         eat_root = False
-            self.ray_net.session_template = c.str('net_session_template')
+            self.ray_net.session_template = c.string('net_session_template')
 
         elif self.protocol is ray.Protocol.RAY_NET:
-            self.ray_net.daemon_url = c.str('net_daemon_url')
-            self.ray_net.session_root = c.str('net_session_root')
-            self.ray_net.session_template = c.str('net_session_template')
-            self.ray_net.daemon_url = c.str('net_daemon_url')
-            self.ray_net.session_root = c.str('net_session_root')
-            self.ray_net.session_template = c.str('net_session_template')
+            self.ray_net.daemon_url = c.string('net_daemon_url')
+            self.ray_net.session_root = c.string('net_session_root')
+            self.ray_net.session_template = c.string('net_session_template')
+            self.ray_net.daemon_url = c.string('net_daemon_url')
+            self.ray_net.session_root = c.string('net_session_root')
+            self.ray_net.session_template = c.string('net_session_template')
 
         if self.is_ray_net:
             # neeeded only to know if RAY_NET client is capable of switch
@@ -928,13 +928,13 @@ class Client(ServerSender, ray.ClientData):
             if self.ray_net.daemon_url and self.ray_net.session_root:
                 self.arguments = self.get_ray_net_arguments_line()
 
-        if c.str('id'):
+        if c.string('id'):
             # session uses "id" for absolutely needed client_id
-            self.client_id = c.str('id')
+            self.client_id = c.string('id')
         else:
             # template uses "client_id" for wanted client_id
             self.client_id = self.session.generate_client_id(
-                c.str('client_id'))
+                c.string('client_id'))
 
         for cc in c.el:
             if cc.tag == 'custom_data':
@@ -1069,9 +1069,9 @@ class Client(ServerSender, ray.ClientData):
             return False
 
         xroot = XmlElement(root)
-        executable = xroot.str('executable')
-        arguments = xroot.str('arguments')
-        config_file = xroot.str('config_file')
+        executable = xroot.string('executable')
+        arguments = xroot.string('arguments')
+        config_file = xroot.string('config_file')
         save_signal = xroot.int('save_signal')
         stop_signal = xroot.int('stop_signal')
         wait_window = xroot.bool('wait_window')

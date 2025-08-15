@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 # third party imports
 from qtpy.QtWidgets import (
-    QApplication, QFileDialog, QMessageBox, QDialogButtonBox)
+    QApplication, QFileDialog, QMessageBox, QDialogButtonBox, QPushButton)
 from qtpy.QtGui import QIcon
 from qtpy.QtCore import QProcess, QProcessEnvironment
 
@@ -95,14 +95,14 @@ class RayToNsmDialog(ChildDialog):
         
         self.choose_current_session = False
         #self.choose_session
-        choose_button = self.ui.buttonBox.addButton(
+        choose_button: QPushButton = self.ui.buttonBox.addButton(
             _translate('utilities', 'Choose a session'),
-            QDialogButtonBox.ButtonRole.AcceptRole)
+            QDialogButtonBox.ButtonRole.AcceptRole) # type:ignore
         choose_button.setIcon(QIcon.fromTheme('folder-open'))
 
-        this_session_button = self.ui.buttonBox.addButton(
+        this_session_button: QPushButton = self.ui.buttonBox.addButton(
             _translate('utilities', 'Convert the current session'),
-            QDialogButtonBox.ButtonRole.AcceptRole)
+            QDialogButtonBox.ButtonRole.AcceptRole) # type:ignore
         
         if not self.session.path:
             this_session_button.setVisible(False)
@@ -243,7 +243,7 @@ class UtilityScriptLauncher:
         ardour_session , filter = QFileDialog.getOpenFileName(
             self.main_win,
             _translate('utilities', "Choose an Ardour session to convert..."),
-            os.getenv('HOME'),
+            os.getenv('HOME', ''),
             _translate('utilities', "Ardour sessions (*.ardour)"))
 
         if not ardour_session:
@@ -308,6 +308,10 @@ class UtilityScriptLauncher:
             if not open_dialog.result():
                 return
 
-            args.append(open_dialog.get_selected_session())
+            session_name = open_dialog.get_selected_session()
+            if session_name is None:
+                return
+
+            args.append(session_name)
 
         self._start_process(script_name, terminal_title, *args)

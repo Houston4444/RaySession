@@ -192,9 +192,9 @@ class DesktopsMemory:
                 continue
             
             win = WindowProperties()
-            win.wclass = w.str('class')
-            win.name = w.str('name')
-            desktop = w.str('desktop')
+            win.wclass = w.string('class')
+            win.name = w.string('name')
+            desktop = w.string('desktop')
             if desktop.lstrip('-').isdigit():
                 win.desktop = int(desktop)
             

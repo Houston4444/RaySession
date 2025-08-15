@@ -43,7 +43,7 @@ class RayPatchbayCallbacker(Callbacker):
         super().__init__(manager)
         self.mng = manager
     
-    def _group_rename(
+    def group_rename(
             self, group_id: int, pretty_name: str, save_in_jack: bool):
         group = self.mng.get_group_from_id(group_id)
         if group is None:
@@ -57,7 +57,7 @@ class RayPatchbayCallbacker(Callbacker):
             group.name, pretty_name, group.mdata_pretty_name,
             int(save_in_jack))
         
-    def _port_rename(self, group_id: int, port_id: int,
+    def port_rename(self, group_id: int, port_id: int,
                      pretty_name: str, save_in_jack: bool):
         port = self.mng.get_port_from_id(group_id, port_id)
         if port is None:
@@ -71,7 +71,7 @@ class RayPatchbayCallbacker(Callbacker):
             port.full_name_id_free, pretty_name,
             port.mdata_pretty_name, int(save_in_jack))
 
-    def _ports_connect(self, group_out_id: int, port_out_id: int,
+    def ports_connect(self, group_out_id: int, port_out_id: int,
                        group_in_id: int, port_in_id: int):
         port_out = self.mng.get_port_from_id(group_out_id, port_out_id)
         port_in = self.mng.get_port_from_id(group_in_id, port_in_id)
@@ -83,7 +83,7 @@ class RayPatchbayCallbacker(Callbacker):
             r.patchbay.CONNECT,
             port_out.full_name, port_in.full_name)
 
-    def _ports_disconnect(self, connection_id: int):
+    def ports_disconnect(self, connection_id: int):
         for connection in self.mng.connections:
             if connection.connection_id == connection_id:
                 self.mng.send_to_patchbay_daemon(
@@ -92,7 +92,7 @@ class RayPatchbayCallbacker(Callbacker):
                     connection.port_in.full_name)
                 break
 
-    def _client_show_gui(self, group_id: int, visible: int):
+    def client_show_gui(self, group_id: int, visible: int):
         group = self.mng.get_group_from_id(group_id)
         if group is None:
             return
@@ -105,7 +105,7 @@ class RayPatchbayCallbacker(Callbacker):
                     client.client_id)
                 break
             
-    def _group_selected(self, group_id: int, splitted_mode: PortMode):
+    def group_selected(self, group_id: int, splitted_mode: PortMode):
         # select client widget matching with the selected box
         group = self.mng.get_group_from_id(group_id)
         if group is None:
@@ -186,7 +186,7 @@ class RayPatchbayManager(PatchbayManager):
             assert isinstance(self.main_win, MainWindow)
 
         self.app_init(self.main_win.ui.graphicsView,
-                      theme_paths,
+                      tuple(theme_paths),
                       callbacker=RayPatchbayCallbacker(self),
                       manual_path=manual_path,
                       default_theme_name='Yellow Boards')
@@ -282,6 +282,9 @@ class RayPatchbayManager(PatchbayManager):
         return n_boxes
 
     def clear_absents_in_view(self, only_current_ptv=False):
+        if self.view_number is None:
+            return
+        
         if only_current_ptv:
             presents = set[str]()
 
@@ -391,8 +394,8 @@ class RayPatchbayManager(PatchbayManager):
         if not jack_client_name:
             self._last_selected_client_name = ''
             self._last_selected_box_n = 0
-            if patchcanvas.canvas.scene is not None:
-                patchcanvas.canvas.scene.clearSelection()
+            if patchcanvas.canvas._scene is not None:
+                patchcanvas.canvas._scene.clearSelection()
             return
         
         box_n = 0

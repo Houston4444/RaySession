@@ -6,6 +6,7 @@ import sys
 import os
 from pathlib import Path
 import logging
+from typing import TYPE_CHECKING
 
 root_path = Path(__file__).parents[2]
 
@@ -95,10 +96,12 @@ if True:
         app.installTranslator(patchbay_translator)
 
     sys_translator = QTranslator()
-    path_sys_translations = QLibraryInfo.location(
-        QLibraryInfo.TranslationsPath)
-    if sys_translator.load(QLocale(), 'qt', '_', path_sys_translations):
-        app.installTranslator(sys_translator)
+    if QT_API != 'PyQt5' or TYPE_CHECKING:
+        path_sys_translations = QLibraryInfo.path(
+            QLibraryInfo.LibraryPath.TranslationsPath)
+    else:
+        path_sys_translations = QLibraryInfo.location(
+            QLibraryInfo.TranslationsPath)
 
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-C.ttf")

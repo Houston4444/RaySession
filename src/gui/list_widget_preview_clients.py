@@ -2,7 +2,7 @@
 # third party imports
 from qtpy.QtWidgets import QListWidget, QListWidgetItem, QFrame, QMenu
 from qtpy.QtGui import QIcon, QFontMetrics, QContextMenuEvent, QMouseEvent
-from qtpy.QtCore import QSize, Signal
+from qtpy.QtCore import QSize, Signal # type:ignore
 
 # Imports from src/shared
 import ray
@@ -35,10 +35,10 @@ class ClientSlot(QFrame):
             self._properties_request)
 
         self._menu = QMenu(self)
-        self._menu.addAction(self.ui.actionAddToTheCurrentSession)
-        self._menu.addAction(self.ui.actionProperties)
+        self._menu.addAction(self.ui.actionAddToTheCurrentSession) # type:ignore
+        self._menu.addAction(self.ui.actionProperties) # type:ignore
 
-        self.ui.iconButton.setMenu(self._menu)
+        self.ui.iconButton.setMenu(self._menu) # type:ignore
         self.update_client_data()
         
         self._server_status = ray.ServerStatus.OFF
@@ -51,9 +51,9 @@ class ClientSlot(QFrame):
 
     def _gray_icon(self, gray: bool):
         if gray:
-            self.ui.iconButton.setIcon(self._icon_off)
+            self.ui.iconButton.setIcon(self._icon_off) # type:ignore
         else:
-            self.ui.iconButton.setIcon(self._icon_on)
+            self.ui.iconButton.setIcon(self._icon_on) # type:ignore
 
     def _properties_request(self):
         self._list_widget.properties_request.emit(self.get_client_id())
@@ -65,7 +65,7 @@ class ClientSlot(QFrame):
         self._gray_icon(not launched)
         self.ui.ClientName.setEnabled(launched)
 
-    def server_status_changed(self, server_status:int):
+    def server_status_changed(self, server_status: ray.ServerStatus):
         self.ui.actionAddToTheCurrentSession.setEnabled(
             server_status is ray.ServerStatus.READY)
 
@@ -79,7 +79,7 @@ class ClientSlot(QFrame):
         layout_width = self._list_widget.width()
 
         scroll_bar = self._list_widget.verticalScrollBar()
-        if scroll_bar.isVisible():
+        if scroll_bar is not None and scroll_bar.isVisible():
             layout_width -= scroll_bar.width()
 
         max_label_width = layout_width - 50
@@ -185,7 +185,7 @@ class ListWidgetPreviewClients(QListWidget):
         if server:
             server.to_daemon(*args)
 
-    def server_status_changed(self, server_status:int):
+    def server_status_changed(self, server_status: ray.ServerStatus):
         self.server_status = server_status
         for i in range(self.count()):
             item: ClientItem = self.item(i)
@@ -207,6 +207,9 @@ class ListWidgetPreviewClients(QListWidget):
                 del item
                 break
 
+    def item(self, index: int) -> ClientItem:
+        return super().item(index) # type:ignore
+
     def mousePressEvent(self, event: QMouseEvent):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
@@ -218,7 +221,7 @@ class ListWidgetPreviewClients(QListWidget):
         QListWidget.resizeEvent(self, event)
         for i in range(self.count()):
             item: ClientItem = self.item(i)
-            widget: ClientSlot = self.itemWidget(item)
+            widget: ClientSlot = self.itemWidget(item) # type:ignore
             if widget is not None:
                 widget.update_layout()
 

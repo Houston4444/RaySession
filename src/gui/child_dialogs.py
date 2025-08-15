@@ -86,8 +86,8 @@ class ChildDialog(QDialog):
         else:
             _logger.error(f'No GUI OSC Server, can not send {args}.')
 
-    def _server_status_changed(self, server_status: int):
-        pass
+    def _server_status_changed(self, server_status: ray.ServerStatus):
+        ...
 
     def _server_copying(self, copying: bool):
         self.server_copying = copying
@@ -141,7 +141,7 @@ class ChildDialog(QDialog):
         self.to_daemon(r.server.CHANGE_ROOT, root_folder)
 
     def parent(self) -> 'MainWindow':
-        super().parent()
+        return super().parent() # type:ignore
 
     def leaveEvent(self, event):
         parent = self.parent()
@@ -167,8 +167,8 @@ class NewSessionDialog(ChildDialog):
 
         self.ui.currentSessionsFolder.setText(CommandLineArgs.session_root)
         self.ui.toolButtonFolder.clicked.connect(self._change_root_folder)
-        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
-        self.ui.lineEdit.setFocus(Qt.FocusReason.OtherFocusReason)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False) # type:ignore
+        self.ui.lineEdit.setFocus(Qt.FocusReason.OtherFocusReason) # type:ignore
         self.ui.lineEdit.textChanged.connect(self._text_changed)
 
         self.session_list = []
@@ -205,7 +205,7 @@ class NewSessionDialog(ChildDialog):
         self._text_is_valid = False
 
         self._completer = QCompleter(self.sub_folders)
-        self.ui.lineEdit.setCompleter(self._completer)
+        self.ui.lineEdit.setCompleter(self._completer) # type:ignore
 
         self._server_status_changed(self.session.server_status)
         
@@ -301,7 +301,7 @@ class NewSessionDialog(ChildDialog):
         self.sub_folders.sort()
         del self._completer
         self._completer = QCompleter([f + '/' for f in self.sub_folders])
-        self.ui.lineEdit.setCompleter(self._completer)
+        self.ui.lineEdit.setCompleter(self._completer) # type:ignore
 
         if not session_names:
             # all sessions are listed, pre-fill last subfolder
@@ -346,7 +346,7 @@ class NewSessionDialog(ChildDialog):
         self._completer = QCompleter([f + '/' for f in self.sub_folders])
         self._completer.setCompletionMode(
             QCompleter.CompletionMode.UnfilteredPopupCompletion)
-        self.ui.lineEdit.setCompleter(self._completer)
+        self.ui.lineEdit.setCompleter(self._completer) # type:ignore
         QTimer.singleShot(50, self._completer.complete)
 
     def _show_completer_at_start(self):
@@ -357,7 +357,7 @@ class NewSessionDialog(ChildDialog):
         QTimer.singleShot(800, self._show_completer_at_start)
 
     def _prevent_ok(self):
-        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled( # type:ignore
             bool(self._server_will_accept and self._text_is_valid))
 
     def get_session_short_path(self)->str:
@@ -386,7 +386,7 @@ class AbstractSaveTemplateDialog(ChildDialog):
             "session template", "Update the template")
         self._create_template_text = self.ui.pushButtonAccept.text()
         self._overwrite_message_box = QMessageBox(
-            QMessageBox.Question,
+            QMessageBox.Icon.Question,
             _translate(
                     'session template',
                     'Overwrite Template ?'),
@@ -518,14 +518,15 @@ class ClientTrashDialog(ChildDialog):
         self.ui.pushButtonCancel.setFocus()
 
         self._remove_client_message_box = QMessageBox(
-            QMessageBox.Warning,
+            QMessageBox.Icon.Warning,
             _translate('trashed_client', 'Remove definitely'),
             _translate('trashed_client',
                 "Are you sure to want to remove definitely this client and all its files ?"),
-            QMessageBox.Ok | QMessageBox.Cancel,
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
             self
             )
-        self._remove_client_message_box.setDefaultButton(QMessageBox.Cancel)
+        self._remove_client_message_box.setDefaultButton(
+            QMessageBox.StandardButton.Cancel)
 
     def _server_status_changed(self, server_status: ray.ServerStatus):
         if server_status in (ray.ServerStatus.CLOSE,
@@ -540,7 +541,8 @@ class ClientTrashDialog(ChildDialog):
         self._remove_client_message_box.exec()
 
         if (self._remove_client_message_box.clickedButton()
-                != self._remove_client_message_box.button(QMessageBox.Ok)):
+                != self._remove_client_message_box.button(
+                    QMessageBox.StandardButton.Ok)):
             return
 
         self.to_daemon(
@@ -564,7 +566,7 @@ class AbortSessionDialog(ChildDialog):
 
         self.ui.pushButtonAbort.clicked.connect(self.accept)
         self.ui.pushButtonCancel.clicked.connect(self.reject)
-        self.ui.pushButtonCancel.setFocus(Qt.FocusReason.OtherFocusReason)
+        self.ui.pushButtonCancel.setFocus(Qt.FocusReason.OtherFocusReason) # type:ignore
 
         self._server_status_changed(self.session.server_status)
 
@@ -596,7 +598,7 @@ class AbortServerCopyDialog(ChildDialog):
             self.reject()
 
     def _set_progress(self, progress: float):
-        self.ui.progressBar.setValue(progress * 100)
+        self.ui.progressBar.setValue(int(progress * 100))
 
 
 class AbortClientCopyDialog(ChildDialog):
@@ -613,7 +615,7 @@ class AbortClientCopyDialog(ChildDialog):
         if client_id != self._client_id:
             return
 
-        self.ui.progressBar.setValue(progress * 100)
+        self.ui.progressBar.setValue(int(progress * 100))
 
     def _server_status_changed(self, server_status: ray.ServerStatus):
         if not self.server_copying:
@@ -712,7 +714,7 @@ class QuitAppDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui.quit_app.Ui_DialogQuitApp()
         self.ui.setupUi(self)
-        self.ui.pushButtonCancel.setFocus(Qt.FocusReason.OtherFocusReason)
+        self.ui.pushButtonCancel.setFocus(Qt.FocusReason.OtherFocusReason) # type:ignore
         self.ui.pushButtonSaveQuit.clicked.connect(self._close_session)
         self.ui.pushButtonQuitNoSave.clicked.connect(self._abort_session)
         self.ui.pushButtonDaemon.clicked.connect(self._leave_daemon_running)
@@ -805,9 +807,9 @@ class NewExecutableDialog(ChildDialog):
             self.ui.comboBoxPrefixMode.toolTip())
         self.ui.labelClientId.setToolTip(self.ui.lineEditClientId.toolTip())
 
-        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False) # type:ignore
 
-        self.ui.lineEdit.setFocus(Qt.FocusReason.OtherFocusReason)
+        self.ui.lineEdit.setFocus(Qt.FocusReason.OtherFocusReason) # type:ignore
         self.ui.lineEdit.textChanged.connect(self._check_allow)
         self.ui.checkBoxNsm.stateChanged.connect(self._check_allow)
 
@@ -831,7 +833,7 @@ class NewExecutableDialog(ChildDialog):
         self.exec_list = []
 
         self._completer = QCompleter(self.exec_list)
-        self.ui.lineEdit.setCompleter(self._completer)
+        self.ui.lineEdit.setCompleter(self._completer) # type:ignore
 
         self.ui.lineEdit.returnPressed.connect(self._close_now)
 
@@ -858,7 +860,7 @@ class NewExecutableDialog(ChildDialog):
 
         del self._completer
         self._completer = QCompleter(self.exec_list)
-        self.ui.lineEdit.setCompleter(self._completer)
+        self.ui.lineEdit.setCompleter(self._completer) # type:ignore
 
     def _is_allowed(self) -> bool:
         nsm = self.ui.checkBoxNsm.isChecked()
@@ -867,7 +869,7 @@ class NewExecutableDialog(ChildDialog):
 
     def _check_allow(self):
         allow = self._is_allowed()
-        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(allow)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(allow) # type:ignore
 
     def _close_now(self):
         if self._is_allowed():
@@ -916,6 +918,8 @@ class StopClientDialog(ChildDialog):
         self.to_daemon(r.client.SAVE, self._client_id)
 
     def _check_box_clicked(self, state):
+        if self.client is None:
+            return
         self.client.check_last_save = not bool(state)
         self.client.send_properties_to_daemon()
 
@@ -943,7 +947,7 @@ class StopClientNoSaveDialog(ChildDialog):
             self.client.status_changed.connect(self._server_updates_client_status)
 
         self.ui.checkBox.stateChanged.connect(self._check_box_clicked)
-        self.ui.pushButtonCancel.setFocus(True)
+        self.ui.pushButtonCancel.setFocus()
 
     def _server_updates_client_status(self, status: int):
         if status in (ray.ClientStatus.STOPPED, ray.ClientStatus.REMOVED):
@@ -951,6 +955,8 @@ class StopClientNoSaveDialog(ChildDialog):
             return
 
     def _check_box_clicked(self, state):
+        if self.client is None:
+            return
         self.client.check_last_save = not bool(state)
         self.client.send_properties_to_daemon()
 
@@ -979,7 +985,7 @@ class ClientRenameDialog(ChildDialog):
         self._change_box_text_with_status(client.status)
         client.status_changed.connect(self._client_status_changed)
 
-    def _change_box_text_with_status(self, status: int):
+    def _change_box_text_with_status(self, status: ray.ClientStatus):
         can_switch = ':switch:' in self.client.capabilities
 
         if status in (
@@ -999,7 +1005,7 @@ class ClientRenameDialog(ChildDialog):
         
         self.ui.checkBoxIdRename.setText(full_text)    
 
-    def _client_status_changed(self, status: int):
+    def _client_status_changed(self, status: ray.ClientStatus):
         if status is ray.ClientStatus.REMOVED:
             self.reject()
             
@@ -1022,14 +1028,20 @@ class ClientRenameDialog(ChildDialog):
         session = self.client.session
         ok = True
         
-        for cl in session.client_list + session.trashed_clients:
-            cl: Client
+        for cl in session.client_list:
             if cl.client_id == out_id:
                 self.ui.buttonBox.button(
-                    QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+                    QDialogButtonBox.StandardButton.Ok).setEnabled(False) # type:ignore
                 return
         
-        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
+        for cl in session.trashed_clients:
+            if cl.client_id == out_id:
+                self.ui.buttonBox.button(
+                    QDialogButtonBox.StandardButton.Ok).setEnabled(False) # type:ignore
+                return
+        
+        self.ui.buttonBox.button(
+            QDialogButtonBox.StandardButton.Ok).setEnabled(True) # type:ignore
     
     def is_identifiant_renamed(self) -> bool:
         return self.ui.checkBoxIdRename.isChecked()
@@ -1091,10 +1103,10 @@ class ScriptUserActionDialog(ChildDialog):
 
     def _button_box_clicked(self, button):
         if button == self.ui.buttonBox.button(
-                QDialogButtonBox.StandardButton.Yes):
+                QDialogButtonBox.StandardButton.Yes): # type:ignore
             self._validate()
         elif button == self.ui.buttonBox.button(
-                QDialogButtonBox.StandardButton.Ignore):
+                QDialogButtonBox.StandardButton.Ignore): # type:ignore
             self._abort()
 
     def set_main_text(self, text: str):
@@ -1178,13 +1190,13 @@ class DaemonUrlWindow(ChildDialog):
             error_text = _translate("url window", "<p align=\"left\">To run a network session,<br>open a terminal on another computer of this network.<br>Launch ray-daemon on port 1234 (for example)<br>by typing the command :</p><p align=\"left\"><code>ray-daemon -p 1234</code></p><p align=\"left\">Then paste below the first url<br>that ray-daemon gives you at startup.</p><p></p>")
 
         self.ui.labelError.setText(error_text)
-        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False) # type:ignore
 
         self.tried_urls = ray.get_list_in_settings(RS.settings, 'network/tried_urls')
         last_tried_url = RS.settings.value('network/last_tried_url', '', type=str)
 
         self._completer = QCompleter(self.tried_urls)
-        self.ui.lineEdit.setCompleter(self._completer)
+        self.ui.lineEdit.setCompleter(self._completer) # type:ignore
 
         if ex_url:
             self.ui.lineEdit.setText(ex_url)
@@ -1195,17 +1207,17 @@ class DaemonUrlWindow(ChildDialog):
         if not text:
             self.ui.lineEdit.completer().complete()
             self.ui.buttonBox.button(
-                QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+                QDialogButtonBox.StandardButton.Ok).setEnabled(False) # type:ignore
             return
 
         if not text.startswith('osc.udp://'):
             self.ui.buttonBox.button(
-                QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+                QDialogButtonBox.StandardButton.Ok).setEnabled(False) # type:ignore
             return
 
         addr = verified_address(text)
         self.ui.buttonBox.button(
-                QDialogButtonBox.StandardButton.Ok).setEnabled(
+                QDialogButtonBox.StandardButton.Ok).setEnabled( # type:ignore
                     isinstance(addr, Address))
 
     def get_url(self):
@@ -1220,9 +1232,9 @@ class WaitingCloseUserDialog(ChildDialog):
 
         if is_dark_theme(self):
             self.ui.labelSaveIcon.setPixmap(
-                QPixmap(':scalable/breeze-dark/document-nosave.svg'))
+                QPixmap(':scalable/breeze-dark/document-nosave.svg')) # type:ignore
 
-        self.ui.pushButtonOk.setFocus(True)
+        self.ui.pushButtonOk.setFocus()
         self.ui.pushButtonUndo.clicked.connect(self._undo_close)
         self.ui.pushButtonSkip.clicked.connect(self._skip)
         self.ui.checkBox.setChecked(not RS.is_hidden(RS.HD_WaitCloseUser))
@@ -1284,7 +1296,7 @@ class StartupDialog(ChildDialog):
             session_item = QListWidgetItem(recent_session.replace('/', ' / '),
                                            self.ui.listWidgetRecentSessions)
             session_item.setData(Qt.ItemDataRole.UserRole, recent_session)
-            self.ui.listWidgetRecentSessions.addItem(session_item)
+            self.ui.listWidgetRecentSessions.addItem(session_item) # type:ignore
 
         self.ui.listWidgetRecentSessions.setMinimumHeight(
             30 * len(self.session.recent_sessions))
@@ -1303,7 +1315,8 @@ class StartupDialog(ChildDialog):
         self.ui.pushButtonOpenSession.focus_on_new.connect(
             self._focus_on_new)
 
-        self.ui.listWidgetRecentSessions.setFocus(Qt.FocusReason.OtherFocusReason)
+        self.ui.listWidgetRecentSessions.setFocus(
+            Qt.FocusReason.OtherFocusReason) # type:ignore
 
     def _server_status_changed(self, server_status: ray.ServerStatus):
         if server_status is not ray.ServerStatus.OFF:
@@ -1318,7 +1331,8 @@ class StartupDialog(ChildDialog):
         self.reject()
 
     def _focus_on_list(self):
-        self.ui.listWidgetRecentSessions.setFocus(Qt.FocusReason.OtherFocusReason)
+        self.ui.listWidgetRecentSessions.setFocus(
+            Qt.FocusReason.OtherFocusReason) # type:ignore
 
     def _focus_on_new(self):
         self.ui.pushButtonNewSession.setFocus(Qt.FocusReason.OtherFocusReason)
@@ -1344,7 +1358,8 @@ class StartupDialog(ChildDialog):
         elif event.key() == Qt.Key.Key_Right:
             self.ui.pushButtonOpenSession.setFocus(Qt.FocusReason.OtherFocusReason)
         elif event.key() in (Qt.Key.Key_Up, Qt.Key.Key_Down):
-            self.ui.listWidgetRecentSessions.setFocus(Qt.FocusReason.OtherFocusReason)
+            self.ui.listWidgetRecentSessions.setFocus(
+                Qt.FocusReason.OtherFocusReason) # type:ignore
 
         if QApplication.keyboardModifiers() & Qt.KeyboardModifier.ControlModifier:
             if event.key() == Qt.Key.Key_N:
