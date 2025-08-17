@@ -98,15 +98,15 @@ class BunServer:
                                  reg_methods=reg_methods)
 
             self.add_method('/_bundle_head', 'hii',
-                            self.__bundle_head)
+                            self.__bundle_head) # type:ignore
             self.add_method('/_bundle_head_reply', 'hii',
-                            self.__bundle_head_reply)
+                            self.__bundle_head_reply) # type:ignore
             self.add_method('/_bundle_tail', 'hii',
-                            self.__bundle_tail)
+                            self.__bundle_tail) # type:ignore
             self.add_method('/_bundle_tail_reply', 'hii',
-                            self.__bundle_tail_reply)
+                            self.__bundle_tail_reply) # type:ignore
             self.add_method('/_local_mega_send', 'hs',
-                            self.__local_mega_send)
+                            self.__local_mega_send) # type:ignore
         else:
             global _last_fake_num
             self.sv = None
@@ -124,9 +124,13 @@ class BunServer:
         return self.sv.url
     
     @property
-    def port(self) -> int | str:
+    def port(self) -> int:
         if self.sv is None:
             return self._dummy_port
+        
+        if not isinstance(self.sv.port, int):
+            raise Exception 
+
         return self.sv.port
     
     @property
@@ -168,7 +172,7 @@ class BunServer:
         '''Except the unknown messages, all messages received
          for functions decorated with @bun_manage go through here.'''
         if osp.path in self._mw_path_wrap:
-            self._mw_path_wrap[osp.path].wrapper(self, osp)
+            self._mw_path_wrap[osp.path].wrapper(self, osp) # type:ignore
     
     def recv(self, timeout: Optional[int] = None) -> bool:
         if self.sv is None and timeout:
@@ -182,6 +186,7 @@ class BunServer:
                     break
                 except BaseException as e:
                     _logger.error(f'Unknown problem in fake recv {str(e)}')
+                    return False
 
                 types_func = self._methods_adder.get_func(osp.path, osp.args)
                 if types_func is None:
@@ -203,6 +208,9 @@ class BunServer:
             osp.types = types
             self._exec_func(func, osp)
         
+        if self.sv is None:
+            return False
+        
         return self.sv.recv(timeout)
     
     def send(self, *args, **kwargs):
@@ -216,7 +224,7 @@ class BunServer:
             if (dest.port in _process_port_queues
                     and are_on_same_machine(self.url, dest)
                     and dest.protocol == UDP):
-                dest_port: int = dest.port
+                dest_port: int = dest.port # type:ignore
         elif isinstance(dest, int):
             if dest in _process_port_queues:
                 dest_port = dest
@@ -326,7 +334,7 @@ class BunServer:
             
             path, args_ = event[0], event[1:]
             
-            types_func = self._methods_adder.get_func(path, args_)
+            types_func = self._methods_adder.get_func(path, list(args_))
             if types_func is None:
                 continue
             
@@ -388,10 +396,10 @@ class BunServer:
         self._director_methods[path] = (multypes, func)
         for types in multypes.split('|'):
             if '.' in types or '*' in types:
-                self.add_method(path, None, self.__director)
+                self.add_method(path, None, self.__director) # type:ignore
                 break
             else:
-                self.add_method(path, types, self.__director)
+                self.add_method(path, types, self.__director) # type:ignore
         
     def add_nice_methods(
             self, methods_dict: dict[OscPath, OscMulTypes],
@@ -411,7 +419,7 @@ class BunServer:
         '''set the fallback function for all messages non matching with
         any defined method.'''
         self._director_methods[''] = ('*', func)
-        self.add_method(None, None, self.__director)
+        self.add_method(None, None, self.__director) # type:ignore
     
     def _mega_send_same_process(self, urls: list[str | int | Address],
                                 mega_send: MegaSend):
@@ -424,7 +432,7 @@ class BunServer:
                 if (url.port in _process_port_queues
                         and are_on_same_machine(self.url, url)
                         and url.protocol == UDP):
-                    dest_port = url.port
+                    dest_port: int = url.port # type:ignore
             elif isinstance(url, int):
                 if url in _process_port_queues:
                     dest_port = url
@@ -441,7 +449,7 @@ class BunServer:
                 # in the same process. No OSC communication is needed            
                 for path, *args in mega_send.tuples:
                     _process_port_queues[dest_port].put(
-                        OscPack(path, args, get_types_with_args(args),
+                        OscPack(path, args, get_types_with_args(args), # type:ignore
                                 Address(self.port)))
                 same_proc_urls.append(url)
 
@@ -450,12 +458,12 @@ class BunServer:
     
     def _mega_send_one_bundle(
             self, urls: list[str | int | Address], mega_send: MegaSend):
-        head_msg = Message('/_bundle_head', mega_send.id, 0, IS_LAST)
+        head_msg = Message('/_bundle_head', mega_send.id, 0, IS_LAST) # type:ignore
         urls_done = set[str | int | Address]()
 
         for url in urls:
             try:
-                self.sv.send(url, Bundle(*[head_msg]+mega_send.messages))
+                self.sv.send(url, Bundle(*[head_msg]+mega_send.messages)) # type:ignore
             except:
                 break
             else:
@@ -526,10 +534,10 @@ class BunServer:
             
             try:
                 self.sv.send(
-                    _RESERVED_PORT,
-                    Bundle(*[Message('/_bundle_head', 0x100000000, 0, 0)]
+                    _RESERVED_PORT, # type:ignore
+                    Bundle(*[Message('/_bundle_head', 0x100000000, 0, 0)] # type:ignore
                            + mega_send.messages[start:end]
-                           +[Message('/_bundle_tail', 0x100000000, 0, 0)]))
+                           +[Message('/_bundle_tail', 0x100000000, 0, 0)])) # type:ignore
             except:
                 if pack_len == 1:
                     _logger.critical(
@@ -559,11 +567,11 @@ class BunServer:
                 self.sv.send(
                     url,
                     Bundle(
-                        *[Message('/_bundle_head', mega_send.id,
-                                  pack_num, is_last)]
+                        *[Message('/_bundle_head', mega_send.id, # type:ignore
+                                  pack_num, is_last)] # type:ignore
                         + mega_send.messages[start:c]
-                        +[Message('/_bundle_tail', mega_send.id,
-                                  pack_num, is_last)]))
+                        +[Message('/_bundle_tail', mega_send.id, # type:ignore
+                                  pack_num, is_last)])) # type:ignore
                 regc = self.wait_mega_send_answer(mega_send, pack_num)
                 if not regc:
                     break
@@ -627,6 +635,9 @@ class BunServerThread(BunServer):
     
     def wait_mega_send_answer(
             self, mega_send: MegaSend, pack_num: int) -> bool:
+        if self.sv is None:
+            return True
+        
         self._ms_checker.add_waiting(mega_send.id, pack_num)
 
         start = time.time()

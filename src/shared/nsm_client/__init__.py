@@ -54,7 +54,7 @@ class NsmServer(BunServer):
             return
 
         if reply_path == nsm.server.ANNOUNCE:
-            self._server_capabilities = osp.args[3]
+            self._server_capabilities: str = osp.args[3] # type:ignore
 
     @bun_manage(nsm.client.OPEN, 'sss')
     def _nsm_client_open(self, osp: OscPack):

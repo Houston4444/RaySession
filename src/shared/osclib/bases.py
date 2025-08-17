@@ -98,35 +98,7 @@ class OscPack:
     
     def argt(self, types: str):
         return tuple(self.args)
-    
-    def depack(self, types: str) -> tuple[str | int | float]:
-        if types == self.types:
-            return tuple(self.args)
-        
-        ret_list = []
-        
-        for i in range(len(types)):
-            if types[i] == self.types[i]:
-                ret_list.append(self.args[i])
-            elif types[i] == 'i':
-                try:
-                    ret_list.append(int(self.args[i]))
-                except:
-                    ret_list.append(0)
-            elif types[i] == 'f':
-                try:
-                    ret_list.append(float(self.args[i]))
-                except:
-                    ret_list.append(0.0)
-            elif types[i] == 's':
-                try:
-                    ret_list.append(str(self.args[i]))
-                except:
-                    ret_list.append('')
-            else:
-                ret_list.append('')
-        
-        return tuple(ret_list)
+
 
 _AVAILABLE_TYPES = 'ihfdcsSmtTFNIb'
 

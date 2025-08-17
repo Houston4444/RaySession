@@ -70,8 +70,8 @@ class MethodsAdder:
         self._dict = dict[str | None, list[tuple[str | None, Callable]]]()
         
     def _already_associated_by(
-            self, path: str, typespec: OscTypes) \
-                -> Optional[tuple[str | None, OscTypes | None]]:
+            self, path: str | None, typespec: OscTypes | None) \
+                -> tuple[str | None, OscTypes | None] | None:
         '''check if add_method path types association will be effective or
         already managed by a previous add_method.
         
@@ -115,7 +115,7 @@ class MethodsAdder:
 
     def _get_func_in_list(
             self, args: list[OscArg],
-            type_funcs: list[tuple[OscTypes, Callable[[], None]]]) \
+            type_funcs: list[tuple[OscTypes | None, Callable[[], None]]]) \
                 -> Optional[tuple[OscTypes, Callable[[], None]]]:
         for types, func in type_funcs:
             if types is None:
@@ -165,7 +165,7 @@ class MethodsAdder:
 
     def get_func(
             self, path: str, args: list[OscArg]) \
-                -> Optional[tuple[OscTypes, Callable[[], None]]]:
+                -> tuple[OscTypes, Callable[[], None]] | None:
         type_funcs = self._dict.get(path)
         if type_funcs is not None:
             types_func = self._get_func_in_list(args, type_funcs)
