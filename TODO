@@ -39,3 +39,9 @@ changelog
 Traduction.
 remove answer() use osp.reply or error
 _re_order_clients osp
+
+YAML:
+    Attention pas dans la standard lib
+    patch_rewriter: écrire tout en YAML dans tous les cas
+    nsm_client_from et nsm_client_to: pas franchement besoin
+        uniquement besoin de la liste des clients JACK avec NSM brothers

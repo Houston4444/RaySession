@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import xml.etree.ElementTree as ET
+import yaml
 
 from jack_renaming_tools import (
     port_belongs_to_client, port_name_client_replaced)
@@ -245,12 +246,95 @@ class Patcher:
         self.saved_connections.clear()
 
         file_path = project_path + '.xml'
+        yaml_path = project_path + '.yaml'
         self.glob.file_path = file_path
         self._logger.info(f'open file: {file_path}')
 
         XML_TAG = self.engine.XML_TAG
 
-        if os.path.isfile(file_path):
+        graph_ports = dict[PortMode, list[str]]()
+        for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
+            graph_ports[port_mode] = list[str]()
+
+        if os.path.isfile(yaml_path):
+            try:
+                with open(yaml_path, 'r') as f:
+                    contents = f.read()
+                    yaml_dict = yaml.safe_load(contents)
+                    assert isinstance(yaml_dict, dict)
+            except:
+                self._logger.error(f'unable to read file {yaml_path}') 
+                return (Err.BAD_PROJECT,
+                        f'{file_path} is not a correct .yaml file')
+            
+            brothers = yaml_dict.get('nsm_brothers')
+            brothers_ = dict[str, str]()
+
+            if isinstance(brothers, dict):
+                for key, value in brothers.items():
+                    if isinstance(key, str) and isinstance(value, str):
+                        brothers_[key] = value
+            
+            conns = yaml_dict.get('connections')
+            if isinstance(conns, list):
+                for conn in conns:
+                    if not isinstance(conn, dict):
+                        continue
+                    
+                    port_from: str = conn.get('from', '')
+                    port_to: str = conn.get('to', '')
+                    
+                    if not (isinstance(port_from, str)
+                            and isinstance(port_to, str)):
+                        self._logger.warning(
+                            f"{debug_conn_str((port_from, port_to))} "
+                            "is incomplete or not correct.")
+                        continue
+                    
+                    if self.glob.monitor_states_done is MonitorStates.DONE:
+                        gp_from = port_from.partition(':')[0]
+                        gp_to = port_to.partition(':')[0]
+                        need_rm = False
+
+                        for nsm_name, jack_name in brothers_.items():
+                            if (jack_name in (gp_from, gp_to)
+                                    and not nsm_name in self.brothers_dict):
+                                self._logger.info(
+                                    f"{debug_conn_str((port_from, port_to))}"
+                                    " is removed "
+                                    f"because NSM client {nsm_name}"
+                                    " has been removed")
+                                need_rm = True
+                                break
+                        
+                        if need_rm:
+                            print('need_rm', port_from, port_to)
+                            continue
+                        
+                    self.saved_connections.append((port_from, port_to))
+                    
+            graph = yaml_dict.get('graph')
+            if isinstance(graph, dict):
+                for group_name, gp_dict in graph.items():
+                    if not (isinstance(group_name, str)
+                            and isinstance(gp_dict, dict)):
+                        continue
+                    
+                    in_ports = gp_dict.get('in_ports')
+                    if isinstance(in_ports, list):
+                        for in_port in in_ports:
+                            if isinstance(in_port, str):
+                                graph_ports[PortMode.INPUT].append(
+                                    f'{group_name}:{in_port}')
+                                
+                    out_ports = gp_dict.get('out_ports')
+                    if isinstance(out_ports, list):
+                        for out_port in out_ports:
+                            if isinstance(out_port, str):
+                                graph_ports[PortMode.OUTPUT].append(
+                                    f'{group_name}:{out_port}')
+
+        elif os.path.isfile(file_path):
             try:
                 tree = ET.parse(file_path)
             except:
@@ -264,10 +348,6 @@ class Patcher:
                 self._logger.error(f'{file_path} is not a {XML_TAG} .xml file')
                 return (Err.BAD_PROJECT,
                         f'{file_path} is not a {XML_TAG} .xml file')
-            
-            graph_ports = dict[PortMode, list[str]]()
-            for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
-                graph_ports[port_mode] = list[str]()
             
             for child in root:
                 if child.tag == 'connection':
@@ -414,6 +494,35 @@ class Patcher:
             self._logger.error(f'unable to write file {self.glob.file_path}')
             self.glob.terminate = True
             return
+
+        # write YAML str
+        out_dict = {}
+        out_dict['connections'] = [
+            {'from': c[0], 'to': c[1]} for c in self.saved_connections]
+        groups_dict = dict[str, dict]()
+        
+        for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
+            el_name = 'in_ports' if port_mode is PortMode.INPUT else 'out_ports'
+
+            for jack_port in self.jack_ports[port_mode]:
+                gp_name, _, port_name = jack_port.name.partition(':')
+                if groups_dict.get(gp_name) is None:
+                    groups_dict[gp_name] = dict[str, dict[str, str | list[str]]]()
+
+                if groups_dict[gp_name].get(el_name) is None:
+                    groups_dict[gp_name][el_name] = list[str]()
+                groups_dict[gp_name][el_name].append(port_name)
+
+        out_dict['graph'] = groups_dict
+        out_dict['nsm_brothers'] = self.brothers_dict.copy()
+        
+        yaml_file = self.glob.file_path.rpartition('.')[0] + '.yaml'
+        try:
+            with open(yaml_file, 'w') as f:
+                f.write(yaml.dump(out_dict, sort_keys=False))
+        except:
+            self._logger.error(f'Unable to write {yaml_file}')
+            # self.glob.terminate = True
 
         self.set_dirty_clean()
         return (Err.OK, 'Done')
