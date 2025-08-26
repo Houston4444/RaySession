@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from qtpy.QtCore import QSettings
 
 
-VERSION = '0.17.0'
+VERSION = '0.18.0'
 APP_TITLE = 'RaySession'
 DEFAULT_SESSION_ROOT = Path.home() / 'Ray Sessions'
 SCRIPTS_DIR = 'ray-scripts'
