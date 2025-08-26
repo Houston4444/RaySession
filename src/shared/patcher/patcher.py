@@ -8,6 +8,7 @@ import yaml
 from jack_renaming_tools import (
     port_belongs_to_client, port_name_client_replaced)
 from nsm_client import NsmServer, NsmCallback, Err
+import ray
 
 from .bases import (
     Glob,
@@ -255,8 +256,12 @@ class Patcher:
         graph_ports = dict[PortMode, list[str]]()
         for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
             graph_ports[port_mode] = list[str]()
+        
+        has_file = False
 
         if os.path.isfile(yaml_path):
+            has_file = True
+
             try:
                 with open(yaml_path, 'r') as f:
                     contents = f.read()
@@ -335,6 +340,8 @@ class Patcher:
                                     f'{group_name}:{out_port}')
 
         elif os.path.isfile(file_path):
+            has_file = True
+            
             try:
                 tree = ET.parse(file_path)
             except:
@@ -401,6 +408,7 @@ class Patcher:
                                 graph_ports[PortMode.INPUT].append(
                                     ':'.join((gp_name, pt.attrib['name'])))
 
+        if has_file:
             # re-declare all ports as new in case we are switching session
             for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
                 for port in self.jack_ports[port_mode]:
@@ -497,6 +505,8 @@ class Patcher:
 
         # write YAML str
         out_dict = {}
+        out_dict['app'] = self.engine.XML_TAG
+        out_dict['version'] = ray.VERSION
         out_dict['connections'] = [
             {'from': c[0], 'to': c[1]} for c in self.saved_connections]
         groups_dict = dict[str, dict]()
