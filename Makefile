@@ -137,7 +137,6 @@ pure_install:
 	install -d $(DEST_RAY)/locale/
 	install -d $(DEST_RAY)/$(_DIR)/
 	install -d $(DEST_RAY)/$(PATCHBAY_DIR)/locale/
-	install -d $(DEST_RAY)/pyjacklib/
 	install -d $(DESTDIR)/etc/xdg/raysession/client_templates/
 	
 	# Install icons
@@ -160,9 +159,6 @@ pure_install:
 	cp -r HoustonPatchbay/manual $(DEST_RAY)/$(PATCHBAY_DIR)/
 	cp -r HoustonPatchbay/source $(DEST_RAY)/$(PATCHBAY_DIR)/
 
-	# Copy pyjacklib
-	cp -r pyjacklib/jacklib $(DEST_RAY)/pyjacklib/
-
 	# Copy Desktop Files
 	install -m 644 data/share/applications/*.desktop \
 		$(DESTDIR)$(PREFIX)/share/applications/
@@ -181,7 +177,6 @@ pure_install:
 	
 	# compile python files
 	$(PYTHON) -m compileall $(DEST_RAY)/HoustonPatchbay/source/
-	$(PYTHON) -m compileall $(DEST_RAY)/pyjacklib/jacklib/
 	$(PYTHON) -m compileall $(DEST_RAY)/src/
 	
 	# install local manual
