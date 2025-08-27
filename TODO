@@ -41,7 +41,39 @@ remove answer() use osp.reply or error
 _re_order_clients osp
 
 YAML:
-    Attention pas dans la standard lib
+    !! Attention pas dans la standard lib
     patch_rewriter: écrire tout en YAML dans tous les cas
     rm .xml quand yaml est écrit
     nsm_brothers -> nsm_clients ?
+    
+forbidden_conns:
+    solution patcher fait tout:
+        problème:
+            impossible de connecter depuis le patchbay
+        contournement:
+            le patchbay doit défaire le forbidden avant de connecter, 
+            mais ne sachant pas lesquels sont forbidden, il faut le faire
+            à chaque connexion.
+        
+        problème:
+            plusieurs patchers == gros gros problèmes
+
+    solution patchbay centralise:
+        à l'ouverture le patcher envoie les forbidden au patchbay sauf si
+        un patcher identique figure parmi les brothers.
+
+        le patcher déconnecte les connections forbidden à l'ouverture et
+        quand elles apparaissent
+
+        le patchbay envoie au démon l'ordre de allow connection avant de connecter
+        une connection forbidden.
+        le démon envoie aux patchers le fait qu'une connection soit allowed
+        DONC: on a besoin d'une nouvelle capability pour les patchers (":ray-patcher:")
+
+    ou:
+        le patcher gère mais ne déconnecte une forbidden connection qu'une fois dans la
+        durée de vie d'un port. On peut tester ça.
+
+
+
+

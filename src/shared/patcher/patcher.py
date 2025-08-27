@@ -185,7 +185,7 @@ class Patcher:
                 port.is_new = True
                 self.timer_connect_check.start()
                 break
-        
+
     def connection_added(self, port_str_a: str, port_str_b: str):
         self.connections.add((port_str_a, port_str_b))
 
@@ -194,34 +194,52 @@ class Patcher:
 
         if (port_str_a, port_str_b) not in self.saved_connections:
             self.timer_dirty_check.start()
-            
+ 
     def connection_removed(self, port_str_a: str, port_str_b: str):
         self.connections.discard((port_str_a, port_str_b))
 
-        if self.to_disc_connections:
+        if self.glob.pending_connection:
             self.may_make_one_connection()
 
         self.timer_dirty_check.start()
 
     def may_make_one_connection(self):
+        'can make one connection or disconnection'
+        one_connected = False
+
         if self.glob.allow_disconnections:
             if self.to_disc_connections:
                 for to_disc_con in self.to_disc_connections:
                     if to_disc_con in self.connections:
+                        if one_connected:
+                            self.glob.pending_connection = True
+                            return
                         self._logger.info(f'disconnect ports: {to_disc_con}')
                         self.engine.disconnect_ports(*to_disc_con)
-                        return
+                        one_connected = True
                 else:
                     self.to_disc_connections.clear()
 
-        output_ports = [p.name for p in self.jack_ports[PortMode.OUTPUT]]
-        input_ports = [p.name for p in self.jack_ports[PortMode.INPUT]]
-        new_output_ports = [p.name for p in self.jack_ports[PortMode.OUTPUT]
-                            if p.is_new]
-        new_input_ports = [p.name for p in self.jack_ports[PortMode.INPUT]
-                           if p.is_new]
+        new_output_ports = set(
+            [p.name for p in self.jack_ports[PortMode.OUTPUT] if p.is_new])
+        new_input_ports = set(
+            [p.name for p in self.jack_ports[PortMode.INPUT] if p.is_new])
 
-        one_connected = False
+        for fbd_con in self.forbidden_connections:
+            if (fbd_con in self.connections
+                    and (fbd_con[0] in new_output_ports
+                         or fbd_con[1] in new_input_ports)):
+                if one_connected:
+                    self.glob.pending_connection = True
+                    return
+                
+                self._logger.info(
+                    f'disconnect forbidden connection: {fbd_con}')
+                self.engine.disconnect_ports(*fbd_con)
+                one_connected = True
+
+        output_ports = set([p.name for p in self.jack_ports[PortMode.OUTPUT]])
+        input_ports = set([p.name for p in self.jack_ports[PortMode.INPUT]])
 
         for sv_con in self.saved_connections:
             if (not sv_con in self.connections
@@ -333,7 +351,7 @@ class Patcher:
                     if not (isinstance(fbd_from, str)
                             and isinstance(fbd_to, str)):
                         continue
-                    
+
                     self.forbidden_connections.add((fbd_from, fbd_to))
                     self.saved_connections.discard((fbd_from, fbd_to))
 
@@ -343,14 +361,14 @@ class Patcher:
                     if not (isinstance(group_name, str)
                             and isinstance(gp_dict, dict)):
                         continue
-                    
+
                     in_ports = gp_dict.get('in_ports')
                     if isinstance(in_ports, list):
                         for in_port in in_ports:
                             if isinstance(in_port, str):
                                 graph_ports[PortMode.INPUT].append(
                                     f'{group_name}:{in_port}')
-                                
+
                     out_ports = gp_dict.get('out_ports')
                     if isinstance(out_ports, list):
                         for out_port in out_ports:
@@ -474,61 +492,63 @@ class Patcher:
         for del_con in del_list:
             self.saved_connections.discard(del_con)
 
-        # write the XML file
-        root = ET.Element(self.engine.XML_TAG)
-        for sv_con in self.saved_connections:
-            conn_el = ET.SubElement(root, 'connection')
-            conn_el.attrib['from'], conn_el.attrib['to'] = sv_con
-            jack_con_from_name = sv_con[0].partition(':')[0].partition('/')[0]
-            jack_con_to_name = sv_con[1].partition(':')[0].partition('/')[0]
-            for key, value in self.brothers_dict.items():
-                if jack_con_from_name == value:
-                    conn_el.attrib['nsm_client_from'] = key
-                if jack_con_to_name == value:
-                    conn_el.attrib['nsm_client_to'] = key
+        # # write the XML file
+        # root = ET.Element(self.engine.XML_TAG)
+        # for sv_con in self.saved_connections:
+        #     conn_el = ET.SubElement(root, 'connection')
+        #     conn_el.attrib['from'], conn_el.attrib['to'] = sv_con
+        #     jack_con_from_name = sv_con[0].partition(':')[0].partition('/')[0]
+        #     jack_con_to_name = sv_con[1].partition(':')[0].partition('/')[0]
+        #     for key, value in self.brothers_dict.items():
+        #         if jack_con_from_name == value:
+        #             conn_el.attrib['nsm_client_from'] = key
+        #         if jack_con_to_name == value:
+        #             conn_el.attrib['nsm_client_to'] = key
 
-        graph = ET.SubElement(root, 'graph')
-        group_names = dict[str, ET.Element]()
+        # graph = ET.SubElement(root, 'graph')
+        # group_names = dict[str, ET.Element]()
 
-        for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
-            el_name = 'in_port' if port_mode is PortMode.INPUT else 'out_port'
+        # for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
+        #     el_name = 'in_port' if port_mode is PortMode.INPUT else 'out_port'
 
-            for jack_port in self.jack_ports[port_mode]:
-                gp_name, colon, port_name = jack_port.name.partition(':')
-                if group_names.get(gp_name) is None:
-                    group_names[gp_name] = ET.SubElement(graph, 'group')
-                    group_names[gp_name].attrib['name'] = gp_name
+        #     for jack_port in self.jack_ports[port_mode]:
+        #         gp_name, colon, port_name = jack_port.name.partition(':')
+        #         if group_names.get(gp_name) is None:
+        #             group_names[gp_name] = ET.SubElement(graph, 'group')
+        #             group_names[gp_name].attrib['name'] = gp_name
 
-                    gp_base_name = gp_name.partition('/')[0]
-                    for key, value in self.brothers_dict.items():
-                        if value == gp_base_name:
-                            group_names[gp_name].attrib['nsm_client'] = key
-                            break
+        #             gp_base_name = gp_name.partition('/')[0]
+        #             for key, value in self.brothers_dict.items():
+        #                 if value == gp_base_name:
+        #                     group_names[gp_name].attrib['nsm_client'] = key
+        #                     break
 
-                out_port_el = ET.SubElement(group_names[gp_name], el_name)
-                out_port_el.attrib['name'] = port_name
+        #         out_port_el = ET.SubElement(group_names[gp_name], el_name)
+        #         out_port_el.attrib['name'] = port_name
         
-        if sys.version_info >= (3, 9):
-            # we can indent the xml tree since python3.9
-            ET.indent(root, space='  ', level=0)
+        # if sys.version_info >= (3, 9):
+        #     # we can indent the xml tree since python3.9
+        #     ET.indent(root, space='  ', level=0)
 
-        self._logger.info(f'save file: {self.glob.file_path}')
-        tree = ET.ElementTree(root)
-        try:
-            tree.write(self.glob.file_path)
-        except:
-            self._logger.error(f'unable to write file {self.glob.file_path}')
-            self.glob.terminate = True
-            return
+        # self._logger.info(f'save file: {self.glob.file_path}')
+        # tree = ET.ElementTree(root)
+        # try:
+        #     tree.write(self.glob.file_path)
+        # except:
+        #     self._logger.error(f'unable to write file {self.glob.file_path}')
+        #     self.glob.terminate = True
+        #     return
 
         # write YAML str
         out_dict = {}
         out_dict['app'] = self.engine.XML_TAG
         out_dict['version'] = ray.VERSION
         out_dict['forbidden_connections'] = [
-            {'from': c[0], 'to': c[1]} for c in self.forbidden_connections]
+            {'from': c[0], 'to': c[1]} 
+            for c in sorted(self.forbidden_connections)]
         out_dict['connections'] = [
-            {'from': c[0], 'to': c[1]} for c in self.saved_connections]
+            {'from': c[0], 'to': c[1]}
+            for c in sorted(self.saved_connections)]
         groups_dict = dict[str, dict]()
         
         for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
