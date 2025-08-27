@@ -35,8 +35,13 @@ class Patcher:
         self._logger = logger
         self.brothers_dict = dict[NsmClientName, JackClientBaseName]()
         self.connections = set[tuple[FullPortName, FullPortName]]()
+        'current connections in the graph'
         self.saved_connections = set[tuple[FullPortName, FullPortName]]()
+        'saved connections (from the config file or later)'
+        self.forbidden_connections = set[tuple[FullPortName, FullPortName]]()
+        'connections that user never want'
         self.to_disc_connections = set[tuple[FullPortName, FullPortName]]()
+        'connections that have to be disconnected ASAP'
         self.jack_ports = dict[PortMode, list[JackPort]]()
         for port_mode in (PortMode.NULL, PortMode.INPUT, PortMode.OUTPUT):
             self.jack_ports[port_mode] = list[JackPort]()
@@ -316,7 +321,22 @@ class Patcher:
                             continue
                         
                     self.saved_connections.add((port_from, port_to))
+            
+            forbidden_conns = yaml_dict.get('forbidden_connections')
+            if isinstance(forbidden_conns, list):
+                for fbd_conn in forbidden_conns:
+                    if not isinstance(fbd_conn, dict):
+                        continue
                     
+                    fbd_from = fbd_conn.get('from')
+                    fbd_to = fbd_conn.get('to')
+                    if not (isinstance(fbd_from, str)
+                            and isinstance(fbd_to, str)):
+                        continue
+                    
+                    self.forbidden_connections.add((fbd_from, fbd_to))
+                    self.saved_connections.discard((fbd_from, fbd_to))
+
             graph = yaml_dict.get('graph')
             if isinstance(graph, dict):
                 for group_name, gp_dict in graph.items():
@@ -505,6 +525,8 @@ class Patcher:
         out_dict = {}
         out_dict['app'] = self.engine.XML_TAG
         out_dict['version'] = ray.VERSION
+        out_dict['forbidden_connections'] = [
+            {'from': c[0], 'to': c[1]} for c in self.forbidden_connections]
         out_dict['connections'] = [
             {'from': c[0], 'to': c[1]} for c in self.saved_connections]
         groups_dict = dict[str, dict]()
