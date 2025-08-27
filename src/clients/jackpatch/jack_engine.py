@@ -73,7 +73,7 @@ class JackEngine(ProtoEngine):
 
     def fill_ports_and_connections(
             self, all_ports: dict[PortMode, list[JackPort]],
-            connection_list: list[tuple[str, str]]):
+            connections: set[tuple[str, str]]):
         '''get all current JACK ports and connections at startup'''
         if self._client is None:
             return
@@ -89,7 +89,7 @@ class JackEngine(ProtoEngine):
             
             if jack_port.mode is PortMode.OUTPUT:
                 for oth_port in self._client.get_all_connections(port):
-                    connection_list.append((jack_port.name, oth_port.name))
+                    connections.add((jack_port.name, oth_port.name))
 
     def connect_ports(self, port_out: str, port_in: str):
         if self._client is None:

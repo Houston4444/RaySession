@@ -53,7 +53,7 @@ class ProtoEngine:
 
     def fill_ports_and_connections(
             self, port_list: dict[PortMode, list[JackPort]],
-            connection_list: list[tuple[str, str]]):
+            connections: set[tuple[str, str]]):
         ...
     def connect_ports(self, port_out: str, port_in: str):
         ...

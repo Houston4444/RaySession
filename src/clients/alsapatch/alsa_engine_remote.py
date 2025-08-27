@@ -157,7 +157,7 @@ class AlsaEngine(ProtoEngine):
 
     def fill_ports_and_connections(
             self, all_ports: dict[PortMode, list[JackPort]],
-            connection_list: list[tuple[str, str]]):
+            connections: set[tuple[str, str]]):
         '''get all current ALSA ports and connections at startup'''
 
         for i in range(100):
@@ -174,7 +174,7 @@ class AlsaEngine(ProtoEngine):
             all_ports[jack_port.mode].append(jack_port)
                 
         for conn in self.remote.connections:
-            connection_list.append(conn)                
+            connections.add(conn)                
 
     def connect_ports(self, port_out: str, port_in: str):
         for jport_out_name, jport_out in self.remote.ports.items():

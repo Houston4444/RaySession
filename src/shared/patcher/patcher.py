@@ -34,9 +34,9 @@ class Patcher:
         self.engine = engine
         self._logger = logger
         self.brothers_dict = dict[NsmClientName, JackClientBaseName]()
-        self.connection_list = list[tuple[FullPortName, FullPortName]]()
-        self.saved_connections = list[tuple[FullPortName, FullPortName]]()
-        self.to_disc_connections = list[tuple[FullPortName, FullPortName]]()
+        self.connections = set[tuple[FullPortName, FullPortName]]()
+        self.saved_connections = set[tuple[FullPortName, FullPortName]]()
+        self.to_disc_connections = set[tuple[FullPortName, FullPortName]]()
         self.jack_ports = dict[PortMode, list[JackPort]]()
         for port_mode in (PortMode.NULL, PortMode.INPUT, PortMode.OUTPUT):
             self.jack_ports[port_mode] = list[JackPort]()
@@ -58,7 +58,7 @@ class Patcher:
 
     def run_loop(self, stop_with_jack=True):
         self.engine.fill_ports_and_connections(
-            self.jack_ports, self.connection_list)
+            self.jack_ports, self.connections)
         jack_stopped = False
 
         while True:
@@ -117,13 +117,13 @@ class Patcher:
             self.glob.dirty_state_sent = True
 
     def is_dirty_now(self) -> bool:
-        for conn in self.connection_list:
+        for conn in self.connections:
             if not conn in self.saved_connections:
                 # There is at least one present connection unsaved                
                 return True
 
         for sv_con in self.saved_connections:
-            if sv_con in self.connection_list:
+            if sv_con in self.connections:
                 continue
 
             if (sv_con[0] in [
@@ -182,7 +182,7 @@ class Patcher:
                 break
         
     def connection_added(self, port_str_a: str, port_str_b: str):
-        self.connection_list.append((port_str_a, port_str_b))
+        self.connections.add((port_str_a, port_str_b))
 
         if self.glob.pending_connection:
             self.may_make_one_connection()
@@ -191,8 +191,7 @@ class Patcher:
             self.timer_dirty_check.start()
             
     def connection_removed(self, port_str_a: str, port_str_b: str):
-        if (port_str_a, port_str_b) in self.connection_list:
-            self.connection_list.remove((port_str_a, port_str_b))
+        self.connections.discard((port_str_a, port_str_b))
 
         if self.to_disc_connections:
             self.may_make_one_connection()
@@ -203,7 +202,7 @@ class Patcher:
         if self.glob.allow_disconnections:
             if self.to_disc_connections:
                 for to_disc_con in self.to_disc_connections:
-                    if to_disc_con in self.connection_list:
+                    if to_disc_con in self.connections:
                         self._logger.info(f'disconnect ports: {to_disc_con}')
                         self.engine.disconnect_ports(*to_disc_con)
                         return
@@ -220,7 +219,7 @@ class Patcher:
         one_connected = False
 
         for sv_con in self.saved_connections:
-            if (not sv_con in self.connection_list
+            if (not sv_con in self.connections
                     and sv_con[0] in output_ports
                     and sv_con[1] in input_ports
                     and (sv_con[0] in new_output_ports
@@ -316,7 +315,7 @@ class Patcher:
                             print('need_rm', port_from, port_to)
                             continue
                         
-                    self.saved_connections.append((port_from, port_to))
+                    self.saved_connections.add((port_from, port_to))
                     
             graph = yaml_dict.get('graph')
             if isinstance(graph, dict):
@@ -393,7 +392,7 @@ class Patcher:
                                 " has been removed")
                             continue
                         
-                    self.saved_connections.append((port_from, port_to))
+                    self.saved_connections.add((port_from, port_to))
             
                 elif child.tag == 'graph':
                     for gp in child:
@@ -417,11 +416,11 @@ class Patcher:
             self.to_disc_connections.clear()
             # disconnect connections not existing at last save
             # if their both ports were present in the graph.
-            for conn in self.connection_list:
+            for conn in self.connections:
                 if (conn not in self.saved_connections
                         and conn[0] in graph_ports[PortMode.OUTPUT]
                         and conn[1] in graph_ports[PortMode.INPUT]):
-                    self.to_disc_connections.append(conn)
+                    self.to_disc_connections.add(conn)
 
             if self.glob.open_done_once:
                 self.glob.allow_disconnections = True
@@ -437,16 +436,15 @@ class Patcher:
         if not self.glob.file_path:
             return
 
-        for connection in self.connection_list:
-            if not connection in self.saved_connections:
-                self.saved_connections.append(connection)
+        for connection in self.connections:
+            self.saved_connections.add(connection)
 
         # delete from saved connected all connections 
         # when there ports are present and not currently connected    
         del_list = list[tuple[str, str]]()
 
         for sv_con in self.saved_connections:
-            if (not sv_con in self.connection_list
+            if (not sv_con in self.connections
                     and sv_con[0] in [
                         p.name for p in self.jack_ports[PortMode.OUTPUT]]
                     and sv_con[1] in [
@@ -454,7 +452,7 @@ class Patcher:
                 del_list.append(sv_con)
                 
         for del_con in del_list:
-            self.saved_connections.remove(del_con)
+            self.saved_connections.discard(del_con)
 
         # write the XML file
         root = ET.Element(self.engine.XML_TAG)
@@ -567,9 +565,10 @@ class Patcher:
                             port_name_client_replaced(
                                 in_port, ex_jack_name, jack_name)))
 
-                for conn in rm_conns:
-                    self.saved_connections.remove(conn)
-                self.saved_connections.extend(new_conns)
+                for rm_conn in rm_conns:
+                    self.saved_connections.discard(rm_conn)
+                for new_conn in new_conns:
+                    self.saved_connections.add(new_conn)
                 self.glob.client_changing_id = None
             
         else:
@@ -601,7 +600,7 @@ class Patcher:
                     conns_to_unsave.append(conn)
             
             for conn in conns_to_unsave:
-                self.saved_connections.remove(conn)
+                self.saved_connections.discard(conn)
 
         elif event.startswith('id_changed_to:'):
             if client_id in self.brothers_dict.keys():
