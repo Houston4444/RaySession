@@ -39,7 +39,8 @@ class Patcher:
         'current connections in the graph'
         self.saved_connections = set[tuple[FullPortName, FullPortName]]()
         'saved connections (from the config file or later)'
-        self.saved_patterns = list[tuple[PortMode, str, str]]()
+        self.saved_patterns = \
+            list[tuple[str | re.Pattern, str | re.Pattern]]()
         self.forbidden_connections = set[tuple[FullPortName, FullPortName]]()
         'connections that user never want'
         self.to_disc_connections = set[tuple[FullPortName, FullPortName]]()
@@ -127,18 +128,19 @@ class Patcher:
         if conn in self.saved_connections:
             return True
         
-        for port_mode, from_, to_ in self.saved_patterns:
-            if port_mode & PortMode.OUTPUT:
-                if re.fullmatch(from_, conn[0]):
-                    if port_mode & PortMode.INPUT:
-                        if re.fullmatch(to_, conn[1]):
-                            return True
-                    elif conn[1] == to_:
+        for from_, to_ in self.saved_patterns:
+            if isinstance(from_, re.Pattern):
+                if isinstance(to_, re.Pattern):
+                    if from_.fullmatch(conn[0]) and to_.fullmatch(conn[1]):
                         return True
-
-            elif port_mode & PortMode.INPUT:
-                if conn[0] == from_ and re.fullmatch(to_, conn[1]):
-                    return True
+                
+                elif to_ == conn[1] and from_.fullmatch(conn[0]):
+                        return True
+            
+            elif isinstance(to_, re.Pattern):
+                if isinstance(from_, str):
+                    if from_ == conn[0] and to_.fullmatch(conn[1]):
+                        return True
         
         return False
 
@@ -148,13 +150,12 @@ class Patcher:
                 # There is at least one present connection unsaved                
                 return True
 
-        for port_mode, from_, to_ in self.saved_patterns:
+        for from_, to_ in self.saved_patterns:
             for output_port in self.jack_ports[PortMode.OUTPUT]:
-                if port_mode & PortMode.OUTPUT:
-                    if not re.fullmatch(from_, output_port.name):
+                if isinstance(from_, re.Pattern):                    
+                    if not from_.fullmatch(output_port.name):
                         continue
-                else:
-                    if output_port.name != from_:
+                elif output_port.name != from_:
                         continue
                     
                 for input_port in self.jack_ports[PortMode.INPUT]:
@@ -165,11 +166,10 @@ class Patcher:
                             in self.connections):
                         continue
                     
-                    if port_mode & PortMode.INPUT:
-                        if not re.fullmatch(to_, input_port.name):
+                    if isinstance(to_, re.Pattern):
+                        if not to_.fullmatch(input_port.name):
                             continue
-                    else:
-                        if input_port.name != to_:
+                    elif input_port.name != to_:
                             continue
 
                     return True
@@ -237,7 +237,11 @@ class Patcher:
         self.connections.add((port_str_a, port_str_b))
 
         if self.glob.pending_connection:
+            import time
+            bef = time.time()
             self.may_make_one_connection()
+            aft = time.time()
+            print('may make connadded', aft - bef)
 
         if not self.conn_is_saved((port_str_a, port_str_b)):
             self.timer_dirty_check.start()
@@ -246,7 +250,11 @@ class Patcher:
         self.connections.discard((port_str_a, port_str_b))
 
         if self.glob.pending_connection:
+            import time
+            bef = time.time()
             self.may_make_one_connection()
+            aft = time.time()
+            print('may make connremoved', aft - bef)
 
         self.timer_dirty_check.start()
 
@@ -288,13 +296,35 @@ class Patcher:
         output_ports = set([p.name for p in self.jack_ports[PortMode.OUTPUT]])
         input_ports = set([p.name for p in self.jack_ports[PortMode.INPUT]])
 
-        for port_mode, from_, to_ in self.saved_patterns:
+        # for port_mode, from_, to_ in self.saved_patterns:
+        #     match port_mode:
+        #         case PortMode.BOTH:
+        #             for output_port in self.jack_ports[PortMode.OUTPUT]:
+        #                 if not re.fullmatch(from_, output_port.name):
+        #                     continue
+                        
+        #                 out_is_new = output_port.name in new_output_ports
+                    
+        #                 for input_port in self.jack_ports[PortMode.INPUT]:
+        #                     if ((output_port.name, input_port.name)
+        #                             in self.connections):
+        #                         continue
+                             
+        #                     if input_port.type == output_port.type:
+        #                         continue
+                            
+        #                     if (not out_is_new
+        #                             and input_port.name not in new_input_ports):
+        #                         continue
+                            
+                            
+
+        for from_, to_ in self.saved_patterns:
             for output_port in self.jack_ports[PortMode.OUTPUT]:
-                if port_mode & PortMode.OUTPUT:
-                    if not re.fullmatch(from_, output_port.name):
+                if isinstance(from_, re.Pattern):
+                    if not from_.fullmatch(output_port.name):
                         continue
-                else:
-                    if output_port.name != from_:
+                elif output_port.name != from_:
                         continue
                 
                 for input_port in self.jack_ports[PortMode.INPUT]:
@@ -308,11 +338,10 @@ class Patcher:
                             or output_port.name in new_output_ports):
                         continue
                     
-                    if port_mode & PortMode.INPUT:
-                        if not re.fullmatch(to_, input_port.name):
+                    if isinstance(to_, re.Pattern):
+                        if not to_.fullmatch(input_port.name):
                             continue
-                    else:
-                        if input_port.name != to_:
+                    elif input_port.name != to_:
                             continue
                     
                     if one_connected:
@@ -614,15 +643,15 @@ class Patcher:
         
         saved_patterns = []
         
-        for port_mode, from_, to_ in self.saved_patterns:
+        for from_, to_ in self.saved_patterns:
             saved_pattern = {}
-            if port_mode & PortMode.OUTPUT:
-                saved_pattern['from_pattern'] = from_
+            if isinstance(from_, re.Pattern):
+                saved_pattern['from_pattern'] = from_.pattern
             else:
                 saved_pattern['from'] = from_
             
-            if port_mode & PortMode.INPUT:
-                saved_pattern['to_pattern'] = to_
+            if isinstance(to_, re.Pattern):
+                saved_pattern['to_pattern'] = to_.pattern
             else:
                 saved_pattern['to'] = to_
             saved_patterns.append(saved_pattern)
