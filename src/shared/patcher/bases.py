@@ -22,6 +22,7 @@ class PortMode(IntEnum):
     NULL = 0
     OUTPUT = 1
     INPUT = 2
+    BOTH = 3
 
 
 class PortType(IntEnum):

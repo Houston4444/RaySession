@@ -1,7 +1,7 @@
 
 import logging
 import os
-import sys
+import re
 import xml.etree.ElementTree as ET
 import yaml
 
@@ -23,6 +23,7 @@ from .bases import (
     Timer,
     Event,
     debug_conn_str)
+from . import yaml_tools
 
 _logger = logging.getLogger(__name__)
 
@@ -38,6 +39,7 @@ class Patcher:
         'current connections in the graph'
         self.saved_connections = set[tuple[FullPortName, FullPortName]]()
         'saved connections (from the config file or later)'
+        self.saved_patterns = list[tuple[PortMode, str, str]]()
         self.forbidden_connections = set[tuple[FullPortName, FullPortName]]()
         'connections that user never want'
         self.to_disc_connections = set[tuple[FullPortName, FullPortName]]()
@@ -121,11 +123,56 @@ class Patcher:
             self.nsm_server.send_dirty_state(False)
             self.glob.dirty_state_sent = True
 
+    def conn_is_saved(self, conn: tuple[FullPortName, FullPortName]) -> bool:
+        if conn in self.saved_connections:
+            return True
+        
+        for port_mode, from_, to_ in self.saved_patterns:
+            if port_mode & PortMode.OUTPUT:
+                if re.fullmatch(from_, conn[0]):
+                    if port_mode & PortMode.INPUT:
+                        if re.fullmatch(to_, conn[1]):
+                            return True
+                    elif conn[1] == to_:
+                        return True
+
+            elif port_mode & PortMode.INPUT:
+                if conn[0] == from_ and re.fullmatch(to_, conn[1]):
+                    return True
+        
+        return False
+
     def is_dirty_now(self) -> bool:
         for conn in self.connections:
-            if not conn in self.saved_connections:
+            if not self.conn_is_saved(conn):
                 # There is at least one present connection unsaved                
                 return True
+
+        for port_mode, from_, to_ in self.saved_patterns:
+            for output_port in self.jack_ports[PortMode.OUTPUT]:
+                if port_mode & PortMode.OUTPUT:
+                    if not re.fullmatch(from_, output_port.name):
+                        continue
+                else:
+                    if output_port.name != from_:
+                        continue
+                    
+                for input_port in self.jack_ports[PortMode.INPUT]:
+                    if input_port.type != output_port.type:
+                        continue
+                    
+                    if ((output_port.name, input_port.name)
+                            in self.connections):
+                        continue
+                    
+                    if port_mode & PortMode.INPUT:
+                        if not re.fullmatch(to_, input_port.name):
+                            continue
+                    else:
+                        if input_port.name != to_:
+                            continue
+
+                    return True
 
         for sv_con in self.saved_connections:
             if sv_con in self.connections:
@@ -192,7 +239,7 @@ class Patcher:
         if self.glob.pending_connection:
             self.may_make_one_connection()
 
-        if (port_str_a, port_str_b) not in self.saved_connections:
+        if not self.conn_is_saved((port_str_a, port_str_b)):
             self.timer_dirty_check.start()
  
     def connection_removed(self, port_str_a: str, port_str_b: str):
@@ -241,6 +288,43 @@ class Patcher:
         output_ports = set([p.name for p in self.jack_ports[PortMode.OUTPUT]])
         input_ports = set([p.name for p in self.jack_ports[PortMode.INPUT]])
 
+        for port_mode, from_, to_ in self.saved_patterns:
+            for output_port in self.jack_ports[PortMode.OUTPUT]:
+                if port_mode & PortMode.OUTPUT:
+                    if not re.fullmatch(from_, output_port.name):
+                        continue
+                else:
+                    if output_port.name != from_:
+                        continue
+                
+                for input_port in self.jack_ports[PortMode.INPUT]:
+                    if (output_port.name, input_port.name) in self.connections:
+                        continue
+                    
+                    if input_port.type is not output_port.type:
+                        continue
+
+                    if not (input_port.name in new_input_ports
+                            or output_port.name in new_output_ports):
+                        continue
+                    
+                    if port_mode & PortMode.INPUT:
+                        if not re.fullmatch(to_, input_port.name):
+                            continue
+                    else:
+                        if input_port.name != to_:
+                            continue
+                    
+                    if one_connected:
+                        self.glob.pending_connection = True
+                        return
+                    
+                    _logger.info(
+                        f'connect ports: {(output_port.name, input_port.name)}')
+                    self.engine.connect_ports(
+                        output_port.name, input_port.name)
+                    one_connected = True
+
         for sv_con in self.saved_connections:
             if (not sv_con in self.connections
                     and sv_con[0] in output_ports
@@ -266,6 +350,7 @@ class Patcher:
     def open_file(self, project_path: str, session_name: str,
                   full_client_id: str) -> tuple[Err, str]:
         _logger.info(f'Open file "{project_path}"')
+        self.saved_patterns.clear()
         self.saved_connections.clear()
 
         file_path = project_path + '.xml'
@@ -304,41 +389,8 @@ class Patcher:
             
             conns = yaml_dict.get('connections')
             if isinstance(conns, list):
-                for conn in conns:
-                    if not isinstance(conn, dict):
-                        continue
-                    
-                    port_from: str = conn.get('from', '')
-                    port_to: str = conn.get('to', '')
-                    
-                    if not (isinstance(port_from, str)
-                            and isinstance(port_to, str)):
-                        self._logger.warning(
-                            f"{debug_conn_str((port_from, port_to))} "
-                            "is incomplete or not correct.")
-                        continue
-                    
-                    if self.glob.monitor_states_done is MonitorStates.DONE:
-                        gp_from = port_from.partition(':')[0]
-                        gp_to = port_to.partition(':')[0]
-                        need_rm = False
-
-                        for nsm_name, jack_name in brothers_.items():
-                            if (jack_name in (gp_from, gp_to)
-                                    and not nsm_name in self.brothers_dict):
-                                self._logger.info(
-                                    f"{debug_conn_str((port_from, port_to))}"
-                                    " is removed "
-                                    f"because NSM client {nsm_name}"
-                                    " has been removed")
-                                need_rm = True
-                                break
-                        
-                        if need_rm:
-                            print('need_rm', port_from, port_to)
-                            continue
-                        
-                    self.saved_connections.add((port_from, port_to))
+                yaml_tools.load_conns_from_yaml(
+                    conns, self.saved_connections, self.saved_patterns)
             
             forbidden_conns = yaml_dict.get('forbidden_connections')
             if isinstance(forbidden_conns, list):
@@ -375,6 +427,24 @@ class Patcher:
                             if isinstance(out_port, str):
                                 graph_ports[PortMode.OUTPUT].append(
                                     f'{group_name}:{out_port}')
+            
+            if self.glob.monitor_states_done is MonitorStates.DONE:
+                rm_list = list[tuple[FullPortName, FullPortName]]()
+                for port_from, port_to in self.saved_connections:
+                    gp_from = port_from.partition(':')[0]
+                    gp_to = port_to.partition(':')[0]
+                    for nsm_name, jack_name in brothers_.items():
+                        if (jack_name in (gp_from, gp_to)
+                                and not nsm_name in self.brothers_dict):
+                            rm_list.append((port_from, port_to))
+                            self._logger.info(
+                                f"{debug_conn_str((port_from, port_to))}"
+                                " is removed "
+                                f"because NSM client {nsm_name}"
+                                " has been removed")
+                
+                for rm_conn in rm_list:
+                    self.saved_connections.discard(rm_conn)
 
         elif os.path.isfile(file_path):
             has_file = True
@@ -455,7 +525,7 @@ class Patcher:
             # disconnect connections not existing at last save
             # if their both ports were present in the graph.
             for conn in self.connections:
-                if (conn not in self.saved_connections
+                if (not self.conn_is_saved(conn)
                         and conn[0] in graph_ports[PortMode.OUTPUT]
                         and conn[1] in graph_ports[PortMode.INPUT]):
                     self.to_disc_connections.add(conn)
@@ -475,7 +545,8 @@ class Patcher:
             return
 
         for connection in self.connections:
-            self.saved_connections.add(connection)
+            if not self.conn_is_saved(connection):
+                self.saved_connections.add(connection)
 
         # delete from saved connected all connections 
         # when there ports are present and not currently connected    
@@ -540,13 +611,29 @@ class Patcher:
         #     return
 
         # write YAML str
+        
+        saved_patterns = []
+        
+        for port_mode, from_, to_ in self.saved_patterns:
+            saved_pattern = {}
+            if port_mode & PortMode.OUTPUT:
+                saved_pattern['from_pattern'] = from_
+            else:
+                saved_pattern['from'] = from_
+            
+            if port_mode & PortMode.INPUT:
+                saved_pattern['to_pattern'] = to_
+            else:
+                saved_pattern['to'] = to_
+            saved_patterns.append(saved_pattern)
+        
         out_dict = {}
         out_dict['app'] = self.engine.XML_TAG
         out_dict['version'] = ray.VERSION
         out_dict['forbidden_connections'] = [
             {'from': c[0], 'to': c[1]} 
             for c in sorted(self.forbidden_connections)]
-        out_dict['connections'] = [
+        out_dict['connections'] = saved_patterns + [
             {'from': c[0], 'to': c[1]}
             for c in sorted(self.saved_connections)]
         groups_dict = dict[str, dict]()

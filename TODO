@@ -73,6 +73,8 @@ forbidden_conns:
     ou:
         le patcher gère mais ne déconnecte une forbidden connection qu'une fois dans la
         durée de vie d'un port. On peut tester ça.
+    
+    TODO patcher: prendre PortType et PortMode de patshared (voir JackPort / PortData)
 
 
 
