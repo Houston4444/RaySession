@@ -8,6 +8,7 @@ from osclib import Address
 from patcher.patcher import Patcher
 from patcher.bases import EventHandler
 from nsm_client import NsmServer
+from proc_name import set_proc_name
 
 from .check_internal import IS_INTERNAL
 from .engine import Engine
@@ -75,6 +76,7 @@ def internal_prepare(
     return patcher.run_loop, patcher.stop, True, None
 
 def run():
+    set_proc_name('ray-jackpatch')
     ret = internal_prepare(*sys.argv[1:], nsm_url=os.getenv('NSM_URL', ''))
     if isinstance(ret, int):
         sys.exit(ret)
