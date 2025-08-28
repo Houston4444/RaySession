@@ -104,8 +104,9 @@ class ClientPropertiesDialog(ChildDialog):
         self.client.ignored_extensions = \
             self.ui.lineEditIgnoredExtensions.text()
         
-        if isinstance(self.client, Client):
-            self.client.send_properties_to_daemon()
+        if TYPE_CHECKING:
+            assert isinstance(self.client, Client)
+        self.client.send_properties_to_daemon()
 
         # better for user to wait a little before close the window
         QTimer.singleShot(150, self.accept)
@@ -294,8 +295,9 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
                 no_save_level = 2
 
         self.client.ray_hack.no_save_level = no_save_level
-        if isinstance(self.client, Client):
-            self.client.send_ray_hack()
+        if TYPE_CHECKING:
+            assert isinstance(self.client, Client)
+        self.client.send_ray_hack()
 
         self.client.executable_path = self.rhack.lineEditExecutable.text()
         self.client.arguments = self.rhack.lineEditArguments.text()
@@ -391,9 +393,10 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         self.client.arguments = self.rhack.lineEditArguments.text()
         self.client.ray_hack.config_file = self.rhack.lineEditConfigFile.text()
 
-        if isinstance(self.client, Client):
-            self.client.send_properties_to_daemon()
-            self.to_daemon(r.client.RESUME, self.client.client_id)
+        if TYPE_CHECKING:
+            assert isinstance(self.client, Client)
+        self.client.send_properties_to_daemon()
+        self.to_daemon(r.client.RESUME, self.client.client_id)
 
     def _stop_client(self):
         self.to_daemon(r.client.SEND_SIGNAL, self.client.client_id,
@@ -555,8 +558,9 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
         if '/' not in new_template:
             self.client.ray_net.session_template = new_template
 
-        if isinstance(self.client, Client):
-            self.client.send_ray_net()
+        if TYPE_CHECKING:
+            assert isinstance(self.client, Client)
+        self.client.send_ray_net()
         ClientPropertiesDialog._save_changes(self)
 
     def _change_icon_with_text(self, text: str):
