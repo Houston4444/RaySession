@@ -44,37 +44,28 @@ YAML:
     !! Attention pas dans la standard lib
     patch_rewriter: écrire tout en YAML dans tous les cas
     rm .xml quand yaml est écrit
+    
     nsm_brothers -> nsm_clients ?
+    forbidden_connections -> disconnections ?
     
-forbidden_conns:
-    solution patcher fait tout:
-        problème:
-            impossible de connecter depuis le patchbay
-        contournement:
-            le patchbay doit défaire le forbidden avant de connecter, 
-            mais ne sachant pas lesquels sont forbidden, il faut le faire
-            à chaque connexion.
-        
-        problème:
-            plusieurs patchers == gros gros problèmes
+    patcher: prendre PortType et PortMode de patshared (voir JackPort / PortData)
 
-    solution patchbay centralise:
-        à l'ouverture le patcher envoie les forbidden au patchbay sauf si
-        un patcher identique figure parmi les brothers.
-
-        le patcher déconnecte les connections forbidden à l'ouverture et
-        quand elles apparaissent
-
-        le patchbay envoie au démon l'ordre de allow connection avant de connecter
-        une connection forbidden.
-        le démon envoie aux patchers le fait qu'une connection soit allowed
-        DONC: on a besoin d'une nouvelle capability pour les patchers (":ray-patcher:")
-
-    ou:
-        le patcher gère mais ne déconnecte une forbidden connection qu'une fois dans la
-        durée de vie d'un port. On peut tester ça.
+    fix logger
+    pattern in forbidden_connections
+    fast:
+        pas de may_make_one mais tout connecter d'un coup
+        shunter timer si port connecté ?
+        timer avec pending_connection (si jamais la connexion n'arrive pas)
     
-    TODO patcher: prendre PortType et PortMode de patshared (voir JackPort / PortData)
+    attention à la prio forbidden/connection
+
+    priority_connections
+    un beau YAML (saut de ligne entre les sections)
+    docu
+
+
+
+
 
 
 
