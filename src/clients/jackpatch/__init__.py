@@ -35,7 +35,7 @@ def internal_prepare(
         read_level = 0
 
         for func_arg in func_args:
-            match func_args:
+            match func_arg:
                 case '-log'|'--log':
                     read_level = logging.INFO
                     continue

@@ -66,3 +66,20 @@ def load_conns_from_yaml(
             _logger.warning(
                 f"{conn_d} is incomplete or not correct.")
             continue
+
+def patterns_to_dict(
+        patt: list[tuple[str | re.Pattern, str | re.Pattern]]) -> list[dict]:
+    patterns = list[dict]()
+    for from_, to_ in patt:
+        pattern = {}
+        if isinstance(from_, re.Pattern):
+            pattern['from_pattern'] = from_.pattern
+        else:
+            pattern['from'] = from_
+        
+        if isinstance(to_, re.Pattern):
+            pattern['to_pattern'] = to_.pattern
+        else:
+            pattern['to'] = to_
+        patterns.append(pattern)
+    return patterns

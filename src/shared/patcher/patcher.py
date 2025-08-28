@@ -41,8 +41,11 @@ class Patcher:
         'saved connections (from the config file or later)'
         self.saved_patterns = \
             list[tuple[str | re.Pattern, str | re.Pattern]]()
+        '''Patterns written in .yaml file managing connections to restore'''
         self.forbidden_connections = set[tuple[FullPortName, FullPortName]]()
         'connections that user never want'
+        self.forbidden_patterns = list[
+            tuple[str | re.Pattern, str | re.Pattern]]()
         self.to_disc_connections = set[tuple[FullPortName, FullPortName]]()
         'connections that have to be disconnected ASAP'
         self.jack_ports = dict[PortMode, list[JackPort]]()
@@ -124,7 +127,7 @@ class Patcher:
             self.nsm_server.send_dirty_state(False)
             self.glob.dirty_state_sent = True
 
-    def conn_is_saved(self, conn: tuple[FullPortName, FullPortName]) -> bool:
+    def is_conn_saved(self, conn: tuple[FullPortName, FullPortName]) -> bool:
         if conn in self.saved_connections:
             return True
         
@@ -144,9 +147,29 @@ class Patcher:
         
         return False
 
+    def is_conn_forbidden(self, conn: tuple[FullPortName, FullPortName]) -> bool:
+        if conn in self.forbidden_connections:
+            return True
+        
+        for from_, to_ in self.forbidden_patterns:
+            if isinstance(from_, re.Pattern):
+                if isinstance(to_, re.Pattern):
+                    if from_.fullmatch(conn[0]) and to_.fullmatch(conn[1]):
+                        return True
+                
+                elif to_ == conn[1] and from_.fullmatch(conn[0]):
+                        return True
+            
+            elif isinstance(to_, re.Pattern):
+                if isinstance(from_, str):
+                    if from_ == conn[0] and to_.fullmatch(conn[1]):
+                        return True
+
+        return False
+
     def is_dirty_now(self) -> bool:
         for conn in self.connections:
-            if not self.conn_is_saved(conn):
+            if not self.is_conn_saved(conn):
                 # There is at least one present connection unsaved                
                 return True
 
@@ -243,7 +266,7 @@ class Patcher:
             aft = time.time()
             print('may make connadded', aft - bef)
 
-        if not self.conn_is_saved((port_str_a, port_str_b)):
+        if not self.is_conn_saved((port_str_a, port_str_b)):
             self.timer_dirty_check.start()
  
     def connection_removed(self, port_str_a: str, port_str_b: str):
@@ -269,7 +292,7 @@ class Patcher:
                         if one_connected:
                             self.glob.pending_connection = True
                             return
-                        self._logger.info(f'disconnect ports: {to_disc_con}')
+                        _logger.info(f'disconnect ports: {to_disc_con}')
                         self.engine.disconnect_ports(*to_disc_con)
                         one_connected = True
                 else:
@@ -280,6 +303,42 @@ class Patcher:
         new_input_ports = set(
             [p.name for p in self.jack_ports[PortMode.INPUT] if p.is_new])
 
+        for from_, to_ in self.forbidden_patterns:
+            for output_port in self.jack_ports[PortMode.OUTPUT]:
+                if isinstance(from_, re.Pattern):
+                    if not from_.fullmatch(output_port.name):
+                        continue
+                elif output_port.name != from_:
+                        continue
+                
+                for input_port in self.jack_ports[PortMode.INPUT]:
+                    if ((output_port.name, input_port.name)
+                            not in self.connections):
+                        continue
+                    
+                    if input_port.type is not output_port.type:
+                        continue
+
+                    if not (input_port.name in new_input_ports
+                            or output_port.name in new_output_ports):
+                        continue
+                    
+                    if isinstance(to_, re.Pattern):
+                        if not to_.fullmatch(input_port.name):
+                            continue
+                    elif input_port.name != to_:
+                            continue
+                    
+                    if one_connected:
+                        self.glob.pending_connection = True
+                        return
+                    
+                    _logger.info(
+                        f'disconnect ports: {(output_port.name, input_port.name)}')
+                    self.engine.disconnect_ports(
+                        output_port.name, input_port.name)
+                    one_connected = True
+
         for fbd_con in self.forbidden_connections:
             if (fbd_con in self.connections
                     and (fbd_con[0] in new_output_ports
@@ -288,36 +347,13 @@ class Patcher:
                     self.glob.pending_connection = True
                     return
                 
-                self._logger.info(
+                _logger.info(
                     f'disconnect forbidden connection: {fbd_con}')
                 self.engine.disconnect_ports(*fbd_con)
                 one_connected = True
 
         output_ports = set([p.name for p in self.jack_ports[PortMode.OUTPUT]])
         input_ports = set([p.name for p in self.jack_ports[PortMode.INPUT]])
-
-        # for port_mode, from_, to_ in self.saved_patterns:
-        #     match port_mode:
-        #         case PortMode.BOTH:
-        #             for output_port in self.jack_ports[PortMode.OUTPUT]:
-        #                 if not re.fullmatch(from_, output_port.name):
-        #                     continue
-                        
-        #                 out_is_new = output_port.name in new_output_ports
-                    
-        #                 for input_port in self.jack_ports[PortMode.INPUT]:
-        #                     if ((output_port.name, input_port.name)
-        #                             in self.connections):
-        #                         continue
-                             
-        #                     if input_port.type == output_port.type:
-        #                         continue
-                            
-        #                     if (not out_is_new
-        #                             and input_port.name not in new_input_ports):
-        #                         continue
-                            
-                            
 
         for from_, to_ in self.saved_patterns:
             for output_port in self.jack_ports[PortMode.OUTPUT]:
@@ -344,6 +380,10 @@ class Patcher:
                     elif input_port.name != to_:
                             continue
                     
+                    if self.is_conn_forbidden(
+                            (output_port.name, input_port.name)):
+                        continue
+                    
                     if one_connected:
                         self.glob.pending_connection = True
                         return
@@ -360,11 +400,14 @@ class Patcher:
                     and sv_con[1] in input_ports
                     and (sv_con[0] in new_output_ports
                          or sv_con[1] in new_input_ports)):
+                if self.is_conn_forbidden(sv_con):
+                    continue
+                
                 if one_connected:
                     self.glob.pending_connection = True
                     break
 
-                self._logger.info(f'connect ports: {sv_con}')
+                _logger.info(f'connect ports: {sv_con}')
                 self.engine.connect_ports(*sv_con)
                 one_connected = True
         else:
@@ -385,7 +428,6 @@ class Patcher:
         file_path = project_path + '.xml'
         yaml_path = project_path + '.yaml'
         self.glob.file_path = file_path
-        self._logger.info(f'open file: {file_path}')
 
         XML_TAG = self.engine.XML_TAG
 
@@ -404,7 +446,7 @@ class Patcher:
                     yaml_dict = yaml.safe_load(contents)
                     assert isinstance(yaml_dict, dict)
             except:
-                self._logger.error(f'unable to read file {yaml_path}') 
+                _logger.error(f'unable to read file {yaml_path}') 
                 return (Err.BAD_PROJECT,
                         f'{file_path} is not a correct .yaml file')
             
@@ -423,18 +465,9 @@ class Patcher:
             
             forbidden_conns = yaml_dict.get('forbidden_connections')
             if isinstance(forbidden_conns, list):
-                for fbd_conn in forbidden_conns:
-                    if not isinstance(fbd_conn, dict):
-                        continue
-                    
-                    fbd_from = fbd_conn.get('from')
-                    fbd_to = fbd_conn.get('to')
-                    if not (isinstance(fbd_from, str)
-                            and isinstance(fbd_to, str)):
-                        continue
-
-                    self.forbidden_connections.add((fbd_from, fbd_to))
-                    self.saved_connections.discard((fbd_from, fbd_to))
+                yaml_tools.load_conns_from_yaml(
+                    forbidden_conns, self.forbidden_connections,
+                    self.forbidden_patterns)
 
             graph = yaml_dict.get('graph')
             if isinstance(graph, dict):
@@ -466,7 +499,7 @@ class Patcher:
                         if (jack_name in (gp_from, gp_to)
                                 and not nsm_name in self.brothers_dict):
                             rm_list.append((port_from, port_to))
-                            self._logger.info(
+                            _logger.info(
                                 f"{debug_conn_str((port_from, port_to))}"
                                 " is removed "
                                 f"because NSM client {nsm_name}"
@@ -481,14 +514,14 @@ class Patcher:
             try:
                 tree = ET.parse(file_path)
             except:
-                self._logger.error(f'unable to read file {file_path}')
+                _logger.error(f'unable to read file {file_path}')
                 return (Err.BAD_PROJECT,
                         f'{file_path} is not a correct .xml file')
             
             # read the DOM
             root = tree.getroot()
             if root.tag != XML_TAG:
-                self._logger.error(f'{file_path} is not a {XML_TAG} .xml file')
+                _logger.error(f'{file_path} is not a {XML_TAG} .xml file')
                 return (Err.BAD_PROJECT,
                         f'{file_path} is not a {XML_TAG} .xml file')
             
@@ -502,7 +535,7 @@ class Patcher:
                         'nsm_client_to', '')
 
                     if not port_from and port_to:
-                        self._logger.warning(
+                        _logger.warning(
                             f"{debug_conn_str((port_from, port_to))} "
                             "is incomplete.")
                         continue
@@ -513,7 +546,7 @@ class Patcher:
                         if (nsm_client_from 
                                 and nsm_client_from
                                     not in self.brothers_dict.keys()):
-                            self._logger.info(
+                            _logger.info(
                                 f"{debug_conn_str((port_from, port_to))}"
                                 " is removed "
                                 f"because NSM client {nsm_client_from}"
@@ -522,7 +555,7 @@ class Patcher:
                         if (nsm_client_to
                                 and nsm_client_to 
                                     not in self.brothers_dict.keys()):
-                            self._logger.info(
+                            _logger.info(
                                 f"{debug_conn_str((port_from, port_to))}"
                                 " is removed "
                                 f"because NSM client {nsm_client_to}"
@@ -554,7 +587,7 @@ class Patcher:
             # disconnect connections not existing at last save
             # if their both ports were present in the graph.
             for conn in self.connections:
-                if (not self.conn_is_saved(conn)
+                if (not self.is_conn_saved(conn)
                         and conn[0] in graph_ports[PortMode.OUTPUT]
                         and conn[1] in graph_ports[PortMode.INPUT]):
                     self.to_disc_connections.add(conn)
@@ -574,7 +607,7 @@ class Patcher:
             return
 
         for connection in self.connections:
-            if not self.conn_is_saved(connection):
+            if not self.is_conn_saved(connection):
                 self.saved_connections.add(connection)
 
         # delete from saved connected all connections 
@@ -641,26 +674,15 @@ class Patcher:
 
         # write YAML str
         
-        saved_patterns = []
-        
-        for from_, to_ in self.saved_patterns:
-            saved_pattern = {}
-            if isinstance(from_, re.Pattern):
-                saved_pattern['from_pattern'] = from_.pattern
-            else:
-                saved_pattern['from'] = from_
-            
-            if isinstance(to_, re.Pattern):
-                saved_pattern['to_pattern'] = to_.pattern
-            else:
-                saved_pattern['to'] = to_
-            saved_patterns.append(saved_pattern)
+        saved_patterns = yaml_tools.patterns_to_dict(self.saved_patterns)
+        forbidden_patterns = yaml_tools.patterns_to_dict(
+            self.forbidden_patterns)
         
         out_dict = {}
         out_dict['app'] = self.engine.XML_TAG
         out_dict['version'] = ray.VERSION
-        out_dict['forbidden_connections'] = [
-            {'from': c[0], 'to': c[1]} 
+        out_dict['forbidden_connections'] = forbidden_patterns + [
+            {'from': c[0], 'to': c[1]}
             for c in sorted(self.forbidden_connections)]
         out_dict['connections'] = saved_patterns + [
             {'from': c[0], 'to': c[1]}
@@ -687,7 +709,7 @@ class Patcher:
             with open(yaml_file, 'w') as f:
                 f.write(yaml.dump(out_dict, sort_keys=False))
         except:
-            self._logger.error(f'Unable to write {yaml_file}')
+            _logger.error(f'Unable to write {yaml_file}')
             # self.glob.terminate = True
 
         self.set_dirty_clean()
@@ -732,7 +754,7 @@ class Patcher:
         else:
             n_clients = is_started
             if len(self.brothers_dict) != n_clients:
-                self._logger.warning('list of monitored clients is incomplete !')
+                _logger.warning('list of monitored clients is incomplete !')
                 ## following line would be the most obvious thing to do,
                 ## but in case of problem, we could have 
                 # an infinite messages loop 
