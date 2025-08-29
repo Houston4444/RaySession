@@ -2,12 +2,14 @@ import re
 import logging
 from typing import Optional
 
+from .bases import ConnectionStr, ConnectionPattern
+
 _logger = logging.getLogger(__name__)
 
 
 def load_conns_from_yaml(
-        yaml_list: list, conns: set[tuple[str, str]],
-        patterns: list[tuple[str | re.Pattern, str | re.Pattern]]):
+        yaml_list: list, conns: set[ConnectionStr],
+        patterns: list[ConnectionPattern]):
     for conn_d in yaml_list:
         if not isinstance(conn_d, dict):
             continue
@@ -67,8 +69,7 @@ def load_conns_from_yaml(
                 f"{conn_d} is incomplete or not correct.")
             continue
 
-def patterns_to_dict(
-        patt: list[tuple[str | re.Pattern, str | re.Pattern]]) -> list[dict]:
+def patterns_to_dict(patt: list[ConnectionPattern]) -> list[dict]:
     patterns = list[dict]()
     for from_, to_ in patt:
         pattern = {}

@@ -3,6 +3,7 @@
 from queue import Queue
 import time
 from enum import IntEnum
+import re
 from typing import Iterator, Optional, TypeAlias
 
 
@@ -16,6 +17,10 @@ multiple JACK clients for the same NSM client'''
 
 FullPortName: TypeAlias = str
 'Full port name string under the form "jack_client_name:port_name"'
+
+ConnectionStr: TypeAlias = tuple[FullPortName, FullPortName]
+ConnectionPattern: TypeAlias = tuple[FullPortName | re.Pattern[str], 
+                                     FullPortName | re.Pattern[str]]
 
 
 class PortMode(IntEnum):
