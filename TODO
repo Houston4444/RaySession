@@ -50,13 +50,8 @@ YAML:
     
     patcher: prendre PortType et PortMode de patshared (voir JackPort / PortData)
 
-    fix logger
-    pattern in forbidden_connections
-    fast:
-        pas de may_make_one mais tout connecter d'un coup
-        shunter timer si port connecté ?
-        timer avec pending_connection (si jamais la connexion n'arrive pas)
-    
+    timer avec pending_connection (si jamais la connexion n'arrive pas)
+agg    
     attention à la prio forbidden/connection:
         avant de connecter, vérifier qu'une connection n'est pas forbidden
 

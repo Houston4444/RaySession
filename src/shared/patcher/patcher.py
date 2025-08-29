@@ -4,6 +4,7 @@ import os
 import re
 from typing import Optional
 import xml.etree.ElementTree as ET
+import time
 import yaml
 
 from jack_renaming_tools import (
@@ -31,7 +32,6 @@ from . import yaml_tools
 _logger = logging.getLogger(__name__)
 
 
-
 class Patcher:
     def __init__(
             self, engine: ProtoEngine, nsm_server: NsmServer,
@@ -43,9 +43,10 @@ class Patcher:
         self.connections = set[ConnectionStr]()
         'current connections in the graph'
         self.saved_connections = set[ConnectionStr]()
-        'saved connections (from the config file or later)'
+        'saved connections from the config file'
         self.saved_patterns = list[ConnectionPattern]()
-        '''Patterns written in .yaml file managing connections to restore'''
+        '''Patterns written in by user in .yaml file.
+        Manage connections to restore'''
         self.saved_conn_cache = set[ConnectionStr]()
         self.forbidden_connections = set[ConnectionStr]()
         'connections that user never want'
@@ -53,6 +54,9 @@ class Patcher:
         self.forbidden_conn_cache = set[ConnectionStr]()
         self.to_disc_connections = set[ConnectionStr]()
         'connections that have to be disconnected ASAP'
+        self.ports_creation = dict[FullPortName, float]()
+        'Stores the creation time of the ports'
+
         self.jack_ports = dict[PortMode, list[JackPort]]()
         for port_mode in (PortMode.NULL, PortMode.INPUT, PortMode.OUTPUT):
             self.jack_ports[port_mode] = list[JackPort]()
@@ -154,6 +158,7 @@ class Patcher:
         return False
 
     def port_added(self, port_name: str, port_mode: int, port_type: int):
+        self.ports_creation[port_name] = time.time()
         port = JackPort()
         port.name = port_name
         port.mode = PortMode(port_mode)
@@ -201,13 +206,28 @@ class Patcher:
                 self.timer_connect_check.start()
                 break
 
-    def connection_added(self, port_str_a: str, port_str_b: str):
-        self.connections.add((port_str_a, port_str_b))
+    def connection_added(self, port_from: str, port_to: str):
+        now = time.time()
+        out_port_new = now - self.ports_creation.get(port_from, 0.0) < 0.250
+        in_port_new = now - self.ports_creation.get(port_to, 0.0) < 0.250
+        
+        self.connections.add((port_from, port_to))
 
-        if self.glob.pending_connection:
+        if self.glob.pending_connection or in_port_new or out_port_new:
+            if out_port_new:
+                for jport in self.jack_ports[PortMode.OUTPUT]:
+                    if jport.name == port_from:
+                        jport.is_new = True
+                        break
+            if in_port_new:
+                for jport in self.jack_ports[PortMode.INPUT]:
+                    if jport.name == port_to:
+                        jport.is_new = True
+                        break
+                
             self.may_make_one_connection()
 
-        if not (port_str_a, port_str_b) in self.saved_conn_cache:
+        if not (port_from, port_to) in self.saved_conn_cache:
             self.timer_dirty_check.start()
  
     def connection_removed(self, port_str_a: str, port_str_b: str):
