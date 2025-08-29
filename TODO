@@ -49,6 +49,7 @@ YAML:
     forbidden_connections -> disconnections ?
     
     patcher: prendre PortType et PortMode de patshared (voir JackPort / PortData)
+    appliquer modifs du __init__ du ray-jackpatch à l'alsapatch
 
     timer avec pending_connection (si jamais la connexion n'arrive pas)
 agg    

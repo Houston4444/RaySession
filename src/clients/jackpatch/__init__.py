@@ -1,5 +1,5 @@
 import logging
-from typing import Union, Callable
+from typing import Callable
 import os
 import signal
 import sys

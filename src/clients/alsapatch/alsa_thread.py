@@ -2,7 +2,7 @@
 # Imports from standard library
 from dataclasses import dataclass
 import time
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import Iterator, Optional
 from threading import Thread
 
 # third party imports
@@ -24,8 +24,10 @@ from pyalsa.alsaseq import (
     SEQ_EVENT_PORT_UNSUBSCRIBED,
 )
 
+from patshared import PortMode
+
 # imports from shared
-from patcher.bases import Glob, EventHandler, Event, PortMode, PortType
+from patcher.bases import EventHandler, Event, PortType
 
 
 _PORT_READS = SEQ_PORT_CAP_READ | SEQ_PORT_CAP_SUBS_READ

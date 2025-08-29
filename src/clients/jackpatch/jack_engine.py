@@ -6,10 +6,12 @@ from typing import Optional
 # Third party
 import jack
 
+from patshared import PortMode
+
 # imports from shared
 from patcher.bases import (
     EventHandler, Event, JackPort,
-    PortMode, PortType, ProtoEngine)
+    PortType, ProtoEngine)
 
 
 _logger = logging.getLogger(__name__)

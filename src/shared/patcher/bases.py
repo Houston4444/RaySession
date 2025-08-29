@@ -6,6 +6,7 @@ from enum import IntEnum
 import re
 from typing import Iterator, Optional, TypeAlias
 
+from patshared import PortMode
 
 # Type aliases
 NsmClientName: TypeAlias = str
@@ -21,13 +22,6 @@ FullPortName: TypeAlias = str
 ConnectionStr: TypeAlias = tuple[FullPortName, FullPortName]
 ConnectionPattern: TypeAlias = tuple[FullPortName | re.Pattern[str], 
                                      FullPortName | re.Pattern[str]]
-
-
-class PortMode(IntEnum):
-    NULL = 0
-    OUTPUT = 1
-    INPUT = 2
-    BOTH = 3
 
 
 class PortType(IntEnum):

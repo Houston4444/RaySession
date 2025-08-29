@@ -9,11 +9,12 @@ import logging
 import time
 from typing import TYPE_CHECKING
 
+from patshared import PortMode
 
 # imports from shared
 from patcher.bases import (
     EventHandler, Event, JackPort,
-    PortMode, PortType, ProtoEngine, FullPortName)
+    PortType, ProtoEngine, FullPortName)
 from osclib import BunServerThread, OscPack, bun_manage
 import osc_paths.ray as r
 import osc_paths.ray.patchbay.monitor as rpm

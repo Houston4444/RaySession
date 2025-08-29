@@ -7,6 +7,8 @@ import xml.etree.ElementTree as ET
 import time
 import yaml
 
+from patshared import PortMode
+
 from jack_renaming_tools import (
     port_belongs_to_client, port_name_client_replaced)
 from nsm_client import NsmServer, NsmCallback, Err
@@ -19,7 +21,6 @@ from .bases import (
     FullPortName,
     ConnectionStr,
     ConnectionPattern,
-    PortMode,
     PortType,
     JackPort,
     MonitorStates,
