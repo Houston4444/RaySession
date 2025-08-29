@@ -6,7 +6,7 @@ from enum import IntEnum
 import re
 from typing import Iterator, Optional, TypeAlias
 
-from patshared import PortMode
+from patshared import PortMode, PortType
 
 # Type aliases
 NsmClientName: TypeAlias = str
@@ -24,20 +24,14 @@ ConnectionPattern: TypeAlias = tuple[FullPortName | re.Pattern[str],
                                      FullPortName | re.Pattern[str]]
 
 
-class PortType(IntEnum):
-    NULL = 0
-    AUDIO = 1
-    MIDI = 2
-
-
-class JackPort:
-    # is_new is used to prevent reconnections
-    # when a disconnection has not been saved and one new port append.
+class PortData:
     id = 0
     name = ''
     mode = PortMode.NULL
     type = PortType.NULL
     is_new = False
+    '''used to prevent reconnections
+    when a disconnection has not been saved and one new port append.'''
     
     
 class ProtoEngine:
@@ -52,7 +46,7 @@ class ProtoEngine:
         return True
 
     def fill_ports_and_connections(
-            self, port_list: dict[PortMode, list[JackPort]],
+            self, port_list: dict[PortMode, list[PortData]],
             connections: set[tuple[str, str]]):
         ...
     def connect_ports(self, port_out: str, port_in: str):

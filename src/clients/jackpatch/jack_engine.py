@@ -6,12 +6,11 @@ from typing import Optional
 # Third party
 import jack
 
-from patshared import PortMode
+from patshared import PortMode, PortType
 
 # imports from shared
 from patcher.bases import (
-    EventHandler, Event, JackPort,
-    PortType, ProtoEngine)
+    EventHandler, Event, PortData, ProtoEngine)
 
 
 _logger = logging.getLogger(__name__)
@@ -26,9 +25,9 @@ def mode_type(port: jack.Port) -> tuple[PortMode, PortType]:
     
     port_type = PortType.NULL
     if port.is_audio:
-        port_type = PortType.AUDIO
+        port_type = PortType.AUDIO_JACK
     elif port.is_midi:
-        port_type = PortType.MIDI
+        port_type = PortType.MIDI_JACK
 
     return port_mode, port_type
 
@@ -74,24 +73,24 @@ class JackEngine(ProtoEngine):
         return True
 
     def fill_ports_and_connections(
-            self, all_ports: dict[PortMode, list[JackPort]],
+            self, all_ports: dict[PortMode, list[PortData]],
             connections: set[tuple[str, str]]):
         '''get all current JACK ports and connections at startup'''
         if self._client is None:
             return
         
         for port in self._client.get_ports():
-            jack_port = JackPort()
-            jack_port.name = port.name
+            port_data = PortData()
+            port_data.name = port.name
             port_mode, port_type = mode_type(port)
-            jack_port.mode = port_mode
-            jack_port.type = port_type
-            jack_port.is_new = True
-            all_ports[jack_port.mode].append(jack_port)
+            port_data.mode = port_mode
+            port_data.type = port_type
+            port_data.is_new = True
+            all_ports[port_data.mode].append(port_data)
             
-            if jack_port.mode is PortMode.OUTPUT:
+            if port_data.mode is PortMode.OUTPUT:
                 for oth_port in self._client.get_all_connections(port):
-                    connections.add((jack_port.name, oth_port.name))
+                    connections.add((port_data.name, oth_port.name))
 
     def connect_ports(self, port_out: str, port_in: str):
         if self._client is None:

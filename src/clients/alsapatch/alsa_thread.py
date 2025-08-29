@@ -24,10 +24,10 @@ from pyalsa.alsaseq import (
     SEQ_EVENT_PORT_UNSUBSCRIBED,
 )
 
-from patshared import PortMode
+from patshared import PortMode, PortType
 
 # imports from shared
-from patcher.bases import EventHandler, Event, PortType
+from patcher.bases import EventHandler, Event
 
 
 _PORT_READS = SEQ_PORT_CAP_READ | SEQ_PORT_CAP_SUBS_READ
@@ -169,11 +169,11 @@ class AlsaManager:
                 if port.caps & _PORT_READS == _PORT_READS:
                     self.ev_handler.add_event(
                         Event.PORT_ADDED, f'{client.name}:{port.name}',
-                        PortMode.OUTPUT, PortType.MIDI)
+                        PortMode.OUTPUT, PortType.MIDI_ALSA)
                 if port.caps & _PORT_WRITES == _PORT_WRITES:
                     self.ev_handler.add_event(
                         Event.PORT_ADDED, f'{client.name}:{port.name}',
-                        PortMode.INPUT, PortType.MIDI)
+                        PortMode.INPUT, PortType.MIDI_ALSA)
 
         for conn in self._connections:
             port_names = conn.as_port_names(self._clients)
@@ -291,11 +291,11 @@ class AlsaManager:
                     if port.caps & _PORT_READS == _PORT_READS:
                         self.ev_handler.add_event(
                             Event.PORT_ADDED, f'{client.name}:{port.name}',
-                            PortMode.OUTPUT, PortType.MIDI)
+                            PortMode.OUTPUT, PortType.MIDI_ALSA)
                     if port.caps & _PORT_WRITES == _PORT_WRITES:
                         self.ev_handler.add_event(
                             Event.PORT_ADDED, f'{client.name}:{port.name}',
-                            PortMode.INPUT, PortType.MIDI)
+                            PortMode.INPUT, PortType.MIDI_ALSA)
                     
                 elif event.type == SEQ_EVENT_PORT_EXIT:
                     client_id, port_id = data['addr.client'], data['addr.port']
@@ -324,11 +324,11 @@ class AlsaManager:
                     if port.caps & _PORT_READS == _PORT_READS:
                         self.ev_handler.add_event(
                             Event.PORT_REMOVED, f'{client.name}:{port.name}',
-                            PortMode.OUTPUT, PortType.MIDI)
+                            PortMode.OUTPUT, PortType.MIDI_ALSA)
                     if port.caps & _PORT_WRITES == _PORT_WRITES:
                         self.ev_handler.add_event(
                             Event.PORT_REMOVED, f'{client.name}:{port.name}',
-                            PortMode.INPUT, PortType.MIDI)
+                            PortMode.INPUT, PortType.MIDI_ALSA)
 
                 elif event.type == SEQ_EVENT_PORT_SUBSCRIBED:
                     sender_client = self._clients.get(data['connect.sender.client'])

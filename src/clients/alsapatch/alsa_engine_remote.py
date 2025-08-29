@@ -9,12 +9,12 @@ import logging
 import time
 from typing import TYPE_CHECKING
 
-from patshared import PortMode
+from patshared import PortMode, PortType
 
 # imports from shared
 from patcher.bases import (
-    EventHandler, Event, JackPort,
-    PortType, ProtoEngine, FullPortName)
+    EventHandler, Event, PortData,
+    ProtoEngine, FullPortName)
 from osclib import BunServerThread, OscPack, bun_manage
 import osc_paths.ray as r
 import osc_paths.ray.patchbay.monitor as rpm
@@ -47,7 +47,7 @@ class PatchRemote(BunServerThread):
         self.ev = ev_handler
         patchbay_dmn_mng.start(self.url)
         self._patchbay_port = patchbay_dmn_mng.get_port()
-        self.ports = dict[FullPortName, JackPort]()
+        self.ports = dict[FullPortName, PortData]()
         self.connections = list[tuple[FullPortName, FullPortName]]()
         self.startup_received = False
 
@@ -113,17 +113,17 @@ class PatchRemote(BunServerThread):
         else:
             mode = PortMode.INPUT
 
-        jack_port = JackPort()
-        jack_port.name = ':'.join(name.split(':')[4:])
-        jack_port.type = PortType.MIDI
-        jack_port.mode = mode
-        jack_port.id = uuid
+        port_data = PortData()
+        port_data.name = ':'.join(name.split(':')[4:])
+        port_data.type = PortType.MIDI_ALSA
+        port_data.mode = mode
+        port_data.id = uuid
 
-        self.ports[name] = jack_port
+        self.ports[name] = port_data
 
         if self.startup_received:
             self.ev.add_event(
-                Event.PORT_ADDED, jack_port.name, mode, jack_port.type)
+                Event.PORT_ADDED, port_data.name, mode, port_data.type)
         
     @bun_manage(rpm.PORT_REMOVED, 's')
     def _port_removed(self, osp: OscPack):
@@ -157,7 +157,7 @@ class AlsaEngine(ProtoEngine):
         return True
 
     def fill_ports_and_connections(
-            self, all_ports: dict[PortMode, list[JackPort]],
+            self, all_ports: dict[PortMode, list[PortData]],
             connections: set[tuple[str, str]]):
         '''get all current ALSA ports and connections at startup'''
 

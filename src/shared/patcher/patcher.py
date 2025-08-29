@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 import time
 import yaml
 
-from patshared import PortMode
+from patshared import PortMode, PortType
 
 from jack_renaming_tools import (
     port_belongs_to_client, port_name_client_replaced)
@@ -21,8 +21,7 @@ from .bases import (
     FullPortName,
     ConnectionStr,
     ConnectionPattern,
-    PortType,
-    JackPort,
+    PortData,
     MonitorStates,
     ProtoEngine,
     Timer,
@@ -58,9 +57,9 @@ class Patcher:
         self.ports_creation = dict[FullPortName, float]()
         'Stores the creation time of the ports'
 
-        self.jack_ports = dict[PortMode, list[JackPort]]()
+        self.ports = dict[PortMode, list[PortData]]()
         for port_mode in (PortMode.NULL, PortMode.INPUT, PortMode.OUTPUT):
-            self.jack_ports[port_mode] = list[JackPort]()
+            self.ports[port_mode] = list[PortData]()
 
         self.timer_dirty_check = Timer(0.300)
         self.timer_connect_check = Timer(0.200)
@@ -79,7 +78,7 @@ class Patcher:
 
     def run_loop(self, stop_with_jack=True):
         self.engine.fill_ports_and_connections(
-            self.jack_ports, self.connections)
+            self.ports, self.connections)
         
         jack_stopped = False
 
@@ -149,9 +148,9 @@ class Patcher:
                 continue
 
             if (sv_con[0] in [
-                        p.name for p in self.jack_ports[PortMode.OUTPUT]]
+                        p.name for p in self.ports[PortMode.OUTPUT]]
                     and sv_con[1] in [
-                        p.name for p in self.jack_ports[PortMode.INPUT]]):
+                        p.name for p in self.ports[PortMode.INPUT]]):
                 # There is at least one saved connection not present
                 # despite the fact its two ports are present.
                 return True
@@ -160,13 +159,13 @@ class Patcher:
 
     def port_added(self, port_name: str, port_mode: int, port_type: int):
         self.ports_creation[port_name] = time.time()
-        port = JackPort()
+        port = PortData()
         port.name = port_name
         port.mode = PortMode(port_mode)
         port.type = PortType(port_type)
         port.is_new = True
 
-        self.jack_ports[port.mode].append(port)
+        self.ports[port.mode].append(port)
 
         self.update_conns_cache(port)
         self.timer_connect_check.start()
@@ -178,9 +177,9 @@ class Patcher:
 
     def port_removed(
             self, port_name: str, port_mode: PortMode, port_type: PortType):
-        for port in self.jack_ports[port_mode]:
+        for port in self.ports[port_mode]:
             if port.name == port_name and port.type == port_type:
-                self.jack_ports[port_mode].remove(port)
+                self.ports[port_mode].remove(port)
                 break
         
         else:
@@ -190,16 +189,16 @@ class Patcher:
                 if pmode is port_mode:
                     continue
                 
-                for port in self.jack_ports[pmode]:
+                for port in self.ports[pmode]:
                     if port.name == port_name and port.type == port_type:
-                        self.jack_ports[pmode].remove(port)
+                        self.ports[pmode].remove(port)
                         break
                 break
 
     def port_renamed(
             self, old_name: str, new_name: str,
             port_mode: PortMode, port_type: PortType):
-        for port in self.jack_ports[port_mode]:
+        for port in self.ports[port_mode]:
             if port.name == old_name and port.type == port_type:
                 port.name = new_name
                 port.is_new = True
@@ -216,12 +215,12 @@ class Patcher:
 
         if self.glob.pending_connection or in_port_new or out_port_new:
             if out_port_new:
-                for jport in self.jack_ports[PortMode.OUTPUT]:
+                for jport in self.ports[PortMode.OUTPUT]:
                     if jport.name == port_from:
                         jport.is_new = True
                         break
             if in_port_new:
-                for jport in self.jack_ports[PortMode.INPUT]:
+                for jport in self.ports[PortMode.INPUT]:
                     if jport.name == port_to:
                         jport.is_new = True
                         break
@@ -244,27 +243,27 @@ class Patcher:
             patterns: list[ConnectionPattern]):
         for from_, to_ in patterns:
             if isinstance(from_, re.Pattern):
-                for outport in self.jack_ports[PortMode.OUTPUT]:
+                for outport in self.ports[PortMode.OUTPUT]:
                     if not from_.fullmatch(outport.name):
                         continue
                     if isinstance(to_, re.Pattern):
-                        for inport in self.jack_ports[PortMode.INPUT]:
+                        for inport in self.ports[PortMode.INPUT]:
                             if to_.fullmatch(inport.name):
                                 conns_cache.add((outport.name, inport.name))
                     else:
-                        for inport in self.jack_ports[PortMode.INPUT]:
+                        for inport in self.ports[PortMode.INPUT]:
                             if to_ == inport.name:
                                 conns_cache.add((outport.name, inport.name))
                                 break
             else:
-                for outport in self.jack_ports[PortMode.OUTPUT]:
+                for outport in self.ports[PortMode.OUTPUT]:
                     if outport.name == from_:
                         if isinstance(to_, re.Pattern):
-                            for inport in self.jack_ports[PortMode.INPUT]:
+                            for inport in self.ports[PortMode.INPUT]:
                                 if to_.fullmatch(inport.name):
                                     conns_cache.add((outport.name, inport.name))
                         else:
-                            for inport in self.jack_ports[PortMode.INPUT]:
+                            for inport in self.ports[PortMode.INPUT]:
                                 if to_ == inport.name:
                                     conns_cache.add((outport.name, inport.name))
                                     break
@@ -272,7 +271,7 @@ class Patcher:
 
     def _add_port_to_conns_cache(
             self, conns_cache: set[ConnectionStr],
-            patterns: list[ConnectionPattern], port: JackPort):
+            patterns: list[ConnectionPattern], port: PortData):
         if port.mode is PortMode.OUTPUT:
             for from_, to_ in patterns:
                 if isinstance(from_, re.Pattern):
@@ -282,11 +281,11 @@ class Patcher:
                     continue
                 
                 if isinstance(to_, re.Pattern):
-                    for input_port in self.jack_ports[PortMode.INPUT]:
+                    for input_port in self.ports[PortMode.INPUT]:
                         if to_.fullmatch(input_port.name):
                             conns_cache.add((port.name, input_port.name))
                 else:
-                    for input_port in self.jack_ports[PortMode.INPUT]:
+                    for input_port in self.ports[PortMode.INPUT]:
                         if to_ == input_port.name:
                             conns_cache.add((port.name, input_port.name))
                             break
@@ -300,17 +299,17 @@ class Patcher:
                     continue
 
                 if isinstance(from_, re.Pattern):
-                    for output_port in self.jack_ports[PortMode.OUTPUT]:
+                    for output_port in self.ports[PortMode.OUTPUT]:
                         if from_.fullmatch(output_port.name):
                             conns_cache.add((output_port.name, port.name))
                 else:
-                    for output_port in self.jack_ports[PortMode.OUTPUT]:
+                    for output_port in self.ports[PortMode.OUTPUT]:
                         if from_ == output_port.name:
                             conns_cache.add((output_port.name, port.name))
                             break
 
     def update_conns_cache(
-            self, port: Optional[JackPort]=None):
+            self, port: Optional[PortData]=None):
         '''Update the cache for saved and forbidden connections'''
         if port is None:
             self._startup_conns_cache(
@@ -342,9 +341,9 @@ class Patcher:
                     self.to_disc_connections.clear()
 
         new_output_ports = set(
-            [p.name for p in self.jack_ports[PortMode.OUTPUT] if p.is_new])
+            [p.name for p in self.ports[PortMode.OUTPUT] if p.is_new])
         new_input_ports = set(
-            [p.name for p in self.jack_ports[PortMode.INPUT] if p.is_new])
+            [p.name for p in self.ports[PortMode.INPUT] if p.is_new])
 
         for fbd_con in self.forbidden_conn_cache:
             if (fbd_con in self.connections
@@ -359,8 +358,8 @@ class Patcher:
                 self.engine.disconnect_ports(*fbd_con)
                 one_connected = True
 
-        output_ports = set([p.name for p in self.jack_ports[PortMode.OUTPUT]])
-        input_ports = set([p.name for p in self.jack_ports[PortMode.INPUT]])
+        output_ports = set([p.name for p in self.ports[PortMode.OUTPUT]])
+        input_ports = set([p.name for p in self.ports[PortMode.INPUT]])
 
         for sv_con in self.saved_conn_cache:
             if (not sv_con in self.connections
@@ -380,7 +379,7 @@ class Patcher:
             self.glob.pending_connection = False
 
             for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
-                for port in self.jack_ports[port_mode]:
+                for port in self.ports[port_mode]:
                     port.is_new = False
 
     # ---- NSM callbacks ----
@@ -556,7 +555,7 @@ class Patcher:
         if has_file:
             # re-declare all ports as new in case we are switching session
             for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
-                for port in self.jack_ports[port_mode]:
+                for port in self.ports[port_mode]:
                     port.is_new = True
 
             self.to_disc_connections.clear()
@@ -593,9 +592,9 @@ class Patcher:
         for sv_con in self.saved_connections:
             if (not sv_con in self.connections
                     and sv_con[0] in [
-                        p.name for p in self.jack_ports[PortMode.OUTPUT]]
+                        p.name for p in self.ports[PortMode.OUTPUT]]
                     and sv_con[1] in [
-                        p.name for p in self.jack_ports[PortMode.INPUT]]):
+                        p.name for p in self.ports[PortMode.INPUT]]):
                 del_list.append(sv_con)
                 
         for del_con in del_list:
@@ -669,7 +668,7 @@ class Patcher:
         for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
             el_name = 'in_ports' if port_mode is PortMode.INPUT else 'out_ports'
 
-            for jack_port in self.jack_ports[port_mode]:
+            for jack_port in self.ports[port_mode]:
                 gp_name, _, port_name = jack_port.name.partition(':')
                 if groups_dict.get(gp_name) is None:
                     groups_dict[gp_name] = dict[str, dict[str, str | list[str]]]()
