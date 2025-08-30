@@ -48,13 +48,10 @@ YAML:
     nsm_brothers -> nsm_clients ?
     forbidden_connections -> disconnections ?
     
-    patcher: prendre PortType et PortMode de patshared (voir JackPort / PortData)
     appliquer modifs du __init__ du ray-jackpatch à l'alsapatch
 
     timer avec pending_connection (si jamais la connexion n'arrive pas)
 agg    
-    attention à la prio forbidden/connection:
-        avant de connecter, vérifier qu'une connection n'est pas forbidden
 
     priority_connections
     un beau YAML (saut de ligne entre les sections)

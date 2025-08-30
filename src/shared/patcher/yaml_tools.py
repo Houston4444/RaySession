@@ -2,7 +2,8 @@ import re
 import logging
 from typing import Optional
 
-from .bases import ConnectionStr, ConnectionPattern
+from .bases import (
+    ConnectionStr, ConnectionPattern, PriorityConnection, PriorityConnElement)
 
 _logger = logging.getLogger(__name__)
 
@@ -84,3 +85,94 @@ def patterns_to_dict(patt: list[ConnectionPattern]) -> list[dict]:
             pattern['to'] = to_
         patterns.append(pattern)
     return patterns
+
+def _read_prio(
+        I: str, output: bool, patt, port) -> Optional[PriorityConnElement]:
+    if output:
+        port_key = 'from'
+        patt_key = 'from_pattern'
+    else:
+        port_key = 'to'
+        patt_key = 'to_pattern'
+
+    if patt is not None:
+        if not isinstance(patt, str):
+            _logger.warning(
+                f'{I} "{patt_key}" must be a str')
+            return
+
+        if port is not None:
+            _logger.warning(
+                f'{I} use of "{port_key}" and "{patt_key}"')
+            return
+        
+        try:
+            ret_ = re.compile(patt)
+        except:
+            _logger.warning(f'{I} invalid "from_pattern".')
+            return
+
+    elif port is not None:
+        if isinstance(port, str):
+            ret_ = port
+        elif isinstance(port, list):
+            ret_ = list[str | re.Pattern[str]]()
+            for el in port:
+                if isinstance(el, str):
+                    ret_.append(el)
+                elif isinstance(el, dict):
+                    patt = el.get('pattern')
+                    if not isinstance(patt, str):
+                        _logger.warning(
+                            f'{I} list element can be a dict '
+                            f'only if it contains "pattern"')
+                        return
+                    
+                    try:
+                        ret_.append(re.compile(patt))
+                    except:
+                        _logger.warning(f'{I} invalid pattern: {patt}')
+                        return
+                else:
+                    _logger.warning(
+                        f'{I} Unknown element in "{port_key}" list.')
+                    return
+        else:
+            _logger.warning(
+                f'{I} "{port_key}" unrecognized format.')
+            return
+    
+    else:
+        _logger.warning(f'{I} "{port_key}" section missing.')
+        return
+    
+    return ret_
+
+def priority_connection_from_dict(prio_dict) -> Optional[PriorityConnection]:
+    I = f'priority_connection ignored in {prio_dict}.\n '
+    if not isinstance(prio_dict, dict):
+        _logger.warning(' is not a dict.')
+        return
+    
+    
+    from_ = _read_prio(
+        I, True, prio_dict.get('from_pattern'), prio_dict.get('from'))
+    if from_ is None:
+        return
+    
+    to_ = _read_prio(
+        I, False, prio_dict.get('to_pattern'), prio_dict.get('to'))
+    if to_ is None:
+        return
+    
+    if (isinstance(from_, (str, re.Pattern))
+            is isinstance(to_, (str, re.Pattern))):
+        _logger.warning(
+            f'{I} priority_connection must face a string and a list')
+        return
+    
+    return (from_, to_)
+    
+            
+    
+    

@@ -4,7 +4,7 @@ from queue import Queue
 import time
 from enum import IntEnum
 import re
-from typing import Iterator, Optional, TypeAlias
+from typing import Iterator, Optional, Pattern, TypeAlias
 
 from patshared import PortMode, PortType
 
@@ -22,7 +22,10 @@ FullPortName: TypeAlias = str
 ConnectionStr: TypeAlias = tuple[FullPortName, FullPortName]
 ConnectionPattern: TypeAlias = tuple[FullPortName | re.Pattern[str], 
                                      FullPortName | re.Pattern[str]]
-
+PriorityConnElement: TypeAlias = \
+    FullPortName | re.Pattern[str] | list[FullPortName | re.Pattern[str]]
+PriorityConnection: TypeAlias = tuple[
+    PriorityConnElement, PriorityConnElement]
 
 class PortData:
     id = 0

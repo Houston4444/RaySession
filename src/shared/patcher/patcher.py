@@ -23,6 +23,7 @@ from .bases import (
     ConnectionPattern,
     PortData,
     MonitorStates,
+    PriorityConnection,
     ProtoEngine,
     Timer,
     Event,
@@ -52,6 +53,7 @@ class Patcher:
         'connections that user never want'
         self.forbidden_patterns = list[ConnectionPattern]()
         self.forbidden_conn_cache = set[ConnectionStr]()
+        self.priority_connections = list[PriorityConnection]()
         self.to_disc_connections = set[ConnectionStr]()
         'connections that have to be disconnected ASAP'
         self.ports_creation = dict[FullPortName, float]()
@@ -75,6 +77,8 @@ class Patcher:
         })
         self.nsm_server.announce(
             self.engine.NSM_NAME, ':dirty:switch:monitor:', engine.EXECUTABLE)
+        
+        self.yaml_dict = {}
 
     def run_loop(self, stop_with_jack=True):
         self.engine.fill_ports_and_connections(
@@ -393,6 +397,7 @@ class Patcher:
         self.forbidden_patterns.clear()
         self.forbidden_connections.clear()
         self.forbidden_conn_cache.clear()
+        self.priority_connections.clear()
 
         file_path = project_path + '.xml'
         yaml_path = project_path + '.yaml'
@@ -438,6 +443,14 @@ class Patcher:
                     forbidden_conns, self.forbidden_connections,
                     self.forbidden_patterns)
 
+            priority_conns = yaml_dict.get('priority_connections')
+            if isinstance(priority_conns, list):
+                for prio_dict in priority_conns:
+                    prio_conn = \
+                        yaml_tools.priority_connection_from_dict(prio_dict)
+                    if prio_conn is not None:
+                        self.priority_connections.append(prio_conn)
+
             graph = yaml_dict.get('graph')
             if isinstance(graph, dict):
                 for group_name, gp_dict in graph.items():
@@ -476,6 +489,8 @@ class Patcher:
                 
                 for rm_conn in rm_list:
                     self.saved_connections.discard(rm_conn)
+            
+            self.yaml_dict = yaml_dict
 
         elif os.path.isfile(file_path):
             has_file = True
@@ -654,12 +669,12 @@ class Patcher:
         forbidden_patterns = yaml_tools.patterns_to_dict(
             self.forbidden_patterns)
         
-        out_dict = {}
+        out_dict = self.yaml_dict
         out_dict['app'] = self.engine.XML_TAG
         out_dict['version'] = ray.VERSION
-        out_dict['forbidden_connections'] = forbidden_patterns + [
-            {'from': c[0], 'to': c[1]}
-            for c in sorted(self.forbidden_connections)]
+        # out_dict['forbidden_connections'] = forbidden_patterns + [
+        #     {'from': c[0], 'to': c[1]}
+        #     for c in sorted(self.forbidden_connections)]
         out_dict['connections'] = saved_patterns + [
             {'from': c[0], 'to': c[1]}
             for c in sorted(self.saved_connections)]
