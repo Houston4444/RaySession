@@ -175,6 +175,9 @@ class Patcher:
         self.ports[port.mode].append(port)
 
         self.update_conns_cache(port)
+        cache_tools.priority_connections_startup(
+            self.priority_connections, self.ports,
+            self.priority_conn_up, self.priority_conn_down)
         self.timer_connect_check.start()
         
         # dirty checker timer is longer than timer connect
@@ -201,6 +204,10 @@ class Patcher:
                         self.ports[pmode].remove(port)
                         break
                 break
+        
+        cache_tools.priority_connections_startup(
+            self.priority_connections, self.ports,
+            self.priority_conn_up, self.priority_conn_down)
 
     def port_renamed(
             self, old_name: str, new_name: str,
@@ -212,6 +219,10 @@ class Patcher:
                 self.update_conns_cache(port)
                 self.timer_connect_check.start()
                 break
+        
+        cache_tools.priority_connections_startup(
+            self.priority_connections, self.ports,
+            self.priority_conn_up, self.priority_conn_down)
 
     def connection_added(self, port_from: str, port_to: str):
         now = time.time()
@@ -369,26 +380,52 @@ class Patcher:
         output_ports = set([p.name for p in self.ports[PortMode.OUTPUT]])
         input_ports = set([p.name for p in self.ports[PortMode.INPUT]])
 
+        for pconn_downed, pconn in self.priority_conn_down.items():
+            if (pconn_downed in self.connections
+                    and (pconn[0] in new_output_ports
+                         or pconn[1] in new_input_ports)):
+                if one_connected:
+                    self.glob.pending_connection = True
+                    return
+                
+                _logger.info(f'disconnect ports (priorized): {pconn_downed}')
+                self.engine.disconnect_ports(*pconn_downed)
+                one_connected = True
+        
+        for pconn in self.priority_conn_up:
+            if (pconn not in self.connections
+                    and pconn not in self.forbidden_conn_cache
+                    and (pconn[0] in new_output_ports
+                         or pconn[1] in new_input_ports)):
+                if one_connected:
+                    self.glob.pending_connection = True
+                    return
+                
+                _logger.info(f'connect ports (priorized): {pconn}')
+                self.engine.connect_ports(*pconn)
+                one_connected = True
+
         for sv_con in self.saved_conn_cache:
             if (not sv_con in self.connections
                     and not sv_con in self.forbidden_conn_cache
+                    and not sv_con in self.priority_conn_down
                     and sv_con[0] in output_ports
                     and sv_con[1] in input_ports
                     and (sv_con[0] in new_output_ports
                          or sv_con[1] in new_input_ports)):
                 if one_connected:
                     self.glob.pending_connection = True
-                    break
+                    return
 
                 _logger.info(f'connect ports: {sv_con}')
                 self.engine.connect_ports(*sv_con)
                 one_connected = True
-        else:
-            self.glob.pending_connection = False
 
-            for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
-                for port in self.ports[port_mode]:
-                    port.is_new = False
+        self.glob.pending_connection = False
+
+        for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
+            for port in self.ports[port_mode]:
+                port.is_new = False
 
     # ---- NSM callbacks ----
 

@@ -15,6 +15,9 @@ def priority_connections_startup(
         ports: dict[PortMode, list[PortData]],
         prio_ups: set[ConnectionStr],
         prio_downs: dict[ConnectionStr, ConnectionStr]):
+    prio_ups.clear()
+    prio_downs.clear()
+    
     for from_, to_ in prio_conns:        
         if isinstance(from_, (str, re.Pattern)):
             for outport in ports[PortMode.OUTPUT]:
@@ -36,6 +39,7 @@ def priority_connections_startup(
                         
                         if prio_found is not None:
                             prio_downs[conn] = prio_found
+                            prio_ups.discard(conn)
                         else:
                             prio_ups.add(conn)
                             prio_found = conn
@@ -59,6 +63,27 @@ def priority_connections_startup(
                         
                         if prio_found is not None:
                             prio_downs[conn] = prio_found
+                            prio_ups.discard(conn)
                         else:
                             prio_ups.add(conn)
                             prio_found = conn
+
+def priority_connections_port_change(
+        prio_conns: list[PriorityConnection],
+        ports: dict[PortMode, list[PortData]],
+        prio_ups: set[ConnectionStr],
+        prio_downs: dict[ConnectionStr, ConnectionStr],
+        port: PortData,
+        change=''):
+    for from_, to_ in prio_conns:
+        if isinstance(from_, (str, re.Pattern)):
+            if TYPE_CHECKING and not isinstance(to_, list):
+                # impossible
+                continue
+            
+            if port.mode is PortMode.OUTPUT:
+                if not str_match(from_, port.name):
+                    continue
+                
+                if change == 'add':
+                    ...
