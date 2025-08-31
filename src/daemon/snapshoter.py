@@ -113,6 +113,7 @@ class Snapshoter(QObject):
             self._git_command += ' %s' % arg
 
         err = ray.Err.OK
+        exit_code = 0
 
         git_args = self._get_git_command_list_at(spath, *all_args)
         self._git_process.start(self._git_exec, git_args)
@@ -120,13 +121,14 @@ class Snapshoter(QObject):
             self._git_process.kill()
             err = ray.Err.SUBPROCESS_UNTERMINATED
         else:
+            exit_code = self._git_process.exitCode()
             if self._git_process.exitStatus() == QProcess.ExitStatus.CrashExit:
                 err = ray.Err.SUBPROCESS_CRASH
-            elif self._git_process.exitCode():
+            elif exit_code:
                 err = ray.Err.SUBPROCESS_EXITCODE
 
         if err and self._error_function:
-            self._error_function(err, ' '.join(all_args))
+            self._error_function(err, ' '.join(all_args), exit_code)
 
         return not bool(err)
 

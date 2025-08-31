@@ -606,7 +606,7 @@ class OperatingSession(Session):
         self.set_server_status(ray.ServerStatus.READY)
         self._send_reply("Snapshot taken.")
 
-    def snapshot_error(self, err_snapshot, info_str=''):
+    def snapshot_error(self, err_snapshot: ray.Err, info_str='', exit_code=0):
         m = _translate('Snapshot Error', "Unknown error")
         if err_snapshot == ray.Err.SUBPROCESS_UNTERMINATED:
             m = _translate('Snapshot Error',
@@ -616,7 +616,8 @@ class OperatingSession(Session):
                            "git crashes.\n%s") % info_str
         elif err_snapshot == ray.Err.SUBPROCESS_EXITCODE:
             m = _translate('Snapshot Error',
-                           "git exit with an error code.\n%s") % info_str
+                           "git exit with the error code %i.\n%s") \
+                % (exit_code, info_str)
         self.message(m)
         self.send_gui_message(m)
 
@@ -832,7 +833,7 @@ for better organization.""")
         if self.snapshoter.load(spath, snapshot, self.init_snapshot_error):
             self.next_function()
 
-    def init_snapshot_error(self, err, info_str=''):
+    def init_snapshot_error(self, err: ray.Err, info_str='', exit_code=0):
         m = _translate('Snapshot Error', "Snapshot error")
         if err == ray.Err.SUBPROCESS_UNTERMINATED:
             m = _translate('Snapshot Error',
@@ -842,7 +843,8 @@ for better organization.""")
                            "command crashes:\n%s") % info_str
         elif err == ray.Err.SUBPROCESS_EXITCODE:
             m = _translate('Snapshot Error',
-                           "command exit with an error code:\n%s") % info_str
+                           "command exit with the error code %i:\n%s") \
+                % (exit_code, info_str)
         elif err == ray.Err.NO_SUCH_FILE:
             m = _translate('Snapshot Error',
                            "error reading file:\n%s") % info_str
@@ -1876,20 +1878,26 @@ for better organization.""")
             self.set_server_status(ray.ServerStatus.READY)
             self.next_function()
 
-    def load_client_snapshot_error(self, err, info_str=''):
+    def load_client_snapshot_error(
+            self, err: ray.Err, info_str='', exit_code=0):
         m = _translate('Snapshot Error', "Snapshot error")
-        if err == ray.Err.SUBPROCESS_UNTERMINATED:
-            m = _translate('Snapshot Error',
-                           "command didn't stop normally:\n%s") % info_str
-        elif err == ray.Err.SUBPROCESS_CRASH:
-            m = _translate('Snapshot Error',
-                           "command crashes:\n%s") % info_str
-        elif err == ray.Err.SUBPROCESS_EXITCODE:
-            m = _translate('Snapshot Error',
-                           "command exit with an error code:\n%s") % info_str
-        elif err == ray.Err.NO_SUCH_FILE:
-            m = _translate('Snapshot Error',
-                           "error reading file:\n%s") % info_str
+        match err:
+            case ray.Err.SUBPROCESS_UNTERMINATED:
+                m = _translate(
+                    'Snapshot Error',
+                    "command didn't stop normally:\n%s") % info_str
+            case ray.Err.SUBPROCESS_CRASH:
+                m = _translate(
+                    'Snapshot Error', "command crashes:\n%s") % info_str
+            case ray.Err.SUBPROCESS_EXITCODE:
+                m = _translate(
+                    'Snapshot Error',
+                    "command exit with the error code %i:\n%s") \
+                        % (exit_code, info_str)
+            case ray.Err.NO_SUCH_FILE:
+                m = _translate(
+                    'Snapshot Error', "error reading file:\n%s") % info_str
+
         self.message(m)
         self.send_gui_message(m)
         self._send_error(err, m)
