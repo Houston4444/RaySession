@@ -22,10 +22,11 @@ FullPortName: TypeAlias = str
 ConnectionStr: TypeAlias = tuple[FullPortName, FullPortName]
 ConnectionPattern: TypeAlias = tuple[FullPortName | re.Pattern[str], 
                                      FullPortName | re.Pattern[str]]
-PriorityConnElement: TypeAlias = \
-    FullPortName | re.Pattern[str] | list[FullPortName | re.Pattern[str]]
-PriorityConnection: TypeAlias = tuple[
-    PriorityConnElement, PriorityConnElement]
+PatternOrName: TypeAlias = FullPortName|re.Pattern[str]
+PriorityConnElement: TypeAlias = PatternOrName | list[PatternOrName]
+PriorityConnection: TypeAlias = (
+    tuple[PatternOrName, list[PatternOrName]]
+    | tuple[list[PatternOrName], PatternOrName])
 
 class PortData:
     id = 0

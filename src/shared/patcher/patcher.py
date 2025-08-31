@@ -29,6 +29,7 @@ from .bases import (
     Event,
     debug_conn_str)
 from . import yaml_tools
+from . import cache_tools
 
 _logger = logging.getLogger(__name__)
 
@@ -54,6 +55,8 @@ class Patcher:
         self.forbidden_patterns = list[ConnectionPattern]()
         self.forbidden_conn_cache = set[ConnectionStr]()
         self.priority_connections = list[PriorityConnection]()
+        self.priority_conn_up = set[ConnectionStr]()
+        self.priority_conn_down = dict[ConnectionStr, ConnectionStr]()
         self.to_disc_connections = set[ConnectionStr]()
         'connections that have to be disconnected ASAP'
         self.ports_creation = dict[FullPortName, float]()
@@ -319,7 +322,8 @@ class Patcher:
             self._startup_conns_cache(
                 self.saved_conn_cache, self.saved_patterns)
             self._startup_conns_cache(
-                self.forbidden_conn_cache, self.forbidden_patterns)            
+                self.forbidden_conn_cache, self.forbidden_patterns)
+
             return
 
         self._add_port_to_conns_cache(
@@ -566,6 +570,9 @@ class Patcher:
         for conn in self.forbidden_connections:
             self.forbidden_conn_cache.add(conn)
         self.update_conns_cache()
+        cache_tools.priority_connections_startup(
+            self.priority_connections, self.ports,
+            self.priority_conn_up, self.priority_conn_down)
 
         if has_file:
             # re-declare all ports as new in case we are switching session

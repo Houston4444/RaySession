@@ -3,7 +3,7 @@ import logging
 from typing import Optional
 
 from .bases import (
-    ConnectionStr, ConnectionPattern, PriorityConnection, PriorityConnElement)
+    ConnectionStr, ConnectionPattern, PatternOrName, PriorityConnection, PriorityConnElement)
 
 _logger = logging.getLogger(__name__)
 
@@ -87,7 +87,8 @@ def patterns_to_dict(patt: list[ConnectionPattern]) -> list[dict]:
     return patterns
 
 def _read_prio(
-        I: str, output: bool, patt, port) -> Optional[PriorityConnElement]:
+        I: str, output: bool, patt, port) \
+            -> PatternOrName | list[PatternOrName] | None:
     if output:
         port_key = 'from'
         patt_key = 'from_pattern'
@@ -153,8 +154,7 @@ def priority_connection_from_dict(prio_dict) -> Optional[PriorityConnection]:
     if not isinstance(prio_dict, dict):
         _logger.warning(' is not a dict.')
         return
-    
-    
+
     from_ = _read_prio(
         I, True, prio_dict.get('from_pattern'), prio_dict.get('from'))
     if from_ is None:
@@ -165,13 +165,11 @@ def priority_connection_from_dict(prio_dict) -> Optional[PriorityConnection]:
     if to_ is None:
         return
     
-    if (isinstance(from_, (str, re.Pattern))
-            is isinstance(to_, (str, re.Pattern))):
-        _logger.warning(
-            f'{I} priority_connection must face a string and a list')
-        return
-    
-    return (from_, to_)
+    if isinstance(from_, (str, re.Pattern)):
+        if isinstance(to_, list):
+            return (from_, to_)
+    elif isinstance(to_, (str, re.Pattern)):
+        return (from_, to_)
     
             
     
