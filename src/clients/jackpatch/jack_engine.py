@@ -47,6 +47,12 @@ class JackEngine(ProtoEngine):
         if self._client is None:
             return False
         
+        @self._client.set_client_registration_callback
+        def client_registration(client_name: str, register: bool):
+            self.ev_handler.add_event(
+                Event.CLIENT_ADDED if register else Event.CLIENT_REMOVED,
+                client_name)
+        
         @self._client.set_port_registration_callback
         def port_registration(port: jack.Port, register: bool):
             self.ev_handler.add_event(

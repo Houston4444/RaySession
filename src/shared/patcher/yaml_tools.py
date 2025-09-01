@@ -27,7 +27,7 @@ def load_conns_from_yaml(
                 from_patt = re.compile(from_pattern)
             except re.error as e:
                 _logger.warning(
-                    f"Incorrect from_pattern, Ignored. " + str(e))
+                    f"Incorrect from_pattern '{from_pattern}', Ignored. " + str(e))
                 continue
 
             if isinstance(to_pattern, str):
@@ -35,7 +35,7 @@ def load_conns_from_yaml(
                     to_patt = re.compile(to_pattern)
                 except re.error as e:
                     _logger.warning(
-                        f"Incorrect to_pattern, Ignored. " + str(e))
+                        f"Incorrect to_pattern '{to_pattern}', Ignored. " + str(e))
                     continue
                 
                 patterns.append((from_patt, to_patt))

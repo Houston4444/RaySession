@@ -51,11 +51,56 @@ YAML:
     appliquer modifs du __init__ du ray-jackpatch à l'alsapatch
 
     timer avec pending_connection (si jamais la connexion n'arrive pas)
-agg    
 
     priority_connections
     un beau YAML (saut de ligne entre les sections)
+    .bak si changement depuis ouverture
     docu
+
+scenarios:
+    inclure $system
+    name
+    rules (present_clients) (acccept pattern)
+    forbidden_connections
+    connections
+    playback_redirections
+    capture_redirections
+
+    À la bascule vers le scenario:
+    - envoyer message NSM
+    - saved connections = saved_ connections + scenario_connections
+    - forbidden connections = forbidden_connections + scenario_forbidden_connections
+    - playback_redirections:
+        - appliquer à saved_connections les redirections
+        - appliquer aux connections en cours les redirections
+
+    À la sauvegarde (sur scenario):
+    - sauvegarder en remplaçant les redirections dans les connections
+
+    A la bascule vers autre scenario:
+    - envoyer message NSM
+    - faire comme si on repassait au non-scenario
+    - bascule vers le nouveau scenario
+
+    Au retour au non-scenario:
+    - envoyer message NSM (on quitte le scenario 1 "Avec JackMixer")
+    - revoir saved_connections et forbidden_connections
+    - refaire à l'envers les redirections
+
+    example:
+        A -> B
+        B -> C
+        A et B iront dans C, au retour, C et B iront dans A
+
+        A -> B
+        C -> B
+        A ec C iront dans B, au retour B ira dans A et C
+
+        A -> B
+        B -> A
+        truc à la con, A reste en A, B va vers A, au retour,  
+
+    client_registration: voir jack_engine_remote et alsa.
 
 
 

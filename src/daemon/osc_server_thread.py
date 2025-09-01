@@ -403,8 +403,11 @@ class ClientCommunicating(BunServerThread):
         if not client:
             return False
 
+        osp_args: tuple[int, str] = osp.args # type:ignore 
+        priority, message = osp_args
+
         self.send_gui(rg.client.MESSAGE,
-                      client.client_id, osp.args[0], osp.args[1])
+                      client.client_id, priority, message)
 
     @validator(nsm.client.GUI_IS_HIDDEN, '')
     def _nsm_client_gui_is_hidden(self, osp: OscPack):

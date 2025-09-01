@@ -150,3 +150,7 @@ class NsmServer(BunServer):
     def send_monitor_reset(self):
         if ':monitor:' in self._server_capabilities:
             self._send_to_daemon(nsm.server.MONITOR_RESET)
+
+    def send_message(self, priority: int, message: str):
+        # TODO check ':message:' capability
+        self._send_to_daemon(nsm.client.MESSAGE, priority, message)

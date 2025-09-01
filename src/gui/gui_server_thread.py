@@ -54,6 +54,7 @@ METHODS_DICT = {
     rg.client.HAS_OPTIONAL_GUI: 's',
     rg.client.GUI_VISIBLE: 'si',
     rg.client.STILL_RUNNING: 's',
+    rg.client.MESSAGE: 'sis',
     rg.trash.ADD: ray.ClientData.ARG_TYPES,
     rg.trash.RAY_HACK_UPDATE: 's' + ray.RayHack.ARG_TYPES,
     rg.trash.RAY_NET_UPDATE: 's' + ray.RayNet.ARG_TYPES,

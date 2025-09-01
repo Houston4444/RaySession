@@ -20,9 +20,8 @@ FullPortName: TypeAlias = str
 'Full port name string under the form "jack_client_name:port_name"'
 
 ConnectionStr: TypeAlias = tuple[FullPortName, FullPortName]
-ConnectionPattern: TypeAlias = tuple[FullPortName | re.Pattern[str], 
-                                     FullPortName | re.Pattern[str]]
 PatternOrName: TypeAlias = FullPortName|re.Pattern[str]
+ConnectionPattern: TypeAlias = tuple[PatternOrName, PatternOrName]
 PriorityConnElement: TypeAlias = PatternOrName | list[PatternOrName]
 PriorityConnection: TypeAlias = (
     tuple[PatternOrName, list[PatternOrName]]

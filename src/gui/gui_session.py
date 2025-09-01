@@ -432,6 +432,12 @@ class SignaledSession(Session):
         if client:
             client.allow_kill()
 
+    @manage(rg.client.MESSAGE, 'sis')
+    def _client_message(self, osp: OscPack):
+        osp_args: tuple[str, int, str] = osp.args # type:ignore
+        client_id, priority, message = osp_args
+        self.main_win.print_message(f'{client_id}: {message}')
+
     @manage(rg.trash.ADD, ray.ClientData.ARG_TYPES)
     def _trash_add(self, osp: OscPack):
         trashed_client = TrashedClient(self)
