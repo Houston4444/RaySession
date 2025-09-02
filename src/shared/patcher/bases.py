@@ -27,6 +27,7 @@ PriorityConnection: TypeAlias = (
     tuple[PatternOrName, list[PatternOrName]]
     | tuple[list[PatternOrName], PatternOrName])
 
+
 class PortData:
     id = 0
     name = ''

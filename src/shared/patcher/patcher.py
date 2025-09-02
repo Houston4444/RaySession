@@ -44,6 +44,7 @@ class Patcher:
         self._logger = logger
         self.brothers_dict = dict[NsmClientName, JackClientBaseName]()
         self.present_clients = set[str]()
+
         self.connections = set[ConnectionStr]()
         'current connections in the graph'
         self.saved_connections = set[ConnectionStr]()
@@ -56,14 +57,29 @@ class Patcher:
         'connections that user never want'
         self.forbidden_patterns = list[ConnectionPattern]()
         self.forbidden_conn_cache = set[ConnectionStr]()
-        self.priority_connections = list[PriorityConnection]()
-        self.priority_conn_up = set[ConnectionStr]()
-        self.priority_conn_down = dict[ConnectionStr, ConnectionStr]()
-        self.priority_ports = set[FullPortName]()
         self.to_disc_connections = set[ConnectionStr]()
         'connections that have to be disconnected ASAP'
         self.ports_creation = dict[FullPortName, float]()
         'Stores the creation time of the ports'
+
+        self.disconnections_time = dict[ConnectionStr, float]()
+        'Store the time since epoch of each disconnection'
+        self.disco_unregister = set[ConnectionStr]()
+        '''all disconnections that occurred just before
+        the destruction of one of their ports'''
+
+        self.connections_in_redirection = set[ConnectionStr]()
+        '''Connections not saved but with redirected connection present
+        in the previous scenario. Theses connections have to be restored
+        if possible.'''
+
+        self.priority_connections = list[PriorityConnection]()
+        self.priority_conn_up = set[ConnectionStr]()
+        self.priority_conn_down = dict[ConnectionStr, ConnectionStr]()
+        self.priority_ports = set[FullPortName]()
+
+        self.scenarios = scenarios.ScenariosManager(self)
+        self.switching_scenario = False
 
         self.ports = dict[PortMode, list[PortData]]()
         for port_mode in (PortMode.NULL, PortMode.INPUT, PortMode.OUTPUT):
@@ -157,7 +173,7 @@ class Patcher:
 
     def is_dirty_now(self) -> bool:
         for conn in self.connections:
-            if not conn in self.saved_conn_cache:
+            if conn not in self.saved_conn_cache:
                 # There is at least one present connection unsaved                
                 return True
 
@@ -177,15 +193,21 @@ class Patcher:
 
     def client_added(self, client_name: str):
         self.present_clients.add(client_name)
-        ret = scenarios.choose(self.present_clients)
+        ret = self.scenarios.choose(self.present_clients)
         if ret:
             self.nsm_server.send_message(2, ret)
+            self.switching_scenario = True
+            self.may_make_one_connection()
+            # self.timer_connect_check.start()
 
     def client_removed(self, client_name: str):
         self.present_clients.discard(client_name)
-        ret = scenarios.choose(self.present_clients)
+        ret = self.scenarios.choose(self.present_clients)
         if ret:
             self.nsm_server.send_message(2, ret)
+            self.switching_scenario = True
+            self.may_make_one_connection()
+            # self.timer_connect_check.start()
 
     def port_added(self, port_name: str, port_mode: int, port_type: int):
         self.ports_creation[port_name] = time.time()
@@ -215,7 +237,7 @@ class Patcher:
             if port.name == port_name and port.type == port_type:
                 self.ports[port_mode].remove(port)
                 break
-        
+
         else:
             # strange, but in some cases,
             # JACK does not sends the good port mode at remove time.
@@ -228,6 +250,14 @@ class Patcher:
                         self.ports[pmode].remove(port)
                         break
                 break
+
+        now = time.time()
+        for conn, time_ in self.disconnections_time.items():
+            if port_name in conn:
+                if now - time_ < 0.250:
+                    self.disco_unregister.add(conn)
+                else:
+                    self.disco_unregister.discard(conn)
 
         cache_tools.priority_connections_startup(
             self.priority_connections, self.ports,
@@ -257,6 +287,7 @@ class Patcher:
         in_port_new = now - self.ports_creation.get(port_to, 0.0) < 0.250
         
         self.connections.add((port_from, port_to))
+        self.disco_unregister.discard((port_from, port_to))
 
         if self.glob.pending_connection or in_port_new or out_port_new:
             if out_port_new:
@@ -277,6 +308,7 @@ class Patcher:
  
     def connection_removed(self, port_str_a: str, port_str_b: str):
         self.connections.discard((port_str_a, port_str_b))
+        self.disconnections_time[(port_str_a, port_str_b)] = time.time()
 
         if self.glob.pending_connection:
             self.may_make_one_connection()
@@ -373,18 +405,52 @@ class Patcher:
         'can make one connection or disconnection'
         one_connected = False
 
-        if self.glob.allow_disconnections:
-            if self.to_disc_connections:
-                for to_disc_con in self.to_disc_connections:
-                    if to_disc_con in self.connections:
-                        if one_connected:
-                            self.glob.pending_connection = True
-                            return
-                        _logger.info(f'startup disconnect ports: {to_disc_con}')
-                        self.engine.disconnect_ports(*to_disc_con)
-                        one_connected = True
-                else:
-                    self.to_disc_connections.clear()
+        if self.switching_scenario or self.glob.allow_disconnections:
+            for to_disc_con in self.to_disc_connections:
+                if to_disc_con in self.connections:
+                    if one_connected:
+                        self.glob.pending_connection = True
+                        return
+                    _logger.info(f'startup disconnect ports: {to_disc_con}')
+                    self.engine.disconnect_ports(*to_disc_con)
+                    one_connected = True
+
+            self.to_disc_connections.clear()
+
+        output_ports = set([p.name for p in self.ports[PortMode.OUTPUT]])
+        input_ports = set([p.name for p in self.ports[PortMode.INPUT]])
+
+        if self.switching_scenario:
+            for red_con in self.connections_in_redirection:
+                if (red_con not in self.connections
+                        and red_con not in self.forbidden_conn_cache
+                        and red_con[0] in output_ports
+                        and red_con[1] in input_ports):
+                    if one_connected:
+                        self.glob.pending_connection = True
+                        return
+                    
+                    _logger.info(
+                        f'connect ports (scenario redirection): {red_con}')
+                    self.engine.connect_ports(*red_con)
+                    one_connected = True
+            
+            for sv_con in self.saved_conn_cache:
+                if (sv_con not in self.connections
+                        and sv_con not in self.forbidden_conn_cache
+                        # and not sv_con in self.priority_conn_down
+                        and sv_con[0] in output_ports
+                        and sv_con[1] in input_ports):
+                    if one_connected:
+                        self.glob.pending_connection = True
+                        return
+                    
+                    _logger.info(f'connect ports (scenario switch): {sv_con}')
+                    self.engine.connect_ports(*sv_con)
+                    one_connected = True
+            
+            if not one_connected:
+                self.switching_scenario = False
 
         new_output_ports = set(
             [p.name for p in self.ports[PortMode.OUTPUT] if p.is_new])
@@ -404,8 +470,6 @@ class Patcher:
                 self.engine.disconnect_ports(*fbd_con)
                 one_connected = True
 
-        output_ports = set([p.name for p in self.ports[PortMode.OUTPUT]])
-        input_ports = set([p.name for p in self.ports[PortMode.INPUT]])
 
         # for pconn_downed, pconn in self.priority_conn_down.items():
         #     if (pconn_downed in self.connections
@@ -524,7 +588,7 @@ class Patcher:
 
             scenars = yaml_dict.get('scenarios')
             if isinstance(scenars, list):
-                scenarios.write_scenarios_from_yaml(scenars)
+                self.scenarios.load_yaml(scenars)
 
             graph = yaml_dict.get('graph')
             if isinstance(graph, dict):
@@ -664,7 +728,7 @@ class Patcher:
             if self.glob.open_done_once:
                 self.glob.allow_disconnections = True
 
-            ret = scenarios.choose(self.present_clients)
+            ret = self.scenarios.choose(self.present_clients)
             if ret:
                 self.nsm_server.send_message(2, ret)
 
