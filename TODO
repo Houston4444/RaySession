@@ -101,6 +101,7 @@ scenarios:
         truc à la con, A reste en A, B va vers A, au retour,  
 
     client_registration: voir jack_engine_remote et alsa.
+    revoir les déconnexions au démarrage (+option ou config)
 
 
 
