@@ -1,7 +1,9 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Literal
 
-from .bases import ConnectionPattern, ConnectionStr, FullPortName
+from patshared import PortMode
+
+from .bases import ConnectionPattern, ConnectionStr
 from . import yaml_tools
 
 if TYPE_CHECKING:
@@ -25,34 +27,79 @@ class ScenarioRules:
             if sc_abst_cl in present_clients:
                 return False
         return True
+    
+    def to_yaml_dict(self) -> dict:
+        out_d = {}
+        if self.present_clients:
+            out_d['present_clients'] = self.present_clients
+        if self.absent_clients:
+            out_d['absent_clients'] = self.absent_clients
+        return out_d
 
 
-class Scenario:
-    def __init__(self, rules: ScenarioRules):
-        self.name = ''
-        self.rules = rules
+class BaseScenario:
+    def __init__(self):
+        self.name = 'Default'
         self.forbidden_connections = set[ConnectionStr]()
         self.forbidden_patterns = list[ConnectionPattern]()
         self.saved_connections = set[ConnectionStr]()
         self.saved_patterns = list[ConnectionPattern]()
+        
+    def __repr__(self) -> str:
+        return 'DefaultScenario'
+
+    def must_stock_conn(self, conn: ConnectionStr) -> Literal[False]:
+        return False
+    
+    def redirected(self, conn: ConnectionStr,
+                   restored=False) -> list[ConnectionStr]:
+        return []
+    
+    def to_yaml_dict(self) -> dict:
+        out_d = {}
+        forbidden_conns = (
+            yaml_tools.patterns_to_dict(self.forbidden_patterns)
+            +  [{'from': c[0], 'to': c[1]}
+                for c in sorted(self.forbidden_connections)])
+        if forbidden_conns:
+            out_d['forbidden_connections'] = forbidden_conns
+        
+        saved_conns = (
+            yaml_tools.patterns_to_dict(self.saved_patterns)
+            +  [{'from': c[0], 'to': c[1]}
+                for c in sorted(self.saved_connections)])
+        if saved_conns:
+            out_d['connections'] = saved_conns
+        
+        return out_d
+    
+    def save_tmp_connections(self):
+        ...
+    
+
+class Scenario(BaseScenario):
+    def __init__(self, rules: ScenarioRules):
+        super().__init__()
+        self.name = ''
+        self.rules = rules
         self.playback_redirections = list[ConnectionStr]()
         self.capture_redirections = list[ConnectionStr]()
-        
+        self.tmp_connections = set[ConnectionStr]()
+
     def __repr__(self) -> str:
         return f'Scenario({self.name})'
 
-    def in_redirect(self, port_name: FullPortName) -> FullPortName:
-        for orig, dest in self.playback_redirections:
-            if orig == port_name:
-                return dest
-        return port_name
-    
-    def out_redirect(self, port_name: FullPortName) -> FullPortName:
-        for orig, dest in self.capture_redirections:
-            if orig == port_name:
-                return dest
-        return port_name
-    
+    def must_stock_conn(self, conn: ConnectionStr) -> bool:
+        port_from , port_to = conn
+        for cp_red in self.capture_redirections:
+            if port_from == cp_red[0]:
+                return True
+        
+        for cp_red in self.playback_redirections:
+            if port_to == cp_red[0]:
+                return True
+        return False
+
     def redirected(self, conn: ConnectionStr,
                    restored=False) -> list[ConnectionStr]:
         '''return all connections that could be a redirection of conn.'''
@@ -84,21 +131,56 @@ class Scenario:
             for r_in in r_ins:
                 ret.append((port_from, r_in))
         return ret
+    
+    def to_yaml_dict(self) -> dict:
+        out_d = {}
+        out_d['name'] = self.name
+        out_d['rules'] = self.rules.to_yaml_dict()
+        
+        forbidden_conns = (
+            yaml_tools.patterns_to_dict(self.forbidden_patterns)
+            +  [{'from': c[0], 'to': c[1]}
+                for c in sorted(self.forbidden_connections)])
+        if forbidden_conns:
+            out_d['forbidden_connections'] = forbidden_conns
+        
+        saved_conns = (
+            yaml_tools.patterns_to_dict(self.saved_patterns)
+            +  [{'from': c[0], 'to': c[1]}
+                for c in sorted(self.saved_connections)])
+        if saved_conns:
+            out_d['connections'] = saved_conns
+        
+        if self.playback_redirections:
+            out_d['playback_redirections'] = [
+                {'origin': pb[0], 'destination': pb[1]}
+                for pb in self.playback_redirections]
+        
+        if self.capture_redirections:
+            out_d['capture_redirections'] = [
+                {'origin': ct[0], 'destination': ct[1]}
+                for ct in self.capture_redirections]
+        
+        return out_d
+    
+    def save_tmp_connections(self):
+        for conn in self.tmp_connections:
+            self.saved_connections.add(conn)
+        self.tmp_connections.clear()
 
 
 class ScenariosManager:
     def __init__(self, patcher: 'Patcher'):
-        self.scenarios = list[Scenario]()
-        self.current_scenario = 0
+        self.scenarios = list[BaseScenario]()
+        self.scenarios.append(BaseScenario())
+        self.current_num = 0
         self.patcher = patcher
-        self.saved_conn_cache = patcher.saved_conn_cache
-        self.to_disc_conns = patcher.to_disc_connections
+        self.conns_to_connect = patcher.conns_to_connect
+        self.conns_to_disconnect = patcher.conns_to_disconnect
 
     @property
-    def current(self) -> Optional[Scenario]:
-        if self.current_scenario == 0:
-            return None
-        return self.scenarios[self.current_scenario - 1]
+    def current(self) -> BaseScenario:
+        return self.scenarios[self.current_num]
 
     def load_yaml(self, yaml_list: list):
         if not isinstance(yaml_list, list):
@@ -182,7 +264,8 @@ class ScenariosManager:
                             and isinstance(destination, str)):
                         continue
                     
-                    scenario.playback_redirections.append((origin, destination))
+                    scenario.playback_redirections.append(
+                        (origin, destination))
             
             ct_redirections = el.get('capture_redirections')
             if isinstance(ct_redirections, list):
@@ -197,59 +280,84 @@ class ScenariosManager:
                             and isinstance(destination, str)):
                         continue
                     
-                    scenario.capture_redirections.append((origin, destination))
+                    scenario.capture_redirections.append(
+                        (origin, destination))
             
             self.scenarios.append(scenario)
 
-    def in_redirect(self, port_name: FullPortName):
-        scenario = self.current
-        if scenario is None:
-            return port_name
-        return scenario.in_redirect(port_name)
+    def to_yaml(self) -> list[dict]:
+        out_list = list[dict]()
+        for scenario in self.scenarios[1:]:
+            out_list.append(scenario.to_yaml_dict())
+        return out_list
 
-    def out_redirect(self, port_name: FullPortName):
-        scenario = self.current
-        if scenario is None:
-            return port_name
-        return scenario.out_redirect(port_name)
+    def save(self):
+        current = self.current
+        for scenario in self.scenarios:
+            if scenario is current:
+                input_ports = set([
+                    p.name for p in self.patcher.ports[PortMode.INPUT]])
+                output_ports = set([
+                    p.name for p in self.patcher.ports[PortMode.OUTPUT]])
+                
+                rm_conns = list[ConnectionStr]()
+                for svd_conn in scenario.saved_connections:
+                    if (svd_conn not in self.patcher.connections
+                            and svd_conn[0] in output_ports
+                            and svd_conn[1] in input_ports):
+                        rm_conns.append(svd_conn)
+                
+                for rm_conn in rm_conns:
+                    scenario.saved_connections.remove(rm_conn)
+                
+                for conn in self.patcher.connections:
+                    if scenario.must_stock_conn(conn):
+                        scenario.saved_connections.add(conn)
+            else:
+                scenario.save_tmp_connections()
 
     def choose(self, present_clients: set[str]) -> str:
-        scen_num = 0
-        for scenario in self.scenarios:
-            scen_num += 1
-            if scenario.rules.match(present_clients):
+        num = 0
+        for scenario in self.scenarios[1:]:
+            num += 1
+            if (isinstance(scenario, Scenario)
+                    and scenario.rules.match(present_clients)):
                 break
         else:
-            scen_num = 0
+            num = 0
 
         ret = ''
-        if scen_num != self.current_scenario:
-            if scen_num:
-                ret = (f'Switch to scenario {scen_num}: '
-                    f'{self.scenarios[scen_num - 1].name}')
-            elif self.current_scenario:
-                ret = (f'Close scenario {scen_num}: '
-                    f'{self.scenarios[scen_num - 1].name}')
+        if num != self.current_num:
+            if num:
+                ret = (f'Switch to scenario {num}: '
+                    f'{self.scenarios[num - 1].name}')
+            elif self.current_num:
+                ret = (f'Close scenario {num}: '
+                    f'{self.scenarios[num - 1].name}')
             # self.current_scenario = scen_num
-            self.load_scenario(scen_num)
+            self.load_scenario(num)
         
         return ret
 
-    def _load_current(self, scenario: Scenario, unload=False):
+    def _load(self, scenario: Scenario, unload=False):
         self.patcher.connections_in_redirection.clear()
         added_conns = list[ConnectionStr]()
         rm_conns = list[ConnectionStr]()
         
-        i = 0
-        for lis in self.patcher.disco_unregister, self.patcher.connections, self.patcher.saved_conn_cache:
-            if 'jack_mixer.Jackouillasikus:Monitor L' in [l[0] for l in lis]:
-                print(f'il est lallla unload={unload} {i}', lis)
-            i += 1
-        
-        for conn in (self.patcher.disco_unregister
+        for conn in (self.patcher.conns_rm_by_port
                      | self.patcher.connections):
-            if conn in self.saved_conn_cache:
+            if conn in self.conns_to_connect:
                 continue
+
+            if unload:
+                if scenario.must_stock_conn(conn):
+                    scenario.tmp_connections.add(conn)
+                    continue
+            else:
+                if conn in scenario.tmp_connections:
+                    self.patcher.connections_in_redirection.add(conn)
+                    # self.patcher.saved_conn_cache.add(conn)
+                    continue
 
             redirected = scenario.redirected(conn, restored=unload)
             if redirected:
@@ -257,7 +365,15 @@ class ScenariosManager:
                 for red_conn in redirected:
                     self.patcher.connections_in_redirection.add(red_conn)
         
-        for conn in self.saved_conn_cache:
+        for conn in self.conns_to_connect:
+            if unload:
+                if scenario.must_stock_conn(conn):
+                    scenario.saved_connections.add(conn)
+                    continue
+            else:
+                if conn in scenario.saved_connections:
+                    continue
+            
             redirected = scenario.redirected(conn, restored=unload)
             if not redirected:
                 continue
@@ -267,24 +383,27 @@ class ScenariosManager:
                 added_conns.append(rescon)
                 
         for conn in rm_conns:
-            self.saved_conn_cache.discard(conn)
-            self.to_disc_conns.add(conn)
+            self.conns_to_connect.discard(conn)
+            self.conns_to_disconnect.add(conn)
         for conn in added_conns:
-            self.saved_conn_cache.add(conn)
-            self.to_disc_conns.discard(conn)
+            self.conns_to_connect.add(conn)
+            self.conns_to_disconnect.discard(conn)
+        
+        if not unload:
+            scenario.tmp_connections.clear()
 
     def load_scenario(self, num: int):
         scenario = self.current
         self.patcher.glob.allow_disconnections = True
         
         print('descenarizon', scenario)
-        if scenario is not None:
-            self._load_current(scenario, unload=True)
+        if isinstance(scenario, Scenario):
+            self._load(scenario, unload=True)
         
-        self.current_scenario = num
+        self.current_num = num
         scenario = self.current
 
         print('scenarizon', scenario)
-        if scenario is not None:
-            self._load_current(scenario)
+        if isinstance(scenario, Scenario):
+            self._load(scenario)
         print('scenar loaded', scenario)
