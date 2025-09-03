@@ -602,25 +602,25 @@ class Patcher:
 
         self.scenarios.save()
 
-        for connection in self.connections:
-            if connection not in self.conns_to_connect:
-                self.saved_connections.add(connection)
+        # for connection in self.connections:
+        #     if connection not in self.conns_to_connect:
+        #         self.saved_connections.add(connection)
 
-        # delete from saved connected all connections 
-        # when there ports are present and not currently connected    
-        del_list = list[tuple[str, str]]()
+        # # delete from saved connected all connections 
+        # # when there ports are present and not currently connected    
+        # del_list = list[tuple[str, str]]()
 
-        for sv_con in self.saved_connections:
-            if (not sv_con in self.connections
-                    and sv_con[0] in [
-                        p.name for p in self.ports[PortMode.OUTPUT]]
-                    and sv_con[1] in [
-                        p.name for p in self.ports[PortMode.INPUT]]):
-                del_list.append(sv_con)
+        # for sv_con in self.saved_connections:
+        #     if (not sv_con in self.connections
+        #             and sv_con[0] in [
+        #                 p.name for p in self.ports[PortMode.OUTPUT]]
+        #             and sv_con[1] in [
+        #                 p.name for p in self.ports[PortMode.INPUT]]):
+        #         del_list.append(sv_con)
                 
-        for del_con in del_list:
-            self.saved_connections.discard(del_con)
-            self.conns_to_connect.discard(del_con)
+        # for del_con in del_list:
+        #     self.saved_connections.discard(del_con)
+        #     self.conns_to_connect.discard(del_con)
 
         # # write the XML file
         # root = ET.Element(self.engine.XML_TAG)
@@ -671,9 +671,9 @@ class Patcher:
 
         # write YAML str
         
-        saved_patterns = yaml_tools.patterns_to_dict(self.saved_patterns)
-        forbidden_patterns = yaml_tools.patterns_to_dict(
-            self.forbidden_patterns)
+        # saved_patterns = yaml_tools.patterns_to_dict(self.saved_patterns)
+        # forbidden_patterns = yaml_tools.patterns_to_dict(
+        #     self.forbidden_patterns)
         
         out_dict = self.yaml_dict
         out_dict['app'] = self.engine.XML_TAG
@@ -681,12 +681,14 @@ class Patcher:
         # out_dict['forbidden_connections'] = forbidden_patterns + [
         #     {'from': c[0], 'to': c[1]}
         #     for c in sorted(self.forbidden_connections)]
-        scenarios = self.scenarios.to_yaml()
-        if scenarios:
-            out_dict['scenarios'] = scenarios
-        out_dict['connections'] = saved_patterns + [
-            {'from': c[0], 'to': c[1]}
-            for c in sorted(self.saved_connections)]
+        self.scenarios.fill_yaml(out_dict)
+
+        # scenarios = self.scenarios.to_yaml()
+        # if scenarios:
+        #     out_dict['scenarios'] = scenarios
+        # out_dict['connections'] = saved_patterns + [
+        #     {'from': c[0], 'to': c[1]}
+        #     for c in sorted(self.saved_connections)]
         groups_dict = dict[str, dict]()
         
         for port_mode in (PortMode.INPUT, PortMode.OUTPUT):

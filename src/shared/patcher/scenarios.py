@@ -334,6 +334,12 @@ class ScenariosManager:
             out_list.append(scenario.to_yaml_dict())
         return out_list
 
+    def fill_yaml(self, yaml_dict: dict):
+        yaml_dict['scenarios'] = [
+            sc.to_yaml_dict() for sc in self.scenarios[1:]]
+        for key, value in self.scenarios[0].to_yaml_dict().items():
+            yaml_dict[key] = value
+
     def load_xml_connections(self, conns: set[ConnectionStr]):
         default = self.scenarios[0]
         default.saved_connections = conns
@@ -353,29 +359,81 @@ class ScenariosManager:
             scenario.port_depattern(self.patcher.ports, port)
 
     def save(self):
-        current = self.current
-        for scenario in self.scenarios:
-            if scenario is current:
-                input_ports = set([
-                    p.name for p in self.patcher.ports[PortMode.INPUT]])
-                output_ports = set([
-                    p.name for p in self.patcher.ports[PortMode.OUTPUT]])
+        scenario = self.current
+        default = self.scenarios[0]
+        
+        input_ports = set([
+            p.name for p in self.patcher.ports[PortMode.INPUT]])
+        output_ports = set([
+            p.name for p in self.patcher.ports[PortMode.OUTPUT]])
+        
+        if isinstance(scenario, Scenario):
+            scenario.save_tmp_connections()
+            
+            for conn in self.patcher.connections:
+                if scenario.must_stock_conn(conn):
+                    scenario.saved_connections.add(conn)
+                    continue
                 
-                rm_conns = list[ConnectionStr]()
-                for svd_conn in scenario.saved_connections:
-                    if (svd_conn not in self.patcher.connections
-                            and svd_conn[0] in output_ports
-                            and svd_conn[1] in input_ports):
-                        rm_conns.append(svd_conn)
+                redirected = scenario.redirected(conn, restored=True)
+                if redirected:
+                    for red_conn in redirected:
+                        default.saved_connections.add(red_conn)
+                else:
+                    default.saved_connections.add(conn)
+
+            rm_conns = list[ConnectionStr]()
+            
+            for svd_conn in scenario.saved_connections:
+                if (svd_conn not in self.patcher.connections
+                        and svd_conn[0] in output_ports
+                        and svd_conn[1] in input_ports):
+                    rm_conns.append(svd_conn)
+            
+            for rm_conn in rm_conns:
+                scenario.saved_connections.discard(rm_conn)
+        else:
+            for conn in self.patcher.connections:
+                default.saved_connections.add(conn)
+            
+            rm_conns = list[ConnectionStr]()
+            
+            for svd_conn in default.saved_connections:
+                if (svd_conn not in self.patcher.connections
+                        and svd_conn[0] in output_ports
+                        and svd_conn[1] in input_ports):
+                    rm_conns.append(svd_conn)
+            
+            for rm_conn in rm_conns:
+                default.saved_connections.discard(rm_conn)
+            
+        
+        
+        # for scenario in self.scenarios:
+        #     if scenario is current:
+        #         input_ports = set([
+        #             p.name for p in self.patcher.ports[PortMode.INPUT]])
+        #         output_ports = set([
+        #             p.name for p in self.patcher.ports[PortMode.OUTPUT]])
                 
-                for rm_conn in rm_conns:
-                    scenario.saved_connections.remove(rm_conn)
+        #         for conn in self.patcher.connections:
+        #             scenario.saved_connections.add(conn)
                 
-                for conn in self.patcher.connections:
-                    if scenario.must_stock_conn(conn):
-                        scenario.saved_connections.add(conn)
-            else:
-                scenario.save_tmp_connections()
+        #         rm_conns = list[ConnectionStr]()
+        #         for svd_conn in scenario.saved_connections:
+        #             if (svd_conn not in self.patcher.connections
+        #                     and svd_conn[0] in output_ports
+        #                     and svd_conn[1] in input_ports):
+        #                 rm_conns.append(svd_conn)
+                
+        #         for rm_conn in rm_conns:
+        #             scenario.saved_connections.discard(rm_conn)
+
+        #         for conn in self.patcher.connections:
+        #             if scenario.must_stock_conn(conn):
+        #                 scenario.saved_connections.add(conn)
+        #     else:
+        #         scenario.save_tmp_connections()
 
     def choose(self, present_clients: set[str]) -> str:
         num = 0
