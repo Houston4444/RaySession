@@ -327,19 +327,26 @@ class ScenariosManager:
             
         for scenario in self.scenarios:
             scenario.startup_depattern(self.patcher.ports)
-        
-        self.patcher.conns_to_connect.clear()
-        self.patcher.conns_to_disconnect.clear()
-        for conn in default.all_saved_conns:
-            self.patcher.conns_to_connect.add(conn)
-        for fbd_conn in default.all_forbidden_conns:
-            self.patcher.conns_to_disconnect.add(fbd_conn)
 
     def to_yaml(self) -> list[dict]:
         out_list = list[dict]()
         for scenario in self.scenarios[1:]:
             out_list.append(scenario.to_yaml_dict())
         return out_list
+
+    def load_xml_connections(self, conns: set[ConnectionStr]):
+        default = self.scenarios[0]
+        default.saved_connections = conns
+        default.startup_depattern(self.patcher.ports)
+
+    def open_default(self):
+        default = self.scenarios[0]
+        self.patcher.conns_to_connect.clear()
+        self.patcher.conns_to_disconnect.clear()
+        for conn in default.all_saved_conns:
+            self.patcher.conns_to_connect.add(conn)
+        for fbd_conn in default.all_forbidden_conns:
+            self.patcher.conns_to_disconnect.add(fbd_conn)
 
     def port_depattern(self, port: PortData):
         for scenario in self.scenarios:

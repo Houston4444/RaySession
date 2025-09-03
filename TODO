@@ -102,6 +102,7 @@ scenarios:
 
     client_registration: voir jack_engine_remote et alsa.
     revoir les déconnexions au démarrage (+option ou config)
+    refaire les changements de nom de client au démarrage
 
 
 

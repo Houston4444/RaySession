@@ -58,16 +58,7 @@ class Patcher:
 
         self.connections = set[ConnectionStr]()
         'current connections in the graph'
-        self.saved_connections = set[ConnectionStr]()
-        'saved connections from the config file'
-        self.saved_patterns = list[ConnectionPattern]()
-        '''Patterns written in by user in .yaml file.
-        Manage connections to restore'''
         self.conns_to_connect = set[ConnectionStr]()
-        self.forbidden_connections = set[ConnectionStr]()
-        'connections that user never want'
-        self.forbidden_patterns = list[ConnectionPattern]()
-        self.forbidden_conn_cache = set[ConnectionStr]()
         self.conns_to_disconnect = set[ConnectionStr]()
         'connections that have to be disconnected ASAP'
         self.ports_creation = dict[FullPortName, float]()
@@ -78,16 +69,6 @@ class Patcher:
         self.conns_rm_by_port = set[ConnectionStr]()
         '''all disconnections that occurred just before
         the destruction of one of their ports'''
-
-        self.connections_in_redirection = set[ConnectionStr]()
-        '''Connections not saved but with redirected connection present
-        in the previous scenario. Theses connections have to be restored
-        if possible.'''
-
-        self.priority_connections = list[PriorityConnection]()
-        self.priority_conn_up = set[ConnectionStr]()
-        self.priority_conn_down = dict[ConnectionStr, ConnectionStr]()
-        self.priority_ports = set[FullPortName]()
 
         self.scenarios = scenarios.ScenariosManager(self)
         self.switching_scenario = False
@@ -231,10 +212,6 @@ class Patcher:
         self.ports[port.mode].append(port)
 
         self.scenarios.port_depattern(port)
-        cache_tools.priority_connections_startup(
-            self.priority_connections, self.ports,
-            self.priority_conn_up, self.priority_conn_down,
-            self.priority_ports)
         self.timer_connect_check.start()
         
         # dirty checker timer is longer than timer connect
@@ -270,10 +247,6 @@ class Patcher:
                 else:
                     self.conns_rm_by_port.discard(conn)
 
-        cache_tools.priority_connections_startup(
-            self.priority_connections, self.ports,
-            self.priority_conn_up, self.priority_conn_down,
-            self.priority_ports)
         self.timer_connect_check.start()
 
     def port_renamed(
@@ -286,11 +259,6 @@ class Patcher:
                 self.scenarios.port_depattern(port)
                 self.timer_connect_check.start()
                 break
-        
-        cache_tools.priority_connections_startup(
-            self.priority_connections, self.ports,
-            self.priority_conn_up, self.priority_conn_down,
-            self.priority_ports)
 
     def connection_added(self, port_from: str, port_to: str):
         now = time.time()
@@ -396,22 +364,6 @@ class Patcher:
                             conns_cache.add((output_port.name, port.name))
                             break
 
-    def update_conns_cache(
-            self, port: Optional[PortData]=None):
-        '''Update the cache for saved and forbidden connections'''
-        if port is None:
-            self._startup_conns_cache(
-                self.conns_to_connect, self.saved_patterns)
-            self._startup_conns_cache(
-                self.forbidden_conn_cache, self.forbidden_patterns)
-
-            return
-
-        self._add_port_to_conns_cache(
-            self.conns_to_connect, self.saved_patterns, port)
-        self._add_port_to_conns_cache(
-            self.forbidden_conn_cache, self.forbidden_patterns, port)
-
     def set_all_ports_new(self, new=True):
         for port_mode in (PortMode.OUTPUT, PortMode.INPUT):
             for port in self.ports[port_mode]:
@@ -420,100 +372,12 @@ class Patcher:
     def may_make_one_connection(self):
         'can make one connection or disconnection'
         one_connected = False
-
-        # if self.switching_scenario or self.allow_disconnections:
-        #     for to_disc_con in self.conns_to_disconnect:
-        #         if to_disc_con in self.connections:
-        #             if one_connected:
-        #                 self.pending_connection = True
-        #                 return
-        #             _logger.info(f'startup disconnect ports: {to_disc_con}')
-        #             self.engine.disconnect_ports(*to_disc_con)
-        #             one_connected = True
-
-        #     self.conns_to_disconnect.clear()
-
         output_ports = set([p.name for p in self.ports[PortMode.OUTPUT]])
         input_ports = set([p.name for p in self.ports[PortMode.INPUT]])
-
-        # if self.switching_scenario:
-        #     for red_con in self.connections_in_redirection:
-        #         if (red_con not in self.connections
-        #                 and red_con not in self.forbidden_conn_cache
-        #                 and red_con[0] in output_ports
-        #                 and red_con[1] in input_ports):
-        #             if one_connected:
-        #                 self.pending_connection = True
-        #                 return
-                    
-        #             _logger.info(
-        #                 f'connect ports (scenario redirection): {red_con}')
-        #             self.engine.connect_ports(*red_con)
-        #             one_connected = True
-            
-        #     for sv_con in self.conns_to_connect:
-        #         if (sv_con not in self.connections
-        #                 and sv_con not in self.forbidden_conn_cache
-        #                 # and not sv_con in self.priority_conn_down
-        #                 and sv_con[0] in output_ports
-        #                 and sv_con[1] in input_ports):
-        #             if one_connected:
-        #                 self.pending_connection = True
-        #                 return
-                    
-        #             _logger.info(f'connect ports (scenario switch): {sv_con}')
-        #             self.engine.connect_ports(*sv_con)
-        #             one_connected = True
-            
-        #     if not one_connected:
-        #         self.switching_scenario = False
-
         new_output_ports = set(
             [p.name for p in self.ports[PortMode.OUTPUT] if p.is_new])
         new_input_ports = set(
             [p.name for p in self.ports[PortMode.INPUT] if p.is_new])
-
-        # for fbd_con in self.forbidden_conn_cache:
-        #     if (fbd_con in self.connections
-        #             and (fbd_con[0] in new_output_ports
-        #                  or fbd_con[1] in new_input_ports)):
-        #         if one_connected:
-        #             self.pending_connection = True
-        #             return
-                
-        #         _logger.info(
-        #             f'disconnect forbidden connection: {fbd_con}')
-        #         self.engine.disconnect_ports(*fbd_con)
-        #         one_connected = True
-
-
-        # for pconn_downed, pconn in self.priority_conn_down.items():
-        #     if (pconn_downed in self.connections
-        #             and (pconn[0] in self.priority_ports
-        #                  or pconn[1] in self.priority_ports)):
-        #         if one_connected:
-        #             self.glob.pending_connection = True
-        #             return
-                
-        #         _logger.info(f'disconnect ports (priorized): {pconn_downed}')
-        #         self.engine.disconnect_ports(*pconn_downed)
-        #         one_connected = True
-        
-        # for pconn in self.priority_conn_up:
-        #     if (pconn not in self.connections
-        #             and pconn not in self.forbidden_conn_cache
-        #             and (pconn[0] in self.priority_ports
-        #                  or pconn[1] in self.priority_ports)):
-        #         if one_connected:
-        #             self.glob.pending_connection = True
-        #             return
-                
-        #         _logger.info(f'connect ports (priorized): {pconn}')
-        #         self.engine.connect_ports(*pconn)
-        #         one_connected = True
-
-        # if not one_connected:
-        #     self.priority_ports.clear()
 
         for disconn in self.conns_to_disconnect:
             if (disconn in self.connections
@@ -529,8 +393,7 @@ class Patcher:
 
         for sv_con in self.conns_to_connect:
             if (sv_con not in self.connections
-                    and not sv_con in self.forbidden_conn_cache
-                    # and not sv_con in self.priority_conn_down
+                    and sv_con not in self.conns_to_disconnect
                     and sv_con[0] in output_ports
                     and sv_con[1] in input_ports
                     and (sv_con[0] in new_output_ports
@@ -551,13 +414,8 @@ class Patcher:
     def open_file(self, project_path: str, session_name: str,
                   full_client_id: str) -> tuple[Err, str]:
         _logger.info(f'Open project "{project_path}"')
-        self.saved_patterns.clear()
-        self.saved_connections.clear()
         self.conns_to_connect.clear()
-        self.forbidden_patterns.clear()
-        self.forbidden_connections.clear()
-        self.forbidden_conn_cache.clear()
-        self.priority_connections.clear()
+        self.conns_to_disconnect.clear()
 
         file_path = project_path + '.xml'
         yaml_path = project_path + '.yaml'
@@ -591,29 +449,6 @@ class Patcher:
                 for key, value in brothers.items():
                     if isinstance(key, str) and isinstance(value, str):
                         brothers_[key] = value
-            
-            conns = yaml_dict.get('connections')
-            if isinstance(conns, list):
-                yaml_tools.load_conns_from_yaml(
-                    conns, self.saved_connections, self.saved_patterns)
-            
-            forbidden_conns = yaml_dict.get('forbidden_connections')
-            if isinstance(forbidden_conns, list):
-                yaml_tools.load_conns_from_yaml(
-                    forbidden_conns, self.forbidden_connections,
-                    self.forbidden_patterns)
-
-            priority_conns = yaml_dict.get('priority_connections')
-            if isinstance(priority_conns, list):
-                for prio_dict in priority_conns:
-                    prio_conn = \
-                        yaml_tools.priority_connection_from_dict(prio_dict)
-                    if prio_conn is not None:
-                        self.priority_connections.append(prio_conn)
-
-            scenars = yaml_dict.get('scenarios')
-            if isinstance(scenars, list):
-                self.scenarios._load_yaml_scenarios(scenars)
 
             graph = yaml_dict.get('graph')
             if isinstance(graph, dict):
@@ -636,23 +471,27 @@ class Patcher:
                                 graph_ports[PortMode.OUTPUT].append(
                                     f'{group_name}:{out_port}')
             
+            self.scenarios.load_yaml(yaml_dict)
+            
             if self.monitor_states_done is MonitorStates.DONE:
-                rm_list = list[tuple[FullPortName, FullPortName]]()
-                for port_from, port_to in self.saved_connections:
-                    gp_from = port_from.partition(':')[0]
-                    gp_to = port_to.partition(':')[0]
-                    for nsm_name, jack_name in brothers_.items():
-                        if (jack_name in (gp_from, gp_to)
-                                and not nsm_name in self.brothers_dict):
-                            rm_list.append((port_from, port_to))
-                            _logger.info(
-                                f"{debug_conn_str((port_from, port_to))}"
-                                " is removed "
-                                f"because NSM client {nsm_name}"
-                                " has been removed")
+                pass
+                # TODO reput this
+                # rm_list = list[tuple[FullPortName, FullPortName]]()
+                # for port_from, port_to in self.saved_connections:
+                #     gp_from = port_from.partition(':')[0]
+                #     gp_to = port_to.partition(':')[0]
+                #     for nsm_name, jack_name in brothers_.items():
+                #         if (jack_name in (gp_from, gp_to)
+                #                 and not nsm_name in self.brothers_dict):
+                #             rm_list.append((port_from, port_to))
+                #             _logger.info(
+                #                 f"{debug_conn_str((port_from, port_to))}"
+                #                 " is removed "
+                #                 f"because NSM client {nsm_name}"
+                #                 " has been removed")
                 
-                for rm_conn in rm_list:
-                    self.saved_connections.discard(rm_conn)
+                # for rm_conn in rm_list:
+                #     self.saved_connections.discard(rm_conn)
             
             self.yaml_dict = yaml_dict
 
@@ -672,6 +511,8 @@ class Patcher:
                 _logger.error(f'{file_path} is not a {XML_TAG} .xml file')
                 return (Err.BAD_PROJECT,
                         f'{file_path} is not a {XML_TAG} .xml file')
+            
+            connections = set[ConnectionStr]()
             
             for child in root:
                 if child.tag == 'connection':
@@ -710,7 +551,7 @@ class Patcher:
                                 " has been removed")
                             continue
                         
-                    self.saved_connections.add((port_from, port_to))
+                    connections.add((port_from, port_to))
             
                 elif child.tag == 'graph':
                     for gp in child:
@@ -724,21 +565,14 @@ class Patcher:
                             elif pt.tag == 'in_port':
                                 graph_ports[PortMode.INPUT].append(
                                     ':'.join((gp_name, pt.attrib['name'])))
-
-        for conn in self.saved_connections:
-            self.conns_to_connect.add(conn)
-        for conn in self.forbidden_connections:
-            self.forbidden_conn_cache.add(conn)
-        # self.update_conns_cache()
-        cache_tools.priority_connections_startup(
-            self.priority_connections, self.ports,
-            self.priority_conn_up, self.priority_conn_down,
-            self.priority_ports)
+            
+            self.scenarios.load_xml_connections(connections)
 
         if has_file:
             # re-declare all ports as new in case we are switching session
             self.set_all_ports_new()
-            self.conns_to_disconnect.clear()
+            # self.conns_to_disconnect.clear()
+
             # disconnect connections not existing at last save
             # if their both ports were present in the graph.
             for conn in self.connections:
@@ -750,6 +584,7 @@ class Patcher:
             if self.open_done_once:
                 self.allow_disconnections = True
 
+            self.scenarios.open_default()
             ret = self.scenarios.choose(self.present_clients)
             if ret:
                 self.nsm_server.send_message(2, ret)
@@ -900,21 +735,21 @@ class Patcher:
                 rm_conns = list[tuple[str, str]]()
                 new_conns = list[tuple[str, str]]()
 
-                for conn in self.saved_connections:
-                    out_port, in_port = conn
-                    if (port_belongs_to_client(out_port, ex_jack_name)
-                            or port_belongs_to_client(in_port, ex_jack_name)):
-                        rm_conns.append(conn)
-                        new_conns.append(
-                            (port_name_client_replaced(
-                                out_port, ex_jack_name, jack_name),
-                            port_name_client_replaced(
-                                in_port, ex_jack_name, jack_name)))
+                # for conn in self.saved_connections:
+                #     out_port, in_port = conn
+                #     if (port_belongs_to_client(out_port, ex_jack_name)
+                #             or port_belongs_to_client(in_port, ex_jack_name)):
+                #         rm_conns.append(conn)
+                #         new_conns.append(
+                #             (port_name_client_replaced(
+                #                 out_port, ex_jack_name, jack_name),
+                #             port_name_client_replaced(
+                #                 in_port, ex_jack_name, jack_name)))
 
-                for rm_conn in rm_conns:
-                    self.saved_connections.discard(rm_conn)
-                for new_conn in new_conns:
-                    self.saved_connections.add(new_conn)
+                # for rm_conn in rm_conns:
+                #     self.saved_connections.discard(rm_conn)
+                # for new_conn in new_conns:
+                #     self.saved_connections.add(new_conn)
                 self.client_changing_id = None
             
         else:
@@ -939,14 +774,14 @@ class Patcher:
             # remove all saved connections from and to its client
             conns_to_unsave = list[tuple[str, str]]()
                 
-            for conn in self.saved_connections:
-                out_port, in_port = conn
-                if (port_belongs_to_client(out_port, jack_client_name)
-                        or port_belongs_to_client(in_port, jack_client_name)):
-                    conns_to_unsave.append(conn)
+            # for conn in self.saved_connections:
+            #     out_port, in_port = conn
+            #     if (port_belongs_to_client(out_port, jack_client_name)
+            #             or port_belongs_to_client(in_port, jack_client_name)):
+            #         conns_to_unsave.append(conn)
             
-            for conn in conns_to_unsave:
-                self.saved_connections.discard(conn)
+            # for conn in conns_to_unsave:
+            #     self.saved_connections.discard(conn)
 
         elif event.startswith('id_changed_to:'):
             if client_id in self.brothers_dict.keys():
