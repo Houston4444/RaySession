@@ -15,7 +15,6 @@ from nsm_client import NsmServer, NsmCallback, Err
 import ray
 
 from .bases import (
-    Glob,
     NsmClientName,
     JackClientBaseName,
     FullPortName,
@@ -39,11 +38,20 @@ class Patcher:
     def __init__(
             self, engine: ProtoEngine, nsm_server: NsmServer,
             logger: logging.Logger):
-        self.glob = Glob()
         self.engine = engine
         self._logger = logger
         
         self.project_path = ''
+        'NSM client project path'
+        self.is_dirty = False
+        'is dirty for NSM'
+        self.dirty_state_sent = False
+        self.monitor_states_done = MonitorStates.NEVER_DONE
+        self.client_changing_id: Optional[tuple[str, str]] = None
+        self.pending_connection = False
+        self.open_done_once = False
+        self.allow_disconnections = False
+        self.terminate = False
         
         self.brothers_dict = dict[NsmClientName, JackClientBaseName]()
         self.present_clients = set[str]()
@@ -116,7 +124,7 @@ class Patcher:
         jack_stopped = False
 
         while True:
-            if self.glob.terminate:
+            if self.terminate:
                 break
 
             self.nsm_server.recv(50)
@@ -153,26 +161,26 @@ class Patcher:
         self.engine.quit()
 
     def stop(self, *args):
-        self.glob.terminate = True
+        self.terminate = True
 
     def set_dirty_clean(self):
-        self.glob.is_dirty = False
+        self.is_dirty = False
         self.nsm_server.send_dirty_state(False)
 
     def timer_dirty_finished(self):
-        if self.glob.is_dirty:
+        if self.is_dirty:
             return
 
-        if self.glob.pending_connection:
+        if self.pending_connection:
             self.timer_dirty_check.start()
             return
 
         if self.is_dirty_now():
-            self.glob.is_dirty = True
+            self.is_dirty = True
             self.nsm_server.send_dirty_state(True)
-        elif not self.glob.dirty_state_sent:
+        elif not self.dirty_state_sent:
             self.nsm_server.send_dirty_state(False)
-            self.glob.dirty_state_sent = True
+            self.dirty_state_sent = True
 
     def is_dirty_now(self) -> bool:
         for conn in self.connections:
@@ -292,7 +300,7 @@ class Patcher:
         self.connections.add((port_from, port_to))
         self.conns_rm_by_port.discard((port_from, port_to))
 
-        if self.glob.pending_connection or in_port_new or out_port_new:
+        if self.pending_connection or in_port_new or out_port_new:
             if out_port_new:
                 for jport in self.ports[PortMode.OUTPUT]:
                     if jport.name == port_from:
@@ -313,7 +321,7 @@ class Patcher:
         self.connections.discard((port_str_a, port_str_b))
         self.disconnections_time[(port_str_a, port_str_b)] = time.time()
 
-        if self.glob.pending_connection:
+        if self.pending_connection:
             self.may_make_one_connection()
 
         self.timer_dirty_check.start()
@@ -408,11 +416,11 @@ class Patcher:
         'can make one connection or disconnection'
         one_connected = False
 
-        if self.switching_scenario or self.glob.allow_disconnections:
+        if self.switching_scenario or self.allow_disconnections:
             for to_disc_con in self.conns_to_disconnect:
                 if to_disc_con in self.connections:
                     if one_connected:
-                        self.glob.pending_connection = True
+                        self.pending_connection = True
                         return
                     _logger.info(f'startup disconnect ports: {to_disc_con}')
                     self.engine.disconnect_ports(*to_disc_con)
@@ -430,7 +438,7 @@ class Patcher:
                         and red_con[0] in output_ports
                         and red_con[1] in input_ports):
                     if one_connected:
-                        self.glob.pending_connection = True
+                        self.pending_connection = True
                         return
                     
                     _logger.info(
@@ -445,7 +453,7 @@ class Patcher:
                         and sv_con[0] in output_ports
                         and sv_con[1] in input_ports):
                     if one_connected:
-                        self.glob.pending_connection = True
+                        self.pending_connection = True
                         return
                     
                     _logger.info(f'connect ports (scenario switch): {sv_con}')
@@ -465,7 +473,7 @@ class Patcher:
                     and (fbd_con[0] in new_output_ports
                          or fbd_con[1] in new_input_ports)):
                 if one_connected:
-                    self.glob.pending_connection = True
+                    self.pending_connection = True
                     return
                 
                 _logger.info(
@@ -511,14 +519,14 @@ class Patcher:
                     and (sv_con[0] in new_output_ports
                          or sv_con[1] in new_input_ports)):
                 if one_connected:
-                    self.glob.pending_connection = True
+                    self.pending_connection = True
                     return
 
                 _logger.info(f'connect ports: {sv_con}')
                 self.engine.connect_ports(*sv_con)
                 one_connected = True
 
-        self.glob.pending_connection = False
+        self.pending_connection = False
 
         for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
             for port in self.ports[port_mode]:
@@ -539,8 +547,7 @@ class Patcher:
 
         file_path = project_path + '.xml'
         yaml_path = project_path + '.yaml'
-        # self.project_path = project_path
-        self.glob.file_path = file_path
+        self.project_path = project_path
 
         XML_TAG = self.engine.XML_TAG
 
@@ -615,7 +622,7 @@ class Patcher:
                                 graph_ports[PortMode.OUTPUT].append(
                                     f'{group_name}:{out_port}')
             
-            if self.glob.monitor_states_done is MonitorStates.DONE:
+            if self.monitor_states_done is MonitorStates.DONE:
                 rm_list = list[tuple[FullPortName, FullPortName]]()
                 for port_from, port_to in self.saved_connections:
                     gp_from = port_from.partition(':')[0]
@@ -669,7 +676,7 @@ class Patcher:
 
                     # ignore connection if NSM client
                     # has been definitely removed
-                    if self.glob.monitor_states_done is MonitorStates.DONE:
+                    if self.monitor_states_done is MonitorStates.DONE:
                         if (nsm_client_from 
                                 and nsm_client_from
                                     not in self.brothers_dict.keys()):
@@ -729,8 +736,8 @@ class Patcher:
                         and conn[1] in graph_ports[PortMode.INPUT]):
                     self.conns_to_disconnect.add(conn)
 
-            if self.glob.open_done_once:
-                self.glob.allow_disconnections = True
+            if self.open_done_once:
+                self.allow_disconnections = True
 
             ret = self.scenarios.choose(self.present_clients)
             if ret:
@@ -738,13 +745,13 @@ class Patcher:
 
             self.may_make_one_connection()
 
-        self.glob.is_dirty = False
-        self.glob.open_done_once = True
+        self.is_dirty = False
+        self.open_done_once = True
         self.timer_dirty_check.start()
         return (Err.OK, '')
 
     def save_file(self):
-        if not self.glob.file_path:
+        if not self.project_path:
             return
 
         self.scenarios.save()
@@ -851,7 +858,8 @@ class Patcher:
         out_dict['graph'] = groups_dict
         out_dict['nsm_brothers'] = self.brothers_dict.copy()
         
-        yaml_file = self.glob.file_path.rpartition('.')[0] + '.yaml'
+        yaml_file = f'{self.project_path}.yaml'
+        
         try:
             with open(yaml_file, 'w') as f:
                 f.write(yaml.dump(out_dict, sort_keys=False))
@@ -864,20 +872,20 @@ class Patcher:
 
     def monitor_client_state(
             self, client_id: str, jack_name: str, is_started: int):
-        if self.glob.monitor_states_done is not MonitorStates.UPDATING:
+        if self.monitor_states_done is not MonitorStates.UPDATING:
             self.brothers_dict.clear()
 
-        self.glob.monitor_states_done = MonitorStates.UPDATING
+        self.monitor_states_done = MonitorStates.UPDATING
         
         if client_id:
             self.brothers_dict[client_id] = jack_name
             
-            if (self.glob.client_changing_id is not None
-                    and self.glob.client_changing_id[1] == client_id):
+            if (self.client_changing_id is not None
+                    and self.client_changing_id[1] == client_id):
                 # we are here only in the case a client id was just changed
                 # we modify the saved connections in consequence.
                 # Note that this client can't be started.
-                ex_jack_name = self.glob.client_changing_id[0]
+                ex_jack_name = self.client_changing_id[0]
                 rm_conns = list[tuple[str, str]]()
                 new_conns = list[tuple[str, str]]()
 
@@ -896,7 +904,7 @@ class Patcher:
                     self.saved_connections.discard(rm_conn)
                 for new_conn in new_conns:
                     self.saved_connections.add(new_conn)
-                self.glob.client_changing_id = None
+                self.client_changing_id = None
             
         else:
             n_clients = is_started
@@ -908,7 +916,7 @@ class Patcher:
                 # nsm_server.send_monitor_reset()
                 return
 
-            self.glob.monitor_states_done = MonitorStates.DONE
+            self.monitor_states_done = MonitorStates.DONE
 
     def monitor_client_event(self, client_id: str, event: str):
         if event == 'removed':
@@ -931,7 +939,7 @@ class Patcher:
 
         elif event.startswith('id_changed_to:'):
             if client_id in self.brothers_dict.keys():
-                self.glob.client_changing_id = (
+                self.client_changing_id = (
                     self.brothers_dict[client_id], event.partition(':')[2])
             self.nsm_server.send_monitor_reset()
 
@@ -940,5 +948,5 @@ class Patcher:
         self.brothers_dict[client_id] = jack_name
 
     def session_is_loaded(self):
-        self.glob.allow_disconnections = True
+        self.allow_disconnections = True
         self.may_make_one_connection()

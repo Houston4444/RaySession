@@ -108,30 +108,6 @@ class EventHandler:
     def new_events(self) -> Iterator[tuple[Event, tuple]]:
         while self._event_queue.qsize():
             yield self._event_queue.get()
-
-
-class Glob:
-    file_path = ''
-    is_dirty = False
-    dirty_state_sent = False
-    pending_connection = False
-    open_done_once = False
-    allow_disconnections = False
-    terminate = False
-    monitor_states_done = MonitorStates.NEVER_DONE
-    client_changing_id: Optional[tuple[str, str]] = None
-    
-    @classmethod
-    def reset(cls):
-        cls.file_path = ''
-        cls.is_dirty = False
-        cls.dirty_state_sent = False
-        cls.pending_connection = False
-        cls.open_done_once = False
-        cls.allow_disconnections = False
-        cls.terminate = False
-        cls.monitor_states_done = MonitorStates.NEVER_DONE
-        cls.client_changing_id = None
     
 
 def b2str(src_bytes: bytes) -> str:

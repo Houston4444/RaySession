@@ -394,7 +394,7 @@ class ScenariosManager:
 
     def load_scenario(self, num: int):
         scenario = self.current
-        self.patcher.glob.allow_disconnections = True
+        self.patcher.allow_disconnections = True
         
         print('descenarizon', scenario)
         if isinstance(scenario, Scenario):
