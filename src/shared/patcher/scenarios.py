@@ -55,7 +55,7 @@ class BaseScenario:
     def must_stock_conn(self, conn: ConnectionStr) -> Literal[False]:
         return False
     
-    def redirected(self, conn: ConnectionStr,
+    def redirecteds(self, conn: ConnectionStr,
                    restored=False) -> list[ConnectionStr]:
         return []
     
@@ -122,7 +122,7 @@ class Scenario(BaseScenario):
                 return True
         return False
 
-    def redirected(self, conn: ConnectionStr,
+    def redirecteds(self, conn: ConnectionStr,
                    restored=False) -> list[ConnectionStr]:
         '''return all connections that could be a redirection of conn.'''
         port_from, port_to = conn
@@ -382,7 +382,7 @@ class ScenariosManager:
                     scenario.saved_connections.add(conn)
                     continue
                 
-                redirected = scenario.redirected(conn, restored=True)
+                redirected = scenario.redirecteds(conn, restored=True)
                 if redirected:
                     for red_conn in redirected:
                         default.saved_connections.add(red_conn)
@@ -436,28 +436,31 @@ class ScenariosManager:
                     scenario.tmp_connections.add(conn)
                     continue
             else:
-                if conn in scenario.tmp_connections|scenario.all_saved_conns:
+                if (conn in scenario.tmp_connections
+                        or conn in scenario.all_saved_conns):
                     continue
 
-            redirected = scenario.redirected(conn, restored=unload)
-            if redirected:
+            redirecteds = scenario.redirecteds(conn, restored=unload)
+            if redirecteds:
                 conns_to_disconnect.add(conn)
-                for red_conn in redirected:
+                for red_conn in redirecteds:
                     conns_to_connect.add(red_conn)
         
-        for conn in self.scenarios[0].all_saved_conns:
-            redirected = scenario.redirected(conn, restored=unload)
-            if redirected:
-                conns_to_disconnect.add(conn)
-                for red_conn in redirected:
-                    conns_to_connect.add(red_conn)
+        for conn in self.scenarios[0].all_forbidden_conns:
+            redirecteds = scenario.redirecteds(conn, restored=unload)
+            if redirecteds:
+                for red_conn in redirecteds:
+                    conns_to_disconnect.add(red_conn)
             else:
-                conns_to_connect.add(conn)
-                
+                conns_to_disconnect.add(conn)
+        
         if not unload:
             for conn in scenario.tmp_connections | scenario.all_saved_conns:
                 conns_to_connect.add(conn)
             scenario.tmp_connections.clear()
+            
+            for fbd_conn in scenario.all_forbidden_conns:
+                conns_to_disconnect.add(fbd_conn)
 
     def load_scenario(self, num: int):
         scenario = self.current
