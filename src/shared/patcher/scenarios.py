@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from patshared import PortMode
 
@@ -39,63 +39,67 @@ class ScenarioRules:
 
 
 class BaseScenario:
+    '''Mother Class of Scenario. Is used by the default scenario.
+    Does not contains rules and redirections'''
     def __init__(self):
         self.name = 'Default'
-        self.forbidden_connections = set[ConnectionStr]()
         self.forbidden_patterns = list[ConnectionPattern]()
-        self.all_forbidden_conns = set[ConnectionStr]()
+        '''Patterns affecting forbidden connections in this scenario.
+        Never change since another project is loaded'''
+        self.forbidden_conns = set[ConnectionStr]()
+        '''Connections forbidden in this scenario.
+        Can be modified each time a port is added, regarding the
+        forbidden patterns'''
         
-        self.saved_connections = set[ConnectionStr]()
         self.saved_patterns = list[ConnectionPattern]()
-        self.all_saved_conns = set[ConnectionStr]()
+        '''Patterns affecting saved connections in this scenario.
+        Never change since another project is loaded'''
+        self.saved_conns = set[ConnectionStr]()
+        '''Connections saved in this scenario. Saved state here does not
+        reflects the project file but the current save state.'''
         
     def __repr__(self) -> str:
         return 'DefaultScenario'
 
-    def must_stock_conn(self, conn: ConnectionStr) -> Literal[False]:
+    def must_stock_conn(self, conn: ConnectionStr) -> bool:
         return False
     
     def redirecteds(self, conn: ConnectionStr,
-                   restored=False) -> list[ConnectionStr]:
+                    restored=False) -> list[ConnectionStr]:
+        '''return all connections that could be a redirection of conn.'''
         return []
+    
+    def projections(self, conn: ConnectionStr,
+                    restored=False) -> list[ConnectionStr]:
+        '''return all connections that could be a redirection of conn,
+        or a list containing only conn if no redirection was found.'''
+        return [conn]
     
     def to_yaml_dict(self) -> dict:
         out_d = {}
-        forbidden_conns = (
-            yaml_tools.patterns_to_dict(self.forbidden_patterns)
-            +  [{'from': c[0], 'to': c[1]}
-                for c in sorted(self.forbidden_connections)])
+        forbidden_conns = depattern.to_yaml_list(
+            self.forbidden_patterns, self.forbidden_conns)
         if forbidden_conns:
             out_d['forbidden_connections'] = forbidden_conns
-        
-        saved_conns = (
-            yaml_tools.patterns_to_dict(self.saved_patterns)
-            +  [{'from': c[0], 'to': c[1]}
-                for c in sorted(self.saved_connections)])
+        saved_conns = depattern.to_yaml_list(
+            self.saved_patterns, self.saved_conns)        
         if saved_conns:
             out_d['connections'] = saved_conns
         
         return out_d
     
-    def save_tmp_connections(self):
-        ...
-    
     def startup_depattern(self, ports: dict[PortMode, list[PortData]]):
-        for conn in self.saved_connections:
-            self.all_saved_conns.add(conn)
-        for conn in self.forbidden_connections:
-            self.all_forbidden_conns.add(conn)
         depattern.startup(
-            ports, self.all_saved_conns, self.saved_patterns)
+            ports, self.saved_conns, self.saved_patterns)
         depattern.startup(
-            ports, self.all_forbidden_conns, self.forbidden_patterns)
+            ports, self.forbidden_conns, self.forbidden_patterns)
         
     def port_depattern(
             self, ports: dict[PortMode, list[PortData]], port: PortData):
         depattern.add_port(
-            ports, self.all_saved_conns, self.saved_patterns, port)
+            ports, self.saved_conns, self.saved_patterns, port)
         depattern.add_port(
-            ports, self.all_forbidden_conns, self.forbidden_patterns, port)
+            ports, self.forbidden_conns, self.forbidden_patterns, port)
         
 
 class Scenario(BaseScenario):
@@ -105,7 +109,6 @@ class Scenario(BaseScenario):
         self.rules = rules
         self.playback_redirections = list[ConnectionStr]()
         self.capture_redirections = list[ConnectionStr]()
-        self.tmp_connections = set[ConnectionStr]()
 
     def __repr__(self) -> str:
         return f'Scenario({self.name})'
@@ -123,8 +126,7 @@ class Scenario(BaseScenario):
         return False
 
     def redirecteds(self, conn: ConnectionStr,
-                   restored=False) -> list[ConnectionStr]:
-        '''return all connections that could be a redirection of conn.'''
+                    restored=False) -> list[ConnectionStr]:
         port_from, port_to = conn
         if restored:
             orig, dest = 1, 0
@@ -154,22 +156,25 @@ class Scenario(BaseScenario):
                 ret.append((port_from, r_in))
         return ret
     
+    def projections(self, conn: ConnectionStr,
+                    restored=False) -> list[ConnectionStr]:
+        ret = self.redirecteds(conn, restored)
+        if ret:
+            return ret
+        return [conn]    
+
     def to_yaml_dict(self) -> dict:
         out_d = {}
         out_d['name'] = self.name
         out_d['rules'] = self.rules.to_yaml_dict()
         
-        forbidden_conns = (
-            yaml_tools.patterns_to_dict(self.forbidden_patterns)
-            +  [{'from': c[0], 'to': c[1]}
-                for c in sorted(self.forbidden_connections)])
+        forbidden_conns = depattern.to_yaml_list(
+            self.forbidden_patterns, self.forbidden_conns)
         if forbidden_conns:
             out_d['forbidden_connections'] = forbidden_conns
-        
-        saved_conns = (
-            yaml_tools.patterns_to_dict(self.saved_patterns)
-            +  [{'from': c[0], 'to': c[1]}
-                for c in sorted(self.saved_connections)])
+
+        saved_conns = depattern.to_yaml_list(
+            self.saved_patterns, self.saved_conns)        
         if saved_conns:
             out_d['connections'] = saved_conns
         
@@ -184,12 +189,6 @@ class Scenario(BaseScenario):
                 for ct in self.capture_redirections]
         
         return out_d
-    
-    def save_tmp_connections(self):
-        for conn in self.tmp_connections:
-            self.saved_connections.add(conn)
-            self.all_saved_conns.add(conn)
-        self.tmp_connections.clear()
 
 
 class ScenariosManager:
@@ -264,13 +263,13 @@ class ScenariosManager:
             conns = el.get('connections')
             if isinstance(conns, list):
                 yaml_tools.load_conns_from_yaml(
-                    conns, scenario.saved_connections,
+                    conns, scenario.saved_conns,
                     scenario.saved_patterns)
 
             fbd_conns = el.get('forbidden_connections')
             if isinstance(fbd_conns, list):
                 yaml_tools.load_conns_from_yaml(
-                    fbd_conns, scenario.forbidden_connections,
+                    fbd_conns, scenario.forbidden_conns,
                     scenario.forbidden_patterns)
             
             pb_redirections = el.get('playback_redirections')
@@ -312,12 +311,12 @@ class ScenariosManager:
         default = self.scenarios[0]
         if isinstance(conns, list):
             yaml_tools.load_conns_from_yaml(
-                conns, default.saved_connections, default.saved_patterns)
+                conns, default.saved_conns, default.saved_patterns)
         
         forbidden_conns = yaml_dict.get('forbidden_connections')
         if isinstance(forbidden_conns, list):
             yaml_tools.load_conns_from_yaml(
-                forbidden_conns, default.forbidden_connections,
+                forbidden_conns, default.forbidden_conns,
                 default.forbidden_patterns)
         
         scenars = yaml_dict.get('scenarios')
@@ -335,16 +334,16 @@ class ScenariosManager:
 
     def load_xml_connections(self, conns: set[ConnectionStr]):
         default = self.scenarios[0]
-        default.saved_connections = conns
+        default.saved_conns = conns
         default.startup_depattern(self.patcher.ports)
 
     def open_default(self):
         default = self.scenarios[0]
         self.patcher.conns_to_connect.clear()
         self.patcher.conns_to_disconnect.clear()
-        for conn in default.all_saved_conns:
+        for conn in default.saved_conns:
             self.patcher.conns_to_connect.add(conn)
-        for fbd_conn in default.all_forbidden_conns:
+        for fbd_conn in default.forbidden_conns:
             self.patcher.conns_to_disconnect.add(fbd_conn)
 
     def port_depattern(self, port: PortData):
@@ -362,43 +361,38 @@ class ScenariosManager:
         
         if scenario is default:
             for conn in self.patcher.connections:
-                default.saved_connections.add(conn)
+                default.saved_conns.add(conn)
             
             rm_conns = list[ConnectionStr]()
-            
-            for svd_conn in default.saved_connections:
+            for svd_conn in default.saved_conns:
                 if (svd_conn not in self.patcher.connections
                         and svd_conn[0] in output_ports
                         and svd_conn[1] in input_ports):
                     rm_conns.append(svd_conn)
             
             for rm_conn in rm_conns:
-                default.saved_connections.discard(rm_conn)
+                default.saved_conns.discard(rm_conn)
         else:
-            scenario.save_tmp_connections()
-
             for conn in self.patcher.connections:
                 if scenario.must_stock_conn(conn):
-                    scenario.saved_connections.add(conn)
+                    scenario.saved_conns.add(conn)
                     continue
                 
                 redirected = scenario.redirecteds(conn, restored=True)
                 if redirected:
                     for red_conn in redirected:
-                        default.saved_connections.add(red_conn)
+                        default.saved_conns.add(red_conn)
                 else:
-                    default.saved_connections.add(conn)
+                    default.saved_conns.add(conn)
 
             rm_conns = list[ConnectionStr]()
-            
-            for svd_conn in scenario.saved_connections:
+            for svd_conn in scenario.saved_conns:
                 if (svd_conn not in self.patcher.connections
                         and svd_conn[0] in output_ports
                         and svd_conn[1] in input_ports):
                     rm_conns.append(svd_conn)
-            
             for rm_conn in rm_conns:
-                scenario.saved_connections.discard(rm_conn)
+                scenario.saved_conns.discard(rm_conn)
 
     def choose(self, present_clients: set[str]) -> str:
         num = 0
@@ -423,59 +417,127 @@ class ScenariosManager:
         
         return ret
 
-    def _load(self, scenario: Scenario, unload=False):
+    def load_scenario(self, num: int):
+        previous_scn = self.current
+        self.current_num = num
+        next_scn = self.current
+        default_scn = self.scenarios[0]
+        
+        print(f'switch scenario from {previous_scn} to {next_scn}')
+        
         conns_to_connect = self.patcher.conns_to_connect
         conns_to_disconnect = self.patcher.conns_to_disconnect
         conns_to_connect.clear()
         conns_to_disconnect.clear()
+        connections = self.patcher.connections | self.patcher.conns_rm_by_port
+        input_ports = set(
+            [p.name for p in self.patcher.ports[PortMode.INPUT]])
+        output_ports = set(
+            [p.name for p in self.patcher.ports[PortMode.OUTPUT]])
+        all_conns = set[ConnectionStr]()
+        projection_conns = set[ConnectionStr]()
         
-        for conn in (self.patcher.conns_rm_by_port
-                     | self.patcher.connections):
-            if unload:
-                if scenario.must_stock_conn(conn):
-                    scenario.tmp_connections.add(conn)
-                    continue
-            else:
-                if (conn in scenario.tmp_connections
-                        or conn in scenario.all_saved_conns):
-                    continue
+        # FIXME: it can causes problems in case of fast scenario change,
+        # when scenario change twice while patcher did not have the time
+        # to change the connections setup.
+        # TODO: scenario switch attr in patcher,
+        # save the entire graph and connections before the switch starts
+        
+        # remove from previous_scn saved conns not connected anymore
+        rm_conns = list[ConnectionStr]()
+        if previous_scn is default_scn:
+            for svd_conn in default_scn.saved_conns:
+                if (svd_conn not in connections
+                        and svd_conn[0] in output_ports
+                        and svd_conn[1] in input_ports):
+                    rm_conns.append(svd_conn)
+            for rm_conn in rm_conns:
+                default_scn.saved_conns.discard(rm_conn)
+        else:
+            for svd_conn in previous_scn.saved_conns:
+                if (svd_conn not in connections
+                        and svd_conn[0] in output_ports
+                        and svd_conn[1] in input_ports):
+                    rm_conns.append(svd_conn)
+            for rm_conn in rm_conns:
+                previous_scn.saved_conns.discard(rm_conn)
 
-            redirecteds = scenario.redirecteds(conn, restored=unload)
-            if redirecteds:
-                conns_to_disconnect.add(conn)
-                for red_conn in redirecteds:
-                    conns_to_connect.add(red_conn)
+            # remove from default_scn saved conns without projection
+            # connected anymore.
+            # (except if projections are forbidden in the previous_scn).
+            rm_conns.clear()
+            for svd_conn in default_scn.saved_conns:
+                if previous_scn.must_stock_conn(svd_conn):
+                    continue
+                
+                for proj_conn in previous_scn.projections(svd_conn):
+                    if (proj_conn in connections
+                        or proj_conn[0] not in output_ports
+                        or proj_conn[1] not in input_ports
+                        or proj_conn in previous_scn.forbidden_conns):
+                        break
+                else:
+                    rm_conns.append(svd_conn)
+                    
+            for rm_conn in rm_conns:
+                default_scn.saved_conns.discard(rm_conn)
         
-        for conn in self.scenarios[0].all_forbidden_conns:
-            redirecteds = scenario.redirecteds(conn, restored=unload)
-            if redirecteds:
-                for red_conn in redirecteds:
-                    conns_to_disconnect.add(red_conn)
-            else:
-                conns_to_disconnect.add(conn)
+        # stock all possible connections we want to treat
+        all_conns = (connections
+                     | default_scn.saved_conns
+                     | default_scn.forbidden_conns)
+        if isinstance(previous_scn, Scenario):
+            all_conns |= (previous_scn.saved_conns
+                          | previous_scn.forbidden_conns)
+        if isinstance(next_scn, Scenario):
+            all_conns |= (next_scn.saved_conns
+                          | next_scn.forbidden_conns)
         
-        if not unload:
-            for conn in scenario.tmp_connections | scenario.all_saved_conns:
-                conns_to_connect.add(conn)
-            scenario.tmp_connections.clear()
+        # save projections of previous_scn in default_scn
+        # and unprojectable conns in previous_scn
+        if isinstance(previous_scn, Scenario):
+            for conn in connections:
+                if previous_scn.must_stock_conn(conn):
+                    previous_scn.saved_conns.add(conn)
+                    continue
+                
+                for df_proj in previous_scn.projections(conn, restored=True):
+                    default_scn.saved_conns.add(df_proj)
+        else:
+            for conn in connections:
+                default_scn.saved_conns.add(conn)
+
+        # set projection connections
+        if isinstance(next_scn, Scenario):
+            for conn in default_scn.saved_conns:
+                if conn in next_scn.saved_conns:
+                    continue
+                
+                for proj_conn in next_scn.projections(conn):
+                    projection_conns.add(proj_conn)
+        else:
+            for conn in default_scn.saved_conns:
+                projection_conns.add(conn)
+        
+        all_conns |= projection_conns
+        
+        for conn in all_conns:
+            if conn in next_scn.forbidden_conns:
+                conns_to_disconnect.add(conn)
+                continue
             
-            for fbd_conn in scenario.all_forbidden_conns:
-                conns_to_disconnect.add(fbd_conn)
+            if conn in next_scn.saved_conns:
+                conns_to_connect.add(conn)
+                continue
+            
+            if conn in default_scn.forbidden_conns:
+                conns_to_disconnect.add(conn)
+                continue
+            
+            if conn in projection_conns:
+                conns_to_connect.add(conn)
+                continue            
+            
+            conns_to_disconnect.add(conn)
 
-    def load_scenario(self, num: int):
-        scenario = self.current
-        # self.patcher.allow_disconnections = True
-        
-        print('descenarizon', scenario)
-        if isinstance(scenario, Scenario):
-            self._load(scenario, unload=True)
-        
-        self.current_num = num
-        scenario = self.current
-
-        print('scenarizon', scenario)
-        if isinstance(scenario, Scenario):
-            self._load(scenario)
-        print('scenar loaded', scenario)
-        
         self.patcher.set_all_ports_new()

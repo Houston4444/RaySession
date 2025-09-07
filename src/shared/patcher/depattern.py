@@ -2,7 +2,13 @@ import re
 
 from patshared import PortMode
 
-from .bases import ConnectionStr, ConnectionPattern, PortData
+from .bases import ConnectionStr, ConnectionPattern, PatternOrName, PortData
+
+
+def str_match(a: PatternOrName, b: str) -> bool:
+    if isinstance(a, str):
+        return a == b
+    return bool(a.match(b))
 
 def startup(
         ports: dict[PortMode, list[PortData]],
@@ -80,3 +86,36 @@ def add_port(
                     if from_ == output_port.name:
                         conns_cache.add((output_port.name, port.name))
                         break
+
+def to_yaml_list(
+        patterns: list[ConnectionPattern],
+        conns: set[ConnectionStr]) -> list[dict]:
+    pats = list[dict]()
+    
+    # write first all ConnectionPatterns
+    for from_, to_ in patterns:
+        d = {}
+        if isinstance(from_, re.Pattern):
+            d['from_pattern'] = from_.pattern
+        else:
+            d['from'] = from_
+        if isinstance(to_, re.Pattern):
+            d['to_pattern'] = to_.pattern
+        else:
+            d['to'] = to_
+        pats.append(d)
+
+    conns_list = list[ConnectionStr]()
+
+    # write connections   
+    for port_from, port_to in conns:
+        for from_, to_ in patterns:
+            if str_match(from_, port_from) and str_match(to_, port_to):
+                # connection match with a ConnectionPattern,
+                # do not save it.
+                break
+        else:
+            conns_list.append((port_from, port_to))
+
+    conns_list.sort()
+    return pats + [{'from': c[0], 'to': c[1]} for c in conns_list]
