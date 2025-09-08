@@ -76,49 +76,8 @@ scenarios:
         - déconnections si dans le graph
         - déconnections systématiques en cas de switch
         - déconnections systématiques
-
-    connections et déconnections temporaires par scenario
-
-
-on arrive sur non-default
-
-                    projeté  forbidden forbidden_dans_dft tmp_conns 
-sauvegardé             Y         N             Y              Y
-svd dans default       N         N             N              N
-projection             Y         N         si saved           Y
-tmp_discon             N         N         si saved        !!!rendre impossible
-
-tmp_conns et tmp_disconns ne doivent jamais contenir de connexions en commun
-la disconnection est prioritaire sur le saved_dans_default
-
-- forbidden est prioritaire sur tout pour interdire la connection
-- ensuite, sauvegardé est prioritaire sur le reste
-- ensuite, forbidden dans def est prioritaire sur le reste
-- ensuite, la projection est prioritaire sur le reste
-- ensuite, projeted est prio (pour déconnecté) PROJETED = - PROJECTION
-- ensuite on check tmp_conns
-- tmp_disconns
-- saved dans def
-
-- forbidden  -> N
-- saved       -> Y
-- forbid def -> N
-- projection  -> Y
-- projeted   -> N
-- tmp_discon  -> Y
-- tmp_conns  -> N
-- saved dans def -> Y
-
-
-                    projeté  forbidden_dans_dft tmp_conns 
-svd dans default       N             N              N
-projection             Y             N              Y
-tmp_discon             N             N       !!!rendre impossible
-
-
-                    projeté     tmp_conns 
-svd dans default       N              N
-tmp_discon             N       !!!rendre impossible
+    revoir l'extinction en scénario (
+        que faire d'ailleurs, rétablir comme avant l'ouverture ?)
 
 
 

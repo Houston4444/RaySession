@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from patshared import PortMode
 
-from .bases import ConnectionPattern, ConnectionStr, PortData
+from .bases import ConnectionPattern, ConnectionStr,  PortData
 from . import depattern
 from . import yaml_tools
 
@@ -100,7 +100,7 @@ class BaseScenario:
             ports, self.saved_conns, self.saved_patterns, port)
         depattern.add_port(
             ports, self.forbidden_conns, self.forbidden_patterns, port)
-        
+
 
 class Scenario(BaseScenario):
     def __init__(self, rules: ScenarioRules):
@@ -197,6 +197,15 @@ class ScenariosManager:
         self.scenarios.append(BaseScenario())
         self.current_num = 0
         self.patcher = patcher
+        
+        self.ex_connections = set[ConnectionStr]()
+        '''Connections at time of last scenario switch.
+        Can be used in case successive scenarios are switching
+        too fastly, and reconnections are not completed.'''
+        
+        self.recent_connections = set[ConnectionStr]()
+        '''All connections or disconnections done
+        since last scenario switch'''
 
     @property
     def current(self) -> BaseScenario:
@@ -345,6 +354,7 @@ class ScenariosManager:
             self.patcher.conns_to_connect.add(conn)
         for fbd_conn in default.forbidden_conns:
             self.patcher.conns_to_disconnect.add(fbd_conn)
+        self.patcher.switching_scenario = True
 
     def port_depattern(self, port: PortData):
         for scenario in self.scenarios:
@@ -423,64 +433,40 @@ class ScenariosManager:
         next_scn = self.current
         default_scn = self.scenarios[0]
         
-        print(f'switch scenario from {previous_scn} to {next_scn}')
-        
-        conns_to_connect = self.patcher.conns_to_connect
-        conns_to_disconnect = self.patcher.conns_to_disconnect
-        conns_to_connect.clear()
-        conns_to_disconnect.clear()
-        connections = self.patcher.connections | self.patcher.conns_rm_by_port
-        input_ports = set(
-            [p.name for p in self.patcher.ports[PortMode.INPUT]])
-        output_ports = set(
-            [p.name for p in self.patcher.ports[PortMode.OUTPUT]])
+        _logger.info(f'switch scenario from {previous_scn} to {next_scn}')
+
+        if self.patcher.switching_scenario is True:
+            connections = self.ex_connections
+        else:
+            connections = (self.patcher.connections
+                           | self.patcher.conns_rm_by_port)
+            self.ex_connections = connections
+
         all_conns = set[ConnectionStr]()
-        projection_conns = set[ConnectionStr]()
-        
-        # FIXME: it can causes problems in case of fast scenario change,
-        # when scenario change twice while patcher did not have the time
-        # to change the connections setup.
-        # TODO: scenario switch attr in patcher,
-        # save the entire graph and connections before the switch starts
         
         # remove from previous_scn saved conns not connected anymore
-        rm_conns = list[ConnectionStr]()
         if previous_scn is default_scn:
-            for svd_conn in default_scn.saved_conns:
+            for svd_conn in list(default_scn.saved_conns):
                 if (svd_conn not in connections
-                        and svd_conn[0] in output_ports
-                        and svd_conn[1] in input_ports):
-                    rm_conns.append(svd_conn)
-            for rm_conn in rm_conns:
-                default_scn.saved_conns.discard(rm_conn)
+                        and svd_conn in self.recent_connections):
+                    default_scn.saved_conns.discard(svd_conn)
         else:
-            for svd_conn in previous_scn.saved_conns:
+            for svd_conn in list(previous_scn.saved_conns):
                 if (svd_conn not in connections
-                        and svd_conn[0] in output_ports
-                        and svd_conn[1] in input_ports):
-                    rm_conns.append(svd_conn)
-            for rm_conn in rm_conns:
-                previous_scn.saved_conns.discard(rm_conn)
+                        and svd_conn in self.recent_connections):
+                    previous_scn.saved_conns.discard(svd_conn)
 
             # remove from default_scn saved conns without projection
             # connected anymore.
             # (except if projections are forbidden in the previous_scn).
-            rm_conns.clear()
-            for svd_conn in default_scn.saved_conns:
-                if previous_scn.must_stock_conn(svd_conn):
-                    continue
-                
+            for svd_conn in list(default_scn.saved_conns):
                 for proj_conn in previous_scn.projections(svd_conn):
                     if (proj_conn in connections
-                        or proj_conn[0] not in output_ports
-                        or proj_conn[1] not in input_ports
+                        or proj_conn not in self.recent_connections
                         or proj_conn in previous_scn.forbidden_conns):
                         break
                 else:
-                    rm_conns.append(svd_conn)
-                    
-            for rm_conn in rm_conns:
-                default_scn.saved_conns.discard(rm_conn)
+                    default_scn.saved_conns.discard(svd_conn)
         
         # stock all possible connections we want to treat
         all_conns = (connections
@@ -495,6 +481,8 @@ class ScenariosManager:
         
         # save projections of previous_scn in default_scn
         # and unprojectable conns in previous_scn
+        projection_conns = set[ConnectionStr]()
+
         if isinstance(previous_scn, Scenario):
             for conn in connections:
                 if previous_scn.must_stock_conn(conn):
@@ -521,6 +509,11 @@ class ScenariosManager:
         
         all_conns |= projection_conns
         
+        conns_to_connect = self.patcher.conns_to_connect
+        conns_to_disconnect = self.patcher.conns_to_disconnect
+        conns_to_connect.clear()
+        conns_to_disconnect.clear()
+        
         for conn in all_conns:
             if conn in next_scn.forbidden_conns:
                 conns_to_disconnect.add(conn)
@@ -540,4 +533,7 @@ class ScenariosManager:
             
             conns_to_disconnect.add(conn)
 
+        self.recent_connections.clear()
+        self.patcher.conns_rm_by_port.clear()
         self.patcher.set_all_ports_new()
+        self.patcher.switching_scenario = True

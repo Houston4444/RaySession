@@ -22,13 +22,10 @@ from .bases import (
     ConnectionPattern,
     PortData,
     MonitorStates,
-    PriorityConnection,
     ProtoEngine,
     Timer,
     Event,
     debug_conn_str)
-from . import yaml_tools
-from . import cache_tools
 from . import scenarios
 
 _logger = logging.getLogger(__name__)
@@ -59,6 +56,7 @@ class Patcher:
         self.connections = set[ConnectionStr]()
         'current connections in the graph'
         self.conns_to_connect = set[ConnectionStr]()
+        'connections that have to be done now or when its ports are created'
         self.conns_to_disconnect = set[ConnectionStr]()
         'connections that have to be disconnected ASAP'
         self.ports_creation = dict[FullPortName, float]()
@@ -188,18 +186,14 @@ class Patcher:
         ret = self.scenarios.choose(self.present_clients)
         if ret:
             self.nsm_server.send_message(2, ret)
-            self.switching_scenario = True
             self.may_make_one_connection()
-            # self.timer_connect_check.start()
 
     def client_removed(self, client_name: str):
         self.present_clients.discard(client_name)
         ret = self.scenarios.choose(self.present_clients)
         if ret:
             self.nsm_server.send_message(2, ret)
-            self.switching_scenario = True
             self.may_make_one_connection()
-            # self.timer_connect_check.start()
 
     def port_added(self, port_name: str, port_mode: int, port_type: int):
         self.ports_creation[port_name] = time.time()
@@ -267,6 +261,7 @@ class Patcher:
         
         self.connections.add((port_from, port_to))
         self.conns_rm_by_port.discard((port_from, port_to))
+        self.scenarios.recent_connections.add((port_from, port_to))
 
         if self.pending_connection or in_port_new or out_port_new:
             if out_port_new:
@@ -279,7 +274,7 @@ class Patcher:
                     if jport.name == port_to:
                         jport.is_new = True
                         break
-                
+
             self.may_make_one_connection()
 
         if not (port_from, port_to) in self.conns_to_connect:
@@ -288,6 +283,7 @@ class Patcher:
     def connection_removed(self, port_str_a: str, port_str_b: str):
         self.connections.discard((port_str_a, port_str_b))
         self.disconnections_time[(port_str_a, port_str_b)] = time.time()
+        self.scenarios.recent_connections.add((port_str_a, port_str_b))
 
         if self.pending_connection:
             self.may_make_one_connection()
@@ -408,6 +404,7 @@ class Patcher:
 
         self.pending_connection = False
         self.set_all_ports_new(False)
+        self.switching_scenario = False
 
     # ---- NSM callbacks ----
 
