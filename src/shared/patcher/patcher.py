@@ -23,6 +23,7 @@ from .bases import (
     PortData,
     MonitorStates,
     ProtoEngine,
+    TerminateState,
     Timer,
     Event,
     debug_conn_str)
@@ -48,7 +49,7 @@ class Patcher:
         self.pending_connection = False
         self.open_done_once = False
         self.allow_disconnections = False
-        self.terminate = False
+        self.terminate = TerminateState.NORMAL
         
         self.brothers_dict = dict[NsmClientName, JackClientBaseName]()
         self.present_clients = set[str]()
@@ -103,7 +104,12 @@ class Patcher:
         jack_stopped = False
 
         while True:
-            if self.terminate:
+            if self.terminate is TerminateState.ASKED:
+                self.terminate = TerminateState.RESTORING
+                self.scenarios.restore_initial_connections()
+                self.may_make_one_connection()
+
+            if self.terminate is TerminateState.LEAVING:
                 break
 
             self.nsm_server.recv(50)
@@ -140,7 +146,7 @@ class Patcher:
         self.engine.quit()
 
     def stop(self, *args):
-        self.terminate = True
+        self.terminate = TerminateState.ASKED
 
     def set_dirty_clean(self):
         self.is_dirty = False
@@ -405,6 +411,9 @@ class Patcher:
         self.pending_connection = False
         self.set_all_ports_new(False)
         self.switching_scenario = False
+        
+        if self.terminate is TerminateState.RESTORING:
+            self.terminate = TerminateState.LEAVING
 
     # ---- NSM callbacks ----
 

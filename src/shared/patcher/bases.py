@@ -2,9 +2,9 @@
 # Imports from standard library
 from queue import Queue
 import time
-from enum import IntEnum
+from enum import IntEnum, Enum
 import re
-from typing import Iterator, Optional, Pattern, TypeAlias
+from typing import Iterator, TypeAlias
 
 from patshared import PortMode, PortType
 
@@ -78,6 +78,13 @@ class MonitorStates(IntEnum):
     DONE = 2
 
 
+class TerminateState(Enum):
+    NORMAL = 0
+    ASKED = 1
+    RESTORING = 2
+    LEAVING = 3
+
+
 class Timer:
     _last_ask = 0.0
     _duration: float
@@ -108,7 +115,7 @@ class EventHandler:
     def new_events(self) -> Iterator[tuple[Event, tuple]]:
         while self._event_queue.qsize():
             yield self._event_queue.get()
-    
+
 
 def b2str(src_bytes: bytes) -> str:
     '''decode bytes to string'''

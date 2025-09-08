@@ -202,10 +202,12 @@ class ScenariosManager:
         '''Connections at time of last scenario switch.
         Can be used in case successive scenarios are switching
         too fastly, and reconnections are not completed.'''
-        
         self.recent_connections = set[ConnectionStr]()
         '''All connections or disconnections done
         since last scenario switch'''
+        self.initial_connections = set[ConnectionStr]()
+        'Connections already existing at startup'
+        
 
     @property
     def current(self) -> BaseScenario:
@@ -348,12 +350,41 @@ class ScenariosManager:
 
     def open_default(self):
         default = self.scenarios[0]
+        self.initial_connections = self.patcher.connections.copy()
         self.patcher.conns_to_connect.clear()
         self.patcher.conns_to_disconnect.clear()
-        for conn in default.saved_conns:
-            self.patcher.conns_to_connect.add(conn)
-        for fbd_conn in default.forbidden_conns:
-            self.patcher.conns_to_disconnect.add(fbd_conn)
+        
+        all_conns = (self.patcher.connections
+                     | default.saved_conns
+                     | default.forbidden_conns)
+        
+        for conn in all_conns:
+            if conn in default.forbidden_conns:
+                self.patcher.conns_to_disconnect.add(conn)
+                continue
+            
+            if conn in default.saved_conns:
+                self.patcher.conns_to_connect.add(conn)
+                continue
+            
+            self.patcher.conns_to_disconnect.add(conn)
+
+        self.recent_connections.clear()
+        self.patcher.conns_rm_by_port.clear()
+        self.patcher.set_all_ports_new()
+        self.patcher.switching_scenario = True
+
+    def restore_initial_connections(self):
+        self.patcher.conns_to_connect.clear()
+        self.patcher.conns_to_disconnect.clear()
+        all_conns = self.patcher.connections | self.initial_connections
+        for conn in all_conns:
+            if conn in self.initial_connections:
+                self.patcher.conns_to_connect.add(conn)
+            else:
+                self.patcher.conns_to_disconnect.add(conn)
+        
+        self.patcher.set_all_ports_new()
         self.patcher.switching_scenario = True
 
     def port_depattern(self, port: PortData):
