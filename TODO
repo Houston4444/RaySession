@@ -46,38 +46,32 @@ YAML:
     rm .xml quand yaml est écrit
     
     nsm_brothers -> nsm_clients ?
+        events in internal jackpatch and alsapatch
     forbidden_connections -> disconnections ?
     
     appliquer modifs du __init__ du ray-jackpatch à l'alsapatch
 
     timer avec pending_connection (si jamais la connexion n'arrive pas)
 
-    priority_connections
     un beau YAML (saut de ligne entre les sections)
     .bak si changement depuis ouverture
     docu
 
 scenarios:
-    inclure $system
-    name
+    inclure $system ou aliases
     rules (present_clients) (acccept pattern)
-    forbidden_connections
-    connections
-    playback_redirections
-    capture_redirections
 
     client_registration: voir jack_engine_remote et alsa.
     revoir les déconnexions au démarrage (+option ou config)
     refaire les changements de nom de client au démarrage
-    voir les forbidden_connections
+    attention, garder les connections des ports non connus au startup
     ajout d'un disconnecting_mode
         - aucune déconnexion
         - déconnections si dans le graph en cas de switch (par défaut)
         - déconnections si dans le graph
         - déconnections systématiques en cas de switch
         - déconnections systématiques
-    revoir l'extinction en scénario (
-        que faire d'ailleurs, rétablir comme avant l'ouverture ?)
+    vérif sans fichier yaml ou xml
 
 
 

@@ -47,8 +47,6 @@ class Patcher:
         self.monitor_states_done = MonitorStates.NEVER_DONE
         self.client_changing_id: Optional[tuple[str, str]] = None
         self.pending_connection = False
-        self.open_done_once = False
-        self.allow_disconnections = False
         self.terminate = TerminateState.NORMAL
         
         self.brothers_dict = dict[NsmClientName, JackClientBaseName]()
@@ -68,6 +66,13 @@ class Patcher:
         self.conns_rm_by_port = set[ConnectionStr]()
         '''all disconnections that occurred just before
         the destruction of one of their ports'''
+
+        self.saved_graph = dict[PortMode, set[FullPortName]]()
+        '''ports existing at last save. When patch file is open,
+        diconnections are possible if ports of existing connections
+        were existing at last save.'''
+        for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
+            self.saved_graph[port_mode] = set[FullPortName]()
 
         self.scenarios = scenarios.ScenariosManager(self)
         self.switching_scenario = False
@@ -146,7 +151,8 @@ class Patcher:
         self.engine.quit()
 
     def stop(self, *args):
-        self.terminate = TerminateState.ASKED
+        if self.terminate is TerminateState.NORMAL:
+            self.terminate = TerminateState.ASKED
 
     def set_dirty_clean(self):
         self.is_dirty = False
@@ -428,10 +434,6 @@ class Patcher:
         self.project_path = project_path
 
         XML_TAG = self.engine.XML_TAG
-
-        graph_ports = dict[PortMode, list[str]]()
-        for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
-            graph_ports[port_mode] = list[str]()
         
         has_file = False
 
@@ -467,14 +469,14 @@ class Patcher:
                     if isinstance(in_ports, list):
                         for in_port in in_ports:
                             if isinstance(in_port, str):
-                                graph_ports[PortMode.INPUT].append(
+                                self.saved_graph[PortMode.INPUT].add(
                                     f'{group_name}:{in_port}')
 
                     out_ports = gp_dict.get('out_ports')
                     if isinstance(out_ports, list):
                         for out_port in out_ports:
                             if isinstance(out_port, str):
-                                graph_ports[PortMode.OUTPUT].append(
+                                self.saved_graph[PortMode.OUTPUT].add(
                                     f'{group_name}:{out_port}')
             
             self.scenarios.load_yaml(yaml_dict)
@@ -566,30 +568,16 @@ class Patcher:
                         gp_name = gp.attrib['name']
                         for pt in gp:
                             if pt.tag == 'out_port':
-                                graph_ports[PortMode.OUTPUT].append(
+                                self.saved_graph[PortMode.OUTPUT].add(
                                     ':'.join((gp_name, pt.attrib['name'])))
                             elif pt.tag == 'in_port':
-                                graph_ports[PortMode.INPUT].append(
+                                self.saved_graph[PortMode.INPUT].add(
                                     ':'.join((gp_name, pt.attrib['name'])))
             
             self.scenarios.load_xml_connections(connections)
 
         if has_file:
             # re-declare all ports as new in case we are switching session
-            self.set_all_ports_new()
-            # self.conns_to_disconnect.clear()
-
-            # disconnect connections not existing at last save
-            # if their both ports were present in the graph.
-            for conn in self.connections:
-                if (conn not in self.conns_to_connect
-                        and conn[0] in graph_ports[PortMode.OUTPUT]
-                        and conn[1] in graph_ports[PortMode.INPUT]):
-                    self.conns_to_disconnect.add(conn)
-
-            if self.open_done_once:
-                self.allow_disconnections = True
-
             self.scenarios.open_default()
             ret = self.scenarios.choose(self.present_clients)
             if ret:
@@ -598,7 +586,6 @@ class Patcher:
             self.may_make_one_connection()
 
         self.is_dirty = False
-        self.open_done_once = True
         self.timer_dirty_check.start()
         return (Err.OK, '')
 
@@ -802,5 +789,4 @@ class Patcher:
         self.brothers_dict[client_id] = jack_name
 
     def session_is_loaded(self):
-        self.allow_disconnections = True
-        self.may_make_one_connection()
+        ...

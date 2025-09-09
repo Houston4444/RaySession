@@ -367,7 +367,9 @@ class ScenariosManager:
                 self.patcher.conns_to_connect.add(conn)
                 continue
             
-            self.patcher.conns_to_disconnect.add(conn)
+            if (conn[0] in self.patcher.saved_graph[PortMode.OUTPUT]
+                    and conn[1] in self.patcher.saved_graph[PortMode.INPUT]):
+                self.patcher.conns_to_disconnect.add(conn)
 
         self.recent_connections.clear()
         self.patcher.conns_rm_by_port.clear()
