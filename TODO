@@ -44,11 +44,11 @@ YAML:
     !! Attention pas dans la standard lib
     patch_rewriter: écrire tout en YAML dans tous les cas
     rm .xml quand yaml est écrit
-    
+
     nsm_brothers -> nsm_clients ?
         events in internal jackpatch and alsapatch
     forbidden_connections -> disconnections ?
-    
+
     appliquer modifs du __init__ du ray-jackpatch à l'alsapatch
 
     timer avec pending_connection (si jamais la connexion n'arrive pas)
@@ -59,12 +59,11 @@ YAML:
 
 scenarios:
     inclure $system ou aliases
-    rules (present_clients) (acccept pattern)
+    rules (present_clients) (acccept pattern) (nsm_clients)
 
     client_registration: voir jack_engine_remote et alsa.
     revoir les déconnexions au démarrage (+option ou config)
     refaire les changements de nom de client au démarrage
-    attention, garder les connections des ports non connus au startup
     ajout d'un disconnecting_mode
         - aucune déconnexion
         - déconnections si dans le graph en cas de switch (par défaut)
