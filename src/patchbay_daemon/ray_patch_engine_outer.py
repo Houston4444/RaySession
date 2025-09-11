@@ -73,6 +73,12 @@ class RayPatchEngineOuter(PatchEngineOuter):
     def port_removed(self, port_name: str):
         self._send_gui(rpm.PORT_REMOVED, port_name)
     
+    def client_added(self, client_name: str):
+        self._send_gui(rpm.CLIENT_ADDED, client_name)
+        
+    def client_removed(self, client_name: str):
+        self._send_gui(rpm.CLIENT_REMOVED, client_name)
+    
     def metadata_updated(self, uuid: int, key: str, value: str):
         self._send_gui(rpm.METADATA_UPDATED, uuid, key, value)
     

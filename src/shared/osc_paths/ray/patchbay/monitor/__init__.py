@@ -13,6 +13,12 @@ CONNECTION_ADDED = '/ray/patchbay/monitor/connection_added'
 CONNECTION_REMOVED = '/ray/patchbay/monitor/connection_removed'
 DSP_LOAD = '/ray/patchbay/monitor/dsp_load'
 METADATA_UPDATED = '/ray/patchbay/monitor/metadata_updated'
+CLIENT_ADDED = '/ray/patchbay/monitor/client_added'
+' (arg types: s)'
+
+CLIENT_REMOVED = '/ray/patchbay/monitor/client_removed'
+' (arg types: s)'
+
 PORT_ADDED = '/ray/patchbay/monitor/port_added'
 PORT_REMOVED = '/ray/patchbay/monitor/port_removed'
 PORT_RENAMED = '/ray/patchbay/monitor/port_renamed'

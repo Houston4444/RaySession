@@ -158,6 +158,8 @@
 /ray/patchbay/monitor/connection_removed
 /ray/patchbay/monitor/dsp_load
 /ray/patchbay/monitor/metadata_updated
+/ray/patchbay/monitor/client_added s
+/ray/patchbay/monitor/client_removed s
 /ray/patchbay/monitor/port_added
 /ray/patchbay/monitor/port_removed
 /ray/patchbay/monitor/port_renamed

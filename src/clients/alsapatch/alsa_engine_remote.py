@@ -137,6 +137,15 @@ class PatchRemote(BunServerThread):
         self.ev.add_event(Event.PORT_REMOVED, jack_port.name,
                           jack_port.mode, jack_port.type)
     
+        
+    @bun_manage(rpm.CLIENT_ADDED, 's')
+    def _client_added(self, osp: OscPack):
+        self.ev.add_event(Event.CLIENT_ADDED, osp.args[0])
+    
+    @bun_manage(rpm.CLIENT_REMOVED, 's')
+    def _client_removed(self, osp: OscPack):
+        self.ev.add_event(Event.CLIENT_REMOVED, osp.args[0])
+    
     @bun_manage(rpm.BIG_PACKETS, 'i')
     def _big_packets(self, osp: OscPack):
         if osp.args[0]:
