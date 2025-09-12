@@ -308,7 +308,8 @@ class Client(ServerSender, ray.ClientData):
             self._osc_srcs[slot] = None
 
             if (self.scripter.is_running()
-                    and self.scripter.pending_command() == self.pending_command):
+                    and self.scripter.pending_command()
+                        == self.pending_command):
                 self._osc_srcs[slot] = self.scripter.initial_caller()
 
         if slot is OscSrc.OPEN:
@@ -1696,7 +1697,8 @@ class Client(ServerSender, ray.ClientData):
                 self._internal.stop()
             elif self.is_external:
                 os.kill(self.pid, signal.SIGTERM)
-            elif self.is_ray_hack and self.ray_hack.stop_sig != signal.SIGTERM.value:
+            elif (self.is_ray_hack
+                    and self.ray_hack.stop_sig != signal.SIGTERM.value):
                 os.kill(self._process.processId(), self.ray_hack.stop_sig)
             else:
                 self._process.terminate()
