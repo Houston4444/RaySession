@@ -135,7 +135,7 @@ class Patcher:
                         self.connection_added(*args)
                     case PatchEvent.CONNECTION_REMOVED:
                         self.connection_removed(*args)
-                    case PatchEvent.JACK_STOPPED:
+                    case PatchEvent.SHUTDOWN:
                         jack_stopped = True
                         break
             

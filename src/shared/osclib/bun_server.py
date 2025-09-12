@@ -497,9 +497,10 @@ class BunServer:
         for url in urls_done:
             urls.remove(url)
     
-    def mega_send(self: 'Union[BunServer, BunServerThread]',
-               url: Union[str, int, Address, list[str | int | Address]],
-               mega_send: MegaSend) -> bool:
+    def mega_send(
+            self: 'Union[BunServer, BunServerThread]',
+            url: str | int | Address | list[str | int | Address],
+            mega_send: MegaSend) -> bool:
         '''send a undeterminated number of messages to another BunServer
         (or BunServerThread).
         

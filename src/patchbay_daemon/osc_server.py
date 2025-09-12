@@ -31,11 +31,12 @@ class PatchbayDaemonServer(BunServer):
     
     @bun_manage(r.patchbay.ADD_GUI, 's')
     def _ray_patchbay_add_gui(self, osp: OscPack):
-        self.add_gui(osp.args[0])
+        gui_url: str = osp.args[0] # type:ignore
+        self.add_gui(gui_url)
 
     @bun_manage(r.patchbay.GUI_DISANNOUNCE, 's')
     def _ray_patchbay_gui_disannounce(self, osp: OscPack):
-        url: str = osp.args[0]
+        url: str = osp.args[0] # type:ignore
 
         for gui_addr in self.gui_list:
             if are_same_osc_port(gui_addr.url, osp.src_addr.url):
@@ -45,20 +46,22 @@ class PatchbayDaemonServer(BunServer):
 
     @bun_manage(r.patchbay.CONNECT, 'ss')
     def _ray_patchbay_connect(self, osp: OscPack):
-        port_out_name, port_in_name = osp.args
+        osp_args: tuple[str, str] = osp.args # type:ignore
+        port_out_name, port_in_name = osp_args
         # connect here
         self.pe.connect_ports(port_out_name, port_in_name)
     
     @bun_manage(r.patchbay.DISCONNECT, 'ss')
     def _ray_patchbay_disconnect(self, osp: OscPack):
-        port_out_name, port_in_name = osp.args
+        osp_args: tuple[str, str] = osp.args # type:ignore
+        port_out_name, port_in_name = osp_args
         # disconnect here
         self.pe.connect_ports(
             port_out_name, port_in_name, disconnect=True)
 
     @bun_manage(r.patchbay.SET_BUFFER_SIZE, 'i')
     def _ray_patchbay_set_buffersize(self, osp: OscPack):
-        buffer_size = osp.args[0]
+        buffer_size: int = osp.args[0] # type:ignore
         self.pe.set_buffer_size(buffer_size)
 
     @bun_manage(r.patchbay.REFRESH, '')
@@ -75,7 +78,8 @@ class PatchbayDaemonServer(BunServer):
     
     @bun_manage(r.patchbay.TRANSPORT_RELOCATE, 'i')
     def _ray_patchbay_transport_relocate(self, osp: OscPack):
-        self.pe.transport_relocate(osp.args[0])
+        pos: int = osp.args[0] # type:ignore
+        self.pe.transport_relocate(pos)
 
     @bun_manage(r.patchbay.ACTIVATE_DSP_LOAD, 'i')
     def _ray_patchbay_activate_dsp_load(self, osp: OscPack):
@@ -91,13 +95,15 @@ class PatchbayDaemonServer(BunServer):
 
     @bun_manage(r.patchbay.GROUP_CUSTOM_NAME, 'sss*')
     def _ray_patchbay_group_pretty_name(self, osp: OscPack):
-        if osp.args[0]:
-            self.pretty_names.save_group(*osp.args)
+        osp_args: tuple[str, ...] = osp.args # type:ignore
+        if osp_args[0]:
+            self.pretty_names.save_group(*osp_args)
 
     @bun_manage(r.patchbay.PORT_CUSTOM_NAME, 'sss*')
     def _ray_patchbay_port_pretty_name(self, osp: OscPack):
-        if osp.args[0]:
-            self.pretty_names.save_port(*osp.args)
+        osp_args: tuple[str, ...] = osp.args # type:ignore
+        if osp_args[0]:
+            self.pretty_names.save_port(*osp_args)
         else:
             # empty string received,
             # listing is finished, lets apply pretty names to JACK
@@ -105,14 +111,16 @@ class PatchbayDaemonServer(BunServer):
 
     @bun_manage(r.patchbay.SAVE_GROUP_CUSTOM_NAME, 'ssi')
     def _ray_patchbay_save_group_pretty_name(self, osp: OscPack):
-        group_name, pretty_name, save_in_jack = osp.args
+        osp_args: tuple[str, str, int] = osp.args # type:ignore
+        group_name, pretty_name, save_in_jack = osp_args
         self.pretty_names.save_group(group_name, pretty_name)
         if save_in_jack:
             self.pe.write_group_pretty_name(group_name, pretty_name)
     
     @bun_manage(r.patchbay.SAVE_PORT_CUSTOM_NAME, 'ssi')
     def _ray_patchbay_save_port_pretty_name(self, osp: OscPack):
-        port_name, pretty_name, save_in_jack = osp.args
+        osp_args: tuple[str, str, int] = osp.args # type:ignore
+        port_name, pretty_name, save_in_jack = osp_args
         self.pretty_names.save_port(port_name, pretty_name)
         if save_in_jack:
             self.pe.write_port_pretty_name(port_name, pretty_name)
@@ -160,7 +168,7 @@ class PatchbayDaemonServer(BunServer):
             ms_gui.add(rpm.UPDATE_PORT_CUSTOM_NAME, port_name, pretty_name)
             
         self.mega_send(self.daemon_port, ms)
-        self.mega_send(self.gui_list, ms_gui)
+        self.mega_send(self.gui_list, ms_gui) # type:ignore
 
     def set_tmp_gui_url(self, gui_url: str):
         self._tmp_gui_url = gui_url
@@ -214,7 +222,7 @@ class PatchbayDaemonServer(BunServer):
                 ms.add(rpm.CONNECTION_ADDED, *conn)
         
         ms.add(rpm.BIG_PACKETS, 1)
-        self.mega_send(src_addrs, ms)
+        self.mega_send(src_addrs, ms) # type:ignore
 
     def add_gui(self, gui_url: str):
         try:
