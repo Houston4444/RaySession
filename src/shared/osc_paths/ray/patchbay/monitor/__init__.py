@@ -13,10 +13,16 @@ CONNECTION_ADDED = '/ray/patchbay/monitor/connection_added'
 CONNECTION_REMOVED = '/ray/patchbay/monitor/connection_removed'
 DSP_LOAD = '/ray/patchbay/monitor/dsp_load'
 METADATA_UPDATED = '/ray/patchbay/monitor/metadata_updated'
-CLIENT_ADDED = '/ray/patchbay/monitor/client_added'
+JACK_CLIENT_ADDED = '/ray/patchbay/monitor/jack_client_added'
 ' (arg types: s)'
 
-CLIENT_REMOVED = '/ray/patchbay/monitor/client_removed'
+JACK_CLIENT_REMOVED = '/ray/patchbay/monitor/jack_client_removed'
+' (arg types: s)'
+
+ALSA_CLIENT_ADDED = '/ray/patchbay/monitor/alsa_client_added'
+' (arg types: s)'
+
+ALSA_CLIENT_REMOVED = '/ray/patchbay/monitor/alsa_client_removed'
 ' (arg types: s)'
 
 PORT_ADDED = '/ray/patchbay/monitor/port_added'

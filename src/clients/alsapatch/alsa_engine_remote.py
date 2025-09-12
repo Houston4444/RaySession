@@ -138,11 +138,11 @@ class PatchRemote(BunServerThread):
                           jack_port.mode, jack_port.type)
     
         
-    @bun_manage(rpm.CLIENT_ADDED, 's')
+    @bun_manage(rpm.ALSA_CLIENT_ADDED, 's')
     def _client_added(self, osp: OscPack):
         self.ev.add_event(PatchEvent.CLIENT_ADDED, osp.args[0])
     
-    @bun_manage(rpm.CLIENT_REMOVED, 's')
+    @bun_manage(rpm.ALSA_CLIENT_REMOVED, 's')
     def _client_removed(self, osp: OscPack):
         self.ev.add_event(PatchEvent.CLIENT_REMOVED, osp.args[0])
     

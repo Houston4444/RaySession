@@ -11,7 +11,7 @@ import logging
 from proc_name import set_proc_name
 
 # imports from HoustonPatchbay
-from patch_engine import PatchEngine
+from patch_engine import PatchEngine, PatchEngineOuterMissing
 
 # local imports
 from osc_server import PatchbayDaemonServer
@@ -35,6 +35,8 @@ def main_loop(args):
     pe, osc_server = args
 
     pe.start(RayPatchEngineOuter(osc_server))
+    if pe.peo is None:
+        raise PatchEngineOuterMissing
     if osc_server._tmp_gui_url:
         osc_server.add_gui(osc_server._tmp_gui_url)
 
