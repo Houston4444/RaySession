@@ -7,6 +7,7 @@ from threading import Thread
 
 # third party imports
 from pyalsa.alsaseq import (
+    AlsaEvent,
     Sequencer,
     SEQ_PORT_CAP_NO_EXPORT,
     SEQ_PORT_CAP_READ,
@@ -94,7 +95,8 @@ class AlsaClient:
             return
 
         physical = not bool(port_info['type'] & SEQ_PORT_TYPE_APPLICATION)
-        self.ports[port_id] = AlsaPort(port_info['name'], port_id, caps, physical)
+        self.ports[port_id] = AlsaPort(
+            port_info['name'], port_id, caps, physical)
 
 
 class AlsaManager:
@@ -203,183 +205,190 @@ class AlsaManager:
         src_client_name, _, src_port_name = port_out_name.partition(':')
         dest_client_name, _, dest_port_name = port_in_name.partition(':')
 
-        src_clients = [c for c in self._clients.values() if c.name == src_client_name]
-        dest_clients = [c for c in self._clients.values() if c.name == dest_client_name]
+        src_clients = [
+            c for c in self._clients.values() if c.name == src_client_name]
+        dest_clients = [
+            c for c in self._clients.values() if c.name == dest_client_name]
         
         if not (src_clients and dest_clients):
             return
         
         for src_client in src_clients:
             for src_port_id, src_port in src_client.ports.items():
-                if src_port.name == src_port_name:
-                    for dest_client in dest_clients:
-                        for dest_port_id, dest_port in dest_client.ports.items():
-                            if dest_port.name == dest_port_name:
-                                try:
-                                    if disconnect:
-                                        self.seq.disconnect_ports(
-                                            (src_client.id, src_port_id),
-                                            (dest_client.id, dest_port_id))
-                                    else: 
-                                        self.seq.connect_ports(
-                                            (src_client.id, src_port_id),
-                                            (dest_client.id, dest_port_id),
-                                            0, 0, 0, 0)
-                                except:
-                                    # TODO log something
-                                    continue
-        
+                if src_port.name != src_port_name:
+                    continue
+
+                for dest_client in dest_clients:
+                    for dest_port_id, dest_port in dest_client.ports.items():
+                        if dest_port.name != dest_port_name:
+                            continue
+                        
+                        try:
+                            if disconnect:
+                                self.seq.disconnect_ports(
+                                    (src_client.id, src_port_id),
+                                    (dest_client.id, dest_port_id))
+                            else: 
+                                self.seq.connect_ports(
+                                    (src_client.id, src_port_id),
+                                    (dest_client.id, dest_port_id),
+                                    0, 0, 0, 0)
+                        except:
+                            # TODO log something
+                            continue
+    
+    def _process_event(self, event: AlsaEvent):
+        data = event.get_data()
+
+        if event.type == SEQ_EVENT_CLIENT_START:
+            try:
+                client_id = data['addr.client']
+                client_info = self.seq.get_client_info(client_id)
+            except:
+                return
+
+            n_tries = 0
+            client_outed = False
+
+            # Sometimes client name is not ready
+            while client_info['name'] == f'Client-{client_id}':
+                time.sleep(0.010)
+                try:
+                    client_info = self.seq.get_client_info(client_id)
+                except:
+                    client_outed = True
+                    break
+                
+                n_tries += 1
+                if n_tries >= 5:
+                    break
+            
+            if client_outed:
+                return
+
+            self._clients[client_id] = AlsaClient(
+                self, client_info['name'], client_id)
+            self.ev_handler.add_event(
+                PatchEvent.CLIENT_ADDED, client_info['name'])
+
+        elif event.type == SEQ_EVENT_CLIENT_EXIT:
+            client_id = data['addr.client']
+            client = self._clients.get(client_id)
+            if client is not None:
+                self.ev_handler.add_event(
+                    PatchEvent.CLIENT_REMOVED,
+                    self._clients[client_id].name)
+                del self._clients[client_id]
+            
+        elif event.type == SEQ_EVENT_PORT_START:
+            client_id, port_id = data['addr.client'], data['addr.port']
+            client = self._clients.get(client_id)
+            if client is None:
+                return
+            
+            client.add_port(port_id)
+            port = client.ports.get(port_id)
+            if port is None:
+                return
+            
+            if port.caps & _PORT_READS == _PORT_READS:
+                self.ev_handler.add_event(
+                    PatchEvent.PORT_ADDED, f'{client.name}:{port.name}',
+                    PortMode.OUTPUT, PortType.MIDI_ALSA)
+            if port.caps & _PORT_WRITES == _PORT_WRITES:
+                self.ev_handler.add_event(
+                    PatchEvent.PORT_ADDED, f'{client.name}:{port.name}',
+                    PortMode.INPUT, PortType.MIDI_ALSA)
+            
+        elif event.type == SEQ_EVENT_PORT_EXIT:
+            client_id, port_id = data['addr.client'], data['addr.port']
+            client = self._clients.get(client_id)
+            if client is None:
+                return
+
+            port = client.ports.get(port_id)
+            if port is None:
+                return
+            
+            to_rm_conns = list[AlsaConn]()
+            
+            for conn in self._connections:
+                if (client_id, port_id) in (
+                        (conn.source_client_id, conn.source_port_id),
+                        (conn.dest_client_id, conn.dest_port_id)):
+                    to_rm_conns.append(conn)
+                    
+            for conn in to_rm_conns:
+                self._connections.remove(conn)
+                port_names = conn.as_port_names(self._clients)
+                if port_names is not None:
+                    self.ev_handler.add_event(
+                        PatchEvent.CONNECTION_REMOVED, *port_names)
+
+            if port.caps & _PORT_READS == _PORT_READS:
+                self.ev_handler.add_event(
+                    PatchEvent.PORT_REMOVED, f'{client.name}:{port.name}',
+                    PortMode.OUTPUT, PortType.MIDI_ALSA)
+            if port.caps & _PORT_WRITES == _PORT_WRITES:
+                self.ev_handler.add_event(
+                    PatchEvent.PORT_REMOVED, f'{client.name}:{port.name}',
+                    PortMode.INPUT, PortType.MIDI_ALSA)
+
+        elif event.type == SEQ_EVENT_PORT_SUBSCRIBED:
+            sender_client = self._clients.get(data['connect.sender.client'])
+            dest_client = self._clients.get(data['connect.dest.client'])
+            if sender_client is None or dest_client is None:
+                return
+            
+            sender_port = sender_client.ports.get(data['connect.sender.port'])
+            dest_port = dest_client.ports.get(data['connect.dest.port'])
+            
+            if sender_port is None or dest_port is None:
+                return
+            
+            alsa_conn = AlsaConn(
+                sender_client.id, sender_port.id,
+                dest_client.id, dest_port.id)
+            
+            self._connections.append(alsa_conn)
+            
+            port_names = alsa_conn.as_port_names(self._clients)
+            
+            if port_names is not None:
+                self.ev_handler.add_event(
+                    PatchEvent.CONNECTION_ADDED, *port_names)
+
+        elif event.type == SEQ_EVENT_PORT_UNSUBSCRIBED:
+            sender_client = self._clients.get(data['connect.sender.client'])
+            dest_client = self._clients.get(data['connect.dest.client'])
+            if sender_client is None or dest_client is None:
+                return
+
+            sender_port = sender_client.ports.get(data['connect.sender.port'])
+            dest_port = dest_client.ports.get(data['connect.dest.port'])
+
+            if sender_port is None or dest_port is None:
+                return
+
+            for conn in self._connections:
+                if (conn.source_client_id == sender_client.id
+                        and conn.source_port_id == sender_port.id
+                        and conn.dest_client_id == dest_client.id
+                        and conn.dest_port_id == dest_port.id):
+                    port_names = conn.as_port_names(self._clients)
+                    if port_names is not None:
+                        self.ev_handler.add_event(
+                            PatchEvent.CONNECTION_REMOVED, *port_names)
+                    self._connections.remove(conn)
+                    break
+    
     def read_events(self):
         while True:
             if self.terminate:
                 break
 
-            event_list = self.seq.receive_events(timeout=128, maxevents=1)
-
-            for event in event_list:
-                data = event.get_data()
-
-                if event.type == SEQ_EVENT_CLIENT_START:
-                    try:
-                        client_id = data['addr.client']
-                        client_info = self.seq.get_client_info(client_id)
-                    except:
-                        continue
-
-                    n_tries = 0
-                    client_outed = False
-
-                    # Sometimes client name is not ready
-                    while client_info['name'] == f'Client-{client_id}':
-                        time.sleep(0.010)
-                        try:
-                            client_info = self.seq.get_client_info(client_id)
-                        except:
-                            client_outed = True
-                            break
-                        
-                        n_tries += 1
-                        if n_tries >= 5:
-                            break
-                    
-                    if client_outed:
-                        continue
-
-                    self._clients[client_id] = AlsaClient(
-                        self, client_info['name'], client_id)
-                    self.ev_handler.add_event(
-                        PatchEvent.CLIENT_ADDED, client_info['name'])
-
-                elif event.type == SEQ_EVENT_CLIENT_EXIT:
-                    client_id = data['addr.client']
-                    client = self._clients.get(client_id)
-                    if client is not None:
-                        self.ev_handler.add_event(
-                            PatchEvent.CLIENT_REMOVED,
-                            self._clients[client_id].name)
-                        del self._clients[client_id]
-                    
-                elif event.type == SEQ_EVENT_PORT_START:
-                    client_id, port_id = data['addr.client'], data['addr.port']
-                    client = self._clients.get(client_id)
-                    if client is None:
-                        continue
-                    
-                    client.add_port(port_id)
-                    port = client.ports.get(port_id)
-                    if port is None:
-                        continue
-                    
-                    if port.caps & _PORT_READS == _PORT_READS:
-                        self.ev_handler.add_event(
-                            PatchEvent.PORT_ADDED, f'{client.name}:{port.name}',
-                            PortMode.OUTPUT, PortType.MIDI_ALSA)
-                    if port.caps & _PORT_WRITES == _PORT_WRITES:
-                        self.ev_handler.add_event(
-                            PatchEvent.PORT_ADDED, f'{client.name}:{port.name}',
-                            PortMode.INPUT, PortType.MIDI_ALSA)
-                    
-                elif event.type == SEQ_EVENT_PORT_EXIT:
-                    client_id, port_id = data['addr.client'], data['addr.port']
-                    client = self._clients.get(client_id)
-                    if client is None:
-                        continue
-
-                    port = client.ports.get(port_id)
-                    if port is None:
-                        continue
-                    
-                    to_rm_conns = list[AlsaConn]()
-                    
-                    for conn in self._connections:
-                        if (client_id, port_id) in (
-                                (conn.source_client_id, conn.source_port_id),
-                                (conn.dest_client_id, conn.dest_port_id)):
-                            to_rm_conns.append(conn)
-                            
-                    for conn in to_rm_conns:
-                        self._connections.remove(conn)
-                        port_names = conn.as_port_names(self._clients)
-                        if port_names is not None:
-                            self.ev_handler.add_event(
-                                PatchEvent.CONNECTION_REMOVED, *port_names)
-
-                    if port.caps & _PORT_READS == _PORT_READS:
-                        self.ev_handler.add_event(
-                            PatchEvent.PORT_REMOVED, f'{client.name}:{port.name}',
-                            PortMode.OUTPUT, PortType.MIDI_ALSA)
-                    if port.caps & _PORT_WRITES == _PORT_WRITES:
-                        self.ev_handler.add_event(
-                            PatchEvent.PORT_REMOVED, f'{client.name}:{port.name}',
-                            PortMode.INPUT, PortType.MIDI_ALSA)
-
-                elif event.type == SEQ_EVENT_PORT_SUBSCRIBED:
-                    sender_client = self._clients.get(data['connect.sender.client'])
-                    dest_client = self._clients.get(data['connect.dest.client'])
-                    if sender_client is None or dest_client is None:
-                        continue
-                    
-                    sender_port = sender_client.ports.get(data['connect.sender.port'])
-                    dest_port = dest_client.ports.get(data['connect.dest.port'])
-                    
-                    if sender_port is None or dest_port is None:
-                        continue
-                    
-                    alsa_conn = AlsaConn(
-                        sender_client.id, sender_port.id,
-                        dest_client.id, dest_port.id)
-                    
-                    self._connections.append(alsa_conn)
-                    
-                    port_names = alsa_conn.as_port_names(self._clients)
-                    
-                    if port_names is not None:
-                        self.ev_handler.add_event(
-                            PatchEvent.CONNECTION_ADDED, *port_names)
-
-                elif event.type == SEQ_EVENT_PORT_UNSUBSCRIBED:
-                    sender_client = self._clients.get(data['connect.sender.client'])
-                    dest_client = self._clients.get(data['connect.dest.client'])
-                    if sender_client is None or dest_client is None:
-                        continue
-
-                    sender_port = sender_client.ports.get(data['connect.sender.port'])
-                    dest_port = dest_client.ports.get(data['connect.dest.port'])
-
-                    if sender_port is None or dest_port is None:
-                        continue
-
-                    for conn in self._connections:
-                        if (conn.source_client_id == sender_client.id
-                                and conn.source_port_id == sender_port.id
-                                and conn.dest_client_id == dest_client.id
-                                and conn.dest_port_id == dest_port.id):
-                            port_names = conn.as_port_names(self._clients)
-                            if port_names is not None:
-                                self.ev_handler.add_event(
-                                    PatchEvent.CONNECTION_REMOVED, *port_names)
-                            self._connections.remove(conn)
-                            break
+            for event in self.seq.receive_events(timeout=128, maxevents=1):
+                self._process_event(event)
                         
     def stop(self):
         self.terminate = True
