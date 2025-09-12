@@ -1682,7 +1682,9 @@ class Client(ServerSender, ray.ClientData):
             self.session.send_monitor_event(
                 'stop_request', self.client_id)
 
-            if self.launched_in_terminal and self.pid_from_nsm:
+            if (self.protocol is ray.Protocol.NSM
+                    and self.launched_in_terminal
+                    and self.pid_from_nsm):
                 try:
                     os.kill(self.pid_from_nsm, signal.SIGTERM)
                 except ProcessLookupError:
