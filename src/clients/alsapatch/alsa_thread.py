@@ -6,8 +6,8 @@ from typing import Iterator, Optional
 from threading import Thread
 
 # third party imports
-from pyalsa import alsaseq
 from pyalsa.alsaseq import (
+    Sequencer,
     SEQ_PORT_CAP_NO_EXPORT,
     SEQ_PORT_CAP_READ,
     SEQ_PORT_CAP_SUBS_READ,
@@ -101,7 +101,7 @@ class AlsaManager:
     def __init__(self, event_handler: EventHandler):
         self.ev_handler = event_handler
         self.terminate = False
-        self.seq = alsaseq.Sequencer(clientname='ray-alsapatch')
+        self.seq = Sequencer(clientname='ray-alsapatch')
 
         self._all_alsa_connections = list[AlsaConn]()
         self._connections = list[AlsaConn]()
