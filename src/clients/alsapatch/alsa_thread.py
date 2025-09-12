@@ -7,7 +7,7 @@ from threading import Thread
 
 # third party imports
 from pyalsa.alsaseq import (
-    AlsaEvent,
+    SeqEvent,
     Sequencer,
     SEQ_PORT_CAP_NO_EXPORT,
     SEQ_PORT_CAP_READ,
@@ -237,7 +237,7 @@ class AlsaManager:
                             # TODO log something
                             continue
     
-    def _process_event(self, event: AlsaEvent):
+    def _process_event(self, event: SeqEvent):
         data = event.get_data()
 
         if event.type == SEQ_EVENT_CLIENT_START:
