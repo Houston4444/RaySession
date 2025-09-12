@@ -10,7 +10,7 @@ from patshared import PortMode, PortType
 
 # imports from shared
 from patcher.bases import (
-    EventHandler, Event, PortData, ProtoEngine)
+    EventHandler, PatchEvent, PortData, ProtoEngine)
 
 
 _logger = logging.getLogger(__name__)
@@ -50,30 +50,30 @@ class JackEngine(ProtoEngine):
         @self._client.set_client_registration_callback
         def client_registration(client_name: str, register: bool):
             self.ev_handler.add_event(
-                Event.CLIENT_ADDED if register else Event.CLIENT_REMOVED,
+                PatchEvent.CLIENT_ADDED if register else PatchEvent.CLIENT_REMOVED,
                 client_name)
         
         @self._client.set_port_registration_callback
         def port_registration(port: jack.Port, register: bool):
             self.ev_handler.add_event(
-                Event.PORT_ADDED if register else Event.PORT_REMOVED,
+                PatchEvent.PORT_ADDED if register else PatchEvent.PORT_REMOVED,
                 port.name, *mode_type(port))
         
         @self._client.set_port_rename_callback
         def port_rename(port: jack.Port, old: str, new: str):
             self.ev_handler.add_event(
-                Event.PORT_RENAMED, old, new, *mode_type(port))
+                PatchEvent.PORT_RENAMED, old, new, *mode_type(port))
             
         @self._client.set_port_connect_callback
         def port_connect(port_a: jack.Port, port_b: jack.Port, connect: bool):
             self.ev_handler.add_event(
-                Event.CONNECTION_ADDED if connect
-                else Event.CONNECTION_REMOVED,
+                PatchEvent.CONNECTION_ADDED if connect
+                else PatchEvent.CONNECTION_REMOVED,
                 port_a.name, port_b.name)
             
         @self._client.set_shutdown_callback
         def on_shutdown(status: jack.Status, reason: str):
-            self.ev_handler.add_event(Event.JACK_STOPPED)
+            self.ev_handler.add_event(PatchEvent.SHUTDOWN)
         
         self._client.activate()
         return True

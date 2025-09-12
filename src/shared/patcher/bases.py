@@ -7,6 +7,7 @@ import re
 from typing import Iterator, TypeAlias
 
 from patshared import PortMode, PortType
+from patch_engine import PatchEvent
 
 # Type aliases
 NsmClientName: TypeAlias = str
@@ -61,17 +62,6 @@ class ProtoEngine:
         ...
 
 
-class Event(IntEnum):
-    CLIENT_ADDED = 1
-    CLIENT_REMOVED = 2
-    PORT_ADDED = 3
-    PORT_REMOVED = 4
-    PORT_RENAMED = 5
-    CONNECTION_ADDED = 6
-    CONNECTION_REMOVED = 7
-    JACK_STOPPED = 8
-
-
 class MonitorStates(IntEnum):
     NEVER_DONE = 0
     UPDATING = 1
@@ -109,10 +99,10 @@ class EventHandler:
     def __init__(self):
         self._event_queue = Queue()
     
-    def add_event(self, event: Event, *args):
+    def add_event(self, event: PatchEvent, *args):
         self._event_queue.put((event, args))
 
-    def new_events(self) -> Iterator[tuple[Event, tuple]]:
+    def new_events(self) -> Iterator[tuple[PatchEvent, tuple]]:
         while self._event_queue.qsize():
             yield self._event_queue.get()
 

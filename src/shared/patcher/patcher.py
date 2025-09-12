@@ -25,7 +25,7 @@ from .bases import (
     ProtoEngine,
     TerminateState,
     Timer,
-    Event,
+    PatchEvent,
     debug_conn_str)
 from . import scenarios
 
@@ -121,21 +121,21 @@ class Patcher:
 
             for event, args in self.engine.ev_handler.new_events():
                 match event:
-                    case Event.CLIENT_ADDED:
+                    case PatchEvent.CLIENT_ADDED:
                         self.client_added(*args)
-                    case Event.CLIENT_REMOVED:
+                    case PatchEvent.CLIENT_REMOVED:
                         self.client_removed(*args)
-                    case Event.PORT_ADDED:
+                    case PatchEvent.PORT_ADDED:
                         self.port_added(*args)
-                    case Event.PORT_REMOVED:
+                    case PatchEvent.PORT_REMOVED:
                         self.port_removed(*args)
-                    case Event.PORT_RENAMED:
+                    case PatchEvent.PORT_RENAMED:
                         self.port_renamed(*args)
-                    case Event.CONNECTION_ADDED:
+                    case PatchEvent.CONNECTION_ADDED:
                         self.connection_added(*args)
-                    case Event.CONNECTION_REMOVED:
+                    case PatchEvent.CONNECTION_REMOVED:
                         self.connection_removed(*args)
-                    case Event.JACK_STOPPED:
+                    case PatchEvent.JACK_STOPPED:
                         jack_stopped = True
                         break
             

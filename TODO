@@ -71,6 +71,7 @@ scenarios:
         - déconnections systématiques en cas de switch
         - déconnections systématiques
     vérif sans fichier yaml ou xml
+    Attention aux types des ports de connection audio/midi
 
 
 
