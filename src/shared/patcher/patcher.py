@@ -38,7 +38,7 @@ class Patcher:
             logger: logging.Logger):
         self.engine = engine
         self._logger = logger
-        
+
         self.project_path = ''
         'NSM client project path'
         self.is_dirty = False
@@ -46,9 +46,11 @@ class Patcher:
         self.dirty_state_sent = False
         self.monitor_states_done = MonitorStates.NEVER_DONE
         self.client_changing_id: Optional[tuple[str, str]] = None
-        self.pending_connection = False
         self.terminate = TerminateState.NORMAL
         
+        self.slow_connect = False
+        self.pending_connection = False
+
         self.brothers_dict = dict[NsmClientName, JackClientBaseName]()
         self.present_clients = set[str]()
 
@@ -379,7 +381,6 @@ class Patcher:
 
     def may_make_one_connection(self):
         'can make one connection or disconnection'
-        one_connected = False
         output_ports = set([p.name for p in self.ports[PortMode.OUTPUT]])
         input_ports = set([p.name for p in self.ports[PortMode.INPUT]])
         new_output_ports = set(
@@ -387,32 +388,52 @@ class Patcher:
         new_input_ports = set(
             [p.name for p in self.ports[PortMode.INPUT] if p.is_new])
 
-        for disconn in self.conns_to_disconnect:
-            if (disconn in self.connections
-                    and (disconn[0] in new_output_ports
-                         or disconn[1] in new_input_ports)):
-                if one_connected:
-                    self.pending_connection = True
-                    return
-                
-                _logger.info(f'disconnect ports: {disconn}')
-                self.engine.disconnect_ports(*disconn)
-                one_connected = True
+        if self.slow_connect:
+            one_connected = False
+            
+            for disconn in self.conns_to_disconnect:
+                if (disconn in self.connections
+                        and (disconn[0] in new_output_ports
+                            or disconn[1] in new_input_ports)):
+                    if one_connected:
+                        self.pending_connection = True
+                        return
+                    
+                    _logger.info(f'disconnect ports: {disconn}')
+                    self.engine.disconnect_ports(*disconn)
+                    one_connected = True
 
-        for sv_con in self.conns_to_connect:
-            if (sv_con not in self.connections
-                    and sv_con not in self.conns_to_disconnect
-                    and sv_con[0] in output_ports
-                    and sv_con[1] in input_ports
-                    and (sv_con[0] in new_output_ports
-                         or sv_con[1] in new_input_ports)):
-                if one_connected:
-                    self.pending_connection = True
-                    return
+            for sv_con in self.conns_to_connect:
+                if (sv_con not in self.connections
+                        and sv_con not in self.conns_to_disconnect
+                        and sv_con[0] in output_ports
+                        and sv_con[1] in input_ports
+                        and (sv_con[0] in new_output_ports
+                            or sv_con[1] in new_input_ports)):
+                    if one_connected:
+                        self.pending_connection = True
+                        return
 
-                _logger.info(f'connect ports: {sv_con}')
-                self.engine.connect_ports(*sv_con)
-                one_connected = True
+                    _logger.info(f'connect ports: {sv_con}')
+                    self.engine.connect_ports(*sv_con)
+                    one_connected = True
+        else:
+            for disconn in self.conns_to_disconnect:
+                if (disconn in self.connections
+                        and (disconn[0] in new_output_ports
+                            or disconn[1] in new_input_ports)):
+                    _logger.info(f'disconnect ports: {disconn}')
+                    self.engine.disconnect_ports(*disconn)
+
+            for sv_con in self.conns_to_connect:
+                if (sv_con not in self.connections
+                        and sv_con not in self.conns_to_disconnect
+                        and sv_con[0] in output_ports
+                        and sv_con[1] in input_ports
+                        and (sv_con[0] in new_output_ports
+                            or sv_con[1] in new_input_ports)):
+                    _logger.info(f'connect ports: {sv_con}')
+                    self.engine.connect_ports(*sv_con)
 
         self.pending_connection = False
         self.set_all_ports_new(False)
