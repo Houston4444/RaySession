@@ -706,12 +706,16 @@ class Patcher:
         groups_dict = dict[str, dict]()
         
         for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
-            el_name = 'in_ports' if port_mode is PortMode.INPUT else 'out_ports'
+            if port_mode is PortMode.INPUT:
+                el_name = 'in_ports'
+            else:
+                el_name = 'out_ports'
 
             for jack_port in self.ports[port_mode]:
                 gp_name, _, port_name = jack_port.name.partition(':')
                 if groups_dict.get(gp_name) is None:
-                    groups_dict[gp_name] = dict[str, dict[str, str | list[str]]]()
+                    groups_dict[gp_name] = dict[
+                        str, dict[str, str | list[str]]]()
 
                 if groups_dict[gp_name].get(el_name) is None:
                     groups_dict[gp_name][el_name] = list[str]()
@@ -724,7 +728,8 @@ class Patcher:
         
         try:
             with open(yaml_file, 'w') as f:
-                f.write(yaml.dump(out_dict, sort_keys=False))
+                f.write(yaml.dump(
+                    out_dict, sort_keys=False, allow_unicode=True))
         except:
             _logger.error(f'Unable to write {yaml_file}')
             # self.glob.terminate = True

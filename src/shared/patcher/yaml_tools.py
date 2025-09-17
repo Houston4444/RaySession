@@ -2,8 +2,8 @@ import re
 import logging
 from typing import Optional
 
-from .bases import (
-    ConnectionStr, ConnectionPattern, PatternOrName, PriorityConnection, PriorityConnElement)
+
+from .bases import ConnectionStr, ConnectionPattern
 
 _logger = logging.getLogger(__name__)
 
@@ -27,7 +27,8 @@ def load_conns_from_yaml(
                 from_patt = re.compile(from_pattern)
             except re.error as e:
                 _logger.warning(
-                    f"Incorrect from_pattern '{from_pattern}', Ignored. " + str(e))
+                    f"Incorrect from_pattern '{from_pattern}', Ignored. "
+                    + str(e))
                 continue
 
             if isinstance(to_pattern, str):
@@ -35,7 +36,8 @@ def load_conns_from_yaml(
                     to_patt = re.compile(to_pattern)
                 except re.error as e:
                     _logger.warning(
-                        f"Incorrect to_pattern '{to_pattern}', Ignored. " + str(e))
+                        f"Incorrect to_pattern '{to_pattern}', Ignored. "
+                        + str(e))
                     continue
                 
                 patterns.append((from_patt, to_patt))
@@ -86,91 +88,44 @@ def patterns_to_dict(patt: list[ConnectionPattern]) -> list[dict]:
         patterns.append(pattern)
     return patterns
 
-def _read_prio(
-        I: str, output: bool, patt, port) \
-            -> PatternOrName | list[PatternOrName] | None:
-    if output:
-        port_key = 'from'
-        patt_key = 'from_pattern'
-    else:
-        port_key = 'to'
-        patt_key = 'to_pattern'
-
-    if patt is not None:
-        if not isinstance(patt, str):
-            _logger.warning(
-                f'{I} "{patt_key}" must be a str')
-            return
-
-        if port is not None:
-            _logger.warning(
-                f'{I} use of "{port_key}" and "{patt_key}"')
-            return
+def load_connect_domain(
+        yaml_list: list, cdomain: list[ConnectionPattern]):
+    for el in yaml_list:
+        if not isinstance(el, dict):
+            continue
         
-        try:
-            ret_ = re.compile(patt)
-        except:
-            _logger.warning(f'{I} invalid "from_pattern".')
-            return
-
-    elif port is not None:
-        if isinstance(port, str):
-            ret_ = port
-        elif isinstance(port, list):
-            ret_ = list[str | re.Pattern[str]]()
-            for el in port:
-                if isinstance(el, str):
-                    ret_.append(el)
-                elif isinstance(el, dict):
-                    patt = el.get('pattern')
-                    if not isinstance(patt, str):
-                        _logger.warning(
-                            f'{I} list element can be a dict '
-                            f'only if it contains "pattern"')
-                        return
-                    
-                    try:
-                        ret_.append(re.compile(patt))
-                    except:
-                        _logger.warning(f'{I} invalid pattern: {patt}')
-                        return
-                else:
-                    _logger.warning(
-                        f'{I} Unknown element in "{port_key}" list.')
-                    return
+        port_from = el.get('from')
+        port_to = el.get('to')
+        from_pattern = el.get('from_pattern')
+        to_pattern = el.get('to_pattern')
+    
+        if isinstance(from_pattern, str):
+            try:
+                from_patt = re.compile(from_pattern)
+            except re.error as e:
+                _logger.warning(
+                    f"Incorrect from_pattern '{from_pattern}', Ignored. "
+                    + str(e))
+                continue
+        
+        elif isinstance(port_from, str):
+            from_patt = port_from
         else:
-            _logger.warning(
-                f'{I} "{port_key}" unrecognized format.')
-            return
-    
-    else:
-        _logger.warning(f'{I} "{port_key}" section missing.')
-        return
-    
-    return ret_
+            from_patt = re.compile(r'.*')
 
-def priority_connection_from_dict(prio_dict) -> Optional[PriorityConnection]:
-    I = f'priority_connection ignored in {prio_dict}.\n '
-    if not isinstance(prio_dict, dict):
-        _logger.warning(' is not a dict.')
-        return
-
-    from_ = _read_prio(
-        I, True, prio_dict.get('from_pattern'), prio_dict.get('from'))
-    if from_ is None:
-        return
-    
-    to_ = _read_prio(
-        I, False, prio_dict.get('to_pattern'), prio_dict.get('to'))
-    if to_ is None:
-        return
-    
-    if isinstance(from_, (str, re.Pattern)):
-        if isinstance(to_, list):
-            return (from_, to_)
-    elif isinstance(to_, (str, re.Pattern)):
-        return (from_, to_)
-    
-            
+        if isinstance(to_pattern, str):
+            try:
+                to_patt = re.compile(to_pattern)
+            except re.error as e:
+                _logger.warning(
+                    f"Incorrect to_pattern, Ignored.\n" + str(e))
+                continue
+        
+        elif isinstance(port_to, str):
+            to_patt = port_to
+        else:
+            to_patt = re.compile(r'.*')
+        
+        cdomain.append((from_patt, to_patt))
     
     

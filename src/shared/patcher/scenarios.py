@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from patshared import PortMode
 
-from .bases import ConnectionPattern, ConnectionStr,  PortData
+from .bases import ConnectionPattern, ConnectionStr, PortData
 from . import depattern
 from . import yaml_tools
 
@@ -109,6 +109,8 @@ class Scenario(BaseScenario):
         self.rules = rules
         self.playback_redirections = list[ConnectionStr]()
         self.capture_redirections = list[ConnectionStr]()
+        self.connect_domain = list[ConnectionPattern]()
+        self.no_connect_domain = list[ConnectionPattern]()
 
     def __repr__(self) -> str:
         return f'Scenario({self.name})'
@@ -314,6 +316,16 @@ class ScenariosManager:
                     
                     scenario.capture_redirections.append(
                         (origin, destination))
+            
+            domain = el.get('connect_domain')
+            if isinstance(domain, list):
+                yaml_tools.load_connect_domain(
+                    domain, scenario.connect_domain)
+                
+            no_domain = el.get('no_connect_domain')
+            if isinstance(no_domain, list):
+                yaml_tools.load_connect_domain(
+                    domain, scenario.no_connect_domain)
             
             self.scenarios.append(scenario)
 
