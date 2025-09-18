@@ -119,3 +119,13 @@ def to_yaml_list(
 
     conns_list.sort()
     return pats + [{'from': c[0], 'to': c[1]} for c in conns_list]
+
+def connection_in_domain(domain: list[tuple[PatternOrName, PatternOrName]],
+                         conn: ConnectionStr) -> bool:
+    port_from, port_to = conn
+    
+    for from_, to_ in domain:
+        if (str_match(from_, port_from)
+                and str_match(to_, port_to)):
+            return True
+    return False

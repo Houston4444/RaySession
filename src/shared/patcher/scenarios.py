@@ -115,6 +115,26 @@ class Scenario(BaseScenario):
     def __repr__(self) -> str:
         return f'Scenario({self.name})'
 
+    def _belongs_to_domain(self, conn: ConnectionStr) -> bool:
+        if self.connect_domain:
+            if self.no_connect_domain:
+                in_no_domain = depattern.connection_in_domain(
+                    self.no_connect_domain, conn)
+                if in_no_domain:
+                    return False
+                
+            in_domain = depattern.connection_in_domain(
+                self.connect_domain, conn)
+            return in_domain
+        
+        if self.no_connect_domain:
+            in_no_domain = depattern.connection_in_domain(
+                self.no_connect_domain, conn)
+            if in_no_domain:
+                return False
+            return True
+        return True            
+
     def must_stock_conn(self, conn: ConnectionStr) -> bool:
         'True if one of the conn ports is the origin of a redirection'
         port_from , port_to = conn
