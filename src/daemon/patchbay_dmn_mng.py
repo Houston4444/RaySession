@@ -171,7 +171,6 @@ def start(gui_url='', one_shot_act=''):
         raise Exception
 
     if _MainObj.is_internal:
-
         try:
             _MainObj.internal_client = InternalClient(
                 'ray-patchbay_daemon',

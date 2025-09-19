@@ -45,13 +45,19 @@ class PatchRemote(BunServerThread):
         self.add_managed_methods()
         self.ev = ev_handler
         patchbay_dmn_mng.start(self.url)
-        self._patchbay_port = patchbay_dmn_mng.get_port()
         self.ports = dict[FullPortName, JackPort]()
         self.connections = list[tuple[FullPortName, FullPortName]]()
         self.startup_received = False
 
     def send_patchbay(self, *args):
-        self.send(self._patchbay_port, *args)
+        pb_port = patchbay_dmn_mng.get_port()
+        if pb_port is None:
+            _logger.warning(
+                f'Try to send message to patchbay daemon '
+                f'without pathcbay daemon port\n'
+                f'{args}')
+            return
+        self.send(pb_port, *args)
 
     @bun_manage(rpm.ANNOUNCE, 'iiiis')
     def _patchbay_announce(self, osp: OscPack):
