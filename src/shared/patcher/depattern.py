@@ -120,6 +120,28 @@ def to_yaml_list(
     conns_list.sort()
     return pats + [{'from': c[0], 'to': c[1]} for c in conns_list]
 
+def domain_to_yaml(
+        domain: list[tuple[PatternOrName, PatternOrName]]) -> \
+            list[dict[str, str]]:
+    out_list = list[dict]()
+    for from_, to_ in domain:
+        out_dict = dict[str, str]()
+        if isinstance(from_, re.Pattern):
+            if from_.pattern != '.*':
+                out_dict['from_pattern'] = from_.pattern
+        else:
+            out_dict['from'] = from_
+        
+        if isinstance(to_, re.Pattern):
+            if to_.pattern != '.*':
+                out_dict['to_pattern'] = to_.pattern
+        else:
+            out_dict['to'] = to_
+            
+        out_list.append(out_dict)
+
+    return out_list
+
 def connection_in_domain(domain: list[tuple[PatternOrName, PatternOrName]],
                          conn: ConnectionStr) -> bool:
     port_from, port_to = conn

@@ -1,3 +1,4 @@
+from enum import Enum, auto
 import logging
 from typing import TYPE_CHECKING
 
@@ -12,6 +13,34 @@ if TYPE_CHECKING:
 
 
 _logger = logging.getLogger(__name__)
+
+
+class ScenarioMode(Enum):
+    '''Defines the scenario connections behavior.'''
+
+    AUTO = auto()
+    '''Scenario will be REDIRECTIONS if there are redirections and
+    no connect domain, else CONNECT_DOMAIN'''
+    
+    REDIRECTIONS = auto()
+    '''Scenario applies projections of connections in BaseScenario
+    within the capture_redirections and playback_redirections. Only the
+    connections to a redirection origin are saved specificaly in the
+    scenario'''
+    
+    CONNECT_DOMAIN = auto()
+    '''Connections allowed to be stored in the connect domain will be stored
+    in the scenario. Other connections will be depend on the BaseScenario'''
+    
+    @staticmethod
+    def from_input(input: str | None) -> 'ScenarioMode':
+        if input is None:
+            return ScenarioMode.AUTO
+        if input.lower() == 'redirections':
+            return ScenarioMode.REDIRECTIONS
+        if input.lower() == 'connect_domain':
+            return ScenarioMode.CONNECT_DOMAIN
+        return ScenarioMode.AUTO
 
 
 class ScenarioRules:
@@ -107,33 +136,48 @@ class Scenario(BaseScenario):
         super().__init__()
         self.name = ''
         self.rules = rules
+        self.mode = ScenarioMode.AUTO
         self.playback_redirections = list[ConnectionStr]()
         self.capture_redirections = list[ConnectionStr]()
         self.connect_domain = list[ConnectionPattern]()
         self.no_connect_domain = list[ConnectionPattern]()
 
     def __repr__(self) -> str:
-        return f'Scenario({self.name})'
+        return f'Scenario({self.name}:{self.mode.name})'
+    
+    def get_final_mode(self, mode: ScenarioMode) -> ScenarioMode:
+        '''Choose the ScenarioMode depending on scenario attributes
+        in case mode is AUTO'''
+        if mode is not ScenarioMode.AUTO:
+            return mode
+        
+        if self.connect_domain or self.no_connect_domain:
+            return ScenarioMode.CONNECT_DOMAIN
+        
+        if self.capture_redirections or self.playback_redirections:
+            return ScenarioMode.REDIRECTIONS
+        
+        return ScenarioMode.CONNECT_DOMAIN
 
     def _belongs_to_domain(self, conn: ConnectionStr) -> bool:
+        if self.mode is not ScenarioMode.CONNECT_DOMAIN:
+            raise Exception
+
         if self.connect_domain:
             if self.no_connect_domain:
-                in_no_domain = depattern.connection_in_domain(
-                    self.no_connect_domain, conn)
-                if in_no_domain:
+                if depattern.connection_in_domain(
+                        self.no_connect_domain, conn):
                     return False
                 
-            in_domain = depattern.connection_in_domain(
+            return depattern.connection_in_domain(
                 self.connect_domain, conn)
-            return in_domain
         
         if self.no_connect_domain:
-            in_no_domain = depattern.connection_in_domain(
-                self.no_connect_domain, conn)
-            if in_no_domain:
+            if depattern.connection_in_domain(
+                    self.no_connect_domain, conn):
                 return False
-            return True
-        return True            
+            return True        
+        return True
 
     def must_stock_conn(self, conn: ConnectionStr) -> bool:
         'True if one of the conn ports is the origin of a redirection'
@@ -145,6 +189,7 @@ class Scenario(BaseScenario):
         for cp_red in self.playback_redirections:
             if port_to == cp_red[0]:
                 return True
+
         return False
 
     def redirecteds(self, conn: ConnectionStr,
@@ -209,6 +254,14 @@ class Scenario(BaseScenario):
             out_d['capture_redirections'] = [
                 {'origin': ct[0], 'destination': ct[1]}
                 for ct in self.capture_redirections]
+        
+        if self.connect_domain:
+            out_d['connect_domain'] = depattern.domain_to_yaml(
+                self.connect_domain)
+        
+        if self.no_connect_domain:
+            out_d['no_connect_domain'] = depattern.domain_to_yaml(
+                self.no_connect_domain)
         
         return out_d
 
@@ -347,6 +400,9 @@ class ScenariosManager:
                 yaml_tools.load_connect_domain(
                     domain, scenario.no_connect_domain)
             
+            scenario.mode = scenario.get_final_mode(
+                ScenarioMode.from_input(el.get('mode')))
+            
             self.scenarios.append(scenario)
 
     def load_yaml(self, yaml_dict: dict):
@@ -434,40 +490,43 @@ class ScenariosManager:
         output_ports = set([
             p.name for p in self.patcher.ports[PortMode.OUTPUT]])
         
-        if scenario is default:
+        if not isinstance(scenario, Scenario):
             for conn in self.patcher.connections:
                 default.saved_conns.add(conn)
             
-            rm_conns = list[ConnectionStr]()
-            for svd_conn in default.saved_conns:
+            for svd_conn in list(default.saved_conns):
                 if (svd_conn not in self.patcher.connections
                         and svd_conn[0] in output_ports
                         and svd_conn[1] in input_ports):
-                    rm_conns.append(svd_conn)
+                    default.saved_conns.discard(svd_conn)
             
-            for rm_conn in rm_conns:
-                default.saved_conns.discard(rm_conn)
         else:
-            for conn in self.patcher.connections:
-                if scenario.must_stock_conn(conn):
-                    scenario.saved_conns.add(conn)
-                    continue
+            match scenario.mode:
+                case ScenarioMode.REDIRECTIONS:
+                    for conn in self.patcher.connections:
+                        if scenario.must_stock_conn(conn):
+                            scenario.saved_conns.add(conn)
+                            continue
+                        
+                        redirected = scenario.redirecteds(conn, restored=True)
+                        if redirected:
+                            for red_conn in redirected:
+                                default.saved_conns.add(red_conn)
+                        else:
+                            default.saved_conns.add(conn)
                 
-                redirected = scenario.redirecteds(conn, restored=True)
-                if redirected:
-                    for red_conn in redirected:
-                        default.saved_conns.add(red_conn)
-                else:
-                    default.saved_conns.add(conn)
+                case ScenarioMode.CONNECT_DOMAIN:
+                    for conn in self.patcher.connections:
+                        if scenario._belongs_to_domain(conn):
+                            scenario.saved_conns.add(conn)
+                        else:
+                            default.saved_conns.add(conn)
 
-            rm_conns = list[ConnectionStr]()
-            for svd_conn in scenario.saved_conns:
+            for svd_conn in list(scenario.saved_conns):
                 if (svd_conn not in self.patcher.connections
                         and svd_conn[0] in output_ports
                         and svd_conn[1] in input_ports):
-                    rm_conns.append(svd_conn)
-            for rm_conn in rm_conns:
-                scenario.saved_conns.discard(rm_conn)
+                    scenario.saved_conns.discard(svd_conn)
 
     def choose(self, present_clients: set[str]) -> str:
         num = 0
@@ -510,7 +569,8 @@ class ScenariosManager:
         all_conns = set[ConnectionStr]()
         
         # remove from previous_scn saved conns not connected anymore
-        if previous_scn is default_scn:
+        if not isinstance(previous_scn, Scenario):
+            # previous_scn is default_scn
             for svd_conn in list(default_scn.saved_conns):
                 if (svd_conn not in connections
                         and svd_conn in self.recent_connections):
@@ -521,18 +581,30 @@ class ScenariosManager:
                         and svd_conn in self.recent_connections):
                     previous_scn.saved_conns.discard(svd_conn)
 
-            # remove from default_scn saved conns without projection
-            # connected anymore.
-            # (except if projections are forbidden in the previous_scn).
-            for svd_conn in list(default_scn.saved_conns):
-                for proj_conn in previous_scn.projections(svd_conn):
-                    if (proj_conn in connections
-                        or proj_conn not in self.recent_connections
-                        or proj_conn in previous_scn.forbidden_conns):
-                        break
-                else:
-                    default_scn.saved_conns.discard(svd_conn)
-        
+            match previous_scn.mode:
+                case ScenarioMode.REDIRECTIONS:
+                    # remove from default_scn saved conns without projection
+                    # connected anymore.
+                    # (except if projections are forbidden
+                    #  in the previous_scn).
+                    for svd_conn in list(default_scn.saved_conns):
+                        for proj_conn in previous_scn.projections(svd_conn):
+                            if (proj_conn in connections
+                                or proj_conn not in self.recent_connections
+                                or proj_conn in previous_scn.forbidden_conns):
+                                break
+                        else:
+                            default_scn.saved_conns.discard(svd_conn)
+                            
+                case ScenarioMode.CONNECT_DOMAIN:
+                    # remove from default_scn saved conns not present
+                    # and not in connect_domain if previous_scn
+                    for svd_conn in list(default_scn.saved_conns):
+                        if (not previous_scn._belongs_to_domain(svd_conn)
+                                and svd_conn not in connections
+                                and svd_conn in self.recent_connections):
+                            default_scn.saved_conns.discard(svd_conn)
+
         # stock all possible connections we want to treat
         all_conns = (connections
                      | default_scn.saved_conns
@@ -543,31 +615,48 @@ class ScenariosManager:
         if isinstance(next_scn, Scenario):
             all_conns |= (next_scn.saved_conns
                           | next_scn.forbidden_conns)
-        
-        # save projections of previous_scn in default_scn
-        # and unprojectable conns in previous_scn
+
         projection_conns = set[ConnectionStr]()
 
         if isinstance(previous_scn, Scenario):
-            for conn in connections:
-                if previous_scn.must_stock_conn(conn):
-                    previous_scn.saved_conns.add(conn)
-                    continue
-                
-                for df_proj in previous_scn.projections(conn, restored=True):
-                    default_scn.saved_conns.add(df_proj)
+            match previous_scn.mode:
+                case ScenarioMode.REDIRECTIONS:
+                    for conn in connections:
+                        if previous_scn.must_stock_conn(conn):
+                            # save unprojectable conns in previous_scn
+                            previous_scn.saved_conns.add(conn)
+                            continue
+                        
+                        # save projections of previous_scn in default_scn
+                        for df_proj in previous_scn.projections(
+                                conn, restored=True):
+                            default_scn.saved_conns.add(df_proj)
+                            
+                case ScenarioMode.CONNECT_DOMAIN:
+                    for conn in connections:
+                        if previous_scn._belongs_to_domain(conn):
+                            previous_scn.saved_conns.add(conn)
+                        else:
+                            default_scn.saved_conns.add(conn)
         else:
             for conn in connections:
                 default_scn.saved_conns.add(conn)
 
         # set projection connections
         if isinstance(next_scn, Scenario):
-            for conn in default_scn.saved_conns:
-                if conn in next_scn.saved_conns:
-                    continue
+            match next_scn.mode:
+                case ScenarioMode.REDIRECTIONS:
+                    for conn in default_scn.saved_conns:
+                        if conn in next_scn.saved_conns:
+                            continue
+                        
+                        for proj_conn in next_scn.projections(conn):
+                            projection_conns.add(proj_conn)
                 
-                for proj_conn in next_scn.projections(conn):
-                    projection_conns.add(proj_conn)
+                case ScenarioMode.CONNECT_DOMAIN:
+                    for conn in default_scn.saved_conns:
+                        if not next_scn._belongs_to_domain(conn):
+                            projection_conns.add(conn)
         else:
             for conn in default_scn.saved_conns:
                 projection_conns.add(conn)
