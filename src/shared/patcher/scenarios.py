@@ -1,6 +1,9 @@
 from enum import Enum, auto
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING
+
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
 from patshared import PortMode
 
@@ -288,20 +291,23 @@ class ScenariosManager:
     def current(self) -> BaseScenario:
         return self.scenarios[self.current_num]
 
-    def _load_yaml_scenarios(self, yaml_list: list):
+    def _load_yaml_scenarios(self, yaml_list: CommentedSeq):
         if not isinstance(yaml_list, list):
             return
         
-        for el in yaml_list:
+        for i in range(len(yaml_list)):
+            el = yaml_list[i]
             m = f'Scenario {el} ignored.'
             
-            if not isinstance(el, dict):
-                _logger.warning(f'{m} not a dict')
+            if not isinstance(el, CommentedMap):
+                yaml_tools._err_reading_yaml(
+                    yaml_list, i, f'Scenario is not a dict/map, ignored.')
                 continue
             
             rules = el.get('rules')
-            if not isinstance(rules, dict):
-                _logger.warning(f'{m} It must have "rules" dict.')
+            if not isinstance(rules, CommentedMap):
+                yaml_tools._err_reading_yaml(
+                    yaml_list, i, f'Scenario must have "rules", ignored.')
                 continue
             
             sc_rules = ScenarioRules()
@@ -310,7 +316,7 @@ class ScenariosManager:
             valid = True
             if isinstance(present_clients, str):
                 sc_rules.present_clients.append(present_clients)
-            elif isinstance(present_clients, list):
+            elif isinstance(present_clients, CommentedSeq):
                 for present_client in present_clients:
                     if not isinstance(present_client, str):
                         valid = False
@@ -320,14 +326,16 @@ class ScenariosManager:
                 valid = False
             
             if not valid:
-                _logger.warning(f'{m} Invalid present client in rules')
+                yaml_tools._err_reading_yaml(
+                    rules, 'present_clients',
+                    'Invalid "present_clients", must be a dict/map or string')
                 continue
             
             absent_clients = rules.get('absent_clients')
             valid = True
             if isinstance(absent_clients, str):
                 sc_rules.absent_clients.append(absent_clients)
-            elif isinstance(absent_clients, list):
+            elif isinstance(absent_clients, CommentedSeq):
                 for absent_client in absent_clients:
                     if not isinstance(absent_client, str):
                         valid = False
@@ -337,7 +345,9 @@ class ScenariosManager:
                 valid = False
 
             if not valid:
-                _logger.warning(f'{m} Invalid absent client in rules')
+                yaml_tools._err_reading_yaml(
+                    rules, 'present_clients',
+                    'Invalid "absent_clients", must be a dict/map or string')
                 continue
             
             scenario = Scenario(sc_rules)
@@ -347,21 +357,30 @@ class ScenariosManager:
                 scenario.name = name
                 
             conns = el.get('connections')
-            if isinstance(conns, list):
+            if isinstance(conns, CommentedSeq):
                 yaml_tools.load_conns_from_yaml(
                     conns, scenario.saved_conns,
                     scenario.saved_patterns)
+            elif conns is not None:
+                yaml_tools.log_wrong_type_in_map(
+                    el, 'connections', list)
 
             fbd_conns = el.get('forbidden_connections')
-            if isinstance(fbd_conns, list):
+            if isinstance(fbd_conns, CommentedSeq):
                 yaml_tools.load_conns_from_yaml(
                     fbd_conns, scenario.forbidden_conns,
                     scenario.forbidden_patterns)
-            
+            elif fbd_conns is not None:
+                yaml_tools.log_wrong_type_in_map(
+                    el, 'forbidden_connections', list)
+
             pb_redirections = el.get('playback_redirections')
-            if isinstance(pb_redirections, list):
-                for pb_red in pb_redirections:
-                    if not isinstance(pb_red, dict):
+            if isinstance(pb_redirections, CommentedSeq):
+                for j in range(len(pb_redirections)):
+                    pb_red = pb_redirections[j]
+                    if not isinstance(pb_red, CommentedMap):
+                        yaml_tools.log_wrong_type_in_seq(
+                            pb_redirections, j, 'playback_redirection', dict)
                         continue
                     
                     origin = pb_red.get('origin')
@@ -369,15 +388,20 @@ class ScenariosManager:
                     
                     if not (isinstance(origin, str)
                             and isinstance(destination, str)):
+                        yaml_tools._err_reading_yaml(
+                            pb_redirections, j, 'incomplete redirection')
                         continue
                     
                     scenario.playback_redirections.append(
                         (origin, destination))
             
             ct_redirections = el.get('capture_redirections')
-            if isinstance(ct_redirections, list):
-                for ct_red in ct_redirections:
-                    if not isinstance(ct_red, dict):
+            if isinstance(ct_redirections, CommentedSeq):
+                for j in range(len(ct_redirections)):
+                    ct_red = ct_redirections[j]
+                    if not isinstance(ct_red, CommentedMap):
+                        yaml_tools.log_wrong_type_in_seq(
+                            ct_redirections, j, 'capture_redirection', dict)
                         continue
                     
                     origin = ct_red.get('origin')
@@ -385,18 +409,20 @@ class ScenariosManager:
                     
                     if not (isinstance(origin, str)
                             and isinstance(destination, str)):
+                        yaml_tools._err_reading_yaml(
+                            pb_redirections, j, 'incomplete redirection')
                         continue
                     
                     scenario.capture_redirections.append(
                         (origin, destination))
             
             domain = el.get('connect_domain')
-            if isinstance(domain, list):
+            if isinstance(domain, CommentedSeq):
                 yaml_tools.load_connect_domain(
                     domain, scenario.connect_domain)
                 
             no_domain = el.get('no_connect_domain')
-            if isinstance(no_domain, list):
+            if isinstance(no_domain, CommentedSeq):
                 yaml_tools.load_connect_domain(
                     domain, scenario.no_connect_domain)
             
@@ -405,21 +431,26 @@ class ScenariosManager:
             
             self.scenarios.append(scenario)
 
-    def load_yaml(self, yaml_dict: dict):
+    def load_yaml(self, yaml_dict: CommentedMap):        
         conns = yaml_dict.get('connections')
         default = self.scenarios[0]
-        if isinstance(conns, list):
+        if isinstance(conns, CommentedSeq):
             yaml_tools.load_conns_from_yaml(
                 conns, default.saved_conns, default.saved_patterns)
+        elif conns is not None:
+            yaml_tools.log_wrong_type_in_map(yaml_dict, 'connections', list)
         
         forbidden_conns = yaml_dict.get('forbidden_connections')
-        if isinstance(forbidden_conns, list):
+        if isinstance(forbidden_conns, CommentedSeq):
             yaml_tools.load_conns_from_yaml(
                 forbidden_conns, default.forbidden_conns,
                 default.forbidden_patterns)
+        elif forbidden_conns is not None:
+            yaml_tools.log_wrong_type_in_map(
+                yaml_dict, 'forbidden_connections', list)
         
         scenars = yaml_dict.get('scenarios')
-        if isinstance(scenars, list):
+        if isinstance(scenars, CommentedSeq):
             self._load_yaml_scenarios(scenars)
             
         for scenario in self.scenarios:

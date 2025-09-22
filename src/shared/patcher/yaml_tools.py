@@ -1,18 +1,83 @@
 import re
 import logging
+from pathlib import Path
 from typing import Optional
 
+from ruamel.yaml.comments import CommentedSeq, CommentedMap
 
 from .bases import ConnectionStr, ConnectionPattern
 
 _logger = logging.getLogger(__name__)
+file_path = ''
+'Contains the path of the yaml patch file, only for logging.'
 
+
+def _err_reading_yaml(
+        el: CommentedMap | CommentedSeq,
+        key: str | int, msg: str):
+    '''log a warning because something in the yaml file was not
+    properly written. It retrieves the line where the error is.
+    
+    If `el` is a CommentedMap (dict), key must be a str, else if
+    `el` is a CommentedSeq (list), key is an int (the index in the list)'''
+    if isinstance(el, CommentedMap):
+        linecol = el.lc.key(key)
+    elif isinstance(el, CommentedSeq):
+        linecol = el.lc.item(key)
+    else:
+        return
+        
+    if (not isinstance(linecol, tuple)
+            or not linecol):
+        _logger.error(
+            f"Error in error report with key {key}:{linecol},{type(linecol)}")
+        return
+    
+    _logger.warning(f'File {file_path},\n\tLine {linecol[0]+1}: {msg}')
+
+def _type_to_str_(wanted_type: type) -> str:
+    if wanted_type is list:
+        return 'list'
+    if wanted_type is dict:
+        return 'dict/map'
+    if wanted_type is str:
+        return 'string'
+    return ''
+
+def _type_to_str(wanted_type: type | tuple[type, ...]) -> str:
+    if isinstance(wanted_type, tuple):
+        type_strs = [_type_to_str_(t) for t in wanted_type]
+        match len(type_strs):
+            case 0:
+                return ''
+            case 1:
+                return type_strs[0]
+            case 2:
+                return ' or '.join(type_strs)
+            case _:
+                return ', '.join(type_strs[:-1]) + ' or ' + type_strs[-1]
+    
+    return _type_to_str_(wanted_type)
+
+def log_wrong_type_in_map(map: CommentedMap, key: str, wanted_type: type):
+    _err_reading_yaml(
+        map, key, f'"{key}" must be a {_type_to_str(wanted_type)}')
+
+def log_wrong_type_in_seq(
+        el : CommentedSeq, index: int, name: str, wanted_type: type):
+    _err_reading_yaml(
+        el, index, f'{name} must be a {_type_to_str(wanted_type)}')
 
 def load_conns_from_yaml(
-        yaml_list: list, conns: set[ConnectionStr],
+        yaml_list: CommentedSeq, conns: set[ConnectionStr],
         patterns: list[ConnectionPattern]):
+    i = -1
     for conn_d in yaml_list:
-        if not isinstance(conn_d, dict):
+        i += 1
+
+        if not isinstance(conn_d, CommentedMap):
+            _err_reading_yaml(
+                yaml_list, i, 'connection is not a dict/map')            
             continue
         
         port_from = conn_d.get('from')
@@ -21,23 +86,24 @@ def load_conns_from_yaml(
         to_pattern = conn_d.get('to_pattern')
         from_patt: Optional[re.Pattern] = None
         to_patt: Optional[re.Pattern] = None
+        incomplete = False
         
         if isinstance(from_pattern, str):
             try:
                 from_patt = re.compile(from_pattern)
             except re.error as e:
-                _logger.warning(
-                    f"Incorrect from_pattern '{from_pattern}', Ignored. "
-                    + str(e))
+                _err_reading_yaml(
+                    conn_d, 'from_pattern',
+                    f"Incorrect pattern '{from_pattern}', ignored.\n\t{e}")
                 continue
 
             if isinstance(to_pattern, str):
                 try:
                     to_patt = re.compile(to_pattern)
                 except re.error as e:
-                    _logger.warning(
-                        f"Incorrect to_pattern '{to_pattern}', Ignored. "
-                        + str(e))
+                    _err_reading_yaml(
+                        conn_d, 'to_pattern',
+                        f"Incorrect pattern '{to_pattern}', ignored.\n\t{e}")
                     continue
                 
                 patterns.append((from_patt, to_patt))
@@ -45,32 +111,32 @@ def load_conns_from_yaml(
             elif isinstance(port_to, str):
                 patterns.append((from_patt, port_to))
             else:
-                _logger.warning(
-                    f'incorrect pattern connection '
-                    f'with "{conn_d}"')
+                incomplete = True
 
         elif isinstance(to_pattern, str):
             try:
                 to_patt = re.compile(to_pattern)
             except re.error as e:
-                _logger.warning(
-                    f"Incorrect to_pattern, Ignored.\n" + str(e))
+                _err_reading_yaml(
+                    conn_d, 'to_pattern',
+                    f"Incorrect pattern '{to_pattern}', ignored.\n\t{e}")
                 continue
             
             if isinstance(port_from, str):
                 patterns.append((port_from, to_patt))
             else:
-                _logger.warning(
-                    f'incorrect pattern connection '
-                    f'with "{conn_d}"')
+                incomplete = True
         
         elif isinstance(port_from, str) and isinstance(port_to, str):
             conns.add((port_from, port_to))
 
         else:
-            _logger.warning(
-                f"{conn_d} is incomplete or not correct.")
-            continue
+            incomplete = True
+        
+        if incomplete:
+            _err_reading_yaml(
+                yaml_list, i,
+                'Connection incomplete or not correct')
 
 def patterns_to_dict(patt: list[ConnectionPattern]) -> list[dict]:
     patterns = list[dict]()
@@ -89,9 +155,14 @@ def patterns_to_dict(patt: list[ConnectionPattern]) -> list[dict]:
     return patterns
 
 def load_connect_domain(
-        yaml_list: list, cdomain: list[ConnectionPattern]):
-    for el in yaml_list:
-        if not isinstance(el, dict):
+        yaml_list: CommentedSeq,
+        cdomain: list[ConnectionPattern]):
+    for i in range(len(yaml_list)):
+        el = yaml_list[i]
+        if not isinstance(el, CommentedMap):
+            _err_reading_yaml(
+                yaml_list, i,
+                'connect_domain is not a dict/map.')
             continue
         
         port_from = el.get('from')
@@ -103,9 +174,9 @@ def load_connect_domain(
             try:
                 from_patt = re.compile(from_pattern)
             except re.error as e:
-                _logger.warning(
-                    f"Incorrect from_pattern '{from_pattern}', Ignored. "
-                    + str(e))
+                _err_reading_yaml(
+                    el, 'from_pattern',
+                    f"Incorrect pattern '{from_pattern}', ignored.\n\t{e}")
                 continue
         
         elif isinstance(port_from, str):
@@ -117,8 +188,9 @@ def load_connect_domain(
             try:
                 to_patt = re.compile(to_pattern)
             except re.error as e:
-                _logger.warning(
-                    f"Incorrect to_pattern, Ignored.\n" + str(e))
+                _err_reading_yaml(
+                    el, 'to_pattern',
+                    f"Incorrect pattern '{from_pattern}', ignored.\n\t{e}")
                 continue
         
         elif isinstance(port_to, str):

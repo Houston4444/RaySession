@@ -5,7 +5,9 @@ import re
 from typing import Optional
 import xml.etree.ElementTree as ET
 import time
-import yaml
+
+from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap
 
 from patshared import PortMode, PortType
 
@@ -27,6 +29,7 @@ from .bases import (
     Timer,
     PatchEvent,
     debug_conn_str)
+from . import yaml_tools
 from . import scenarios
 
 _logger = logging.getLogger(__name__)
@@ -464,13 +467,16 @@ class Patcher:
             try:
                 with open(yaml_path, 'r') as f:
                     contents = f.read()
-                    yaml_dict = yaml.safe_load(contents)
-                    assert isinstance(yaml_dict, dict)
+                    yaml = YAML()
+                    yaml_dict = yaml.load(contents)
+                    assert isinstance(yaml_dict, CommentedMap)
             except:
                 _logger.error(f'unable to read file {yaml_path}') 
                 return (Err.BAD_PROJECT,
                         f'{file_path} is not a correct .yaml file')
             
+            yaml_tools.file_path = yaml_path
+
             brothers = yaml_dict.get('nsm_brothers')
             brothers_ = dict[str, str]()
 
@@ -728,10 +734,13 @@ class Patcher:
         
         try:
             with open(yaml_file, 'w') as f:
-                f.write(yaml.dump(
-                    out_dict, sort_keys=False, allow_unicode=True))
-        except:
-            _logger.error(f'Unable to write {yaml_file}')
+                yaml = YAML()
+                print(out_dict)
+                # f.write(yaml.dump(
+                #     out_dict, sort_keys=False, allow_unicode=True))
+                f.write(yaml.dump(out_dict))
+        except BaseException as e:
+            _logger.error(f'Unable to write {yaml_file}\n\t{e}')
             # self.glob.terminate = True
 
         self.set_dirty_clean()
