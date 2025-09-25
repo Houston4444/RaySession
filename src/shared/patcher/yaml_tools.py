@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from ruamel.yaml.comments import CommentedSeq, CommentedMap
+from ruamel.yaml.comments import CommentedSeq, CommentedMap, Comment
 
 from .bases import ConnectionStr, ConnectionPattern
 
@@ -199,5 +199,30 @@ def load_connect_domain(
             to_patt = re.compile(r'.*')
         
         cdomain.append((from_patt, to_patt))
-    
-    
+
+def replace_key_comment_with(map: CommentedMap, key: str, comment: str):
+    # Pfff, boring to find this !
+    if isinstance(map.ca, Comment):
+        if key in map.ca.items:
+            map.ca.items[key][3] =  None
+    map.yaml_set_comment_before_after_key(key, after=comment)
+
+def add_empty_lines(input_str: str) -> str:
+    '''add empty lines in full yaml str before some main keys.'''
+    # Methods to achieve this from ruamel directly seems to not be reliable,
+    # (often, set comment does not remove the existing comment, and we don't
+    # want here to add empty line if it already exists
+    out_lines = list[str]()
+    last_is_empty = False
+    for line in input_str.splitlines():
+        if line.startswith(
+                ('scenarios:', 'connections:', 'forbidden_connections:',
+                 'graph:', 'nsm_brothers:')):
+            if not last_is_empty:
+                out_lines.append('')
+
+        out_lines.append(line)
+        last_is_empty = bool(line == '')
+
+    return '\n'.join(out_lines)
+

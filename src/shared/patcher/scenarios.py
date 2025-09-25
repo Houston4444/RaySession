@@ -107,8 +107,8 @@ class BaseScenario:
         or a list containing only conn if no redirection was found.'''
         return [conn]
     
-    def to_yaml_dict(self) -> dict:
-        out_d = {}
+    def to_yaml_map(self) -> CommentedMap:
+        out_d = CommentedMap()
         forbidden_conns = depattern.to_yaml_list(
             self.forbidden_patterns, self.forbidden_conns)
         if forbidden_conns:
@@ -117,7 +117,7 @@ class BaseScenario:
             self.saved_patterns, self.saved_conns)        
         if saved_conns:
             out_d['connections'] = saved_conns
-        
+
         return out_d
     
     def startup_depattern(self, ports: dict[PortMode, list[PortData]]):
@@ -144,6 +144,8 @@ class Scenario(BaseScenario):
         self.capture_redirections = list[ConnectionStr]()
         self.connect_domain = list[ConnectionPattern]()
         self.no_connect_domain = list[ConnectionPattern]()
+        
+        self.yaml_map = CommentedMap()
 
     def __repr__(self) -> str:
         return f'Scenario({self.name}:{self.mode.name})'
@@ -233,10 +235,8 @@ class Scenario(BaseScenario):
             return ret
         return [conn]    
 
-    def to_yaml_dict(self) -> dict:
-        out_d = {}
-        out_d['name'] = self.name
-        out_d['rules'] = self.rules.to_yaml_dict()
+    def to_yaml_map(self) -> CommentedMap:
+        out_d = self.yaml_map
         
         forbidden_conns = depattern.to_yaml_list(
             self.forbidden_patterns, self.forbidden_conns)
@@ -247,25 +247,7 @@ class Scenario(BaseScenario):
             self.saved_patterns, self.saved_conns)        
         if saved_conns:
             out_d['connections'] = saved_conns
-        
-        if self.playback_redirections:
-            out_d['playback_redirections'] = [
-                {'origin': pb[0], 'destination': pb[1]}
-                for pb in self.playback_redirections]
-        
-        if self.capture_redirections:
-            out_d['capture_redirections'] = [
-                {'origin': ct[0], 'destination': ct[1]}
-                for ct in self.capture_redirections]
-        
-        if self.connect_domain:
-            out_d['connect_domain'] = depattern.domain_to_yaml(
-                self.connect_domain)
-        
-        if self.no_connect_domain:
-            out_d['no_connect_domain'] = depattern.domain_to_yaml(
-                self.no_connect_domain)
-        
+                
         return out_d
 
 
@@ -292,12 +274,11 @@ class ScenariosManager:
         return self.scenarios[self.current_num]
 
     def _load_yaml_scenarios(self, yaml_list: CommentedSeq):
-        if not isinstance(yaml_list, list):
+        if not isinstance(yaml_list, CommentedSeq):
             return
-        
+
         for i in range(len(yaml_list)):
             el = yaml_list[i]
-            m = f'Scenario {el} ignored.'
             
             if not isinstance(el, CommentedMap):
                 yaml_tools._err_reading_yaml(
@@ -351,6 +332,7 @@ class ScenariosManager:
                 continue
             
             scenario = Scenario(sc_rules)
+            scenario.yaml_map = el
             
             name = el.get('name')
             if isinstance(name, str):
@@ -456,10 +438,11 @@ class ScenariosManager:
         for scenario in self.scenarios:
             scenario.startup_depattern(self.patcher.ports)
 
-    def fill_yaml(self, yaml_dict: dict):
-        yaml_dict['scenarios'] = [
-            sc.to_yaml_dict() for sc in self.scenarios[1:]]
-        for key, value in self.scenarios[0].to_yaml_dict().items():
+    def fill_yaml(self, yaml_dict: CommentedMap):
+        if len(self.scenarios) > 1:
+            yaml_dict['scenarios'] = [
+                sc.to_yaml_map() for sc in self.scenarios[1:]]
+        for key, value in self.scenarios[0].to_yaml_map().items():
             yaml_dict[key] = value
 
     def load_xml_connections(self, conns: set[ConnectionStr]):

@@ -1,13 +1,14 @@
 
+from io import StringIO
 import logging
 import os
 import re
+import time
 from typing import Optional
 import xml.etree.ElementTree as ET
-import time
 
 from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
 from patshared import PortMode, PortType
 
@@ -31,6 +32,7 @@ from .bases import (
     debug_conn_str)
 from . import yaml_tools
 from . import scenarios
+from .yaml_comments import GRAPH, NSM_BROTHERS
 
 _logger = logging.getLogger(__name__)
 
@@ -101,7 +103,7 @@ class Patcher:
         self.nsm_server.announce(
             self.engine.NSM_NAME, ':dirty:switch:monitor:', engine.EXECUTABLE)
         
-        self.yaml_dict = {}
+        self.yaml_dict = CommentedMap()
 
     def run_loop(self, stop_with_jack=True):
         self.engine.fill_ports_and_connections(
@@ -453,7 +455,7 @@ class Patcher:
         self.conns_to_connect.clear()
         self.conns_to_disconnect.clear()
 
-        file_path = project_path + '.xml'
+        xml_path = project_path + '.xml'
         yaml_path = project_path + '.yaml'
         self.project_path = project_path
 
@@ -473,7 +475,7 @@ class Patcher:
             except:
                 _logger.error(f'unable to read file {yaml_path}') 
                 return (Err.BAD_PROJECT,
-                        f'{file_path} is not a correct .yaml file')
+                        f'{yaml_path} is not a correct .yaml file')
             
             yaml_tools.file_path = yaml_path
 
@@ -486,7 +488,7 @@ class Patcher:
                         brothers_[key] = value
 
             graph = yaml_dict.get('graph')
-            if isinstance(graph, dict):
+            if isinstance(graph, CommentedMap):
                 for group_name, gp_dict in graph.items():
                     if not (isinstance(group_name, str)
                             and isinstance(gp_dict, dict)):
@@ -530,22 +532,22 @@ class Patcher:
             
             self.yaml_dict = yaml_dict
 
-        elif os.path.isfile(file_path):
+        elif os.path.isfile(xml_path):
             has_file = True
             
             try:
-                tree = ET.parse(file_path)
+                tree = ET.parse(xml_path)
             except:
-                _logger.error(f'unable to read file {file_path}')
+                _logger.error(f'unable to read file {xml_path}')
                 return (Err.BAD_PROJECT,
-                        f'{file_path} is not a correct .xml file')
+                        f'{xml_path} is not a correct .xml file')
             
             # read the DOM
             root = tree.getroot()
             if root.tag != XML_TAG:
-                _logger.error(f'{file_path} is not a {XML_TAG} .xml file')
+                _logger.error(f'{xml_path} is not a {XML_TAG} .xml file')
                 return (Err.BAD_PROJECT,
-                        f'{file_path} is not a {XML_TAG} .xml file')
+                        f'{xml_path} is not a {XML_TAG} .xml file')
             
             connections = set[ConnectionStr]()
             
@@ -709,7 +711,7 @@ class Patcher:
         # out_dict['connections'] = saved_patterns + [
         #     {'from': c[0], 'to': c[1]}
         #     for c in sorted(self.saved_connections)]
-        groups_dict = dict[str, dict]()
+        groups_dict = CommentedMap()
         
         for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
             if port_mode is PortMode.INPUT:
@@ -719,29 +721,33 @@ class Patcher:
 
             for jack_port in self.ports[port_mode]:
                 gp_name, _, port_name = jack_port.name.partition(':')
-                if groups_dict.get(gp_name) is None:
-                    groups_dict[gp_name] = dict[
-                        str, dict[str, str | list[str]]]()
+                if gp_name not in groups_dict:
+                    groups_dict[gp_name] = CommentedMap()
 
-                if groups_dict[gp_name].get(el_name) is None:
-                    groups_dict[gp_name][el_name] = list[str]()
+                if el_name not in groups_dict[gp_name]:
+                    groups_dict[gp_name][el_name] = CommentedSeq()
+
                 groups_dict[gp_name][el_name].append(port_name)
 
         out_dict['graph'] = groups_dict
         out_dict['nsm_brothers'] = self.brothers_dict.copy()
-        
+
+        yaml_tools.replace_key_comment_with(
+            out_dict, 'graph', GRAPH)
+        yaml_tools.replace_key_comment_with(
+            out_dict, 'nsm_brothers', NSM_BROTHERS)
+
         yaml_file = f'{self.project_path}.yaml'
-        
+        string_io = StringIO()
+        yaml = YAML()
+        yaml.dump(out_dict, string_io)
+        out_contents = yaml_tools.add_empty_lines(string_io.getvalue())
+
         try:
             with open(yaml_file, 'w') as f:
-                yaml = YAML()
-                print(out_dict)
-                # f.write(yaml.dump(
-                #     out_dict, sort_keys=False, allow_unicode=True))
-                f.write(yaml.dump(out_dict))
+                f.write(out_contents)
         except BaseException as e:
             _logger.error(f'Unable to write {yaml_file}\n\t{e}')
-            # self.glob.terminate = True
 
         self.set_dirty_clean()
         return (Err.OK, 'Done')
