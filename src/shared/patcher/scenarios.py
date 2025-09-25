@@ -279,8 +279,8 @@ class ScenariosManager:
 
         for i, el in enumerate(yaml_list):
             if not isinstance(el, CommentedMap):
-                yaml_tools._err_reading_yaml(
-                    yaml_list, i, f'Scenario is not a dict/map, ignored.')
+                yaml_tools.log_wrong_type_in_seq(
+                    yaml_list, i, 'scenario', dict)
                 continue
             
             rules = el.get('rules')
@@ -305,9 +305,8 @@ class ScenariosManager:
                 valid = False
             
             if not valid:
-                yaml_tools._err_reading_yaml(
-                    rules, 'present_clients',
-                    'Invalid "present_clients", must be a dict/map or string')
+                yaml_tools.log_wrong_type_in_map(
+                    rules, 'present_clients', (list, str))
                 continue
             
             absent_clients = rules.get('absent_clients')
@@ -324,9 +323,8 @@ class ScenariosManager:
                 valid = False
 
             if not valid:
-                yaml_tools._err_reading_yaml(
-                    rules, 'present_clients',
-                    'Invalid "absent_clients", must be a dict/map or string')
+                yaml_tools.log_wrong_type_in_map(
+                    rules, 'absent_clients', (list, str))
                 continue
             
             scenario = Scenario(sc_rules)
@@ -566,6 +564,8 @@ class ScenariosManager:
         return ret
 
     def load_scenario(self, num: int):
+        '''Load a scenario written in the patch file, or default if num == 0.
+        It sets patcher.conns_to_connect and patcher.conns_to_disconnect.'''
         previous_scn = self.current
         self.current_num = num
         next_scn = self.current

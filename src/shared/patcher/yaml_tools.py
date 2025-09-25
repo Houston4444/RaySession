@@ -59,12 +59,14 @@ def _type_to_str(wanted_type: type | tuple[type, ...]) -> str:
     
     return _type_to_str_(wanted_type)
 
-def log_wrong_type_in_map(map: CommentedMap, key: str, wanted_type: type):
+def log_wrong_type_in_map(
+        map: CommentedMap, key: str, wanted_type: type | tuple[type, ...]):
     _err_reading_yaml(
         map, key, f'"{key}" must be a {_type_to_str(wanted_type)}')
 
 def log_wrong_type_in_seq(
-        el : CommentedSeq, index: int, name: str, wanted_type: type):
+        el : CommentedSeq, index: int, name: str,
+        wanted_type: type | tuple[type, ...]):
     _err_reading_yaml(
         el, index, f'{name} must be a {_type_to_str(wanted_type)}')
 
