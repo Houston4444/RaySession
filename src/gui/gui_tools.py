@@ -273,8 +273,7 @@ def split_in_two(string: str) -> tuple[str, str]:
         sep = ''
 
         for sep in (' ', '-', '_', 'capital'):
-            for i in range(len(string)):
-                c = string[i]
+            for i, c in enumerate(string):
                 if sep == 'capital':
                     if c.upper() == c:
                         if not c.isdigit() or not last_was_digit:

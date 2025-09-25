@@ -277,9 +277,7 @@ class ScenariosManager:
         if not isinstance(yaml_list, CommentedSeq):
             return
 
-        for i in range(len(yaml_list)):
-            el = yaml_list[i]
-            
+        for i, el in enumerate(yaml_list):
             if not isinstance(el, CommentedMap):
                 yaml_tools._err_reading_yaml(
                     yaml_list, i, f'Scenario is not a dict/map, ignored.')
@@ -358,8 +356,7 @@ class ScenariosManager:
 
             pb_redirections = el.get('playback_redirections')
             if isinstance(pb_redirections, CommentedSeq):
-                for j in range(len(pb_redirections)):
-                    pb_red = pb_redirections[j]
+                for j, pb_red in enumerate(pb_redirections):
                     if not isinstance(pb_red, CommentedMap):
                         yaml_tools.log_wrong_type_in_seq(
                             pb_redirections, j, 'playback_redirection', dict)
@@ -379,7 +376,7 @@ class ScenariosManager:
             
             ct_redirections = el.get('capture_redirections')
             if isinstance(ct_redirections, CommentedSeq):
-                for j in range(len(ct_redirections)):
+                for j, ct_red in enumerate(ct_redirections):
                     ct_red = ct_redirections[j]
                     if not isinstance(ct_red, CommentedMap):
                         yaml_tools.log_wrong_type_in_seq(
@@ -430,10 +427,13 @@ class ScenariosManager:
         elif forbidden_conns is not None:
             yaml_tools.log_wrong_type_in_map(
                 yaml_dict, 'forbidden_connections', list)
-        
+
         scenars = yaml_dict.get('scenarios')
         if isinstance(scenars, CommentedSeq):
             self._load_yaml_scenarios(scenars)
+        elif scenars is not None:
+            yaml_tools.log_wrong_type_in_map(
+                yaml_dict, 'scenarios', list)
             
         for scenario in self.scenarios:
             scenario.startup_depattern(self.patcher.ports)

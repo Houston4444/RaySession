@@ -394,8 +394,7 @@ class Client(ServerSender, ray.ClientData):
             found = False
 
             for searched in all_data:
-                for i in range(len(lang_strs)):
-                    lang_str = lang_strs[i]
+                for i, lang_str in enumerate(lang_strs):
                     if var == searched + lang_str:
                         all_data[searched][i] = value
                         found = True

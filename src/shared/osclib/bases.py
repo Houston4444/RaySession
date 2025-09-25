@@ -146,8 +146,7 @@ def types_validator(input_types: OscTypes, multypes: OscMulTypes) -> bool:
         wildcard = ''
         mt = ''
 
-        for i in range(len(avl_types)):
-            mt = avl_types[i]
+        for i, mt in enumerate(avl_types):
             if i + 1 < len(avl_types) and avl_types[i+1] == '*':
                 if mt in ('', '.'):
                     return True

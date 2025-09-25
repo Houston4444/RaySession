@@ -74,7 +74,7 @@ scenarios:
     <!-- vérif sans fichier yaml ou xml -->
     Attention aux types des ports de connection audio/midi
     Attention au renommage des ports
-    ruamel, réécrire les commentaires
+    ruamel, réécrire les commentaires sur connections
     envoyer les erreurs à la GUI
 
 

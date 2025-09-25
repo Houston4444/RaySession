@@ -1433,8 +1433,7 @@ for better organization.""")
 
         # remove stopped clients
         rm_indexes = list[int]()
-        for i in range(len(self.clients)):
-            client = self.clients[i]
+        for i, client in enumerate(self.clients):
             if not client.is_running():
                 rm_indexes.append(i)
 

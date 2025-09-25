@@ -71,15 +71,12 @@ def log_wrong_type_in_seq(
 def load_conns_from_yaml(
         yaml_list: CommentedSeq, conns: set[ConnectionStr],
         patterns: list[ConnectionPattern]):
-    i = -1
-    for conn_d in yaml_list:
-        i += 1
-
+    for i, conn_d in enumerate(yaml_list):
         if not isinstance(conn_d, CommentedMap):
             _err_reading_yaml(
                 yaml_list, i, 'connection is not a dict/map')            
             continue
-        
+
         port_from = conn_d.get('from')
         port_to = conn_d.get('to')
         from_pattern = conn_d.get('from_pattern')
@@ -157,8 +154,7 @@ def patterns_to_dict(patt: list[ConnectionPattern]) -> list[dict]:
 def load_connect_domain(
         yaml_list: CommentedSeq,
         cdomain: list[ConnectionPattern]):
-    for i in range(len(yaml_list)):
-        el = yaml_list[i]
+    for i, el in enumerate(yaml_list):
         if not isinstance(el, CommentedMap):
             _err_reading_yaml(
                 yaml_list, i,

@@ -319,8 +319,7 @@ class SnapGroup(Snapshot):
     def add_group(self, snap_group: 'SnapGroup'):
         to_rem = list[int]()
 
-        for i in range(len(self.snapshots)):
-            snapshot = self.snapshots[i]
+        for i, snapshot in enumerate(self.snapshots):
             if snap_group.can_take(snapshot):
                 snap_group.add(snapshot)
                 to_rem.append(i)

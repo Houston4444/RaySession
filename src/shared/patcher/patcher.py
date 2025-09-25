@@ -692,25 +692,11 @@ class Patcher:
         #     return
 
         # write YAML str
-        
-        # saved_patterns = yaml_tools.patterns_to_dict(self.saved_patterns)
-        # forbidden_patterns = yaml_tools.patterns_to_dict(
-        #     self.forbidden_patterns)
-        
         out_dict = self.yaml_dict
         out_dict['app'] = self.engine.XML_TAG
         out_dict['version'] = ray.VERSION
-        # out_dict['forbidden_connections'] = forbidden_patterns + [
-        #     {'from': c[0], 'to': c[1]}
-        #     for c in sorted(self.forbidden_connections)]
         self.scenarios.fill_yaml(out_dict)
 
-        # scenarios = self.scenarios.to_yaml()
-        # if scenarios:
-        #     out_dict['scenarios'] = scenarios
-        # out_dict['connections'] = saved_patterns + [
-        #     {'from': c[0], 'to': c[1]}
-        #     for c in sorted(self.saved_connections)]
         groups_dict = CommentedMap()
         
         for port_mode in (PortMode.INPUT, PortMode.OUTPUT):

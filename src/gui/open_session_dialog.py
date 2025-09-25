@@ -526,8 +526,7 @@ class OpenSessionDialog(ChildDialog):
             folder_div = session_name.split('/')
             folders = self.folders
 
-            for i in range(len(folder_div)):
-                f = folder_div[i]
+            for i, f in enumerate(folder_div):
                 for g in folders:
                     if g.name == f:
                         if i + 1 == len(folder_div):

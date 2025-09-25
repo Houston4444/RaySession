@@ -263,8 +263,8 @@ class NewSessionDialog(ChildDialog):
         if last_used_template.startswith('///'):
             last_factory_template = last_used_template.replace('///', '', 1)
 
-            for i in range(len(ray.FACTORY_SESSION_TEMPLATES)):
-                factory_template = ray.FACTORY_SESSION_TEMPLATES[i]
+            for i, factory_template in enumerate(
+                    ray.FACTORY_SESSION_TEMPLATES):
                 if factory_template == last_factory_template:
                     self.ui.comboBoxTemplate.setCurrentIndex(i+1)
                     break
