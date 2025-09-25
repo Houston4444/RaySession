@@ -333,26 +333,21 @@ class ScenariosManager:
             name = el.get('name')
             if isinstance(name, str):
                 scenario.name = name
-                
-            conns = el.get('connections')
+            
+            conns = yaml_tools.item_at(el, 'connections', list)
             if isinstance(conns, CommentedSeq):
                 yaml_tools.load_conns_from_yaml(
                     conns, scenario.saved_conns,
                     scenario.saved_patterns)
-            elif conns is not None:
-                yaml_tools.log_wrong_type_in_map(
-                    el, 'connections', list)
 
-            fbd_conns = el.get('forbidden_connections')
+            fbd_conns = yaml_tools.item_at(el, 'forbidden_connections', list)
             if isinstance(fbd_conns, CommentedSeq):
                 yaml_tools.load_conns_from_yaml(
                     fbd_conns, scenario.forbidden_conns,
                     scenario.forbidden_patterns)
-            elif fbd_conns is not None:
-                yaml_tools.log_wrong_type_in_map(
-                    el, 'forbidden_connections', list)
 
-            pb_redirections = el.get('playback_redirections')
+            pb_redirections = yaml_tools.item_at(
+                el, 'playback_redirections', list)
             if isinstance(pb_redirections, CommentedSeq):
                 for j, pb_red in enumerate(pb_redirections):
                     if not isinstance(pb_red, CommentedMap):
@@ -372,10 +367,10 @@ class ScenariosManager:
                     scenario.playback_redirections.append(
                         (origin, destination))
             
-            ct_redirections = el.get('capture_redirections')
+            ct_redirections = yaml_tools.item_at(
+                el, 'capture_redirections', list)
             if isinstance(ct_redirections, CommentedSeq):
                 for j, ct_red in enumerate(ct_redirections):
-                    ct_red = ct_redirections[j]
                     if not isinstance(ct_red, CommentedMap):
                         yaml_tools.log_wrong_type_in_seq(
                             ct_redirections, j, 'capture_redirection', dict)
@@ -387,51 +382,63 @@ class ScenariosManager:
                     if not (isinstance(origin, str)
                             and isinstance(destination, str)):
                         yaml_tools._err_reading_yaml(
-                            pb_redirections, j, 'incomplete redirection')
+                            ct_redirections, j, 'incomplete redirection')
                         continue
                     
                     scenario.capture_redirections.append(
                         (origin, destination))
             
-            domain = el.get('connect_domain')
+            domain = yaml_tools.item_at(el, 'connect_domain', list)
             if isinstance(domain, CommentedSeq):
                 yaml_tools.load_connect_domain(
                     domain, scenario.connect_domain)
                 
-            no_domain = el.get('no_connect_domain')
+            no_domain = yaml_tools.item_at(el, 'no_connect_domain', list)
             if isinstance(no_domain, CommentedSeq):
                 yaml_tools.load_connect_domain(
-                    domain, scenario.no_connect_domain)
-            
+                    no_domain, scenario.no_connect_domain)
+
             scenario.mode = scenario.get_final_mode(
                 ScenarioMode.from_input(el.get('mode')))
+
+            valid_keys = {
+                'name', 'rules',
+                'connections', 'forbidden_connections',
+                'playback_redirections', 'capture_redirections',
+                'connect_domain', 'no_connect_domain'}
+
+            for key in el.keys():
+                if key not in valid_keys:
+                    yaml_tools._err_reading_yaml(
+                        el, key, f'{key} is unknown and will be ignored.')
+                
+                elif (key in ('connect_domain', 'no_connect_domain')
+                        and scenario.mode is ScenarioMode.REDIRECTIONS):
+                    yaml_tools._err_reading_yaml(
+                        el, key, 
+                        f'{key} will be ignored because '
+                        'scenario contains redirections')
             
             self.scenarios.append(scenario)
 
     def load_yaml(self, yaml_dict: CommentedMap):        
-        conns = yaml_dict.get('connections')
         default = self.scenarios[0]
+
+        conns = yaml_tools.item_at(yaml_dict, 'connections', list)
         if isinstance(conns, CommentedSeq):
             yaml_tools.load_conns_from_yaml(
                 conns, default.saved_conns, default.saved_patterns)
-        elif conns is not None:
-            yaml_tools.log_wrong_type_in_map(yaml_dict, 'connections', list)
         
-        forbidden_conns = yaml_dict.get('forbidden_connections')
+        forbidden_conns = yaml_tools.item_at(
+            yaml_dict, 'forbidden_connections', list)
         if isinstance(forbidden_conns, CommentedSeq):
             yaml_tools.load_conns_from_yaml(
                 forbidden_conns, default.forbidden_conns,
                 default.forbidden_patterns)
-        elif forbidden_conns is not None:
-            yaml_tools.log_wrong_type_in_map(
-                yaml_dict, 'forbidden_connections', list)
 
-        scenars = yaml_dict.get('scenarios')
+        scenars = yaml_tools.item_at(yaml_dict, 'scenarios', list)
         if isinstance(scenars, CommentedSeq):
             self._load_yaml_scenarios(scenars)
-        elif scenars is not None:
-            yaml_tools.log_wrong_type_in_map(
-                yaml_dict, 'scenarios', list)
             
         for scenario in self.scenarios:
             scenario.startup_depattern(self.patcher.ports)

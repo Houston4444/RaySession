@@ -1,9 +1,8 @@
 import re
 import logging
-from pathlib import Path
-from typing import Optional
+from typing import Optional, TypeVar, Type
 
-from ruamel.yaml.comments import CommentedSeq, CommentedMap, Comment
+from ruamel.yaml.comments import CommentedSeq, CommentedMap, Comment, LineCol
 
 from .bases import ConnectionStr, ConnectionPattern
 
@@ -11,6 +10,7 @@ _logger = logging.getLogger(__name__)
 file_path = ''
 'Contains the path of the yaml patch file, only for logging.'
 
+T = TypeVar('T')
 
 def _err_reading_yaml(
         el: CommentedMap | CommentedSeq,
@@ -20,6 +20,9 @@ def _err_reading_yaml(
     
     If `el` is a CommentedMap (dict), key must be a str, else if
     `el` is a CommentedSeq (list), key is an int (the index in the list)'''
+    if not isinstance(el.lc, LineCol):
+        return
+
     if isinstance(el, CommentedMap):
         linecol = el.lc.key(key)
     elif isinstance(el, CommentedSeq):
@@ -69,6 +72,15 @@ def log_wrong_type_in_seq(
         wanted_type: type | tuple[type, ...]):
     _err_reading_yaml(
         el, index, f'{name} must be a {_type_to_str(wanted_type)}')
+
+def item_at(map: CommentedMap, key: str, wanted_type: Type[T]) -> T | None:
+    item = map.get(key)
+    if item is None:
+        return
+
+    if isinstance(item, wanted_type):
+        return item
+    log_wrong_type_in_map(map, key, wanted_type)
 
 def load_conns_from_yaml(
         yaml_list: CommentedSeq, conns: set[ConnectionStr],
