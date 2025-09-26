@@ -76,6 +76,7 @@ scenarios:
     Attention au renommage des ports
     ruamel, réécrire les commentaires sur connections
     envoyer les erreurs à la GUI
+    bug: les connexions nouvelles ne sont pas reconnectés tant qu'on redémarre pas le patch
 
 
 

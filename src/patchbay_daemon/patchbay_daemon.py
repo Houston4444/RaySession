@@ -82,6 +82,7 @@ def main_loop(args):
         if n == 20:
             n = 0
 
+    _logger.debug('prepare patchbay_daemon exit')
     pe.exit()
 
 def start():
