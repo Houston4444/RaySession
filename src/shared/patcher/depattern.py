@@ -87,9 +87,14 @@ def add_port(
                         conns_cache.add((output_port.name, port.name))
                         break
 
-def to_yaml_list(
+def to_yaml_connection_dicts(
         patterns: list[ConnectionPattern],
-        conns: set[ConnectionStr]) -> list[dict]:
+        conns: set[ConnectionStr]) -> list[dict[str, str]]:
+    '''take patterns and conns, and return a list of dicts
+    usable in yaml file.
+    Connections with patterns are returned on top, then connections
+    are sorted, note that connections already matching with a pattern
+    are removed.'''
     pats = list[dict]()
     
     # write first all ConnectionPatterns

@@ -1,6 +1,5 @@
 from enum import Enum, auto
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
@@ -109,11 +108,11 @@ class BaseScenario:
     
     def to_yaml_map(self) -> CommentedMap:
         out_d = CommentedMap()
-        forbidden_conns = depattern.to_yaml_list(
+        forbidden_conns = depattern.to_yaml_connection_dicts(
             self.forbidden_patterns, self.forbidden_conns)
         if forbidden_conns:
             out_d['forbidden_connections'] = forbidden_conns
-        saved_conns = depattern.to_yaml_list(
+        saved_conns = depattern.to_yaml_connection_dicts(
             self.saved_patterns, self.saved_conns)        
         if saved_conns:
             out_d['connections'] = saved_conns
@@ -135,10 +134,11 @@ class BaseScenario:
 
 
 class Scenario(BaseScenario):
-    def __init__(self, rules: ScenarioRules):
+    def __init__(self, rules: ScenarioRules, base_map: CommentedMap):
         super().__init__()
         self.name = ''
         self.rules = rules
+        self.base_map = base_map
         self.mode = ScenarioMode.AUTO
         self.playback_redirections = list[ConnectionStr]()
         self.capture_redirections = list[ConnectionStr]()
@@ -238,12 +238,12 @@ class Scenario(BaseScenario):
     def to_yaml_map(self) -> CommentedMap:
         out_d = self.yaml_map
         
-        forbidden_conns = depattern.to_yaml_list(
+        forbidden_conns = depattern.to_yaml_connection_dicts(
             self.forbidden_patterns, self.forbidden_conns)
         if forbidden_conns:
             out_d['forbidden_connections'] = forbidden_conns
 
-        saved_conns = depattern.to_yaml_list(
+        saved_conns = depattern.to_yaml_connection_dicts(
             self.saved_patterns, self.saved_conns)        
         if saved_conns:
             out_d['connections'] = saved_conns
@@ -327,7 +327,7 @@ class ScenariosManager:
                     rules, 'absent_clients', (list, str))
                 continue
             
-            scenario = Scenario(sc_rules)
+            scenario = Scenario(sc_rules, el)
             scenario.yaml_map = el
             
             name = el.get('name')
@@ -444,11 +444,33 @@ class ScenariosManager:
             scenario.startup_depattern(self.patcher.ports)
 
     def fill_yaml(self, yaml_dict: CommentedMap):
-        if len(self.scenarios) > 1:
-            yaml_dict['scenarios'] = [
-                sc.to_yaml_map() for sc in self.scenarios[1:]]
-        for key, value in self.scenarios[0].to_yaml_map().items():
-            yaml_dict[key] = value
+        scenars_seq = yaml_dict.get('scenarios')
+        if isinstance(scenars_seq, CommentedSeq):
+            for scenar_map in scenars_seq:
+                if not isinstance(scenar_map, CommentedMap):
+                    continue
+                for scenario in self.scenarios[1:]:
+                    if (isinstance(scenario, Scenario)
+                            and scenario.base_map is scenar_map):
+                        yaml_tools.save_connections(
+                            scenar_map, 'connections',
+                            scenario.saved_patterns,
+                            scenario.saved_conns)
+                        yaml_tools.save_connections(
+                            scenar_map, 'forbidden_connections',
+                            scenario.forbidden_patterns,
+                            scenario.forbidden_conns)
+                        break
+        
+        default = self.scenarios[0]
+
+        yaml_tools.save_connections(
+            yaml_dict, 'connections',
+            default.saved_patterns, default.saved_conns)
+        
+        yaml_tools.save_connections(
+            yaml_dict, 'forbidden_connections',
+            default.forbidden_patterns, default.forbidden_conns)
 
     def load_xml_connections(self, conns: set[ConnectionStr]):
         default = self.scenarios[0]

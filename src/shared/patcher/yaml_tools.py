@@ -4,6 +4,7 @@ from typing import Optional, TypeVar, Type
 
 from ruamel.yaml.comments import CommentedSeq, CommentedMap, Comment, LineCol
 
+from . import depattern
 from .bases import ConnectionStr, ConnectionPattern
 
 _logger = logging.getLogger(__name__)
@@ -209,6 +210,42 @@ def load_connect_domain(
             to_patt = re.compile(r'.*')
         
         cdomain.append((from_patt, to_patt))
+
+def restore_connections_comments(
+        conns: list[dict[str, str]],
+        old_conns: CommentedSeq | None) -> CommentedSeq | list:
+    '''restore comments in connections from origin file if possible.'''
+    if old_conns is None:
+        return conns
+
+    out_seq = CommentedSeq()
+    for conn in conns:
+        for old_conn in old_conns:
+            if not isinstance(old_conn, CommentedMap):
+                continue
+
+            if conn.keys() != old_conn.keys():
+                continue
+
+            for key, value in conn.items():
+                if old_conn[key] != value:
+                    break
+            else:
+                out_seq.append(old_conn)
+                break
+        else:
+            out_seq.append(conn)
+    
+    return out_seq
+
+def save_connections(
+        map: CommentedMap,
+        key: str,
+        patterns: list[ConnectionPattern],
+        conns: set[ConnectionStr]):
+    map[key] = restore_connections_comments(
+        depattern.to_yaml_connection_dicts(
+            patterns, conns), map.get(key))
 
 def replace_key_comment_with(map: CommentedMap, key: str, comment: str):
     # Pfff, boring to find this !
