@@ -67,7 +67,7 @@ METHODS_DICT = {
     rg.SCRIPT_USER_ACTION: 's',
     rg.HIDE_SCRIPT_USER_ACTION: '',
     rpm.PORT_ADDED: 'siih',
-    rpm.PORT_RENAMED: 'ss|ssi',
+    rpm.PORT_RENAMED: 'ss|ssh',
     rpm.PORT_REMOVED: 's',
     rpm.CONNECTION_ADDED: 'ss',
     rpm.CONNECTION_REMOVED: 'ss',
