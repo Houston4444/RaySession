@@ -498,7 +498,7 @@ class BunServer:
             urls.remove(url)
     
     def mega_send(
-            self: 'Union[BunServer, BunServerThread]',
+            self: 'BunServer | BunServerThread',
             url: str | int | Address | list[str | int | Address],
             mega_send: MegaSend) -> bool:
         '''send a undeterminated number of messages to another BunServer
@@ -506,7 +506,7 @@ class BunServer:
         
         !!! the recepter MUST be a Bunserver or a BunServerThread !!!'''
 
-        urls = url if isinstance(url, list) else [url]
+        urls = url.copy() if isinstance(url, list) else [url]
         if not urls:
             return True
 
@@ -517,7 +517,7 @@ class BunServer:
         self._mega_send_one_bundle(urls, mega_send)
         if not urls:
             return True
-        
+
         self._mega_send_local_json(urls, mega_send)
         if not urls:
             return True
