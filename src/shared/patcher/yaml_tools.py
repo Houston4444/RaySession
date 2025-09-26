@@ -213,12 +213,12 @@ def load_connect_domain(
 
 def restore_connections_comments(
         conns: list[dict[str, str]],
-        old_conns: CommentedSeq | None) -> CommentedSeq | list:
+        old_conns: CommentedSeq | None):
     '''restore comments in connections from origin file if possible.'''
     if old_conns is None:
         return conns
 
-    out_seq = CommentedSeq()
+    out_dicts = list[dict[str, str]]()
     for conn in conns:
         for old_conn in old_conns:
             if not isinstance(old_conn, CommentedMap):
@@ -231,21 +231,36 @@ def restore_connections_comments(
                 if old_conn[key] != value:
                     break
             else:
-                out_seq.append(old_conn)
+                out_dicts.append(old_conn)
                 break
         else:
-            out_seq.append(conn)
+            out_dicts.append(conn)
     
-    return out_seq
+    # idea here was to save comments at top of 'connections' section,
+    # clearing the list and appending all needed items.
+    # sadly, it doesn't works, probably the comment is saved in first
+    # item, but even if the first item doesn't change,
+    # the comment is removed.
+    # I definitely think that ruamel.yaml is powerful, but very obscur.
+    old_conns.clear()
+    for out_dict in out_dicts:
+        old_conns.append(out_dict)
 
 def save_connections(
         map: CommentedMap,
         key: str,
         patterns: list[ConnectionPattern],
         conns: set[ConnectionStr]):
-    map[key] = restore_connections_comments(
+    old_conns_seq = map.get(key)
+    if not isinstance(old_conns_seq, CommentedSeq):
+        out_dicts = depattern.to_yaml_connection_dicts(patterns, conns)
+        if out_dicts:
+            map[key] = out_dicts
+        return
+
+    restore_connections_comments(
         depattern.to_yaml_connection_dicts(
-            patterns, conns), map.get(key))
+            patterns, conns), old_conns_seq)
 
 def replace_key_comment_with(map: CommentedMap, key: str, comment: str):
     # Pfff, boring to find this !

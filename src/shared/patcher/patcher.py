@@ -697,6 +697,7 @@ class Patcher:
         out_dict['version'] = ray.VERSION
         self.scenarios.fill_yaml(out_dict)
 
+        # fill the 'graph' section
         groups_dict = CommentedMap()
         
         for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
