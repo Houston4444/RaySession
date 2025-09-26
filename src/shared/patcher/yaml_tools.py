@@ -238,10 +238,9 @@ def restore_connections_comments(
     
     # idea here was to save comments at top of 'connections' section,
     # clearing the list and appending all needed items.
-    # sadly, it doesn't works, probably the comment is saved in first
-    # item, but even if the first item doesn't change,
-    # the comment is removed.
-    # I definitely think that ruamel.yaml is powerful, but very obscur.
+    # sadly, it works only if the comment start at first line,
+    # probably the comment is saved in first item, 
+    # but even if the first item doesn't change, the comment is removed.
     old_conns.clear()
     for out_dict in out_dicts:
         old_conns.append(out_dict)
