@@ -11,6 +11,7 @@ from patch_engine import PatchEvent
 
 # Type aliases
 NsmClientName: TypeAlias = str
+'''simple NSM client id'''
 
 JackClientBaseName: TypeAlias = str
 '''base of a jack client name,
@@ -23,10 +24,6 @@ FullPortName: TypeAlias = str
 ConnectionStr: TypeAlias = tuple[FullPortName, FullPortName]
 PatternOrName: TypeAlias = FullPortName|re.Pattern[str]
 ConnectionPattern: TypeAlias = tuple[PatternOrName, PatternOrName]
-PriorityConnElement: TypeAlias = PatternOrName | list[PatternOrName]
-PriorityConnection: TypeAlias = (
-    tuple[PatternOrName, list[PatternOrName]]
-    | tuple[list[PatternOrName], PatternOrName])
 
 
 class PortData:

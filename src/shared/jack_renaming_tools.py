@@ -44,8 +44,10 @@ def port_belongs_to_client(port_name: str, jack_client_name: str) -> bool:
 
         if bridge == 'a2j':
             search_str = jack_client_name.replace('.', ' ')
-            if group_name == search_str or group_name.startswith(search_str + '/'):
-                jclient_name = group_name.replace(search_str, jack_client_name, 1)
+            if (group_name == search_str
+                    or group_name.startswith(search_str + '/')):
+                jclient_name = group_name.replace(
+                    search_str, jack_client_name, 1)
         else:
             jclient_name = group_name
 
@@ -76,3 +78,23 @@ def port_name_client_replaced(
                 return "Midi-Bridge:" + ub_port_name
     
     return port_name
+
+def group_name_client_replaced(
+        group_name: str, old_client_jack_name: str,
+        new_client_jack_name: str) -> str:
+    if not group_belongs_to_client(group_name, old_client_jack_name):
+        return group_name
+    
+    return group_name.replace(old_client_jack_name, new_client_jack_name)
+
+def pattern_belongs_to_client(patt: str, jack_client_name: str) -> bool:
+    if ':' not in patt:
+        return False
+    
+    cl = patt.partition(':')[0]
+    for spec in r'^$*+?{}[]|()\\':
+        if spec in cl:
+            return False
+    
+    return group_belongs_to_client(
+        cl.replace('\\.', '.', 1), jack_client_name)

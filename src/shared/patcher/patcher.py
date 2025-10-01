@@ -50,7 +50,11 @@ class Patcher:
         'is dirty for NSM'
         self.dirty_state_sent = False
         self.monitor_states_done = MonitorStates.NEVER_DONE
-        self.client_changing_id: Optional[tuple[str, str]] = None
+        self.client_changing_id: \
+            None | tuple[NsmClientName, JackClientBaseName, NsmClientName] \
+                = None
+        '''if not None, contains the JACK client name of the NSM client
+        before renaming, and the new NSM client_id.'''
         self.terminate = TerminateState.NORMAL
         
         self.slow_connect = False
@@ -385,7 +389,8 @@ class Patcher:
                 port.is_new = new
 
     def may_make_one_connection(self):
-        'can make one connection or disconnection'
+        '''can make one connection or disconnection if slow_connect is True.
+        Else, it make all needed and possible connections now.'''
         output_ports = set([p.name for p in self.ports[PortMode.OUTPUT]])
         input_ports = set([p.name for p in self.ports[PortMode.INPUT]])
         new_output_ports = set(
@@ -414,7 +419,7 @@ class Patcher:
                         and sv_con[0] in output_ports
                         and sv_con[1] in input_ports
                         and (sv_con[0] in new_output_ports
-                            or sv_con[1] in new_input_ports)):
+                             or sv_con[1] in new_input_ports)):
                     if one_connected:
                         self.pending_connection = True
                         return
@@ -480,7 +485,7 @@ class Patcher:
             yaml_tools.file_path = yaml_path
 
             brothers = yaml_dict.get('nsm_brothers')
-            brothers_ = dict[str, str]()
+            brothers_ = dict[NsmClientName, JackClientBaseName]()
 
             if isinstance(brothers, dict):
                 for key, value in brothers.items():
@@ -511,25 +516,8 @@ class Patcher:
             self.scenarios.load_yaml(yaml_dict)
             
             if self.monitor_states_done is MonitorStates.DONE:
-                pass
-                # TODO reput this
-                # rm_list = list[tuple[FullPortName, FullPortName]]()
-                # for port_from, port_to in self.saved_connections:
-                #     gp_from = port_from.partition(':')[0]
-                #     gp_to = port_to.partition(':')[0]
-                #     for nsm_name, jack_name in brothers_.items():
-                #         if (jack_name in (gp_from, gp_to)
-                #                 and not nsm_name in self.brothers_dict):
-                #             rm_list.append((port_from, port_to))
-                #             _logger.info(
-                #                 f"{debug_conn_str((port_from, port_to))}"
-                #                 " is removed "
-                #                 f"because NSM client {nsm_name}"
-                #                 " has been removed")
-                
-                # for rm_conn in rm_list:
-                #     self.saved_connections.discard(rm_conn)
-            
+                self.scenarios.check_nsm_brothers(brothers_)
+
             self.yaml_dict = yaml_dict
 
         elif os.path.isfile(xml_path):
@@ -698,7 +686,7 @@ class Patcher:
         self.scenarios.fill_yaml(out_dict)
 
         # fill the 'graph' section
-        groups_dict = CommentedMap()
+        groups_dict = dict[str, dict[str, list[str]]]()
         
         for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
             if port_mode is PortMode.INPUT:
@@ -709,10 +697,10 @@ class Patcher:
             for jack_port in self.ports[port_mode]:
                 gp_name, _, port_name = jack_port.name.partition(':')
                 if gp_name not in groups_dict:
-                    groups_dict[gp_name] = CommentedMap()
+                    groups_dict[gp_name] = dict[str, list[str]]()
 
                 if el_name not in groups_dict[gp_name]:
-                    groups_dict[gp_name][el_name] = CommentedSeq()
+                    groups_dict[gp_name][el_name] = list[str]()
 
                 groups_dict[gp_name][el_name].append(port_name)
 
@@ -750,29 +738,13 @@ class Patcher:
             self.brothers_dict[client_id] = jack_name
             
             if (self.client_changing_id is not None
-                    and self.client_changing_id[1] == client_id):
+                    and self.client_changing_id[2] == client_id):
                 # we are here only in the case a client id was just changed
                 # we modify the saved connections in consequence.
                 # Note that this client can't be started.
-                ex_jack_name = self.client_changing_id[0]
-                rm_conns = list[tuple[str, str]]()
-                new_conns = list[tuple[str, str]]()
+                self.scenarios.nsm_brother_id_changed(
+                    *self.client_changing_id, jack_name)
 
-                # for conn in self.saved_connections:
-                #     out_port, in_port = conn
-                #     if (port_belongs_to_client(out_port, ex_jack_name)
-                #             or port_belongs_to_client(in_port, ex_jack_name)):
-                #         rm_conns.append(conn)
-                #         new_conns.append(
-                #             (port_name_client_replaced(
-                #                 out_port, ex_jack_name, jack_name),
-                #             port_name_client_replaced(
-                #                 in_port, ex_jack_name, jack_name)))
-
-                # for rm_conn in rm_conns:
-                #     self.saved_connections.discard(rm_conn)
-                # for new_conn in new_conns:
-                #     self.saved_connections.add(new_conn)
                 self.client_changing_id = None
             
         else:
@@ -809,7 +781,9 @@ class Patcher:
         elif event.startswith('id_changed_to:'):
             if client_id in self.brothers_dict.keys():
                 self.client_changing_id = (
-                    self.brothers_dict[client_id], event.partition(':')[2])
+                    client_id,
+                    self.brothers_dict[client_id],
+                    event.partition(':')[2])
             self.nsm_server.send_monitor_reset()
 
     def monitor_client_updated(

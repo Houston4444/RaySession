@@ -1,12 +1,19 @@
 from enum import Enum, auto
 import logging
+import re
 from typing import TYPE_CHECKING
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from jack_renaming_tools import (
+    group_belongs_to_client,
+    group_name_client_replaced,
+    port_belongs_to_client,
+    port_name_client_replaced)
 
 from patshared import PortMode
 
-from .bases import ConnectionPattern, ConnectionStr, PortData
+from .bases import (ConnectionPattern, ConnectionStr, JackClientBaseName,
+                    NsmClientName, PortData)
 from . import depattern
 from . import yaml_tools
 
@@ -21,7 +28,7 @@ class ScenarioMode(Enum):
     '''Defines the scenario connections behavior.'''
 
     AUTO = auto()
-    '''Scenario will be REDIRECTIONS if there are redirections and
+    '''Scenario mode will be REDIRECTIONS if there are redirections and
     no connect domain, else CONNECT_DOMAIN'''
     
     REDIRECTIONS = auto()
@@ -238,6 +245,55 @@ class Scenario(BaseScenario):
     def to_yaml_map(self) -> CommentedMap:
         out_d = self.yaml_map
         
+        out_d['rules'] = self.rules.to_yaml_dict()
+        
+        if self.capture_redirections:
+            out_d['capture_redirections'] = [
+                {'origin': cr[0], 'destination': cr[1]}
+                for cr in self.capture_redirections]
+        if self.playback_redirections:
+            out_d['playback_redirections'] = [
+                {'origin': pr[0], 'destination': pr[1]}
+                for pr in self.playback_redirections]
+        
+        if self.connect_domain:
+            cd_dicts = list[dict]()
+            for cd in self.connect_domain:
+                cd_dict = {}
+                if isinstance(cd[0], re.Pattern):
+                    if cd[0].pattern != '.*':
+                        cd_dict['from_pattern'] = cd[0].pattern
+                else:
+                    cd_dict['from'] = cd[0]
+                    
+                if isinstance(cd[1], re.Pattern):
+                    if cd[1].pattern != '.*':
+                        cd_dict['to_pattern'] = cd[1].pattern
+                else:
+                    cd_dict['to'] = cd[1]
+                cd_dicts.append(cd_dict)
+            
+            out_d['connect_domain'] = cd_dicts
+            
+        if self.no_connect_domain:
+            ncd_dicts = list[dict]()
+            for ncd in self.no_connect_domain:
+                ncd_dict = {}
+                if isinstance(ncd[0], re.Pattern):
+                    if ncd[0].pattern != '.*':
+                        ncd_dict['from_pattern'] = ncd[0].pattern
+                else:
+                    ncd_dict['from'] = ncd[0]
+                    
+                if isinstance(ncd[1], re.Pattern):
+                    if ncd[1].pattern != '.*':
+                        ncd_dict['to_pattern'] = ncd[1].pattern
+                else:
+                    ncd_dict['to'] = ncd[1]
+                ncd_dicts.append(ncd_dict)
+            
+            out_d['no_connect_domain'] = ncd_dicts
+        
         forbidden_conns = depattern.to_yaml_connection_dicts(
             self.forbidden_patterns, self.forbidden_conns)
         if forbidden_conns:
@@ -267,7 +323,6 @@ class ScenariosManager:
         since last scenario switch'''
         self.initial_connections = set[ConnectionStr]()
         'Connections already existing at startup'
-        
 
     @property
     def current(self) -> BaseScenario:
@@ -460,6 +515,7 @@ class ScenariosManager:
                             scenar_map, 'forbidden_connections',
                             scenario.forbidden_patterns,
                             scenario.forbidden_conns)
+                        scenar_map['rules'] = scenario.rules.to_yaml_dict()
                         break
         
         default = self.scenarios[0]
@@ -522,6 +578,164 @@ class ScenariosManager:
         for scenario in self.scenarios:
             scenario.port_depattern(self.patcher.ports, port)
 
+    def check_nsm_brothers(
+            self, ex_brothers: dict[NsmClientName, JackClientBaseName]):
+        '''In all connections lists, remove connections with a port that
+        should not exist anymore because its NSM client has been removed.
+        
+        `brothers` is the dict in file'''
+        rm_jack_clients = [ex_brothers[ex_b] for ex_b in ex_brothers
+                           if ex_b not in self.patcher.brothers_dict]
+        if not rm_jack_clients:
+            return
+
+        for scenario in self.scenarios:
+            for port_from, port_to in list(scenario.saved_conns):
+                for rm_jack in rm_jack_clients:
+                    if (port_belongs_to_client(port_from, rm_jack)
+                            or port_belongs_to_client(port_to, rm_jack)):
+                        _logger.info(
+                            f'remove saved connection ({port_from}, {port_to}) '
+                            f'in {scenario} '
+                            f'because NSM client has been removed')
+                        scenario.saved_conns.discard((port_from, port_to))
+                        break
+            
+            for port_from, port_to in list(scenario.forbidden_conns):
+                for rm_jack in rm_jack_clients:
+                    if (port_belongs_to_client(port_from, rm_jack)
+                            or port_belongs_to_client(port_to, rm_jack)):
+                        _logger.info(
+                            f'remove forbidden connection ({port_from}, {port_to}) '
+                            f'in {scenario} '
+                            f'because NSM client has been removed')
+                        scenario.forbidden_conns.discard((port_from, port_to))
+                        break
+
+    def nsm_brother_id_changed(
+            self,
+            ex_client_id: NsmClientName, ex_jack_name: JackClientBaseName,
+            new_client_id: NsmClientName, new_jack_name: JackClientBaseName):
+        for scenario in self.scenarios:
+            print('NSMBrotherID Cange', scenario)
+            for port_from, port_to in list(scenario.saved_conns):
+                if (port_belongs_to_client(port_from, ex_jack_name)
+                        or port_belongs_to_client(port_to, ex_jack_name)):
+                    scenario.saved_conns.discard((port_from, port_to))
+                    print('aho', scenario, (port_from, port_to))
+                    scenario.saved_conns.add(
+                        (port_name_client_replaced(
+                            port_from, ex_jack_name, new_jack_name),
+                         port_name_client_replaced(
+                            port_to, ex_jack_name, new_jack_name)))
+                    
+            for port_from, port_to in list(scenario.forbidden_conns):
+                if (port_belongs_to_client(port_from, ex_jack_name)
+                        or port_belongs_to_client(port_to, ex_jack_name)):
+                    scenario.forbidden_conns.discard((port_from, port_to))
+                    scenario.forbidden_conns.add(
+                        (port_name_client_replaced(
+                            port_from, ex_jack_name, new_jack_name),
+                         port_name_client_replaced(
+                            port_to, ex_jack_name, new_jack_name)))
+            
+            if not isinstance(scenario, Scenario):
+                continue
+            
+            for i, client_name in enumerate(scenario.rules.present_clients):
+                scenario.rules.present_clients[i] = \
+                    group_name_client_replaced(
+                        client_name, ex_jack_name, new_jack_name)
+                print('chici', scenario, client_name, ex_jack_name, new_jack_name, group_belongs_to_client(client_name, ex_jack_name), scenario.rules.present_clients[i])
+            
+            for i, client_name in enumerate(scenario.rules.absent_clients):
+                scenario.rules.absent_clients[i] = \
+                    group_name_client_replaced(
+                        client_name, ex_jack_name, new_jack_name)
+                    
+            for i, pb_red in enumerate(scenario.playback_redirections):
+                orig, dest = pb_red
+                if (port_belongs_to_client(orig, ex_jack_name)
+                        or port_belongs_to_client(dest, ex_jack_name)):
+                    scenario.playback_redirections[i] = (
+                        port_name_client_replaced(
+                            orig, ex_jack_name, new_jack_name),
+                        port_name_client_replaced(
+                            dest, ex_jack_name, new_jack_name)
+                    )
+            
+            for i, ct_red in enumerate(scenario.capture_redirections):
+                orig, dest = ct_red
+                if (port_belongs_to_client(orig, ex_jack_name)
+                        or port_belongs_to_client(dest, ex_jack_name)):
+                    scenario.capture_redirections[i] = (
+                        port_name_client_replaced(
+                            orig, ex_jack_name, new_jack_name),
+                        port_name_client_replaced(
+                            dest, ex_jack_name, new_jack_name)
+                    )
+            
+            for i, cdomain in enumerate(scenario.connect_domain):
+                from_, to_ = cdomain
+                new_from_, new_to_ = cdomain
+                if isinstance(from_, str):
+                    new_from_ = port_name_client_replaced(
+                        from_, ex_jack_name, new_jack_name)
+                if isinstance(to_, str):
+                    new_to_ = port_name_client_replaced(
+                        to_, ex_jack_name, new_jack_name)
+                    
+                if new_from_ == from_ and new_to_ == to_:
+                    continue
+                scenario.connect_domain[i] = (new_from_, new_to_)
+                
+            for i, cdomain in enumerate(scenario.no_connect_domain):
+                from_, to_ = cdomain
+                new_from_, new_to_ = cdomain
+                if isinstance(from_, str):
+                    new_from_ = port_name_client_replaced(
+                        from_, ex_jack_name, new_jack_name)
+                if isinstance(to_, str):
+                    new_to_ = port_name_client_replaced(
+                        to_, ex_jack_name, new_jack_name)
+                    
+                if new_from_ == from_ and new_to_ == to_:
+                    continue
+                scenario.no_connect_domain[i] = (new_from_, new_to_)
+            
+            # import re
+            
+            # for i, patt in enumerate(scenario.saved_patterns.copy()):
+            #     from_, to_ = patt
+            #     new_from_, new_to_ = patt
+
+            #     if isinstance(from_, re.Pattern):
+            #         from_str = from_.pattern.replace('\\.', '.')
+            #         if port_belongs_to_client(from_str, ex_jack_name):
+            #             new_str = port_name_client_replaced(
+            #                 from_str, ex_jack_name, new_jack_name)
+            #             new_from_ = re.compile(new_str.replace('.', '\\.'))
+            #     else:
+            #         if port_belongs_to_client(from_, ex_jack_name):
+            #             new_from_ = port_name_client_replaced(
+            #                 from_, ex_jack_name, new_jack_name)
+                            
+            #     if isinstance(to_, re.Pattern):
+            #         to_str = to_.pattern.replace('\\.', '.')
+            #         if port_belongs_to_client(to_str, ex_jack_name):
+            #             new_str = port_name_client_replaced(
+            #                 to_str, ex_jack_name, new_jack_name)
+            #             new_to_ = re.compile(new_str.replace('.', '\\.'))
+            #     else:
+            #         if port_belongs_to_client(to_, ex_jack_name):
+            #             new_to_ = port_name_client_replaced(
+            #                 to_, ex_jack_name, new_jack_name)
+                
+            #     if from_ == new_from_ and to_ == new_to_:
+            #         continue
+                
+            #     scenario.saved_patterns[i] = (new_from_, new_to_)
+
     def save(self):
         scenario = self.current
         default = self.scenarios[0]
@@ -563,11 +777,7 @@ class ScenariosManager:
                         else:
                             default.saved_conns.add(conn)
 
-            for svd_conn in list(scenario.saved_conns):
-                if (svd_conn not in self.patcher.connections
-                        and svd_conn[0] in output_ports
-                        and svd_conn[1] in input_ports):
-                    scenario.saved_conns.discard(svd_conn)
+        self.load_scenario(self.current_num)
 
     def choose(self, present_clients: set[str]) -> str:
         num = 0
@@ -635,7 +845,7 @@ class ScenariosManager:
                             if (proj_conn in connections
                                 or proj_conn not in self.recent_connections
                                 or proj_conn in previous_scn.forbidden_conns):
-                                break
+                                    break
                         else:
                             default_scn.saved_conns.discard(svd_conn)
                             

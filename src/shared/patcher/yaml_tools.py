@@ -216,15 +216,16 @@ def restore_connections_comments(
         old_conns: CommentedSeq | None):
     '''restore comments in connections from origin file if possible.'''
     if old_conns is None:
-        return conns
+        return
 
     out_dicts = list[dict[str, str]]()
+    
     for conn in conns:
         for old_conn in old_conns:
             if not isinstance(old_conn, CommentedMap):
                 continue
 
-            if conn.keys() != old_conn.keys():
+            if old_conn.keys() != conn.keys():
                 continue
 
             for key, value in conn.items():
@@ -244,17 +245,17 @@ def restore_connections_comments(
     old_conns.clear()
     for out_dict in out_dicts:
         old_conns.append(out_dict)
+        
 
 def save_connections(
         map: CommentedMap,
         key: str,
         patterns: list[ConnectionPattern],
         conns: set[ConnectionStr]):
+    'Save connections stocked in `patterns` and `conns` to `map` at `key`.'
     old_conns_seq = map.get(key)
     if not isinstance(old_conns_seq, CommentedSeq):
-        out_dicts = depattern.to_yaml_connection_dicts(patterns, conns)
-        if out_dicts:
-            map[key] = out_dicts
+        map[key] = depattern.to_yaml_connection_dicts(patterns, conns)
         return
 
     restore_connections_comments(
