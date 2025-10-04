@@ -4,16 +4,13 @@ import logging
 import os
 import re
 import time
-from typing import Optional
 import xml.etree.ElementTree as ET
 
 from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from ruamel.yaml.comments import CommentedMap
 
 from patshared import PortMode, PortType
 
-from jack_renaming_tools import (
-    port_belongs_to_client, port_name_client_replaced)
 from nsm_client import NsmServer, NsmCallback, Err
 import ray
 
@@ -31,7 +28,7 @@ from .bases import (
     PatchEvent,
     debug_conn_str)
 from . import yaml_tools
-from . import scenarios
+from . import scenarios_mng
 from .yaml_comments import GRAPH, NSM_BROTHERS
 
 _logger = logging.getLogger(__name__)
@@ -85,7 +82,7 @@ class Patcher:
         for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
             self.saved_graph[port_mode] = set[FullPortName]()
 
-        self.scenarios = scenarios.ScenariosManager(self)
+        self.scenarios_mng = scenarios_mng.ScenariosManager(self)
         self.switching_scenario = False
 
         self.ports = dict[PortMode, list[PortData]]()
@@ -122,7 +119,7 @@ class Patcher:
         while True:
             if self.terminate is TerminateState.ASKED:
                 self.terminate = TerminateState.RESTORING
-                self.scenarios.restore_initial_connections()
+                self.scenarios_mng.restore_initial_connections()
                 self.may_make_one_connection()
 
             if self.terminate is TerminateState.LEAVING:
@@ -206,14 +203,14 @@ class Patcher:
 
     def client_added(self, client_name: str):
         self.present_clients.add(client_name)
-        ret = self.scenarios.choose(self.present_clients)
+        ret = self.scenarios_mng.choose(self.present_clients)
         if ret:
             self.nsm_server.send_message(2, ret)
             self.may_make_one_connection()
 
     def client_removed(self, client_name: str):
         self.present_clients.discard(client_name)
-        ret = self.scenarios.choose(self.present_clients)
+        ret = self.scenarios_mng.choose(self.present_clients)
         if ret:
             self.nsm_server.send_message(2, ret)
             self.may_make_one_connection()
@@ -228,7 +225,7 @@ class Patcher:
 
         self.ports[port.mode].append(port)
 
-        self.scenarios.port_depattern(port)
+        self.scenarios_mng.port_depattern(port)
         self.timer_connect_check.start()
         
         # dirty checker timer is longer than timer connect
@@ -273,7 +270,7 @@ class Patcher:
             if port.name == old_name and port.type == port_type:
                 port.name = new_name
                 port.is_new = True
-                self.scenarios.port_depattern(port)
+                self.scenarios_mng.port_depattern(port)
                 self.timer_connect_check.start()
                 break
 
@@ -284,7 +281,7 @@ class Patcher:
         
         self.connections.add((port_from, port_to))
         self.conns_rm_by_port.discard((port_from, port_to))
-        self.scenarios.recent_connections.add((port_from, port_to))
+        self.scenarios_mng.recent_connections.add((port_from, port_to))
 
         if self.pending_connection or in_port_new or out_port_new:
             if out_port_new:
@@ -306,7 +303,7 @@ class Patcher:
     def connection_removed(self, port_str_a: str, port_str_b: str):
         self.connections.discard((port_str_a, port_str_b))
         self.disconnections_time[(port_str_a, port_str_b)] = time.time()
-        self.scenarios.recent_connections.add((port_str_a, port_str_b))
+        self.scenarios_mng.recent_connections.add((port_str_a, port_str_b))
 
         if self.pending_connection:
             self.may_make_one_connection()
@@ -513,10 +510,10 @@ class Patcher:
                                 self.saved_graph[PortMode.OUTPUT].add(
                                     f'{group_name}:{out_port}')
             
-            self.scenarios.load_yaml(yaml_dict)
+            self.scenarios_mng.load_yaml(yaml_dict)
             
             if self.monitor_states_done is MonitorStates.DONE:
-                self.scenarios.check_nsm_brothers(brothers_)
+                self.scenarios_mng.check_nsm_brothers(brothers_)
 
             self.yaml_dict = yaml_dict
 
@@ -591,12 +588,12 @@ class Patcher:
                                 self.saved_graph[PortMode.INPUT].add(
                                     ':'.join((gp_name, pt.attrib['name'])))
             
-            self.scenarios.load_xml_connections(connections)
+            self.scenarios_mng.load_xml_connections(connections)
 
         if has_file:
             # re-declare all ports as new in case we are switching session
-            self.scenarios.open_default()
-            ret = self.scenarios.choose(self.present_clients)
+            self.scenarios_mng.open_default()
+            ret = self.scenarios_mng.choose(self.present_clients)
             if ret:
                 self.nsm_server.send_message(2, ret)
 
@@ -610,7 +607,7 @@ class Patcher:
         if not self.project_path:
             return
 
-        self.scenarios.save()
+        self.scenarios_mng.save()
 
         # for connection in self.connections:
         #     if connection not in self.conns_to_connect:
@@ -683,7 +680,7 @@ class Patcher:
         out_dict = self.yaml_dict
         out_dict['app'] = self.engine.XML_TAG
         out_dict['version'] = ray.VERSION
-        self.scenarios.fill_yaml(out_dict)
+        self.scenarios_mng.fill_yaml(out_dict)
 
         # fill the 'graph' section
         groups_dict = dict[str, dict[str, list[str]]]()
@@ -742,7 +739,7 @@ class Patcher:
                 # we are here only in the case a client id was just changed
                 # we modify the saved connections in consequence.
                 # Note that this client can't be started.
-                self.scenarios.nsm_brother_id_changed(
+                self.scenarios_mng.nsm_brother_id_changed(
                     *self.client_changing_id, jack_name)
 
                 self.client_changing_id = None
