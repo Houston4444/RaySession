@@ -33,9 +33,11 @@ class ScenariosManager:
         '''Connections at time of last scenario switch.
         Can be used in case successive scenarios are switching
         too fastly, and reconnections are not completed.'''
+
         self.recent_connections = set[ConnectionStr]()
         '''All connections or disconnections done
         since last scenario switch'''
+
         self.initial_connections = set[ConnectionStr]()
         'Connections already existing at startup'
 
@@ -219,6 +221,7 @@ class ScenariosManager:
             for scenar_map in scenars_seq:
                 if not isinstance(scenar_map, CommentedMap):
                     continue
+
                 for scenario in self.scenarios[1:]:
                     if (isinstance(scenario, Scenario)
                             and scenario.base_map is scenar_map):
@@ -361,12 +364,15 @@ class ScenariosManager:
                 scenario.rules.present_clients[i] = \
                     group_name_client_replaced(
                         client_name, ex_jack_name, new_jack_name)
-                print('chici', scenario, client_name, ex_jack_name, new_jack_name, group_belongs_to_client(client_name, ex_jack_name), scenario.rules.present_clients[i])
+                scenario.base_map['rules']['present_clients'][i] = \
+                    scenario.rules.present_clients[i]
             
             for i, client_name in enumerate(scenario.rules.absent_clients):
                 scenario.rules.absent_clients[i] = \
                     group_name_client_replaced(
                         client_name, ex_jack_name, new_jack_name)
+                scenario.base_map['rules']['absent_clients'][i] = \
+                    scenario.rules.absent_clients[i]
                     
             for i, pb_red in enumerate(scenario.playback_redirections):
                 orig, dest = pb_red
@@ -378,6 +384,10 @@ class ScenariosManager:
                         port_name_client_replaced(
                             dest, ex_jack_name, new_jack_name)
                     )
+
+                    red_map = scenario.base_map['playback_redirections'][i]
+                    red_map['origin'] = scenario.playback_redirections[i][0]
+                    red_map['destination'] = scenario.playback_redirections[i][1]                        
             
             for i, ct_red in enumerate(scenario.capture_redirections):
                 orig, dest = ct_red
@@ -389,6 +399,10 @@ class ScenariosManager:
                         port_name_client_replaced(
                             dest, ex_jack_name, new_jack_name)
                     )
+                    
+                    cap_map = scenario.base_map['capture_redirections'][i]
+                    cap_map['origin'] = scenario.capture_redirections[i][0]
+                    cap_map['destination'] = scenario.capture_redirections[i][1]  
             
             for i, cdomain in enumerate(scenario.connect_domain):
                 from_, to_ = cdomain
@@ -402,7 +416,13 @@ class ScenariosManager:
                     
                 if new_from_ == from_ and new_to_ == to_:
                     continue
+
                 scenario.connect_domain[i] = (new_from_, new_to_)
+                dom_map = scenario.base_map['connect_domain'][i]
+                if isinstance(new_from_, str):
+                    dom_map['from'] = new_from_
+                if isinstance(new_to_, str):
+                    dom_map['to'] = new_to_
                 
             for i, cdomain in enumerate(scenario.no_connect_domain):
                 from_, to_ = cdomain
@@ -416,7 +436,14 @@ class ScenariosManager:
                     
                 if new_from_ == from_ and new_to_ == to_:
                     continue
+
                 scenario.no_connect_domain[i] = (new_from_, new_to_)
+                dom_map = scenario.base_map['no_connect_domain'][i]
+                if isinstance(new_from_, str):
+                    dom_map['from'] = new_from_
+                if isinstance(new_to_, str):
+                    dom_map['to'] = new_to_
+                    
             
             # import re
             

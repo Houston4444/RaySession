@@ -149,22 +149,24 @@ def load_conns_from_yaml(
             _err_reading_yaml(
                 yaml_list, i,
                 'Connection incomplete or not correct')
+                
+def pattern_to_dict(conn_pattern: ConnectionPattern) -> dict[str, str]:
+    from_, to_ = conn_pattern
+    out_d = dict[str, str]()
+    if isinstance(from_, re.Pattern):
+        out_d['from_pattern'] = from_.pattern
+    else:
+        out_d['from'] = from_
+    
+    if isinstance(to_, re.Pattern):
+        out_d['to_pattern'] = to_.pattern
+    else:
+        out_d['to'] = to_
+    
+    return out_d
 
-def patterns_to_dict(patt: list[ConnectionPattern]) -> list[dict]:
-    patterns = list[dict]()
-    for from_, to_ in patt:
-        pattern = {}
-        if isinstance(from_, re.Pattern):
-            pattern['from_pattern'] = from_.pattern
-        else:
-            pattern['from'] = from_
-        
-        if isinstance(to_, re.Pattern):
-            pattern['to_pattern'] = to_.pattern
-        else:
-            pattern['to'] = to_
-        patterns.append(pattern)
-    return patterns
+def patterns_to_dict(patt: list[ConnectionPattern]) -> list[dict[str, str]]:
+    return [pattern_to_dict(cp) for cp in patt]
 
 def load_connect_domain(
         yaml_list: CommentedSeq,
@@ -245,7 +247,6 @@ def restore_connections_comments(
     old_conns.clear()
     for out_dict in out_dicts:
         old_conns.append(out_dict)
-        
 
 def save_connections(
         map: CommentedMap,
@@ -255,7 +256,9 @@ def save_connections(
     'Save connections stocked in `patterns` and `conns` to `map` at `key`.'
     old_conns_seq = map.get(key)
     if not isinstance(old_conns_seq, CommentedSeq):
-        map[key] = depattern.to_yaml_connection_dicts(patterns, conns)
+        conns_map = depattern.to_yaml_connection_dicts(patterns, conns)
+        if conns_map:
+            map[key] = conns_map
         return
 
     restore_connections_comments(

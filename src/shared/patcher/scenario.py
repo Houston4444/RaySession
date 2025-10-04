@@ -1,12 +1,16 @@
 from enum import Enum, auto
+import logging
 import re
 
-from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
 from patshared import PortMode
 
 from . import depattern
 from .bases import ConnectionStr, ConnectionPattern, PortData
+
+
+_logger = logging.getLogger(__name__)
 
 
 class ScenarioMode(Enum):
@@ -59,6 +63,53 @@ class ScenarioRules:
         if self.absent_clients:
             out_d['absent_clients'] = self.absent_clients
         return out_d
+
+    def update_yaml_map(self, yaml_map: CommentedMap):
+        if self.present_clients:
+            pres = yaml_map.get('present_clients')
+            if isinstance(pres, CommentedSeq):
+                if len(pres) != len(self.present_clients):
+                    _logger.warning(
+                        'Difference between number of present clients '
+                        f'in data ({len(self.present_clients)}) '
+                        f'and in yaml map ({len(pres)}) !!!')
+                    return
+
+                for i, present_client in enumerate(self.present_clients):
+                    pres[i] = present_client
+                    
+            elif isinstance(pres, str):
+                if len(self.present_clients) != 1:
+                    _logger.warning(
+                        f'yaml present_clients is a str but there is not '
+                        f'just 1 present client in data '
+                        f'({len(self.present_clients)}) !')
+                    return
+                
+                yaml_map['present_clients'] = self.present_clients[0]
+        
+        if self.absent_clients:
+            abst = yaml_map.get('absent_clients')
+            if isinstance(abst, CommentedSeq):
+                if len(abst) != len(self.absent_clients):
+                    _logger.warning(
+                        'Difference between number of absent clients '
+                        f'in data ({len(self.absent_clients)}) '
+                        f'and in yaml map ({len(abst)}) !!!')
+                    return
+
+                for i, absent_client in enumerate(self.absent_clients):
+                    abst[i] = absent_client
+                    
+            elif isinstance(abst, str):
+                if len(self.absent_clients) != 1:
+                    _logger.warning(
+                        f'yaml present_clients is a str but there is not '
+                        f'just 1 present client in data '
+                        f'({len(self.absent_clients)}) !')
+                    return
+                
+                yaml_map['absent_clients'] = self.absent_clients[0]
 
 
 class BaseScenario:
@@ -226,6 +277,24 @@ class Scenario(BaseScenario):
         if ret:
             return ret
         return [conn]    
+
+    def update_yaml_map(self):
+        rules_map = self.yaml_map.get('rules')
+        if not isinstance(rules_map, CommentedMap):
+            # TODO log something
+            return
+        
+        # self.rules.update_yaml_map(rules_map)
+        # conn_dom = self.yaml_map.get('connect_domain')
+        # # if isinstance(conn_dom, CommentedSeq):
+        # #     ex_conn_dom = conn_dom.copy()
+        # #     conn_dom.clear()
+            
+        # #     for connect_domain in self.connect_domain:
+        # #         conn_dom_dict = yaml_tools.pattern_to_dict(connect_domain)
+        # #         for ex_connd in ex_conn_dom:
+        # #             if ex_connd == conn_dom_dict:
+        # #                 conn_dom.append()
 
     def to_yaml_map(self) -> CommentedMap:
         out_d = self.yaml_map
