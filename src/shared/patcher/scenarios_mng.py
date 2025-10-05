@@ -2,11 +2,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
-from jack_renaming_tools import (
-    one_port_belongs_to_client,
-    group_name_client_replaced,
-    port_name_client_replaced,
-    port_names_client_replaced)
+from jack_renaming_tools import Renamer, one_port_belongs_to_client
 
 from patshared import PortMode
 
@@ -346,53 +342,47 @@ class ScenariosManager:
             self,
             ex_client_id: NsmClientName, ex_jack_name: JackClientBaseName,
             new_client_id: NsmClientName, new_jack_name: JackClientBaseName):
+        renamer = Renamer(ex_client_id, new_client_id,
+                          ex_jack_name, new_jack_name)
+        
         for scenario in self.scenarios:
             for svd_conn in list(scenario.saved_conns):
-                if one_port_belongs_to_client(svd_conn, ex_jack_name):
+                if renamer.one_port_belongs(svd_conn):
                     scenario.saved_conns.discard(svd_conn)
-                    scenario.saved_conns.add(
-                        port_names_client_replaced(
-                            svd_conn, ex_jack_name, new_jack_name))
+                    scenario.saved_conns.add(renamer.ports_renamed(svd_conn))
                     
             for fbd_conn in list(scenario.forbidden_conns):
-                if one_port_belongs_to_client(fbd_conn, ex_jack_name):
+                if renamer.one_port_belongs(fbd_conn):
                     scenario.forbidden_conns.discard(fbd_conn)
                     scenario.forbidden_conns.add(
-                        port_names_client_replaced(
-                            fbd_conn, ex_jack_name, new_jack_name))
+                        renamer.ports_renamed(fbd_conn))
             
             if not isinstance(scenario, Scenario):
                 continue
             
             for i, client_name in enumerate(scenario.rules.present_clients):
                 scenario.rules.present_clients[i] = \
-                    group_name_client_replaced(
-                        client_name, ex_jack_name, new_jack_name)
+                    renamer.group_renamed(client_name)
                 scenario.base_map['rules']['present_clients'][i] = \
                     scenario.rules.present_clients[i]
             
             for i, client_name in enumerate(scenario.rules.absent_clients):
                 scenario.rules.absent_clients[i] = \
-                    group_name_client_replaced(
-                        client_name, ex_jack_name, new_jack_name)
+                    renamer.group_renamed(client_name)
                 scenario.base_map['rules']['absent_clients'][i] = \
                     scenario.rules.absent_clients[i]
                     
             for i, pb_red in enumerate(scenario.playback_redirections):
-                if one_port_belongs_to_client(pb_red, ex_jack_name):
-                    new_red = port_names_client_replaced(
-                        pb_red, ex_jack_name, new_jack_name)
-
+                if renamer.one_port_belongs(pb_red):
+                    new_red = renamer.ports_renamed(pb_red)
                     scenario.playback_redirections[i] = new_red
                     red_map = scenario.base_map['playback_redirections'][i]
                     red_map['origin'], red_map['destination'] = new_red
             
             for i, ct_red in enumerate(scenario.capture_redirections):
-                if one_port_belongs_to_client(ct_red, ex_jack_name):
-                    new_red = port_names_client_replaced(
-                        ct_red, ex_jack_name, new_jack_name)
-                    scenario.capture_redirections[i] = new_red
-                    
+                if renamer.one_port_belongs(ct_red):
+                    new_red = renamer.ports_renamed(ct_red)
+                    scenario.capture_redirections[i] = new_red                    
                     cap_map = scenario.base_map['capture_redirections'][i]
                     cap_map['origin'], cap_map['destination'] = new_red
             
@@ -400,11 +390,9 @@ class ScenariosManager:
                 from_, to_ = cdomain
                 new_from_, new_to_ = cdomain
                 if isinstance(from_, str):
-                    new_from_ = port_name_client_replaced(
-                        from_, ex_jack_name, new_jack_name)
+                    new_from_ = renamer.port_renamed(from_)
                 if isinstance(to_, str):
-                    new_to_ = port_name_client_replaced(
-                        to_, ex_jack_name, new_jack_name)
+                    new_to_ = renamer.port_renamed(to_)
                     
                 if new_from_ == from_ and new_to_ == to_:
                     continue
@@ -420,11 +408,9 @@ class ScenariosManager:
                 from_, to_ = cdomain
                 new_from_, new_to_ = cdomain
                 if isinstance(from_, str):
-                    new_from_ = port_name_client_replaced(
-                        from_, ex_jack_name, new_jack_name)
+                    new_from_ = renamer.port_renamed(from_)
                 if isinstance(to_, str):
-                    new_to_ = port_name_client_replaced(
-                        to_, ex_jack_name, new_jack_name)
+                    new_to_ = renamer.port_renamed(to_)
                     
                 if new_from_ == from_ and new_to_ == to_:
                     continue

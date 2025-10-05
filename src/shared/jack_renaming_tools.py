@@ -4,6 +4,42 @@ from typing import Iterable, TypeVar
 T_StrItr = TypeVar('T_StrItr', tuple[str, ...], list[str], set[str])
 
 
+class Renamer:
+    '''Simple class that gives shorter access to public functions
+    of this module.
+    When a NSM client is renamed, it gives shorter code than call
+    same functions with always the same arguments.'''
+    def __init__(self, old_client_id: str, new_client_id: str,
+                 old_jack_name: str, new_jack_name: str):
+        self.old_client_id = old_client_id
+        self.new_client_id = new_client_id
+        self.old_jack_name = old_jack_name
+        self.new_jack_name = new_jack_name
+        
+    def port_belongs(self, port_name: str) -> bool:
+        'does `port_name` belongs to old client'
+        return port_belongs_to_client(port_name, self.old_jack_name)
+    
+    def one_port_belongs(self, port_names: T_StrItr) -> bool:
+        'does at least one port of `port_names` belongs to old client'
+        return one_port_belongs_to_client(port_names, self.old_jack_name)
+    
+    def port_renamed(self, port_name: str) -> str:
+        return port_name_client_replaced(
+            port_name, self.old_jack_name, self.new_jack_name)
+    
+    def ports_renamed(self, port_names: T_StrItr) -> T_StrItr:
+        return port_names_client_replaced(
+            port_names, self.old_jack_name, self.new_jack_name)
+        
+    def group_belongs(self, group_name: str) -> bool:
+        return group_belongs_to_client(group_name, self.old_jack_name)
+    
+    def group_renamed(self, group_name: str) -> str:
+        return group_name_client_replaced(
+            group_name, self.old_jack_name, self.new_jack_name)
+
+
 def group_belongs_to_client(group_name: str, jack_client_name: str):
     if group_name == jack_client_name:
         return True
