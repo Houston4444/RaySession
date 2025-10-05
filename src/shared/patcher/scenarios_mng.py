@@ -297,8 +297,9 @@ class ScenariosManager:
 
     def check_removed_nsm_brothers(
             self, ex_brothers: dict[NsmClientName, JackClientBaseName]):
-        '''In all connections lists, remove connections with a port that
-        should not exist anymore because its NSM client has been removed.
+        '''At file open, in all connections lists,
+        remove connections with a port that should not exist anymore
+        because its NSM client has been removed.
         
         `brothers` is the dict in file'''
         rm_jack_clients = [ex_brothers[ex_b] for ex_b in ex_brothers
@@ -338,6 +339,8 @@ class ScenariosManager:
             for fbd_conn in list(scenario.saved_conns):
                 if one_port_belongs_to_client(fbd_conn, jack_name):
                     scenario.forbidden_conns.discard(fbd_conn)
+        
+        self.reload_scenario()
 
     def nsm_brother_id_changed(
             self,
@@ -345,7 +348,6 @@ class ScenariosManager:
             new_client_id: NsmClientName, new_jack_name: JackClientBaseName):
         for scenario in self.scenarios:
             for svd_conn in list(scenario.saved_conns):
-                port_from, port_to = svd_conn
                 if one_port_belongs_to_client(svd_conn, ex_jack_name):
                     scenario.saved_conns.discard(svd_conn)
                     scenario.saved_conns.add(
@@ -353,7 +355,6 @@ class ScenariosManager:
                             svd_conn, ex_jack_name, new_jack_name))
                     
             for fbd_conn in list(scenario.forbidden_conns):
-                port_from, port_to = fbd_conn
                 if one_port_belongs_to_client(fbd_conn, ex_jack_name):
                     scenario.forbidden_conns.discard(fbd_conn)
                     scenario.forbidden_conns.add(
@@ -435,6 +436,8 @@ class ScenariosManager:
                 if isinstance(new_to_, str):
                     dom_map['to'] = new_to_
 
+        self.reload_scenario()
+
     def save(self):
         scenario = self.current
         default = self.scenarios[0]
@@ -476,7 +479,7 @@ class ScenariosManager:
                         else:
                             default.saved_conns.add(conn)
 
-        self.load_scenario(self.current_num)
+        self.reload_scenario()
 
     def choose(self, present_clients: set[str]) -> str:
         num = 0
@@ -500,6 +503,11 @@ class ScenariosManager:
             self.load_scenario(num)
         
         return ret
+
+    def reload_scenario(self):
+        '''rewrite patcher.conns_to_connect and patcher.conns_to_disconnect
+        without checking scenario change.'''
+        self.load_scenario(self.current_num)
 
     def load_scenario(self, num: int):
         '''Load a scenario written in the patch file, or default if num == 0.

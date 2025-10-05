@@ -746,7 +746,10 @@ class Patcher:
                 ex_jack_name = self.client_changing_id[1]
                 for conn in list(self.conns_rm_by_port):
                     if one_port_belongs_to_client(conn, ex_jack_name):
-                        self.conns_rm_by_port.discard(conn)                                
+                        self.conns_rm_by_port.discard(conn)
+                for conn in list(self.scenarios_mng.ex_connections):
+                    if one_port_belongs_to_client(conn, ex_jack_name):
+                        self.scenarios_mng.ex_connections.discard(conn)
                 
                 self.scenarios_mng.nsm_brother_id_changed(
                     *self.client_changing_id, jack_name)
