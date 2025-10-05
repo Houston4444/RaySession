@@ -10,6 +10,7 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 
 from patshared import PortMode, PortType
+from jack_renaming_tools import one_port_belongs_to_client
 
 from nsm_client import NsmServer, NsmCallback, Err
 import ray
@@ -513,7 +514,7 @@ class Patcher:
             self.scenarios_mng.load_yaml(yaml_dict)
             
             if self.monitor_states_done is MonitorStates.DONE:
-                self.scenarios_mng.check_nsm_brothers(brothers_)
+                self.scenarios_mng.check_removed_nsm_brothers(brothers_)
 
             self.yaml_dict = yaml_dict
 
@@ -739,6 +740,14 @@ class Patcher:
                 # we are here only in the case a client id was just changed
                 # we modify the saved connections in consequence.
                 # Note that this client can't be started.
+                
+                # remove from conns_rm_by_port connections matching with
+                # old name to avoid theses connections to be saved.
+                ex_jack_name = self.client_changing_id[1]
+                for conn in list(self.conns_rm_by_port):
+                    if one_port_belongs_to_client(conn, ex_jack_name):
+                        self.conns_rm_by_port.discard(conn)                                
+                
                 self.scenarios_mng.nsm_brother_id_changed(
                     *self.client_changing_id, jack_name)
 
@@ -763,17 +772,8 @@ class Patcher:
             else:
                 return
             
-            # remove all saved connections from and to its client
-            conns_to_unsave = list[tuple[str, str]]()
-                
-            # for conn in self.saved_connections:
-            #     out_port, in_port = conn
-            #     if (port_belongs_to_client(out_port, jack_client_name)
-            #             or port_belongs_to_client(in_port, jack_client_name)):
-            #         conns_to_unsave.append(conn)
-            
-            # for conn in conns_to_unsave:
-            #     self.saved_connections.discard(conn)
+            self.scenarios_mng.nsm_brother_removed(
+                client_id, jack_client_name)
 
         elif event.startswith('id_changed_to:'):
             if client_id in self.brothers_dict.keys():

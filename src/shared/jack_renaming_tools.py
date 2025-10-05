@@ -1,3 +1,7 @@
+from typing import Iterable, TypeVar
+
+
+T_StrItr = TypeVar('T_StrItr', tuple[str, ...], list[str], set[str])
 
 
 def group_belongs_to_client(group_name: str, jack_client_name: str):
@@ -98,3 +102,22 @@ def pattern_belongs_to_client(patt: str, jack_client_name: str) -> bool:
     
     return group_belongs_to_client(
         cl.replace('\\.', '.', 1), jack_client_name)
+
+def one_port_belongs_to_client(
+        ports: Iterable[str], jack_client_name: str) -> bool:
+    for port in ports:
+        if port_belongs_to_client(port, jack_client_name):
+            return True
+    return False
+
+def port_names_client_replaced(
+        ports: T_StrItr,
+        ex_client_name: str, new_client_name: str) -> T_StrItr:
+    out_list = [port_name_client_replaced(p, ex_client_name, new_client_name)
+                for p in ports]
+
+    if isinstance(ports, list):
+        return out_list
+    if isinstance(ports, tuple):
+        return tuple(out_list)
+    return set(out_list)

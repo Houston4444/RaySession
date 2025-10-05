@@ -1,6 +1,5 @@
 from enum import Enum, auto
 import logging
-import re
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
@@ -149,19 +148,6 @@ class BaseScenario:
         or a list containing only conn if no redirection was found.'''
         return [conn]
     
-    def to_yaml_map(self) -> CommentedMap:
-        out_d = CommentedMap()
-        forbidden_conns = depattern.to_yaml_connection_dicts(
-            self.forbidden_patterns, self.forbidden_conns)
-        if forbidden_conns:
-            out_d['forbidden_connections'] = forbidden_conns
-        saved_conns = depattern.to_yaml_connection_dicts(
-            self.saved_patterns, self.saved_conns)        
-        if saved_conns:
-            out_d['connections'] = saved_conns
-
-        return out_d
-    
     def startup_depattern(self, ports: dict[PortMode, list[PortData]]):
         depattern.startup(
             ports, self.saved_conns, self.saved_patterns)
@@ -276,86 +262,4 @@ class Scenario(BaseScenario):
         ret = self.redirecteds(conn, restored)
         if ret:
             return ret
-        return [conn]    
-
-    def update_yaml_map(self):
-        rules_map = self.yaml_map.get('rules')
-        if not isinstance(rules_map, CommentedMap):
-            # TODO log something
-            return
-        
-        # self.rules.update_yaml_map(rules_map)
-        # conn_dom = self.yaml_map.get('connect_domain')
-        # # if isinstance(conn_dom, CommentedSeq):
-        # #     ex_conn_dom = conn_dom.copy()
-        # #     conn_dom.clear()
-            
-        # #     for connect_domain in self.connect_domain:
-        # #         conn_dom_dict = yaml_tools.pattern_to_dict(connect_domain)
-        # #         for ex_connd in ex_conn_dom:
-        # #             if ex_connd == conn_dom_dict:
-        # #                 conn_dom.append()
-
-    def to_yaml_map(self) -> CommentedMap:
-        out_d = self.yaml_map
-        
-        out_d['rules'] = self.rules.to_yaml_dict()
-        
-        if self.capture_redirections:
-            out_d['capture_redirections'] = [
-                {'origin': cr[0], 'destination': cr[1]}
-                for cr in self.capture_redirections]
-        if self.playback_redirections:
-            out_d['playback_redirections'] = [
-                {'origin': pr[0], 'destination': pr[1]}
-                for pr in self.playback_redirections]
-        
-        if self.connect_domain:
-            cd_dicts = list[dict]()
-            for cd in self.connect_domain:
-                cd_dict = {}
-                if isinstance(cd[0], re.Pattern):
-                    if cd[0].pattern != '.*':
-                        cd_dict['from_pattern'] = cd[0].pattern
-                else:
-                    cd_dict['from'] = cd[0]
-                    
-                if isinstance(cd[1], re.Pattern):
-                    if cd[1].pattern != '.*':
-                        cd_dict['to_pattern'] = cd[1].pattern
-                else:
-                    cd_dict['to'] = cd[1]
-                cd_dicts.append(cd_dict)
-            
-            out_d['connect_domain'] = cd_dicts
-            
-        if self.no_connect_domain:
-            ncd_dicts = list[dict]()
-            for ncd in self.no_connect_domain:
-                ncd_dict = {}
-                if isinstance(ncd[0], re.Pattern):
-                    if ncd[0].pattern != '.*':
-                        ncd_dict['from_pattern'] = ncd[0].pattern
-                else:
-                    ncd_dict['from'] = ncd[0]
-                    
-                if isinstance(ncd[1], re.Pattern):
-                    if ncd[1].pattern != '.*':
-                        ncd_dict['to_pattern'] = ncd[1].pattern
-                else:
-                    ncd_dict['to'] = ncd[1]
-                ncd_dicts.append(ncd_dict)
-            
-            out_d['no_connect_domain'] = ncd_dicts
-        
-        forbidden_conns = depattern.to_yaml_connection_dicts(
-            self.forbidden_patterns, self.forbidden_conns)
-        if forbidden_conns:
-            out_d['forbidden_connections'] = forbidden_conns
-
-        saved_conns = depattern.to_yaml_connection_dicts(
-            self.saved_patterns, self.saved_conns)        
-        if saved_conns:
-            out_d['connections'] = saved_conns
-                
-        return out_d
+        return [conn]
