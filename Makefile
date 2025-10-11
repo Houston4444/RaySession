@@ -138,6 +138,7 @@ pure_install:
 	install -d $(DEST_RAY)/$(_DIR)/
 	install -d $(DEST_RAY)/$(PATCHBAY_DIR)/locale/
 	install -d $(DESTDIR)/etc/xdg/raysession/client_templates/
+	install -d $(DESTDIR)/etc/bash_completion.d
 	
 	# Install icons
 	for sz in $(ICON_SIZES);do \
@@ -153,6 +154,11 @@ pure_install:
 	cp -r session_templates $(DEST_RAY)/
 	cp -r session_scripts   $(DEST_RAY)/
 	cp -r data              $(DEST_RAY)/
+
+	# Copy completion script
+	cp -r src/completion/ray_completion.sh $(DESTDIR)/etc/bash_completion.d/
+	sed -i "s|XXX_PYCOMPLETION_XXX|$(DEST_RAY)/src/completion|" \
+		$(DESTDIR)/etc/bash_completion.d/ray_completion.sh
 
 	# Copy patchbay themes, manual and lib
 	cp -r HoustonPatchbay/themes $(DEST_RAY)/$(PATCHBAY_DIR)/
