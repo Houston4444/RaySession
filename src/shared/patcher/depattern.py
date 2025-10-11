@@ -1,9 +1,12 @@
 import re
+from typing import TYPE_CHECKING
 
 from patshared import PortMode
 
 from .bases import ConnectionStr, ConnectionPattern, PatternOrName, PortData
 
+if TYPE_CHECKING:
+    from .scenarios_mng import ScenariosManager
 
 def str_match(a: PatternOrName, b: str) -> bool:
     if isinstance(a, str):
@@ -12,10 +15,22 @@ def str_match(a: PatternOrName, b: str) -> bool:
 
 def startup(
         ports: dict[PortMode, list[PortData]],
+        mng: 'ScenariosManager',
         conns: set[ConnectionStr],
         patterns: list[ConnectionPattern]):
-    '''add to conns all possible connections matching with patterns
+    '''add to `conns` all possible connections matching with patterns
     regarding the ports in presence'''
+    new_conns = set[ConnectionStr]()
+    
+    # transform all conns with their port Equivalences alias (if it exists)
+    for conn in list(conns):
+        port_from, port_to = conn
+        new_conns.add((mng.capture_eqvs.alias(port_from),
+                       mng.playback_eqvs.alias(port_to)))
+    
+    conns.clear()
+    conns |= new_conns
+    
     for from_, to_ in patterns:
         if isinstance(from_, re.Pattern):
             for outport in ports[PortMode.OUTPUT]:
@@ -27,22 +42,48 @@ def startup(
                             conns.add((outport.name, inport.name))
                 else:
                     for inport in ports[PortMode.INPUT]:
-                        if to_ == inport.name:
+                        if to_ in (inport.name,
+                                   mng.playback_eqvs.alias(inport.name)):
                             conns.add((outport.name, inport.name))
                             break
         else:
             for outport in ports[PortMode.OUTPUT]:
-                if outport.name == from_:
+                if from_ in (outport.name,
+                             mng.playback_eqvs.alias(outport.name)):
                     if isinstance(to_, re.Pattern):
                         for inport in ports[PortMode.INPUT]:
                             if to_.fullmatch(inport.name):
                                 conns.add((outport.name, inport.name))
                     else:
                         for inport in ports[PortMode.INPUT]:
-                            if to_ == inport.name:
+                            if to_ in (inport.name,
+                                       mng.playback_eqvs.alias(inport.name)):
                                 conns.add((outport.name, inport.name))
                                 break
                     break
+    
+    outport_names = set([p.name for p in ports[PortMode.OUTPUT]])
+    inport_names = set([p.name for p in ports[PortMode.INPUT]])
+    
+    real_conns = set[ConnectionStr]()
+    
+    for conn in conns:
+        port_from, port_to = conn
+        real_from = mng.capture_eqvs.first(port_from, outport_names)
+        real_to = mng.playback_eqvs.first(port_to, inport_names)
+
+        if real_from is None:
+            if real_to is None:
+                continue
+            else:
+                real_conns.add((port_from, real_to))
+        else:
+            if real_to is None:
+                real_conns.add((real_from, port_to))
+            else:
+                real_conns.add((real_from, real_to))
+
+    conns |= real_conns
 
 def add_port(
         ports: dict[PortMode, list[PortData]],

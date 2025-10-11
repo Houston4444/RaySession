@@ -10,6 +10,7 @@ from .bases import (ConnectionStr, JackClientBaseName,
                     NsmClientName, PortData)
 from . import yaml_tools
 from .scenario import ScenarioMode, ScenarioRules, BaseScenario, Scenario
+from .equivalences import Equivalences
 
 if TYPE_CHECKING:
     from .patcher import Patcher
@@ -21,7 +22,7 @@ _logger = logging.getLogger(__name__)
 class ScenariosManager:
     def __init__(self, patcher: 'Patcher'):
         self.scenarios = list[BaseScenario]()
-        self.scenarios.append(BaseScenario())
+        self.scenarios.append(BaseScenario(self))
         self.current_num = 0
         self.patcher = patcher
         
@@ -36,6 +37,9 @@ class ScenariosManager:
 
         self.initial_connections = set[ConnectionStr]()
         'Connections already existing at startup'
+        
+        self.capture_eqvs = Equivalences()
+        self.playback_eqvs = Equivalences()
 
     @property
     def current(self) -> BaseScenario:
@@ -95,7 +99,7 @@ class ScenariosManager:
                     rules, 'absent_clients', (list, str))
                 continue
             
-            scenario = Scenario(sc_rules, el)
+            scenario = Scenario(self, sc_rules, el)
             scenario.yaml_map = el
             
             name = el.get('name')
@@ -192,6 +196,45 @@ class ScenariosManager:
     def load_yaml(self, yaml_dict: CommentedMap):        
         default = self.scenarios[0]
 
+        all_equiv_ports = set[str]()
+        for eqv_key in ('capture_equivalences', 'playback_equivalences'):
+            equivalences = yaml_tools.item_at(yaml_dict, eqv_key, dict)
+            if isinstance(equivalences, CommentedMap):
+                for alias, port_names in equivalences.items():
+                    if not isinstance(alias, str):
+                        yaml_tools._err_reading_yaml(
+                            equivalences, alias, f'{alias} is not a string, '
+                            f'ignored !')
+                        continue
+                    
+                    if not isinstance(port_names, CommentedSeq):
+                        yaml_tools.log_wrong_type_in_map(
+                            equivalences, alias, list)
+                    
+                    equiv = list[str]()
+                    
+                    for i, port_name in enumerate(port_names):
+                        if not isinstance(port_name, str):
+                            yaml_tools.log_wrong_type_in_seq(
+                                port_names, i, 'port name', str)
+                            continue
+                        
+                        if port_name in all_equiv_ports:
+                            yaml_tools._err_reading_yaml(
+                                port_names, i,
+                                f'{port_name} is already used '
+                                f'in a previous equivalence. Ignored')
+                            continue
+
+                        all_equiv_ports.add(port_name)
+                        equiv.append(port_name)
+                    
+                    if equiv:
+                        if eqv_key == 'capture_equivalences':
+                            self.capture_eqvs[alias] = equiv
+                        else:
+                            self.playback_eqvs[alias] = equiv
+        
         conns = yaml_tools.item_at(yaml_dict, 'connections', list)
         if isinstance(conns, CommentedSeq):
             yaml_tools.load_conns_from_yaml(
@@ -207,7 +250,7 @@ class ScenariosManager:
         scenars = yaml_tools.item_at(yaml_dict, 'scenarios', list)
         if isinstance(scenars, CommentedSeq):
             self._load_yaml_scenarios(scenars)
-            
+        
         for scenario in self.scenarios:
             scenario.startup_depattern(self.patcher.ports)
 

@@ -1,5 +1,6 @@
 from enum import Enum, auto
 import logging
+from typing import TYPE_CHECKING
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
@@ -8,6 +9,8 @@ from patshared import PortMode
 from . import depattern
 from .bases import ConnectionStr, ConnectionPattern, PortData
 
+if TYPE_CHECKING:
+    from .scenarios_mng import ScenariosManager
 
 _logger = logging.getLogger(__name__)
 
@@ -114,7 +117,8 @@ class ScenarioRules:
 class BaseScenario:
     '''Mother Class of Scenario. Is used by the default scenario.
     Does not contains rules and redirections'''
-    def __init__(self):
+    def __init__(self, mng: 'ScenariosManager'):
+        self.mng = mng
         self.name = 'Default'
         self.forbidden_patterns = list[ConnectionPattern]()
         '''Patterns affecting forbidden connections in this scenario.
@@ -150,10 +154,12 @@ class BaseScenario:
     
     def startup_depattern(self, ports: dict[PortMode, list[PortData]]):
         depattern.startup(
-            ports, self.saved_conns, self.saved_patterns)
+            ports, self.mng,
+            self.saved_conns, self.saved_patterns)
         depattern.startup(
-            ports, self.forbidden_conns, self.forbidden_patterns)
-        
+            ports, self.mng, 
+            self.forbidden_conns, self.forbidden_patterns)
+
     def port_depattern(
             self, ports: dict[PortMode, list[PortData]], port: PortData):
         depattern.add_port(
@@ -163,8 +169,10 @@ class BaseScenario:
 
 
 class Scenario(BaseScenario):
-    def __init__(self, rules: ScenarioRules, base_map: CommentedMap):
-        super().__init__()
+    def __init__(
+            self, mng: 'ScenariosManager',
+            rules: ScenarioRules, base_map: CommentedMap):
+        super().__init__(mng)
         self.name = ''
         self.rules = rules
         self.base_map = base_map
