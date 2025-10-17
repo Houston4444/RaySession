@@ -279,7 +279,7 @@ class MainWindow(QMainWindow):
         self._control_menu.addAction(self.ui.actionPreferences)
 
         self._control_tool_button: QToolButton = \
-            self.ui.toolBar.widgetForAction(self.ui.actionControlMenu)
+            self.ui.toolBar.widgetForAction(self.ui.actionControlMenu) # type:ignore
         
         self._control_tool_button.setPopupMode(
             QToolButton.ToolButtonPopupMode.InstantPopup)
@@ -353,7 +353,7 @@ class MainWindow(QMainWindow):
             ray_icon('trash-empty', dark)) # type:ignore
         if self.ui.trashButton.icon().isNull():
             self.ui.trashButton.setIcon(
-                ray_icon('trash'), dark) # type:ignore
+                ray_icon('trash', dark))
 
         self.ui.actionDuplicateSession.setIcon(
             ray_icon('xml-node-duplicate', dark)) # type:ignore
