@@ -105,6 +105,8 @@ if True:
 
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-C.ttf")
+    print('apzeoff', QFontDatabase.applicationFontFamilies(0)[0])
+    print('xpeofof', QFontDatabase.applicationFontFamilies(1)[0])
 
     # get arguments
     parser = ArgParser()
