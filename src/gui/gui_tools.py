@@ -103,14 +103,14 @@ def ray_icon(icon_name: str, dark=False) -> QIcon:
     breeze = 'breeze-dark' if dark else 'breeze'
     scal = Path(__file__).parents[2] / 'resources' / 'scalable'
     print('BBBOONN alors tu va le trouver oui !!!!', f'{scal}/{breeze}/{icon_name}')
-    normal_pxm = QPixmap(f'{scal}/{breeze}/{icon_name}')
+    normal_pxm = QPixmap(f'{scal}/{breeze}/{icon_name}', format='svg')
     print('cpa trouvé ?', normal_pxm.isNull())
     # icon.addFile(f'{scal}/{breeze}/{icon_name}', QSize(22, 22))
     icon.addPixmap(
-        QPixmap(f'{scal}/{breeze}/{icon_name}'),
+        QPixmap(f'{scal}/{breeze}/{icon_name}', format='svg'),
         QIcon.Mode.Normal, QIcon.State.On)
     icon.addPixmap(
-        QPixmap(f'{scal}/{breeze}/disabled/{icon_name}'),
+        QPixmap(f'{scal}/{breeze}/disabled/{icon_name}', format='svg'),
         QIcon.Mode.Disabled, QIcon.State.Off)
     
     from qtpy.QtCore import QDir
