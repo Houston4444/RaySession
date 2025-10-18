@@ -101,12 +101,13 @@ def ray_icon(icon_name: str, dark=False) -> QIcon:
     
     icon = QIcon()
     breeze = 'breeze-dark' if dark else 'breeze'
-    icon.addFile(f'scalable:{breeze}/{icon_name}', QSize(22, 22))
+    scal = Path(__file__).parents[2] / 'resources' / 'scalable'
+    icon.addFile(f'{scal}/{breeze}/{icon_name}', QSize(22, 22))
     # icon.addPixmap(
     #     QPixmap(f'scalable:/{breeze}/{icon_name}'),
     #     QIcon.Mode.Normal, QIcon.State.On)
     icon.addPixmap(
-        QPixmap(f'scalable:{breeze}/disabled/{icon_name}'),
+        QPixmap(f'{scal}/{breeze}/disabled/{icon_name}'),
         QIcon.Mode.Disabled, QIcon.State.Off)
     
     from qtpy.QtCore import QDir
