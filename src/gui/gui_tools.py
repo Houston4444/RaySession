@@ -96,14 +96,15 @@ def ray_icon(icon_name: str, dark=False) -> QIcon:
     if dark and icon_name in _RAY_ICONS_CACHE_DARK.keys():
         return _RAY_ICONS_CACHE_DARK[icon_name]
     if not dark and icon_name in _RAY_ICONS_CACHE_LIGHT.keys():
+        print('known icon name', icon_name)
         return _RAY_ICONS_CACHE_LIGHT[icon_name]
     
     icon = QIcon()
     breeze = 'breeze-dark' if dark else 'breeze'
-    # icon.addFile(f':scalable/{breeze}/{icon_name}', QSize(22, 22))
-    icon.addPixmap(
-        QPixmap(f'scalable:/{breeze}/{icon_name}'),
-        QIcon.Mode.Normal, QIcon.State.On)
+    icon.addFile(f'scalable:/{breeze}/{icon_name}', QSize(22, 22))
+    # icon.addPixmap(
+    #     QPixmap(f'scalable:/{breeze}/{icon_name}'),
+    #     QIcon.Mode.Normal, QIcon.State.On)
     icon.addPixmap(
         QPixmap(f'scalable:/{breeze}/disabled/{icon_name}'),
         QIcon.Mode.Disabled, QIcon.State.Off)
