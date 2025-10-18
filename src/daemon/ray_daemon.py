@@ -45,13 +45,9 @@ from session_signaled import SignaledSession
 import patchbay_dmn_mng
 
 
-_terminate = False
-
 def signal_handler(sig, frame):
     if sig in (signal.SIGINT, signal.SIGTERM):
         session.terminate()
-        global _terminate
-        _terminate = True
 
 
 # if __name__ == '__main__':
@@ -67,8 +63,8 @@ if True:
 
     # create app
     app = QCoreApplication(sys.argv)
-    app.setApplicationName("RaySession")
-    app.setOrganizationName("RaySession")
+    app.setOrganizationName(ray.APP_TITLE)
+    app.setApplicationName(ray.APP_TITLE)
 
     init_daemon_tools()
     

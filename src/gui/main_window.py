@@ -5,14 +5,14 @@ import time
 import subprocess
 
 # third party imports
-from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt, PYQT5, PYQT6 # type:ignore
+from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt # type:ignore
 from qtpy.QtGui import (QIcon, QDesktopServices, QFontMetrics,
                          QCloseEvent, QKeyEvent)
 if TYPE_CHECKING:
     # FIX : QAction not found by pylance
     from qtpy.QtGui import QAction, QShortcut # type:ignore
 from qtpy.QtWidgets import (
-    QApplication, QMainWindow, QMenu, QDialog,
+    QApplication, QMainWindow, QMenu,
     QMessageBox, QToolButton, QAbstractItemView,
     QBoxLayout, QSystemTrayIcon, QShortcut, QAction) # type:ignore
 
@@ -353,7 +353,7 @@ class MainWindow(QMainWindow):
             ray_icon('trash-empty', dark)) # type:ignore
         if self.ui.trashButton.icon().isNull():
             self.ui.trashButton.setIcon(
-                ray_icon('trash', dark))
+                ray_icon('trash', dark)) # type:ignore
 
         self.ui.actionDuplicateSession.setIcon(
             ray_icon('xml-node-duplicate', dark)) # type:ignore
@@ -618,11 +618,11 @@ class MainWindow(QMainWindow):
 
         self._flash_open_bool = not self._flash_open_bool
 
-    def _quit_app(self):
+    def _quit_app(self) -> bool:
         if self.wild_shutdown and not CommandLineArgs.under_nsm:
             self.daemon_manager.disannounce()
             QTimer.singleShot(10, QApplication.quit)
-            return
+            return True
 
         if self.session.is_running():
             self.show()
@@ -1704,7 +1704,12 @@ class MainWindow(QMainWindow):
 
     # Reimplemented Qt Functions
 
-    def closeEvent(self, event: QCloseEvent):        
+    def closeEvent(self, event: QCloseEvent):
+        import time
+        print('mainwin close event', time.time())
+        # import inspect
+        # for frame in inspect.stack():
+        #     print('  ', 'sioe', frame.filename, frame.lineno, frame.function)
         self.save_window_settings()
         self.session.patchbay_manager.save_patchcanvas_cache()
         self.session.patchbay_manager.save_settings()
