@@ -364,7 +364,8 @@ class MainWindow(QMainWindow):
         self.ui.actionSaveTemplateSession_2.setIcon(
             ray_icon('document-save-as-template', dark)) # type:ignore
         close_icon = ray_icon('window-close', dark)
-        print(f'hopoula {close_icon}', close_icon.isNull())
+        from qtpy.QtCore import QDir
+        print(f'hopoula {close_icon}', close_icon.isNull(), QDir.searchPaths('scalable'))
         self.ui.actionCloseSession.setIcon(
             ray_icon('window-close', dark)) # type:ignore
         self.ui.actionAbortSession.setIcon(
