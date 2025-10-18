@@ -109,10 +109,13 @@ def ray_icon(icon_name: str, dark=False) -> QIcon:
         QPixmap(f'scalable:/{breeze}/disabled/{icon_name}'),
         QIcon.Mode.Disabled, QIcon.State.Off)
     
-    if dark:
-        _RAY_ICONS_CACHE_DARK[icon_name] = icon
-    else:
-        _RAY_ICONS_CACHE_LIGHT[icon_name] = icon
+    from qtpy.QtCore import QDir
+    if QDir.searchPaths('scalable'):
+        print('searchch paths', QDir.searchPaths('scalable'))
+        if dark:
+            _RAY_ICONS_CACHE_DARK[icon_name] = icon
+        else:
+            _RAY_ICONS_CACHE_LIGHT[icon_name] = icon
     
     return icon
 
