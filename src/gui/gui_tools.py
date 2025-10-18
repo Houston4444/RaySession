@@ -96,30 +96,21 @@ def ray_icon(icon_name: str, dark=False) -> QIcon:
     if dark and icon_name in _RAY_ICONS_CACHE_DARK.keys():
         return _RAY_ICONS_CACHE_DARK[icon_name]
     if not dark and icon_name in _RAY_ICONS_CACHE_LIGHT.keys():
-        print('known icon name', icon_name)
         return _RAY_ICONS_CACHE_LIGHT[icon_name]
     
     icon = QIcon()
     breeze = 'breeze-dark' if dark else 'breeze'
-    scal = Path(__file__).parents[2] / 'resources' / 'scalable'
-    print('BBBOONN alors tu va le trouver oui !!!!', f'{scal}/{breeze}/{icon_name}')
-    normal_pxm = QPixmap(f'{scal}/{breeze}/{icon_name}.svg')
-    print('cpa trouvé ?', normal_pxm.isNull())
-    # icon.addFile(f'{scal}/{breeze}/{icon_name}', QSize(22, 22))
     icon.addPixmap(
-        QPixmap(f'{scal}/{breeze}/{icon_name}.svg'),
+        QPixmap(f':scalable/{breeze}/{icon_name}.svg'),
         QIcon.Mode.Normal, QIcon.State.On)
     icon.addPixmap(
-        QPixmap(f'{scal}/{breeze}/disabled/{icon_name}.svg'),
+        QPixmap(f':scalable/{breeze}/disabled/{icon_name}.svg'),
         QIcon.Mode.Disabled, QIcon.State.Off)
     
-    from qtpy.QtCore import QDir
-    if QDir.searchPaths('scalable'):
-        print('searchch paths', QDir.searchPaths('scalable'))
-        if dark:
-            _RAY_ICONS_CACHE_DARK[icon_name] = icon
-        else:
-            _RAY_ICONS_CACHE_LIGHT[icon_name] = icon
+    if dark:
+        _RAY_ICONS_CACHE_DARK[icon_name] = icon
+    else:
+        _RAY_ICONS_CACHE_LIGHT[icon_name] = icon
     
     return icon
 
