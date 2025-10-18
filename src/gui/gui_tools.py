@@ -102,6 +102,7 @@ def ray_icon(icon_name: str, dark=False) -> QIcon:
     icon = QIcon()
     breeze = 'breeze-dark' if dark else 'breeze'
     scal = Path(__file__).parents[2] / 'resources' / 'scalable'
+    print('BBBOONN alors tu va le trouver oui !!!!', f'{scal}/{breeze}/{icon_name}')
     icon.addFile(f'{scal}/{breeze}/{icon_name}', QSize(22, 22))
     # icon.addPixmap(
     #     QPixmap(f'scalable:/{breeze}/{icon_name}'),
