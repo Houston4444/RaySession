@@ -100,9 +100,12 @@ def ray_icon(icon_name: str, dark=False) -> QIcon:
     
     icon = QIcon()
     breeze = 'breeze-dark' if dark else 'breeze'
-    icon.addFile(':scalable/%s/%s' % (breeze, icon_name), QSize(22, 22))
+    # icon.addFile(f':scalable/{breeze}/{icon_name}', QSize(22, 22))
     icon.addPixmap(
-        QPixmap(f':scalable/{breeze}/disabled/{icon_name}'),
+        QPixmap(f'scalable:/{breeze}/{icon_name}'),
+        QIcon.Mode.Normal, QIcon.State.On)
+    icon.addPixmap(
+        QPixmap(f'scalable:/{breeze}/disabled/{icon_name}'),
         QIcon.Mode.Disabled, QIcon.State.Off)
     
     if dark:

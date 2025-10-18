@@ -20,7 +20,7 @@ os.environ['QT_API'] = QT_API
 # third party imports
 from qtpy.QtWidgets import QApplication
 from qtpy.QtGui import QIcon, QFontDatabase
-from qtpy.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo
+from qtpy.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo, QDir
 
 # Imports from src/shared
 import ray
@@ -36,9 +36,12 @@ from gui_session import SignaledSession
 import resources_rc
 
 _logger = logging.getLogger()
-
+session = None
 
 def signal_handler(sig, frame):
+    if session is None:
+        return
+    
     if sig in (signal.SIGINT, signal.SIGTERM):
         if session.daemon_manager.launched_before:
             if (CommandLineArgs.under_nsm
@@ -54,8 +57,6 @@ def signal_handler(sig, frame):
 
         session.main_win.terminate_request = True
         session.daemon_manager.stop()
-    global terminate
-    terminate = True
 
 
 if True:
@@ -67,6 +68,10 @@ if True:
     
     set_proc_name(ray.APP_TITLE.lower())
     
+    resources_dir = Path(__file__).parents[2] / 'resources'
+    for prefix in 'fonts', 'scalable':
+        QDir.setSearchPaths(prefix, [str(resources_dir / prefix)])
+
     # set Qt Application
     app = QApplication(sys.argv)
     app.setApplicationName(ray.APP_TITLE)
@@ -105,8 +110,6 @@ if True:
 
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
     QFontDatabase.addApplicationFont(":/fonts/Ubuntu-C.ttf")
-    print('apzeoff', QFontDatabase.applicationFontFamilies(0)[0])
-    print('xpeofof', QFontDatabase.applicationFontFamilies(1)[0])
 
     # get arguments
     parser = ArgParser()

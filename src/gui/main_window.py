@@ -1705,11 +1705,6 @@ class MainWindow(QMainWindow):
     # Reimplemented Qt Functions
 
     def closeEvent(self, event: QCloseEvent):
-        import time
-        print('mainwin close event', time.time())
-        # import inspect
-        # for frame in inspect.stack():
-        #     print('  ', 'sioe', frame.filename, frame.lineno, frame.function)
         self.save_window_settings()
         self.session.patchbay_manager.save_patchcanvas_cache()
         self.session.patchbay_manager.save_settings()
