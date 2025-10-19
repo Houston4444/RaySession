@@ -39,3 +39,7 @@ changelog
 Traduction.
 remove answer() use osp.reply or error
 _re_order_clients osp
+
+# ADAPT WMachines
+    # LMDE
+    
