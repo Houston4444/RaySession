@@ -87,7 +87,7 @@ src/gui/ui/%.py: resources/ui/%.ui
 # ------------------------
 # # Translations Files
 
-LOCALE: locale
+LOCALE: -locale
 
 locale: locale/raysession_en.qm \
 		locale/raysession_fr.qm \
