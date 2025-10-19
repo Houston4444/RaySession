@@ -7,7 +7,7 @@ import subprocess
 # third party imports
 from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt # type:ignore
 from qtpy.QtGui import (QIcon, QDesktopServices, QFontMetrics,
-                         QCloseEvent, QKeyEvent)
+                        QCloseEvent, QKeyEvent)
 if TYPE_CHECKING:
     # FIX : QAction not found by pylance
     from qtpy.QtGui import QAction, QShortcut # type:ignore
@@ -363,9 +363,6 @@ class MainWindow(QMainWindow):
             ray_icon('document-save-as-template', dark)) # type:ignore
         self.ui.actionSaveTemplateSession_2.setIcon(
             ray_icon('document-save-as-template', dark)) # type:ignore
-        close_icon = ray_icon('window-close', dark)
-        from qtpy.QtCore import QDir
-        print(f'hopoula {close_icon}', close_icon.isNull(), QDir.searchPaths('scalable'))
         self.ui.actionCloseSession.setIcon(
             ray_icon('window-close', dark)) # type:ignore
         self.ui.actionAbortSession.setIcon(

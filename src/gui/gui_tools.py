@@ -101,10 +101,10 @@ def ray_icon(icon_name: str, dark=False) -> QIcon:
     icon = QIcon()
     breeze = 'breeze-dark' if dark else 'breeze'
     icon.addPixmap(
-        QPixmap(f':scalable/{breeze}/{icon_name}.svg'),
+        QPixmap(f':/scalable/{breeze}/{icon_name}.svg'),
         QIcon.Mode.Normal, QIcon.State.On)
     icon.addPixmap(
-        QPixmap(f':scalable/{breeze}/disabled/{icon_name}.svg'),
+        QPixmap(f':/scalable/{breeze}/disabled/{icon_name}.svg'),
         QIcon.Mode.Disabled, QIcon.State.Off)
     
     if dark:
@@ -305,14 +305,8 @@ def split_in_two(string: str) -> tuple[str, str]:
             return (string[:best_index], string[best_index+1:])
         return (string[:best_index], string[best_index:])
 
-def dirname(*args) -> str:
-    return os.path.dirname(*args)
-
-def basename(*args) -> str:
-    return os.path.basename(*args)
-
 def get_code_root() -> Path:
-    return Path(__file__).parent.parent.parent
+    return Path(__file__).parents[2]
 
 def server_status_string(server_status: ray.ServerStatus) -> str:
     SERVER_STATUS_STRINGS = {
