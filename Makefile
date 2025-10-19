@@ -9,12 +9,10 @@ DEST_RAY := $(DESTDIR)$(PREFIX)/share/raysession
 
 LINK = ln -s
 LRELEASE ?= lrelease
-QT_VERSION ?= 5
+QT_VERSION ?= 6
 
-# if you set QT_VERSION environment variable to 6 at the make command
-# it will choose the other commands QT_API, pyuic6, pylupdate6.
-# You will can run raysession directly in source without install
-# typing: QT_API=PyQt6 python3 src/bin/raysession
+# if you set QT_VERSION environment variable to 5 at the make command
+# it will choose the other commands QT_API, pyuic5, pylupdat56.
 
 ifeq ($(QT_VERSION), 6)
 	QT_API ?= PyQt6

@@ -12,28 +12,30 @@ cloned the submodules, which you can do using:
 The required build dependencies are: (devel packages of these)
 
  - qtpy
- - PyQt5 or PyQt6
- - Qt5 dev tools or Qt6 dev tools
- - qtchooser
+ - PyQt6 (or PyQt5)
+ - Qt6 dev tools (or Qt5 dev tools)
+ - qtchooser (only for translations)
+ - qttools5-dev-tools (only for translations, works for Qt5 and Qt6)
 
 On Debian and Ubuntu, use these commands as root to install all build
 dependencies:
 
-- for Qt5 build:
-
-`$ [sudo] apt install python3-qtpy python3-pyqt5 pyqt5-dev-tools qtchooser qttools5-dev-tools python3-liblo python3-pyqt5.qtsvg`
-
 - for Qt6 build:
 
-`$ [sudo] apt install pyqt6-dev-tools qt6-base-dev-tools`
+`$ [sudo] apt install pyqt6-dev-tools qt6-base-dev-tools qtchooser`
+
+- for Qt5 build:
+
+`$ [sudo] apt install pyqt5-dev-tools qtchooser qttools5-dev-tools`
+
 
 To build RaySession, simply run as usual:
 
 `$ make`
 
-if you prefer to build it with Qt6:
+if you prefer to build it with Qt5:
 
-`$ QT_VERSION=6 make`
+`$ QT_VERSION=5 make`
 
 Depending of the distribution you might need to use the LRELEASE variable
 to build.  If you don't have 'lrelease' executable but 'lrelease-qt5' use:
@@ -57,11 +59,7 @@ To uninstall RaySession, run:
 
 `$ [sudo] make uninstall`
 
-# Running
-
-You can run RaySession without install, by using:
-
-`$ ./src/bin/raysession`
+# Runtime dependencies
 
 To run it, you'll additionally need:
    - qt6-svg-plugins (or probably libqt5svg5 for Qt5)
@@ -84,3 +82,9 @@ by Dominic Sacre, for liblo you need to use the following fork:
 Simply install it with:
 
 `$ python3 -m pip install pyliblo3`
+
+# Running
+
+You can run RaySession without install, by using:
+
+`$ ./src/bin/raysession`
