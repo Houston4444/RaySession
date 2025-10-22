@@ -9,6 +9,7 @@ DEST_RAY := $(DESTDIR)$(PREFIX)/share/raysession
 
 LINK = ln -s
 LRELEASE ?= lrelease
+RCC ?= rcc
 QT_VERSION ?= 6
 
 # if you set QT_VERSION environment variable to 5 at the make command
@@ -18,7 +19,10 @@ ifeq ($(QT_VERSION), 6)
 	QT_API ?= PyQt6
 	PYUIC ?= pyuic6
 	PYLUPDATE ?= pylupdate6
-	RCC ?= /usr/lib/qt6/libexec/rcc
+	ifeq (, $(shell which $(RCC))) 
+		RCC := /usr/lib/qt6/libexec/rcc
+	endif
+
 	ifeq (, $(shell which $(LRELEASE)))
 		LRELEASE := lrelease-qt6
 	endif
