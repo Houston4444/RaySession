@@ -120,24 +120,6 @@ def get_default_root() -> str:
     
     return str(Path.home() / 'Ray Sessions')
 
-def _complete_control_client(comp_words: list[str]) -> str:
-    if len(comp_words) == 1:
-        return r_control.bs_comm('list_clients')
-    
-    if len(comp_words) == 2:
-        return CLIENT_ARG
-    
-    match comp_words[1]:
-        case 'open_snapshot':
-            if len(comp_words) == 3:
-                return r_control.bs_comm(
-                    'client', comp_words[0], 'list_snapshots')
-                
-        case 'set_properties':
-            return CLIENT_PROPS
-
-    return ''
-
 def complete_control(comp_words: list[str]) -> str:
     if len(comp_words) == 1:
         return HELP_ARGS + FIRST_ARG
