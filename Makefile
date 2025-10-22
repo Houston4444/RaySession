@@ -105,7 +105,7 @@ clean:
 	rm -f -R src/gui/ui
 	rm -f -R src/__pycache__ src/*/__pycache__ src/*/*/__pycache__ \
 		  src/*/*/*/__pycache__
-	rm src/shared/qt_api.py
+	rm -f src/shared/qt_api.py
 
 # -------------------------
 
