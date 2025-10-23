@@ -1768,7 +1768,8 @@ class MainWindow(QMainWindow):
                 RS.settings.value('tool_bar/text_with_icons', 'AUTO'))
             
             if text_with_icons is TextWithIcons.NO:
-                self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+                self.ui.toolBar.setToolButtonStyle(
+                    Qt.ToolButtonStyle.ToolButtonIconOnly)
             else:
                  self.ui.toolBar.setToolButtonStyle(
                      Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
