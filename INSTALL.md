@@ -48,6 +48,8 @@ to build.  If you don't have 'lrelease' executable but 'lrelease-qt5' use:
 
 `$ make LRELEASE=lrelease-qt5`
 
+on Debian, you probably need to set RCC this way:
+`$ RCC=/usr/lib/qt6/libexec/rcc make`
 
 # Installing
 
