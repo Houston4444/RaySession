@@ -20,7 +20,7 @@ os.environ['QT_API'] = QT_API
 # third party imports
 from qtpy.QtWidgets import QApplication
 from qtpy.QtGui import QIcon, QFontDatabase
-from qtpy.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo, QDir
+from qtpy.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo, QDir, Qt
 
 # Imports from src/shared
 import ray
