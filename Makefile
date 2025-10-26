@@ -19,8 +19,17 @@ ifeq ($(QT_VERSION), 6)
 	QT_API ?= PyQt6
 	PYUIC ?= pyuic6
 	PYLUPDATE ?= pylupdate6
-	ifeq (, $(shell which $(RCC))) 
-		RCC := /usr/lib/qt6/libexec/rcc
+	RCC_EXEC := $(shell which $(RCC))
+	RCC_QT6_DEB := /usr/lib/qt6/libexec/rcc
+
+	ifeq (, ${RCC_EXEC})
+		RCC := ${RCC_QT6_DEB}
+	else
+		ifeq ($(shell readlink ${RCC_EXEC}), qtchooser)
+            @if [ -x ${RCC_QT6_DEB} ];then
+				RCC := ${RCC_QT6_DEB}
+			fi
+		endif
 	endif
 
 	ifeq (, $(shell which $(LRELEASE)))
@@ -28,10 +37,9 @@ ifeq ($(QT_VERSION), 6)
 	endif
 
 else
-    QT_API ?= PyQt5
+	QT_API ?= PyQt5
 	PYUIC ?= pyuic5
 	PYLUPDATE ?= pylupdate5
-	RCC ?= rcc
 	ifeq (, $(shell which $(LRELEASE)))
 		LRELEASE := lrelease-qt5
 	endif

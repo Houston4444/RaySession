@@ -25,12 +25,6 @@ Priorité:
 
 - voir pretty_name et SIGTERM quand session chargée
 
-
-osc_server
-    recv
-    set_ready_for_daemon
-    add_gui()
-
 réduire les msgs notamment dsp_load et transport_position pour les patchers
 one_shot_act et server arrêté !
 share more in PatchEngine (routine)
@@ -40,6 +34,4 @@ Traduction.
 remove answer() use osp.reply or error
 _re_order_clients osp
 
-# ADAPT WMachines
-    # LMDE
     
