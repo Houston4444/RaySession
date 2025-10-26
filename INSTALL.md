@@ -82,6 +82,7 @@ To run it, you'll additionally need:
    - Roboto font family (used by default patchbay theme)
 
 To install runtime dependencies on debian based systems, run:
+
 `[sudo] apt install qt6-svg-plugins python3-pyqt6 python3-pyqt6.qtsvg python3-qtpy python3-jack-client git python3-pyalsa python3-liblo fonts-roboto`
 
 IMPORTANT: since python 3.11, because pyliblo has been totally abandonned
