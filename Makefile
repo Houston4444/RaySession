@@ -26,9 +26,9 @@ ifeq ($(QT_VERSION), 6)
 		RCC := ${RCC_QT6_DEB}
 	else
 		ifeq ($(shell readlink ${RCC_EXEC}), qtchooser)
-            @if [ -x ${RCC_QT6_DEB} ];then
+			ifeq ($(shell test -x ${RCC_QT6_DEB} | echo $$?), 0)
 				RCC := ${RCC_QT6_DEB}
-			fi
+			endif
 		endif
 	endif
 
