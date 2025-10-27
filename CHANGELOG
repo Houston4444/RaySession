@@ -13,7 +13,8 @@
             (in config: daemon/internal_mode can be FORCE_INTERNAL, FORCE_NSM or FOLLOW_PROTOCOL)
         Patchbay daemon now runs in the daemon process
             (in config: daemon/internal_patchbay can be 'true' or 'false')
-        ray_control auto-completion for bash 
+        ray_control: auto-completion for bash
+        Tool bar: tool bar is now responsive design, it can have many lines if too much widgets are shown
     
     Patchbay:
         Views: you can now use as much views as you want, switching them with Alt+Num
