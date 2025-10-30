@@ -357,10 +357,10 @@ class ArgParser(argparse.ArgumentParser):
             '--config-dir', '-c', type=str, default='',
             help='use a custom config dir')
         self.add_argument(
-            '--debug', '-d', action='store_true', help='see all OSC messages')
+            '--debug', '-d', action='store_true', help=argparse.SUPPRESS)
         self.add_argument(
             '--debug-only', '-do', action='store_true',
-            help='debug without client messages')
+            help=argparse.SUPPRESS)
         self.add_argument(
             '--no-client-messages', '-ncm', action='store_true',
             help='do not print client messages')

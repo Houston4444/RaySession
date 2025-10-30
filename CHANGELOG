@@ -18,7 +18,7 @@
     
     Patchbay:
         Views: you can now use as much views as you want, switching them with Alt+Num
-        Hide: Boxes are now hideable
+        Hide: Boxes are now hideable (a widget in the tool bar allows to set hidden boxes visible)
         Arrange: two scripts can be now arrange the graph, "follow the signal chain" or "two rows facing each other"
         Custom Names: Clients and ports are now renamable in the canvas,
             it can optionnally set this name as JACK metadata and auto-export custom names to JACK pretty names.
