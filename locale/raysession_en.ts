@@ -155,7 +155,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_trash.ui" line="172"/>
+        <location filename="../resources/ui/donations.ui" line="25"/>
         <source>...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -402,11 +402,6 @@
     <message>
         <location filename="../resources/ui/donations.ui" line="14"/>
         <source>Donations</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../resources/ui/donations.ui" line="20"/>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Hi !&lt;/p&gt;&lt;p&gt;it seems that you appreciate RaySession, this is already good news.&lt;br/&gt;This software is free as in Speech and as in Beer,&lt;br/&gt;but it has required and still takes time.&lt;/p&gt;&lt;p&gt;Make a donation (even small) is a simple way to say &amp;quot;Thank you&amp;quot;.&lt;br/&gt;You can donate &lt;a href=&quot;https://liberapay.com/Houston4444&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;here&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;If ever you donate nothing,&lt;br/&gt;this program will continue to work without limits of functionnality,&lt;br/&gt;without limit of duration, and even without insulting you ;) .&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -830,6 +825,21 @@ You can make the window re-appear from your system tray.</source>
     <message>
         <location filename="../resources/ui/client_rename.ui" line="97"/>
         <source>Identifier renaming (client must be stopped)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/donations.ui" line="60"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Hi !&lt;/p&gt;&lt;p&gt;If you appreciate &lt;span style=&quot; font-weight:600;&quot;&gt;RaySession&lt;/span&gt;, this is already good news.&lt;br/&gt;This software is free as in Speech and as in Beer, but developing this program requires an incredibly unreasonable amount of time in relation to the donations associated with it.&lt;/p&gt;&lt;p&gt;Donations can help reduce the amount of time I spend on subordinate work, allowing me to develop new features. There is still so much to do...&lt;/p&gt;&lt;p&gt;Make a donation (even small) can also be a simple way to say &amp;quot;Thank you&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/donations.ui" line="88"/>
+        <source>Donate on LiberaPay</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/donations.ui" line="123"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If ever you donate nothing, this program will continue to work without limits of functionnality, without limit of duration, and even without insulting you ;) .&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1313,12 +1323,12 @@ Applications</source>
 <context>
     <name>Duplicate</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="188"/>
+        <location filename="../src/gui/child_dialogs.py" line="189"/>
         <source>Duplicated session name :</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="190"/>
+        <location filename="../src/gui/child_dialogs.py" line="191"/>
         <source>Duplicate Session</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2699,57 +2709,57 @@ Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.</sour
 <context>
     <name>client status</name>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="336"/>
+        <location filename="../src/gui/gui_tools.py" line="337"/>
         <source>stopped</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="337"/>
+        <location filename="../src/gui/gui_tools.py" line="338"/>
         <source>launch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="338"/>
+        <location filename="../src/gui/gui_tools.py" line="339"/>
         <source>open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="339"/>
+        <location filename="../src/gui/gui_tools.py" line="340"/>
         <source>ready</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="341"/>
+        <location filename="../src/gui/gui_tools.py" line="342"/>
         <source>copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="342"/>
+        <location filename="../src/gui/gui_tools.py" line="343"/>
         <source>save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="343"/>
+        <location filename="../src/gui/gui_tools.py" line="344"/>
         <source>switch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="344"/>
+        <location filename="../src/gui/gui_tools.py" line="345"/>
         <source>quit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="345"/>
+        <location filename="../src/gui/gui_tools.py" line="346"/>
         <source>noop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="346"/>
+        <location filename="../src/gui/gui_tools.py" line="347"/>
         <source>error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="347"/>
+        <location filename="../src/gui/gui_tools.py" line="348"/>
         <source>removed</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2788,17 +2798,17 @@ Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.</sour
 <context>
     <name>client_status</name>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="335"/>
+        <location filename="../src/gui/gui_tools.py" line="336"/>
         <source>invalid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="349"/>
+        <location filename="../src/gui/gui_tools.py" line="350"/>
         <source>script</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="350"/>
+        <location filename="../src/gui/gui_tools.py" line="351"/>
         <source>lose</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2806,7 +2816,7 @@ Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.</sour
 <context>
     <name>client_stop</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="907"/>
+        <location filename="../src/gui/child_dialogs.py" line="908"/>
         <source>&lt;strong&gt;%s&lt;/strong&gt; seems to has not been saved for %i minute(s).&lt;br /&gt;Do you really want to stop it ?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3006,7 +3016,7 @@ for better organization.</source>
 <context>
     <name>guimsg</name>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="358"/>
+        <location filename="../src/gui/gui_tools.py" line="359"/>
         <source>Can&apos;t create session in a dir containing a session for better organization.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3039,27 +3049,17 @@ for better organization.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="215"/>
-        <source>display OSC messages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/gui/gui_tools.py" line="218"/>
-        <source>debug without client messages</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/gui/gui_tools.py" line="200"/>
         <source>connect to this daemon port</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="221"/>
+        <location filename="../src/gui/gui_tools.py" line="222"/>
         <source>do not print client messages</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="230"/>
+        <location filename="../src/gui/gui_tools.py" line="231"/>
         <source>prevent to attach to an already running daemon</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3080,17 +3080,17 @@ for better organization.</source>
 <context>
     <name>id_renaming</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="995"/>
+        <location filename="../src/gui/child_dialogs.py" line="996"/>
         <source>The client project will be reload</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="998"/>
+        <location filename="../src/gui/child_dialogs.py" line="999"/>
         <source>The client will be restarted</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1001"/>
+        <location filename="../src/gui/child_dialogs.py" line="1002"/>
         <source>Rename Identifier</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3140,7 +3140,7 @@ for better organization.</source>
 <context>
     <name>new client template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="474"/>
+        <location filename="../src/gui/child_dialogs.py" line="475"/>
         <source>New application template name :</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3166,7 +3166,7 @@ for better organization.</source>
 <context>
     <name>notes_dialog</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="684"/>
+        <location filename="../src/gui/child_dialogs.py" line="685"/>
         <source>%s Notes - %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3251,17 +3251,17 @@ for better organization.</source>
 <context>
     <name>root_folder_dialogs</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="98"/>
+        <location filename="../src/gui/child_dialogs.py" line="99"/>
         <source>Choose root folder for sessions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="73"/>
+        <location filename="../src/gui/child_dialogs.py" line="74"/>
         <source>unwritable dir</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="123"/>
+        <location filename="../src/gui/child_dialogs.py" line="124"/>
         <source>&lt;p&gt;You have no permissions for %s,&lt;br&gt;choose another directory !&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3269,57 +3269,57 @@ for better organization.</source>
 <context>
     <name>server status</name>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="313"/>
+        <location filename="../src/gui/gui_tools.py" line="314"/>
         <source>off</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="314"/>
+        <location filename="../src/gui/gui_tools.py" line="315"/>
         <source>new</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="315"/>
+        <location filename="../src/gui/gui_tools.py" line="316"/>
         <source>open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="316"/>
+        <location filename="../src/gui/gui_tools.py" line="317"/>
         <source>clear</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="317"/>
+        <location filename="../src/gui/gui_tools.py" line="318"/>
         <source>switch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="318"/>
+        <location filename="../src/gui/gui_tools.py" line="319"/>
         <source>launch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="320"/>
+        <location filename="../src/gui/gui_tools.py" line="321"/>
         <source>copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="321"/>
+        <location filename="../src/gui/gui_tools.py" line="322"/>
         <source>ready</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="322"/>
+        <location filename="../src/gui/gui_tools.py" line="323"/>
         <source>save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="323"/>
+        <location filename="../src/gui/gui_tools.py" line="324"/>
         <source>close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="312"/>
+        <location filename="../src/gui/gui_tools.py" line="313"/>
         <source>invalid</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3327,27 +3327,27 @@ for better organization.</source>
 <context>
     <name>server_status</name>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="328"/>
+        <location filename="../src/gui/gui_tools.py" line="329"/>
         <source>snapshot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="325"/>
+        <location filename="../src/gui/gui_tools.py" line="326"/>
         <source>rewind</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="326"/>
+        <location filename="../src/gui/gui_tools.py" line="327"/>
         <source>waiting</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="327"/>
+        <location filename="../src/gui/gui_tools.py" line="328"/>
         <source>save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="329"/>
+        <location filename="../src/gui/gui_tools.py" line="330"/>
         <source>script</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3355,12 +3355,12 @@ for better organization.</source>
 <context>
     <name>session template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="387"/>
+        <location filename="../src/gui/child_dialogs.py" line="388"/>
         <source>Overwrite Template ?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="384"/>
+        <location filename="../src/gui/child_dialogs.py" line="385"/>
         <source>Update the template</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3396,12 +3396,12 @@ for better organization.</source>
 <context>
     <name>session_notes</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="668"/>
+        <location filename="../src/gui/child_dialogs.py" line="669"/>
         <source>Too long notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="668"/>
+        <location filename="../src/gui/child_dialogs.py" line="669"/>
         <source>&lt;p&gt;Because notes are spread to the OSC server,&lt;br&gt;they can&apos;t be longer than 65000 characters.&lt;br&gt;Sorry !&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3409,28 +3409,28 @@ for better organization.</source>
 <context>
     <name>session_template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="240"/>
+        <location filename="../src/gui/child_dialogs.py" line="241"/>
         <source>empty</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="242"/>
+        <location filename="../src/gui/child_dialogs.py" line="243"/>
         <source>with JACK patch memory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="418"/>
+        <location filename="../src/gui/child_dialogs.py" line="419"/>
         <source>Template &lt;strong&gt;%s&lt;/strong&gt; already exists.
 Overwrite it ?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="244"/>
+        <location filename="../src/gui/child_dialogs.py" line="245"/>
         <source>with JACK config memory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="246"/>
+        <location filename="../src/gui/child_dialogs.py" line="247"/>
         <source>with basic scripts</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3476,12 +3476,12 @@ Overwrite it ?</source>
 <context>
     <name>trashed_client</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="519"/>
+        <location filename="../src/gui/child_dialogs.py" line="520"/>
         <source>Remove definitely</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="519"/>
+        <location filename="../src/gui/child_dialogs.py" line="520"/>
         <source>Are you sure to want to remove definitely this client and all its files ?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3489,7 +3489,7 @@ Overwrite it ?</source>
 <context>
     <name>url window</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1189"/>
+        <location filename="../src/gui/child_dialogs.py" line="1190"/>
         <source>&lt;p align=&quot;left&quot;&gt;To run a network session,&lt;br&gt;open a terminal on another computer of this network.&lt;br&gt;Launch ray-daemon on port 1234 (for example)&lt;br&gt;by typing the command :&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;&lt;code&gt;ray-daemon -p 1234&lt;/code&gt;&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;Then paste below the first url&lt;br&gt;that ray-daemon gives you at startup.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3497,27 +3497,27 @@ Overwrite it ?</source>
 <context>
     <name>url_window</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1169"/>
+        <location filename="../src/gui/child_dialogs.py" line="1170"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;didn&apos;t announce !&lt;br&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1177"/>
+        <location filename="../src/gui/child_dialogs.py" line="1178"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses an other session root folder !&lt;.p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1181"/>
+        <location filename="../src/gui/child_dialogs.py" line="1182"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses a forbidden session root folder !&lt;.p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1187"/>
+        <location filename="../src/gui/child_dialogs.py" line="1188"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses another %s version.&lt;.p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1173"/>
+        <location filename="../src/gui/child_dialogs.py" line="1174"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;has a loaded session.&lt;br&gt;It can&apos;t be used for slave session&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3584,7 +3584,7 @@ please close its terminal and start again !</source>
 <context>
     <name>wrong_version</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="765"/>
+        <location filename="../src/gui/child_dialogs.py" line="766"/>
         <source>The running daemon has not the same version than the interface
 RaySession will quit now.
 

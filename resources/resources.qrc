@@ -9,6 +9,7 @@
        <file>main_icon/16x16/raysession.png</file>
        <file>main_icon/96x96/raysession.png</file>
        <file>main_icon/32x32/raysession.png</file>
+       <file>scalable/breeze/liberapay_logo_black-on-yellow.svg</file>
        <file>scalable/breeze/star-yellow.svg</file>
        <file>scalable/breeze/media-playback-stop-red.svg</file>
        <file>scalable/breeze/link.svg</file>
@@ -32,6 +33,7 @@
        <file>scalable/breeze/configure.svg</file>
        <file>scalable/breeze/list-add.svg</file>
        <file>scalable/breeze/run-install.svg</file>
+       <file>scalable/breeze/handshake-deal.svg</file>
        <file>scalable/breeze/document-nosave.svg</file>
        <file>scalable/breeze/view-list-icons.svg</file>
        <file>scalable/breeze/document-unsaved.svg</file>
@@ -65,6 +67,7 @@
        <file>scalable/breeze/disabled/visibility.svg</file>
        <file>scalable/breeze/disabled/media-playback-stop.svg</file>
        <file>scalable/breeze/disabled/system-file-manager.svg</file>
+       <file>scalable/breeze-dark/liberapay_logo_black-on-yellow.svg</file>
        <file>scalable/breeze-dark/link.svg</file>
        <file>scalable/breeze-dark/list-remove.svg</file>
        <file>scalable/breeze-dark/document-saved.svg</file>
@@ -86,6 +89,7 @@
        <file>scalable/breeze-dark/configure.svg</file>
        <file>scalable/breeze-dark/list-add.svg</file>
        <file>scalable/breeze-dark/run-install.svg</file>
+       <file>scalable/breeze-dark/handshake-deal.svg</file>
        <file>scalable/breeze-dark/document-nosave.svg</file>
        <file>scalable/breeze-dark/view-list-icons.svg</file>
        <file>scalable/breeze-dark/document-unsaved.svg</file>

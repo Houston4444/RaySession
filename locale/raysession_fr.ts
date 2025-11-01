@@ -240,7 +240,7 @@
         <translation>Icône</translation>
     </message>
     <message>
-        <location filename="../resources/ui/client_trash.ui" line="172"/>
+        <location filename="../resources/ui/donations.ui" line="25"/>
         <source>...</source>
         <translation>...</translation>
     </message>
@@ -507,7 +507,7 @@
     <message>
         <location filename="../resources/ui/donations.ui" line="20"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Hi !&lt;/p&gt;&lt;p&gt;it seems that you appreciate RaySession, this is already good news.&lt;br/&gt;This software is free as in Speech and as in Beer,&lt;br/&gt;but it has required and still takes time.&lt;/p&gt;&lt;p&gt;Make a donation (even small) is a simple way to say &amp;quot;Thank you&amp;quot;.&lt;br/&gt;You can donate &lt;a href=&quot;https://liberapay.com/Houston4444&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;here&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;If ever you donate nothing,&lt;br/&gt;this program will continue to work without limits of functionnality,&lt;br/&gt;without limit of duration, and even without insulting you ;) .&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Bonjour !&lt;/p&gt;&lt;p&gt;Il semble que vous appréciiez RaySession, c&apos;est déjà une bonne nouvelle.&lt;br/&gt;C&apos;est un logiciel libre,&lt;br/&gt;mais il a demandé et demande encore du temps.&lt;/p&gt;&lt;p&gt;Faire une donation (même petite) est un moyen simple de dire &amp;quot;Merci&amp;quot;.&lt;br/&gt;Vous pouvez donner &lt;a href=&quot;https://liberapay.com/Houston4444&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;ici&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Si jamais vous ne donnez rien,&lt;br/&gt;ce programme continuera de fonctionner sans limite de fonctionnalité,&lt;br/&gt;sans limite de durée, et même sans vous insulter ;) .&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation type="obsolete">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Bonjour !&lt;/p&gt;&lt;p&gt;Il semble que vous appréciiez RaySession, c&apos;est déjà une bonne nouvelle.&lt;br/&gt;C&apos;est un logiciel libre,&lt;br/&gt;mais il a demandé et demande encore du temps.&lt;/p&gt;&lt;p&gt;Faire une donation (même petite) est un moyen simple de dire &amp;quot;Merci&amp;quot;.&lt;br/&gt;Vous pouvez donner &lt;a href=&quot;https://liberapay.com/Houston4444&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#2980b9;&quot;&gt;ici&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Si jamais vous ne donnez rien,&lt;br/&gt;ce programme continuera de fonctionner sans limite de fonctionnalité,&lt;br/&gt;sans limite de durée, et même sans vous insulter ;) .&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../resources/ui/remove_template.ui" line="17"/>
@@ -1070,6 +1070,21 @@ Vous pouvez faire ré-apparaître la fenêtre depuis votre boîte à miniatures.
         <source>Identifier renaming (client must be stopped)</source>
         <translation>Renommage de l&apos;identifiant (le client doit être arrêté)</translation>
     </message>
+    <message>
+        <location filename="../resources/ui/donations.ui" line="60"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Hi !&lt;/p&gt;&lt;p&gt;If you appreciate &lt;span style=&quot; font-weight:600;&quot;&gt;RaySession&lt;/span&gt;, this is already good news.&lt;br/&gt;This software is free as in Speech and as in Beer, but developing this program requires an incredibly unreasonable amount of time in relation to the donations associated with it.&lt;/p&gt;&lt;p&gt;Donations can help reduce the amount of time I spend on subordinate work, allowing me to develop new features. There is still so much to do...&lt;/p&gt;&lt;p&gt;Make a donation (even small) can also be a simple way to say &amp;quot;Thank you&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Bonjour !&lt;/p&gt;&lt;p&gt;Si vous appréciez &lt;span style=&quot; font-weight:600;&quot;&gt;RaySession&lt;/span&gt;, c&apos;est déjà une bonne nouvelle.&lt;br/&gt;C&apos;est un logiciel libre, mais develloper ce programme demande un temps incroyablement déraisonnable au regard des dons qui y sont associés.&lt;/p&gt;&lt;p&gt;Les dons peuvent permettre de réduire la quantité d&apos;heures passées à du travail subordonné, me permettant ainsi de develloper de nouvelles fonctionnalités. Il y a encore tant à faire...&lt;/p&gt;&lt;p&gt;Faire un don (même petit) peut aussi être une manière simple de dire &amp;quot;Merci&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/donations.ui" line="88"/>
+        <source>Donate on LiberaPay</source>
+        <translation>Donner sur LiberaPay</translation>
+    </message>
+    <message>
+        <location filename="../resources/ui/donations.ui" line="123"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If ever you donate nothing, this program will continue to work without limits of functionnality, without limit of duration, and even without insulting you ;) .&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Si jamais vous ne donnez rien, ce programme continuera de fonctionner sans limites de temps, sans limites de fonctionnalités, et même sans vous insulter ;).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
 </context>
 <context>
     <name>DialogAboutRaysession</name>
@@ -1587,12 +1602,12 @@ applications</translation>
 <context>
     <name>Duplicate</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="188"/>
+        <location filename="../src/gui/child_dialogs.py" line="189"/>
         <source>Duplicated session name :</source>
         <translation>Nom de la session dupliquée :</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="190"/>
+        <location filename="../src/gui/child_dialogs.py" line="191"/>
         <source>Duplicate Session</source>
         <translation>Dupliquer la session</translation>
     </message>
@@ -2403,7 +2418,7 @@ le programme à la fermeture de la session</translation>
     <message>
         <location filename="../src/daemon/client.py" line="2358"/>
         <source>  %s: announced</source>
-        <translation>%s: annoncé</translation>
+        <translation>  %s: annoncé</translation>
     </message>
 </context>
 <context>
@@ -3275,42 +3290,42 @@ Techniquement, les raccourcis sont créés pour GTK2, GTK3, QT4, QT5, KDE et FLT
 <context>
     <name>client status</name>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="336"/>
+        <location filename="../src/gui/gui_tools.py" line="337"/>
         <source>stopped</source>
         <translation>arrêté</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="337"/>
+        <location filename="../src/gui/gui_tools.py" line="338"/>
         <source>launch</source>
         <translation>lancé</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="338"/>
+        <location filename="../src/gui/gui_tools.py" line="339"/>
         <source>open</source>
         <translation>ouverture</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="339"/>
+        <location filename="../src/gui/gui_tools.py" line="340"/>
         <source>ready</source>
         <translation>prêt</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="342"/>
+        <location filename="../src/gui/gui_tools.py" line="343"/>
         <source>save</source>
         <translation>sauvegarde</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="343"/>
+        <location filename="../src/gui/gui_tools.py" line="344"/>
         <source>switch</source>
         <translation>bascule</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="344"/>
+        <location filename="../src/gui/gui_tools.py" line="345"/>
         <source>quit</source>
         <translation>arrêt</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="346"/>
+        <location filename="../src/gui/gui_tools.py" line="347"/>
         <source>error</source>
         <translation>erreur</translation>
     </message>
@@ -3320,17 +3335,17 @@ Techniquement, les raccourcis sont créés pour GTK2, GTK3, QT4, QT5, KDE et FLT
         <translation type="obsolete">invalide</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="345"/>
+        <location filename="../src/gui/gui_tools.py" line="346"/>
         <source>noop</source>
         <translation>pas-op</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="347"/>
+        <location filename="../src/gui/gui_tools.py" line="348"/>
         <source>removed</source>
         <translation>supprimé</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="341"/>
+        <location filename="../src/gui/gui_tools.py" line="342"/>
         <source>copy</source>
         <translation>copie</translation>
     </message>
@@ -3389,17 +3404,17 @@ Techniquement, les raccourcis sont créés pour GTK2, GTK3, QT4, QT5, KDE et FLT
 <context>
     <name>client_status</name>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="335"/>
+        <location filename="../src/gui/gui_tools.py" line="336"/>
         <source>invalid</source>
         <translation>invalide</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="349"/>
+        <location filename="../src/gui/gui_tools.py" line="350"/>
         <source>script</source>
         <translation>script</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="350"/>
+        <location filename="../src/gui/gui_tools.py" line="351"/>
         <source>lose</source>
         <translation>perdu</translation>
     </message>
@@ -3407,7 +3422,7 @@ Techniquement, les raccourcis sont créés pour GTK2, GTK3, QT4, QT5, KDE et FLT
 <context>
     <name>client_stop</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="907"/>
+        <location filename="../src/gui/child_dialogs.py" line="908"/>
         <source>&lt;strong&gt;%s&lt;/strong&gt; seems to has not been saved for %i minute(s).&lt;br /&gt;Do you really want to stop it ?</source>
         <translation>&lt;strong&gt;%s&lt;/strong&gt; semble ne pas avoir été sauvegardé depuis %i minute(s).&lt;br /&gt;Voulez-vous vraiment l&apos;arrêter ?</translation>
     </message>
@@ -3678,7 +3693,7 @@ for better organization.</source>
 pour une meilleure organisation.</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="358"/>
+        <location filename="../src/gui/gui_tools.py" line="359"/>
         <source>Can&apos;t create session in a dir containing a session for better organization.</source>
         <translation>Il n&apos;est pas possible de créer une session dans un dossier contenant une session dans un souci d&apos;organisation.</translation>
     </message>
@@ -3713,12 +3728,12 @@ pour une meilleure organisation.</translation>
     <message>
         <location filename="../src/gui/gui_tools.py" line="215"/>
         <source>display OSC messages</source>
-        <translation>afficher les messages OSC</translation>
+        <translation type="obsolete">afficher les messages OSC</translation>
     </message>
     <message>
         <location filename="../src/gui/gui_tools.py" line="218"/>
         <source>debug without client messages</source>
-        <translation>débugger sans les messages des clients</translation>
+        <translation type="obsolete">débugger sans les messages des clients</translation>
     </message>
     <message>
         <location filename="../src/gui/gui_tools.py" line="200"/>
@@ -3726,12 +3741,12 @@ pour une meilleure organisation.</translation>
         <translation>se connecter au démon à ce port</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="221"/>
+        <location filename="../src/gui/gui_tools.py" line="222"/>
         <source>do not print client messages</source>
         <translation>ne pas affcher les messages des clients</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="230"/>
+        <location filename="../src/gui/gui_tools.py" line="231"/>
         <source>prevent to attach to an already running daemon</source>
         <translation>empêcher l&apos;attachement à un démon existant</translation>
     </message>
@@ -3752,17 +3767,17 @@ pour une meilleure organisation.</translation>
 <context>
     <name>id_renaming</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="995"/>
+        <location filename="../src/gui/child_dialogs.py" line="996"/>
         <source>The client project will be reload</source>
         <translation>Le projet du client sera rechargé</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="998"/>
+        <location filename="../src/gui/child_dialogs.py" line="999"/>
         <source>The client will be restarted</source>
         <translation>Le client sera redémarré</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1001"/>
+        <location filename="../src/gui/child_dialogs.py" line="1002"/>
         <source>Rename Identifier</source>
         <translation>Renommer l&apos;identifiant</translation>
     </message>
@@ -3825,7 +3840,7 @@ pour une meilleure organisation.</translation>
 <context>
     <name>new client template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="474"/>
+        <location filename="../src/gui/child_dialogs.py" line="475"/>
         <source>New application template name :</source>
         <translation>Nom du nouveau modèle d&apos;application :</translation>
     </message>
@@ -3859,7 +3874,7 @@ pour une meilleure organisation.</translation>
 <context>
     <name>notes_dialog</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="684"/>
+        <location filename="../src/gui/child_dialogs.py" line="685"/>
         <source>%s Notes - %s</source>
         <translation>Notes %s - %s</translation>
     </message>
@@ -3963,17 +3978,17 @@ pour une meilleure organisation.</translation>
 <context>
     <name>root_folder_dialogs</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="98"/>
+        <location filename="../src/gui/child_dialogs.py" line="99"/>
         <source>Choose root folder for sessions</source>
         <translation>Sélectionnez le dossier de racine pour les sessions</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="73"/>
+        <location filename="../src/gui/child_dialogs.py" line="74"/>
         <source>unwritable dir</source>
         <translation>Dossier non-inscriptible</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="123"/>
+        <location filename="../src/gui/child_dialogs.py" line="124"/>
         <source>&lt;p&gt;You have no permissions for %s,&lt;br&gt;choose another directory !&lt;/p&gt;</source>
         <translation>&lt;p&gt;Vous n&apos;avez pas les permissions pour %s,&lt;br&gt;Sélectionnez un autre répertoire !&lt;/p&gt;</translation>
     </message>
@@ -3981,57 +3996,57 @@ pour une meilleure organisation.</translation>
 <context>
     <name>server status</name>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="312"/>
+        <location filename="../src/gui/gui_tools.py" line="313"/>
         <source>invalid</source>
         <translation>invalide</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="313"/>
+        <location filename="../src/gui/gui_tools.py" line="314"/>
         <source>off</source>
         <translation>éteint</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="314"/>
+        <location filename="../src/gui/gui_tools.py" line="315"/>
         <source>new</source>
         <translation>création</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="315"/>
+        <location filename="../src/gui/gui_tools.py" line="316"/>
         <source>open</source>
         <translation>ouverture</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="316"/>
+        <location filename="../src/gui/gui_tools.py" line="317"/>
         <source>clear</source>
         <translation>nettoyage</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="317"/>
+        <location filename="../src/gui/gui_tools.py" line="318"/>
         <source>switch</source>
         <translation>bascule</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="318"/>
+        <location filename="../src/gui/gui_tools.py" line="319"/>
         <source>launch</source>
         <translation>lancement</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="321"/>
+        <location filename="../src/gui/gui_tools.py" line="322"/>
         <source>ready</source>
         <translation>prêt</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="322"/>
+        <location filename="../src/gui/gui_tools.py" line="323"/>
         <source>save</source>
         <translation>sauvegarde</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="323"/>
+        <location filename="../src/gui/gui_tools.py" line="324"/>
         <source>close</source>
         <translation>fermeture</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="320"/>
+        <location filename="../src/gui/gui_tools.py" line="321"/>
         <source>copy</source>
         <translation>copie</translation>
     </message>
@@ -4039,27 +4054,27 @@ pour une meilleure organisation.</translation>
 <context>
     <name>server_status</name>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="328"/>
+        <location filename="../src/gui/gui_tools.py" line="329"/>
         <source>snapshot</source>
         <translation>cliché</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="325"/>
+        <location filename="../src/gui/gui_tools.py" line="326"/>
         <source>rewind</source>
         <translation>rappel</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="326"/>
+        <location filename="../src/gui/gui_tools.py" line="327"/>
         <source>waiting</source>
         <translation>attente</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="327"/>
+        <location filename="../src/gui/gui_tools.py" line="328"/>
         <source>save</source>
         <translation>sauvegarde</translation>
     </message>
     <message>
-        <location filename="../src/gui/gui_tools.py" line="329"/>
+        <location filename="../src/gui/gui_tools.py" line="330"/>
         <source>script</source>
         <translation>script</translation>
     </message>
@@ -4067,12 +4082,12 @@ pour une meilleure organisation.</translation>
 <context>
     <name>session template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="387"/>
+        <location filename="../src/gui/child_dialogs.py" line="388"/>
         <source>Overwrite Template ?</source>
         <translation>Écraser le modèle ?</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="384"/>
+        <location filename="../src/gui/child_dialogs.py" line="385"/>
         <source>Update the template</source>
         <translation>Mettre à jour le modèle</translation>
     </message>
@@ -4108,12 +4123,12 @@ pour une meilleure organisation.</translation>
 <context>
     <name>session_notes</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="668"/>
+        <location filename="../src/gui/child_dialogs.py" line="669"/>
         <source>Too long notes</source>
         <translation>Notes trop longues</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="668"/>
+        <location filename="../src/gui/child_dialogs.py" line="669"/>
         <source>&lt;p&gt;Because notes are spread to the OSC server,&lt;br&gt;they can&apos;t be longer than 65000 characters.&lt;br&gt;Sorry !&lt;/p&gt;</source>
         <translation>&lt;p&gt;Du fait que les notes sont diffusées par le serveur OSC,&lt;br&gt;elles ne peuvent pas excéder 65000 caractères.&lt;br&gt;Désolé !&lt;/p&gt;</translation>
     </message>
@@ -4121,29 +4136,29 @@ pour une meilleure organisation.</translation>
 <context>
     <name>session_template</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="418"/>
+        <location filename="../src/gui/child_dialogs.py" line="419"/>
         <source>Template &lt;strong&gt;%s&lt;/strong&gt; already exists.
 Overwrite it ?</source>
         <translation>Le modèle &lt;strong&gt;%s&lt;/strong&gt; existe déjà.
 Voulez-vous l&apos;écraser ?</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="240"/>
+        <location filename="../src/gui/child_dialogs.py" line="241"/>
         <source>empty</source>
         <translation>vide</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="242"/>
+        <location filename="../src/gui/child_dialogs.py" line="243"/>
         <source>with JACK patch memory</source>
         <translation>avec mémoire du patch de JACK</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="244"/>
+        <location filename="../src/gui/child_dialogs.py" line="245"/>
         <source>with JACK config memory</source>
         <translation>avec mémoire de la configuration de JACK</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="246"/>
+        <location filename="../src/gui/child_dialogs.py" line="247"/>
         <source>with basic scripts</source>
         <translation>avec les scripts de base</translation>
     </message>
@@ -4189,12 +4204,12 @@ Voulez-vous l&apos;écraser ?</translation>
 <context>
     <name>trashed_client</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="519"/>
+        <location filename="../src/gui/child_dialogs.py" line="520"/>
         <source>Remove definitely</source>
         <translation>Supprimer définitivement</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="519"/>
+        <location filename="../src/gui/child_dialogs.py" line="520"/>
         <source>Are you sure to want to remove definitely this client and all its files ?</source>
         <translation>Êtes-vous sûr(e) de vouloir supprimer définitivement ce client et tous ses fichiers ?</translation>
     </message>
@@ -4202,7 +4217,7 @@ Voulez-vous l&apos;écraser ?</translation>
 <context>
     <name>url window</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1189"/>
+        <location filename="../src/gui/child_dialogs.py" line="1190"/>
         <source>&lt;p align=&quot;left&quot;&gt;To run a network session,&lt;br&gt;open a terminal on another computer of this network.&lt;br&gt;Launch ray-daemon on port 1234 (for example)&lt;br&gt;by typing the command :&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;&lt;code&gt;ray-daemon -p 1234&lt;/code&gt;&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;Then paste below the first url&lt;br&gt;that ray-daemon gives you at startup.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</source>
         <translation>&lt;p align=&quot;left&quot;&gt;Pour lancer une session réseau,&lt;br&gt;ouvrez un terminal sur un autre ordinateur de ce réseau.&lt;br&gt;Lancez ray-daemon sur le port 1234 (par exemple)&lt;br&gt;en tapant la commande suivante :&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;&lt;code&gt;ray-daemon -p 1234&lt;/code&gt;&lt;/p&gt;&lt;p align=&quot;left&quot;&gt;Ensuite collez ci-dessous la première url&lt;br&gt;que ray-daemon affiche au démarrage.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;</translation>
     </message>
@@ -4210,22 +4225,22 @@ Voulez-vous l&apos;écraser ?</translation>
 <context>
     <name>url_window</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1169"/>
+        <location filename="../src/gui/child_dialogs.py" line="1170"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;didn&apos;t announce !&lt;br&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Le démon à l&apos;adresse&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;ne s&apos;est pas annoncé !&lt;br&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1173"/>
+        <location filename="../src/gui/child_dialogs.py" line="1174"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;has a loaded session.&lt;br&gt;It can&apos;t be used for slave session&lt;/p&gt;</source>
         <translation>&lt;p&gt;Le démon à&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;à déjà une session chargée.&lt;br&gt;Il ne peut pas être utilisé pour une session esclave&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1177"/>
+        <location filename="../src/gui/child_dialogs.py" line="1178"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses an other session root folder !&lt;.p&gt;</source>
         <translation>&lt;p&gt;Le démon à l&apos;adresse&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;n&apos;utilise pas le bon dossier de sessions racine !&lt;.p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1181"/>
+        <location filename="../src/gui/child_dialogs.py" line="1182"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses a forbidden session root folder !&lt;.p&gt;</source>
         <translation>&lt;p&gt;Le démon à l&apos;adresse&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;utilise un dossier de sessions racine interdit !&lt;.p&gt;</translation>
     </message>
@@ -4240,7 +4255,7 @@ Voulez-vous l&apos;écraser ?</translation>
         <translation type="obsolete">&lt;p&gt;le démon à&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;a une session chargée.&lt;br&gt;Il ne peut pas être utilisé pour une session exclave&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="1187"/>
+        <location filename="../src/gui/child_dialogs.py" line="1188"/>
         <source>&lt;p&gt;daemon at&lt;br&gt;&lt;strong&gt;%s&lt;/strong&gt;&lt;br&gt;uses another %s version.&lt;.p&gt;</source>
         <translation>&lt;p&gt;le démon à &lt;br&gt; &lt;strong&gt;%s &lt;/strong&gt; &lt;br&gt; utilise une autre version de %s. &lt;. p&gt;</translation>
     </message>
@@ -4308,7 +4323,7 @@ fermez son terminal et recommencez !</translation>
 <context>
     <name>wrong_version</name>
     <message>
-        <location filename="../src/gui/child_dialogs.py" line="765"/>
+        <location filename="../src/gui/child_dialogs.py" line="766"/>
         <source>The running daemon has not the same version than the interface
 RaySession will quit now.
 
