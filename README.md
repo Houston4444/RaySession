@@ -45,4 +45,4 @@ Infos
 
 You can see documentation on NSM protocol at: https://new-session-manager.jackaudio.org/api/index.html
 
-RaySession is being developed by Mathieu Picot (houston4444), using Python3 and Qt5.
+RaySession is being developed by Mathieu Picot (houston4444), using Python3 and qtpy.
