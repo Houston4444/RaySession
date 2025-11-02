@@ -25,7 +25,7 @@
         <string>...</string>
        </property>
        <property name="icon">
-        <iconset resource="../resources.qrc">
+        <iconset resource="../../HoustonPatchbay/resources/resources.qrc">
          <normaloff>:/scalable/breeze/handshake-deal.svg</normaloff>:/scalable/breeze/handshake-deal.svg</iconset>
        </property>
        <property name="iconSize">
@@ -88,8 +88,8 @@
             <string>Donate on LiberaPay</string>
            </property>
            <property name="icon">
-            <iconset resource="../resources.qrc">
-             <normaloff>:/scalable/breeze/liberapay_logo_black-on-yellow.svg</normaloff>:/scalable/breeze/liberapay_logo_black-on-yellow.svg</iconset>
+            <iconset resource="../../HoustonPatchbay/resources/resources.qrc">
+             <normaloff>:/scalable/liberapay_logo_black-on-yellow.svg</normaloff>:/scalable/liberapay_logo_black-on-yellow.svg</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -172,6 +172,7 @@
  </widget>
  <resources>
   <include location="../resources.qrc"/>
+  <include location="../../HoustonPatchbay/resources/resources.qrc"/>
  </resources>
  <connections>
   <connection>
