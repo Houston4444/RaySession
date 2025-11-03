@@ -7,7 +7,7 @@ PREFIX ?= /usr/local
 DESTDIR =
 DEST_RAY := $(DESTDIR)$(PREFIX)/share/raysession
 
-LINK = ln -s
+LINK = ln -s -f
 LRELEASE ?= lrelease
 RCC ?= rcc
 QT_VERSION ?= 6
@@ -54,7 +54,7 @@ ICON_SIZES := 16 24 32 48 64 96 128 256
 
 PYTHON := python3
 ifeq (, $(shell which $(PYTHON)))
- PYTHON := python
+	PYTHON := python
 endif
 
 PATCHBAY_DIR=HoustonPatchbay
@@ -70,8 +70,7 @@ QT_PREPARE:
 	$(info compiling for Qt$(QT_VERSION) using $(QT_API))
 	$(file > $(BUILD_CFG_FILE),QT_API='$(QT_API)')
 
-    ifeq ($(QT_API), $(QT_API_INST))
-    else
+    ifneq ($(QT_API), $(QT_API_INST))
 		rm -f *~ src/*~ src/*.pyc src/frontend/ui/*.py \
 		    resources/locale/*.qm src/resources_rc.py
     endif
