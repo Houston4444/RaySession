@@ -9,7 +9,7 @@ RaySession is a GNU/Linux session manager for audio programs such as Ardour, Car
 The principle is to load together audio programs, then be able to save or close all documents together.<br>
 Its main purpose is to manage NSM compatible programs, but it also helps for other programs.<br>
 <br>
-it benefits from a nice patchbay, a [complete manual](https://raysession.tuxfamily.org/en/manual) as well as a splendid [web site](https://raysession.tuxfamily.org) .<br>
+it benefits from a nice patchbay, a [complete manual](https://raysession.tuxfamily.org/en/manual) and a [web site](https://raysession.tuxfamily.org) .<br>
 
 An integrated client can save and restore JACK connections.<br>
 Except this, RaySession doesn't deals with JACK, the recommended user behavior is to use it when JACK is already started.<br>
