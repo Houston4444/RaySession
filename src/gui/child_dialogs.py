@@ -1263,7 +1263,7 @@ class DonationsDialog(ChildDialog):
 
         dark = '-dark' if is_dark_theme(self) else ''
         self.ui.toolButtonImage.setIcon(
-            QIcon(f':scalable/breeze{dark}/handshake-deal.svg'))        
+            QIcon(f':scalable/breeze{dark}/handshake-deal.svg'))
 
         self.ui.toolButtonDonate.clicked.connect(self._donate)
 

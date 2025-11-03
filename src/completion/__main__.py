@@ -82,8 +82,11 @@ class RControl:
 r_control = RControl()
 
 def crade_log(*args):
-    with open('ray_comp_log', 'a') as f:
-        f.write(f"{args}")
+    pass
+
+    # # uncomment this to have logs
+    # with open('ray_comp_log', 'a') as f:
+    #     f.write(f"{args}")
 
 def ray_control(*args: str) -> str:
     ctrls = ['ray_control'] + [a for a in args]
