@@ -293,6 +293,12 @@ QToolButton {border: none}</string>
        </item>
        <item>
         <widget class="QToolButton" name="toolButtonGUI">
+         <property name="minimumSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
          <property name="styleSheet">
           <string notr="true">QToolButton{border:none}</string>
          </property>
@@ -329,6 +335,12 @@ QToolButton {border: none}</string>
        </item>
        <item>
         <widget class="QToolButton" name="startButton">
+         <property name="minimumSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
          <property name="maximumSize">
           <size>
            <width>32</width>
@@ -361,6 +373,12 @@ QToolButton {border: none}</string>
         <widget class="QToolButton" name="stopButton">
          <property name="enabled">
           <bool>false</bool>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
          </property>
          <property name="maximumSize">
           <size>
@@ -437,6 +455,12 @@ QToolButton {border: none}</string>
          <property name="enabled">
           <bool>false</bool>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
          <property name="maximumSize">
           <size>
            <width>32</width>
@@ -454,8 +478,7 @@ QToolButton {border: none}</string>
          </property>
          <property name="icon">
           <iconset resource="../resources.qrc">
-           <normaloff>:/scalable/breeze/document-save.svg</normaloff>
-           <disabledoff>:/scalable/breeze/disabled/document-save.svg</disabledoff>:/scalable/breeze/document-save.svg</iconset>
+           <normaloff>:/scalable/breeze/document-save.svg</normaloff>:/scalable/breeze/document-save.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -583,7 +606,8 @@ QToolButton {border: none}</string>
   </action>
   <action name="actionFindBoxesInPatchbay">
    <property name="icon">
-    <iconset theme="edit-find"/>
+    <iconset theme="edit-find">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Find boxes in patchbay</string>

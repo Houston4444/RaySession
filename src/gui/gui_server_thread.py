@@ -366,6 +366,10 @@ class GuiServerThread(BunServerThread):
     def to_daemon(self, *args):
         if self.daemon_manager is None:
             return
+        if self.daemon_manager.address is None:
+            _logger.warning(f"try to send to daemon {args}, but there is no daemon address")
+            return
+        
         self.send(self.daemon_manager.address, *args)
 
     def send_patchbay_daemon(self, *args):

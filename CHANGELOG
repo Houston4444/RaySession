@@ -1,5 +1,11 @@
-0.17.0 / 2025-09-XX
+0.17.0 / 2025-11-02
     Mainly a patchbay features release. There are important structural changes in the code, here are mentionned only the most important new features.
+
+    Qt6 is now the default framework (instead of Qt5).
+
+    New dependencies:
+        python3-qtpy
+        python3 JACK-Client
 
     RaySession itself:
         New protocol: Internal. Used by ray-jackpatch, ray-alsapatch and ray-sooperlooper.
@@ -7,14 +13,17 @@
             (in config: daemon/internal_mode can be FORCE_INTERNAL, FORCE_NSM or FOLLOW_PROTOCOL)
         Patchbay daemon now runs in the daemon process
             (in config: daemon/internal_patchbay can be 'true' or 'false')
+        ray_control: auto-completion for bash
+        Tool bar: tool bar is now responsive design, it can have many lines if too much widgets are shown
     
     Patchbay:
         Views: you can now use as much views as you want, switching them with Alt+Num
-        Hide: Boxes are now hideable
+        Hide: Boxes are now hideable (a widget in the tool bar allows to set hidden boxes visible)
         Arrange: two scripts can be now arrange the graph, "follow the signal chain" or "two rows facing each other"
         Custom Names: Clients and ports are now renamable in the canvas,
             it can optionnally set this name as JACK metadata and auto-export custom names to JACK pretty names.
         Undo/Redo: all box move, wrap/unwrap, hide/restore, arrange, change view events can be undone/redone
+        + Many many optimizations to prevent lagging when patchbay is consequent.
 
 
 0.14.4 / 2024-11-11

@@ -8,7 +8,7 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 # third party imports
-from qtpy.QtCore import QSettings, QSize, QFile
+from qtpy.QtCore import QSettings, QFile
 from qtpy.QtWidgets import QApplication, QWidget
 from qtpy.QtGui import QIcon, QPixmap, QPalette
 
@@ -23,10 +23,10 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 _translate = QApplication.translate
 
-_RAY_ICONS_CACHE_LIGHT = {}
-_RAY_ICONS_CACHE_DARK = {}
-_APP_ICONS_CACHE_LIGHT = {}
-_APP_ICONS_CACHE_DARK = {}
+_ray_icons_cache_light = {}
+_ray_icons_cache_dark = {}
+_app_icons_cache_light = {}
+_app_icons_cache_dark = {}
 
 class RS:
     settings = QSettings()
@@ -93,22 +93,24 @@ class ErrDaemon:
 
 
 def ray_icon(icon_name: str, dark=False) -> QIcon:
-    if dark and icon_name in _RAY_ICONS_CACHE_DARK.keys():
-        return _RAY_ICONS_CACHE_DARK[icon_name]
-    if not dark and icon_name in _RAY_ICONS_CACHE_LIGHT.keys():
-        return _RAY_ICONS_CACHE_LIGHT[icon_name]
+    if dark and icon_name in _ray_icons_cache_dark.keys():
+        return _ray_icons_cache_dark[icon_name]
+    if not dark and icon_name in _ray_icons_cache_light.keys():
+        return _ray_icons_cache_light[icon_name]
     
     icon = QIcon()
     breeze = 'breeze-dark' if dark else 'breeze'
-    icon.addFile(':scalable/%s/%s' % (breeze, icon_name), QSize(22, 22))
     icon.addPixmap(
-        QPixmap(f':scalable/{breeze}/disabled/{icon_name}'),
+        QPixmap(f':/scalable/{breeze}/{icon_name}.svg'),
+        QIcon.Mode.Normal, QIcon.State.On)
+    icon.addPixmap(
+        QPixmap(f':/scalable/{breeze}/disabled/{icon_name}.svg'),
         QIcon.Mode.Disabled, QIcon.State.Off)
     
     if dark:
-        _RAY_ICONS_CACHE_DARK[icon_name] = icon
+        _ray_icons_cache_dark[icon_name] = icon
     else:
-        _RAY_ICONS_CACHE_LIGHT[icon_name] = icon
+        _ray_icons_cache_light[icon_name] = icon
     
     return icon
 
@@ -211,12 +213,13 @@ class ArgParser(argparse.ArgumentParser):
         self.add_argument(
             '--config-dir', '-c', type=str, default='',
             help=_translate('help', 'use a custom config dir'))
+        # old arg, do nothing, is kept for backward compatibility
         self.add_argument(
-            '--debug', '-d', action='store_true',
-            help=_translate('help', 'display OSC messages'))
+            '--debug', '-d', action='store_true', help=argparse.SUPPRESS)
+        # old arg, do nothing, is kept for backward compatibility
         self.add_argument(
             '--debug-only', '-do', action='store_true',
-            help=_translate('help', 'debug without client messages'))
+            help=argparse.SUPPRESS)
         self.add_argument(
             '---no-client-messages', '-ncm', action='store_true',
             help=_translate('help', 'do not print client messages'))
@@ -302,14 +305,8 @@ def split_in_two(string: str) -> tuple[str, str]:
             return (string[:best_index], string[best_index+1:])
         return (string[:best_index], string[best_index:])
 
-def dirname(*args) -> str:
-    return os.path.dirname(*args)
-
-def basename(*args) -> str:
-    return os.path.basename(*args)
-
 def get_code_root() -> Path:
-    return Path(__file__).parent.parent.parent
+    return Path(__file__).parents[2]
 
 def server_status_string(server_status: ray.ServerStatus) -> str:
     SERVER_STATUS_STRINGS = {
@@ -372,17 +369,17 @@ def get_app_icon(icon_name: str, widget: QWidget) -> QIcon:
             QPalette.ColorGroup.Inactive,
             QPalette.ColorRole.WindowText).color().lightness() > 128)
     
-    if dark and icon_name in _APP_ICONS_CACHE_DARK.keys():
-        return _APP_ICONS_CACHE_DARK[icon_name]
-    if not dark and icon_name in _APP_ICONS_CACHE_LIGHT.keys():
-        return _APP_ICONS_CACHE_LIGHT[icon_name]
+    if dark and icon_name in _app_icons_cache_dark.keys():
+        return _app_icons_cache_dark[icon_name]
+    if not dark and icon_name in _app_icons_cache_light.keys():
+        return _app_icons_cache_light[icon_name]
     
     icon = QIcon.fromTheme(icon_name)
 
     if icon.isNull():
         for ext in ('svg', 'svgz', 'png'):
-            filename = ":app_icons/%s.%s" % (icon_name, ext)
-            darkname = ":app_icons/dark/%s.%s" % (icon_name, ext)
+            filename = f':app_icons/{icon_name}.{ext}'
+            darkname = f':app_icons/dark/{icon_name}.{ext}'
 
             if dark and QFile.exists(darkname):
                 filename = darkname
@@ -394,9 +391,11 @@ def get_app_icon(icon_name: str, widget: QWidget) -> QIcon:
                 break
 
     if icon.isNull():
-        for path in ('/usr/local', '/usr', '%s/.local' % os.getenv('HOME')):
-            for ext in ('png', 'svg', 'svgz', 'xpm'):
-                filename = "%s/share/pixmaps/%s.%s" % (path, icon_name, ext)
+        usr = Path('/usr')
+        for path in usr / 'local', usr, Path.home() / '.local':
+            for ext in 'png', 'svg', 'svgz', 'xpm':
+                filepath = path / 'share' / 'pixmaps' / f'{icon_name}.{ext}'
+                filename = str(filepath)
                 if QFile.exists(filename):
                     del icon
                     icon = QIcon()
@@ -404,8 +403,8 @@ def get_app_icon(icon_name: str, widget: QWidget) -> QIcon:
                     break
 
     if dark:
-        _APP_ICONS_CACHE_DARK[icon_name] = icon
+        _app_icons_cache_dark[icon_name] = icon
     else:
-        _APP_ICONS_CACHE_LIGHT[icon_name] = icon
+        _app_icons_cache_light[icon_name] = icon
 
     return icon

@@ -214,7 +214,7 @@ class DaemonManager(QObject):
     def finish_init(self):
         self.main_win = self.session.main_win
 
-    def disannounce(self, address=None):
+    def disannounce(self, address: None | Address =None):
         if not address:
             address = self.address
 

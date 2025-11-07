@@ -24,7 +24,7 @@ import osc_paths.ray as r
 
 # Local imports
 import child_dialogs
-from gui_tools import CommandLineArgs, ray_icon, is_dark_theme, basename
+from gui_tools import CommandLineArgs, ray_icon, is_dark_theme
 from child_dialogs import ChildDialog
 from client_properties_dialog import ClientPropertiesDialog
 from snapshots_dialog import (
