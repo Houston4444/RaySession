@@ -1,4 +1,4 @@
-0.17.0 / 2025-10-XX
+0.17.0 / 2025-11-02
     Mainly a patchbay features release. There are important structural changes in the code, here are mentionned only the most important new features.
 
     Qt6 is now the default framework (instead of Qt5).
