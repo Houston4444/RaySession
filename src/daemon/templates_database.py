@@ -183,7 +183,7 @@ def _should_rewrite_user_templates_file(
 
     return True
 
-def _list_xml_elements(base: str) -> Iterator[tuple[Path, XmlElement, bool]]:
+def _list_xml_elements(base: str) -> Iterator[tuple[Path, XmlElement]]:
     factory = bool(base == 'factory')
     search_paths = _get_search_template_dirs(factory)
     
@@ -209,10 +209,6 @@ def _list_xml_elements(base: str) -> Iterator[tuple[Path, XmlElement, bool]]:
         if root.tag != 'RAY-CLIENT-TEMPLATES':
             continue
         
-        dbase_version = root.attrib.get('VERSION', '0.8.0')
-        old_mode = ray.version_to_tuple(dbase_version) < (0, 17, 0)
-        
-        
         if not factory and root.attrib.get('VERSION') != ray.VERSION:
             # we may rewrite user client templates file
             file_rewritten = _should_rewrite_user_templates_file(
@@ -230,7 +226,7 @@ def _list_xml_elements(base: str) -> Iterator[tuple[Path, XmlElement, bool]]:
                     and not c.bool('erased_by_nsm_desktop_file')):
                 c.set_bool('erased_by_nsm_desktop_file', True)
                 
-            yield search_path, c, old_mode
+            yield search_path, c
 
         if file_rewritten:
             _logger.info('rewrite user client templates XML file')
@@ -248,14 +244,14 @@ def rebuild_templates_database(session: 'OperatingSession', base: str):
     template_names = set[str]()
     template_execs = set[str]()
     
-    for search_path, c, old_mode in _list_xml_elements(base):
+    for search_path, c in _list_xml_elements(base):
         template_execs.add(c.string('executable'))
 
     from_desktop_execs = list[NsmDesktopExec]()
     if base == 'factory':
         from_desktop_execs = _first_desktops_scan()
 
-    for search_path, c, old_mode in _list_xml_elements(base):
+    for search_path, c in _list_xml_elements(base):
         template_name = c.string('template-name')
 
         if (not template_name
@@ -387,7 +383,7 @@ def rebuild_templates_database(session: 'OperatingSession', base: str):
                     continue
 
         template_client = Client(session)
-        template_client.read_xml_properties(c, old_mode=old_mode)
+        template_client.read_xml_properties(c)
         template_client.client_id = c.string('client_id')        
         if not template_client.client_id:
             template_client.client_id = session.generate_abstract_client_id(

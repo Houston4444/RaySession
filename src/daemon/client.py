@@ -821,7 +821,7 @@ class Client(ServerSender, ray.ClientData):
 
         return jack_client_name
 
-    def read_xml_properties(self, c: XmlElement, old_mode=False):
+    def read_xml_properties(self, c: XmlElement):
         self.executable_path = c.string('executable')
         self.arguments = c.string('arguments')
         self.pre_env = c.string('pre_env')
