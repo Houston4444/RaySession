@@ -836,9 +836,8 @@ class Client(ServerSender, ray.ClientData):
         self.start_gui_hidden = not c.bool('gui_visible', True)
         self.template_origin = c.string('template_origin')
 
-        if old_mode:
-            self.jack_naming = ray.JackNaming.SHORT
-            self.prefix_mode = ray.PrefixMode.SESSION_NAME
+        self.jack_naming = ray.JackNaming.SHORT
+        self.prefix_mode = ray.PrefixMode.SESSION_NAME
 
         if c.string('jack_naming'):
             self.jack_naming = ray.JackNaming(int(c.bool('jack_naming')))

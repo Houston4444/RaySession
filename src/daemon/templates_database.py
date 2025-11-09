@@ -183,7 +183,7 @@ def _should_rewrite_user_templates_file(
 
     return True
 
-def _list_xml_elements(base: str) -> Iterator[tuple[Path, XmlElement]]:
+def _list_xml_elements(base: str) -> Iterator[tuple[Path, XmlElement, bool]]:
     factory = bool(base == 'factory')
     search_paths = _get_search_template_dirs(factory)
     
