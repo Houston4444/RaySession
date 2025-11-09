@@ -1,3 +1,14 @@
+0.17.1 / 2025-11-09
+    Important Bug Fixes release. The update is highly recommended because some connections may have been lost during session save with v0.17.0.
+
+    Bug fixes:
+        client jack_naming wrongly considered as True when not specified in xml file (very strong)
+        broadcast broken, impossibility for clients to talk together, breaking automations between non-timeline-xt and non-mixer-xt (and maybe others)
+        unkwown behavior if client_id is not specified in template
+        possible crash when a port is renamed by its client
+        add group without saved position could not update the scene size
+
+
 0.17.0 / 2025-11-02
     Mainly a patchbay features release. There are important structural changes in the code, here are mentionned only the most important new features.
 
