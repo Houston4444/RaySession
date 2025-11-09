@@ -26,7 +26,7 @@ import ardour_templates
 from client import Client
 
 if TYPE_CHECKING:
-    from session import Session
+    from session_operating import OperatingSession
 
 
 _translate = QCoreApplication.translate
@@ -240,7 +240,7 @@ def _list_xml_elements(base: str) -> Iterator[tuple[Path, XmlElement, bool]]:
                 _logger.error(
                     'Rewrite user client templates XML file failed')
 
-def rebuild_templates_database(session: 'Session', base: str):        
+def rebuild_templates_database(session: 'OperatingSession', base: str):        
     # discovery start
     templates_database = session.get_client_templates_database(base)
     templates_database.clear()
@@ -358,7 +358,7 @@ def rebuild_templates_database(session: 'Session', base: str):
                     continue
 
                 full_program_version = str(
-                    version_process.readAllStandardOutput(),
+                    version_process.readAllStandardOutput(), # type:ignore
                     encoding='utf-8')
 
                 previous_is_digit = False
@@ -390,7 +390,7 @@ def rebuild_templates_database(session: 'Session', base: str):
         template_client.read_xml_properties(c, old_mode=old_mode)
         template_client.client_id = c.string('client_id')        
         if not template_client.client_id:
-            template_client.client_id == session.generate_abstract_client_id(
+            template_client.client_id = session.generate_abstract_client_id(
                 template_client.executable_path)
         template_client.update_infos_from_desktop_file()
         
