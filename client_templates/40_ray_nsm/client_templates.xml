@@ -5,7 +5,7 @@
       In all cases, template will be available only if the executable value is in PATH
       and if the template-name has not already been added -->
 <RAY-CLIENT-TEMPLATES erased_by_nsm_desktop_file="false" VERSION="0.17.0">
- <Client-Template template-name="Hydrogen" client_id="hydrogen" executable="hydrogen" needed-version="1.1"/> 
+ <Client-Template template-name="Hydrogen" client_id="hydrogen" executable="hydrogen" needed-version="1.1" prefix_mode="1" jack_naming="1"/>
  <Client-Template template-name="Ardour" executable="ardour" name="Ardour" icon="ardour" client_id="ardour" list_ardour_templates="true" prefix_mode="2" jack_naming="0"/>
  <Client-Template template-name="Ardour8" executable="Ardour8" name="Ardour" icon="ardour" client_id="ardour" list_ardour_templates="true" prefix_mode="2" jack_naming="0"/>
  <Client-Template template-name="ardour8" executable="ardour8" name="Ardour" icon="ardour" client_id="ardour" list_ardour_templates="true" prefix_mode="2" jack_naming="0"/>
@@ -16,17 +16,17 @@
  <Client-Template template-name="Ardour5" executable="Ardour5" name="Ardour" icon="ardour" client_id="ardour" prefix_mode="2" jack_naming="0"/>
  <Client-Template template-name="ardour5" executable="ardour5" name="Ardour" icon="ardour" client_id="ardour" prefix_mode="2" jack_naming="0"/>
  <Client-Template template-name="Mixbus9" executable="Mixbus9" name="Mixbus" client_id="mixbus" label="Mixbus9" list_ardour_templates="true" prefix_mode="2" jack_naming="0"/>
- <Client-Template template-name="Mixbus8" executable="Mixbus8" name="Mixbus" client_id="mixbus" label="Mixbus8" list_ardour_templates="true"/>
+ <Client-Template template-name="Mixbus8" executable="Mixbus8" name="Mixbus" client_id="mixbus" label="Mixbus8" list_ardour_templates="true" prefix_mode="2" jack_naming="0"/>
  <Client-Template template-name="Mixbus32c9" executable="Mixbus32c9" name="Mixbus32C" client_id="mixbus32c" label="Mixbus32c9" list_ardour_templates="true" prefix_mode="2" jack_naming="0"/>
  <Client-Template template-name="Mixbus32c8" executable="Mixbus32c8" name="Mixbus32C" client_id="mixbus32c" label="Mixbus32c8" list_ardour_templates="true" prefix_mode="2" jack_naming="0"/>
- <Client-Template template-name="amsynth" executable="amsynth" name="amsynth" client_id="amsynth" check_nsm_bin="1" prefix_mode="1"/>
+ <Client-Template template-name="amsynth" executable="amsynth" name="amsynth" client_id="amsynth" check_nsm_bin="1" prefix_mode="1" jack_naming="1"/>
  <Client-Template template-name="Carla" executable="carla-jack-multi" client_id="Carla" label="Carla" jack_naming="1" prefix_mode="1"/>
  <Client-Template template-name="Carla-Rack" executable="carla-rack" client_id="rack" prefix_mode="1" jack_naming="1"/>
- <Client-Template template-name="Carla-Patchbay" executable="carla-patchbay" client_id="patchbay" prefix_mode="1"/>
+ <Client-Template template-name="Carla-Patchbay" executable="carla-patchbay" client_id="patchbay" prefix_mode="1" jack_naming="1"/>
  <Client-Template template-name="Non-Mixer" executable="non-mixer" client_id="nonmixer" prefix_mode="1" jack_naming="1"/>
- <Client-Template template-name="Qtractor" executable="qtractor" client_id="qtractor" jack_naming="1"/>
- <Client-Template template-name="Guitarix" client_id="guitarix" executable="guitarix" check_nsm_bin="1" prefix_mode="1"/>
- <Client-Template template-name="Non-Timeline" executable="non-timeline" client_id="timeline" jack_naming="1"/>
+ <Client-Template template-name="Qtractor" executable="qtractor" client_id="qtractor" jack_naming="1" prefix_mode="2"/>
+ <Client-Template template-name="Guitarix" client_id="guitarix" executable="guitarix" check_nsm_bin="1" prefix_mode="1" jack_naming="1"/>
+ <Client-Template template-name="Non-Timeline" executable="non-timeline" client_id="timeline" prefix_mode="2" jack_naming="1"/>
  <Client-Template template-name="Luppp" executable="luppp" client_id="luppp" unignored_extensions=".wav" prefix_mode="1" jack_naming="1"/>
  <Client-Template template-name="ZynAddSubFX" client_id="zynaddsub" desktop_file="zynaddsubfx-jack" executable="zynaddsubfx" prefix_mode="1" jack_naming="1"/>
  <Client-Template template-name="synthv1" client_id="synthv1" icon="synthv1-jack" executable="synthv1_jack" prefix_mode="1" jack_naming="1"/>
