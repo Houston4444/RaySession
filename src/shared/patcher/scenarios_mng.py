@@ -265,10 +265,12 @@ class ScenariosManager:
                     if (isinstance(scenario, Scenario)
                             and scenario.base_map is scenar_map):
                         yaml_tools.save_connections(
+                            self,
                             scenar_map, 'connections',
                             scenario.saved_patterns,
                             scenario.saved_conns)
                         yaml_tools.save_connections(
+                            self,
                             scenar_map, 'forbidden_connections',
                             scenario.forbidden_patterns,
                             scenario.forbidden_conns)
@@ -277,10 +279,12 @@ class ScenariosManager:
         default = self.scenarios[0]
 
         yaml_tools.save_connections(
+            self,
             yaml_dict, 'connections',
             default.saved_patterns, default.saved_conns)
         
         yaml_tools.save_connections(
+            self,
             yaml_dict, 'forbidden_connections',
             default.forbidden_patterns, default.forbidden_conns)
 
@@ -333,6 +337,26 @@ class ScenariosManager:
     def port_depattern(self, port: PortData):
         for scenario in self.scenarios:
             scenario.port_depattern(self.patcher.ports, port)
+
+    def capture_equivalence(self, alias: str) -> str:
+        if alias not in self.capture_eqvs:
+            return alias
+        
+        ret = self.capture_eqvs.first(
+            alias, set([p.name for p in self.patcher.ports[PortMode.OUTPUT]]))
+        if ret is None:
+            return alias
+        return ret
+
+    def playback_equivalence(self, alias: str) -> str:
+        if alias not in self.playback_eqvs:
+            return alias
+        
+        ret = self.playback_eqvs.first(
+            alias, set([p.name for p in self.patcher.ports[PortMode.INPUT]]))
+        if ret is None:
+            return alias
+        return ret
 
     def check_removed_nsm_brothers(
             self, ex_brothers: dict[NsmClientName, JackClientBaseName]):

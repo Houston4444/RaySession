@@ -1,11 +1,15 @@
 import re
 import logging
-from typing import Optional, TypeVar, Type
+from typing import TYPE_CHECKING, Optional, TypeVar, Type
 
 from ruamel.yaml.comments import CommentedSeq, CommentedMap, Comment, LineCol
 
 from . import depattern
 from .bases import ConnectionStr, ConnectionPattern
+
+if TYPE_CHECKING:
+    from .scenarios_mng import ScenariosManager
+
 
 _logger = logging.getLogger(__name__)
 file_path = ''
@@ -249,21 +253,27 @@ def restore_connections_comments(
         old_conns.append(out_dict)
 
 def save_connections(
+        mng: 'ScenariosManager',
         map: CommentedMap,
         key: str,
         patterns: list[ConnectionPattern],
         conns: set[ConnectionStr]):
     'Save connections stocked in `patterns` and `conns` to `map` at `key`.'
+    
+    equiv_conns = set([
+        (mng.capture_eqvs.alias(c[0]), mng.playback_eqvs.alias(c[1]))
+        for c in conns])
+    
     old_conns_seq = map.get(key)
     if not isinstance(old_conns_seq, CommentedSeq):
-        conns_map = depattern.to_yaml_connection_dicts(patterns, conns)
+        conns_map = depattern.to_yaml_connection_dicts(patterns, equiv_conns)
         if conns_map:
             map[key] = conns_map
         return
 
     restore_connections_comments(
         depattern.to_yaml_connection_dicts(
-            patterns, conns), old_conns_seq)
+            patterns, equiv_conns), old_conns_seq)
 
 def replace_key_comment_with(map: CommentedMap, key: str, comment: str):
     # Pfff, boring to find this !
