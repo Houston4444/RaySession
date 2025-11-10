@@ -345,7 +345,7 @@ class ClientCommunicating(BunServerThread):
                 continue
 
             if not are_same_osc_port(client.addr.url, osp.src_addr.url):
-                self.send(client.addr, Message(osp.path, *osp.args)) # type:ignore
+                self.send(client.addr, Message(*osp.args)) # type:ignore
 
             # TODO broadcast to slave daemons
             #for gui_addr in self.gui_list:
