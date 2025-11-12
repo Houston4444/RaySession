@@ -225,11 +225,11 @@ class Scenario(BaseScenario):
         'True if one of the conn ports is the origin of a redirection'
         port_from , port_to = conn
         for cp_red in self.capture_redirections:
-            if self.mng.capture_eqvs.alias(port_from) == cp_red[0]:
+            if port_from == cp_red[0]:
                 return True
         
         for cp_red in self.playback_redirections:
-            if self.mng.playback_eqvs.alias(port_to) == cp_red[0]:
+            if port_to == cp_red[0]:
                 return True
 
         return False
@@ -243,9 +243,9 @@ class Scenario(BaseScenario):
             orig, dest = 0, 1
             
         r_outs = [ct[dest] for ct in self.capture_redirections
-                  if self.mng.capture_equivalence(ct[orig]) == port_from]
+                  if ct[orig] == port_from]
         r_ins = [ct[dest] for ct in self.playback_redirections
-                 if self.mng.playback_equivalence(ct[orig]) == port_to]
+                 if ct[orig] == port_to]
 
         if not (r_outs or r_ins):
             return []

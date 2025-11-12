@@ -103,7 +103,7 @@ def load_conns_from_yaml(
         from_patt: Optional[re.Pattern] = None
         to_patt: Optional[re.Pattern] = None
         incomplete = False
-        
+
         if isinstance(from_pattern, str):
             try:
                 from_patt = re.compile(from_pattern)
@@ -253,27 +253,21 @@ def restore_connections_comments(
         old_conns.append(out_dict)
 
 def save_connections(
-        mng: 'ScenariosManager',
         map: CommentedMap,
         key: str,
         patterns: list[ConnectionPattern],
         conns: set[ConnectionStr]):
     'Save connections stocked in `patterns` and `conns` to `map` at `key`.'
-    
-    equiv_conns = set([
-        (mng.capture_eqvs.alias(c[0]), mng.playback_eqvs.alias(c[1]))
-        for c in conns])
-    
     old_conns_seq = map.get(key)
     if not isinstance(old_conns_seq, CommentedSeq):
-        conns_map = depattern.to_yaml_connection_dicts(patterns, equiv_conns)
+        conns_map = depattern.to_yaml_connection_dicts(patterns, conns)
         if conns_map:
             map[key] = conns_map
         return
 
     restore_connections_comments(
         depattern.to_yaml_connection_dicts(
-            patterns, equiv_conns), old_conns_seq)
+            patterns, conns), old_conns_seq)
 
 def replace_key_comment_with(map: CommentedMap, key: str, comment: str):
     # Pfff, boring to find this !

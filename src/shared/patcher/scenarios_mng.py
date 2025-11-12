@@ -2,9 +2,10 @@ import logging
 from typing import TYPE_CHECKING
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
-from jack_renaming_tools import Renamer, one_port_belongs_to_client
 
 from patshared import PortMode
+
+from jack_renaming_tools import Renamer, one_port_belongs_to_client
 
 from .bases import (ConnectionStr, JackClientBaseName,
                     NsmClientName, PortData)
@@ -44,6 +45,91 @@ class ScenariosManager:
     @property
     def current(self) -> BaseScenario:
         return self.scenarios[self.current_num]
+
+    def replace_aliases(
+            self, conns: set[ConnectionStr]) -> set[ConnectionStr]:
+        '''replace in `conns` all aliases (equivalences)
+        with their first present port.
+        If no port exists, keep the alias'''
+        out_conns = set[ConnectionStr]()
+        
+        out_port_names = set(
+            [p.name for p in self.patcher.ports[PortMode.OUTPUT]])
+        in_port_names = set(
+            [p.name for p in self.patcher.ports[PortMode.INPUT]])
+        
+        for conn in conns:
+            out_conns.add(
+                (self.capture_eqvs.first(conn[0], out_port_names),
+                 self.playback_eqvs.first(conn[1], in_port_names)))
+        
+        return out_conns
+
+    def replace_aliases_on_place(self, conns: set[ConnectionStr]):
+        '''replace in `conns` all aliases (equivalences)
+        with their first present port.
+        If no port exists, keep the alias'''
+        out_port_names = set(
+            [p.name for p in self.patcher.ports[PortMode.OUTPUT]])
+        in_port_names = set(
+            [p.name for p in self.patcher.ports[PortMode.INPUT]])
+        
+        out_conns = set[ConnectionStr]()
+        for conn in conns:
+            out_conns.add(
+                (self.capture_eqvs.first(conn[0], out_port_names),
+                    self.playback_eqvs.first(conn[1], in_port_names)))
+        
+        conns.clear()
+        conns |= out_conns
+        
+    def replace_ports_with_aliases(
+            self, conns: set[ConnectionStr]) -> set[ConnectionStr]:
+        '''replace in `conns` port names with their alias if it exists'''
+        out_conns = set[ConnectionStr]()
+        
+        for conn in conns:
+            out_conns.add(
+                (self.capture_eqvs.alias(conn[0]),
+                 self.playback_eqvs.alias(conn[1])))
+        
+        return out_conns
+
+    def load_aliases(self, conns: set[ConnectionStr]):
+        '''replace in `conns` all port names with their alias,
+        and then all aliases with their first present port name'''
+        aliconns = self.replace_ports_with_aliases(conns)
+        self.replace_aliases_on_place(aliconns)
+        conns.clear()
+        conns |= aliconns
+
+    def replace_port_name(
+            self, conns: set[ConnectionStr], alias: str, new: str,
+            port_mode: PortMode):
+        if port_mode not in (PortMode.OUTPUT, PortMode.INPUT):
+            return
+        
+        out_conns = set[ConnectionStr]()
+        process = False
+        
+        if port_mode is PortMode.OUTPUT:
+            for conn in conns:
+                if self.capture_eqvs.alias(conn[0]) == alias:
+                    process = True
+                    out_conns.add((new, conn[1]))
+                else:
+                    out_conns.add(conn)
+        else:
+            for conn in conns:
+                if self.playback_eqvs.alias(conn[1]) == alias:
+                    process = True
+                    out_conns.add((conn[0], new))
+                else:
+                    out_conns.add(conn)
+
+        if process:
+            conns.clear()
+            conns |= out_conns
 
     def _load_yaml_scenarios(self, yaml_list: CommentedSeq):
         if not isinstance(yaml_list, CommentedSeq):
@@ -156,7 +242,7 @@ class ScenariosManager:
                         yaml_tools._err_reading_yaml(
                             ct_redirections, j, 'incomplete redirection')
                         continue
-                    
+
                     scenario.capture_redirections.append(
                         (origin, destination))
             
@@ -239,7 +325,7 @@ class ScenariosManager:
         if isinstance(conns, CommentedSeq):
             yaml_tools.load_conns_from_yaml(
                 conns, default.saved_conns, default.saved_patterns)
-        
+
         forbidden_conns = yaml_tools.item_at(
             yaml_dict, 'forbidden_connections', list)
         if isinstance(forbidden_conns, CommentedSeq):
@@ -247,12 +333,33 @@ class ScenariosManager:
                 forbidden_conns, default.forbidden_conns,
                 default.forbidden_patterns)
 
+        self.replace_aliases_on_place(default.saved_conns)
+        self.replace_aliases_on_place(default.forbidden_conns)
+
         scenars = yaml_tools.item_at(yaml_dict, 'scenarios', list)
         if isinstance(scenars, CommentedSeq):
             self._load_yaml_scenarios(scenars)
         
+        out_port_names = set(
+            [p.name for p in self.patcher.ports[PortMode.OUTPUT]])
+        in_port_names = set(
+            [p.name for p in self.patcher.ports[PortMode.INPUT]])
+        
         for scenario in self.scenarios:
             scenario.startup_depattern(self.patcher.ports)
+            self.replace_aliases_on_place(scenario.saved_conns)
+            self.replace_aliases_on_place(scenario.forbidden_conns)
+
+            if isinstance(scenario, Scenario):
+                for i, cp_red in enumerate(scenario.capture_redirections):
+                    scenario.capture_redirections[i] = tuple(
+                        [self.capture_eqvs.corrected(cp, out_port_names)
+                         for cp in cp_red])
+                
+                for i, pb_red in enumerate(scenario.playback_redirections):
+                    scenario.playback_redirections[i] = tuple(
+                        [self.playback_eqvs.corrected(pb, in_port_names)
+                         for pb in pb_red])
 
     def fill_yaml(self, yaml_dict: CommentedMap):
         scenars_seq = yaml_dict.get('scenarios')
@@ -265,28 +372,28 @@ class ScenariosManager:
                     if (isinstance(scenario, Scenario)
                             and scenario.base_map is scenar_map):
                         yaml_tools.save_connections(
-                            self,
                             scenar_map, 'connections',
                             scenario.saved_patterns,
-                            scenario.saved_conns)
+                            self.replace_ports_with_aliases(
+                                scenario.saved_conns))
                         yaml_tools.save_connections(
-                            self,
                             scenar_map, 'forbidden_connections',
                             scenario.forbidden_patterns,
-                            scenario.forbidden_conns)
+                            self.replace_ports_with_aliases(
+                                scenario.forbidden_conns))
                         break
         
         default = self.scenarios[0]
 
         yaml_tools.save_connections(
-            self,
             yaml_dict, 'connections',
-            default.saved_patterns, default.saved_conns)
+            default.saved_patterns,
+            self.replace_ports_with_aliases(default.saved_conns))
         
         yaml_tools.save_connections(
-            self,
             yaml_dict, 'forbidden_connections',
-            default.forbidden_patterns, default.forbidden_conns)
+            default.forbidden_patterns,
+            self.replace_ports_with_aliases(default.forbidden_conns))
 
     def load_xml_connections(self, conns: set[ConnectionStr]):
         default = self.scenarios[0]
@@ -337,26 +444,56 @@ class ScenariosManager:
     def port_depattern(self, port: PortData):
         for scenario in self.scenarios:
             scenario.port_depattern(self.patcher.ports, port)
-
-    def capture_equivalence(self, alias: str) -> str:
-        if alias not in self.capture_eqvs:
-            return alias
         
-        ret = self.capture_eqvs.first(
-            alias, set([p.name for p in self.patcher.ports[PortMode.OUTPUT]]))
-        if ret is None:
-            return alias
-        return ret
-
-    def playback_equivalence(self, alias: str) -> str:
-        if alias not in self.playback_eqvs:
-            return alias
+        out_port_names = set(
+            [p.name for p in self.patcher.ports[PortMode.OUTPUT]])
+        in_port_names = set(
+            [p.name for p in self.patcher.ports[PortMode.INPUT]])
         
-        ret = self.playback_eqvs.first(
-            alias, set([p.name for p in self.patcher.ports[PortMode.INPUT]]))
-        if ret is None:
-            return alias
-        return ret
+        # manage aliases
+        
+        if port.mode is PortMode.INPUT:
+            alias = self.playback_eqvs.alias(port.name)
+            if alias == port.name:
+                return
+
+            if self.playback_eqvs.first(alias, out_port_names) != port.name:
+                # new port does not becomes the first item of alias
+                return
+        
+        elif port.mode is PortMode.OUTPUT:
+            alias = self.capture_eqvs.alias(port.name)
+            if alias == port.name:
+                return
+
+            if self.capture_eqvs.first(alias, in_port_names) != port.name:
+                # new port does not becomes the first item of alias
+                return
+            
+        else:
+            return
+
+        for scenario in self.scenarios:
+            for conns in scenario.saved_conns, scenario.forbidden_conns:
+                self.replace_port_name(
+                    conns, alias, port.name, port.mode)
+            
+            if isinstance(scenario, Scenario):
+                if port.mode is PortMode.OUTPUT:
+                    for i, cp_red in enumerate(scenario.capture_redirections):
+                        scenario.capture_redirections[i] = tuple(
+                            [self.capture_eqvs.corrected(cp, out_port_names)
+                             for cp in cp_red])
+                        
+                else:
+                    for i, pb_red in enumerate(scenario.playback_redirections):
+                        scenario.playback_redirections[i] = tuple(
+                            [self.playback_eqvs.corrected(pb, in_port_names)
+                             for pb in pb_red])
+
+    def aliased_conn(self, conn: ConnectionStr) -> ConnectionStr:
+        return (self.capture_eqvs.alias(conn[0]),
+                self.playback_eqvs.alias(conn[1]))
 
     def check_removed_nsm_brothers(
             self, ex_brothers: dict[NsmClientName, JackClientBaseName]):
@@ -535,6 +672,8 @@ class ScenariosManager:
         self.reload_scenario()
 
     def choose(self, present_clients: set[str]) -> str:
+        '''choose the scenario because somes elements relative
+        to scenarios rules may have change (present clients)'''
         num = 0
         for scenario in self.scenarios[1:]:
             num += 1
@@ -629,8 +768,6 @@ class ScenariosManager:
             all_conns |= (next_scn.saved_conns
                           | next_scn.forbidden_conns)
 
-        projection_conns = set[ConnectionStr]()
-
         if isinstance(previous_scn, Scenario):
             match previous_scn.mode:
                 case ScenarioMode.REDIRECTIONS:
@@ -644,7 +781,7 @@ class ScenariosManager:
                         for df_proj in previous_scn.projections(
                                 conn, restored=True):
                             default_scn.saved_conns.add(df_proj)
-                            
+
                 case ScenarioMode.CONNECT_DOMAIN:
                     for conn in connections:
                         if previous_scn._belongs_to_domain(conn):
@@ -654,6 +791,8 @@ class ScenariosManager:
         else:
             for conn in connections:
                 default_scn.saved_conns.add(conn)
+
+        projection_conns = set[ConnectionStr]()
 
         # set projection connections
         if isinstance(next_scn, Scenario):

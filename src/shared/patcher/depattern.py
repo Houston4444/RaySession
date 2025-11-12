@@ -61,29 +61,6 @@ def startup(
                                 conns.add((outport.name, inport.name))
                                 break
                     break
-    
-    outport_names = set([p.name for p in ports[PortMode.OUTPUT]])
-    inport_names = set([p.name for p in ports[PortMode.INPUT]])
-    
-    real_conns = set[ConnectionStr]()
-    
-    for conn in conns:
-        port_from, port_to = conn
-        real_from = mng.capture_eqvs.first(port_from, outport_names)
-        real_to = mng.playback_eqvs.first(port_to, inport_names)
-
-        if real_from is None:
-            if real_to is None:
-                continue
-            else:
-                real_conns.add((port_from, real_to))
-        else:
-            if real_to is None:
-                real_conns.add((real_from, port_to))
-            else:
-                real_conns.add((real_from, real_to))
-
-    conns |= real_conns
 
 def add_port(
         ports: dict[PortMode, list[PortData]],
