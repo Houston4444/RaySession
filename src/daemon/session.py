@@ -4,14 +4,13 @@ import logging
 import os
 import random
 import string
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from io import BytesIO
 
 # Imports from src/shared
-from osclib import Address, are_same_osc_port
-from osclib.bases import OscPack
+from osclib import Address, are_same_osc_port, OscPack
 import ray
 from xml_tools import XmlElement
 import osc_paths.ray as r
@@ -28,6 +27,9 @@ from server_sender import ServerSender
 from client import Client
 from daemon_tools import NoSessionPath, Terminal
 import templates_database
+
+if TYPE_CHECKING:
+    from session_operating import OperatingSession
 
 
 _logger = logging.getLogger(__name__)
@@ -550,5 +552,8 @@ class Session(ServerSender):
                 self.send(monitor_addr, r.monitor.CLIENT_EVENT,
                           client_id, event)
     
-    def _rebuild_templates_database(self, base: str):        
+    def _rebuild_templates_database(self, base: str):
+        if TYPE_CHECKING and not isinstance(self, OperatingSession):
+            return
+
         templates_database.rebuild_templates_database(self, base)
