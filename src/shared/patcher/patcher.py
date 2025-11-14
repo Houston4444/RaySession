@@ -55,8 +55,6 @@ class Patcher:
         before renaming, and the new NSM client_id.'''
         self.terminate = TerminateState.NORMAL
         
-        self.pending_connection = False
-
         self.brothers_dict = dict[NsmClientName, JackClientBaseName]()
         self.present_clients = set[str]()
 
@@ -120,7 +118,7 @@ class Patcher:
             if self.terminate is TerminateState.ASKED:
                 self.terminate = TerminateState.RESTORING
                 self.scenarios_mng.restore_initial_connections()
-                self.may_make_one_connection()
+                self.may_make_connections()
 
             if self.terminate is TerminateState.LEAVING:
                 break
@@ -151,7 +149,7 @@ class Patcher:
                 break
             
             if self.timer_connect_check.elapsed():
-                self.may_make_one_connection()
+                self.may_make_connections()
 
             if self.timer_dirty_check.elapsed():
                 self.timer_dirty_finished()
@@ -168,10 +166,6 @@ class Patcher:
 
     def timer_dirty_finished(self):
         if self.is_dirty:
-            return
-
-        if self.pending_connection:
-            self.timer_dirty_check.start()
             return
 
         if self.is_dirty_now():
@@ -206,14 +200,14 @@ class Patcher:
         ret = self.scenarios_mng.choose(self.present_clients)
         if ret:
             self.nsm_server.send_message(2, ret)
-            self.may_make_one_connection()
+            self.may_make_connections()
 
     def client_removed(self, client_name: str):
         self.present_clients.discard(client_name)
         ret = self.scenarios_mng.choose(self.present_clients)
         if ret:
             self.nsm_server.send_message(2, ret)
-            self.may_make_one_connection()
+            self.may_make_connections()
 
     def port_added(self, port_name: str, port_mode: int, port_type: int):
         self.ports_creation[port_name] = time.time()
@@ -283,7 +277,7 @@ class Patcher:
         self.conns_rm_by_port.discard((port_from, port_to))
         self.scenarios_mng.recent_connections.add((port_from, port_to))
 
-        if self.pending_connection or in_port_new or out_port_new:
+        if in_port_new or out_port_new:
             if out_port_new:
                 for jport in self.ports[PortMode.OUTPUT]:
                     if jport.name == port_from:
@@ -295,7 +289,7 @@ class Patcher:
                         jport.is_new = True
                         break
 
-            self.may_make_one_connection()
+            self.may_make_connections()
 
         if not (port_from, port_to) in self.conns_to_connect:
             self.timer_dirty_check.start()
@@ -304,9 +298,6 @@ class Patcher:
         self.connections.discard((port_str_a, port_str_b))
         self.disconnections_time[(port_str_a, port_str_b)] = time.time()
         self.scenarios_mng.recent_connections.add((port_str_a, port_str_b))
-
-        if self.pending_connection:
-            self.may_make_one_connection()
 
         self.timer_dirty_check.start()
 
@@ -385,10 +376,9 @@ class Patcher:
             for port in self.ports[port_mode]:
                 port.is_new = new
 
-    def may_make_one_connection(self):
-        '''can make one connection or disconnection if slow_connect is True.
-        Else, it make all needed and possible connections now.'''
-        _logger.debug('May make one or more connections')
+    def may_make_connections(self):
+        '''make all needed and possible connections and disconnections now.'''
+        _logger.debug('may_make_connections')
         output_ports = set([p.name for p in self.ports[PortMode.OUTPUT]])
         input_ports = set([p.name for p in self.ports[PortMode.INPUT]])
         new_output_ports = set(
@@ -413,7 +403,6 @@ class Patcher:
                 _logger.info(f'connect ports: {sv_con}')
                 self.engine.connect_ports(*sv_con)
 
-        self.pending_connection = False
         self.set_all_ports_new(False)
         self.switching_scenario = False
         
@@ -568,7 +557,7 @@ class Patcher:
             if ret:
                 self.nsm_server.send_message(2, ret)
 
-            self.may_make_one_connection()
+            self.may_make_connections()
 
         self.is_dirty = False
         self.timer_dirty_check.start()
