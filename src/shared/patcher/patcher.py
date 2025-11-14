@@ -389,6 +389,7 @@ class Patcher:
     def may_make_one_connection(self):
         '''can make one connection or disconnection if slow_connect is True.
         Else, it make all needed and possible connections now.'''
+        _logger.debug('May make one or more connections')
         output_ports = set([p.name for p in self.ports[PortMode.OUTPUT]])
         input_ports = set([p.name for p in self.ports[PortMode.INPUT]])
         new_output_ports = set(
