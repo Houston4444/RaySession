@@ -430,7 +430,7 @@ class Patcher:
             for disconn in self.conns_to_disconnect:
                 if (disconn in self.connections
                         and (disconn[0] in new_output_ports
-                            or disconn[1] in new_input_ports)):
+                             or disconn[1] in new_input_ports)):
                     _logger.info(f'disconnect ports: {disconn}')
                     self.engine.disconnect_ports(*disconn)
 
@@ -440,7 +440,7 @@ class Patcher:
                         and sv_con[0] in output_ports
                         and sv_con[1] in input_ports
                         and (sv_con[0] in new_output_ports
-                            or sv_con[1] in new_input_ports)):
+                             or sv_con[1] in new_input_ports)):
                     _logger.info(f'connect ports: {sv_con}')
                     self.engine.connect_ports(*sv_con)
 

@@ -77,6 +77,32 @@ scenarios:
             remplacer dans toutes les listes de scenar
             remplacer dans les redirections
             puis, gérer la bascule
+        
+        rename port_depattern
+
+        que faire quand un alias port change ?
+            port ajouté:
+                changer l'alias dans toutes les listes de connexions
+                gérer des conns_to_connect / conns_to_disconnect
+                ça marche
+                Si scenario change alors que les conns/deconns n'ont pas encore été faites ?
+                    - ce sera oublié
+
+            port supprimé:
+                changer l'alias dans toutes les listes de connexions
+                compliqué, il faut checker dans les conns_rm_by_port et rétablir les connexions si possible
+                ça doit pouvoir marcher
+                Si scenario change alors que les conns/deconns n'ont pas encore été faites ?
+                    - ce sera oublié
+
+            port renommé:
+                changer l'alias dans toutes les listes de connexions
+                garder les connexions au port renommé en place
+                si le renommage fait qu'il devient premier port de l'alias alors gérer les conns/disconns
+
+            Solutions:
+                - garder en mémoire les conn/disconns générées par les évenèments d'alias
+                - oublier le fonctionnement lent, et demander immédiatement les conns/disconn : OUI OUI OUI
 
 
 

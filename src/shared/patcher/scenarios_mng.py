@@ -444,7 +444,7 @@ class ScenariosManager:
     def port_depattern(self, port: PortData):
         for scenario in self.scenarios:
             scenario.port_depattern(self.patcher.ports, port)
-        
+
         out_port_names = set(
             [p.name for p in self.patcher.ports[PortMode.OUTPUT]])
         in_port_names = set(
@@ -494,24 +494,35 @@ class ScenariosManager:
         
         if port.mode is PortMode.INPUT:
             for conn in self.patcher.connections:
-                if (self.playback_eqvs.alias(conn[1]) == alias
+                if not (self.playback_eqvs.alias(conn[1]) == alias
                         and conn[1] != port.name):
-                    for in_port in self.patcher.ports[PortMode.INPUT]:
-                        if in_port.name == conn[1]:
-                            in_port.is_new = True
-                            break
+                    continue
 
-                    self.patcher.conns_to_connect.discard(conn)
-                    self.patcher.conns_to_disconnect.add(conn)
-                    self.patcher.conns_to_connect.add((conn[0], port.name))
-                    self.patcher.conns_to_disconnect.discard((conn[0], port.name))
+                for in_port in self.patcher.ports[PortMode.INPUT]:
+                    if in_port.name == conn[1]:
+                        in_port.is_new = True
+                        break
+
+                self.patcher.conns_to_connect.discard(conn)
+                self.patcher.conns_to_disconnect.add(conn)
+                self.patcher.conns_to_connect.add((conn[0], port.name))
+                self.patcher.conns_to_disconnect.discard((conn[0], port.name))
 
         elif port.mode is PortMode.OUTPUT:
             for conn in self.patcher.connections:
-                if (self.capture_eqvs.alias(conn[0]) == alias
+                if not (self.capture_eqvs.alias(conn[0]) == alias
                         and conn[0] != port.name):
-                    self.patcher.conns_to_connect.discard(conn)
-                    self.patcher.conns_to_disconnect.add(conn)
+                    continue
+
+                for out_port in self.patcher.ports[PortMode.OUTPUT]:
+                    if out_port.name == conn[0]:
+                        out_port.is_new = True
+                        break
+
+                self.patcher.conns_to_connect.discard(conn)
+                self.patcher.conns_to_disconnect.add(conn)
+                self.patcher.conns_to_connect.add((port.name, conn[1]))
+                self.patcher.conns_to_connect.discard((port.name, conn[1]))
 
     def check_removed_nsm_brothers(
             self, ex_brothers: dict[NsmClientName, JackClientBaseName]):
