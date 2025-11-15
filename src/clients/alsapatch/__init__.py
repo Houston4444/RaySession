@@ -29,6 +29,8 @@ def internal_prepare(
     '''Prepare the client, return a int in case of error,
     otherwise the start_func and the stop_func.'''
     # set log level with exec arguments
+    continuous_save = True
+
     if len(func_args) > 0:
         log_dict = {logging.INFO: '', logging.DEBUG: ''}
         read_level = 0
@@ -41,6 +43,8 @@ def internal_prepare(
                 case '-dbg'|'--dbg':
                     read_level = logging.DEBUG
                     continue
+                case '--no-continuous-save'|'-ncs':
+                    continuous_save = False
             
             if read_level == 0:
                 continue
@@ -70,7 +74,8 @@ def internal_prepare(
         return 2
 
     nsm_server = NsmServer(daemon_address, total_fake=IS_INTERNAL)
-    patcher = Patcher(engine, nsm_server, _logger)
+    patcher = Patcher(engine, nsm_server, _logger,
+                      continuous_save=continuous_save)
     return patcher.run_loop, patcher.stop
 
 def run():

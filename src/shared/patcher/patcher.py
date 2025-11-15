@@ -38,7 +38,7 @@ _logger = logging.getLogger(__name__)
 class Patcher:
     def __init__(
             self, engine: ProtoEngine, nsm_server: NsmServer,
-            logger: logging.Logger):
+            logger: logging.Logger, continuous_save=True):
         self.engine = engine
         self._logger = logger
 
@@ -53,6 +53,14 @@ class Patcher:
                 = None
         '''if not None, contains the JACK client name of the NSM client
         before renaming, and the new NSM client_id.'''
+        
+        self.continuous_save = continuous_save
+        '''if False, all connections are loosed if they have not been saved
+        before to have been disconnected (except in case of scenario switch).
+        
+        if True, connections are restored if they have been destroyed with
+        destruction of one of their port.'''
+
         self.terminate = TerminateState.NORMAL
         
         self.brothers_dict = dict[NsmClientName, JackClientBaseName]()
@@ -259,13 +267,15 @@ class Patcher:
                     # when the port re-appears,
                     # because it is the case in case of scenario switch,
                     # behavior is more understandable this way.
-                    if conn not in self.conns_to_disconnect:
+                    if (self.continuous_save
+                            and conn not in self.conns_to_disconnect):
                         self.conns_to_connect.add(conn)
 
                 elif ((port_name == conn[0] and conn[1] in in_ports)
                       or (port_name == conn[1] and conn[0] in out_ports)):
                     self.conns_rm_by_port.discard(conn)
-                    self.conns_to_connect.discard(conn)
+                    if self.continuous_save:
+                        self.conns_to_connect.discard(conn)
 
         self.scenarios_mng.port_removed(port_name, port_mode)
 
