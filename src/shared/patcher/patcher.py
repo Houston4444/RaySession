@@ -81,7 +81,6 @@ class Patcher:
             self.saved_graph[port_mode] = set[FullPortName]()
 
         self.scenarios_mng = scenarios_mng.ScenariosManager(self)
-        self.switching_scenario = False
 
         self.ports = dict[PortMode, list[PortData]]()
         for port_mode in (PortMode.NULL, PortMode.INPUT, PortMode.OUTPUT):
@@ -247,13 +246,19 @@ class Patcher:
                         break
                 break
 
+        out_ports = set([p.name for p in self.ports[PortMode.OUTPUT]])
+        in_ports = set([p.name for p in self.ports[PortMode.INPUT]])
+
         now = time.time()
         for conn, time_ in self.disconnections_time.items():
             if port_name in conn:
                 if now - time_ < 0.250:
                     self.conns_rm_by_port.add(conn)
-                else:
+                elif ((port_name == conn[0] and conn[1] in in_ports)
+                      or (port_name == conn[1] and conn[0] in out_ports)):
                     self.conns_rm_by_port.discard(conn)
+
+        self.scenarios_mng.port_removed(port_name, port_mode)
 
         self.timer_connect_check.start()
 
@@ -404,7 +409,6 @@ class Patcher:
                 self.engine.connect_ports(*sv_con)
 
         self.set_all_ports_new(False)
-        self.switching_scenario = False
         
         if self.terminate is TerminateState.RESTORING:
             self.terminate = TerminateState.LEAVING
@@ -706,9 +710,6 @@ class Patcher:
                 for conn in list(self.conns_rm_by_port):
                     if one_port_belongs_to_client(conn, ex_jack_name):
                         self.conns_rm_by_port.discard(conn)
-                for conn in list(self.scenarios_mng.ex_connections):
-                    if one_port_belongs_to_client(conn, ex_jack_name):
-                        self.scenarios_mng.ex_connections.discard(conn)
                 
                 self.scenarios_mng.nsm_brother_id_changed(
                     *self.client_changing_id, jack_name)

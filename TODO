@@ -103,7 +103,9 @@ scenarios:
             Solutions:
                 - garder en mémoire les conn/disconns générées par les évenèments d'alias
                 - oublier le fonctionnement lent, et demander immédiatement les conns/disconn : OUI OUI OUI
-
+        
+    checker s'il n'y a pas une meilleure solution pour reconnaître une connexion removed by bort
+        jack et alsa
 
 
 
