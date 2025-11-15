@@ -41,25 +41,6 @@ class ScenariosManager:
     def current(self) -> BaseScenario:
         return self.scenarios[self.current_num]
 
-    def replace_aliases(
-            self, conns: set[ConnectionStr]) -> set[ConnectionStr]:
-        '''replace in `conns` all aliases (equivalences)
-        with their first present port.
-        If no port exists, keep the alias'''
-        out_conns = set[ConnectionStr]()
-        
-        out_port_names = set(
-            [p.name for p in self.patcher.ports[PortMode.OUTPUT]])
-        in_port_names = set(
-            [p.name for p in self.patcher.ports[PortMode.INPUT]])
-        
-        for conn in conns:
-            out_conns.add(
-                (self.capture_eqvs.first(conn[0], out_port_names),
-                 self.playback_eqvs.first(conn[1], in_port_names)))
-        
-        return out_conns
-
     def replace_aliases_on_place(self, conns: set[ConnectionStr]):
         '''replace in `conns` all aliases (equivalences)
         with their first present port.
@@ -89,14 +70,6 @@ class ScenariosManager:
                  self.playback_eqvs.alias(conn[1])))
         
         return out_conns
-
-    def load_aliases(self, conns: set[ConnectionStr]):
-        '''replace in `conns` all port names with their alias,
-        and then all aliases with their first present port name'''
-        aliconns = self.replace_ports_with_aliases(conns)
-        self.replace_aliases_on_place(aliconns)
-        conns.clear()
-        conns |= aliconns
 
     def replace_port_name(
             self, conns: set[ConnectionStr], alias: str, new: str,
@@ -355,6 +328,18 @@ class ScenariosManager:
                     scenario.playback_redirections[i] = tuple(
                         [self.playback_eqvs.corrected(pb, in_port_names)
                          for pb in pb_red])
+                
+                for connect_domain in (scenario.connect_domain,
+                                       scenario.no_connect_domain):
+                    for i, cdomain in enumerate(connect_domain):
+                        from_, to_ = cdomain
+                        if isinstance(from_, str):
+                            from_ = self.capture_eqvs.corrected(
+                                from_, out_port_names)
+                        if isinstance(to_, str):
+                            to_ = self.playback_eqvs.corrected(
+                                to_, in_port_names)
+                        connect_domain[i] = (from_, to_)
 
     def fill_yaml(self, yaml_dict: CommentedMap):
         scenars_seq = yaml_dict.get('scenarios')
@@ -470,11 +455,27 @@ class ScenariosManager:
                     for i, cp_red in enumerate(scenario.capture_redirections):
                         scenario.capture_redirections[i] = tuple(
                             [eqvs.corrected(cp, port_names) for cp in cp_red])
+                    
+                    for connect_domain in (scenario.connect_domain,
+                                           scenario.no_connect_domain):
+                        for i, cdomain in enumerate(connect_domain):
+                            from_, to_ = cdomain
+                            if isinstance(from_, str):
+                                from_ = eqvs.corrected(from_, port_names)
+                            connect_domain[i] = (from_, to_)
 
                 else:
                     for i, pb_red in enumerate(scenario.playback_redirections):
                         scenario.playback_redirections[i] = tuple(
                             [eqvs.corrected(pb, port_names) for pb in pb_red])
+                        
+                    for connect_domain in (scenario.connect_domain,
+                                           scenario.no_connect_domain):
+                        for i, cdomain in enumerate(connect_domain):
+                            from_, to_ = cdomain
+                            if isinstance(to_, str):
+                                to_ = eqvs.corrected(to_, port_names)
+                            connect_domain[i] = (from_, to_)
 
         for conn in self.patcher.connections:
             if not (eqvs.alias(conn[mode_index]) == alias
@@ -535,11 +536,27 @@ class ScenariosManager:
                     for i, cp_red in enumerate(scenario.capture_redirections):
                         scenario.capture_redirections[i] = tuple(
                             [eqvs.corrected(cp, port_names) for cp in cp_red])
-                        
+                    
+                    for connect_domain in (scenario.connect_domain,
+                                           scenario.no_connect_domain):
+                        for i, cdomain in enumerate(connect_domain):
+                            from_, to_ = cdomain
+                            if isinstance(from_, str):
+                                from_ = eqvs.corrected(from_, port_names)
+                            connect_domain[i] = (from_, to_)
+                    
                 else:
                     for i, pb_red in enumerate(scenario.playback_redirections):
                         scenario.playback_redirections[i] = tuple(
                             [eqvs.corrected(pb, port_names) for pb in pb_red])
+                        
+                    for connect_domain in (scenario.connect_domain,
+                                           scenario.no_connect_domain):
+                        for i, cdomain in enumerate(connect_domain):
+                            from_, to_ = cdomain
+                            if isinstance(to_, str):
+                                to_ = eqvs.corrected(to_, port_names)
+                            connect_domain[i] = (from_, to_)
         
         if ':' not in new_port:
             return
