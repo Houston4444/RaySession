@@ -259,10 +259,13 @@ class Patcher:
                     # when the port re-appears,
                     # because it is the case in case of scenario switch,
                     # behavior is more understandable this way.
-                    self.conns_to_connect.add(conn)
+                    if conn not in self.conns_to_disconnect:
+                        self.conns_to_connect.add(conn)
+
                 elif ((port_name == conn[0] and conn[1] in in_ports)
                       or (port_name == conn[1] and conn[0] in out_ports)):
                     self.conns_rm_by_port.discard(conn)
+                    self.conns_to_connect.discard(conn)
 
         self.scenarios_mng.port_removed(port_name, port_mode)
 

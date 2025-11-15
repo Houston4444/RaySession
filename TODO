@@ -104,8 +104,6 @@ scenarios:
                 - garder en mémoire les conn/disconns générées par les évenèments d'alias
                 - oublier le fonctionnement lent, et demander immédiatement les conns/disconn : OUI OUI OUI
         
-    peut-être plus logique de reconnecter les conns rm by port à chaque fois qu'un port apparaît
-
     Séparer en plusieurs fichiers:
     - connections
     - graph
@@ -114,7 +112,9 @@ scenarios:
 
     voir aliases dans connect_domain
     voir comportement à l'arrêt (retour aux connections d'origine)
-    
+    scenario par client NSM
+    scenario par clé str envoyée
+
 
 
 
