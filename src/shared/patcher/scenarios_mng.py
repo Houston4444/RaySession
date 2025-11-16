@@ -9,9 +9,9 @@ from jack_renaming_tools import Renamer, one_port_belongs_to_client
 
 from .bases import (ConnectionStr, JackClientBaseName,
                     NsmClientName, PortData)
+from . import equivalences
 from . import yaml_tools
 from .scenario import ScenarioMode, ScenarioRules, BaseScenario, Scenario
-from .equivalences import Equivalences
 
 if TYPE_CHECKING:
     from .patcher import Patcher
@@ -34,8 +34,12 @@ class ScenariosManager:
         self.initial_connections = set[ConnectionStr]()
         'Connections already existing at startup'
         
-        self.capture_eqvs = Equivalences()
-        self.playback_eqvs = Equivalences()
+        self.capture_eqvs = equivalences.Equivalences()
+        '''Equivalences (aliases with associated ports)
+        for capture (output) ports'''
+        self.playback_eqvs = equivalences.Equivalences()
+        '''Equivalences (aliases with associated ports)
+        for playback (input) ports'''
 
     @property
     def current(self) -> BaseScenario:
@@ -45,59 +49,19 @@ class ScenariosManager:
         '''replace in `conns` all aliases (equivalences)
         with their first present port.
         If no port exists, keep the alias'''
-        out_port_names = set(
-            [p.name for p in self.patcher.ports[PortMode.OUTPUT]])
-        in_port_names = set(
-            [p.name for p in self.patcher.ports[PortMode.INPUT]])
-        
-        out_conns = set[ConnectionStr]()
-        for conn in conns:
-            out_conns.add(
-                (self.capture_eqvs.first(conn[0], out_port_names),
-                    self.playback_eqvs.first(conn[1], in_port_names)))
-        
-        conns.clear()
-        conns |= out_conns
+        equivalences.replace_aliases_on_place(self, conns)
         
     def replace_ports_with_aliases(
             self, conns: set[ConnectionStr]) -> set[ConnectionStr]:
         '''replace in `conns` port names with their alias if it exists'''
-        out_conns = set[ConnectionStr]()
-        
-        for conn in conns:
-            out_conns.add(
-                (self.capture_eqvs.alias(conn[0]),
-                 self.playback_eqvs.alias(conn[1])))
-        
-        return out_conns
+        return equivalences.replace_ports_with_aliases(self, conns)
 
     def replace_port_name(
             self, conns: set[ConnectionStr], alias: str, new: str,
             port_mode: PortMode):
-        if port_mode not in (PortMode.OUTPUT, PortMode.INPUT):
-            return
-        
-        out_conns = set[ConnectionStr]()
-        process = False
-        
-        if port_mode is PortMode.OUTPUT:
-            for conn in conns:
-                if self.capture_eqvs.alias(conn[0]) == alias:
-                    process = True
-                    out_conns.add((new, conn[1]))
-                else:
-                    out_conns.add(conn)
-        else:
-            for conn in conns:
-                if self.playback_eqvs.alias(conn[1]) == alias:
-                    process = True
-                    out_conns.add((conn[0], new))
-                else:
-                    out_conns.add(conn)
-
-        if process:
-            conns.clear()
-            conns |= out_conns
+        '''replace in `conns` all port names which have `alias` for alias,
+        with `new`. `port_mode` of the port is required.'''
+        equivalences.replace_port_name(self, conns, alias, new, port_mode)
 
     def _load_yaml_scenarios(self, yaml_list: CommentedSeq):
         if not isinstance(yaml_list, CommentedSeq):
@@ -423,6 +387,11 @@ class ScenariosManager:
         for scenario in self.scenarios:
             scenario.port_depattern(self.patcher.ports, port)
 
+    def check_equivalences_for_port_added(self, port: PortData):
+        '''Check if `port` becomes the first port of an equivalence,
+        and if it is the case, modify all needed connections sets
+        and lists, and update connections right now.
+        '''
         if port.mode is PortMode.OUTPUT:
             eqvs = self.capture_eqvs
             mode_index = 0
@@ -499,7 +468,8 @@ class ScenariosManager:
                 
         self.patcher.may_make_connections()
 
-    def port_removed(self, port_name: str, port_mode: PortMode):
+    def check_equivalences_for_port_removed(
+            self, port_name: str, port_mode: PortMode):
         if port_mode is PortMode.OUTPUT:
             eqvs = self.capture_eqvs
             mode_index = 0

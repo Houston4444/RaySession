@@ -227,6 +227,7 @@ class Patcher:
         self.ports[port.mode].append(port)
 
         self.scenarios_mng.port_depattern(port)
+        self.scenarios_mng.check_equivalences_for_port_added(port)
         self.timer_connect_check.start()
         
         # dirty checker timer is longer than timer connect
@@ -277,7 +278,8 @@ class Patcher:
                     if self.continuous_save:
                         self.conns_to_connect.discard(conn)
 
-        self.scenarios_mng.port_removed(port_name, port_mode)
+        self.scenarios_mng.check_equivalences_for_port_removed(
+            port_name, port_mode)
 
         self.timer_connect_check.start()
 
@@ -289,6 +291,7 @@ class Patcher:
                 port.name = new_name
                 port.is_new = True
                 self.scenarios_mng.port_depattern(port)
+                self.scenarios_mng.check_equivalences_for_port_added(port)
                 self.timer_connect_check.start()
                 break
 
