@@ -387,89 +387,16 @@ class ScenariosManager:
         for scenario in self.scenarios:
             scenario.port_depattern(self.patcher.ports, port)
 
-    def check_equivalences_for_port_added(self, port: PortData):
+    def check_equivalences_change_for_port(
+            self, port_name: str, port_mode: PortMode, removed=False):
         '''Check if `port` becomes the first port of an equivalence,
         and if it is the case, modify all needed connections sets
         and lists, and update connections right now.
+        
+        if `removed` is True, it means the this port just has been removed,
+        all needed connections will be modified, checking if an other port
+        takes the priority on its alias equivalence.
         '''
-        if port.mode is PortMode.OUTPUT:
-            eqvs = self.capture_eqvs
-            mode_index = 0
-        elif port.mode is PortMode.INPUT:
-            eqvs = self.playback_eqvs
-            mode_index = 1
-        else:
-            return
-
-        alias = eqvs.alias(port.name)
-        if alias == port.name:
-            return
-        
-        port_names = set([p.name for p in self.patcher.ports[port.mode]])
-        
-        if eqvs.first(alias, port_names) != port.name:
-            # new port does not becomes the first item of alias
-            return
-
-        # replace in all connections sets the alias or the old port name
-        # with the new port name        
-        for scenario in self.scenarios:
-            for conns in scenario.saved_conns, scenario.forbidden_conns:
-                self.replace_port_name(
-                    conns, alias, port.name, port.mode)
-
-            if isinstance(scenario, Scenario):
-                if port.mode is PortMode.OUTPUT:
-                    for i, cp_red in enumerate(scenario.capture_redirections):
-                        scenario.capture_redirections[i] = tuple(
-                            [eqvs.corrected(cp, port_names) for cp in cp_red])
-                    
-                    for connect_domain in (scenario.connect_domain,
-                                           scenario.no_connect_domain):
-                        for i, cdomain in enumerate(connect_domain):
-                            from_, to_ = cdomain
-                            if isinstance(from_, str):
-                                from_ = eqvs.corrected(from_, port_names)
-                            connect_domain[i] = (from_, to_)
-
-                else:
-                    for i, pb_red in enumerate(scenario.playback_redirections):
-                        scenario.playback_redirections[i] = tuple(
-                            [eqvs.corrected(pb, port_names) for pb in pb_red])
-                        
-                    for connect_domain in (scenario.connect_domain,
-                                           scenario.no_connect_domain):
-                        for i, cdomain in enumerate(connect_domain):
-                            from_, to_ = cdomain
-                            if isinstance(to_, str):
-                                to_ = eqvs.corrected(to_, port_names)
-                            connect_domain[i] = (from_, to_)
-
-        for conn in self.patcher.connections:
-            if not (eqvs.alias(conn[mode_index]) == alias
-                    and conn[mode_index] != port.name):
-                continue
-            
-            for pport in self.patcher.ports[port.mode]:
-                if pport.name == conn[mode_index]:
-                    pport.is_new = True
-                    break
-
-            self.patcher.conns_to_connect.discard(conn)
-            self.patcher.conns_to_disconnect.add(conn)
-            
-            if port.mode is PortMode.OUTPUT:
-                new_conn = (port.name, conn[1])
-            else:
-                new_conn = (conn[0], port.name)
-                
-            self.patcher.conns_to_connect.add(new_conn)
-            self.patcher.conns_to_disconnect.discard(new_conn)
-                
-        self.patcher.may_make_connections()
-
-    def check_equivalences_for_port_removed(
-            self, port_name: str, port_mode: PortMode):
         if port_mode is PortMode.OUTPUT:
             eqvs = self.capture_eqvs
             mode_index = 0
@@ -485,20 +412,29 @@ class ScenariosManager:
         
         port_names = set([p.name for p in self.patcher.ports[port_mode]])
 
-        for prio_port in eqvs[alias]:
-            if prio_port in port_names:
-                # removed port was not the prior of alias, do nothing
-                return
-            if prio_port == port_name:
-                break
+        if removed:
+            for prio_port in eqvs[alias]:
+                if prio_port in port_names:
+                    # removed port was not the prior of alias, do nothing
+                    return
+                if prio_port == port_name:
+                    break
 
-        new_port = eqvs.first(alias, port_names)
-        
+            new_port = eqvs.first(alias, port_names)
+        else:
+            if eqvs.first(alias, port_names) != port_name:
+                # new port does not becomes the first item of alias
+                return
+
+            new_port = port_name
+            
+        # replace in all connections sets the alias or the old port name
+        # with the new port name        
         for scenario in self.scenarios:
             for conns in scenario.saved_conns, scenario.forbidden_conns:
                 for conn in conns:
                     self.replace_port_name(
-                        conns, alias, port_name, port_mode)
+                        conns, alias, new_port, port_mode)
                     
             if isinstance(scenario, Scenario):
                 if port_mode is PortMode.OUTPUT:
@@ -507,7 +443,7 @@ class ScenariosManager:
                             [eqvs.corrected(cp, port_names) for cp in cp_red])
                     
                     for connect_domain in (scenario.connect_domain,
-                                           scenario.no_connect_domain):
+                                        scenario.no_connect_domain):
                         for i, cdomain in enumerate(connect_domain):
                             from_, to_ = cdomain
                             if isinstance(from_, str):
@@ -520,33 +456,56 @@ class ScenariosManager:
                             [eqvs.corrected(pb, port_names) for pb in pb_red])
                         
                     for connect_domain in (scenario.connect_domain,
-                                           scenario.no_connect_domain):
+                                        scenario.no_connect_domain):
                         for i, cdomain in enumerate(connect_domain):
                             from_, to_ = cdomain
                             if isinstance(to_, str):
                                 to_ = eqvs.corrected(to_, port_names)
                             connect_domain[i] = (from_, to_)
-        
-        if ':' not in new_port:
-            return
-
-        for conn in self.patcher.conns_rm_by_port:
-            if conn[mode_index] != port_name:
-                continue
-            
-            for port in self.patcher.ports[port_mode]:
-                if port.name == new_port:
-                    port.is_new = True
-                    break
                 
-            if port_mode is PortMode.OUTPUT:
-                new_conn = (new_port, conn[1])
-            else:
-                new_conn = (conn[0], new_port)
+        if removed:
+            if ':' not in new_port:
+                return
 
-            self.patcher.conns_to_connect.add(new_conn)
-            self.patcher.conns_to_disconnect.discard(new_conn)
-        
+            for conn in self.patcher.conns_rm_by_port:
+                if conn[mode_index] != port_name:
+                    continue
+                
+                for port in self.patcher.ports[port_mode]:
+                    if port.name == new_port:
+                        port.is_new = True
+                        break
+                    
+                if port_mode is PortMode.OUTPUT:
+                    new_conn = (new_port, conn[1])
+                else:
+                    new_conn = (conn[0], new_port)
+
+                self.patcher.conns_to_connect.add(new_conn)
+                self.patcher.conns_to_disconnect.discard(new_conn)
+
+        else:
+            for conn in self.patcher.connections:
+                if not (eqvs.alias(conn[mode_index]) == alias
+                        and conn[mode_index] != port_name):
+                    continue
+                
+                for pport in self.patcher.ports[port_mode]:
+                    if pport.name == conn[mode_index]:
+                        pport.is_new = True
+                        break
+
+                self.patcher.conns_to_connect.discard(conn)
+                self.patcher.conns_to_disconnect.add(conn)
+                
+                if port_mode is PortMode.OUTPUT:
+                    new_conn = (port_name, conn[1])
+                else:
+                    new_conn = (conn[0], port_name)
+                    
+                self.patcher.conns_to_connect.add(new_conn)
+                self.patcher.conns_to_disconnect.discard(new_conn)
+                
         self.patcher.may_make_connections()
 
     def check_removed_nsm_brothers(
