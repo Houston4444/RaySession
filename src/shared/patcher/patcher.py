@@ -81,11 +81,16 @@ class Patcher:
         '''all disconnections that occurred just before
         the destruction of one of their ports'''
 
+        self.initial_graph = dict[PortMode, set[FullPortName]]()
+        '''ports existing at startup. Used to know which connections it should
+        restore or not at exit.'''
+
         self.saved_graph = dict[PortMode, set[FullPortName]]()
         '''ports existing at last save. When patch file is open,
         diconnections are possible if ports of existing connections
         were existing at last save.'''
         for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
+            self.initial_graph[port_mode] = set[FullPortName]()
             self.saved_graph[port_mode] = set[FullPortName]()
 
         self.scenarios_mng = scenarios_mng.ScenariosManager(self)
@@ -117,6 +122,7 @@ class Patcher:
         
         for port_mode in (PortMode.OUTPUT, PortMode.INPUT):
             for port in self.ports[port_mode]:
+                self.initial_graph[port_mode].add(port.name)
                 self.present_clients.add(port.name.partition(':')[0])
         
         jack_stopped = False
@@ -442,6 +448,9 @@ class Patcher:
     def open_file(self, project_path: str, session_name: str,
                   full_client_id: str) -> tuple[Err, str]:
         _logger.info(f'Open project "{project_path}"')
+        
+        switching = bool(self.project_path)
+
         self.conns_to_connect.clear()
         self.conns_to_disconnect.clear()
 
@@ -580,7 +589,7 @@ class Patcher:
 
         if has_file:
             # re-declare all ports as new in case we are switching session
-            self.scenarios_mng.open_default()
+            self.scenarios_mng.open_default(switching)
             ret = self.scenarios_mng.choose(self.present_clients)
             if ret:
                 self.nsm_server.send_message(2, ret)

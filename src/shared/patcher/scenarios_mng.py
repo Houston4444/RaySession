@@ -344,9 +344,12 @@ class ScenariosManager:
         default.saved_conns = conns
         default.startup_depattern(self.patcher.ports)
 
-    def open_default(self):
+    def open_default(self, switching: bool):
+        '''load the default scenario. `switching` is True 
+        if the session is switching.'''
         default = self.scenarios[0]
-        self.initial_connections = self.patcher.connections.copy()
+        if not switching:
+            self.initial_connections = self.patcher.connections.copy()
         self.patcher.conns_to_connect.clear()
         self.patcher.conns_to_disconnect.clear()
         
@@ -374,8 +377,13 @@ class ScenariosManager:
     def restore_initial_connections(self):
         self.patcher.conns_to_connect.clear()
         self.patcher.conns_to_disconnect.clear()
+        
         all_conns = self.patcher.connections | self.initial_connections
         for conn in all_conns:
+            if (conn[0] not in self.patcher.initial_graph[PortMode.OUTPUT]
+                    or conn[1] not in self.patcher.initial_graph[PortMode.INPUT]):
+                continue
+
             if conn in self.initial_connections:
                 self.patcher.conns_to_connect.add(conn)
             else:
