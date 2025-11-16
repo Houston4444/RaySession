@@ -406,7 +406,6 @@ class ScenariosManager:
         self.recent_connections.clear()
         self.patcher.conns_rm_by_port.clear()
         self.patcher.set_all_ports_new()
-        # self.patcher.switching_scenario = True
 
     def restore_initial_connections(self):
         self.patcher.conns_to_connect.clear()

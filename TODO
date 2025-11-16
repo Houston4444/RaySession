@@ -111,6 +111,7 @@ scenarios:
     - equivalences
 
     voir aliases dans connect_domain
+    réécriture/réorga pour ce qui concerne les alias
     voir comportement à l'arrêt (retour aux connections d'origine)
     scenario par client NSM
     scenario par clé str envoyée
