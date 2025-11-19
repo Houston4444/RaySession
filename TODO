@@ -70,40 +70,8 @@ scenarios:
     # ruamel, réécrire les commentaires sur connections
     envoyer les erreurs à la GUI
     # bug: les connexions nouvelles ne sont pas reconnectés tant qu'on redémarre pas le patch
-
-    Problème équivalences:
-        tout stocker en brut sauf les alias n'ayant pas de port présent
-        quand un port dans alias apparait/disparait:
-            remplacer dans toutes les listes de scenar
-            remplacer dans les redirections
-            puis, gérer la bascule
         
-        rename port_depattern
 
-        que faire quand un alias port change ?
-            port ajouté:
-                changer l'alias dans toutes les listes de connexions
-                gérer des conns_to_connect / conns_to_disconnect
-                ça marche
-                Si scenario change alors que les conns/deconns n'ont pas encore été faites ?
-                    - ce sera oublié
-
-            port supprimé:
-                changer l'alias dans toutes les listes de connexions
-                compliqué, il faut checker dans les conns_rm_by_port et rétablir les connexions si possible
-                ça doit pouvoir marcher
-                Si scenario change alors que les conns/deconns n'ont pas encore été faites ?
-                    - ce sera oublié
-
-            port renommé:
-                changer l'alias dans toutes les listes de connexions
-                garder les connexions au port renommé en place
-                si le renommage fait qu'il devient premier port de l'alias alors gérer les conns/disconns
-
-            Solutions:
-                - garder en mémoire les conn/disconns générées par les évenèments d'alias
-                - oublier le fonctionnement lent, et demander immédiatement les conns/disconn : OUI OUI OUI
-        
     Séparer en plusieurs fichiers:
     - connections
     - graph
@@ -114,6 +82,13 @@ scenarios:
     scenario par client NSM
     scenario par clé str envoyée
 
+    # PROBLÈME session switch et persistance:
+    conns_rm_by_port : pendant le switch, remet des connexions qui ne doivent pas être connectées
+    soit:
+        - on exclue la possibilité du continous save
+            - mais on est obligé de l'avoir pour le changement de scenario
+                - du coup on ne pratique la continuité que sur les connexions contenant un port dans une redirection
+                
 
 
 

@@ -90,6 +90,7 @@ def item_at(map: CommentedMap, key: str, wanted_type: Type[T]) -> T | None:
 def load_conns_from_yaml(
         yaml_list: CommentedSeq, conns: set[ConnectionStr],
         patterns: list[ConnectionPattern]):
+    conns.clear()
     for i, conn_d in enumerate(yaml_list):
         if not isinstance(conn_d, CommentedMap):
             _err_reading_yaml(

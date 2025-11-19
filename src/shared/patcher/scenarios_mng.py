@@ -64,6 +64,8 @@ class ScenariosManager:
         equivalences.replace_port_name(self, conns, alias, new, port_mode)
 
     def _load_yaml_scenarios(self, yaml_list: CommentedSeq):
+        del self.scenarios[1:]
+        
         if not isinstance(yaml_list, CommentedSeq):
             return
 
@@ -347,6 +349,8 @@ class ScenariosManager:
     def open_default(self, switching: bool):
         '''load the default scenario. `switching` is True 
         if the session is switching.'''
+        _logger.debug('open default scenario')
+        self.current_num = 0
         default = self.scenarios[0]
         if not switching:
             self.initial_connections = self.patcher.connections.copy()
@@ -365,7 +369,7 @@ class ScenariosManager:
             if conn in default.saved_conns:
                 self.patcher.conns_to_connect.add(conn)
                 continue
-            
+
             if (conn[0] in self.patcher.saved_graph[PortMode.OUTPUT]
                     and conn[1] in self.patcher.saved_graph[PortMode.INPUT]):
                 self.patcher.conns_to_disconnect.add(conn)
@@ -841,19 +845,19 @@ class ScenariosManager:
             if conn in next_scn.forbidden_conns:
                 conns_to_disconnect.add(conn)
                 continue
-            
+
             if conn in next_scn.saved_conns:
                 conns_to_connect.add(conn)
                 continue
-            
+
             if conn in default_scn.forbidden_conns:
                 conns_to_disconnect.add(conn)
                 continue
-            
+
             if conn in projection_conns:
                 conns_to_connect.add(conn)
                 continue            
-            
+
             conns_to_disconnect.add(conn)
 
         self.recent_connections.clear()

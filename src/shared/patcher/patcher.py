@@ -72,6 +72,10 @@ class Patcher:
         'connections that have to be done now or when its ports are created'
         self.conns_to_disconnect = set[ConnectionStr]()
         'connections that have to be disconnected ASAP'
+        self.pending_conns = set[ConnectionStr]()
+        'connections asked by the patcher waiting for a confirmation'
+        self.pending_disconns = set[ConnectionStr]()
+        'disconnections asked by the patcher waiting for a confirmation'
         self.ports_creation = dict[FullPortName, float]()
         'Stores the creation time of the ports'
 
@@ -307,10 +311,13 @@ class Patcher:
         now = time.time()
         out_port_new = now - self.ports_creation.get(port_from, 0.0) < 0.250
         in_port_new = now - self.ports_creation.get(port_to, 0.0) < 0.250
+
         
-        self.connections.add((port_from, port_to))
-        self.conns_rm_by_port.discard((port_from, port_to))
-        self.scenarios_mng.recent_connections.add((port_from, port_to))
+        conn = (port_from, port_to)
+        self.connections.add(conn)
+        self.conns_rm_by_port.discard(conn)
+        self.pending_conns.discard(conn)
+        self.scenarios_mng.recent_connections.add(conn)
 
         if in_port_new or out_port_new:
             if out_port_new:
@@ -330,9 +337,11 @@ class Patcher:
             self.timer_dirty_check.start()
  
     def connection_removed(self, port_str_a: str, port_str_b: str):
-        self.connections.discard((port_str_a, port_str_b))
-        self.disconnections_time[(port_str_a, port_str_b)] = time.time()
-        self.scenarios_mng.recent_connections.add((port_str_a, port_str_b))
+        conn = (port_str_a, port_str_b)
+        self.pending_disconns.discard(conn)
+        self.connections.discard(conn)
+        self.disconnections_time[conn] = time.time()
+        self.scenarios_mng.recent_connections.add(conn)
 
         self.timer_dirty_check.start()
 
@@ -426,6 +435,7 @@ class Patcher:
                     and (disconn[0] in new_output_ports
                          or disconn[1] in new_input_ports)):
                 _logger.info(f'disconnect ports: {disconn}')
+                self.pending_disconns.add(disconn)
                 self.engine.disconnect_ports(*disconn)
 
         for sv_con in self.conns_to_connect:
@@ -436,6 +446,7 @@ class Patcher:
                     and (sv_con[0] in new_output_ports
                          or sv_con[1] in new_input_ports)):
                 _logger.info(f'connect ports: {sv_con}')
+                self.pending_conns.add(sv_con)
                 self.engine.connect_ports(*sv_con)
 
         self.set_all_ports_new(False)
@@ -590,6 +601,7 @@ class Patcher:
         if has_file:
             # re-declare all ports as new in case we are switching session
             self.scenarios_mng.open_default(switching)
+            self.may_make_connections()
             ret = self.scenarios_mng.choose(self.present_clients)
             if ret:
                 self.nsm_server.send_message(2, ret)
