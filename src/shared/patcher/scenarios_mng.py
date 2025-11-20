@@ -553,6 +553,11 @@ class ScenariosManager:
                         scenario.forbidden_conns.discard(fbd_conn)
                         break
 
+        for rm_jack in rm_jack_clients:
+            for conn in list(self.patcher.conns_rm_by_port):
+                if one_port_belongs_to_client(conn, rm_jack):
+                    self.patcher.conns_rm_by_port.discard(conn)
+
     def nsm_brother_removed(
             self, nsm_client_id: NsmClientName,
             jack_name: JackClientBaseName):
@@ -564,6 +569,10 @@ class ScenariosManager:
             for fbd_conn in list(scenario.saved_conns):
                 if one_port_belongs_to_client(fbd_conn, jack_name):
                     scenario.forbidden_conns.discard(fbd_conn)
+        
+        for conn in list(self.patcher.conns_rm_by_port):
+            if one_port_belongs_to_client(conn, jack_name):
+                self.patcher.conns_rm_by_port.discard(conn)
         
         self.reload_scenario()
 
@@ -650,6 +659,10 @@ class ScenariosManager:
                     dom_map['from'] = new_from_
                 if isinstance(new_to_, str):
                     dom_map['to'] = new_to_
+
+        for conn in list(self.patcher.conns_rm_by_port):
+            if one_port_belongs_to_client(conn, ex_jack_name):
+                self.patcher.conns_rm_by_port.discard(conn)
 
         self.reload_scenario()
 

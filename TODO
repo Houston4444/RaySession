@@ -58,13 +58,6 @@ scenarios:
         ajouter les méthodes à la GUI pour éviter msgs inconnus
     # revoir les déconnexions au démarrage (+option ou config)
     # refaire les changements de nom de client au démarrage
-    <!-- ajout d'un disconnecting_mode
-        - aucune déconnexion
-        - déconnections si dans le graph en cas de switch (par défaut)
-        - déconnections si dans le graph
-        - déconnections systématiques en cas de switch
-        - déconnections systématiques -->
-    <!-- vérif sans fichier yaml ou xml -->
     # Attention aux types des ports de connection audio/midi
     # Attention au renommage des ports
     # ruamel, réécrire les commentaires sur connections
@@ -81,6 +74,7 @@ scenarios:
     # voir comportement à l'arrêt (retour aux connections d'origine)
     scenario par client NSM
     scenario par clé str envoyée
+    removed conns from NSM client removed
                 
 
 

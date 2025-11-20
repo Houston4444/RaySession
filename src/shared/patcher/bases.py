@@ -34,8 +34,8 @@ class PortData:
     is_new = False
     '''used to prevent reconnections
     when a disconnection has not been saved and one new port append.'''
-    
-    
+
+
 class ProtoEngine:
     XML_TAG = 'RAY-PATCH'
     EXECUTABLE = 'ray-patch'
@@ -103,10 +103,6 @@ class EventHandler:
         while self._event_queue.qsize():
             yield self._event_queue.get()
 
-
-def b2str(src_bytes: bytes) -> str:
-    '''decode bytes to string'''
-    return str(src_bytes, encoding="utf-8")
 
 def debug_conn_str(conn: tuple[str, str]):
     return f"connection from '{conn[0]}' to '{conn[1]}'"
