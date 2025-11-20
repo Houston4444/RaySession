@@ -50,15 +50,17 @@ class ScenarioRules:
         self.absent_clients = list[str]()
         self.started_nsm_clients = list[str]()
         self.stopped_nsm_clients = list[str]()
-        
+        self.keywords = list[str]()
+
     def fill(self, map: CommentedMap) -> bool:
         '''fill the rules with yaml contents.
         Return `False` if rules are not valid'''
         lists_ = {'present_clients': self.present_clients,
                   'absent_clients': self.absent_clients,
                   'present_nsm_clients': self.started_nsm_clients,
-                  'absent_nsm_clients': self.stopped_nsm_clients}
-        
+                  'absent_nsm_clients': self.stopped_nsm_clients,
+                  'current_keyword': self.keywords}
+
         for key, list_ in lists_.items():
             seq = map.get(key)    
             valid = True
@@ -78,7 +80,7 @@ class ScenarioRules:
                 yaml_tools.log_wrong_type_in_map(
                     map, key, (list, str))
                 return False
-        
+
         return True
         
     def match(self, mng: 'ScenariosManager') -> bool:
@@ -96,6 +98,10 @@ class ScenarioRules:
             
         for nsm_client_id in self.stopped_nsm_clients:
             if nsm_client_id in mng.patcher.started_brothers:
+                return False
+        
+        if mng.current_keyword and self.keywords:
+            if mng.current_keyword not in self.keywords:
                 return False
         
         return True

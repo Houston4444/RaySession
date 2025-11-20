@@ -40,6 +40,10 @@ class ScenariosManager:
         self.playback_eqvs = equivalences.Equivalences()
         '''Equivalences (aliases with associated ports)
         for playback (input) ports'''
+        
+        self.current_keyword = ''
+        '''string used to switch scenarios if 'current_keyword'
+        is specified in their rules.'''
 
     @property
     def current(self) -> BaseScenario:

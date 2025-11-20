@@ -178,6 +178,7 @@
 /ray/patchbay/monitor/pretty_names_locked i
     1 if pretty names are locked by another patchbay daemon
 /ray/patchbay/monitor/views_changed
+/ray/patch_scenario/set_keyword s
 /ray/server/abort_copy
 /ray/server/abort_parrallel_copy
 /ray/server/abort_snapshot
