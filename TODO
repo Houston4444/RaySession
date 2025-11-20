@@ -81,13 +81,6 @@ scenarios:
     # voir comportement à l'arrêt (retour aux connections d'origine)
     scenario par client NSM
     scenario par clé str envoyée
-
-    # PROBLÈME session switch et persistance:
-    conns_rm_by_port : pendant le switch, remet des connexions qui ne doivent pas être connectées
-    soit:
-        - on exclue la possibilité du continous save
-            - mais on est obligé de l'avoir pour le changement de scenario
-                - du coup on ne pratique la continuité que sur les connexions contenant un port dans une redirection
                 
 
 
