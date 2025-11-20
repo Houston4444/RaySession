@@ -49,7 +49,10 @@ class PatchbayDaemonServer(BunServer):
         osp_args: tuple[str, str] = osp.args # type:ignore
         port_out_name, port_in_name = osp_args
         # connect here
-        self.pe.connect_ports(port_out_name, port_in_name)
+        success = self.pe.connect_ports(port_out_name, port_in_name)
+        if not success:
+            self.send(osp.src_addr, r.patchbay.CONNECT_FAILED,
+                      port_out_name, port_in_name)
     
     @bun_manage(r.patchbay.DISCONNECT, 'ss')
     def _ray_patchbay_disconnect(self, osp: OscPack):

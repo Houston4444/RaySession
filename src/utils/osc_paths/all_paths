@@ -133,8 +133,9 @@
 /ray/patchbay/activate_dsp_load
 /ray/patchbay/activate_transport
 /ray/patchbay/add_gui
-/ray/patchbay/connect
-/ray/patchbay/disconnect
+/ray/patchbay/connect ss
+/ray/patchbay/connect_failed ss
+/ray/patchbay/disconnect ss
 /ray/patchbay/group_custom_name
 /ray/patchbay/gui_disannounce
 /ray/patchbay/port_custom_name

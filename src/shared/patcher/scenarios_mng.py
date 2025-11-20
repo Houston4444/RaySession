@@ -696,30 +696,33 @@ class ScenariosManager:
 
         self.reload_scenario()
 
-    def choose(self, present_clients: set[str]) -> str:
+    def choose(self):
         '''choose the scenario because somes elements relative
         to scenarios rules may have change (present clients)'''
+        if self.patcher.pending_conns or self.patcher.pending_disconns:
+            return
+        
         num = 0
         for scenario in self.scenarios[1:]:
             num += 1
             if (isinstance(scenario, Scenario)
-                    and scenario.rules.match(present_clients)):
+                    and scenario.rules.match(self.patcher.present_clients)):
                 break
         else:
             num = 0
 
-        ret = ''
         if num != self.current_num:
             if num:
-                ret = (f'Switch to scenario {num}: '
+                self.patcher.nsm_server.send_message(
+                    2, f'Switch to scenario {num}: '
                     f'{self.scenarios[num].name}')
             elif self.current_num:
-                ret = (f'Close scenario {num}: '
+                self.patcher.nsm_server.send_message(
+                    2, f'Close scenario {num}: '
                     f'{self.scenarios[num].name}')
 
             self.load_scenario(num)
-        
-        return ret
+            self.patcher.may_make_connections()
 
     def reload_scenario(self):
         '''rewrite patcher.conns_to_connect and patcher.conns_to_disconnect

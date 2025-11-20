@@ -1,5 +1,6 @@
 
 # Imports from standard library
+import errno
 import logging
 from typing import Optional
 
@@ -102,14 +103,24 @@ class JackEngine(ProtoEngine):
         if self._client is None:
             return
 
+        success = False
+
         try:
             self._client.connect(port_out, port_in)
-        except jack.JackErrorCode:
+            success = True
+        except jack.JackErrorCode as e:
             # Connection already exists
-            pass
+            if e.code is not errno.EEXIST:
+                _logger.warning(
+                    f"Failed to connect '{port_out}' to '{port_in}'\n{str(e)}")
+            
         except BaseException as e:
             _logger.warning(
                 f"Failed to connect '{port_out}' to '{port_in}'\n{str(e)}")
+        
+        if not success:
+            self.ev_handler.add_event(
+                PatchEvent.CONNECTION_FAILED, port_out, port_in)
 
     def disconnect_ports(self, port_out: str, port_in: str):
         if self._client is None:

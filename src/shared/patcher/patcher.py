@@ -158,6 +158,8 @@ class Patcher:
                         self.connection_added(*args)
                     case PatchEvent.CONNECTION_REMOVED:
                         self.connection_removed(*args)
+                    case PatchEvent.CONNECTION_FAILED:
+                        self.connection_failed(*args)
                     case PatchEvent.SHUTDOWN:
                         jack_stopped = True
                         break
@@ -214,17 +216,11 @@ class Patcher:
 
     def client_added(self, client_name: str):
         self.present_clients.add(client_name)
-        ret = self.scenarios_mng.choose(self.present_clients)
-        if ret:
-            self.nsm_server.send_message(2, ret)
-            self.may_make_connections()
+        self.scenarios_mng.choose()
 
     def client_removed(self, client_name: str):
         self.present_clients.discard(client_name)
-        ret = self.scenarios_mng.choose(self.present_clients)
-        if ret:
-            self.nsm_server.send_message(2, ret)
-            self.may_make_connections()
+        self.scenarios_mng.choose()
 
     def port_added(self, port_name: str, port_mode: int, port_type: int):
         self.ports_creation[port_name] = time.time()
@@ -312,7 +308,6 @@ class Patcher:
         out_port_new = now - self.ports_creation.get(port_from, 0.0) < 0.250
         in_port_new = now - self.ports_creation.get(port_to, 0.0) < 0.250
 
-        
         conn = (port_from, port_to)
         self.connections.add(conn)
         self.conns_rm_by_port.discard(conn)
@@ -325,6 +320,7 @@ class Patcher:
                     if jport.name == port_from:
                         jport.is_new = True
                         break
+
             if in_port_new:
                 for jport in self.ports[PortMode.INPUT]:
                     if jport.name == port_to:
@@ -335,15 +331,28 @@ class Patcher:
 
         if not (port_from, port_to) in self.conns_to_connect:
             self.timer_dirty_check.start()
+        
+        self.scenarios_mng.choose()
  
     def connection_removed(self, port_str_a: str, port_str_b: str):
         conn = (port_str_a, port_str_b)
-        self.pending_disconns.discard(conn)
+        if conn not in self.pending_disconns:
+            # disconnections_time is used to recognize a connection
+            # removed by one of its ports.
+            # here, disconnect was asked by the patcher
+            # so, we can assume it is not removed by the port
+            self.disconnections_time[conn] = time.time()
         self.connections.discard(conn)
-        self.disconnections_time[conn] = time.time()
+        self.pending_disconns.discard(conn)
         self.scenarios_mng.recent_connections.add(conn)
+        self.scenarios_mng.choose()
 
         self.timer_dirty_check.start()
+
+    def connection_failed(self, port_from: str, port_to: str):
+        _logger.info(f'Connection failed from {port_from} to {port_to}')
+        self.pending_conns.discard((port_from, port_to))
+        self.scenarios_mng.choose()
 
     def _startup_conns_cache(
             self, conns: set[ConnectionStr],
@@ -458,7 +467,6 @@ class Patcher:
 
     def open_file(self, project_path: str, session_name: str,
                   full_client_id: str) -> tuple[Err, str]:
-        _logger.info(f'Open project "{project_path}"')
         
         switching = bool(self.project_path)
 
@@ -602,11 +610,7 @@ class Patcher:
             # re-declare all ports as new in case we are switching session
             self.scenarios_mng.open_default(switching)
             self.may_make_connections()
-            ret = self.scenarios_mng.choose(self.present_clients)
-            if ret:
-                self.nsm_server.send_message(2, ret)
-
-            self.may_make_connections()
+            self.scenarios_mng.choose()
 
         self.is_dirty = False
         self.timer_dirty_check.start()
