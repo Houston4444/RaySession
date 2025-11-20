@@ -1,21 +1,20 @@
 import logging
-from typing import Union, Callable
+from typing import Callable
 import os
 import signal
 import sys
-from pathlib import Path
 
 from osclib import Address
 from patcher.patcher import Patcher
 from patcher.bases import EventHandler
 from nsm_client import NsmServer
+from proc_name import set_proc_name
 
 from .engine import Engine
 from .check_internal import IS_INTERNAL
 
 
-is_internal = not Path(sys.argv[0]).name == 'ray-alsapatch'
-if is_internal:
+if IS_INTERNAL:
     _logger = logging.getLogger(__name__)
 else:
     _logger = logging.getLogger()
@@ -25,7 +24,8 @@ else:
     _logger.addHandler(_log_handler)
 
 def internal_prepare(
-        *func_args: str, nsm_url='') -> Union[int, tuple[Callable, Callable]]:
+        *func_args: str, nsm_url='') -> \
+            int | tuple[Callable, Callable, bool, None]:
     '''Prepare the client, return a int in case of error,
     otherwise the start_func and the stop_func.'''
     # set log level with exec arguments
@@ -36,7 +36,7 @@ def internal_prepare(
         read_level = 0
 
         for func_arg in func_args:
-            match func_args:
+            match func_arg:
                 case '-log'|'--log':
                     read_level = logging.INFO
                     continue
@@ -76,14 +76,15 @@ def internal_prepare(
     nsm_server = NsmServer(daemon_address, total_fake=IS_INTERNAL)
     patcher = Patcher(engine, nsm_server, _logger,
                       continuous_save=continuous_save)
-    return patcher.run_loop, patcher.stop
+    return patcher.run_loop, patcher.stop, True, None
 
 def run():
+    set_proc_name('ray-alsapatch')
     ret = internal_prepare(*sys.argv[1:], nsm_url=os.getenv('NSM_URL', ''))
     if isinstance(ret, int):
         sys.exit(ret)
 
-    start_func, stop_func = ret
+    start_func, stop_func, stop_with_jack, none = ret
 
     signal.signal(signal.SIGINT, stop_func)
     signal.signal(signal.SIGTERM, stop_func)

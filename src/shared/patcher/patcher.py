@@ -121,6 +121,7 @@ class Patcher:
         self.yaml_dict = CommentedMap()
 
     def run_loop(self, stop_with_jack=True):
+        _logger.debug(f'start the main loop {stop_with_jack=}')
         self.engine.fill_ports_and_connections(
             self.ports, self.connections)
         
