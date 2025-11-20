@@ -8,6 +8,7 @@ from patshared import PortMode
 
 from . import depattern
 from .bases import ConnectionStr, ConnectionPattern, PortData
+from . import yaml_tools
 
 if TYPE_CHECKING:
     from .scenarios_mng import ScenariosManager
@@ -47,71 +48,57 @@ class ScenarioRules:
     def __init__(self):
         self.present_clients = list[str]()
         self.absent_clients = list[str]()
+        self.started_nsm_clients = list[str]()
+        self.stopped_nsm_clients = list[str]()
         
-    def match(self, present_clients: set[str]) -> bool:
-        for sc_pres_cl in self.present_clients:
-            if sc_pres_cl not in present_clients:
+    def fill(self, map: CommentedMap) -> bool:
+        '''fill the rules with yaml contents.
+        Return `False` if rules are not valid'''
+        lists_ = {'present_clients': self.present_clients,
+                  'absent_clients': self.absent_clients,
+                  'present_nsm_clients': self.started_nsm_clients,
+                  'absent_nsm_clients': self.stopped_nsm_clients}
+        
+        for key, list_ in lists_.items():
+            seq = map.get(key)    
+            valid = True
+
+            if isinstance(seq, str):
+                list_.append(seq)
+            elif isinstance(seq, CommentedSeq):
+                for item in seq:
+                    if not isinstance(item, str):
+                        valid = False
+                        break
+                    list_.append(item)
+            elif seq is not None:
+                valid = False
+            
+            if not valid:
+                yaml_tools.log_wrong_type_in_map(
+                    map, key, (list, str))
                 return False
         
-        for sc_abst_cl in self.absent_clients:
-            if sc_abst_cl in present_clients:
-                return False
         return True
-    
-    def to_yaml_dict(self) -> dict:
-        out_d = {}
-        if self.present_clients:
-            out_d['present_clients'] = self.present_clients
-        if self.absent_clients:
-            out_d['absent_clients'] = self.absent_clients
-        return out_d
-
-    def update_yaml_map(self, yaml_map: CommentedMap):
-        if self.present_clients:
-            pres = yaml_map.get('present_clients')
-            if isinstance(pres, CommentedSeq):
-                if len(pres) != len(self.present_clients):
-                    _logger.warning(
-                        'Difference between number of present clients '
-                        f'in data ({len(self.present_clients)}) '
-                        f'and in yaml map ({len(pres)}) !!!')
-                    return
-
-                for i, present_client in enumerate(self.present_clients):
-                    pres[i] = present_client
-                    
-            elif isinstance(pres, str):
-                if len(self.present_clients) != 1:
-                    _logger.warning(
-                        f'yaml present_clients is a str but there is not '
-                        f'just 1 present client in data '
-                        f'({len(self.present_clients)}) !')
-                    return
-                
-                yaml_map['present_clients'] = self.present_clients[0]
         
-        if self.absent_clients:
-            abst = yaml_map.get('absent_clients')
-            if isinstance(abst, CommentedSeq):
-                if len(abst) != len(self.absent_clients):
-                    _logger.warning(
-                        'Difference between number of absent clients '
-                        f'in data ({len(self.absent_clients)}) '
-                        f'and in yaml map ({len(abst)}) !!!')
-                    return
-
-                for i, absent_client in enumerate(self.absent_clients):
-                    abst[i] = absent_client
-                    
-            elif isinstance(abst, str):
-                if len(self.absent_clients) != 1:
-                    _logger.warning(
-                        f'yaml present_clients is a str but there is not '
-                        f'just 1 present client in data '
-                        f'({len(self.absent_clients)}) !')
-                    return
-                
-                yaml_map['absent_clients'] = self.absent_clients[0]
+    def match(self, mng: 'ScenariosManager') -> bool:
+        for client_name in self.present_clients:
+            if client_name not in mng.patcher.present_clients:
+                return False
+        
+        for client_name in self.absent_clients:
+            if client_name in mng.patcher.present_clients:
+                return False
+            
+        for nsm_client_id in self.started_nsm_clients:
+            if nsm_client_id not in mng.patcher.started_brothers:
+                return False
+            
+        for nsm_client_id in self.stopped_nsm_clients:
+            if nsm_client_id in mng.patcher.started_brothers:
+                return False
+        
+        return True
 
 
 class BaseScenario:

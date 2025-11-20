@@ -64,7 +64,12 @@ class Patcher:
         self.terminate = TerminateState.NORMAL
         
         self.brothers_dict = dict[NsmClientName, JackClientBaseName]()
+        self.started_brothers = set[NsmClientName]()
+        '''NSM client ids of started brothers'''
+        
         self.present_clients = set[str]()
+        '''names of present JACK clients. Note that clients without port and
+        without metadatas can not be listed'''
 
         self.connections = set[ConnectionStr]()
         'current connections in the graph'
@@ -747,6 +752,11 @@ class Patcher:
         self.monitor_states_done = MonitorStates.UPDATING
         
         if client_id:
+            if is_started:
+                self.started_brothers.add(client_id)
+            else:
+                self.started_brothers.discard(client_id)
+            
             self.brothers_dict[client_id] = jack_name
             
             if (self.client_changing_id is not None
@@ -780,22 +790,30 @@ class Patcher:
             self.monitor_states_done = MonitorStates.DONE
 
     def monitor_client_event(self, client_id: str, event: str):
-        if event == 'removed':
-            if client_id in self.brothers_dict:
-                jack_client_name = self.brothers_dict.pop(client_id)
-            else:
-                return
-            
-            self.scenarios_mng.nsm_brother_removed(
-                client_id, jack_client_name)
+        match event:
+            case 'removed':
+                self.started_brothers.discard(client_id)
+                if client_id in self.brothers_dict:
+                    jack_client_name = self.brothers_dict.pop(client_id)
+                else:
+                    return
+                
+                self.scenarios_mng.nsm_brother_removed(
+                    client_id, jack_client_name)
 
-        elif event.startswith('id_changed_to:'):
-            if client_id in self.brothers_dict.keys():
-                self.client_changing_id = (
-                    client_id,
-                    self.brothers_dict[client_id],
-                    event.partition(':')[2])
-            self.nsm_server.send_monitor_reset()
+            case 'started'|'joined':
+                self.started_brothers.add(client_id)
+
+            case 'stopped_by_server'|'stopped_by_itself':
+                self.started_brothers.discard(client_id)
+
+            case s if s.startswith('id_changed_to:'):
+                if client_id in self.brothers_dict.keys():
+                    self.client_changing_id = (
+                        client_id,
+                        self.brothers_dict[client_id],
+                        event.partition(':')[2])
+                self.nsm_server.send_monitor_reset()
 
     def monitor_client_updated(
             self, client_id: str, jack_name: str, is_started: int):

@@ -82,41 +82,7 @@ class ScenariosManager:
                 continue
             
             sc_rules = ScenarioRules()
-            present_clients = rules.get('present_clients')
-
-            valid = True
-            if isinstance(present_clients, str):
-                sc_rules.present_clients.append(present_clients)
-            elif isinstance(present_clients, CommentedSeq):
-                for present_client in present_clients:
-                    if not isinstance(present_client, str):
-                        valid = False
-                        break
-                    sc_rules.present_clients.append(present_client)
-            elif present_clients is not None:
-                valid = False
-            
-            if not valid:
-                yaml_tools.log_wrong_type_in_map(
-                    rules, 'present_clients', (list, str))
-                continue
-            
-            absent_clients = rules.get('absent_clients')
-            valid = True
-            if isinstance(absent_clients, str):
-                sc_rules.absent_clients.append(absent_clients)
-            elif isinstance(absent_clients, CommentedSeq):
-                for absent_client in absent_clients:
-                    if not isinstance(absent_client, str):
-                        valid = False
-                        break
-                    sc_rules.absent_clients.append(absent_client)
-            elif absent_clients is not None:
-                valid = False
-
-            if not valid:
-                yaml_tools.log_wrong_type_in_map(
-                    rules, 'absent_clients', (list, str))
+            if not sc_rules.fill(rules):
                 continue
             
             scenario = Scenario(self, sc_rules, el)
@@ -719,7 +685,7 @@ class ScenariosManager:
         for scenario in self.scenarios[1:]:
             num += 1
             if (isinstance(scenario, Scenario)
-                    and scenario.rules.match(self.patcher.present_clients)):
+                    and scenario.rules.match(self)):
                 break
         else:
             num = 0
