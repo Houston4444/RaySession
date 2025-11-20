@@ -269,7 +269,8 @@ class Patcher:
         now = time.time()
         for conn, time_ in self.disconnections_time.items():
             if port_name in conn:
-                if now - time_ < 0.250:
+                if now - time_ < 0.100:
+                    _logger.debug(f'Connection removed by port: {conn}')
                     self.conns_rm_by_port.add(conn)
                     
                     # choose to reconnect this connection
