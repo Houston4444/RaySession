@@ -1186,6 +1186,10 @@ class Client(ServerSender, ray.ClientData):
         return ':monitor:' in self.capabilities
     
     @property
+    def can_patcher(self):
+        return ':patcher:' in self.capabilities 
+    
+    @property
     def can_switch(self):
         return ':switch:' in self.capabilities
     
@@ -1195,7 +1199,7 @@ class Client(ServerSender, ray.ClientData):
     
     @property
     def can_optional_gui(self):
-        return ':optional-gui' in self.capabilities
+        return ':optional-gui:' in self.capabilities
 
     def gui_msg_style(self) -> str:
         return "%s (%s)" % (self.name, self.client_id)
@@ -1881,54 +1885,46 @@ class Client(ServerSender, ray.ClientData):
         self.send_gui_client_properties()
 
     def get_properties_message(self):
-        message = """client_id:%s
-protocol:%s
-executable:%s
-environment:%s
-arguments:%s
-name:%s
-prefix_mode:%i
-custom_prefix:%s
-jack_naming:%i
-jack_name:%s
-desktop_file:%s
-label:%s
-icon:%s
-check_last_save:%i
-ignored_extensions:%s""" % (self.client_id,
-                            self.protocol.to_string(),
-                            self.executable_path,
-                            self.pre_env,
-                            self.arguments,
-                            self.name,
-                            self.prefix_mode.value,
-                            self.custom_prefix,
-                            self.jack_naming.value,
-                            self.get_jack_client_name(),
-                            self.desktop_file,
-                            self.label,
-                            self.icon,
-                            int(self.check_last_save),
-                            self.ignored_extensions)
+        message = (
+            f'client_id:{self.client_id}\n'
+            f'protocol:{self.protocol.to_string()}\n'
+            f'executable:{self.executable_path}\n'
+            f'environment:{self.pre_env}\n'
+            f'arguments:{self.arguments}\n'
+            f'name:{self.name}\n'
+            f'prefix_mode:{self.prefix_mode.value}\n'
+            f'custom_prefix:{self.custom_prefix}\n'
+            f'jack_naming:{self.jack_naming.value}\n'
+            f'jack_name:{self.get_jack_client_name()}\n'
+            f'desktop_file:{self.desktop_file}\n'
+            f'label:{self.label}\n'
+            f'icon:{self.icon}\n'
+            f'check_last_save:{int(self.check_last_save)}\n'
+            f'ignored_extensions:{self.ignored_extensions}'
+        )
 
-        if self.protocol in (ray.Protocol.NSM, ray.Protocol.INTERNAL):
-            message += "\ncapabilities:%s" % self.capabilities
-        elif self.protocol is ray.Protocol.RAY_HACK:
-            message += """\nconfig_file:%s
-save_sig:%i
-stop_sig:%i
-wait_win:%i
-no_save_level:%i""" % (self.ray_hack.config_file,
-                       self.ray_hack.save_sig,
-                       self.ray_hack.stop_sig,
-                       int(self.ray_hack.wait_win),
-                       self.ray_hack.no_save_level)
-        elif self.protocol is ray.Protocol.RAY_NET:
-            message += """\nnet_daemon_url:%s
-net_session_root:%s
-net_session_template:%s""" % (self.ray_net.daemon_url,
-                              self.ray_net.session_root,
-                              self.ray_net.session_template)
+        match self.protocol:
+            case ray.Protocol.NSM|ray.Protocol.INTERNAL:
+                message += f'\ncapabilities:{self.capabilities}'
+
+            case ray.Protocol.RAY_HACK:
+                message += (
+                    '\n'
+                    f'config_file:{self.ray_hack.config_file}\n'
+                    f'save_sig:{self.ray_hack.save_sig}\n'
+                    f'stop_sig:{self.ray_hack.stop_sig}\n'
+                    f'wait_win:{int(self.ray_hack.wait_win)}\n'
+                    f'no_save_level:{self.ray_hack.no_save_level}'
+                )
+
+            case ray.Protocol.RAY_NET:
+                message += (
+                    '\n'
+                    f'net_daemon_url:{self.ray_net.daemon_url}\n'
+                    f'net_session_root:{self.ray_net.session_root}\n'
+                    f'net_session_template:{self.ray_net.session_template}'
+                )
+
         return message
 
     def relevant_no_save_level(self) -> int:
@@ -2385,7 +2381,10 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         self.send_gui_client_properties()
         self.set_status(ray.ClientStatus.OPEN)
 
-        if ':monitor:' in self.capabilities:
+        if self.can_patcher:
+            self.send(self.addr, nsm.client.PATCH_KEYWORD,
+                      server.patcher_keyword)
+        if self.can_monitor:
             self.session.send_initial_monitor(self.addr)
         self.session.send_monitor_client_update(self)
 

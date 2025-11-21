@@ -59,7 +59,7 @@ class ScenarioRules:
                   'absent_clients': self.absent_clients,
                   'present_nsm_clients': self.started_nsm_clients,
                   'absent_nsm_clients': self.stopped_nsm_clients,
-                  'current_keyword': self.keywords}
+                  'keyword': self.keywords}
 
         for key, list_ in lists_.items():
             seq = map.get(key)    
@@ -100,10 +100,10 @@ class ScenarioRules:
             if nsm_client_id in mng.patcher.started_brothers:
                 return False
         
-        if mng.current_keyword and self.keywords:
+        if self.keywords:
             if mng.current_keyword not in self.keywords:
                 return False
-        
+
         return True
 
 

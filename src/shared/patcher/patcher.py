@@ -118,10 +118,13 @@ class Patcher:
             NsmCallback.MONITOR_CLIENT_STATE: self.monitor_client_state,
             NsmCallback.MONITOR_CLIENT_EVENT: self.monitor_client_event,
             NsmCallback.MONITOR_CLIENT_UPDATED: self.monitor_client_updated,
+            NsmCallback.PATCH_KEYWORD_CHANGED: self.patch_keyword_changed,
             NsmCallback.SESSION_IS_LOADED: self.session_is_loaded
         })
         self.nsm_server.announce(
-            self.engine.NSM_NAME, ':dirty:switch:monitor:', engine.EXECUTABLE)
+            self.engine.NSM_NAME,
+            ':dirty:switch:monitor:patcher:',
+            engine.EXECUTABLE)
         
         self.yaml_dict = CommentedMap()
 
@@ -814,10 +817,16 @@ class Patcher:
                         self.brothers_dict[client_id],
                         event.partition(':')[2])
                 self.nsm_server.send_monitor_reset()
+        
+        self.scenarios_mng.choose()
 
     def monitor_client_updated(
             self, client_id: str, jack_name: str, is_started: int):
         self.brothers_dict[client_id] = jack_name
+
+    def patch_keyword_changed(self, keyword: str):
+        self.scenarios_mng.current_keyword = keyword
+        self.scenarios_mng.choose()
 
     def session_is_loaded(self):
         ...

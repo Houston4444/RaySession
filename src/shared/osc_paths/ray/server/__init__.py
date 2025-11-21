@@ -57,3 +57,7 @@ auto_export_custom_names if it is set.'''
 AUTO_EXPORT_CUSTOM_NAMES = '/ray/server/auto_export_custom_names'
 '''Enable/disable auto-export of ports and clients custom names
 to JACK pretty-name metadatas (arg types: i)'''
+
+SET_PATCH_KEYWORD = '/ray/server/set_patch_keyword'
+'''set the patch keyword which could change the
+current patch scenario (arg types: s)'''

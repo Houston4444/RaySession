@@ -508,6 +508,11 @@ class OscServerThread(ClientCommunicating):
             RS.settings.value(
                 'daemon/internal_mode', 'FOLLOW_PROTOCOL', type=str))
 
+        self.patcher_keyword = ''
+        '''This keyword can be used by patchers (ray-jackpatch, ray-alsapatch)
+        to switch scenario depending on their rules.
+        User can set it with `ray_control set_patch_keyword KEYWORD`.'''
+
         self.client_templates_database = {
             'factory': [], 'user': []}
 
@@ -1009,6 +1014,16 @@ class OscServerThread(ClientCommunicating):
         # start patchbay daemon in main thread if it is not started yet
         return bool(
             patchbay_dmn_mng.state() is not patchbay_dmn_mng.State.LAUNCHED)
+
+    @directos(r.server.SET_PATCH_KEYWORD, 's')
+    def _srv_set_patch_keyword(self, osp: OscPack):
+        keyword: str = osp.args[0] # type:ignore
+        self.patcher_keyword = keyword
+        for client in self.session.clients:
+            if client.nsm_active and client.can_patcher:
+                self.send(client.addr, nsm.client.PATCH_KEYWORD, keyword)
+        
+        self.send(*osp.reply(), 'keyword sent')
 
     @validator(r.server.patchbay.SAVE_GROUP_POSITION,
                'i' + GroupPos.ARG_TYPES)

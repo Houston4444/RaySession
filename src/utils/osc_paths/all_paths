@@ -16,6 +16,7 @@
 /nsm/client/save
 /nsm/client/session_is_loaded
 /nsm/client/show_optional_gui
+/nsm/client/patch_keyword s
 /nsm/server/abort
 /nsm/server/add
 /nsm/server/announce
@@ -178,7 +179,6 @@
 /ray/patchbay/monitor/pretty_names_locked i
     1 if pretty names are locked by another patchbay daemon
 /ray/patchbay/monitor/views_changed
-/ray/patch_scenario/set_keyword s
 /ray/server/abort_copy
 /ray/server/abort_parrallel_copy
 /ray/server/abort_snapshot
@@ -266,6 +266,9 @@
 /ray/session/show_notes
 /ray/session/skip_wait_user
 /ray/session/take_snapshot
+/ray/server/set_patch_keyword s
+    set the patch keyword which could change the
+    current patch scenario
 /ray/trashed_client/remove_definitely
 /ray/trashed_client/remove_keep_files
 /ray/trashed_client/restore

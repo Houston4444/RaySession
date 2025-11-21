@@ -80,7 +80,8 @@ SERVER_OPERATIONS = (
     'auto_export_custom_names',
     'export_custom_names',
     'import_pretty_names',
-    'clear_pretty_names')
+    'clear_pretty_names',
+    'set_patch_keyword')
 
 
 def signal_handler(sig, frame):

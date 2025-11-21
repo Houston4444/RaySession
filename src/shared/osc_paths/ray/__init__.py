@@ -8,7 +8,6 @@ from . import favorites
 from . import gui
 from . import monitor
 from . import net_daemon
-from . import patch_scenario
 from . import patchbay
 from . import server
 from . import session
