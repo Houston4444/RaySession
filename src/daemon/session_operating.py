@@ -1801,7 +1801,7 @@ for better organization.""")
             self.name, self.name,
             client.prefix, tmp_client.prefix,
             client.client_id, tmp_client.client_id,
-            client.get_links_dirname(), tmp_client.get_links_dirname())
+            client.links_dirname, tmp_client.links_dirname)
 
         ex_jack_name = client.jack_client_name
         ex_client_id = client.client_id

@@ -248,7 +248,7 @@ def adjust_files_after_copy(
     new_session_name = Path(new_session_full_name).name
     new_client_id = client.client_id
     old_client_id = client.client_id
-    new_client_links_dir = client.get_links_dirname()
+    new_client_links_dir = client.links_dirname
     old_client_links_dir = new_client_links_dir
 
     X_SESSION_X = "XXX_SESSION_NAME_XXX"

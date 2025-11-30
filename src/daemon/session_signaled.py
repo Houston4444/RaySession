@@ -1657,7 +1657,7 @@ class SignaledSession(OperatingSession):
     @client_action(r.client.LIST_FILES, 's')
     def _ray_client_list_files(self, osp: OscPack, client:Client):
         self.send(*osp.reply(),
-                  *[str(c) for c in client.get_project_files()])
+                  *[str(c) for c in client.project_files])
         self.send(*osp.reply())
 
     @client_action(r.client.GET_PID, 's')
@@ -1823,7 +1823,7 @@ class SignaledSession(OperatingSession):
             self.name, self.name,
             client.prefix, tmp_client.prefix,
             client.client_id, tmp_client.client_id,
-            client.get_links_dirname(), tmp_client.get_links_dirname())
+            client.links_dirname, tmp_client.links_dirname)
 
         ex_jack_name = client.jack_client_name
         ex_client_id = client.client_id
@@ -1928,7 +1928,7 @@ class SignaledSession(OperatingSession):
         client.set_status(ray.ClientStatus.REMOVED)
 
         prefix = client.prefix
-        links_dir = client.get_links_dirname()
+        links_dir = client.links_dirname
 
         if self.path is None:
             raise NoSessionPath
@@ -2000,7 +2000,7 @@ class SignaledSession(OperatingSession):
 
         self.send_gui(rg.trash.REMOVE, client.client_id)
 
-        for file_path in client.get_project_files():
+        for file_path in client.project_files:
             try:
                 subprocess.run(['rm', '-R', file_path])
             except:

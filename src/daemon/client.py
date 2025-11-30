@@ -560,13 +560,11 @@ class Client(ServerSender, ray.ClientData):
         self._send_error_to_caller(OscSrc.SAVE_TP, ray.Err.COPY_ABORTED,
             _translate('GUIMSG', 'Copy has been aborted !'))
 
-    def get_links_dirname(self) -> str:
+    @property
+    def links_dirname(self) -> str:
         '''return the dir path used by carla for links such as
         audio convolutions or soundfonts'''
-        links_dir = self.jack_client_name
-        for c in ('-', '.'):
-            links_dir = links_dir.replace(c, '_')
-        return links_dir
+        return self.jack_client_name.replace('-', '_').replace('.', '_')
 
     def send_to_self_address(self, *args):
         if self.addr is None:
@@ -1342,30 +1340,31 @@ class Client(ServerSender, ray.ClientData):
         scripter_pending_command = self.scripter.pending_command()
 
         if exit_code:
-            error_text = "script %s ended with an error code" \
-                            % self.scripter.get_path()
-            if scripter_pending_command is ray.Command.SAVE:
-                self._send_error_to_caller(OscSrc.SAVE, - exit_code,
-                                        error_text)
-            elif scripter_pending_command is ray.Command.START:
-                self._send_error_to_caller(OscSrc.START, - exit_code,
-                                        error_text)
-            elif scripter_pending_command is ray.Command.STOP:
-                self._send_error_to_caller(OscSrc.STOP, - exit_code,
-                                        error_text)
+            error_text = \
+                f'script {self.scripter.get_path()} ended with an error code'
+            match scripter_pending_command:
+                case ray.Command.SAVE:
+                    self._send_error_to_caller(
+                        OscSrc.SAVE, - exit_code, error_text)
+                case ray.Command.START:
+                    self._send_error_to_caller(
+                        OscSrc.START, - exit_code, error_text)
+                case ray.Command.STOP:
+                    self._send_error_to_caller(
+                        OscSrc.STOP, - exit_code, error_text)
         else:
-            if scripter_pending_command is ray.Command.SAVE:
-                self._send_reply_to_caller(OscSrc.SAVE, 'saved')
-            elif scripter_pending_command is ray.Command.START:
-                self._send_reply_to_caller(OscSrc.START, 'started')
-            elif scripter_pending_command is ray.Command.STOP:
-                self._send_reply_to_caller(OscSrc.STOP, 'stopped')
+            match scripter_pending_command:
+                case ray.Command.SAVE:
+                    self._send_reply_to_caller(OscSrc.SAVE, 'saved')
+                case ray.Command.START:
+                    self._send_reply_to_caller(OscSrc.START, 'started')
+                case ray.Command.STOP:
+                    self._send_reply_to_caller(OscSrc.STOP, 'stopped')
 
         if scripter_pending_command is self.pending_command:
             self.pending_command = ray.Command.NONE
 
-        if (scripter_pending_command is ray.Command.STOP
-                and self.is_running):
+        if scripter_pending_command is ray.Command.STOP and self.is_running:
             # if stop script ends with a not stopped client
             # We must stop it, else it would prevent session close
             self.stop()
@@ -1598,81 +1597,84 @@ class Client(ServerSender, ray.ClientData):
         for line in message.splitlines():
             prop, colon, value = line.partition(':')
 
-            if prop == 'client_id':
-                # do not change client_id !!!
-                continue
-            elif prop == 'executable':
-                self.executable_path = value
-            elif prop == 'environment':
-                self.pre_env = value
-            elif prop == 'arguments':
-                self.arguments = value
-            elif prop == 'name':
-                # do not change client name,
-                # It will be re-sent by client itself
-                continue
-            elif prop == 'prefix_mode':
-                if value.isdigit():
-                    self.prefix_mode = ray.PrefixMode(int(value))
-            elif prop == 'custom_prefix':
-                self.custom_prefix = value
-            elif prop == 'jack_naming':
-                if value.isdigit():
-                    self.jack_naming = ray.JackNaming(int(value))
-            elif prop == 'jack_name':
-                # do not change jack name
-                # only allow to change jack_naming
-                continue
-            elif prop == 'label':
-                self.label = value
-            elif prop == 'desktop_file':
-                self.desktop_file = value
-            elif prop == 'description':
-                # description could contains many lines
-                continue
-            elif prop == 'icon':
-                self.icon = value
-            elif prop == 'capabilities':
-                # do not change capabilities, no sense !
-                continue
-            elif prop == 'check_last_save':
-                if value.isdigit():
-                    self.check_last_save = bool(int(value))
-            elif prop == 'ignored_extensions':
-                self.ignored_extensions = value
-            elif prop == 'protocol':
-                # do not change protocol value
-                continue
+            match prop:
+                case 'client_id':
+                    # do not change client_id !!!
+                    continue
+                case 'executable':
+                    self.executable_path = value
+                case 'environment':
+                    self.pre_env = value
+                case 'arguments':
+                    self.arguments = value
+                case 'name':
+                    # do not change client name,
+                    # It will be re-sent by client itself
+                    continue
+                case 'prefix_mode':
+                    if value.isdigit():
+                        self.prefix_mode = ray.PrefixMode(int(value))
+                case 'custom_prefix':
+                    self.custom_prefix = value
+                case 'jack_naming':
+                    if value.isdigit():
+                        self.jack_naming = ray.JackNaming(int(value))
+                case 'jack_name':
+                    # do not change jack name
+                    # only allow to change jack_naming
+                    continue
+                case 'label':
+                    self.label = value
+                case 'desktop_file':
+                    self.desktop_file = value
+                case 'description':
+                    # description could contains many lines
+                    continue
+                case 'icon':
+                    self.icon = value
+                case 'capabilities':
+                    # do not change capabilities, no sense !
+                    continue
+                case 'check_last_save':
+                    if value.isdigit():
+                        self.check_last_save = bool(int(value))
+                case 'ignored_extensions':
+                    self.ignored_extensions = value
+                case 'protocol':
+                    # do not change protocol value
+                    continue
 
             if self.is_ray_hack:
-                if prop == 'config_file':
-                    self.ray_hack.config_file = value
-                elif prop == 'save_sig':
-                    try:
-                        sig = signal.Signals(int(value))
+                match prop:
+                    case 'config_file':
+                        self.ray_hack.config_file = value
+                    case 'save_sig':
+                        try:
+                            sig = signal.Signals(int(value))
+                        except ValueError:
+                            continue
                         self.ray_hack.save_sig = int(value)
-                    except:
-                        continue
-                elif prop == 'stop_sig':
-                    try:
-                        sig = signal.Signals(int(value))
+                    case 'stop_sig':
+                        try:
+                            sig = signal.Signals(int(value))
+                        except ValueError:
+                            continue
                         self.ray_hack.stop_sig = int(value)
-                    except:
-                        continue
-                elif prop == 'wait_win':
-                    self.ray_hack.wait_win = bool(
-                        value.lower() in ('1', 'true'))
-                elif prop == 'no_save_level':
-                    if value.isdigit() and 0 <= int(value) <= 2:
-                        self.ray_hack.no_save_level = int(value)
+                    case 'wait_win':
+                        self.ray_hack.wait_win = bool(
+                            value.lower() in ('1', 'true'))
+                    case 'no_save_level':
+                        if value.isdigit() and 0 <= int(value) <= 2:
+                            self.ray_hack.no_save_level = int(value)
 
             elif self.is_ray_net:
-                if prop == 'net_daemon_url':
-                    self.ray_net.daemon_url = value
-                elif prop == 'net_session_root':
-                    self.ray_net.session_root = value
-                elif prop == 'net_session_template':
-                    self.ray_net.session_template = value
+                match prop:
+                    case 'net_daemon_url':
+                        self.ray_net.daemon_url = value
+                    case 'net_session_root':
+                        self.ray_net.session_root = value
+                    case 'net_session_template':
+                        self.ray_net.session_template = value
 
         self.send_gui_client_properties()
 
@@ -1727,16 +1729,15 @@ class Client(ServerSender, ray.ClientData):
 
         return 0
 
-    def get_project_files(self) -> list[Path]:
-        client_files = list[Path]()
-        try:
-            project_path = self.project_path
-        except:
-            return []
-
+    @property
+    def project_files(self) -> list[Path]:
+        '''list of client project files or directories currently existing'''
         spath = self.session.path
         if spath is None:
             return []
+
+        client_files = list[Path]()
+        project_path = self.project_path
 
         if project_path.exists():
             client_files.append(project_path)
@@ -1754,7 +1755,7 @@ class Client(ServerSender, ray.ClientData):
         if scripts_dir.exists():
             client_files.append(scripts_dir)
 
-        full_links_dir = spath / self.get_links_dirname()
+        full_links_dir = spath / self.links_dirname
         if full_links_dir.exists():
             client_files.append(full_links_dir)
 
@@ -1861,9 +1862,6 @@ class Client(ServerSender, ray.ClientData):
         if osp is not None:
             self._osc_srcs[OscSrc.SAVE_TP] = osp
 
-        #copy files
-        client_files = self.get_project_files()
-
         template_dir = TemplateRoots.user_clients / template_name
         if template_dir.exists():
             try:
@@ -1890,6 +1888,9 @@ class Client(ServerSender, ray.ClientData):
                           template_name,
                           net_session_root)
 
+        # copy files
+        client_files = self.project_files
+
         if client_files:
             self.set_status(ray.ClientStatus.COPY)
             self.session.file_copier.start_client_copy(
@@ -1910,9 +1911,9 @@ class Client(ServerSender, ray.ClientData):
         spath = self.session.path
         
         if spath is None:
-            self.send(src_addr, osc_paths.ERROR, osc_path, ray.Err.NO_SESSION_OPEN,
-                      "impossible to eat other session client, "
-                      "no session open")
+            self.send(
+                src_addr, osc_paths.ERROR, osc_path, ray.Err.NO_SESSION_OPEN,
+                "impossible to eat other session client, no session open")
             return
         
         while Path(spath / tmp_basedir).exists():
@@ -1932,32 +1933,34 @@ class Client(ServerSender, ray.ClientData):
         
         self.session.file_copier.start_client_copy(
             self.client_id,
-            client.get_project_files(),
+            client.project_files,
             tmp_work_dir,
             self.eat_other_session_client_step_1,
             self.eat_other_session_client_aborted,
             [src_addr, osc_path, client, tmp_work_dir])
 
-    def eat_other_session_client_step_1(self, src_addr: Address, osc_path: str,
-                                        client: 'Client', tmp_work_dir: str):
+    def eat_other_session_client_step_1(
+            self, src_addr: Address, osc_path: str,
+            client: 'Client', tmp_work_dir: str):
         self._rename_files(
             Path(tmp_work_dir), client.session.name, self.session.name,
             client.prefix, self.prefix,
             client.client_id, self.client_id,
-            client.get_links_dirname(), self.get_links_dirname())
+            client.links_dirname, self.links_dirname)
 
         has_move_errors = False
 
         for file_path in os.listdir(tmp_work_dir):
             try:
-                os.rename("%s/%s" % (tmp_work_dir, file_path),
-                          "%s/%s" % (self.session.path, file_path))
+                os.rename(f'{tmp_work_dir}/{file_path}',
+                          f'{self.session.path}/{file_path}')
             except:
                 self.message(
                     _translate(
                         'client',
                         'failed to move %s/%s to %s/%s, sorry.')
-                        % (tmp_work_dir, file_path, self.session.path, file_path))
+                        % (tmp_work_dir, file_path,
+                           self.session.path, file_path))
                 has_move_errors = True
         
         if not has_move_errors:
@@ -1965,8 +1968,8 @@ class Client(ServerSender, ray.ClientData):
                 shutil.rmtree(tmp_work_dir)
             except:
                 self.message(
-                    'client'
-                    'fail to remove temp directory %s. sorry.' % tmp_work_dir)
+                    f'failed to remove temp client directory '
+                    f'{tmp_work_dir}. sorry.')
 
         self.send(src_addr, osc_paths.REPLY, osc_path,
                   "Client copied from another session")
@@ -1999,7 +2002,7 @@ class Client(ServerSender, ray.ClientData):
         elif prefix_mode is ray.PrefixMode.CUSTOM:
             new_prefix = custom_prefix
 
-        links_dir = self.get_links_dirname()
+        links_dir = self.links_dirname
 
         if self.session.path is None:
             _logger.warning(

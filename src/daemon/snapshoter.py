@@ -19,7 +19,7 @@ import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 
 # Local imports
-from daemon_tools import Terminal
+from daemon_tools import NoSessionPath, Terminal
 
 if TYPE_CHECKING:
     from session import Session
@@ -141,6 +141,8 @@ class Snapshoter(QObject):
         return first_args + list(args)
 
     def _get_history_full_path(self) -> Path:
+        if self.session.path is None:
+            raise NoSessionPath
         return self.session.path / self._gitdir / self._history_path
     
     def _get_history_xml_root(self) -> Optional[Element]:
@@ -205,7 +207,7 @@ class Snapshoter(QObject):
             client.write_xml_properties(c)
             c.set_str('client_id', client.client_id)
             
-            for client_file_path in client.get_project_files():
+            for client_file_path in client.project_files:
                 base_path = str(
                     client_file_path.relative_to(self.session.path))
                 file_xml = ET.SubElement(client_el, 'file')
