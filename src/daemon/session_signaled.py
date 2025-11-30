@@ -1825,9 +1825,9 @@ class SignaledSession(OperatingSession):
             client.client_id, tmp_client.client_id,
             client.get_links_dirname(), tmp_client.get_links_dirname())
 
-        ex_jack_name = client.get_jack_client_name()
+        ex_jack_name = client.jack_client_name
         ex_client_id = client.client_id
-        new_jack_name = tmp_client.get_jack_client_name()
+        new_jack_name = tmp_client.jack_client_name
 
         client.client_id = new_client_id
         client.prefix_mode = prefix_mode
@@ -1924,7 +1924,7 @@ class SignaledSession(OperatingSession):
             return
         
         ex_client_id = client.client_id
-        ex_jack_name = client.get_jack_client_name()
+        ex_jack_name = client.jack_client_name
         client.set_status(ray.ClientStatus.REMOVED)
 
         prefix = client.prefix
@@ -1942,7 +1942,7 @@ class SignaledSession(OperatingSession):
 
         client.client_id = new_client_id
         self._update_forbidden_ids_set()
-        new_jack_name = client.get_jack_client_name()
+        new_jack_name = client.jack_client_name
 
         if new_jack_name != ex_jack_name:
             rewrite_jack_patch_files(

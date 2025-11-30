@@ -502,7 +502,7 @@ class Session(ServerSender):
                 monitor_addr,
                 mon.CLIENT_STATE,
                 client.client_id,
-                client.get_jack_client_name(),
+                client.jack_client_name(),
                 int(client.is_running()))
             n_clients += 1
 
@@ -511,7 +511,7 @@ class Session(ServerSender):
                 monitor_addr,
                 mon.CLIENT_STATE,
                 client.client_id,
-                client.get_jack_client_name(),
+                client.jack_client_name(),
                 0)            
             n_clients += 1
 
@@ -525,7 +525,7 @@ class Session(ServerSender):
                 other_client.send_to_self_address(
                     nsm.client.monitor.CLIENT_UPDATED,
                     client.client_id,
-                    client.get_jack_client_name(),
+                    client.jack_client_name(),
                     int(client.is_running()))
         
         server = self.get_server()
@@ -535,7 +535,7 @@ class Session(ServerSender):
                     monitor_addr,
                     r.monitor.CLIENT_UPDATED,
                     client.client_id,
-                    client.get_jack_client_name(),
+                    client.jack_client_name(),
                     int(client.is_running()))
 
     def send_monitor_event(self, event: str, client_id=''):

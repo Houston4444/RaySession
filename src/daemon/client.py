@@ -563,7 +563,7 @@ class Client(ServerSender, ray.ClientData):
     def get_links_dirname(self) -> str:
         '''return the dir path used by carla for links such as
         audio convolutions or soundfonts'''
-        links_dir = self.get_jack_client_name()
+        links_dir = self.jack_client_name
         for c in ('-', '.'):
             links_dir = links_dir.replace(c, '_')
         return links_dir
@@ -579,7 +579,8 @@ class Client(ServerSender, ray.ClientData):
             return
         self.session.message(message)
 
-    def get_jack_client_name(self) -> str:
+    @property
+    def jack_client_name(self) -> str:
         if self.is_ray_net:
             # ray-net will use jack_client_name for template
             # quite dirty, but this is the easier way
@@ -1164,7 +1165,7 @@ class Client(ServerSender, ray.ClientData):
             env = os.environ.copy()
             env['RAY_SESSION_NAME'] = self.session.name
             env['RAY_CLIENT_ID'] = self.client_id
-            env['RAY_JACK_CLIENT_NAME'] = self.get_jack_client_name()
+            env['RAY_JACK_CLIENT_NAME'] = self.jack_client_name
             env['CONFIG_FILE'] = expand_vars(env, self.ray_hack.config_file)
             env['PWD'] = str(self.get_project_path())
             
@@ -1199,8 +1200,6 @@ class Client(ServerSender, ray.ClientData):
             self._process.setWorkingDirectory(str(ray_hack_pwd))
             process_env.insert('RAY_SESSION_NAME', self.session.name)
             process_env.insert('RAY_CLIENT_ID', self.client_id)
-
-            self.jack_client_name = self.get_jack_client_name()
             self.send_gui_client_properties()
 
         self.launched_in_terminal = self.in_terminal
@@ -1533,7 +1532,6 @@ class Client(ServerSender, ray.ClientData):
         self.gui_has_been_visible = self.gui_visible
 
     def switch(self):
-        self.jack_client_name = self.get_jack_client_name()
         client_project_path = self.get_project_path()
         self.send_gui_client_properties()
         self.message(
@@ -1685,7 +1683,7 @@ class Client(ServerSender, ray.ClientData):
             f'prefix_mode:{self.prefix_mode.value}\n'
             f'custom_prefix:{self.custom_prefix}\n'
             f'jack_naming:{self.jack_naming.value}\n'
-            f'jack_name:{self.get_jack_client_name()}\n'
+            f'jack_name:{self.jack_client_name}\n'
             f'desktop_file:{self.desktop_file}\n'
             f'label:{self.label}\n'
             f'icon:{self.icon}\n'
@@ -2163,11 +2161,8 @@ class Client(ServerSender, ray.ClientData):
                   server_capabilities)
 
         client_project_path = str(self.get_project_path())
-        self.jack_client_name = self.get_jack_client_name()
-
         if self.is_ray_net:
             client_project_path = self.session.short_path_name
-            self.jack_client_name = self.ray_net.session_template
 
         self.send_gui_client_properties()
         self.set_status(ray.ClientStatus.OPEN)
