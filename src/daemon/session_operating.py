@@ -315,7 +315,7 @@ class OperatingSession(Session):
                 elif client.status is not ray.ClientStatus.STOPPED:
                     clients_to_finish.append(client)
 
-            elif (client.is_running()
+            elif (client.is_running
                     and client.launched_in_terminal
                     and client.status is not ray.ClientStatus.LOSE):
                 has_alives = True
@@ -331,7 +331,7 @@ class OperatingSession(Session):
 
     def _check_windows_appears(self):
         for client in self.clients:
-            if client.is_running() and client.ray_hack_waiting_win:
+            if client.is_running and client.ray_hack_waiting_win:
                 break
         else:
             self.window_waiter.stop()
@@ -635,14 +635,14 @@ class OperatingSession(Session):
         if self.has_server_option(ray.Option.HAS_WMCTRL):
             has_nosave_clients = False
             for client in self.clients:
-                if client.is_running() and client.relevant_no_save_level() == 2:
+                if client.is_running and client.relevant_no_save_level() == 2:
                     has_nosave_clients = True
                     break
 
             if has_nosave_clients:
                 self.desktops_memory.set_active_window_list()
                 for client in self.clients:
-                    if client.is_running() and client.relevant_no_save_level() == 2:
+                    if client.is_running and client.relevant_no_save_level() == 2:
                         self.expected_clients.append(client)
                         self.desktops_memory.find_and_close(client.pid)
 
@@ -661,7 +661,7 @@ class OperatingSession(Session):
         has_nosave_clients = False
 
         for client in self.clients:
-            if (client.is_running() and client.relevant_no_save_level()):
+            if (client.is_running and client.relevant_no_save_level()):
                 self.expected_clients.append(client)
                 has_nosave_clients = True
 
@@ -706,7 +706,7 @@ class OperatingSession(Session):
             if client not in keep_client_list:
                 # client is not capable of switch, or is not wanted
                 # in the new session
-                if client.is_running():
+                if client.is_running:
                     self.expected_clients.append(client)
                 else:
                     byebye_client_list.append(client)
@@ -1393,7 +1393,7 @@ for better organization.""")
 
         for client in self.clients.__reversed__():
             if (open_off
-                    or not client.is_running()
+                    or not client.is_running
                     or (client.is_reply_pending() and not client.is_dumb_client())
                     or client.switch_state is not ray.SwitchState.RESERVED):
                 self.clients_to_quit.append(client)
@@ -1430,7 +1430,7 @@ for better organization.""")
         # remove stopped clients
         rm_indexes = list[int]()
         for i, client in enumerate(self.clients):
-            if not client.is_running():
+            if not client.is_running:
                 rm_indexes.append(i)
 
         rm_indexes.reverse()
@@ -1512,7 +1512,7 @@ for better organization.""")
                 self.send_initial_monitor(monitor_addr, False)
                 
             for client in self.clients:
-                if client.addr and client.is_running() and client.can_monitor:
+                if client.addr and client.is_running and client.can_monitor:
                     self.send_initial_monitor(client.addr, True)
 
         self._no_future()
@@ -1550,7 +1550,7 @@ for better organization.""")
         for client in self.clients:
             if client.nsm_active and client.is_reply_pending():
                 self.expected_clients.append(client)
-            elif client.is_running() and client.is_dumb_client():
+            elif client.is_running and client.is_dumb_client():
                 client.set_status(ray.ClientStatus.NOOP)
 
         if self.expected_clients:
@@ -1593,7 +1593,7 @@ for better organization.""")
         # display optional GUIs we want to be shown now
         if self.has_server_option(ray.Option.GUI_STATES):
             for client in self.clients:
-                if (client.is_running()
+                if (client.is_running
                         and client.can_optional_gui
                         and not client.start_gui_hidden
                         and not client.gui_has_been_visible):
@@ -1774,7 +1774,7 @@ for better organization.""")
     def save_client_and_patchers(self, client: Client):
         for oth_client in self.clients:
             if (oth_client is client or 
-                    (oth_client.is_running()
+                    (oth_client.is_running
                         and oth_client.can_monitor
                         and oth_client.executable_path.startswith('ray-')
                         and oth_client.executable_path.endswith('patch'))):

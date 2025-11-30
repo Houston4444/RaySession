@@ -81,7 +81,7 @@ class Session(ServerSender):
             return
 
         for client in self.clients:
-            if client.is_running():
+            if client.is_running:
                 return
 
         self.is_renameable = True
@@ -296,7 +296,7 @@ class Session(ServerSender):
             c.set_str('id', client.client_id)
             
             launched = bool(
-                client.is_running()
+                client.is_running
                 or (client.auto_start
                     and not client.has_been_started))
             c.set_bool('launched', launched)            
@@ -500,8 +500,8 @@ class Session(ServerSender):
                 monitor_addr,
                 mon.CLIENT_STATE,
                 client.client_id,
-                client.jack_client_name(),
-                int(client.is_running()))
+                client.jack_client_name,
+                int(client.is_running))
             n_clients += 1
 
         for client in self.trashed_clients:
@@ -509,7 +509,7 @@ class Session(ServerSender):
                 monitor_addr,
                 mon.CLIENT_STATE,
                 client.client_id,
-                client.jack_client_name(),
+                client.jack_client_name,
                 0)            
             n_clients += 1
 
@@ -523,8 +523,8 @@ class Session(ServerSender):
                 other_client.send_to_self_address(
                     nsm.client.monitor.CLIENT_UPDATED,
                     client.client_id,
-                    client.jack_client_name(),
-                    int(client.is_running()))
+                    client.jack_client_name,
+                    int(client.is_running))
         
         server = self.get_server()
         if server is not None:
@@ -533,8 +533,8 @@ class Session(ServerSender):
                     monitor_addr,
                     r.monitor.CLIENT_UPDATED,
                     client.client_id,
-                    client.jack_client_name(),
-                    int(client.is_running()))
+                    client.jack_client_name,
+                    int(client.is_running))
 
     def send_monitor_event(self, event: str, client_id=''):
         '''send an event message to clients capable of ":monitor:"'''

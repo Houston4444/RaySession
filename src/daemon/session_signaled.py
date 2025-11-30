@@ -254,11 +254,11 @@ class SignaledSession(OperatingSession):
             for client in self.clients:
                 if (client.pid == pid
                         and not client.nsm_active
-                        and client.is_running()):
+                        and client.is_running):
                     return client
                 
             for client in self.clients:
-                if (not client.nsm_active and client.is_running()
+                if (not client.nsm_active and client.is_running
                         and is_pid_child_of(pid, client.pid)):
                     return client
 
@@ -1112,7 +1112,7 @@ class SignaledSession(OperatingSession):
                     return
 
         for client in self.clients:
-            if client.is_running():
+            if client.is_running:
                 self.send_gui_message(
                     _translate('GUIMSG',
                                'Stop all clients before rename session !'))
@@ -1455,7 +1455,7 @@ class SignaledSession(OperatingSession):
         client_id_list = list[str]()
 
         for client in self.clients:
-            if ((f_started < 0 or f_started == client.is_running())
+            if ((f_started < 0 or f_started == client.is_running)
                 and (f_active < 0 or f_active == client.nsm_active)
                 and (f_auto_start < 0 or f_auto_start == client.auto_start)
                 and (f_no_save_level < 0
@@ -1524,7 +1524,7 @@ class SignaledSession(OperatingSession):
 
     @client_action(r.client.TRASH, 's')
     def _ray_client_trash(self, osp: OscPack, client:Client):
-        if client.is_running():
+        if client.is_running:
             self.send(*osp.error(), ray.Err.OPERATION_PENDING,
                         "Stop client before to trash it !")
             return
@@ -1545,7 +1545,7 @@ class SignaledSession(OperatingSession):
 
     @client_action(r.client.RESUME, 's')
     def _ray_client_resume(self, osp: OscPack, client:Client):
-        if client.is_running():
+        if client.is_running:
             self.send_gui_message(
                 _translate('GUIMSG', 'client %s is already running.')
                     % client.gui_msg_style)
@@ -1662,7 +1662,7 @@ class SignaledSession(OperatingSession):
 
     @client_action(r.client.GET_PID, 's')
     def _ray_client_get_pid(self, osp: OscPack, client:Client):
-        if client.is_running():
+        if client.is_running:
             self.send(*osp.reply(), str(client.pid))
             self.send(*osp.reply())
         else:
@@ -1681,7 +1681,7 @@ class SignaledSession(OperatingSession):
 
         for client in self.clients:
             if client.client_id == client_id:
-                if client.is_running():
+                if client.is_running:
                     self.steps_order = [
                         self.save,
                         (self.snapshot, '', snapshot, True),
@@ -1702,7 +1702,7 @@ class SignaledSession(OperatingSession):
 
     @client_action(r.client.IS_STARTED, 's')
     def _ray_client_is_started(self, osp: OscPack, client:Client):
-        if client.is_running():
+        if client.is_running:
             self.send(*osp.reply(), 'client running')
         else:
             self.send(*osp.error(), ray.Err.GENERAL_ERROR,
@@ -1755,7 +1755,7 @@ class SignaledSession(OperatingSession):
 
     @client_action(r.client.CHANGE_PREFIX, 'si|ss|sis|sss')
     def _ray_client_change_prefix(self, osp: OscPack, client:Client):
-        if client.is_running():
+        if client.is_running:
             self.send(*osp.error(), ray.Err.NOT_NOW,
                       "impossible to change prefix while client is running")
             return
@@ -1783,7 +1783,7 @@ class SignaledSession(OperatingSession):
     @client_action(r.client.CHANGE_ADVANCED_PROPERTIES, 'ssisi')
     def _ray_client_change_advanced_properties(
             self, osp: OscPack, client: Client):
-        if client.is_running():
+        if client.is_running:
             self.send(*osp.error(), ray.Err.NOT_NOW,
                       "impossible to change id while client is running")
             return
@@ -1875,7 +1875,7 @@ class SignaledSession(OperatingSession):
                       f'client_id {new_client_id} is forbidden in this session')
             return
 
-        if client.is_running():
+        if client.is_running:
             if client.status is not ray.ClientStatus.READY:
                 self.send(*osp.error(), ray.Err.NOT_NOW,
                           f'client_id {new_client_id} is not ready')
@@ -1905,7 +1905,7 @@ class SignaledSession(OperatingSession):
 
     @client_action(r.client.CHANGE_ID, 'ss')
     def _ray_client_change_id(self, osp: OscPack, client: Client):
-        if client.is_running():
+        if client.is_running:
             self.send(*osp.error(), ray.Err.NOT_NOW,
                       "impossible to change id while client is running")
             return

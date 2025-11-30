@@ -347,7 +347,7 @@ class Client(ServerSender, ray.ClientData):
         if not self.is_ray_hack:
             return
 
-        if not self.is_running():
+        if not self.is_running:
             return
 
         if self.ray_hack.wait_win:
@@ -527,7 +527,7 @@ class Client(ServerSender, ray.ClientData):
         c.set_str('template-name', template_name)
         c.set_str('client_id', self.short_client_id(self.client_id))
         
-        if not self.is_running():
+        if not self.is_running:
             c.set_bool('launched', False)
         
         # write the file
@@ -1044,6 +1044,8 @@ class Client(ServerSender, ray.ClientData):
 
     @property
     def project_path(self) -> Path:
+        '''Absolute Path of client possible project.
+        Raise NoSessionPath if client has no session path.'''
         if self.is_ray_net:
             return Path(self.session.short_path_name)
 
@@ -1251,7 +1253,7 @@ class Client(ServerSender, ray.ClientData):
             self._send_error_to_caller(OscSrc.OPEN, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s is exiting.') % self.gui_msg_style)
 
-        if self.is_running() and self.is_dumb_client():
+        if self.is_running and self.is_dumb_client():
             self._send_error_to_caller(OscSrc.OPEN, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s seems to can not open')
                     % self.gui_msg_style)
@@ -1263,7 +1265,7 @@ class Client(ServerSender, ray.ClientData):
         if self.pending_command is ray.Command.OPEN:
             return
 
-        if not self.is_running():
+        if not self.is_running:
             if self.executable_path in RS.non_active_clients:
                 if osp is not None and osp.src_addr:
                     self._osc_srcs[OscSrc.START] = osp
@@ -1273,7 +1275,7 @@ class Client(ServerSender, ray.ClientData):
             return
 
     def terminate(self):
-        if self.is_running():
+        if self.is_running:
             if self.is_external:
                 os.kill(self.pid, signal.SIGTERM)
             else:
@@ -1289,7 +1291,7 @@ class Client(ServerSender, ray.ClientData):
             os.kill(self.pid, signal.SIGKILL)
             return
 
-        if self.is_running():
+        if self.is_running:
             self._process.kill()
 
     def send_signal(self, sig: int, src_addr=None, src_path=""):
@@ -1301,7 +1303,7 @@ class Client(ServerSender, ray.ClientData):
                           ray.Err.GENERAL_ERROR, 'invalid signal %i' % sig)
             return
 
-        if not self.is_running():
+        if not self.is_running:
             if src_addr:
                 self.send(src_addr, osc_paths.ERROR, src_path,
                           ray.Err.GENERAL_ERROR,
@@ -1311,7 +1313,8 @@ class Client(ServerSender, ray.ClientData):
         os.kill(self.pid, sig)
         self.send(src_addr, osc_paths.REPLY, src_path, 'signal sent')
 
-    def is_running(self):
+    @property
+    def is_running(self) -> bool:
         if self.is_external:
             return True
         
@@ -1362,7 +1365,7 @@ class Client(ServerSender, ray.ClientData):
             self.pending_command = ray.Command.NONE
 
         if (scripter_pending_command is ray.Command.STOP
-                and self.is_running()):
+                and self.is_running):
             # if stop script ends with a not stopped client
             # We must stop it, else it would prevent session close
             self.stop()
@@ -1396,7 +1399,7 @@ class Client(ServerSender, ray.ClientData):
             if not self.ray_hack.saveable():
                 return False
 
-            return bool(self.is_running()
+            return bool(self.is_running
                         and self.pending_command is ray.Command.NONE)
 
         return self.nsm_active
@@ -1412,7 +1415,7 @@ class Client(ServerSender, ray.ClientData):
         if osp is not None:
             self._osc_srcs[OscSrc.SAVE] = osp
 
-        if self.is_running():
+        if self.is_running:
             if self.scripter.start(ray.Command.SAVE, osp,
                                    self._osc_srcs.get(OscSrc.SAVE)):
                 self.set_status(ray.ClientStatus.SCRIPT)
@@ -1423,7 +1426,7 @@ class Client(ServerSender, ray.ClientData):
                 _translate('GUIMSG', '%s is already saving, please wait!')
                     % self.gui_msg_style)
 
-        if self.is_running():
+        if self.is_running:
             self.session.send_monitor_event(
                 'save_request', self.client_id)
 
@@ -1460,7 +1463,7 @@ class Client(ServerSender, ray.ClientData):
         self.send_gui_message(
             _translate('GUIMSG', "  %s: stopping") % self.gui_msg_style)
 
-        if self.is_running():
+        if self.is_running:
             if self.scripter.start(ray.Command.STOP, osp,
                                    self._osc_srcs.get(OscSrc.STOP)):
                 self.set_status(ray.ClientStatus.SCRIPT)
@@ -1498,8 +1501,8 @@ class Client(ServerSender, ray.ClientData):
             self._send_reply_to_caller(OscSrc.STOP, 'client stopped.')
 
     def quit(self):
-        self.message("Commanding %s to quit" % self.name)
-        if self.is_running():
+        self.message(f'Commanding {self.name} to quit')
+        if self.is_running:
             self.pending_command = ray.Command.STOP
             self.terminate()
             self.set_status(ray.ClientStatus.QUIT)
@@ -1557,7 +1560,7 @@ class Client(ServerSender, ray.ClientData):
             return False
 
         if not ((self.nsm_active and self.can_switch)
-                or (self.is_dumb_client() and self.is_running())):
+                or (self.is_dumb_client() and self.is_running)):
             return False
 
         if self.is_ray_net:
@@ -1878,7 +1881,7 @@ class Client(ServerSender, ray.ClientData):
             if self.ray_net.daemon_url:
                 self.ray_net.session_template = template_name
                 net_session_root = self.ray_net.session_root
-                if self.is_running():
+                if self.is_running:
                     net_session_root = self.ray_net.running_session_root
 
                 self.send(Address(self.ray_net.daemon_url),
@@ -1981,7 +1984,7 @@ class Client(ServerSender, ray.ClientData):
                   "Copy was aborted by user")
 
     def change_prefix(self, prefix_mode: ray.PrefixMode, custom_prefix: str):
-        if self.is_running():
+        if self.is_running:
             return
 
         old_prefix = self.session.name

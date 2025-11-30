@@ -341,7 +341,7 @@ class ClientCommunicating(BunServerThread):
                 continue
 
             if (client.protocol is not ray.Protocol.NSM
-                    or not client.is_running()):
+                    or not client.is_running):
                 continue
 
             if not are_same_osc_port(client.addr.url, osp.src_addr.url):
