@@ -1548,7 +1548,7 @@ class SignaledSession(OperatingSession):
         if client.is_running():
             self.send_gui_message(
                 _translate('GUIMSG', 'client %s is already running.')
-                    % client.gui_msg_style())
+                    % client.gui_msg_style)
 
             # make ray_control exit code 0 in this case
             self.send(*osp.reply(), 'client running')
@@ -1569,7 +1569,7 @@ class SignaledSession(OperatingSession):
         if client.nsm_active:
             self.send_gui_message(
                 _translate('GUIMSG', 'client %s is already active.')
-                    % client.gui_msg_style())
+                    % client.gui_msg_style)
 
             # make ray_control exit code 0 in this case
             self.send(*osp.reply(), 'client active')
@@ -1585,7 +1585,7 @@ class SignaledSession(OperatingSession):
             client.save(osp)
         else:
             self.send_gui_message(_translate('GUIMSG', "%s is not saveable.")
-                                    % client.gui_msg_style())
+                                    % client.gui_msg_style)
             self.send(*osp.reply(), 'client saved')
 
     @client_action(r.client.SAVE_AS_TEMPLATE, 'ss')
@@ -1601,7 +1601,6 @@ class SignaledSession(OperatingSession):
     @client_action(r.client.SHOW_OPTIONAL_GUI, 's')
     def _ray_client_show_optional_gui(self, osp: OscPack, client:Client):
         client.send_to_self_address(nsm.client.SHOW_OPTIONAL_GUI)
-        client.show_gui_ordered = True
         self.send(*osp.reply(), 'show optional GUI asked')
 
     @client_action(r.client.HIDE_OPTIONAL_GUI, 's')
@@ -1707,8 +1706,8 @@ class SignaledSession(OperatingSession):
             self.send(*osp.reply(), 'client running')
         else:
             self.send(*osp.error(), ray.Err.GENERAL_ERROR,
-                        _translate('GUIMSG', '%s is not running.')
-                        % client.gui_msg_style())
+                      _translate('GUIMSG', '%s is not running.')
+                        % client.gui_msg_style)
 
     @client_action(r.client.SEND_SIGNAL, 'si')
     def _ray_client_send_signal(self, osp: OscPack, client:Client):

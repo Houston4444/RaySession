@@ -30,12 +30,13 @@ class PrefixMode(Enum):
     @classmethod
     def _missing_(cls, value: object) -> 'PrefixMode':
         if isinstance(value, str):
-            if value.lower() == 'client_name':
-                return PrefixMode.CLIENT_NAME
-            if value.lower() == 'session_name':
-                return PrefixMode.SESSION_NAME
-            if value.lower() == 'custom':
-                return PrefixMode.CUSTOM
+            match value.lower():    
+                case 'client_name':
+                    return PrefixMode.CLIENT_NAME
+                case 'session_name':
+                    return PrefixMode.SESSION_NAME
+                case 'custom':
+                    return PrefixMode.CUSTOM
         return PrefixMode.CLIENT_NAME
 
 
@@ -124,12 +125,13 @@ class Protocol(Enum):
     @staticmethod
     def from_string(string: str) -> 'Protocol':
         lo_str = string.lower()
-        if lo_str in ('ray_hack', 'ray-hack'):
-            return Protocol.RAY_HACK
-        if lo_str in ('ray_net', 'ray-net'):
-            return Protocol.RAY_NET
-        if lo_str == 'internal':
-            return Protocol.INTERNAL
+        match lo_str:
+            case 'ray_hack'|'ray-hack':
+                return Protocol.RAY_HACK
+            case 'ray_net'|'ray-net':
+                return Protocol.RAY_NET
+            case 'internal':
+                return Protocol.INTERNAL
         return Protocol.NSM
 
 

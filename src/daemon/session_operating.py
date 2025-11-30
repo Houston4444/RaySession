@@ -141,7 +141,7 @@ class OperatingSession(Session):
                 if n_expected == 1:
                     message = _translate('GUIMSG',
                         'waiting announce from %s...'
-                            % self.expected_clients[0].gui_msg_style())
+                            % self.expected_clients[0].gui_msg_style)
                 else:
                     message = _translate('GUIMSG',
                         'waiting announce from %i clients...' % n_expected)
@@ -150,7 +150,7 @@ class OperatingSession(Session):
                 if n_expected == 1:
                     message = _translate('GUIMSG',
                         'waiting for %s to stop...'
-                            % self.expected_clients[0].gui_msg_style())
+                            % self.expected_clients[0].gui_msg_style)
                 else:
                     message = _translate('GUIMSG',
                         'waiting for %i clients to stop...' % n_expected)
@@ -187,7 +187,7 @@ class OperatingSession(Session):
 
     def _clean_expected(self):
         if self.expected_clients:
-            client_names = [c.gui_msg_style() for c in self.expected_clients]
+            client_names = [c.gui_msg_style for c in self.expected_clients]
 
             if self.wait_for is ray.WaitFor.ANNOUNCE:
                 self.send_gui_message(
@@ -499,7 +499,7 @@ class OperatingSession(Session):
                 if len(self.expected_clients) == 1:
                     self.send_gui_message(
                         _translate('GUIMSG', 'waiting for %s to save...')
-                            % self.expected_clients[0].gui_msg_style())
+                            % self.expected_clients[0].gui_msg_style)
                 else:
                     self.send_gui_message(
                         _translate('GUIMSG', 'waiting for %i clients to save...')
@@ -727,7 +727,7 @@ class OperatingSession(Session):
                 self.send_gui_message(
                     _translate('GUIMSG',
                                'waiting for %s to quit...')
-                        % self.expected_clients[0].gui_msg_style())
+                        % self.expected_clients[0].gui_msg_style)
             else:
                 self.send_gui_message(
                     _translate('GUIMSG',
@@ -1559,7 +1559,7 @@ for better organization.""")
                 self.send_gui_message(
                     _translate('GUIMSG',
                                'waiting for %s to load its project...')
-                    % self.expected_clients[0].gui_msg_style())
+                    % self.expected_clients[0].gui_msg_style)
             else:
                 self.send_gui_message(
                     _translate('GUIMSG',
