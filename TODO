@@ -75,7 +75,6 @@ scenarios:
     # scenario par clé str envoyée
     # removed conns from NSM client removed
 
-    connect_domain: from_client / to_client, changeable par changement d'ID.
     Une grosse docu.
 
     client.py reduction du fichier

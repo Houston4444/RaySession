@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.18">
+<title>Documentation sur les fichiers de patch utilisés par ray-jackpatch et ray-alsapatch.</title>
+<style>
+/* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
+
+@import url(//fonts.googleapis.com/css?family=Noto+Sans);
+@import url(https://cdn.jsdelivr.net/gh/asciidoctor/asciidoctor@2.0/data/stylesheets/asciidoctor-default.css); /* Default asciidoc style framework - important */
+
+/* CUSTOMISATIONS */
+/* Change the values in root for quick customisation. If you want even more fine grain... venture further. */
+
+:root{
+--maincolor:#cccccc;
+--primarycolor:#5E5E5E; /* Grey 500 */
+--secondarycolor:#ba3925;
+--tertiarycolor: #186d7a;
+--sidebarbackground:#232323; /* Grey 900 */
+--linkcolor:#663815; /* Brown */
+--linkhover: #9c5620;
+--linkcoloralternate: #9c5620;
+--white:#FFFFFF;
+--black:#000000;
+--gold:#ffd777;
+--brown:#4e2b10;
+}
+
+body{font-family: "Noto Sans",sans-serif;background-color: var(--maincolor);link-color: var(--gold)}
+
+#header{background-color:var(--brown); padding:25px;padding-top:0px;max-width: none;}
+#footer{background-color: var(--sidebarbackground);}
+/* h1{color:#ffd755 !important;font-family:"Noto Sans",sans-serif;} */
+h1{color:var(--white) !important;font-family:"Noto Sans",sans-serif;}
+h2{background-color:var(--brown);;color:var(--gold) !important;font-family:"Noto Sans",sans-serif;text-decoration:none;padding:10px;border-top-left-radius:10px;border-top-right-radius:10px;}
+h3{background-color:var(--primarycolor);color:white !important;font-family:"Noto Sans",sans-serif;text-decoration:none;padding:10px;border-top-left-radius:6px;border-top-right-radius:6px;}
+h4,h5,h6{color:var(--primarycolor);}
+.title{color:var(--sidebarbackground) !important;font-family:"Noto Sans",sans-serif;font-style: normal; font-weight: normal;}
+p{font-family: "Noto Sans",sans-serif ! important}
+#toc.toc2 a:link{color:#d0d0d0;font-family: "Noto Sans",sans-serif ! important;font-size:13px;}
+
+a {
+  text-decoration: none;
+  color: var(--linkcolor);
+}
+a:hover {
+  color: var(--linkhover);
+}
+.quoteblock blockquote::before {
+  color: var(--linkcoloralternate);
+}
+mark {
+  color: var(--white);
+  background-color: var(--linkcolor);
+}
+
+/* Card styling */
+.sect1{border-bottom:1px solid grey;border-radius:10px;}
+
+/* Table styles */
+th{background-color: var(--linkcolor);color:var(--white);}
+
+#toc.toc2{background-color:var(--sidebarbackground);color:var(--gold);}
+#toc a{color:var(--gold);}
+#toc a:visited{color: #999;}
+#toc a:active{color:var(--gold);}
+#toctitle{color:var(--gold); !important;background-color:var(--brown);font-size: 14px !important;padding:10px;border-radius:6px;}
+
+/* Responsiveness fixes */
+video {
+  max-width: 100%;
+}
+
+@media all and (max-width: 600px) {
+table {
+  width: 55vw!important;
+  font-size: 3vw;
+}
+
+</style>
+</head>
+<body class="book toc2 toc-left">
+<div id="header">
+<h1>Documentation sur les fichiers de patch utilisés par ray-jackpatch et ray-alsapatch.</h1>
+<div id="toc" class="toc2">
+<div id="toctitle">Table des matières</div>
+<ul class="sectlevel1">
+<li><a href="#_app">app</a></li>
+<li><a href="#_version">version</a></li>
+<li><a href="#_playback_equivalences">playback_equivalences</a></li>
+<li><a href="#_hardware_equivalences">hardware_equivalences</a></li>
+<li><a href="#_scenarios">scenarios</a></li>
+<li><a href="#_connections_2">connections</a></li>
+<li><a href="#_forbidden_connections_2">forbidden_connections</a></li>
+<li><a href="#_graph">graph</a></li>
+<li><a href="#_nsm_brothers">nsm_brothers</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Un fichier de patch doit contenir les deux clés suvantes:</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_app">app</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>l&#8217;application qui utilise ce fichier, soit <code>app: RAY-JACKPATCH</code>, soit <code>app: RAY-ALSAPATCH</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_version">version</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>la version de RaySession avec laquelle il a été créé.</p>
+</div>
+<div class="paragraph">
+<p>il peut ensuite contenir les clés suivantes:</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_playback_equivalences">playback_equivalences</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>&#8230;&#8203;</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_hardware_equivalences">hardware_equivalences</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>&#8230;&#8203;</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_scenarios">scenarios</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>La clé <code>scenarios</code> peut être vide ou absente, sinon elle doit contenir une liste de dictionnaires. Créer des scenarios permet d&#8217;avoir des connections différentes selon différentes conditions, par exemple selon quel client est présent. Voici un exemple simple avec 2 scenarios:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>scenarios:
+- name: With jack_mixer and Carla
+  rules:
+    present_clients:
+    - jack_mixer.Mixer
+    - Carla-Rack.rack
+  playback_redirections:
+  - origin: system:playback_1
+    destination: Carla-Rack.rack:audio-in1
+  - origin: system:playback_2
+    destination: Carla-Rack.rack:audio-in2
+
+- name: Avec jack_mixer
+  rules:
+    present_clients:
+    - jack_mixer.Mixer
+  playback_redirections:
+  - origin: system:playback_1
+    destination: jack_mixer.Mixer:Iniin L
+  - origin: system:playback_2
+    destination: jack_mixer.Mixer:Iniin R</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Il existe deux types de scenarios, les scenarios à redirections et les scenarios à domaine de connexions. Ici il s&#8217;agit de deux scenarios à redirections.</p>
+</div>
+<div class="paragraph">
+<p>Voyons les différentes clés possibles:</p>
+</div>
+<div class="sect2">
+<h3 id="_name">name</h3>
+<div class="paragraph">
+<p>Le nom du scenario n&#8217;a que très peu d&#8217;importance, il sera utilisé par le programme pour notifier un changement de scenario.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rules">rules</h3>
+<div class="paragraph">
+<p><code>rules</code> est absolument obligatoire. Un scenario qui ne contient pas de clé <code>rules</code> sera ignoré. Cette clé défini les conditions selon lesquelles le scenario est chargé. Le programme parcourt les scenarios dans l&#8217;ordre dans lequel ils sont écrits et choisit la premier scenario remplissant les conditions (s&#8217;il y en a un). Attention donc à l&#8217;ordre des scenarios.</p>
+</div>
+<div class="paragraph">
+<p><code>rules</code> est un dictionnaire qui peut contenir les clés suivantes:</p>
+</div>
+<div class="sect3">
+<h4 id="_present_clients">present_clients</h4>
+<div class="paragraph">
+<p>Liste des clients JACK (ou ALSA) nécessairement présents pour que le scenario soit chargé.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_absent_clients">absent_clients</h4>
+<div class="paragraph">
+<p>Liste des clients JACK (ou ALSA) nécessairement absents pour que le scenario soit chargé.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_present_nsm_clients">present_nsm_clients</h4>
+<div class="paragraph">
+<p>Liste des clients NSM nécessairement démarrés dans la session pour que le scenario soit chargé.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_absent_nsm_clients">absent_nsm_clients</h4>
+<div class="paragraph">
+<p>Liste des clients NSM nécessairement arrêtés dans la session pour que le scenario soit chargé.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_keyword">keyword</h4>
+<div class="paragraph">
+<p>Mot-clé ou liste de mots-clés. Le mot-clé de patch est défini de manière globale pour l&#8217;instance de raysession et  peut être changé via <code>ray_control set_patch_keyword KEYWORD</code>. Ainsi, un scenario acceptera d&#8217;être chargé si le mot clé de patch est le mot clé de <code>keyword</code> ou dans la liste de mots-clés de <code>keyword</code> et si toutes les autres conditions sont réunies bien sûr.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="playback_redirections">playback_redirections</h3>
+<div class="paragraph">
+<p>Contient une liste de redirections de port d&#8217;entrée. Une redirection est un dictionnaire comprenant une clé <code>origin</code> et une clé <code>destination</code>. Ces deux clés doivent contenir le nom d&#8217;un port d&#8217;entrée, comme dans l&#8217;exemple:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>  playback_redirections:
+  - origin: system:playback_1
+    destination: Carla-Rack.rack:audio-in1
+  - origin: system:playback_2
+    destination: Carla-Rack.rack:audio-in2</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Oui, <code>system:playback_1</code> est bel et bien un port d&#8217;entrée ! Il s&#8217;agit du dernier port d&#8217;entrée avant la sortie analogique.</p>
+</div>
+<div class="paragraph">
+<p>À partir du moment où le scenario contient la clé <code>playback_redirections</code> ou <code>capture_redirections</code>, alors le scenario est un scenario à redirections. Lorsqu&#8217;un scenario à redirections est chargé, tous les ports normalement connectés au ports <code>origin</code> seront déconnectés de <code>origin</code> et connectés à la <code>destination</code> correspondante. Lorsque le scenario est déchargé, tous les ports connectés à <code>destination</code> seront déconnectés de <code>destination</code> et connectés à <code>origin</code>.</p>
+</div>
+<div class="paragraph">
+<p>Le grand intérêt est le suivant, imaginez ici que Carla-Rack contienne des effets assez coûteux en charge DSP mais s&#8217;appliquant à tout ce qui va vers les haut parleurs. Vous en avez besoin dans votre écoute, mais vous devez parfois vous en passer pour éviter la surcharge. Appliquer un tel scenario permet de ne pas avoir à refaire/défaire des connexions à chaque fois que vous lancez/arrêtez Carla-Rack.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_capture_redirections">capture_redirections</h3>
+<div class="paragraph">
+<p>Exactement la même chose que <a href="#playback_redirections">playback_redirections</a> pour les ports de sortie.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_connect_domain">connect_domain</h3>
+<div class="paragraph">
+<p>&#8230;&#8203;</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_no_connect_domain">no_connect_domain</h3>
+<div class="paragraph">
+<p>&#8230;&#8203;</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_connections">connections</h3>
+<div class="paragraph">
+<p>&#8230;&#8203;</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_forbidden_connections">forbidden_connections</h3>
+<div class="paragraph">
+<p>&#8230;&#8203;</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_connections_2">connections</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>&#8230;&#8203;</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_forbidden_connections_2">forbidden_connections</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>&#8230;&#8203;</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_graph">graph</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>&#8230;&#8203;</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_nsm_brothers">nsm_brothers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>&#8230;&#8203;</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-11-30 11:35:12 +0100
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,122 @@
+= Documentation sur les fichiers de patch utilisés par ray-jackpatch et ray-alsapatch.
+:toc: left
+:toc-title: Table des matières
+:toclevels: 1
+:imagesdir: images
+:stylesheet: ../patchbay/en/patchbay_manual.css
+
+Un fichier de patch doit contenir les deux clés suvantes:
+
+== app
+l'application qui utilise ce fichier, soit `app: RAY-JACKPATCH`, soit `app: RAY-ALSAPATCH`.
+
+
+== version
+la version de RaySession avec laquelle il a été créé.
+
+il peut ensuite contenir les clés suivantes:
+
+== playback_equivalences
+...
+
+== hardware_equivalences
+...
+
+== scenarios
+La clé `scenarios` peut être vide ou absente, sinon elle doit contenir une liste de dictionnaires. Créer des scenarios permet d'avoir des connections différentes selon différentes conditions, par exemple selon quel client est présent. Voici un exemple simple avec 2 scenarios:
+
+
+```
+scenarios:
+- name: With jack_mixer and Carla
+  rules:
+    present_clients:
+    - jack_mixer.Mixer
+    - Carla-Rack.rack
+  playback_redirections:
+  - origin: system:playback_1
+    destination: Carla-Rack.rack:audio-in1
+  - origin: system:playback_2
+    destination: Carla-Rack.rack:audio-in2
+
+- name: Avec jack_mixer
+  rules:
+    present_clients:
+    - jack_mixer.Mixer
+  playback_redirections:
+  - origin: system:playback_1
+    destination: jack_mixer.Mixer:Iniin L
+  - origin: system:playback_2
+    destination: jack_mixer.Mixer:Iniin R
+```
+
+Il existe deux types de scenarios, les scenarios à redirections et les scenarios à domaine de connexions. Ici il s'agit de deux scenarios à redirections.
+
+Voyons les différentes clés possibles:
+
+=== name
+Le nom du scenario n'a que très peu d'importance, il sera utilisé par le programme pour notifier un changement de scenario.
+
+=== rules
+`rules` est absolument obligatoire. Un scenario qui ne contient pas de clé `rules` sera ignoré. Cette clé défini les conditions selon lesquelles le scenario est chargé. Le programme parcourt les scenarios dans l'ordre dans lequel ils sont écrits et choisit la premier scenario remplissant les conditions (s'il y en a un). Attention donc à l'ordre des scenarios.
+
+`rules` est un dictionnaire qui peut contenir les clés suivantes:
+
+==== present_clients
+Liste des clients JACK (ou ALSA) nécessairement présents pour que le scenario soit chargé.
+
+==== absent_clients
+Liste des clients JACK (ou ALSA) nécessairement absents pour que le scenario soit chargé.
+
+==== present_nsm_clients
+Liste des clients NSM nécessairement démarrés dans la session pour que le scenario soit chargé.
+
+==== absent_nsm_clients
+Liste des clients NSM nécessairement arrêtés dans la session pour que le scenario soit chargé.
+
+==== keyword
+Mot-clé ou liste de mots-clés. Le mot-clé de patch est défini de manière globale pour l'instance de raysession et  peut être changé via `ray_control set_patch_keyword KEYWORD`. Ainsi, un scenario acceptera d'être chargé si le mot clé de patch est le mot clé de `keyword` ou dans la liste de mots-clés de `keyword` et si toutes les autres conditions sont réunies bien sûr.
+
+[#playback_redirections]
+=== playback_redirections
+Contient une liste de redirections de port d'entrée. Une redirection est un dictionnaire comprenant une clé `origin` et une clé `destination`. Ces deux clés doivent contenir le nom d'un port d'entrée, comme dans l'exemple:
+```
+  playback_redirections:
+  - origin: system:playback_1
+    destination: Carla-Rack.rack:audio-in1
+  - origin: system:playback_2
+    destination: Carla-Rack.rack:audio-in2
+```
+
+Oui, `system:playback_1` est bel et bien un port d'entrée ! Il s'agit du dernier port d'entrée avant la sortie analogique.
+
+À partir du moment où le scenario contient la clé `playback_redirections` ou `capture_redirections`, alors le scenario est un scenario à redirections. Lorsqu'un scenario à redirections est chargé, tous les ports normalement connectés au ports `origin` seront déconnectés de `origin` et connectés à la `destination` correspondante. Lorsque le scenario est déchargé, tous les ports connectés à `destination` seront déconnectés de `destination` et connectés à `origin`.
+
+Le grand intérêt est le suivant, imaginez ici que Carla-Rack contienne des effets assez coûteux en charge DSP mais s'appliquant à tout ce qui va vers les haut parleurs. Vous en avez besoin dans votre écoute, mais vous devez parfois vous en passer pour éviter la surcharge. Appliquer un tel scenario permet de ne pas avoir à refaire/défaire des connexions à chaque fois que vous lancez/arrêtez Carla-Rack.
+
+=== capture_redirections
+Exactement la même chose que <<playback_redirections>> pour les ports de sortie.
+
+=== connect_domain
+...
+
+=== no_connect_domain
+...
+
+=== connections
+...
+
+=== forbidden_connections
+...
+
+== connections
+...
+
+== forbidden_connections
+...
+
+== graph
+...
+
+== nsm_brothers
+...
