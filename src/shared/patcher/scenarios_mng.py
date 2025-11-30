@@ -557,6 +557,23 @@ class ScenariosManager:
         renamer = Renamer(ex_client_id, new_client_id,
                           ex_jack_name, new_jack_name)
         
+        def pattern_renamed(
+                input: str | re.Pattern[str]) -> str | re.Pattern[str]:
+            if isinstance(input, str):
+                return renamer.port_renamed(input)
+            
+            input_str = input.pattern
+            if not ':' in input_str:
+                return input
+
+            gp_name, _, port_sh_name = input_str.partition(':')[0]
+            gp_name = yaml_tools.de_escape(gp_name)
+            if not renamer.group_belongs(gp_name):
+                return input
+
+            new_gp_name = renamer.group_renamed(gp_name)
+            return re.compile(f'{re.escape(new_gp_name)}:{port_sh_name}')            
+        
         for scenario in self.scenarios:
             for svd_conn in list(scenario.saved_conns):
                 if renamer.one_port_belongs(svd_conn):
@@ -612,25 +629,8 @@ class ScenariosManager:
             
             for i, cdomain in enumerate(scenario.connect_domain):
                 from_, to_ = cdomain
-                new_from_, new_to_ = cdomain
-                if isinstance(from_, str):
-                    new_from_ = renamer.port_renamed(from_)
-                elif ':' in from_.pattern:
-                    gp_name, _, port_sh_name = from_.pattern.partition(':')[0]
-                    gp_name = yaml_tools.de_escape(gp_name)
-                    if renamer.group_belongs(gp_name):
-                        new_gp_name = renamer.group_renamed(gp_name)
-                        new_from_ = f'{re.escape(new_gp_name)}:{port_sh_name}'    
-                    
-                if isinstance(to_, str):
-                    new_to_ = renamer.port_renamed(to_)
-                elif ':' in to_.pattern:
-                    gp_name, _, port_sh_name = to_.pattern.partition(':')[0]
-                    gp_name = yaml_tools.de_escape(gp_name)
-                    if renamer.group_belongs(gp_name):
-                        new_gp_name = renamer.group_renamed(gp_name)
-                        new_to_ = f'{re.escape(new_gp_name)}:{port_sh_name}'   
-
+                new_from_ = pattern_renamed(from_)
+                new_to_ = pattern_renamed(to_)
                 if new_from_ == from_ and new_to_ == to_:
                     continue
 
@@ -638,17 +638,18 @@ class ScenariosManager:
                 dom_map = scenario.base_map['connect_domain'][i]
                 if isinstance(new_from_, str):
                     dom_map['from'] = new_from_
+                else:
+                    dom_map['from_pattern'] = new_from_.pattern
+                
                 if isinstance(new_to_, str):
                     dom_map['to'] = new_to_
+                else:
+                    dom_map['to_pattern'] = new_to_.pattern
                 
             for i, cdomain in enumerate(scenario.no_connect_domain):
                 from_, to_ = cdomain
-                new_from_, new_to_ = cdomain
-                if isinstance(from_, str):
-                    new_from_ = renamer.port_renamed(from_)
-                if isinstance(to_, str):
-                    new_to_ = renamer.port_renamed(to_)
-                    
+                new_from_ = pattern_renamed(from_)
+                new_to_ = pattern_renamed(to_)
                 if new_from_ == from_ and new_to_ == to_:
                     continue
 
@@ -656,8 +657,13 @@ class ScenariosManager:
                 dom_map = scenario.base_map['no_connect_domain'][i]
                 if isinstance(new_from_, str):
                     dom_map['from'] = new_from_
+                else:
+                    dom_map['from_pattern'] = new_from_
+
                 if isinstance(new_to_, str):
                     dom_map['to'] = new_to_
+                else:
+                    dom_map['to_pattern'] = new_to_
 
         for conn in list(self.patcher.conns_rm_by_port):
             if one_port_belongs_to_client(conn, ex_jack_name):
