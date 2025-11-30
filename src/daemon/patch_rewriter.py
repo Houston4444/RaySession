@@ -195,13 +195,13 @@ def rewrite_jack_patch_files(
         if client.protocol not in (ray.Protocol.NSM, ray.Protocol.INTERNAL):
             continue
 
-        yaml_path = Path(str(client.get_project_path()) + '.yaml')        
+        yaml_path = Path(str(client.project_path) + '.yaml')        
         if yaml_path.exists():
             _yaml_rewrite(yaml_path, old_client_id, new_client_id,
                           old_jack_name, new_jack_name)
             continue
         
-        xml_path = Path(str(client.get_project_path()) + '.xml')
+        xml_path = Path(str(client.project_path) + '.xml')
         if xml_path.exists():
             _xml_rewrite(xml_path, old_client_id, new_client_id,
                          old_jack_name, new_jack_name)

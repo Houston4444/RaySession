@@ -6,6 +6,8 @@ import xml.etree.ElementTree as ET
 
 import ray
 
+from daemon_tools import TemplateRoots
+
 if TYPE_CHECKING:
     from client import Client
 
@@ -237,3 +239,81 @@ def rename_client_files(
     for now_path, next_path in files_to_rename:
         _logger.info(f'renaming\n\tfile: {now_path}\n\tto:   {next_path}')
         os.rename(now_path, next_path)
+        
+def adjust_files_after_copy(
+        client: 'Client', new_session_full_name: str,
+        template_save=ray.Template.NONE):
+    spath = client.session.path
+    old_session_name = client.session.name
+    new_session_name = Path(new_session_full_name).name
+    new_client_id = client.client_id
+    old_client_id = client.client_id
+    new_client_links_dir = client.get_links_dirname()
+    old_client_links_dir = new_client_links_dir
+
+    X_SESSION_X = "XXX_SESSION_NAME_XXX"
+    X_CLIENT_ID_X = "XXX_CLIENT_ID_XXX"
+    X_CLIENT_LINKS_DIR_X = "XXX_CLIENT_LINKS_DIR_XXX"
+    'used for Carla links dir'
+
+    match template_save:
+        case ray.Template.NONE:
+            spath = client.session.root / new_session_full_name
+
+        case ray.Template.RENAME:
+            ...
+
+        case ray.Template.SESSION_SAVE:
+            spath = Path(new_session_full_name)
+            if not spath.is_absolute():
+                spath = TemplateRoots.user_sessions / new_session_full_name
+            new_session_name = X_SESSION_X
+
+        case ray.Template.SESSION_SAVE_NET:
+            spath = (client.session.root
+                        / TemplateRoots.net_session_name
+                        / new_session_full_name)
+            new_session_name = X_SESSION_X
+
+        case ray.Template.SESSION_LOAD:
+            spath = client.session.root / new_session_full_name
+            old_session_name = X_SESSION_X
+
+        case ray.Template.SESSION_LOAD_NET:
+            spath = client.session.root / new_session_full_name
+            old_session_name = X_SESSION_X
+
+        case ray.Template.CLIENT_SAVE:
+            spath = TemplateRoots.user_clients / new_session_full_name
+            new_session_name = X_SESSION_X
+            new_client_id = X_CLIENT_ID_X
+            new_client_links_dir = X_CLIENT_LINKS_DIR_X
+
+        case ray.Template.CLIENT_LOAD:
+            spath = client.session.path
+            old_session_name = X_SESSION_X
+            old_client_id = X_CLIENT_ID_X
+            old_client_links_dir = X_CLIENT_LINKS_DIR_X
+
+    if spath is None:
+        _logger.error(
+            f'Impossible to adjust files after copy '
+            f'for client {client.client_id} : '
+            f'spath is None')
+        return
+
+    old_prefix = old_session_name
+    new_prefix = new_session_name
+    
+    match client.prefix_mode:
+        case ray.PrefixMode.CLIENT_NAME:
+            old_prefix = new_prefix = client.name
+        case ray.PrefixMode.CUSTOM:
+            old_prefix = new_prefix = client.custom_prefix
+
+    rename_client_files(
+        client, spath,
+        old_session_name, new_session_name,
+        old_prefix, new_prefix,
+        old_client_id, new_client_id,
+        old_client_links_dir, new_client_links_dir)

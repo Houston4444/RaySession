@@ -30,7 +30,7 @@ import osc_paths.nsm as nsm
 import client_tools
 from server_sender import ServerSender
 from daemon_tools  import (
-    TemplateRoots, Terminal, RS, get_code_root,
+    NoSessionPath, TemplateRoots, Terminal, RS, get_code_root,
     highlight_text, exec_and_desktops)
 from signaler import Signaler
 from scripter import ClientScripter
@@ -1042,13 +1042,14 @@ class Client(ServerSender, ray.ClientData):
 
         return ''
 
-    def get_project_path(self) -> Optional[Path]:
+    @property
+    def project_path(self) -> Path:
         if self.is_ray_net:
             return Path(self.session.short_path_name)
 
         spath = self.session.path
         if spath is None:
-            return None
+            raise NoSessionPath
 
         if self.prefix_mode is ray.PrefixMode.SESSION_NAME:
             return spath / f'{self.session.name}.{self.client_id}'
@@ -1167,9 +1168,9 @@ class Client(ServerSender, ray.ClientData):
             env['RAY_CLIENT_ID'] = self.client_id
             env['RAY_JACK_CLIENT_NAME'] = self.jack_client_name
             env['CONFIG_FILE'] = expand_vars(env, self.ray_hack.config_file)
-            env['PWD'] = str(self.get_project_path())
+            env['PWD'] = str(self.project_path)
             
-            ray_hack_pwd = self.get_project_path()
+            ray_hack_pwd = self.project_path
             if ray_hack_pwd is None:
                 _logger.error(
                     f"Ray-Hack client {self.client_id} can not have "
@@ -1532,7 +1533,7 @@ class Client(ServerSender, ray.ClientData):
         self.gui_has_been_visible = self.gui_visible
 
     def switch(self):
-        client_project_path = self.get_project_path()
+        client_project_path = self.project_path
         self.send_gui_client_properties()
         self.message(
             f'Commanding {self.name} to switch "{client_project_path}"')
@@ -1725,8 +1726,9 @@ class Client(ServerSender, ray.ClientData):
 
     def get_project_files(self) -> list[Path]:
         client_files = list[Path]()
-        project_path = self.get_project_path()
-        if project_path is None:
+        try:
+            project_path = self.project_path
+        except:
             return []
 
         spath = self.session.path
@@ -2016,80 +2018,8 @@ class Client(ServerSender, ray.ClientData):
     def adjust_files_after_copy(
             self, new_session_full_name: str,
             template_save=ray.Template.NONE):
-        spath = self.session.path
-        old_session_name = self.session.name
-        new_session_name = Path(new_session_full_name).name
-        new_client_id = self.client_id
-        old_client_id = self.client_id
-        new_client_links_dir = self.get_links_dirname()
-        old_client_links_dir = new_client_links_dir
-
-        X_SESSION_X = "XXX_SESSION_NAME_XXX"
-        X_CLIENT_ID_X = "XXX_CLIENT_ID_XXX"
-        X_CLIENT_LINKS_DIR_X = "XXX_CLIENT_LINKS_DIR_XXX"
-        'used for Carla links dir'
-
-        match template_save:
-            case ray.Template.NONE:
-                spath = self.session.root / new_session_full_name
-
-            case ray.Template.RENAME:
-                ...
-
-            case ray.Template.SESSION_SAVE:
-                spath = Path(new_session_full_name)
-                if not spath.is_absolute():
-                    spath = TemplateRoots.user_sessions / new_session_full_name
-                new_session_name = X_SESSION_X
-
-            case ray.Template.SESSION_SAVE_NET:
-                spath = (self.session.root
-                         / TemplateRoots.net_session_name
-                         / new_session_full_name)
-                new_session_name = X_SESSION_X
-
-            case ray.Template.SESSION_LOAD:
-                spath = self.session.root / new_session_full_name
-                old_session_name = X_SESSION_X
-
-            case ray.Template.SESSION_LOAD_NET:
-                spath = self.session.root / new_session_full_name
-                old_session_name = X_SESSION_X
-
-            case ray.Template.CLIENT_SAVE:
-                spath = TemplateRoots.user_clients / new_session_full_name
-                new_session_name = X_SESSION_X
-                new_client_id = X_CLIENT_ID_X
-                new_client_links_dir = X_CLIENT_LINKS_DIR_X
-
-            case ray.Template.CLIENT_LOAD:
-                spath = self.session.path
-                old_session_name = X_SESSION_X
-                old_client_id = X_CLIENT_ID_X
-                old_client_links_dir = X_CLIENT_LINKS_DIR_X
-
-        if spath is None:
-            _logger.error(
-                f'Impossible to adjust files after copy '
-                f'for client {self.client_id} : '
-                f'spath is None')
-            return
-
-        old_prefix = old_session_name
-        new_prefix = new_session_name
-        
-        match self.prefix_mode:
-            case ray.PrefixMode.CLIENT_NAME:
-                old_prefix = new_prefix = self.name
-            case ray.PrefixMode.CUSTOM:
-                old_prefix = new_prefix = self.custom_prefix
-
-        self._rename_files(
-            spath,
-            old_session_name, new_session_name,
-            old_prefix, new_prefix,
-            old_client_id, new_client_id,
-            old_client_links_dir, new_client_links_dir)
+        client_tools.adjust_files_after_copy(
+            self, new_session_full_name, template_save)
 
     def server_announce(self, osp: OscPack, is_new: bool):
         client_name, capabilities, executable_path, \
@@ -2160,7 +2090,7 @@ class Client(ServerSender, ray.ClientData):
                   ray.APP_TITLE,
                   server_capabilities)
 
-        client_project_path = str(self.get_project_path())
+        client_project_path = str(self.project_path)
         if self.is_ray_net:
             client_project_path = self.session.short_path_name
 

@@ -423,9 +423,7 @@ class Session(ServerSender):
             return False
 
         if client.is_ray_hack:
-            project_path = client.get_project_path()
-            if project_path is None:
-                raise NoSessionPath
+            project_path = client.project_path
             if not project_path.is_dir():
                 try:
                     project_path.mkdir(parents=True)
