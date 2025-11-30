@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import TYPE_CHECKING
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
@@ -425,7 +426,7 @@ class ScenariosManager:
                             [eqvs.corrected(cp, port_names) for cp in cp_red])
                     
                     for connect_domain in (scenario.connect_domain,
-                                        scenario.no_connect_domain):
+                                           scenario.no_connect_domain):
                         for i, cdomain in enumerate(connect_domain):
                             from_, to_ = cdomain
                             if isinstance(from_, str):
@@ -438,7 +439,7 @@ class ScenariosManager:
                             [eqvs.corrected(pb, port_names) for pb in pb_red])
                         
                     for connect_domain in (scenario.connect_domain,
-                                        scenario.no_connect_domain):
+                                           scenario.no_connect_domain):
                         for i, cdomain in enumerate(connect_domain):
                             from_, to_ = cdomain
                             if isinstance(to_, str):
@@ -536,10 +537,13 @@ class ScenariosManager:
                 if one_port_belongs_to_client(svd_conn, jack_name):
                     scenario.saved_conns.discard(svd_conn)
                     
-            for fbd_conn in list(scenario.saved_conns):
+            for fbd_conn in list(scenario.forbidden_conns):
                 if one_port_belongs_to_client(fbd_conn, jack_name):
                     scenario.forbidden_conns.discard(fbd_conn)
-        
+                    
+            if not isinstance(scenario, Scenario):
+                continue
+
         for conn in list(self.patcher.conns_rm_by_port):
             if one_port_belongs_to_client(conn, jack_name):
                 self.patcher.conns_rm_by_port.discard(conn)
@@ -579,7 +583,19 @@ class ScenariosManager:
                     renamer.group_renamed(client_name)
                 scenario.base_map['rules']['absent_clients'][i] = \
                     scenario.rules.absent_clients[i]
+            
+            for i, nsm_client_id in enumerate(scenario.rules.started_nsm_clients):
+                if nsm_client_id == ex_client_id:
+                    scenario.rules.started_nsm_clients[i] = new_client_id
+                    scenario.base_map['rules']['present_nsm_clients'][i] = \
+                        new_client_id
                     
+            for i, nsm_client_id in enumerate(scenario.rules.stopped_nsm_clients):
+                if nsm_client_id == ex_client_id:
+                    scenario.rules.stopped_nsm_clients[i] = new_client_id
+                    scenario.base_map['rules']['absent_nsm_clients'][i] = \
+                        new_client_id
+            
             for i, pb_red in enumerate(scenario.playback_redirections):
                 if renamer.one_port_belongs(pb_red):
                     new_red = renamer.ports_renamed(pb_red)
@@ -599,9 +615,22 @@ class ScenariosManager:
                 new_from_, new_to_ = cdomain
                 if isinstance(from_, str):
                     new_from_ = renamer.port_renamed(from_)
+                elif ':' in from_.pattern:
+                    gp_name, _, port_sh_name = from_.pattern.partition(':')[0]
+                    gp_name = yaml_tools.de_escape(gp_name)
+                    if renamer.group_belongs(gp_name):
+                        new_gp_name = renamer.group_renamed(gp_name)
+                        new_from_ = f'{re.escape(new_gp_name)}:{port_sh_name}'    
+                    
                 if isinstance(to_, str):
                     new_to_ = renamer.port_renamed(to_)
-                    
+                elif ':' in to_.pattern:
+                    gp_name, _, port_sh_name = to_.pattern.partition(':')[0]
+                    gp_name = yaml_tools.de_escape(gp_name)
+                    if renamer.group_belongs(gp_name):
+                        new_gp_name = renamer.group_renamed(gp_name)
+                        new_to_ = f'{re.escape(new_gp_name)}:{port_sh_name}'   
+
                 if new_from_ == from_ and new_to_ == to_:
                     continue
 

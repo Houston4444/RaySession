@@ -1,14 +1,11 @@
 import re
 import logging
-from typing import TYPE_CHECKING, Optional, TypeVar, Type
+from typing import Optional, TypeVar, Type
 
 from ruamel.yaml.comments import CommentedSeq, CommentedMap, Comment, LineCol
 
 from . import depattern
 from .bases import ConnectionStr, ConnectionPattern
-
-if TYPE_CHECKING:
-    from .scenarios_mng import ScenariosManager
 
 
 _logger = logging.getLogger(__name__)
@@ -187,6 +184,8 @@ def load_connect_domain(
         port_to = el.get('to')
         from_pattern = el.get('from_pattern')
         to_pattern = el.get('to_pattern')
+        client_from = el.get('from_client')
+        client_to = el.get('to_client')
     
         if isinstance(from_pattern, str):
             try:
@@ -197,6 +196,8 @@ def load_connect_domain(
                     f"Incorrect pattern '{from_pattern}', ignored.\n\t{e}")
                 continue
         
+        elif isinstance(client_from, str):
+            from_patt = re.compile(re.escape(client_from) + ':.*')
         elif isinstance(port_from, str):
             from_patt = port_from
         else:
@@ -210,7 +211,8 @@ def load_connect_domain(
                     el, 'to_pattern',
                     f"Incorrect pattern '{from_pattern}', ignored.\n\t{e}")
                 continue
-        
+        elif isinstance(client_to, str):
+            to_patt = re.compile(re.escape(client_to) + ':.*')
         elif isinstance(port_to, str):
             to_patt = port_to
         else:
@@ -296,3 +298,8 @@ def add_empty_lines(input_str: str) -> str:
 
     return '\n'.join(out_lines)
 
+def de_escape(string: str) -> str:
+    '''remove '\\\\' from string, keeping '\\\\\\\\' as '\\\\'.'''
+    splitted = string.split('\\')
+    return ''.join([s if s else '\\' for i, s in enumerate(splitted)
+                    if i not in (0, len(splitted) - 1)])

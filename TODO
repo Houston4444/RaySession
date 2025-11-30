@@ -61,7 +61,6 @@ scenarios:
     # Attention aux types des ports de connection audio/midi
     # Attention au renommage des ports
     # ruamel, réécrire les commentaires sur connections
-    envoyer les erreurs à la GUI
     # bug: les connexions nouvelles ne sont pas reconnectés tant qu'on redémarre pas le patch
         
 
@@ -72,10 +71,18 @@ scenarios:
     - equivalences
 
     # voir comportement à l'arrêt (retour aux connections d'origine)
-    scenario par client NSM
-    scenario par clé str envoyée
-    removed conns from NSM client removed
-                
+    # scenario par client NSM
+    # scenario par clé str envoyée
+    # removed conns from NSM client removed
+
+    connect_domain: from_client / to_client, changeable par changement d'ID.
+    Une grosse docu.
+
+    client.py reduction du fichier
+    d'abord créer les alternatives de client
+    ensuite voir: 
+        Dans la GUI pour les patchers:
+            permettre de basculer de scenario keyword
 
 
 
