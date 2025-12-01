@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Optional
 # third party imports
 from qtpy.QtCore import (QCoreApplication, QProcess,
                          QProcessEnvironment, QTimer)
+from ruamel.yaml.comments import CommentedMap
 
 # Imports from src/shared
 from osclib import Address, OscPack
@@ -816,6 +817,89 @@ class Client(ServerSender, ray.ClientData):
             for data in self.custom_data:
                 sub_child[data] = self.custom_data[data] # type:ignore
             ET.dump(c.el)
+
+    def write_yaml_properties(self, map: CommentedMap):
+        map.clear()
+        if not self.is_ray_net:
+            map['executable'] = self.executable_path
+            if self.arguments:
+                map['arguments'] = self.arguments
+
+        if self.pre_env:
+            map['pre_env'] = self.pre_env
+
+        map['name'] = self.name
+        if self.desktop_file:
+            map['desktop_file'] = self.desktop_file
+        if self.label != self._desktop_label:
+            map['label'] = self.label
+        if self.description != self._desktop_description:
+            map['description'] = self.description
+        if self.icon != self._desktop_icon:
+            map['icon'] = self.icon
+        if not self.check_last_save:
+            map['check_last_save'] = False
+
+        if self.prefix_mode is not ray.PrefixMode.CLIENT_NAME:
+            map['prefix_mode'] = self.prefix_mode.name
+            if self.prefix_mode is ray.PrefixMode.CUSTOM:
+                map['custom_prefix'] = self.custom_prefix
+        
+        if self.can_optional_gui:
+            map['gui_visible'] = not self.start_gui_hidden
+
+        if self.jack_naming is not ray.JackNaming.LONG:
+            map['jack_naming'] = False
+
+        if self.in_terminal:
+            map['in_terminal'] = True
+
+        if self.template_origin:
+            map['template_origin'] = self.template_origin
+
+        protocol = self.protocol
+        internal_mode = ray.InternalMode.FOLLOW_PROTOCOL
+        server = self.get_server()
+        if server is not None:
+            internal_mode = server.internal_mode
+        if internal_mode is not ray.InternalMode.FOLLOW_PROTOCOL:
+            protocol = self.protocol_orig
+
+        if protocol is not ray.Protocol.NSM:
+            map['protocol'] = self.protocol.to_string()
+
+            if self.is_ray_hack:
+                map['config_file'] = self.ray_hack.config_file
+                map['save_signal'] = self.ray_hack.save_sig
+                map['stop_signal'] = self.ray_hack.stop_sig
+                map['wait_win'] = self.ray_hack.wait_win
+                map['no_save_level'] = self.ray_hack.no_save_level
+
+            elif self.is_ray_net:
+                map['net_daemon_url'] = self.ray_net.daemon_url
+                map['net_session_root'] = self.ray_net.session_root
+                map['net_session_template'] = self.ray_net.session_template
+
+        if self.ignored_extensions != ray.GIT_IGNORED_EXTENSIONS:
+            ignored = ' '.join(
+                [c for c in self.ignored_extensions.split(' ')
+                 if c and c not in ray.GIT_IGNORED_EXTENSIONS.split(' ')])
+            unignored = ' '.join(
+                [g for g in ray.GIT_IGNORED_EXTENSIONS
+                 if g and g not in self.ignored_extensions.split(' ')])
+
+            if ignored:
+                map['ignored_extensions'] = ignored
+
+            if unignored:
+                map['unignored_extensions'] = unignored
+
+        if self.last_open_duration >= 5.0:
+            map['last_open_duration'] = float(
+                '%.3f' % self.last_open_duration)
+
+        if self.custom_data:
+            map['custom_data'] = self.custom_data
 
     def transform_from_proxy_to_hack(
             self, spath: Path, sess_name: str) -> bool:
