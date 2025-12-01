@@ -387,7 +387,7 @@ def rebuild_templates_database(session: 'OperatingSession', base: str):
         template_client.client_id = c.string('client_id')        
         if not template_client.client_id:
             template_client.client_id = session.generate_abstract_client_id(
-                template_client.executable_path)
+                template_client.executable)
         template_client.update_infos_from_desktop_file()
         
         display_name = ''
@@ -401,7 +401,7 @@ def rebuild_templates_database(session: 'OperatingSession', base: str):
         # for Ardour, list ardour templates
         if base == 'factory' and c.bool('list_ardour_templates'):
             for ard_tp_path in ardour_templates.list_templates_from_exec(
-                    template_client.executable_path):
+                    template_client.executable):
                 ard_template_client = Client(session)
                 ard_template_client.eat_attributes(template_client)
                 ard_template_client.client_id = template_client.client_id
@@ -435,7 +435,7 @@ def rebuild_templates_database(session: 'OperatingSession', base: str):
         display_name = fde['name']
 
         template_client = Client(session)
-        template_client.executable_path = fde['executable']
+        template_client.executable = fde['executable']
         template_client.desktop_file = fde['desktop_file']
         template_client.client_id = session.generate_abstract_client_id(
             fde['executable'])

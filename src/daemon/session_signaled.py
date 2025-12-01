@@ -245,7 +245,7 @@ class SignaledSession(OperatingSession):
                 # this client is internal for sure
                 for client in self.clients:
                     if (client.protocol is ray.Protocol.INTERNAL
-                            and client.executable_path == executable_path
+                            and client.executable == executable_path
                             and client._internal is not None
                             and client._internal.running
                             and not client.nsm_active):
@@ -269,7 +269,7 @@ class SignaledSession(OperatingSession):
             for client in self.clients:
                 if (client.launched_in_terminal
                         and client.process_drowned
-                        and client.executable_path == executable_path):
+                        and client.executable == executable_path):
                     # when launched in terminal
                     # the client process can be stopped
                     # because the terminal process is 'linked' to an existing instance
@@ -1261,7 +1261,7 @@ class SignaledSession(OperatingSession):
         client = Client(self)
 
         client.protocol = protocol
-        client.executable_path = executable
+        client.executable = executable
         client.name = os.path.basename(executable)
         client.client_id = client_id
         client.prefix_mode = prefix_mode

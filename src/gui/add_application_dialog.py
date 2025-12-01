@@ -495,7 +495,7 @@ class AddApplicationDialog(ChildDialog):
         #self.ui.labelTemplateName.setText(template_name)
         self.ui.labelDescription.setText(cdata.description)
         self.ui.labelProtocol.setText(cdata.protocol.to_string())
-        self.ui.labelExecutable.setText(cdata.executable_path)
+        self.ui.labelExecutable.setText(cdata.executable)
         self.ui.labelLabel.setText(cdata.label)
         self.ui.labelName.setText(cdata.name)
 

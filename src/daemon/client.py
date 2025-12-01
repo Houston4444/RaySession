@@ -596,7 +596,7 @@ class Client(ServerSender, ray.ClientData):
 
         # Mostly for ray_hack
         if not jack_client_name:
-            jack_client_name = os.path.basename(self.executable_path)
+            jack_client_name = os.path.basename(self.executable)
             jack_client_name.capitalize()
 
         if '_' in self.client_id:
@@ -607,7 +607,7 @@ class Client(ServerSender, ray.ClientData):
         return jack_client_name
 
     def read_xml_properties(self, c: XmlElement):
-        self.executable_path = c.string('executable')
+        self.executable = c.string('executable')
         self.arguments = c.string('arguments')
         self.pre_env = c.string('pre_env')
         self.name = c.string('name')
@@ -631,7 +631,7 @@ class Client(ServerSender, ray.ClientData):
 
         # ensure client has a name
         if not self.name:
-            self.name = Path(self.executable_path).name
+            self.name = Path(self.executable).name
 
         self.update_infos_from_desktop_file()
 
@@ -672,7 +672,7 @@ class Client(ServerSender, ray.ClientData):
 
         # backward compatibility with network session
         if (self.protocol is ray.Protocol.NSM
-                and Path(self.executable_path).name == 'ray-network'):
+                and Path(self.executable).name == 'ray-network'):
             self.protocol = ray.Protocol.RAY_NET
 
             if self.arguments:
@@ -708,7 +708,7 @@ class Client(ServerSender, ray.ClientData):
 
         if self.is_ray_net:
             # neeeded only to know if RAY_NET client is capable of switch
-            self.executable_path = ray.RAYNET_BIN
+            self.executable = ray.RAYNET_BIN
             if self.ray_net.daemon_url and self.ray_net.session_root:
                 self.arguments = self.get_ray_net_arguments_line()
 
@@ -726,7 +726,7 @@ class Client(ServerSender, ray.ClientData):
 
     def write_xml_properties(self, c: XmlElement):
         if not self.is_ray_net:
-            c.set_str('executable', self.executable_path)
+            c.set_str('executable', self.executable)
             if self.arguments:
                 c.set_str('arguments', self.arguments)
 
@@ -821,7 +821,7 @@ class Client(ServerSender, ray.ClientData):
     def write_yaml_properties(self, map: CommentedMap):
         map.clear()
         if not self.is_ray_net:
-            map['executable'] = self.executable_path
+            map['executable'] = self.executable
             if self.arguments:
                 map['arguments'] = self.arguments
 
@@ -911,7 +911,7 @@ class Client(ServerSender, ray.ClientData):
         spath: the session Path of the future session.
         sess_name: the future session name'''
 
-        if self.executable_path != 'ray-proxy':
+        if self.executable != 'ray-proxy':
             return False
         
         match self.prefix_mode:
@@ -950,7 +950,7 @@ class Client(ServerSender, ray.ClientData):
             return False
 
         self.protocol = ray.Protocol.RAY_HACK
-        self.executable_path = executable
+        self.executable = executable
         self.arguments = arguments
         self.ray_hack.config_file = config_file
         self.ray_hack.no_save_level = no_save_level
@@ -1148,7 +1148,7 @@ class Client(ServerSender, ray.ClientData):
         return spath / f'{self.session.name}.{self.client_id}'
 
     def set_default_git_ignored(self, executable=""):
-        executable = executable if executable else self.executable_path
+        executable = executable if executable else self.executable
         executable = os.path.basename(executable)
 
         if executable.startswith(('ardour', 'Ardour')):
@@ -1224,7 +1224,7 @@ class Client(ServerSender, ray.ClientData):
             if server is not None:
                 terminal_args = [
                     a.replace('RAY_TERMINAL_TITLE',
-                              f"{self.client_id} {self.executable_path}")
+                              f"{self.client_id} {self.executable}")
                     for a in shlex.split(server.terminal_command)]
 
         if self.is_ray_net:
@@ -1278,7 +1278,7 @@ class Client(ServerSender, ray.ClientData):
         if self.arguments:
             arguments += shlex.split(arguments_line)
 
-        self.running_executable = self.executable_path
+        self.running_executable = self.executable
         self.running_arguments = self.arguments
 
         if self.is_ray_hack:
@@ -1288,21 +1288,21 @@ class Client(ServerSender, ray.ClientData):
             self.send_gui_client_properties()
 
         self.launched_in_terminal = self.in_terminal
-        if self.launched_in_terminal or self.executable_path in INTERNAL_EXECS:
+        if self.launched_in_terminal or self.executable in INTERNAL_EXECS:
             self.session.externals_timer.start()
 
         self.session.send_monitor_event(
             'start_request', self.client_id)
 
         self._process.setProcessEnvironment(process_env)
-        prog, *other_args = terminal_args + [self.executable_path] + arguments
+        prog, *other_args = terminal_args + [self.executable] + arguments
         
         internal_mode = ray.InternalMode.FOLLOW_PROTOCOL
         server = self.get_server()
         if server is not None:
             internal_mode = server.internal_mode
 
-        if self.executable_path in INTERNAL_EXECS:
+        if self.executable in INTERNAL_EXECS:
             self.protocol_orig = self.protocol
 
             if internal_mode is ray.InternalMode.FORCE_INTERNAL:
@@ -1312,7 +1312,7 @@ class Client(ServerSender, ray.ClientData):
 
             if self.protocol is ray.Protocol.INTERNAL:
                 self._internal = InternalClient(
-                    self.executable_path, tuple(arguments),
+                    self.executable, tuple(arguments),
                     self.get_server_url())
                 self._internal.start()
                 self.session.externals_timer.start()
@@ -1348,7 +1348,7 @@ class Client(ServerSender, ray.ClientData):
             return
 
         if not self.is_running:
-            if self.executable_path in RS.non_active_clients:
+            if self.executable in RS.non_active_clients:
                 if osp is not None and osp.src_addr:
                     self._osc_srcs[OscSrc.START] = osp
                     self._osc_srcs[OscSrc.OPEN] = None
@@ -1595,7 +1595,7 @@ class Client(ServerSender, ray.ClientData):
 
     def eat_attributes(self, new_client: 'Client'):
         #self.client_id = new_client.client_id
-        self.executable_path = new_client.executable_path
+        self.executable = new_client.executable
         self.arguments = new_client.arguments
         self.name = new_client.name
         self.prefix_mode = new_client.prefix_mode
@@ -1652,7 +1652,7 @@ class Client(ServerSender, ray.ClientData):
                         and self.ray_net.running_session_root
                             == other_client.ray_net.session_root)
 
-        return bool(self.running_executable == other_client.executable_path
+        return bool(self.running_executable == other_client.executable
                     and self.running_arguments == other_client.arguments)
 
     def send_gui_client_properties(self, removed=False):
@@ -1686,7 +1686,7 @@ class Client(ServerSender, ray.ClientData):
                     # do not change client_id !!!
                     continue
                 case 'executable':
-                    self.executable_path = value
+                    self.executable = value
                 case 'environment':
                     self.pre_env = value
                 case 'arguments':
@@ -1766,7 +1766,7 @@ class Client(ServerSender, ray.ClientData):
         message = (
             f'client_id:{self.client_id}\n'
             f'protocol:{self.protocol.to_string()}\n'
-            f'executable:{self.executable_path}\n'
+            f'executable:{self.executable}\n'
             f'environment:{self.pre_env}\n'
             f'arguments:{self.arguments}\n'
             f'name:{self.name}\n'
@@ -1854,10 +1854,10 @@ class Client(ServerSender, ray.ClientData):
             return
 
         if not desktop_file:
-            desktop_file = exec_and_desktops.get(self.executable_path)
+            desktop_file = exec_and_desktops.get(self.executable)
 
         if not desktop_file:
-            desktop_file = os.path.basename(self.executable_path)
+            desktop_file = os.path.basename(self.executable)
 
         if not desktop_file.endswith('.desktop'):
             desktop_file += ".desktop"
@@ -1892,7 +1892,7 @@ class Client(ServerSender, ray.ClientData):
             # if the executable is a symlink, we can search desktop file
             # finding the symlink target as executable in desktop file.
             alter_exec = None
-            full_exec = shutil.which(self.executable_path)
+            full_exec = shutil.which(self.executable)
 
             if full_exec is not None:
                 if Path(full_exec).is_symlink():
@@ -1926,7 +1926,7 @@ class Client(ServerSender, ray.ClientData):
                     for line in contents.splitlines():
                         if line.startswith('Exec='):
                             value = line.partition('=')[2]
-                            if (self.executable_path in value.split()
+                            if (self.executable in value.split()
                                     or (alter_exec is not None
                                         and alter_exec in value.split())):
                                 desk_file_found = True
@@ -2151,8 +2151,8 @@ class Client(ServerSender, ray.ClientData):
             self.pid = pid
             self.running_executable = executable_path
 
-        if self.executable_path in RS.non_active_clients:
-            RS.non_active_clients.remove(self.executable_path)
+        if self.executable in RS.non_active_clients:
+            RS.non_active_clients.remove(self.executable)
 
         if self.protocol is ray.Protocol.NSM:
             self.message( 

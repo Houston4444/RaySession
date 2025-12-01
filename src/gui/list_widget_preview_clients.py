@@ -132,7 +132,7 @@ class ClientSlot(QFrame):
                self.client.protocol.to_string())
         tool_tip += "%s : %s<br>" \
             % (_translate('client_slot', 'Executable'),
-               self.client.executable_path)
+               self.client.executable)
         tool_tip += "%s : %s</p>" \
             % (_translate('client_slot', 'client id'), self.client.client_id)
         tool_tip += "</body></html>"

@@ -510,7 +510,7 @@ class ClientTrashDialog(ChildDialog):
 
         self.ui.labelPrettierName.setText(self.client_data.prettier_name())
         self.ui.labelDescription.setText(self.client_data.description)
-        self.ui.labelExecutable.setText(self.client_data.executable_path)
+        self.ui.labelExecutable.setText(self.client_data.executable)
         self.ui.labelId.setText(self.client_data.client_id)
         self.ui.toolButtonIcon.setIcon(QIcon.fromTheme(self.client_data.icon))
 

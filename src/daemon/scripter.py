@@ -240,7 +240,7 @@ class ClientScripter(Scripter):
         process_env.insert('RAY_CLIENT_SCRIPTS_DIR', str(scripts_dir))
         process_env.insert('RAY_CLIENT_ID', self._client.client_id)
         process_env.insert('RAY_CLIENT_EXECUTABLE',
-                           self._client.executable_path)
+                           self._client.executable)
         process_env.insert('RAY_CLIENT_ARGUMENTS', self._client.arguments)
         self._process.setProcessEnvironment(process_env)
 

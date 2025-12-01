@@ -404,7 +404,7 @@ class OperatingSession(Session):
 
     def _new_client(self, executable: str, client_id=None) -> Client:
         client = Client(self)
-        client.executable_path = executable
+        client.executable = executable
         client.name = Path(executable).name
         client.client_id = client_id
         if not client_id:
@@ -451,7 +451,7 @@ class OperatingSession(Session):
             for client_xml in child:
                 client = Client(self)
                 client.read_xml_properties(XmlElement(client_xml))
-                if not client.executable_path:
+                if not client.executable:
                     continue
             
                 tmp_clients.append(client)
@@ -1275,10 +1275,10 @@ for better organization.""")
                         client = Client(self)
                         client.read_xml_properties(c)
                         
-                        if not client.executable_path:
+                        if not client.executable:
                             continue
 
-                        if client.executable_path == 'ray-proxy':
+                        if client.executable == 'ray-proxy':
                             client.transform_from_proxy_to_hack(spath, sess_name)
 
                         if client.client_id in client_ids:
@@ -1312,7 +1312,7 @@ for better organization.""")
                     if len(elements) >= 3:
                         client = Client(self)
                         client.name = elements[0]
-                        client.executable_path = elements[1]
+                        client.executable = elements[1]
                         client.client_id = elements[2]
                         client.prefix_mode = ray.PrefixMode.CLIENT_NAME
                         client.auto_start = True
@@ -1486,7 +1486,7 @@ for better organization.""")
                 if future_client.auto_start and not (self.is_dummy or open_off):
                     self.clients_to_launch.append(future_client)
 
-                    if (not future_client.executable_path
+                    if (not future_client.executable
                             in RS.non_active_clients):
                         self.expected_clients.append(future_client)
 
@@ -1538,8 +1538,8 @@ for better organization.""")
 
     def load_substep4(self):
         for client in self.expected_clients:
-            if not client.executable_path in RS.non_active_clients:
-                RS.non_active_clients.append(client.executable_path)
+            if not client.executable in RS.non_active_clients:
+                RS.non_active_clients.append(client.executable)
 
         RS.settings.setValue('daemon/non_active_list', RS.non_active_clients)
 
@@ -1707,7 +1707,7 @@ for better organization.""")
                 if t.template_name.startswith('/ardour_tp/'):
                     ard_tp_name = t.template_name.rpartition('/')[2]
                     ard_tp_path = ardour_templates.get_template_path_from_name(
-                        ard_tp_name, client.executable_path)
+                        ard_tp_name, client.executable)
                     if ard_tp_path is None:
                         self.answer(src_addr, src_path, "Failed to copy Ardour template",
                                     ray.Err.BAD_PROJECT)
@@ -1776,8 +1776,8 @@ for better organization.""")
             if (oth_client is client or 
                     (oth_client.is_running
                         and oth_client.can_monitor
-                        and oth_client.executable_path.startswith('ray-')
-                        and oth_client.executable_path.endswith('patch'))):
+                        and oth_client.executable.startswith('ray-')
+                        and oth_client.executable.endswith('patch'))):
                 self.expected_clients.append(oth_client)
                 oth_client.save()
         

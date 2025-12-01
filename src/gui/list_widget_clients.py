@@ -324,7 +324,7 @@ class ClientSlot(QFrame):
                 f'{self.client.protocol.to_string()}'
                 '<br>'
                 f"{_translate('client_slot', 'Executable')} : "
-                f"{self.client.executable_path}"
+                f"{self.client.executable}"
                 '<br>'
                 f"{_translate('client_slot', 'client id')} : "
                 f'{self.client.client_id}'

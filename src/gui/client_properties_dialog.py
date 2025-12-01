@@ -182,7 +182,7 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
             self.ui.tabWidget.setTabText(1, 'NSM')
 
     def _save_changes(self):
-        self.client.executable_path = self.nsmui.lineEditExecutable.text()
+        self.client.executable = self.nsmui.lineEditExecutable.text()
         self.client.arguments = self.nsmui.lineEditArguments.text()
         self.client.pre_env = self.nsmui.lineEditEnviron.text()
         self.client.in_terminal = self.nsmui.checkBoxTerminal.isChecked()
@@ -209,7 +209,7 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
         ClientPropertiesDialog.update_contents(self)
         self.nsmui.labelClientName.setText(self.client.name)
         self.nsmui.labelCapabilities.setText(self._get_capacities_line())
-        self.nsmui.lineEditExecutable.setText(self.client.executable_path)
+        self.nsmui.lineEditExecutable.setText(self.client.executable)
         self.nsmui.lineEditArguments.setText(self.client.arguments)
         self.nsmui.lineEditEnviron.setText(self.client.pre_env)
         self.nsmui.checkBoxTerminal.setChecked(self.client.in_terminal)
@@ -299,7 +299,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
             assert isinstance(self.client, Client)
         self.client.send_ray_hack()
 
-        self.client.executable_path = self.rhack.lineEditExecutable.text()
+        self.client.executable = self.rhack.lineEditExecutable.text()
         self.client.arguments = self.rhack.lineEditArguments.text()
         self.client.pre_env = self.rhack.lineEditEnviron.text()
         ClientPropertiesDialog._save_changes(self)
@@ -385,11 +385,11 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         if self.client.ray_hack is None:
             return
         
-        executable = self.client.executable_path
+        executable = self.client.executable
         arguments = self.client.arguments
         config_file = self.client.ray_hack.config_file
 
-        self.client.executable_path = self.rhack.lineEditExecutable.text()
+        self.client.executable = self.rhack.lineEditExecutable.text()
         self.client.arguments = self.rhack.lineEditArguments.text()
         self.client.ray_hack.config_file = self.rhack.lineEditConfigFile.text()
 
@@ -454,7 +454,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
         if self.client.ray_hack is None:
             return
         
-        self.rhack.lineEditExecutable.setText(self.client.executable_path)
+        self.rhack.lineEditExecutable.setText(self.client.executable)
         self.rhack.lineEditArguments.setText(self.client.arguments)
         self.rhack.lineEditEnviron.setText(self.client.pre_env)
         self.rhack.lineEditConfigFile.setText(
