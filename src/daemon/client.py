@@ -1955,7 +1955,7 @@ class Client(ServerSender, ray.ClientData):
                 self._send_error_to_caller(
                     OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
                     _translate('GUIMSG', 'impossible to remove %s !')
-                    % highlight_text(template_dir))
+                        % highlight_text(template_dir))
                 return
 
         template_dir.mkdir(parents=True)
@@ -1986,7 +1986,7 @@ class Client(ServerSender, ray.ClientData):
         else:
             self._save_as_template_substep1(template_name)
 
-    def eat_other_session_client(self, src_addr, osc_path, client: 'Client'):
+    def eat_other_session_client(self, osp: OscPack, client: 'Client'):
         # eat attributes but keep client_id
         self.eat_attributes(client)
 
@@ -1997,7 +1997,7 @@ class Client(ServerSender, ray.ClientData):
         
         if spath is None:
             self.send(
-                src_addr, osc_paths.ERROR, osc_path, ray.Err.NO_SESSION_OPEN,
+                *osp.error(), ray.Err.NO_SESSION_OPEN,
                 "impossible to eat other session client, no session open")
             return
         
@@ -2009,7 +2009,7 @@ class Client(ServerSender, ray.ClientData):
             tmp_work_dir.mkdir(parents=True)
         except:
             self.send(
-                src_addr, osc_paths.ERROR, osc_path, ray.Err.CREATE_FAILED,
+                *osp.error(), ray.Err.CREATE_FAILED,
                 f"impossible to make a tmp workdir at {tmp_work_dir}. Abort.")
             self.session._remove_client(self)
             return
@@ -2022,13 +2022,13 @@ class Client(ServerSender, ray.ClientData):
             tmp_work_dir,
             self.eat_other_session_client_step_1,
             self.eat_other_session_client_aborted,
-            [src_addr, osc_path, client, tmp_work_dir])
+            [osp, client, tmp_work_dir])
 
     def eat_other_session_client_step_1(
-            self, src_addr: Address, osc_path: str,
-            client: 'Client', tmp_work_dir: str):
+            self, osp: OscPack,
+            client: 'Client', tmp_work_dir: Path):
         self._rename_files(
-            Path(tmp_work_dir), client.session.name, self.session.name,
+            tmp_work_dir, client.session.name, self.session.name,
             client.prefix, self.prefix,
             client.client_id, self.client_id,
             client.links_dirname, self.links_dirname)
@@ -2056,19 +2056,18 @@ class Client(ServerSender, ray.ClientData):
                     f'failed to remove temp client directory '
                     f'{tmp_work_dir}. sorry.')
 
-        self.send(src_addr, osc_paths.REPLY, osc_path,
-                  "Client copied from another session")
+        self.send(*osp.reply(), "Client copied from another session")
 
         if self.auto_start:
             self.start()
         else:
             self.set_status(ray.ClientStatus.STOPPED)
 
-    def eat_other_session_client_aborted(self, src_addr, osc_path,
-                                         client, tmp_work_dir):
+    def eat_other_session_client_aborted(
+            self, osp: OscPack, client: Client, tmp_work_dir):
         shutil.rmtree(tmp_work_dir)
         self.session._remove_client(self)
-        self.send(src_addr, osc_paths.ERROR, osc_path, ray.Err.COPY_ABORTED,
+        self.send(*osp.error(), ray.Err.COPY_ABORTED,
                   "Copy was aborted by user")
 
     def change_prefix(self, prefix_mode: ray.PrefixMode, custom_prefix: str):

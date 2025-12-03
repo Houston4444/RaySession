@@ -1355,8 +1355,7 @@ class SignaledSession(OperatingSession):
                               'session is busy')
                     return
 
-                new_client.eat_other_session_client(
-                    osp.src_addr, osp.path, client)
+                new_client.eat_other_session_client(osp, client)
                 break
         else:
             self.send(
