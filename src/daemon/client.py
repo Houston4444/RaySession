@@ -819,7 +819,18 @@ class Client(ServerSender, ray.ClientData):
             ET.dump(c.el)
 
     def write_yaml_properties(self, map: CommentedMap):
+        protocol = self.protocol
+        internal_mode = ray.InternalMode.FOLLOW_PROTOCOL
+        server = self.get_server()
+        if server is not None:
+            internal_mode = server.internal_mode
+        if internal_mode is not ray.InternalMode.FOLLOW_PROTOCOL:
+            protocol = self.protocol_orig
+
         map.clear()
+        if protocol is not ray.Protocol.NSM:
+            map['protocol'] = self.protocol.to_string()
+        
         if not self.is_ray_net:
             map['executable'] = self.executable
             if self.arguments:
@@ -857,25 +868,15 @@ class Client(ServerSender, ray.ClientData):
         if self.template_origin:
             map['template_origin'] = self.template_origin
 
-        protocol = self.protocol
-        internal_mode = ray.InternalMode.FOLLOW_PROTOCOL
-        server = self.get_server()
-        if server is not None:
-            internal_mode = server.internal_mode
-        if internal_mode is not ray.InternalMode.FOLLOW_PROTOCOL:
-            protocol = self.protocol_orig
-
-        if protocol is not ray.Protocol.NSM:
-            map['protocol'] = self.protocol.to_string()
-
-            if self.is_ray_hack:
+        match protocol:
+            case ray.Protocol.RAY_HACK:
                 map['config_file'] = self.ray_hack.config_file
                 map['save_signal'] = self.ray_hack.save_sig
                 map['stop_signal'] = self.ray_hack.stop_sig
                 map['wait_win'] = self.ray_hack.wait_win
                 map['no_save_level'] = self.ray_hack.no_save_level
 
-            elif self.is_ray_net:
+            case ray.Protocol.RAY_NET:
                 map['net_daemon_url'] = self.ray_net.daemon_url
                 map['net_session_root'] = self.ray_net.session_root
                 map['net_session_template'] = self.ray_net.session_template
@@ -885,7 +886,7 @@ class Client(ServerSender, ray.ClientData):
                 [c for c in self.ignored_extensions.split(' ')
                  if c and c not in ray.GIT_IGNORED_EXTENSIONS.split(' ')])
             unignored = ' '.join(
-                [g for g in ray.GIT_IGNORED_EXTENSIONS
+                [g for g in ray.GIT_IGNORED_EXTENSIONS.split(' ')
                  if g and g not in self.ignored_extensions.split(' ')])
 
             if ignored:

@@ -9,6 +9,10 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 from io import BytesIO
 
+# third-party imports
+from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
+
 # Imports from src/shared
 from osclib import Address, are_same_osc_port, OscPack
 import ray
@@ -278,6 +282,61 @@ class Session(ServerSender):
 
         if session_file.is_file() and not os.access(session_file, os.W_OK):
             return ray.Err.CREATE_FAILED
+        
+        session_file_yaml = session_path / 'raysession.yaml'
+        if self.is_nsm_locked() and os.getenv('NSM_URL'):
+            session_file_yaml = session_path / 'raysubsession.yaml'
+        
+        # if (session_file_yaml.is_file()
+        #         and not os.access(session_file_yaml, os.W_OK)):
+        #     return ray.Err.CREATE_FAILED
+
+        main_map = CommentedMap()
+        main_map['app'] = 'RAYSESSION'
+        main_map['version'] = ray.VERSION
+        main_map['name'] = self.name
+        if self.notes_shown:
+            main_map['notes_shown'] = True
+            
+        clients_map = CommentedMap()
+        for client in self.clients:
+            client_map = CommentedMap()
+            client.write_yaml_properties(client_map)
+            
+            launched = bool(
+                client.is_running
+                or (client.auto_start
+                    and not client.has_been_started))
+            if not launched:
+                client_map['launched'] = False
+            
+            clients_map[client.client_id] = client_map
+        
+        main_map['clients'] = clients_map
+        
+        trashed_clients_map = CommentedMap()
+        if self.trashed_clients:
+            for client in self.trashed_clients:
+                client_map = CommentedMap()
+                client.write_yaml_properties(client_map)
+                trashed_clients_map[client.client_id] = client_map
+            
+            main_map['trashed_clients'] = trashed_clients_map
+        
+        # save desktop memory of windows if needed
+        if self.has_server_option(ray.Option.DESKTOPS_MEMORY):
+            self.desktops_memory.save()
+        
+        if self.desktops_memory.saved_windows:
+            main_map['windows'] = CommentedSeq()
+            for win in self.desktops_memory.saved_windows:
+                wmap = CommentedMap()
+                wmap['class'] = win.wclass
+                wmap['name'] = win.name
+                wmap['desktop'] = win.desktop
+        
+        yaml = YAML()
+        yaml.dump(main_map, session_file_yaml)
 
         root = ET.Element('RAYSESSION')
         xroot = XmlElement(root)

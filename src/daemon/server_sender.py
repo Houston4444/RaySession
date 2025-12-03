@@ -147,12 +147,6 @@ class ServerSender:
 
         return 0
 
-    def answer(self, src_addr, src_path, message, err=ray.Err.OK):
-        if err == ray.Err.OK:
-            self.send(src_addr, osc_paths.REPLY, src_path, message)
-        else:
-            self.send(src_addr, osc_paths.ERROR, src_path, err, message)
-
     def has_server_option(self, option: ray.Option) -> bool:
         server = self.get_server()
         if not server:

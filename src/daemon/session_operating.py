@@ -205,8 +205,8 @@ class OperatingSession(Session):
 
     def next_function(self, from_run_step=False, run_step_args=[]):
         if self.run_step_addr and not from_run_step:
-            self.answer(self.run_step_addr, r.session.RUN_STEP,
-                        'step done')
+            self.send(self.run_step_addr, osc_paths.REPLY,
+                      r.session.RUN_STEP, 'step done')
             self.run_step_addr = None
             return
 
@@ -362,9 +362,13 @@ class OperatingSession(Session):
         self.steps_order.clear()
 
         if self.run_step_addr:
-            self.answer(self.run_step_addr, r.session.RUN_STEP,
-                        error_message, err)
-
+            if err is ray.Err.OK:
+                self.send(self.run_step_addr, osc_paths.REPLY,
+                          r.session.RUN_STEP, error_message)
+            else:
+                self.send(self.run_step_addr, osc_paths.ERROR,
+                          r.session.RUN_STEP, err, error_message)
+            
         if self.steps_osp is None:
             return
         
@@ -1661,7 +1665,7 @@ for better organization.""")
         self.send_gui(rg.server.DISANNOUNCE)
         QCoreApplication.quit()
 
-    def add_client_template(self, src_addr, src_path,
+    def add_client_template(self, osp: OscPack,
                             template_name: str, factory=False, auto_start=True,
                             unique_id=''):
         if self.path is None:
@@ -1709,8 +1713,9 @@ for better organization.""")
                     ard_tp_path = ardour_templates.get_template_path_from_name(
                         ard_tp_name, client.executable)
                     if ard_tp_path is None:
-                        self.answer(src_addr, src_path, "Failed to copy Ardour template",
-                                    ray.Err.BAD_PROJECT)
+                        self.send(
+                            *osp.error(), 'Failed to copy Ardour template',
+                            ray.Err.BAD_PROJECT)
                         return
                     
                     ard_tp_copyed = ardour_templates.copy_template_to_session(
@@ -1720,14 +1725,16 @@ for better organization.""")
                         client.client_id
                     )
                     if not ard_tp_copyed:
-                        self.answer(src_addr, src_path, "Failed to copy Ardour template",
-                                    ray.Err.BAD_PROJECT)
+                        self.send(
+                            *osp.error(), 'Failed to copy Ardour template',
+                            ray.Err.BAD_PROJECT)
                         return
                 
                 if not self._add_client(client):
-                    self.answer(src_addr, src_path,
-                                "Session does not accept any new client now",
-                                ray.Err.NOT_NOW)
+                    self.send(
+                        osp.error(),
+                        'Session does not accept any new client now',
+                        ray.Err.NOT_NOW)
                     return
                 
                 if file_paths:
@@ -1736,11 +1743,10 @@ for better organization.""")
                         client.client_id, file_paths, self.path,
                         self.add_client_template_step_1,
                         self.add_client_template_aborted,
-                        [src_addr, src_path, client],
+                        [osp, client],
                         src_is_factory=factory)
                 else:
-                    self.add_client_template_step_1(src_addr, src_path,
-                                                    client)
+                    self.add_client_template_step_1(osp, client)
                 return
 
         # no template found with that name
@@ -1752,11 +1758,13 @@ for better organization.""")
                 RS.favorites.remove(favorite)
                 break
 
-        self.send(src_addr, osc_paths.ERROR, src_path, ray.Err.NO_SUCH_FILE,
-                  _translate('GUIMSG', "%s is not an existing template !")
+        self.send(
+            *osp.error(),
+            ray.Err.NO_SUCH_FILE,
+            _translate('GUIMSG', "%s is not an existing template !")
                   % highlight_text(template_name))
 
-    def add_client_template_step_1(self, src_addr, src_path, client: Client):
+    def add_client_template_step_1(self, osp: OscPack, client: Client):
         client.adjust_files_after_copy(self.name, ray.Template.CLIENT_LOAD)
 
         if client.auto_start:
@@ -1764,11 +1772,11 @@ for better organization.""")
         else:
             client.set_status(ray.ClientStatus.STOPPED)
 
-        self.answer(src_addr, src_path, client.client_id)
+        self.send(*osp.reply(), client.client_id)
 
-    def add_client_template_aborted(self, src_addr, src_path, client: Client):
+    def add_client_template_aborted(self, osp: OscPack, client: Client):
         self._remove_client(client)
-        self.send(src_addr, osc_paths.ERROR, src_path, ray.Err.COPY_ABORTED,
+        self.send(*osp.error(), ray.Err.COPY_ABORTED,
                   _translate('GUIMSG', 'Copy has been aborted !'))
 
     def save_client_and_patchers(self, client: Client):

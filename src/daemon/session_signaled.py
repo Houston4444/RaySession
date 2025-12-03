@@ -1311,7 +1311,7 @@ class SignaledSession(OperatingSession):
                     return
 
         self.add_client_template(
-            osp.src_addr, osp.path, template_name, factory, auto_start, unique_id)
+            osp, template_name, factory, auto_start, unique_id)
 
     @manage(r.session.ADD_FACTORY_CLIENT_TEMPLATE, 'ss*')
     def _ray_session_add_factory_client_template(self, osp: OscPack):
