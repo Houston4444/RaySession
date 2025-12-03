@@ -1114,15 +1114,13 @@ class Client(ServerSender, ray.ClientData):
 
     @property
     def prefix(self) -> str:
-        if self.prefix_mode is ray.PrefixMode.SESSION_NAME:
-            return self.session.name
-
-        if self.prefix_mode is ray.PrefixMode.CLIENT_NAME:
-            return self.name
-
-        if self.prefix_mode is ray.PrefixMode.CUSTOM:
-            return self.custom_prefix
-
+        match self.prefix_mode:
+            case ray.PrefixMode.SESSION_NAME:
+                return self.session.name
+            case ray.PrefixMode.CLIENT_NAME:
+                return self.name
+            case ray.PrefixMode.CUSTOM:
+                return self.custom_prefix
         return ''
 
     @property
@@ -1150,28 +1148,29 @@ class Client(ServerSender, ray.ClientData):
 
     def set_default_git_ignored(self, executable=""):
         executable = executable if executable else self.executable
-        executable = os.path.basename(executable)
+        executable = Path(executable).name
 
-        if executable.startswith(('ardour', 'Ardour')):
-            if len(executable) == 6:
-                self.ignored_extensions += " .mid"
-            elif len(executable) <= 8:
-                rest = executable[6:]
-                if rest.isdigit():
+        match executable:
+            case s if s.startswith(('ardour', 'Ardour')):
+                if len(executable) == 6:
                     self.ignored_extensions += " .mid"
-        elif executable == 'qtractor':
-            self.ignored_extensions += " .mid"
+                elif len(executable) <= 8:
+                    rest = executable[6:]
+                    if rest.isdigit():
+                        self.ignored_extensions += " .mid"
+            case 'qtractor':
+                self.ignored_extensions += " .mid"
 
-        elif executable in ('luppp', 'sooperlooper', 'sooperlooper_nsm'):
-            if '.wav' in self.ignored_extensions:
-                self.ignored_extensions = \
-                    self.ignored_extensions.replace('.wav', '')
-
-        elif executable == 'samplv1_jack':
-            for ext in ('.wav', '.flac', '.ogg', '.mp3'):
-                if ext in self.ignored_extensions:
+            case 'luppp' | 'sooperlooper' | 'sooperlooper_nsm':
+                if '.wav' in self.ignored_extensions:
                     self.ignored_extensions = \
-                        self.ignored_extensions.replace(ext, '')
+                        self.ignored_extensions.replace('.wav', '')
+
+            case 'samplv1_jack':
+                for ext in ('.wav', '.flac', '.ogg', '.mp3'):
+                    if ext in self.ignored_extensions:
+                        self.ignored_extensions = \
+                            self.ignored_extensions.replace(ext, '')
 
     def start(self, osp: Optional[OscPack]=None, wait_open_to_reply=False):
         if osp is not None and not wait_open_to_reply:
@@ -1193,8 +1192,10 @@ class Client(ServerSender, ray.ClientData):
                 and self.session.path is not None
                 and not self.session.root in self.session.path.parents):
             self._send_error_to_caller(OscSrc.START, ray.Err.GENERAL_ERROR,
-                _translate('GUIMSG',
-                    "Impossible to run Ray-Net client when session is not in root folder"))
+                _translate(
+                    'GUIMSG',
+                    "Impossible to run Ray-Net client "
+                    "when session is not in root folder"))
             return
 
         if self.scripter.start(ray.Command.START, osp,
@@ -1337,7 +1338,8 @@ class Client(ServerSender, ray.ClientData):
                 _translate('GUIMSG', '%s is exiting.') % self.gui_msg_style)
 
         if self.is_running and self.is_dumb_client():
-            self._send_error_to_caller(OscSrc.OPEN, ray.Err.GENERAL_ERROR,
+            self._send_error_to_caller(
+                OscSrc.OPEN, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s seems to can not open')
                     % self.gui_msg_style)
 
@@ -1383,14 +1385,14 @@ class Client(ServerSender, ray.ClientData):
         except:
             if src_addr:
                 self.send(src_addr, osc_paths.ERROR, src_path,
-                          ray.Err.GENERAL_ERROR, 'invalid signal %i' % sig)
+                          ray.Err.GENERAL_ERROR, f'invalid signal {sig}')
             return
 
         if not self.is_running:
             if src_addr:
                 self.send(src_addr, osc_paths.ERROR, src_path,
                           ray.Err.GENERAL_ERROR,
-                          'client %s is not running' % self.client_id)
+                          f'client {self.client_id} is not running')
             return
 
         os.kill(self.pid, sig)
@@ -1522,7 +1524,7 @@ class Client(ServerSender, ray.ClientData):
                 QTimer.singleShot(300, self._ray_hack_saved)
 
             elif self.can_save_now():
-                self.message("Telling %s to save" % self.name)
+                self.message(f'Telling {self.client_id} to save')
                 self.send_to_self_address(nsm.client.SAVE)
 
                 self.pending_command = ray.Command.SAVE
@@ -1783,7 +1785,7 @@ class Client(ServerSender, ray.ClientData):
         )
 
         match self.protocol:
-            case ray.Protocol.NSM|ray.Protocol.INTERNAL:
+            case ray.Protocol.NSM | ray.Protocol.INTERNAL:
                 message += f'\ncapabilities:{self.capabilities}'
 
             case ray.Protocol.RAY_HACK:

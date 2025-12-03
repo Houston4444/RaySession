@@ -1782,10 +1782,7 @@ for better organization.""")
     def save_client_and_patchers(self, client: Client):
         for oth_client in self.clients:
             if (oth_client is client or 
-                    (oth_client.is_running
-                        and oth_client.can_monitor
-                        and oth_client.executable.startswith('ray-')
-                        and oth_client.executable.endswith('patch'))):
+                    (oth_client.is_running and oth_client.can_patcher)):
                 self.expected_clients.append(oth_client)
                 oth_client.save()
         

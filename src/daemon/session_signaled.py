@@ -30,7 +30,6 @@ from session_operating import OperatingSession
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session_dummy import DummySession
-from canvas_saver import CanvasSaver
 
 _logger = logging.getLogger(__name__)
 _translate = QCoreApplication.translate
@@ -719,13 +718,13 @@ class SignaledSession(OperatingSession):
                 break
         else:
             self.send(*osp.error(), ray.Err.BAD_PROJECT,
-                      "%s is not an existing session, can't rename !"
-                      % old_session_name)
+                      f"{old_session_name} is not an existing session, "
+                      "can't rename !")
 
         if '/' in new_session_name:
             self.send(*osp.error(), ray.Err.BAD_PROJECT,
                       "'/' is not allowed in new_session_name")
-            return False
+            return
 
         tmp_session = self._new_dummy_session(self.root)
         tmp_session.ray_server_rename_session(osp)
@@ -1340,27 +1339,28 @@ class SignaledSession(OperatingSession):
 
         if dummy_session.path is None:
             self.send(*osp.error(), ray.Err.NOT_NOW,
-                      "falied to load other session %s" % other_session)
+                      f'failed to load other session {other_session}')
             return
         
         for client in dummy_session.clients:
             if client.client_id == client_id:
-                new_client = Client(self)
-                new_client.client_id = self.generate_client_id(
-                    Client.short_client_id(client_id))
-
-                ok = self._add_client(new_client)
-                if not ok:
-                    self.send(*osp.error(), ray.Err.NOT_NOW,
-                              'session is busy')
-                    return
-
-                new_client.eat_other_session_client(osp, client)
                 break
         else:
             self.send(
                 *osp.error(), ray.Err.NO_SUCH_FILE,
                 f'no client {client_id} found in session {other_session}')
+            return
+
+        new_client = Client(self)
+        new_client.client_id = self.generate_client_id(
+            Client.short_client_id(client_id))
+
+        ok = self._add_client(new_client)
+        if not ok:
+            self.send(*osp.error(), ray.Err.NOT_NOW, 'session is busy')
+            return
+
+        new_client.eat_other_session_client(osp, client)
 
     @manage(r.session.REORDER_CLIENTS, 'ss*')
     def _ray_session_reorder_clients(self, osp: OscPack):
@@ -1439,17 +1439,17 @@ class SignaledSession(OperatingSession):
                 cape = 0
                 arg = arg.replace('not_', '', 1)
 
-            if ':' in arg:
-                search_properties.append((cape, arg))
-
-            elif arg == 'started':
-                f_started = cape
-            elif arg == 'active':
-                f_active = cape
-            elif arg == 'auto_start':
-                f_auto_start = cape
-            elif arg == 'no_save_level':
-                f_no_save_level = cape
+            match arg:
+                case s if ':' in s:
+                    search_properties.append((cape, arg))
+                case 'started':
+                    f_started = cape
+                case 'active':
+                    f_active = cape
+                case 'auto_start':
+                    f_auto_start = cape
+                case 'no_save_level':
+                    f_no_save_level = cape
 
         client_id_list = list[str]()
 
@@ -1458,7 +1458,8 @@ class SignaledSession(OperatingSession):
                 and (f_active < 0 or f_active == client.nsm_active)
                 and (f_auto_start < 0 or f_auto_start == client.auto_start)
                 and (f_no_save_level < 0
-                     or f_no_save_level == int(bool(client.relevant_no_save_level())))):
+                     or f_no_save_level == int(bool(
+                         client.relevant_no_save_level())))):
                 if search_properties:
                     message = client.get_properties_message()
 
@@ -1483,11 +1484,7 @@ class SignaledSession(OperatingSession):
 
     @manage(r.session.LIST_TRASHED_CLIENTS, '')
     def _ray_session_list_trashed_clients(self, osp: OscPack):
-        client_id_list = list[str]()
-
-        for trashed_client in self.trashed_clients:
-            client_id_list.append(trashed_client.client_id)
-
+        client_id_list = [tc.client_id for tc in self.trashed_clients]
         if client_id_list:
             self.send(*osp.reply(), *client_id_list)
         self.send(*osp.reply())
@@ -1883,14 +1880,16 @@ class SignaledSession(OperatingSession):
             elif client.can_switch:
                 self.steps_order = [
                     (self.save_client_and_patchers, client),
-                    (self.rename_full_client, client, new_client_name, new_client_id),
+                    (self.rename_full_client, client,
+                     new_client_name, new_client_id),
                     (self.switch_client, client),
                     (self.rename_full_client_done, client)]
             else:
                 self.steps_order = [
                     (self.save_client_and_patchers, client),
                     (self.close_client, client),
-                    (self.rename_full_client, client, new_client_name, new_client_id),
+                    (self.rename_full_client, client,
+                     new_client_name, new_client_id),
                     (self.restart_client, client),
                     (self.rename_full_client_done, client)
                 ]
@@ -2061,14 +2060,14 @@ class SignaledSession(OperatingSession):
         client.net_daemon_copy_timer.start()
 
     def check_recent_sessions_existing(self):
-        # check here if recent sessions still exist
-        if self.root in self.recent_sessions.keys():
-            to_remove_list = list[str]()
-            for sess in self.recent_sessions[self.root]:
-                if not Path(self.root / sess / 'raysession.xml').exists():
-                    to_remove_list.append(sess)
-            for sess in to_remove_list:
-                self.recent_sessions[self.root].remove(sess)
+        '''remove from self.recent_sessions sessions not existing anymore'''
+        recent_sessions = self.recent_sessions.get(self.root)
+        if recent_sessions is None:
+            return
+        
+        for sess in recent_sessions.copy():
+            if not Path(self.root / sess / 'raysession.xml').exists():
+                recent_sessions.remove(sess)
 
     def server_open_session_at_start(self, session_name):
         self.steps_order = [(self.preload, session_name),
@@ -2086,7 +2085,6 @@ class SignaledSession(OperatingSession):
         if self.terminated_yet:
             return
 
-        # self.send_patchbay_daemon(r.patchbay.QUIT)
         patchbay_dmn_mng.daemon_exit()
 
         if self.file_copier.is_active():
