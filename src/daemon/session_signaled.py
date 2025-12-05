@@ -74,7 +74,7 @@ def session_operation(path: str | tuple[str, ...], types: str):
 
             if sess.steps_order:
                 sess.send(*osp.error(), ray.Err.OPERATION_PENDING,
-                        "An operation pending.")
+                          "An operation pending.")
                 return
 
             if sess.file_copier.is_active():
@@ -608,7 +608,7 @@ class SignaledSession(OperatingSession):
                         basefolder = str(Path(root).relative_to(self.root))
                         self.send(*osp.reply(), basefolder)
 
-        self.send(*osp.reply(), "")
+        self.send(*osp.reply(), '')
 
     @session_operation((r.server.NEW_SESSION, nsm.server.NEW), 's|ss')
     def _ray_server_new_session(self, osp: OscPack):
@@ -1592,7 +1592,11 @@ class SignaledSession(OperatingSession):
             self.send_error_copy_running(osp)
             return
 
-        client.save_as_template(template_name, osp)
+        self.steps_osp = osp
+        self.steps_order = [
+            (self.save_client_as_template, client, template_name)]
+        
+        self.next_function()
 
     @client_action(r.client.SHOW_OPTIONAL_GUI, 's')
     def _ray_client_show_optional_gui(self, osp: OscPack, client:Client):

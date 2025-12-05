@@ -31,8 +31,7 @@ import osc_paths.nsm as nsm
 import client_tools
 from server_sender import ServerSender
 from daemon_tools  import (
-    NoSessionPath, TemplateRoots, Terminal, RS, get_code_root,
-    highlight_text, exec_and_desktops)
+    NoSessionPath, Terminal, RS, get_code_root, exec_and_desktops)
 from signaler import Signaler
 from scripter import ClientScripter
 from internal_client import InternalClient
@@ -48,8 +47,7 @@ class OscSrc(Enum):
     START = 0
     OPEN = 1
     SAVE = 2
-    SAVE_TP = 3
-    STOP = 4
+    STOP = 3
 
 
 NSM_API_VERSION_MAJOR = 1
@@ -323,7 +321,7 @@ class Client(ServerSender, ray.ClientData):
             self._osc_srcs[slot] = None
 
             if (self.scripter.is_running()
-                    and self.scripter.pending_command() == self.pending_command):
+                    and self.scripter.pending_command() is self.pending_command):
                 self._osc_srcs[slot] = self.scripter.initial_caller()
 
         if slot is OscSrc.OPEN:
@@ -433,133 +431,6 @@ class Client(ServerSender, ray.ClientData):
             self, spath, old_session_name, new_session_name,
             old_prefix, new_prefix, old_client_id, new_client_id,
             old_client_links_dir, new_client_links_dir)
-
-    def _save_as_template_substep1(self, template_name: str):
-        self.set_status(self.status) # see set_status to see why
-
-        if self.prefix_mode is not ray.PrefixMode.CUSTOM:
-            self.adjust_files_after_copy(template_name,
-                                         ray.Template.CLIENT_SAVE)
-
-        user_clients_path = TemplateRoots.user_clients
-        xml_file = user_clients_path / 'client_templates.xml'
-
-        # security check
-        if xml_file.exists():
-            if not os.access(xml_file, os.W_OK):
-                self._send_error_to_caller(
-                    OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                    _translate('GUIMSG', '%s is not writeable !') % xml_file)
-                return
-
-            if xml_file.is_dir():
-                # should not be a dir, remove it !
-                _logger.info(
-                    f'removing {xml_file} because it is a dir, it must be a file')
-                try:
-                    shutil.rmtree(xml_file)
-                except:
-                    self._send_error_to_caller(
-                        OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                        _translate('GUIMSG', 'Failed to remove %s directory !') % xml_file)
-                    return
-
-        if not user_clients_path.is_dir():
-            try:
-                user_clients_path.mkdir(parents=True)
-            except BaseException as e:
-                _logger.error(str(e))
-                self._send_error_to_caller(
-                    OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                    _translate('GUIMSG', 'Failed to create directories for %s')
-                        % user_clients_path)
-                return
-
-        # create client_templates.xml if it does not exists
-        if not xml_file.is_file():
-            root = ET.Element('RAY-CLIENT-TEMPLATES')
-            tree = ET.ElementTree(root)
-            try:
-                tree.write(xml_file)
-            except:
-                _logger.error(
-                    'Failed to create user client templates xml file')
-                self._send_error_to_caller(
-                    OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                    _translate('GUIMSG', 'Failed to write xml file  %s')
-                        % str(xml_file))
-                return
-
-        try:
-            tree = ET.parse(xml_file)
-        except BaseException as e:
-            _logger.error(str(e))
-            self._send_error_to_caller(
-                OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                _translate('GUIMSG', '%s seems to not be a valid XML file.')
-                    % str(xml_file))
-            return
-
-        root = tree.getroot()
-        
-        if root.tag != 'RAY-CLIENT-TEMPLATES':
-            self._send_error_to_caller(
-                OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                _translate('GUIMSG', '%s is not a client templates XML file.')
-                    % str(xml_file))
-            return
-        
-        # remove the existant templates with the same name
-        to_rm_childs = list[ET.Element]()
-        for child in root:
-            if child.tag != 'Client-Template':
-                continue
-            
-            c = XmlElement(child)
-            if c.string('template-name') == template_name:
-                to_rm_childs.append(child)
-                
-        for child in to_rm_childs:
-            root.remove(child)
-
-        # create the client template item in xml file
-        c = XmlElement(ET.SubElement(root, 'Client-Template'))
-        self.write_xml_properties(c)
-        c.set_str('template-name', template_name)
-        c.set_str('client_id', self.short_client_id(self.client_id))
-        
-        if not self.is_running:
-            c.set_bool('launched', False)
-        
-        # write the file
-        ET.indent(tree, level=0)
-        
-        try:
-            tree.write(xml_file)
-        except Exception as e:
-            _logger.error(str(e))
-            self._send_error_to_caller(
-                OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                _translate('GUIMSG', 'Failed to write XML file %s.')
-                    % str(xml_file))
-            return
-
-        self.template_origin = template_name
-        self.send_gui_client_properties()
-
-        template_data_base_users = self.get_client_templates_database('user')
-        template_data_base_users.clear()
-
-        self.send_gui_message(
-            _translate('message', 'Client template %s created')
-                % template_name)
-
-        self._send_reply_to_caller(OscSrc.SAVE_TP, 'client template created')
-
-    def _save_as_template_aborted(self, template_name: str):
-        self.set_status(self.status)
-        self._send_error_to_caller(OscSrc.SAVE_TP, ray.Err.COPY_ABORTED,
-            _translate('GUIMSG', 'Copy has been aborted !'))
 
     @property
     def links_dirname(self) -> str:
@@ -1945,49 +1816,6 @@ class Client(ServerSender, ray.ClientData):
             else:
                 self.desktop_file = '//not_found'
 
-    def save_as_template(self, template_name: str, osp: Optional[OscPack]=None):
-        if osp is not None:
-            self._osc_srcs[OscSrc.SAVE_TP] = osp
-
-        template_dir = TemplateRoots.user_clients / template_name
-        if template_dir.exists():
-            try:
-                shutil.rmtree(template_dir)
-            except:
-                self._send_error_to_caller(
-                    OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                    _translate('GUIMSG', 'impossible to remove %s !')
-                        % highlight_text(template_dir))
-                return
-
-        template_dir.mkdir(parents=True)
-
-        if self.is_ray_net:
-            if self.ray_net.daemon_url:
-                self.ray_net.session_template = template_name
-                net_session_root = self.ray_net.session_root
-                if self.is_running:
-                    net_session_root = self.ray_net.running_session_root
-
-                self.send(Address(self.ray_net.daemon_url),
-                          r.server.SAVE_SESSION_TEMPLATE,
-                          self.session.name,
-                          template_name,
-                          net_session_root)
-
-        # copy files
-        client_files = self.project_files
-
-        if client_files:
-            self.set_status(ray.ClientStatus.COPY)
-            self.session.file_copier.start_client_copy(
-                self.client_id, client_files, template_dir,
-                self._save_as_template_substep1,
-                self._save_as_template_aborted,
-                [template_name])
-        else:
-            self._save_as_template_substep1(template_name)
-
     def eat_other_session_client(self, osp: OscPack, client: 'Client'):
         # eat attributes but keep client_id
         self.eat_attributes(client)
@@ -2066,7 +1894,7 @@ class Client(ServerSender, ray.ClientData):
             self.set_status(ray.ClientStatus.STOPPED)
 
     def eat_other_session_client_aborted(
-            self, osp: OscPack, client: Client, tmp_work_dir):
+            self, osp: OscPack, client: 'Client', tmp_work_dir):
         shutil.rmtree(tmp_work_dir)
         self.session._remove_client(self)
         self.send(*osp.error(), ray.Err.COPY_ABORTED,
