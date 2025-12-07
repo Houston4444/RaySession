@@ -1827,6 +1827,95 @@ for better organization.""")
             ray.Err.COPY_ABORTED,
             _translate('GUIMSG', 'Copy has been aborted !'))
 
+    def add_other_session_client(self, client: 'Client'):
+        # eat attributes but keep client_id
+        new_client = Client(self)
+        new_client.client_id = self.generate_client_id(
+            Client.short_client_id(client.client_id))
+        
+        ok = self._add_client(new_client)
+        if not ok:
+            self._send_error(ray.Err.NOT_NOW, 'session is busy')
+            return
+
+        if self.path is None:
+            raise NoSessionPath
+
+        new_client.eat_attributes(client)
+        new_client.send_gui_client_properties()
+        
+        tmp_basedir = ".tmp_ray_workdir"
+        
+        while Path(self.path / tmp_basedir).exists():
+            tmp_basedir += 'X'
+        tmp_work_dir = self.path / tmp_basedir
+        
+        try:
+            tmp_work_dir.mkdir(parents=True)
+        except:
+            self._send_error(
+                ray.Err.CREATE_FAILED,
+                f"impossible to make a tmp workdir at {tmp_work_dir}. Abort.")
+            self._remove_client(new_client)
+            return
+
+        new_client.set_status(ray.ClientStatus.PRECOPY)
+        
+        self.file_copier.start_client_copy(
+            new_client.client_id,
+            client.project_files,
+            tmp_work_dir,
+            self.add_other_session_client_step_1,
+            self.add_other_session_client_aborted,
+            [new_client, client, tmp_work_dir])
+
+    def add_other_session_client_step_1(
+            self, new_client: 'Client', client: 'Client', tmp_work_dir: Path):
+        new_client._rename_files(
+            tmp_work_dir, client.session.name, self.name,
+            client.prefix, new_client.prefix,
+            client.client_id, new_client.client_id,
+            client.links_dirname, new_client.links_dirname)
+
+        has_move_errors = False
+
+        for file_path in os.listdir(tmp_work_dir):
+            try:
+                os.rename(f'{tmp_work_dir}/{file_path}',
+                          f'{self.path}/{file_path}')
+            except:
+                self.message(
+                    _translate(
+                        'client',
+                        'failed to move %s/%s to %s/%s, sorry.')
+                        % (tmp_work_dir, file_path,
+                           self.path, file_path))
+                has_move_errors = True
+        
+        if not has_move_errors:
+            try:
+                shutil.rmtree(tmp_work_dir)
+            except:
+                self.message(
+                    f'failed to remove temp client directory '
+                    f'{tmp_work_dir}. sorry.')
+
+        self._send_reply('Client copied from another session')
+
+        if new_client.auto_start:
+            new_client.start()
+        else:
+            new_client.set_status(ray.ClientStatus.STOPPED)
+            
+        self.steps_osp = None
+
+    def add_other_session_client_aborted(
+            self, new_client: 'Client', client: 'Client', tmp_work_dir: Path):
+        shutil.rmtree(tmp_work_dir)
+        self._remove_client(new_client)
+        self._send_error(ray.Err.COPY_ABORTED, 'Copy was aborted by user')
+        self.steps_osp = None
+
     def exit_now(self):
         self._wait_and_go_to(1000, self.exit_now_step_2, ray.WaitFor.PATCHBAY_QUIT)
         

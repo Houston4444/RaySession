@@ -79,7 +79,8 @@ def session_operation(path: str | tuple[str, ...], types: str):
 
             if sess.file_copier.is_active():
                 if osp.path.startswith('/nsm/server/'):
-                    sess.send(*osp.error(), ray.Err.OPERATION_PENDING,
+                    sess.send(
+                        *osp.error(), ray.Err.OPERATION_PENDING,
                         "An operation pending.")
                 else:
                     sess.send(
@@ -92,6 +93,10 @@ def session_operation(path: str | tuple[str, ...], types: str):
             sess.steps_osp = osp
 
             response = func(*args, **kwargs)
+            
+            if not sess.steps_order:
+                sess.steps_osp = None
+
             sess.next_function()
 
             return response
@@ -1328,7 +1333,7 @@ class SignaledSession(OperatingSession):
         other_session, client_id = osp_args    
 
         # @session_operation remember this but this is not needed here
-        self.steps_osp = None
+        # self.steps_osp = None
 
         dummy_session = DummySession(self.root)
         dummy_session.dummy_load(other_session)
@@ -1338,8 +1343,9 @@ class SignaledSession(OperatingSession):
         # This is quite dirty but so easier
 
         if dummy_session.path is None:
-            self.send(*osp.error(), ray.Err.NOT_NOW,
-                      f'failed to load other session {other_session}')
+            self.send(
+                *osp.error(), ray.Err.NOT_NOW,
+                f'failed to load temporary other session {other_session}')
             return
         
         for client in dummy_session.clients:
@@ -1351,16 +1357,7 @@ class SignaledSession(OperatingSession):
                 f'no client {client_id} found in session {other_session}')
             return
 
-        new_client = Client(self)
-        new_client.client_id = self.generate_client_id(
-            Client.short_client_id(client_id))
-
-        ok = self._add_client(new_client)
-        if not ok:
-            self.send(*osp.error(), ray.Err.NOT_NOW, 'session is busy')
-            return
-
-        new_client.eat_other_session_client(osp, client)
+        self.steps_order = [(self.add_other_session_client, client)]
 
     @manage(r.session.REORDER_CLIENTS, 'ss*')
     def _ray_session_reorder_clients(self, osp: OscPack):

@@ -124,8 +124,8 @@ class Client(ServerSender, ray.ClientData):
         self.session = parent_session
         self.is_dummy = self.session.is_dummy
 
-        self.custom_data = {}
-        self.custom_tmp_data = {}
+        self.custom_data = dict[str, str]()
+        self.custom_tmp_data = dict[str, str]()
 
         self._process = QProcess()
         self._process.started.connect(self._process_started)
@@ -445,8 +445,6 @@ class Client(ServerSender, ray.ClientData):
         self.send(self.addr, *args)
 
     def message(self, message: str):
-        if self.session is None:
-            return
         self.session.message(message)
 
     @property
@@ -910,7 +908,7 @@ class Client(ServerSender, ray.ClientData):
         if self.session.wait_for is ray.WaitFor.REPLY:
             self.session.end_timer_if_last_expected(self)
 
-    def set_label(self, label:str):
+    def set_label(self, label: str):
         self.label = label
         self.send_gui_client_properties()
 
@@ -1509,7 +1507,7 @@ class Client(ServerSender, ray.ClientData):
             self.send_gui(rg.client.GUI_VISIBLE,
                            self.client_id, int(self.gui_visible))
 
-    def can_switch_with(self, other_client: 'Client')->bool:
+    def can_switch_with(self, other_client: 'Client') -> bool:
         if self.protocol is ray.Protocol.RAY_HACK:
             return False
 
@@ -1636,7 +1634,7 @@ class Client(ServerSender, ray.ClientData):
 
         self.send_gui_client_properties()
 
-    def get_properties_message(self):
+    def get_properties_message(self) -> str:
         message = (
             f'client_id:{self.client_id}\n'
             f'protocol:{self.protocol.to_string()}\n'
@@ -1815,90 +1813,6 @@ class Client(ServerSender, ray.ClientData):
                     break
             else:
                 self.desktop_file = '//not_found'
-
-    def eat_other_session_client(self, osp: OscPack, client: 'Client'):
-        # eat attributes but keep client_id
-        self.eat_attributes(client)
-
-        self.send_gui_client_properties()
-        
-        tmp_basedir = ".tmp_ray_workdir"
-        spath = self.session.path
-        
-        if spath is None:
-            self.send(
-                *osp.error(), ray.Err.NO_SESSION_OPEN,
-                "impossible to eat other session client, no session open")
-            return
-        
-        while Path(spath / tmp_basedir).exists():
-            tmp_basedir += 'X'
-        tmp_work_dir = spath / tmp_basedir
-        
-        try:
-            tmp_work_dir.mkdir(parents=True)
-        except:
-            self.send(
-                *osp.error(), ray.Err.CREATE_FAILED,
-                f"impossible to make a tmp workdir at {tmp_work_dir}. Abort.")
-            self.session._remove_client(self)
-            return
-
-        self.set_status(ray.ClientStatus.PRECOPY)
-        
-        self.session.file_copier.start_client_copy(
-            self.client_id,
-            client.project_files,
-            tmp_work_dir,
-            self.eat_other_session_client_step_1,
-            self.eat_other_session_client_aborted,
-            [osp, client, tmp_work_dir])
-
-    def eat_other_session_client_step_1(
-            self, osp: OscPack,
-            client: 'Client', tmp_work_dir: Path):
-        self._rename_files(
-            tmp_work_dir, client.session.name, self.session.name,
-            client.prefix, self.prefix,
-            client.client_id, self.client_id,
-            client.links_dirname, self.links_dirname)
-
-        has_move_errors = False
-
-        for file_path in os.listdir(tmp_work_dir):
-            try:
-                os.rename(f'{tmp_work_dir}/{file_path}',
-                          f'{self.session.path}/{file_path}')
-            except:
-                self.message(
-                    _translate(
-                        'client',
-                        'failed to move %s/%s to %s/%s, sorry.')
-                        % (tmp_work_dir, file_path,
-                           self.session.path, file_path))
-                has_move_errors = True
-        
-        if not has_move_errors:
-            try:
-                shutil.rmtree(tmp_work_dir)
-            except:
-                self.message(
-                    f'failed to remove temp client directory '
-                    f'{tmp_work_dir}. sorry.')
-
-        self.send(*osp.reply(), "Client copied from another session")
-
-        if self.auto_start:
-            self.start()
-        else:
-            self.set_status(ray.ClientStatus.STOPPED)
-
-    def eat_other_session_client_aborted(
-            self, osp: OscPack, client: 'Client', tmp_work_dir):
-        shutil.rmtree(tmp_work_dir)
-        self.session._remove_client(self)
-        self.send(*osp.error(), ray.Err.COPY_ABORTED,
-                  "Copy was aborted by user")
 
     def change_prefix(self, prefix_mode: ray.PrefixMode, custom_prefix: str):
         if self.is_running:
