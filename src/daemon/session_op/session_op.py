@@ -1,0 +1,44 @@
+from typing import TYPE_CHECKING, Callable
+
+import ray
+
+if TYPE_CHECKING:
+    from session_operating import OperatingSession
+
+
+class SessionOp:
+    def __init__(self, session: 'OperatingSession'):
+        self.session = session
+        self.routine = list[Callable]()
+        self.func_n = 0
+    
+    def _clean_up_session_ops(self):
+        self.session.steps_osp = None
+        self.session.steps_order.clear()
+
+    def start(self):
+        self.func_n = 0
+        self.routine[0]()
+    
+    def start_from_script(self, arguments: list[str]):
+        self.start()
+    
+    def next(self, duration: int, wait_for: ray.WaitFor):
+        self.func_n += 1
+        self.session._wait_and_go_to(
+            duration, self.routine[self.func_n], wait_for)
+
+    def reply(self, msg: str):
+        if self.session.steps_osp is not None:        
+            self.session.send_even_dummy(
+                *self.session.steps_osp.reply(), msg)
+        
+        self._clean_up_session_ops()
+        
+    def error(self, err: ray.Err, msg: str):
+        if self.session.steps_osp is not None:
+            self.session.send_even_dummy(
+            *self.session.steps_osp.error(), err, msg)
+            
+        self._clean_up_session_ops()
+

@@ -3,7 +3,7 @@ from pathlib import Path
 from osclib import OscPack
 
 from session_operating import OperatingSession
-from session_operations import SessionOpSave
+from session_op import SessionOpSave, SessionOpLoad
 
 
 class DummySession(OperatingSession):
@@ -24,7 +24,7 @@ class DummySession(OperatingSession):
     def dummy_load_and_template(self, session_full_name, template_name):
         self.steps_order = [(self.preload, session_full_name),
                             self.take_place,
-                            self.load,
+                            SessionOpLoad(self),
                             (self.save_session_template, template_name, True)]
         self.next_function()
 
@@ -33,7 +33,7 @@ class DummySession(OperatingSession):
         session_to_load, new_session_full_name, sess_root = osp.args
         self.steps_order = [(self.preload, session_to_load),
                             self.take_place,
-                            self.load,
+                            SessionOpLoad(self),
                             (self.duplicate, new_session_full_name),
                             self.duplicate_only_done]
         self.next_function()
@@ -43,7 +43,7 @@ class DummySession(OperatingSession):
         self.steps_osp = osp
         self.steps_order = [(self.preload, session_name),
                             self.take_place,
-                            self.load,
+                            SessionOpLoad(self),
                             (self.save_session_template, template_name, net)]
         self.next_function()
 
@@ -53,7 +53,7 @@ class DummySession(OperatingSession):
 
         self.steps_order = [(self.preload, full_session_name),
                             self.take_place,
-                            self.load,
+                            SessionOpLoad(self),
                             (self.rename, new_session_name),
                             SessionOpSave(self),
                             (self.rename_done, new_session_name)]
@@ -64,12 +64,12 @@ class DummySession(OperatingSession):
         session_name = osp.args[0]
         self.steps_order = [(self.preload, session_name, False),
                             self.take_place,
-                            self.load,
+                            SessionOpLoad(self),
                             (self.send_preview, osp.src_addr, folder_sizes)]
         self.next_function()
     
     def dummy_load(self, session_name):
         self.steps_order = [(self.preload, session_name, False),
                             self.take_place,
-                            self.load]
+                            SessionOpLoad(self)]
         self.next_function()

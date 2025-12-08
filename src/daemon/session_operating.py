@@ -34,7 +34,7 @@ import ardour_templates
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session import Session
-from session_operations import SessionOp, SessionOpSave
+from session_op import SessionOp, SessionOpSave
 from file_copier import FileCopier
 from scripter import StepScripter
 from canvas_saver import CanvasSaver

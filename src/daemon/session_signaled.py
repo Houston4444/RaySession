@@ -27,7 +27,7 @@ import multi_daemon_file
 from signaler import Signaler
 from daemon_tools import NoSessionPath, Terminal, RS, is_pid_child_of, highlight_text
 from session_operating import OperatingSession
-from session_operations import SessionOp, SessionOpSave
+from session_op import SessionOp, SessionOpSave, SessionOpLoad
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session_dummy import DummySession
@@ -632,7 +632,7 @@ class SignaledSession(OperatingSession):
                                     (self.preload, session_name),
                                     self.close,
                                     self.take_place,
-                                    self.load,
+                                    SessionOpLoad(self),
                                     self.new_done]
                 return
 
@@ -706,7 +706,7 @@ class SignaledSession(OperatingSession):
                              # if open_off, clear all clients at close
                              (self.close, open_off),
                              self.take_place,
-                             (self.load, open_off),
+                             SessionOpLoad(self, open_off=open_off),
                              self.load_done]
 
     @manage(r.server.OPEN_SESSION_OFF, 's|si')
@@ -1041,7 +1041,7 @@ class SignaledSession(OperatingSession):
                             (self.preload, new_session_full_name),
                             self.close,
                             self.take_place,
-                            self.load,
+                            SessionOpLoad(self),
                             self.duplicate_done]
 
     @manage(r.session.DUPLICATE_ONLY, 'sss')
@@ -1093,7 +1093,7 @@ class SignaledSession(OperatingSession):
             (self.init_snapshot, self.path, snapshot),
             (self.preload, str(self.path)),
             self.take_place,
-            self.load,
+            SessionOpLoad(self),
             self.load_done]
 
     @manage(r.session.RENAME, 's')
@@ -2074,7 +2074,7 @@ class SignaledSession(OperatingSession):
     def server_open_session_at_start(self, session_name):
         self.steps_order = [(self.preload, session_name),
                             self.take_place,
-                            self.load,
+                            SessionOpLoad(self),
                             self.load_done]
         self.next_function()
 
