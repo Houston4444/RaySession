@@ -34,7 +34,7 @@ import ardour_templates
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session import Session
-from session_op import SessionOp, SessionOpSave
+from session_op import SessionOp, SessionOpSave, SessionOpClose
 from file_copier import FileCopier
 from scripter import StepScripter
 from canvas_saver import CanvasSaver
@@ -406,8 +406,9 @@ class OperatingSession(Session):
             # the next_function (save, close, load)
             if self.step_scripter.get_step() in ('load', 'close'):
                 self.steps_order.clear()
-                self.steps_order = [(self.close, True),
-                                    self.abort_done]
+                self.steps_order = [
+                    SessionOpClose(self, clear_all_clients=True),
+                    self.abort_done]
 
                 # Fake the next_function to come from run_step message
                 # This way, we are sure the close step

@@ -29,7 +29,7 @@ import multi_daemon_file
 from signaler import Signaler
 from server_sender import ServerSender
 from client import Client
-from daemon_tools import NoSessionPath, Terminal
+from daemon_tools import Terminal
 import templates_database
 
 if TYPE_CHECKING:
@@ -398,8 +398,8 @@ class Session(ServerSender):
 
     def generate_abstract_client_id(self, wanted_id:str) -> str:
         '''generates a client_id from wanted_id
-           not regarding the existing ids in the session
-           or session directory. Useful for templates'''
+        not regarding the existing ids in the session
+        or session directory. Useful for templates'''
         for to_rm in ('ray-', 'non-', 'carla-'):
             if wanted_id.startswith(to_rm):
                 wanted_id = wanted_id.replace(to_rm, '', 1)

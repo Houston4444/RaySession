@@ -29,6 +29,7 @@ class SessionOpLoad(SessionOp):
     def start_from_script(self, arguments: list[str]):
         if 'open_off' in arguments:
             self.open_off = True
+        self.start()
     
     def load(self, open_off=False):
         session = self.session

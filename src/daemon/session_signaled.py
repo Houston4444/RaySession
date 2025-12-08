@@ -27,7 +27,7 @@ import multi_daemon_file
 from signaler import Signaler
 from daemon_tools import NoSessionPath, Terminal, RS, is_pid_child_of, highlight_text
 from session_operating import OperatingSession
-from session_op import SessionOp, SessionOpSave, SessionOpLoad
+from session_op import SessionOp, SessionOpSave, SessionOpLoad, SessionOpClose
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session_dummy import DummySession
@@ -630,7 +630,7 @@ class SignaledSession(OperatingSession):
                                     self.snapshot,
                                     (self.prepare_template, *osp.args, False),
                                     (self.preload, session_name),
-                                    self.close,
+                                    SessionOpClose(self),
                                     self.take_place,
                                     SessionOpLoad(self),
                                     self.new_done]
@@ -639,7 +639,7 @@ class SignaledSession(OperatingSession):
         self.steps_order = [SessionOpSave(self),
                             self.close_no_save_clients,
                             self.snapshot,
-                            self.close,
+                            SessionOpClose(self),
                             (self.new, osp.args[0]),
                             SessionOpSave(self),
                             self.new_done]
@@ -702,12 +702,12 @@ class SignaledSession(OperatingSession):
             self.steps_order += [(self.prepare_template, session_name,
                                  template_name, True)]
 
-        self.steps_order += [(self.preload, session_name),
-                             # if open_off, clear all clients at close
-                             (self.close, open_off),
-                             self.take_place,
-                             SessionOpLoad(self, open_off=open_off),
-                             self.load_done]
+        self.steps_order += [
+            (self.preload, session_name),
+            SessionOpClose(self, clear_all_clients=open_off),
+            self.take_place,
+            SessionOpLoad(self, open_off=open_off),
+            self.load_done]
 
     @manage(r.server.OPEN_SESSION_OFF, 's|si')
     def _ray_server_open_session_off(self, osp: OscPack):
@@ -923,7 +923,7 @@ class SignaledSession(OperatingSession):
         self.steps_order = [SessionOpSave(self, outing=True),
                             self.close_no_save_clients,
                             self.snapshot,
-                            (self.close, True),
+                            SessionOpClose(self, clear_all_clients=True),
                             self.close_done]
 
     @manage((r.session.ABORT, nsm.server.ABORT), '')
@@ -974,7 +974,8 @@ class SignaledSession(OperatingSession):
                                'abort ordered from elsewhere, sorry !'))
 
         self.steps_osp = osp
-        self.steps_order = [(self.close, True), self.abort_done]
+        self.steps_order = [SessionOpClose(self, clear_all_clients=True),
+                            self.abort_done]
 
         if self.file_copier.is_active():
             self.file_copier.abort(self.next_function, [])
@@ -986,7 +987,7 @@ class SignaledSession(OperatingSession):
         patchbay_dmn_mng.daemon_exit()
         self.steps_osp = osp
         self.steps_order = [self.terminate_step_scripter,
-                            self.close, self.exit_now]
+                            SessionOpClose(self), self.exit_now]
 
         if self.file_copier.is_active():
             self.file_copier.abort(self.next_function, [])
@@ -1039,7 +1040,7 @@ class SignaledSession(OperatingSession):
                             self.snapshot,
                             (self.duplicate, new_session_full_name),
                             (self.preload, new_session_full_name),
-                            self.close,
+                            SessionOpClose(self),
                             self.take_place,
                             SessionOpLoad(self),
                             self.duplicate_done]
@@ -1089,7 +1090,7 @@ class SignaledSession(OperatingSession):
             SessionOpSave(self),
             self.close_no_save_clients,
             (self.snapshot, '', snapshot, True),
-            (self.close, True),
+            SessionOpClose(self, clear_all_clients=True),
             (self.init_snapshot, self.path, snapshot),
             (self.preload, str(self.path)),
             self.take_place,
@@ -2094,6 +2095,6 @@ class SignaledSession(OperatingSession):
 
         self.terminated_yet = True
         self.steps_order = [self.terminate_step_scripter,
-                            self.close, self.exit_now]
+                            SessionOpClose(self), self.exit_now]
 
         self.next_function()
