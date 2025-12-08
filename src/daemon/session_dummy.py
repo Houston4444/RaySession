@@ -3,6 +3,7 @@ from pathlib import Path
 from osclib import OscPack
 
 from session_operating import OperatingSession
+from session_operations import SessionOpSave
 
 
 class DummySession(OperatingSession):
@@ -54,7 +55,7 @@ class DummySession(OperatingSession):
                             self.take_place,
                             self.load,
                             (self.rename, new_session_name),
-                            self.save,
+                            SessionOpSave(self),
                             (self.rename_done, new_session_name)]
         self.next_function()
     

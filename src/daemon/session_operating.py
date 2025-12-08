@@ -17,7 +17,7 @@ from qtpy.QtCore import QCoreApplication, QTimer
 
 # Imports from src/shared
 from osclib import Address, MegaSend, is_valid_osc_url
-from osclib.bases import OscPack, OscPath
+from osclib.bases import OscPack
 import ray
 from xml_tools import XmlElement
 import osc_paths
@@ -34,6 +34,7 @@ import ardour_templates
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session import Session
+from session_operations import SessionOp, SessionOpSave
 from file_copier import FileCopier
 from scripter import StepScripter
 from canvas_saver import CanvasSaver
@@ -75,7 +76,7 @@ class OperatingSession(Session):
         self.steps_osp: Optional[OscPack] = None
         'Stock the OscPack of the long operation running (if any).'
 
-        self.steps_order = list[Callable| tuple[Callable | Any, ...]]()
+        self.steps_order = list[SessionOp | Callable | tuple[Callable | Any, ...]]()
 
         self.terminated_yet = False
 
@@ -226,47 +227,59 @@ class OperatingSession(Session):
             if len(next_item) > 1:
                 arguments = next_item[1:]
 
+        elif isinstance(next_item, SessionOp):
+            next_function = next_item.start
+
+        scripted_steps = {'load': self.load,
+                          'save': self.save,
+                          'close': self.close}
+
         if (self.has_server_option(ray.Option.SESSION_SCRIPTS)
                 and not self.step_scripter.is_running()
                 and self.path is not None
                 and not from_run_step):
-            for step_string in ('load', 'save', 'close'):
-                if next_function == self.__getattribute__(step_string):
-                    if (step_string == 'load'
-                            and arguments
-                            and arguments[0] == True):
-                        # prevent use of load session script
-                        # with open_session_off
-                        break
-
-                    if (self.steps_osp is not None
-                            and self.step_scripter.start(
-                                step_string, arguments,
-                                self.steps_osp.src_addr,
-                                self.steps_osp.path)):
-                        self.set_server_status(ray.ServerStatus.SCRIPT)
-                        return
+            for step_str, func in scripted_steps.items():
+                if step_str == 'save' and isinstance(func, SessionOpSave):
+                    ...
+                else:
+                    if func is not next_function:
+                        continue
+                
+                if func is self.load and arguments and arguments[0] is True:
                     break
+                
+                if (self.steps_osp is not None
+                        and self.step_scripter.start(
+                            step_str, arguments,
+                            self.steps_osp.src_addr,
+                            self.steps_osp.path)):
+                    self.set_server_status(ray.ServerStatus.SCRIPT)
+                    return
+                break
 
         if (from_run_step and next_function
                 and self.step_scripter.is_running()):
-            if (next_function
-                    == self.__getattribute__(
-                                self.step_scripter.get_step())):
+            step = self.step_scripter.get_step()
+            if (next_function is scripted_steps.get(step)
+                    or (step == 'save' 
+                        and isinstance(next_function, SessionOpSave))):
                 self.step_scripter.set_stepper_has_call(True)
 
-            if next_function == self.load:
+            if next_function is self.load:
                 if 'open_off' in run_step_args:
                     arguments = [True]
-            elif next_function == self.close:
+            elif next_function is self.close:
                 if 'close_all' in run_step_args:
                     arguments = [True]
-            elif next_function == self.save:
+            elif next_function is self.save:
                 if 'without_clients' in run_step_args:
                     arguments = [False, False]
+            elif isinstance(next_function, SessionOp):
+                next_function.start_from_script(run_step_args)
 
         self.steps_order.__delitem__(0)
-        _logger.debug(f'next_function: {next_function.__name__}')  # type: ignore
+        _logger.debug(
+            f'next_function: {next_function.__name__}')  # type: ignore
         next_function(*arguments) # type: ignore
 
     def _timer_launch_timeout(self):
