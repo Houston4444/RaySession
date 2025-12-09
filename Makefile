@@ -210,6 +210,6 @@ pure_install:
 	
 	# Install Translations
 	install -m 644 locale/*.qm $(DEST_RAY)/locale/
-	install -m 644 $(PATCHBAY_DIR)/locale/*.qm $(DEST_RAY)/$(PATCHBAY_DIR)/locale
+	install -m 644 $(PATCHBAY_DIR)/locale/*.qm $(DEST_RAY)/$(PATCHBAY_DIR)/locale/
 
 
