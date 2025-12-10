@@ -209,7 +209,7 @@ pure_install:
 	install -m 755 data/bin/ray_control $(DESTDIR)$(PREFIX)/bin/
 	
 	# Install Translations
-	install -m 644 locale/*.qm $(DEST_RAY)/locale/
-	install -m 644 $(PATCHBAY_DIR)/locale/*.qm $(DEST_RAY)/$(PATCHBAY_DIR)/locale/
+	install -m 644 -t $(DEST_RAY)/locale/ locale/*.qm
+	install -m 644 -t $(DEST_RAY)/$(PATCHBAY_DIR)/locale/ $(PATCHBAY_DIR)/locale/*.qm
 
 
