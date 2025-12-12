@@ -917,7 +917,9 @@ class SignaledSession(OperatingSession):
             self.steps_order.append(SessionOpSave(self))
             
         self.steps_order += [
-            SessionOpSaveSnapshot(self, snapshot_name=snapshot_name, force=True),
+            SessionOpSaveSnapshot(
+                self, snapshot_name=snapshot_name,
+                force=True, error_is_minor=False),
             self.snapshot_done]
 
     @session_operation((r.session.CLOSE, nsm.server.CLOSE), '')
