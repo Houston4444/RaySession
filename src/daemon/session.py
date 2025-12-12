@@ -68,7 +68,6 @@ class Session(ServerSender):
 
         self.bookmarker = BookMarker()
         self.desktops_memory = DesktopsMemory(self)
-        self.snapshoter = Snapshoter(self)
         
         self._time_at_open = 0
 

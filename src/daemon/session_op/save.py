@@ -19,6 +19,7 @@ class SessionOpSave(SessionOp):
     def __init__(self, session: 'OperatingSession',
                  outing=False, save_clients=True):
         super().__init__(session)
+        self.script_step = 'save'
         self.outing = outing
         self.save_clients = save_clients
         self.routine = [self.save, self.save_substep1]

@@ -11,6 +11,7 @@ class SessionOp:
         self.session = session
         self.routine = list[Callable]()
         self.func_n = 0
+        self.script_step: str = ''
     
     def _clean_up_session_ops(self):
         self.session.steps_osp = None
@@ -23,10 +24,11 @@ class SessionOp:
     def start_from_script(self, arguments: list[str]):
         self.start()
     
-    def next(self, duration: int, wait_for: ray.WaitFor):
+    def next(self, duration: int, wait_for: ray.WaitFor, redondant=False):
         self.func_n += 1
         self.session._wait_and_go_to(
-            duration, self.routine[self.func_n], wait_for)
+            duration, self.routine[self.func_n],
+            wait_for, redondant=redondant)
 
     def reply(self, msg: str):
         if self.session.steps_osp is not None:        

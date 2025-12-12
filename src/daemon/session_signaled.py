@@ -27,7 +27,7 @@ import multi_daemon_file
 from signaler import Signaler
 from daemon_tools import NoSessionPath, Terminal, RS, is_pid_child_of, highlight_text
 from session_operating import OperatingSession
-from session_op import SessionOp, SessionOpSave, SessionOpLoad, SessionOpClose
+from session_op import SessionOp, SessionOpSave, SessionOpLoad, SessionOpClose, SessionOpCloseNoSaveClients, SessionOpSaveSnapshot
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session_dummy import DummySession
@@ -626,8 +626,8 @@ class SignaledSession(OperatingSession):
 
             if not spath.exists():
                 self.steps_order = [SessionOpSave(self),
-                                    self.close_no_save_clients,
-                                    self.snapshot,
+                                    SessionOpCloseNoSaveClients(self),
+                                    SessionOpSaveSnapshot(self),
                                     (self.prepare_template, *osp.args, False),
                                     (self.preload, session_name),
                                     SessionOpClose(self),
@@ -637,8 +637,8 @@ class SignaledSession(OperatingSession):
                 return
 
         self.steps_order = [SessionOpSave(self),
-                            self.close_no_save_clients,
-                            self.snapshot,
+                            SessionOpCloseNoSaveClients(self),
+                            SessionOpSaveSnapshot(self),
                             SessionOpClose(self),
                             (self.new, osp.args[0]),
                             SessionOpSave(self),
@@ -693,10 +693,10 @@ class SignaledSession(OperatingSession):
         if save_previous:
             self.steps_order += [SessionOpSave(self, outing=True)]
 
-        self.steps_order += [self.close_no_save_clients]
+        self.steps_order += [SessionOpCloseNoSaveClients(self)]
 
         if save_previous:
-            self.steps_order += [(self.snapshot, '', '', False, True)]
+            self.steps_order += [SessionOpSaveSnapshot(self, outing=True)]
 
         if template_name:
             self.steps_order += [(self.prepare_template, session_name,
@@ -777,7 +777,7 @@ class SignaledSession(OperatingSession):
             if client.is_ray_net:
                 client.ray_net.session_template = template_name
 
-        self.steps_order = [SessionOpSave(self), self.snapshot,
+        self.steps_order = [SessionOpSave(self), SessionOpSaveSnapshot(self),
                             (self.save_session_template, template_name)]
 
     @manage(r.server.GET_SESSION_PREVIEW, 's')
@@ -886,7 +886,7 @@ class SignaledSession(OperatingSession):
     def _ray_session_save(self, osp: OscPack):        
         # self.steps_order = [self.save, self.snapshot, self.save_done]
         self.steps_order = [
-            SessionOpSave(self), self.snapshot, self.save_done]
+            SessionOpSave(self), SessionOpSaveSnapshot(self), self.save_done]
 
     @session_operation(r.session.SAVE_AS_TEMPLATE, 's')
     def _ray_session_save_as_template(self, osp: OscPack):
@@ -896,7 +896,7 @@ class SignaledSession(OperatingSession):
             if client.is_ray_net:
                 client.ray_net.session_template = template_name
 
-        self.steps_order = [SessionOpSave(self), self.snapshot,
+        self.steps_order = [SessionOpSave(self), SessionOpSaveSnapshot(self),
                             (self.save_session_template, template_name)]
 
     @session_operation(r.session.TAKE_SNAPSHOT, 's|si')
@@ -915,14 +915,16 @@ class SignaledSession(OperatingSession):
 
         if with_save:
             self.steps_order.append(SessionOpSave(self))
-        self.steps_order += [(self.snapshot, snapshot_name, '', True),
-                             self.snapshot_done]
+            
+        self.steps_order += [
+            SessionOpSaveSnapshot(self, snapshot_name=snapshot_name, force=True),
+            self.snapshot_done]
 
     @session_operation((r.session.CLOSE, nsm.server.CLOSE), '')
     def _ray_session_close(self, osp: OscPack):
         self.steps_order = [SessionOpSave(self, outing=True),
-                            self.close_no_save_clients,
-                            self.snapshot,
+                            SessionOpCloseNoSaveClients(self),
+                            SessionOpSaveSnapshot(self),
                             SessionOpClose(self, clear_all_clients=True),
                             self.close_done]
 
@@ -1036,8 +1038,8 @@ class SignaledSession(OperatingSession):
             return
 
         self.steps_order = [SessionOpSave(self),
-                            self.close_no_save_clients,
-                            self.snapshot,
+                            SessionOpCloseNoSaveClients(self),
+                            SessionOpSaveSnapshot(self),
                             (self.duplicate, new_session_full_name),
                             (self.preload, new_session_full_name),
                             SessionOpClose(self),
@@ -1068,7 +1070,7 @@ class SignaledSession(OperatingSession):
             self.steps_osp = osp
 
             self.steps_order = [SessionOpSave(self),
-                                self.snapshot,
+                                SessionOpSaveSnapshot(self),
                                 (self.duplicate, new_session),
                                 self.duplicate_only_done]
 
@@ -1084,12 +1086,12 @@ class SignaledSession(OperatingSession):
         if self.path is None:
             return
 
-        snapshot = osp.args[0]
+        snapshot: str = osp.args[0] # type:ignore
 
         self.steps_order = [
             SessionOpSave(self),
-            self.close_no_save_clients,
-            (self.snapshot, '', snapshot, True),
+            SessionOpCloseNoSaveClients(self),
+            SessionOpSaveSnapshot(self, rewind_snapshot=snapshot, force=True),
             SessionOpClose(self, clear_all_clients=True),
             (self.init_snapshot, self.path, snapshot),
             (self.preload, str(self.path)),
@@ -1682,7 +1684,7 @@ class SignaledSession(OperatingSession):
                 if client.is_running:
                     self.steps_order = [
                         SessionOpSave(self),
-                        (self.snapshot, '', snapshot, True),
+                        SessionOpSaveSnapshot(self, rewind_snapshot=snapshot, force=True),
                         self.before_close_client_for_snapshot,
                         (self.close_client, client),
                         (self.load_client_snapshot, client_id, snapshot),
@@ -1691,7 +1693,7 @@ class SignaledSession(OperatingSession):
                 else:
                     self.steps_order = [
                         SessionOpSave(self),
-                        (self.snapshot, '', snapshot, True),
+                        SessionOpSaveSnapshot(self, rewind_snapshot=snapshot, force=True),
                         (self.load_client_snapshot, client_id, snapshot),
                         self.load_client_snapshot_done]
                 break

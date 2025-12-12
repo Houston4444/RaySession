@@ -20,6 +20,7 @@ class SessionOpClose(SessionOp):
     def __init__(self, session: 'OperatingSession',
                  clear_all_clients=False):
         super().__init__(session)
+        self.script_step = 'close'
         self.clear_all_clients = clear_all_clients
         self.routine = [
             self.close, self.close_substep1, self.close_substep2]

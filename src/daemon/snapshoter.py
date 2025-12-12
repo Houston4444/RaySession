@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element
 
 # third party imports
-from qtpy.QtCore import QProcess, QObject, QDateTime
+from qtpy.QtCore import Slot, QProcess, QObject, QDateTime # type:ignore
 
 # Imports from src/shared
 import ray
@@ -22,37 +22,38 @@ import osc_paths.ray.gui as rg
 from daemon_tools import NoSessionPath, Terminal
 
 if TYPE_CHECKING:
-    from session import Session
+    from session_operating import OperatingSession
 
 
 _logger = logging.getLogger(__name__)
 
+_GIT_EXEC = 'git'
+_GIT_DIR = '.ray-snapshots'
+_EXCLUDE_PATH = 'info/exclude'
+_HISTORY_PATH = 'session_history.xml'
+_MAX_FILE_SIZE = 50 # in Mb
 
-def git_stringer(string:str) -> str:
-    for char in (' ', '*', '?', '[', ']', '(', ')'):
+
+def git_stringer(string: str) -> str:
+    for char in ' *?[]()':
         string = string.replace(char, "\\" + char)
 
-    for char in ('#', '!'):
+    for char in '#!':
         if string.startswith(char):
             string = "\\" + string
 
     return string
 
-def full_ref_for_gui(ref, name, rw_ref, rw_name='', ss_name=''):
+def full_ref_for_gui(ref, name: str, rw_ref: str, rw_name='', ss_name=''):
     if ss_name:
-        return "%s:%s\n%s:%s\n%s" % (ref, name, rw_ref, rw_name, ss_name)
-    return "%s:%s\n%s:%s" % (ref, name, rw_ref, rw_name)
+        return f'{ref}:{name}\n{rw_ref}:{rw_name}\n{ss_name}'
+    return f'{ref}:{name}\n{rw_ref}:{rw_name}'
 
 
 class Snapshoter(QObject):
-    def __init__(self, session: 'Session'):
+    def __init__(self, session: 'OperatingSession'):
         QObject.__init__(self)
         self.session = session
-        self._git_exec = 'git'
-        self._gitdir = '.ray-snapshots'
-        self._exclude_path = 'info/exclude'
-        self._history_path = "session_history.xml"
-        self._max_file_size = 50 #in Mb
 
         self._next_snapshot_name = ''
         self._rw_snapshot = ''
@@ -69,8 +70,10 @@ class Snapshoter(QObject):
         self._adder_aborted = False
 
         self._git_process = QProcess()
-        self._git_process.readyReadStandardOutput.connect(self._standard_output)
-        self._git_process.readyReadStandardError.connect(self._standard_error)
+        self._git_process.readyReadStandardOutput.connect(
+            self._standard_output)
+        self._git_process.readyReadStandardError.connect(
+            self._standard_error)
         self._git_command = ''
 
         self._n_file_changed = 0
@@ -96,6 +99,10 @@ class Snapshoter(QObject):
         self.session.send_gui(rg.server.PROGRESS,
                               self._n_file_treated / self._n_file_changed)
 
+    @Slot()
+    def _adder_finished(self):
+        self.session.snapshoter_add_finished()
+
     def _standard_error(self):
         standard_error = self._git_process.readAllStandardError().data()
         Terminal.snapshoter_message(standard_error, self._git_command)
@@ -105,18 +112,21 @@ class Snapshoter(QObject):
         Terminal.snapshoter_message(standard_output, self._git_command)
 
     def _run_git_process(self, *all_args) -> bool:
-        return self._run_git_process_at(str(self.session.path), *all_args)
+        if self.session.path is None:
+            raise NoSessionPath
+        return self._run_git_process_at(self.session.path, *all_args)
 
-    def _run_git_process_at(self, spath: str, *all_args) -> bool:
-        self._git_command = ''
-        for arg in all_args:
-            self._git_command += ' %s' % arg
+    def _run_git_process_at(self, spath: Path, *all_args: str) -> bool:
+        if all_args:
+            self._git_command = ' ' + ' '.join(all_args)
+        else:
+            self._git_command = ''
 
         err = ray.Err.OK
         exit_code = 0
 
         git_args = self._get_git_command_list_at(spath, *all_args)
-        self._git_process.start(self._git_exec, git_args)
+        self._git_process.start(_GIT_EXEC, git_args)
         if not self._git_process.waitForFinished(2000):
             self._git_process.kill()
             err = ray.Err.SUBPROCESS_UNTERMINATED
@@ -133,17 +143,19 @@ class Snapshoter(QObject):
         return not bool(err)
 
     def _get_git_command_list(self, *args) -> list[str]:
-        return self._get_git_command_list_at(str(self.session.path), *args)
+        if self.session.path is None:
+            raise NoSessionPath
+        return self._get_git_command_list_at(self.session.path, *args)
 
-    def _get_git_command_list_at(self, spath: str, *args) -> list[str]:
-        first_args = ['--work-tree', spath, '--git-dir',
-                      str(Path(spath) / self._gitdir)]
+    def _get_git_command_list_at(self, spath: Path, *args: str) -> list[str]:
+        first_args = [
+            '--work-tree', str(spath), '--git-dir', str(spath / _GIT_DIR)]
         return first_args + list(args)
 
     def _get_history_full_path(self) -> Path:
         if self.session.path is None:
             raise NoSessionPath
-        return self.session.path / self._gitdir / self._history_path
+        return self.session.path / _GIT_DIR / _HISTORY_PATH
     
     def _get_history_xml_root(self) -> Optional[Element]:
         if not self._is_init():
@@ -166,16 +178,13 @@ class Snapshoter(QObject):
             return None
         return root            
 
-    def _get_tag_date(self)->str:
+    def _get_tag_date(self) -> str:
         date_time = QDateTime.currentDateTimeUtc()
         date = date_time.date()
         time = date_time.time()
 
-        tagdate = "%s_%s_%s_%s_%s_%s" % (
-                    date.year(), date.month(), date.day(),
-                    time.hour(), time.minute(), time.second())
-
-        return tagdate
+        return (f'{date.year()}_{date.month()}_{date.day()}_'
+                f'{time.hour()}_{time.minute()}_{time.second()}')
 
     def _write_history_file(
             self, date_str: str, snapshot_name='', rewind_snapshot='') -> int:
@@ -225,7 +234,7 @@ class Snapshoter(QObject):
         if self.session.path is None:
             return ray.Err.NO_SESSION_OPEN
         
-        file_path = self.session.path / self._gitdir / self._exclude_path
+        file_path = self.session.path / _GIT_DIR / _EXCLUDE_PATH
 
         contents = (
             "# This file is generated by ray-daemon at each snapshot\n"
@@ -233,7 +242,7 @@ class Snapshoter(QObject):
             "# If you want to add/remove files managed by git\n"
             "# Create/Edit .gitignore in the session folder\n"
             "\n"
-            f"{self._gitdir}\n"
+            f"{_GIT_DIR}\n"
             "\n"
             "# Globally ignored extensions\n"
         )
@@ -285,12 +294,12 @@ class Snapshoter(QObject):
         contents += '\n'
         contents += "# Too big Files\n"
 
-        no_check_list = (self._gitdir)
+        no_check_list = (_GIT_DIR)
         # check too big files
         for foldername, subfolders, filenames in os.walk(self.session.path):
             subfolders[:] = [d for d in subfolders if d not in no_check_list]
 
-            if foldername == str(self.session.path / self._gitdir):
+            if foldername == str(self.session.path / _GIT_DIR):
                 continue
 
             for filename in filenames:
@@ -313,7 +322,7 @@ class Snapshoter(QObject):
                 except:
                     continue
 
-                if file_size > self._max_file_size * 1024 ** 2:
+                if file_size > _MAX_FILE_SIZE * 1024 ** 2:
                     if foldername == str(self.session.path):
                         line = git_stringer(filename)
                     else:
@@ -335,7 +344,7 @@ class Snapshoter(QObject):
         if self.session.path is None:
             return False
 
-        exclude_file = self.session.path / self._gitdir / self._exclude_path
+        exclude_file = self.session.path / _GIT_DIR / _EXCLUDE_PATH
         return exclude_file.is_file()
 
     def _can_save(self) -> bool:
@@ -355,7 +364,7 @@ class Snapshoter(QObject):
                 machine_name = 'somewhere'
 
             if not self._run_git_process(
-                'config', 'user.email', '%s@%s' % (user_name, machine_name)):
+                'config', 'user.email', f'{user_name}@{machine_name}'):
                 return False
 
             user_name = os.getenv('USER')
@@ -377,7 +386,7 @@ class Snapshoter(QObject):
 
     def _save_step_1(self):
         if self._adder_aborted:
-            if self._next_function:
+            if self._next_function is not None:
                 self._next_function(aborted=True)
             return
 
@@ -432,9 +441,9 @@ class Snapshoter(QObject):
             
             ref = child.attrib.get('ref', '')
             name = child.attrib.get('name', '')
-            rw_sn = child.attrib.get('rewind_snapshot')
+            rw_sn = child.attrib.get('rewind_snapshot', '')
             rw_name = ''
-            session_name = child.attrib.get('session_name')
+            session_name = child.attrib.get('session_name', '')
             
             # don't list snapshot from client before session renamed
             if client_id and session_name != self.session.name:
@@ -488,7 +497,7 @@ class Snapshoter(QObject):
 
         args = self._get_git_command_list(
             'ls-files', '--exclude-standard', '--others', '--modified')
-        self._changes_checker.start(self._git_exec, args)
+        self._changes_checker.start(_GIT_EXEC, args)
         self._changes_checker.waitForFinished(2000)
 
         return bool(self._n_file_changed)
@@ -518,7 +527,7 @@ class Snapshoter(QObject):
 
         if self._n_file_changed:
             all_args = self._get_git_command_list('add', '-A', '-v')
-            self._adder_process.start(self._git_exec, all_args)
+            self._adder_process.start(_GIT_EXEC, all_args)
         else:
             self._save_step_1()
 
@@ -529,10 +538,10 @@ class Snapshoter(QObject):
 
         snapshot_ref = snapshot.partition('\n')[0].partition(':')[0]
 
-        if not self._run_git_process_at(str(spath), 'reset', '--hard'):
+        if not self._run_git_process_at(spath, 'reset', '--hard'):
             return False
 
-        if not self._run_git_process_at(str(spath), 'checkout', snapshot_ref):
+        if not self._run_git_process_at(spath, 'checkout', snapshot_ref):
             return False
         return True
 
@@ -585,7 +594,7 @@ class Snapshoter(QObject):
             return
         
         auto_snap_file = (
-            self.session.path / self._gitdir / 'prevent_auto_snapshot')
+            self.session.path / _GIT_DIR / 'prevent_auto_snapshot')
         file_exists = auto_snap_file.exists()
 
         if bool_snapshot:
@@ -610,6 +619,6 @@ class Snapshoter(QObject):
             return False
 
         auto_snap_file = (
-            self.session.path / self._gitdir / 'prevent_auto_snapshot')
+            self.session.path / _GIT_DIR / 'prevent_auto_snapshot')
         return auto_snap_file.exists()
         

@@ -21,6 +21,7 @@ class SessionOpLoad(SessionOp):
     def __init__(self, session: 'OperatingSession',
                  open_off=False):
         super().__init__(session)
+        self.script_step = 'load'
         self.open_off = open_off
         self.routine = [
             self.load, self.load_substep2, self.load_substep3,

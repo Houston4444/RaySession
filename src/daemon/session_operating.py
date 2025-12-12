@@ -34,7 +34,8 @@ import ardour_templates
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session import Session
-from session_op import SessionOp, SessionOpSave, SessionOpClose
+from session_op import SessionOp, SessionOpClose, SessionOpLoad
+from snapshoter import Snapshoter
 from file_copier import FileCopier
 from scripter import StepScripter
 from canvas_saver import CanvasSaver
@@ -52,6 +53,7 @@ class OperatingSession(Session):
         self.file_copier = FileCopier(self)
         self.step_scripter = StepScripter(self)
         self.canvas_saver = CanvasSaver(self)
+        self.snapshoter = Snapshoter(self)
 
         self.timer = QTimer()
         self.timer_redondant = False
@@ -191,15 +193,16 @@ class OperatingSession(Session):
         if self.expected_clients:
             client_names = [c.gui_msg_style for c in self.expected_clients]
 
-            if self.wait_for is ray.WaitFor.ANNOUNCE:
-                self.send_gui_message(
-                    _translate('GUIMSG', "%s didn't announce.")
-                    % ', '.join(client_names))
+            match self.wait_for:
+                case ray.WaitFor.ANNOUNCE:
+                    self.send_gui_message(
+                        _translate('GUIMSG', "%s didn't announce.")
+                        % ', '.join(client_names))
 
-            elif self.wait_for is ray.WaitFor.QUIT:
-                self.send_gui_message(
-                    _translate('GUIMSG', "%s still alive !")
-                    % ', '.join(client_names))
+                case ray.WaitFor.QUIT:
+                    self.send_gui_message(
+                        _translate('GUIMSG', "%s still alive !")
+                        % ', '.join(client_names))
 
             self.expected_clients.clear()
 
@@ -238,43 +241,23 @@ class OperatingSession(Session):
                 and not self.step_scripter.is_running()
                 and self.path is not None
                 and not from_run_step):
-            for step_str, func in scripted_steps.items():
-                if step_str == 'save' and isinstance(func, SessionOpSave):
-                    ...
-                else:
-                    if func is not next_function:
-                        continue
-                
-                if func is self.load and arguments and arguments[0] is True:
-                    break
-                
-                if (self.steps_osp is not None
-                        and self.step_scripter.start(
-                            step_str, arguments,
-                            self.steps_osp.src_addr,
-                            self.steps_osp.path)):
-                    self.set_server_status(ray.ServerStatus.SCRIPT)
-                    return
-                break
+            if isinstance(next_function, SessionOp):
+                if not (isinstance(next_function, SessionOpLoad)
+                        and next_function.open_off):
+                    if (next_function.script_step
+                            and self.steps_osp is not None
+                            and self.step_scripter.start(
+                                next_function.script_step, arguments,
+                                self.steps_osp.src_addr,
+                                self.steps_osp.path)):
+                        self.set_server_status(ray.ServerStatus.SCRIPT)
+                        return
 
         if (from_run_step and next_function
                 and self.step_scripter.is_running()):
-            step = self.step_scripter.get_step()
-            if (next_function is scripted_steps.get(step)
-                    or (step == 'save' 
-                        and isinstance(next_function, SessionOpSave))):
-                self.step_scripter.set_stepper_has_call(True)
-
-            if next_function is self.load:
-                if 'open_off' in run_step_args:
-                    arguments = [True]
-            elif next_function is self.close:
-                if 'close_all' in run_step_args:
-                    arguments = [True]
-            elif next_function is self.save:
-                if 'without_clients' in run_step_args:
-                    arguments = [False, False]
-            elif isinstance(next_function, SessionOp):
+            if isinstance(next_function, SessionOp):
+                if next_function.script_step == self.step_scripter.get_step():
+                    self.step_scripter.set_stepper_has_call(True)
                 next_function.start_from_script(run_step_args)
 
         self.steps_order.__delitem__(0)
@@ -364,6 +347,19 @@ class OperatingSession(Session):
             self.timer.setSingleShot(True)
             self.timer.stop()
             self.timer.start(0)
+
+    def snapshoter_add_finished(self):
+        '`git add .` snapshoter command is finished'
+        if self.wait_for is not ray.WaitFor.SNAPSHOT_ADD:
+            _logger.warning(
+                'git add command ended while nothing is waiting for it')
+            return
+        
+        self.wait_for = ray.WaitFor.NONE
+        
+        self.timer.setSingleShot(True)
+        self.timer.stop()
+        self.timer.start(0)
 
     def _send_reply(self, *args: str):
         if self.steps_osp is None:
@@ -623,16 +619,20 @@ class OperatingSession(Session):
 
     def snapshot_error(self, err_snapshot: ray.Err, info_str='', exit_code=0):
         m = _translate('Snapshot Error', "Unknown error")
-        if err_snapshot == ray.Err.SUBPROCESS_UNTERMINATED:
-            m = _translate('Snapshot Error',
-                           "git didn't stop normally.\n%s") % info_str
-        elif err_snapshot == ray.Err.SUBPROCESS_CRASH:
-            m = _translate('Snapshot Error',
-                           "git crashes.\n%s") % info_str
-        elif err_snapshot == ray.Err.SUBPROCESS_EXITCODE:
-            m = _translate('Snapshot Error',
-                           "git exit with the error code %i.\n%s") \
-                % (exit_code, info_str)
+        match err_snapshot:
+            case ray.Err.SUBPROCESS_UNTERMINATED:
+                m = _translate(
+                    'Snapshot Error',
+                    "git didn't stop normally.\n%s") % info_str
+            case ray.Err.SUBPROCESS_CRASH:
+                m = _translate(
+                    'Snapshot Error',
+                    "git crashes.\n%s") % info_str
+            case ray.Err.SUBPROCESS_EXITCODE:
+                m = _translate(
+                    'Snapshot Error',
+                    "git exit with the error code %i.\n%s") % (
+                        exit_code, info_str)
         self.message(m)
         self.send_gui_message(m)
 
