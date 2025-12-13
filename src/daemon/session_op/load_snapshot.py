@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 _translate = QCoreApplication.translate
 
 
-class SessionOpLoadSnapshot(SessionOp):
+class LoadSnapshot(SessionOp):
     def __init__(self, session: 'OperatingSession',
                  snapshot_name: str, client_id=''):
         super().__init__(session)

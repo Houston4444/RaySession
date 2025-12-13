@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 _translate = QCoreApplication.translate
 
 
-class SessionOpSaveSessionTemplate(SessionOp):
+class SaveSessionTemplate(SessionOp):
     def __init__(self, session: 'OperatingSession',
                  template_name: str, net=False):
         super().__init__(session)

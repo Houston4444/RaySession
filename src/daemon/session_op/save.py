@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 _translate = QCoreApplication.translate
 
 
-class SessionOpSave(SessionOp):
+class Save(SessionOp):
     def __init__(self, session: 'OperatingSession',
                  outing=False, save_clients=True):
         super().__init__(session)

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 _translate = QCoreApplication.translate
 
 
-class SessionOpSaveSnapshot(SessionOp):
+class SaveSnapshot(SessionOp):
     def __init__(self, session: 'OperatingSession',
                  snapshot_name='', rewind_snapshot='',
                  force=False, outing=False,

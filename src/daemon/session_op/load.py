@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 _translate = QCoreApplication.translate
 
 
-class SessionOpLoad(SessionOp):
+class Load(SessionOp):
     def __init__(self, session: 'OperatingSession',
                  open_off=False):
         super().__init__(session)

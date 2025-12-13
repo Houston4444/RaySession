@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 _translate = QCoreApplication.translate
 
 
-class SessionOpClose(SessionOp):
+class Close(SessionOp):
     def __init__(self, session: 'OperatingSession',
                  clear_all_clients=False):
         super().__init__(session)

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 _translate = QCoreApplication.translate
 
 
-class SessionOpCloseNoSaveClients(SessionOp):
+class CloseNoSaveClients(SessionOp):
     def __init__(self, session: 'OperatingSession'):
         super().__init__(session)
         self.routine = [

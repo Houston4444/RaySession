@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 _translate = QCoreApplication.translate
 
 
-class SessionOpDuplicate(SessionOp):
+class Duplicate(SessionOp):
     def __init__(self, session: 'OperatingSession', new_session_name: str):
         super().__init__(session)
         self.new_session_name = new_session_name

@@ -34,7 +34,7 @@ import ardour_templates
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session import Session
-from session_op import SessionOp, SessionOpClose, SessionOpLoad
+import session_op as sop
 from snapshoter import Snapshoter
 from file_copier import FileCopier
 from scripter import StepScripter
@@ -78,7 +78,7 @@ class OperatingSession(Session):
         self.steps_osp: Optional[OscPack] = None
         'Stock the OscPack of the long operation running (if any).'
 
-        self.steps_order = list[SessionOp | Callable | tuple[Callable | Any, ...]]()
+        self.steps_order = list[sop.SessionOp | Callable | tuple[Callable | Any, ...]]()
 
         self.terminated_yet = False
 
@@ -239,15 +239,15 @@ class OperatingSession(Session):
             if len(next_item) > 1:
                 arguments = next_item[1:]
 
-        elif isinstance(next_item, SessionOp):
+        elif isinstance(next_item, sop.SessionOp):
             next_function = next_item.start
 
         if (self.has_server_option(ray.Option.SESSION_SCRIPTS)
                 and not self.step_scripter.is_running()
                 and self.path is not None
                 and not from_run_step):
-            if isinstance(next_function, SessionOp):
-                if not (isinstance(next_function, SessionOpLoad)
+            if isinstance(next_function, sop.SessionOp):
+                if not (isinstance(next_function, sop.Load)
                         and next_function.open_off):
                     if (next_function.script_step
                             and self.steps_osp is not None
@@ -260,7 +260,7 @@ class OperatingSession(Session):
 
         if (from_run_step and next_function
                 and self.step_scripter.is_running()):
-            if isinstance(next_function, SessionOp):
+            if isinstance(next_function, sop.SessionOp):
                 if next_function.script_step == self.step_scripter.get_step():
                     self.step_scripter.set_stepper_has_call(True)
                 next_function.start_from_script(run_step_args)
@@ -415,7 +415,7 @@ class OperatingSession(Session):
             if self.step_scripter.get_step() in ('load', 'close'):
                 self.steps_order.clear()
                 self.steps_order = [
-                    SessionOpClose(self, clear_all_clients=True),
+                    sop.Close(self, clear_all_clients=True),
                     self.abort_done]
 
                 # Fake the next_function to come from run_step message
@@ -586,181 +586,6 @@ class OperatingSession(Session):
         self._send_reply("Created.")
         self.set_server_status(ray.ServerStatus.READY)
         self.steps_osp = None
-
-    def duplicate(self, new_session_full_name: str):
-        if self._clients_have_errors():
-            self._send_error(
-                ray.Err.GENERAL_ERROR,
-                _translate('error', "Some clients could not save"))
-            return
-
-        self.send_gui(rg.trash.CLEAR)
-        self.send_gui_message(
-            _translate('GUIMSG', '-- Duplicating session %s to %s --')
-            % (highlight_text(self.short_path_name),
-               highlight_text(new_session_full_name)))
-
-        for client in self.clients:
-            if client.is_ray_net:
-                client.ray_net.duplicate_state = -1
-                if (client.ray_net.daemon_url
-                        and is_valid_osc_url(client.ray_net.daemon_url)):
-                    self.send(Address(client.ray_net.daemon_url),
-                              r.session.DUPLICATE_ONLY,
-                              self.short_path_name,
-                              new_session_full_name,
-                              client.ray_net.session_root)
-
-                self.expected_clients.append(client)
-
-        if self.expected_clients:
-            self.send_gui_message(
-                _translate('GUIMSG',
-                           'waiting for network daemons to start duplicate...'))
-
-        self._wait_and_go_to(
-            2000,
-            (self.duplicate_substep1, new_session_full_name),
-            ray.WaitFor.DUPLICATE_START)
-
-    def duplicate_substep1(self, new_session_full_name: str):
-        if self.path is None:
-            raise NoSessionPath
-        
-        spath = self.root / new_session_full_name
-        self.set_server_status(ray.ServerStatus.COPY)
-        self.send_gui_message(_translate('GUIMSG', 'start session copy...'))
-
-        # lock the directory of the new session created
-        multi_daemon_file.add_locked_path(spath)
-
-        self.file_copier.start_session_copy(
-            self.path, spath,
-            self.duplicate_substep2, self.duplicate_aborted,
-            [new_session_full_name])
-
-    def duplicate_substep2(self, new_session_full_name: str):
-        self._clean_expected()
-        
-        self.send_gui_message(_translate('GUIMSG', '...session copy finished.'))
-        for client in self.clients:
-            if (client.is_ray_net
-                    and 0 <= client.ray_net.duplicate_state < 1):
-                self.expected_clients.append(client)
-
-        if self.expected_clients:
-            self.send_gui_message(
-                _translate('GUIMSG',
-                           'waiting for network daemons to finish duplicate'))
-
-        self._wait_and_go_to(
-            3600000,  #1Hour
-            (self.duplicate_substep3, new_session_full_name),
-            ray.WaitFor.DUPLICATE_FINISH)
-
-    def duplicate_substep3(self, new_session_full_name: str):
-        self.adjust_files_after_copy(new_session_full_name, ray.Template.NONE)
-
-        # unlock the directory of the new session created
-        multi_daemon_file.unlock_path(self.root / new_session_full_name)
-        
-        self.next_function()
-
-    def duplicate_aborted(self, new_session_full_name: str):
-        self.steps_order.clear()
-
-        # unlock the directory of the aborted session
-        multi_daemon_file.unlock_path(self.root / new_session_full_name)
-
-        if self.steps_osp is not None:
-            if self.steps_osp.path == nsm.server.DUPLICATE:
-                # for nsm server control API compatibility
-                # abort duplication is not possible in Non/New NSM
-                # so, send the only known error
-                self._send_error(ray.Err.NO_SUCH_FILE, "No such file.")
-
-            self.send(self.steps_osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1.0)
-
-        self.set_server_status(ray.ServerStatus.READY)
-        self.steps_osp = None
-
-    def save_session_template(self, template_name: str, net=False):
-        if self.path is None:
-            raise NoSessionPath
-
-        template_root = TemplateRoots.user_sessions
-
-        if net:
-            template_root = self.root / TemplateRoots.net_session_name
-
-        spath = template_root / template_name
-
-        #overwrite existing template
-        if spath.is_dir():            
-            if not os.access(spath, os.W_OK):
-                self._send_error(
-                    ray.Err.GENERAL_ERROR,
-                    _translate(
-                        "error",
-                        "Impossible to save template, unwriteable file !"))
-
-                self.set_server_status(ray.ServerStatus.READY)
-                return
-
-            spath.rmdir()
-
-        if not template_root.exists():
-            template_root.mkdir(parents=True)
-
-        # For network sessions,
-        # save as template the network session only
-        # if there is no other server on this same machine.
-        # Else, one could erase template just created by another one.
-        # To prevent all confusion,
-        # all seen machines are sent to prevent an erase by looping
-        # (a network session can contains another network session
-        # on the machine where is the master daemon, for example).
-
-        for client in self.clients:
-            if (client.is_ray_net
-                    and client.ray_net.daemon_url):
-                self.send(Address(client.ray_net.daemon_url),
-                          r.server.SAVE_SESSION_TEMPLATE,
-                          self.short_path_name,
-                          template_name,
-                          client.ray_net.session_root)
-
-        self.set_server_status(ray.ServerStatus.COPY)
-
-        self.send_gui_message(
-            _translate('GUIMSG', 'start session copy to template...'))
-
-        self.file_copier.start_session_copy(
-            self.path, spath,
-            self.save_session_template_substep_1,
-            self.save_session_template_aborted,
-            [template_name, net])
-
-    def save_session_template_substep_1(self, template_name: str, net: bool):
-        tp_mode = ray.Template.SESSION_SAVE
-        if net:
-            tp_mode = ray.Template.SESSION_SAVE_NET
-
-        for client in self.clients + self.trashed_clients:
-            client.adjust_files_after_copy(template_name, tp_mode)
-
-        self.message("Done")
-        self.send_gui_message(
-            _translate('GUIMSG', "...session saved as template named %s")
-            % highlight_text(template_name))
-
-        self._send_reply("Saved as template.")
-        self.set_server_status(ray.ServerStatus.READY)
-
-    def save_session_template_aborted(self, template_name: str, net: bool):
-        self.steps_order.clear()
-        self._send_reply("Session template aborted")
-        self.set_server_status(ray.ServerStatus.READY)
 
     def prepare_template(self, new_session_full_name: str,
                          template_name: str, net=False):
