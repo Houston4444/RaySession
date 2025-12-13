@@ -178,6 +178,7 @@ class Err(IntEnum):
     ABORT_ORDERED = -19
     COPY_ABORTED = -20
     SESSION_IN_SESSION_DIR = -21
+    GIT_ERROR = -22
     # check control/osc_server.py in case of changes !!!
 
 
@@ -200,6 +201,7 @@ class WaitFor(Enum):
     SCRIPT_QUIT = 7
     PATCHBAY_QUIT = 8
     SNAPSHOT_ADD = 9
+    FILE_COPY = 10
 
 
 class Template(Enum):

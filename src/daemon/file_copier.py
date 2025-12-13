@@ -66,6 +66,14 @@ class FileCopier(ServerSender):
         self._abort_src_addr: Optional[Address] = None
         self._abort_src_path = ''
 
+    @property
+    def active(self) -> bool:
+        return self._is_active
+    
+    @property
+    def aborted(self) -> bool:
+        return self._aborted
+
     def _get_file_size(self, filepath: Path) -> int:
         if not filepath.exists():
             return 0

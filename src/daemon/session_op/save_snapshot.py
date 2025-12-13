@@ -3,6 +3,10 @@ from typing import TYPE_CHECKING
 from qtpy.QtCore import QCoreApplication
 
 import ray
+import osc_paths
+import osc_paths.ray as r
+
+from snapshoter import full_ref_for_gui
 
 from .session_op import SessionOp
 
@@ -42,41 +46,93 @@ class SessionOpSaveSnapshot(SessionOp):
             session.set_server_status(ray.ServerStatus.SNAPSHOT)
 
         session.send_gui_message(_translate('GUIMSG', "snapshot started..."))
-        session.snapshoter.save(self.snapshot_name, self.rewind_snapshot,
-            self.snapshot_substep1, self.snapshot_error)
+        err = session.snapshoter.save()
+        
+        if err is not ray.Err.OK:
+            match err:
+                case ray.Err.GIT_ERROR:
+                    err, command, exit_code = \
+                        session.snapshoter.last_git_error
+                    m = self._snapshot_error_msg(err, command, exit_code)
+                case ray.Err.CREATE_FAILED:
+                    m = _translate(
+                        'Snapshot Error',
+                        'Failed to write exclude file %s') % (
+                            self.session.snapshoter.exclude_file)
+                case _:
+                    m = _translate('Snapshot Error', 'Unknown error')
+            
+            if self.error_is_minor:
+                session._send_minor_error(err, m)
+                session.next_function()
+            else:
+                self.error(err, m)
+            return
+        
+        # 15mn for the command git add .
+        self.next(900000, ray.WaitFor.SNAPSHOT_ADD)
 
-    def snapshot_substep1(self, aborted=False):
-        session = self.session
-        if aborted:
-            session.message('Snapshot aborted')
-            session.send_gui_message(_translate('GUIMSG', 'Snapshot aborted!'))
-
-        session.send_gui_message(_translate('GUIMSG', '...Snapshot finished.'))
-        session.next_function()
-
-    def snapshot_error(self, err_snapshot: ray.Err, info_str='', exit_code=0):
+    def snapshot_substep1(self):
         session = self.session
         
+        if session.snapshoter.adder_aborted:
+            session.message('Snapshot aborted')
+            session.send_gui_message(
+                _translate('GUIMSG', 'Snapshot aborted!'))
+            
+            if not self.error_is_minor:
+                self.error(
+                    ray.Err.COPY_ABORTED,
+                    _translate('Snapshot Error',
+                               'Snapshot has been aborted by user'))
+                return
+
+        err, ref = session.snapshoter.commit(
+            self.snapshot_name, self.rewind_snapshot)
+        
+        command = ''
+        exit_code = 0
+        if err is ray.Err.GIT_ERROR:
+            err, command, exit_code = session.snapshoter.last_git_error
+        
+        m = self._snapshot_error_msg(err, command, exit_code)
+        
+        if err is not ray.Err.OK:
+            session.message(m)
+            if self.error_is_minor:
+                session._send_minor_error(err, m)
+            else:
+                self.error(err, m)
+                return
+        
+        # not really a reply, not strong.
+        if ref:
+            self.session.send_gui(
+                osc_paths.REPLY,
+                r.session.LIST_SNAPSHOTS,
+                full_ref_for_gui(
+                    ref, self.snapshot_name, self.rewind_snapshot))
+
+        session.send_gui_message(
+            _translate('GUIMSG', '...Snapshot finished.'))
+        session.next_function()
+
+    def _snapshot_error_msg(
+            self, err: ray.Err, command: str, exit_code: int) -> str:
         m = _translate('Snapshot Error', "Unknown error")
-        match err_snapshot:
+        match err:
             case ray.Err.SUBPROCESS_UNTERMINATED:
                 m = _translate(
                     'Snapshot Error',
-                    "git didn't stop normally.\n%s") % info_str
+                    "git didn't stop normally.\n%s") % command
             case ray.Err.SUBPROCESS_CRASH:
                 m = _translate(
                     'Snapshot Error',
-                    "git crashes.\n%s") % info_str
+                    "git crashes.\n%s") % command
             case ray.Err.SUBPROCESS_EXITCODE:
                 m = _translate(
                     'Snapshot Error',
                     "git exit with the error code %i.\n%s") % (
-                        exit_code, info_str)
-        session.message(m)
-        session.send_gui_message(m)
-
-        if self.error_is_minor:
-            session._send_minor_error(err_snapshot, m)
-            session.next_function()
-        else:
-            self.error(err_snapshot, m)
+                        exit_code, command)
+                    
+        return m

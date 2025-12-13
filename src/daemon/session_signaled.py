@@ -25,9 +25,12 @@ import osc_paths.nsm as nsm
 from client import Client
 import multi_daemon_file
 from signaler import Signaler
-from daemon_tools import NoSessionPath, Terminal, RS, is_pid_child_of, highlight_text
+from daemon_tools import (
+    NoSessionPath, Terminal, RS, is_pid_child_of, highlight_text)
 from session_operating import OperatingSession
-from session_op import SessionOp, SessionOpSave, SessionOpLoad, SessionOpClose, SessionOpCloseNoSaveClients, SessionOpSaveSnapshot
+from session_op import (
+    SessionOp, SessionOpSave, SessionOpLoad, SessionOpClose,
+    SessionOpCloseNoSaveClients, SessionOpSaveSnapshot, SessionOpLoadSnapshot)
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session_dummy import DummySession
@@ -1095,7 +1098,7 @@ class SignaledSession(OperatingSession):
             SessionOpCloseNoSaveClients(self),
             SessionOpSaveSnapshot(self, rewind_snapshot=snapshot, force=True),
             SessionOpClose(self, clear_all_clients=True),
-            (self.init_snapshot, self.path, snapshot),
+            SessionOpLoadSnapshot(self, snapshot),
             (self.preload, str(self.path)),
             self.take_place,
             SessionOpLoad(self),
@@ -1689,14 +1692,14 @@ class SignaledSession(OperatingSession):
                         SessionOpSaveSnapshot(self, rewind_snapshot=snapshot, force=True),
                         self.before_close_client_for_snapshot,
                         (self.close_client, client),
-                        (self.load_client_snapshot, client_id, snapshot),
+                        SessionOpLoadSnapshot(self, snapshot, client_id=client_id),
                         (self.start_client, client),
                         self.load_client_snapshot_done]
                 else:
                     self.steps_order = [
                         SessionOpSave(self),
                         SessionOpSaveSnapshot(self, rewind_snapshot=snapshot, force=True),
-                        (self.load_client_snapshot, client_id, snapshot),
+                        SessionOpLoadSnapshot(self, snapshot, client_id=client_id),
                         self.load_client_snapshot_done]
                 break
         else:

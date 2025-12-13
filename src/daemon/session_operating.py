@@ -117,20 +117,22 @@ class OperatingSession(Session):
 
         # follow: Callable
 
-        if wait_for is ray.WaitFor.SCRIPT_QUIT:
-            if self.step_scripter.is_running():
-                self.wait_for = wait_for
-                self.timer.setSingleShot(True)
-                self.timer.timeout.connect(follow)
-                self.timer.start(duration)
-            else:
-                follow()
-            return
-
-        if wait_for is ray.WaitFor.PATCHBAY_QUIT:
-            if not patchbay_dmn_mng.is_running():
-                follow()
-                return
+        if wait_for in (ray.WaitFor.SCRIPT_QUIT,
+                        ray.WaitFor.PATCHBAY_QUIT,
+                        ray.WaitFor.SNAPSHOT_ADD):
+            match wait_for:
+                case ray.WaitFor.SCRIPT_QUIT:
+                    if not self.step_scripter.is_running():
+                        follow()
+                        return
+                case ray.WaitFor.PATCHBAY_QUIT:
+                    if not patchbay_dmn_mng.is_running():
+                        follow()
+                        return
+                case ray.WaitFor.SNAPSHOT_ADD:
+                    if not self.snapshoter.adder_running:
+                        follow()
+                        return
 
             self.wait_for = wait_for
             self.timer.setSingleShot(True)
@@ -355,8 +357,7 @@ class OperatingSession(Session):
                 'git add command ended while nothing is waiting for it')
             return
         
-        self.wait_for = ray.WaitFor.NONE
-        
+        self.wait_for = ray.WaitFor.NONE        
         self.timer.setSingleShot(True)
         self.timer.stop()
         self.timer.start(0)
@@ -587,31 +588,31 @@ class OperatingSession(Session):
         self.steps_order.clear()
         self.steps_osp = None
 
-    def snapshot(self, snapshot_name='', rewind_snapshot='',
-                 force=False, outing=False):
-        if not force:
-            if not (self.has_server_option(ray.Option.SNAPSHOTS)
-                    and not self.snapshoter.is_auto_snapshot_prevented()
-                    and self.snapshoter.has_changes()):
-                self.next_function()
-                return
+    # def snapshot(self, snapshot_name='', rewind_snapshot='',
+    #              force=False, outing=False):
+    #     if not force:
+    #         if not (self.has_server_option(ray.Option.SNAPSHOTS)
+    #                 and not self.snapshoter.is_auto_snapshot_prevented()
+    #                 and self.snapshoter.has_changes()):
+    #             self.next_function()
+    #             return
 
-        if outing:
-            self.set_server_status(ray.ServerStatus.OUT_SNAPSHOT)
-        else:
-            self.set_server_status(ray.ServerStatus.SNAPSHOT)
+    #     if outing:
+    #         self.set_server_status(ray.ServerStatus.OUT_SNAPSHOT)
+    #     else:
+    #         self.set_server_status(ray.ServerStatus.SNAPSHOT)
 
-        self.send_gui_message(_translate('GUIMSG', "snapshot started..."))
-        self.snapshoter.save(snapshot_name, rewind_snapshot,
-                             self.snapshot_substep1, self.snapshot_error)
+    #     self.send_gui_message(_translate('GUIMSG', "snapshot started..."))
+    #     self.snapshoter.save(snapshot_name, rewind_snapshot,
+    #                          self.snapshot_substep1, self.snapshot_error)
 
-    def snapshot_substep1(self, aborted=False):
-        if aborted:
-            self.message('Snapshot aborted')
-            self.send_gui_message(_translate('GUIMSG', 'Snapshot aborted!'))
+    # def snapshot_substep1(self, aborted=False):
+    #     if aborted:
+    #         self.message('Snapshot aborted')
+    #         self.send_gui_message(_translate('GUIMSG', 'Snapshot aborted!'))
 
-        self.send_gui_message(_translate('GUIMSG', '...Snapshot finished.'))
-        self.next_function()
+    #     self.send_gui_message(_translate('GUIMSG', '...Snapshot finished.'))
+    #     self.next_function()
 
     def snapshot_done(self):
         self.set_server_status(ray.ServerStatus.READY)
@@ -843,32 +844,32 @@ for better organization.""")
         self.set_server_status(ray.ServerStatus.READY)
         self.steps_osp = None
 
-    def init_snapshot(self, spath: Path, snapshot: str):
-        self.set_server_status(ray.ServerStatus.REWIND)
-        if self.snapshoter.load(spath, snapshot, self.init_snapshot_error):
-            self.next_function()
+    # def init_snapshot(self, spath: Path, snapshot: str):
+    #     self.set_server_status(ray.ServerStatus.REWIND)
+    #     if self.snapshoter.load(spath, snapshot, self.init_snapshot_error):
+    #         self.next_function()
 
-    def init_snapshot_error(self, err: ray.Err, info_str='', exit_code=0):
-        m = _translate('Snapshot Error', "Snapshot error")
-        if err == ray.Err.SUBPROCESS_UNTERMINATED:
-            m = _translate('Snapshot Error',
-                           "command didn't stop normally:\n%s") % info_str
-        elif err == ray.Err.SUBPROCESS_CRASH:
-            m = _translate('Snapshot Error',
-                           "command crashes:\n%s") % info_str
-        elif err == ray.Err.SUBPROCESS_EXITCODE:
-            m = _translate('Snapshot Error',
-                           "command exit with the error code %i:\n%s") \
-                % (exit_code, info_str)
-        elif err == ray.Err.NO_SUCH_FILE:
-            m = _translate('Snapshot Error',
-                           "error reading file:\n%s") % info_str
-        self.message(m)
-        self.send_gui_message(m)
-        self._send_error(err, m)
+    # def init_snapshot_error(self, err: ray.Err, info_str='', exit_code=0):
+    #     m = _translate('Snapshot Error', "Snapshot error")
+    #     if err == ray.Err.SUBPROCESS_UNTERMINATED:
+    #         m = _translate('Snapshot Error',
+    #                        "command didn't stop normally:\n%s") % info_str
+    #     elif err == ray.Err.SUBPROCESS_CRASH:
+    #         m = _translate('Snapshot Error',
+    #                        "command crashes:\n%s") % info_str
+    #     elif err == ray.Err.SUBPROCESS_EXITCODE:
+    #         m = _translate('Snapshot Error',
+    #                        "command exit with the error code %i:\n%s") \
+    #             % (exit_code, info_str)
+    #     elif err == ray.Err.NO_SUCH_FILE:
+    #         m = _translate('Snapshot Error',
+    #                        "error reading file:\n%s") % info_str
+    #     self.message(m)
+    #     self.send_gui_message(m)
+    #     self._send_error(err, m)
 
-        self.set_server_status(ray.ServerStatus.OFF)
-        self.steps_order.clear()
+    #     self.set_server_status(ray.ServerStatus.OFF)
+    #     self.steps_order.clear()
 
     def duplicate(self, new_session_full_name: str):
         if self._clients_have_errors():
@@ -1048,7 +1049,6 @@ for better organization.""")
     def prepare_template(self, new_session_full_name: str,
                          template_name: str, net=False):
         template_root = TemplateRoots.user_sessions
-
         if net:
             template_root = self.root / TemplateRoots.net_session_name
 
@@ -1626,23 +1626,25 @@ for better organization.""")
         self.set_server_status(ray.ServerStatus.READY)
         self.steps_osp = None
 
-    def load_error(self, err_loading):
+    def load_error(self, err_loading: ray.Err):
         self.message("Failed")
         m = _translate('Load Error', "Unknown error")
-        if err_loading == ray.Err.CREATE_FAILED:
-            m = _translate('Load Error', "Could not create session file!")
-        elif err_loading == ray.Err.SESSION_LOCKED:
-            m = _translate('Load Error',
-                           "Session is locked by another process!")
-        elif err_loading == ray.Err.NO_SUCH_FILE:
-            m = _translate('Load Error', "The named session does not exist.")
-        elif err_loading == ray.Err.BAD_PROJECT:
-            m = _translate('Load Error', "Could not load session file.")
-        elif err_loading == ray.Err.SESSION_IN_SESSION_DIR:
-            m = _translate(
-                'Load Error',
-                "Can't create session in a dir containing a session\n"
-                + "for better organization.")
+        match err_loading:
+            case ray.Err.CREATE_FAILED:
+                m = _translate('Load Error', "Could not create session file!")
+            case ray.Err.SESSION_LOCKED:
+                m = _translate(
+                    'Load Error', "Session is locked by another process!")
+            case ray.Err.NO_SUCH_FILE:
+                m = _translate(
+                    'Load Error', "The named session does not exist.")
+            case ray.Err.BAD_PROJECT:
+                m = _translate('Load Error', "Could not load session file.")
+            case ray.Err.SESSION_IN_SESSION_DIR:
+                m = _translate(
+                    'Load Error',
+                    "Can't create session in a dir containing a session\n"
+                    + "for better organization.")
 
         self._send_error(err_loading, m)
 
@@ -1659,6 +1661,7 @@ for better organization.""")
                 'Impossible to reply duplicate_only_done '
                 'because OscPack is None')
             return
+
         self.send(self.steps_osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1)
         self._send_reply("Duplicated only done.")
         self.steps_osp = None
@@ -1941,9 +1944,9 @@ for better organization.""")
         self.send_gui(rg.server.DISANNOUNCE)
         QCoreApplication.quit()
 
-    def add_client_template(self, osp: OscPack,
-                            template_name: str, factory=False, auto_start=True,
-                            unique_id=''):
+    def add_client_template(
+            self, osp: OscPack, template_name: str, factory=False,
+            auto_start=True, unique_id=''):
         if self.path is None:
             return
         
