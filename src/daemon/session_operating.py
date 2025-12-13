@@ -173,7 +173,8 @@ class OperatingSession(Session):
             self.wait_for = wait_for
             self.timer.setSingleShot(True)
             self.timer.timeout.connect(follow)
-            self.timer.start(duration)
+            if duration >= 0:
+                self.timer.start(duration)
         else:
             follow()
 

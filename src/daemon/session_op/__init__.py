@@ -1,5 +1,6 @@
 from .session_op import SessionOp
 from .save import SessionOpSave
+from .save_session_template import SessionOpSaveSessionTemplate
 from .save_snapshot import SessionOpSaveSnapshot
 from .load import SessionOpLoad
 from .load_snapshot import SessionOpLoadSnapshot

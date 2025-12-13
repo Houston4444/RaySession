@@ -3,7 +3,9 @@ from pathlib import Path
 from osclib import OscPack
 
 from session_operating import OperatingSession
-from session_op import SessionOpSave, SessionOpLoad, SessionOpDuplicate
+from session_op import (
+    SessionOpSave, SessionOpLoad, SessionOpDuplicate,
+    SessionOpSaveSessionTemplate)
 
 
 class DummySession(OperatingSession):
@@ -25,7 +27,7 @@ class DummySession(OperatingSession):
         self.steps_order = [(self.preload, session_full_name),
                             self.take_place,
                             SessionOpLoad(self),
-                            (self.save_session_template, template_name, True)]
+                            SessionOpSaveSessionTemplate(self, template_name, net=True)]
         self.next_function()
 
     def dummy_duplicate(self, osp: OscPack):
@@ -45,7 +47,7 @@ class DummySession(OperatingSession):
         self.steps_order = [(self.preload, session_name),
                             self.take_place,
                             SessionOpLoad(self),
-                            (self.save_session_template, template_name, net)]
+                            SessionOpSaveSessionTemplate(self, template_name, net=net)]
         self.next_function()
 
     def ray_server_rename_session(self, osp: OscPack):

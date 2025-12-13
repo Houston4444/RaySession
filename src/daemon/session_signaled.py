@@ -31,7 +31,7 @@ from session_operating import OperatingSession
 from session_op import (
     SessionOp, SessionOpSave, SessionOpLoad, SessionOpClose,
     SessionOpCloseNoSaveClients, SessionOpSaveSnapshot, SessionOpLoadSnapshot,
-    SessionOpDuplicate)
+    SessionOpDuplicate, SessionOpSaveSessionTemplate)
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session_dummy import DummySession
@@ -781,8 +781,10 @@ class SignaledSession(OperatingSession):
             if client.is_ray_net:
                 client.ray_net.session_template = template_name
 
-        self.steps_order = [SessionOpSave(self), SessionOpSaveSnapshot(self),
-                            (self.save_session_template, template_name)]
+        self.steps_order = [
+            SessionOpSave(self),
+            SessionOpSaveSnapshot(self),
+            SessionOpSaveSessionTemplate(self, template_name)]
 
     @manage(r.server.GET_SESSION_PREVIEW, 's')
     def _ray_server_get_session_preview(self, osp: OscPack):
@@ -900,8 +902,10 @@ class SignaledSession(OperatingSession):
             if client.is_ray_net:
                 client.ray_net.session_template = template_name
 
-        self.steps_order = [SessionOpSave(self), SessionOpSaveSnapshot(self),
-                            (self.save_session_template, template_name)]
+        self.steps_order = [
+            SessionOpSave(self),
+            SessionOpSaveSnapshot(self),
+            SessionOpSaveSessionTemplate(self, template_name)]
 
     @session_operation(r.session.TAKE_SNAPSHOT, 's|si')
     def _ray_session_take_snapshot(self, osp: OscPack):
