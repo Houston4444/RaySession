@@ -30,7 +30,8 @@ from daemon_tools import (
 from session_operating import OperatingSession
 from session_op import (
     SessionOp, SessionOpSave, SessionOpLoad, SessionOpClose,
-    SessionOpCloseNoSaveClients, SessionOpSaveSnapshot, SessionOpLoadSnapshot)
+    SessionOpCloseNoSaveClients, SessionOpSaveSnapshot, SessionOpLoadSnapshot,
+    SessionOpDuplicate)
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session_dummy import DummySession
@@ -1045,7 +1046,7 @@ class SignaledSession(OperatingSession):
         self.steps_order = [SessionOpSave(self),
                             SessionOpCloseNoSaveClients(self),
                             SessionOpSaveSnapshot(self),
-                            (self.duplicate, new_session_full_name),
+                            SessionOpDuplicate(self, new_session_full_name),
                             (self.preload, new_session_full_name),
                             SessionOpClose(self),
                             self.take_place,
@@ -1076,7 +1077,7 @@ class SignaledSession(OperatingSession):
 
             self.steps_order = [SessionOpSave(self),
                                 SessionOpSaveSnapshot(self),
-                                (self.duplicate, new_session),
+                                SessionOpDuplicate(self, new_session),
                                 self.duplicate_only_done]
 
             self.next_function()

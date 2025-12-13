@@ -119,7 +119,8 @@ class OperatingSession(Session):
 
         if wait_for in (ray.WaitFor.SCRIPT_QUIT,
                         ray.WaitFor.PATCHBAY_QUIT,
-                        ray.WaitFor.SNAPSHOT_ADD):
+                        ray.WaitFor.SNAPSHOT_ADD,
+                        ray.WaitFor.FILE_COPY):
             match wait_for:
                 case ray.WaitFor.SCRIPT_QUIT:
                     if not self.step_scripter.is_running():
@@ -133,11 +134,16 @@ class OperatingSession(Session):
                     if not self.snapshoter.adder_running:
                         follow()
                         return
+                case ray.WaitFor.FILE_COPY:
+                    if not self.file_copier.is_active():
+                        follow()
+                        return
 
             self.wait_for = wait_for
             self.timer.setSingleShot(True)
             self.timer.timeout.connect(follow)
-            self.timer.start(duration)
+            if duration >= 0:
+                self.timer.start(duration)
             return
 
         if self.expected_clients:
@@ -234,10 +240,6 @@ class OperatingSession(Session):
 
         elif isinstance(next_item, SessionOp):
             next_function = next_item.start
-
-        scripted_steps = {'load': self.load,
-                          'save': self.save,
-                          'close': self.close}
 
         if (self.has_server_option(ray.Option.SESSION_SCRIPTS)
                 and not self.step_scripter.is_running()
@@ -362,6 +364,14 @@ class OperatingSession(Session):
         self.timer.stop()
         self.timer.start(0)
 
+    def files_copy_finished(self):
+        print('gile copy finsihed', self.wait_for)
+        if self.wait_for is ray.WaitFor.FILE_COPY:
+            self.wait_for = ray.WaitFor.NONE
+            self.timer.setSingleShot(True)
+            self.timer.stop()
+            self.timer.start(0)
+
     def _send_reply(self, *args: str):
         if self.steps_osp is None:
             return
@@ -429,8 +439,8 @@ class OperatingSession(Session):
         self.clients.append(client)
         return client
 
-    def adjust_files_after_copy(self, new_session_full_name: str,
-                                template_mode: ray.Template):
+    def adjust_files_after_copy(
+            self, new_session_full_name: str, template_mode: ray.Template):
         new_session_short_path = Path(new_session_full_name)
         
         if new_session_short_path.is_absolute():
@@ -492,81 +502,6 @@ class OperatingSession(Session):
     # then, when timer is timeout or when all client replied,
     # save_substep1 is launched.
 
-    def save(self, outing=False, save_clients=True):
-        if self.path is None:
-            self.next_function()
-            return
-
-        if outing:
-            self.set_server_status(ray.ServerStatus.OUT_SAVE)
-        else:
-            self.set_server_status(ray.ServerStatus.SAVE)
-
-        self.send_gui_message(_translate('GUIMSG', '-- Saving session %s --')
-                                % highlight_text(self.short_path_name))
-
-        if save_clients:
-            for client in self.clients:
-                if client.can_save_now():
-                    self.expected_clients.append(client)
-                client.save()
-
-            if self.expected_clients:
-                if len(self.expected_clients) == 1:
-                    self.send_gui_message(
-                        _translate('GUIMSG', 'waiting for %s to save...')
-                            % self.expected_clients[0].gui_msg_style)
-                else:
-                    self.send_gui_message(
-                        _translate('GUIMSG', 'waiting for %i clients to save...')
-                            % len(self.expected_clients))
-
-        self._wait_and_go_to(10000, (self.save_substep1, outing),
-                             ray.WaitFor.REPLY)
-
-    def save_substep1(self, outing=False, save_clients=True):
-        self._clean_expected()
-
-        if save_clients and outing:
-            for client in self.clients:
-                if client.has_error():
-                    self._send_error(
-                        ray.Err.GENERAL_ERROR,
-                        "Some clients could not save")
-                    break
-
-        if self.path is None:
-            self.next_function()
-            return
-
-        err = self._save_session_file()
-        if err:
-            self.save_error(ray.Err.CREATE_FAILED)
-            return
-
-        self.canvas_saver.save_json_session_canvas(self.path)
-
-        full_notes_path = self.path / ray.NOTES_PATH
-
-        if self.notes:
-            try:
-                with open(full_notes_path, 'w') as notes_file:
-                    notes_file.write(self.notes)
-            except:
-                self.message("unable to save notes in %s" % full_notes_path)
-
-        elif full_notes_path.is_file():
-            try:
-                full_notes_path.unlink()
-            except:
-                self.message("unable to remove %s" % full_notes_path)
-
-        self.send_gui_message(_translate('GUIMSG', "Session '%s' saved.")
-                                % self.short_path_name)
-        self.message("Session %s saved." % self.short_path_name)
-
-        self.next_function()
-
     def save_done(self):
         self.message("Done.")
         self._send_reply("Saved.")
@@ -588,202 +523,9 @@ class OperatingSession(Session):
         self.steps_order.clear()
         self.steps_osp = None
 
-    # def snapshot(self, snapshot_name='', rewind_snapshot='',
-    #              force=False, outing=False):
-    #     if not force:
-    #         if not (self.has_server_option(ray.Option.SNAPSHOTS)
-    #                 and not self.snapshoter.is_auto_snapshot_prevented()
-    #                 and self.snapshoter.has_changes()):
-    #             self.next_function()
-    #             return
-
-    #     if outing:
-    #         self.set_server_status(ray.ServerStatus.OUT_SNAPSHOT)
-    #     else:
-    #         self.set_server_status(ray.ServerStatus.SNAPSHOT)
-
-    #     self.send_gui_message(_translate('GUIMSG', "snapshot started..."))
-    #     self.snapshoter.save(snapshot_name, rewind_snapshot,
-    #                          self.snapshot_substep1, self.snapshot_error)
-
-    # def snapshot_substep1(self, aborted=False):
-    #     if aborted:
-    #         self.message('Snapshot aborted')
-    #         self.send_gui_message(_translate('GUIMSG', 'Snapshot aborted!'))
-
-    #     self.send_gui_message(_translate('GUIMSG', '...Snapshot finished.'))
-    #     self.next_function()
-
     def snapshot_done(self):
         self.set_server_status(ray.ServerStatus.READY)
         self._send_reply("Snapshot taken.")
-
-    def snapshot_error(self, err_snapshot: ray.Err, info_str='', exit_code=0):
-        m = _translate('Snapshot Error', "Unknown error")
-        match err_snapshot:
-            case ray.Err.SUBPROCESS_UNTERMINATED:
-                m = _translate(
-                    'Snapshot Error',
-                    "git didn't stop normally.\n%s") % info_str
-            case ray.Err.SUBPROCESS_CRASH:
-                m = _translate(
-                    'Snapshot Error',
-                    "git crashes.\n%s") % info_str
-            case ray.Err.SUBPROCESS_EXITCODE:
-                m = _translate(
-                    'Snapshot Error',
-                    "git exit with the error code %i.\n%s") % (
-                        exit_code, info_str)
-        self.message(m)
-        self.send_gui_message(m)
-
-        # quite dirty
-        # minor error is not a fatal error
-        # it's important for ray_control to not stop
-        # if operation is not snapshot (ex: close or save)
-        if self.next_function.__name__ == 'snapshot_done':
-            self._send_error(err_snapshot, m)
-            self.steps_osp = None
-            return
-
-        self._send_minor_error(err_snapshot, m)
-        self.next_function()
-
-    def close_no_save_clients(self):
-        self._clean_expected()
-
-        if self.has_server_option(ray.Option.HAS_WMCTRL):
-            has_nosave_clients = False
-            for client in self.clients:
-                if client.is_running and client.relevant_no_save_level() == 2:
-                    has_nosave_clients = True
-                    break
-
-            if has_nosave_clients:
-                self.desktops_memory.set_active_window_list()
-                for client in self.clients:
-                    if client.is_running and client.relevant_no_save_level() == 2:
-                        self.expected_clients.append(client)
-                        self.desktops_memory.find_and_close(client.pid)
-
-        if self.expected_clients:
-            self.send_gui_message(
-                _translate(
-                    'GUIMSG',
-                    'waiting for no saveable clients to be closed gracefully...'))
-
-        duration = int(1000 * math.sqrt(len(self.expected_clients)))
-        self._wait_and_go_to(duration, self.close_no_save_clients_substep1,
-                             ray.WaitFor.QUIT)
-
-    def close_no_save_clients_substep1(self):
-        self._clean_expected()
-        has_nosave_clients = False
-
-        for client in self.clients:
-            if (client.is_running and client.relevant_no_save_level()):
-                self.expected_clients.append(client)
-                has_nosave_clients = True
-
-        if has_nosave_clients:
-            self.set_server_status(ray.ServerStatus.WAIT_USER)
-            self.timer_wu_progress_n = 0
-            self.timer_waituser_progress.start()
-            self.send_gui_message(_translate('GUIMSG',
-                'waiting you to close yourself unsaveable clients...'))
-
-        # Timer (2mn) is restarted if an expected client has been closed
-        self._wait_and_go_to(120000, self.next_function, ray.WaitFor.QUIT, True)
-
-    def close(self, clear_all_clients=False):
-        self.expected_clients.clear()
-
-        if self.path is None:
-            self.next_function()
-            return
-
-        # clients we will keep alive
-        keep_client_list = list[Client]()
-
-        # stopped clients we will remove immediately
-        byebye_client_list = list[Client]()
-
-        if not clear_all_clients:
-            for future_client in self.future_clients:
-                if not future_client.auto_start:
-                    continue
-
-                for client in self.clients:
-                    if client in keep_client_list:
-                        continue
-
-                    if client.can_switch_with(future_client):
-                        client.switch_state = ray.SwitchState.RESERVED
-                        keep_client_list.append(client)
-                        break
-
-        for client in self.clients:
-            if client not in keep_client_list:
-                # client is not capable of switch, or is not wanted
-                # in the new session
-                if client.is_running:
-                    self.expected_clients.append(client)
-                else:
-                    byebye_client_list.append(client)
-
-        if keep_client_list:
-            self.set_server_status(ray.ServerStatus.CLEAR)
-        else:
-            self.set_server_status(ray.ServerStatus.CLOSE)
-
-        for client in byebye_client_list:
-            if client in self.clients:
-                self._remove_client(client)
-            else:
-                raise NameError(f'no client {client.client_id} to remove')
-
-        if self.expected_clients:
-            if len(self.expected_clients) == 1:
-                self.send_gui_message(
-                    _translate('GUIMSG',
-                               'waiting for %s to quit...')
-                        % self.expected_clients[0].gui_msg_style)
-            else:
-                self.send_gui_message(
-                    _translate('GUIMSG',
-                               'waiting for %i clients to quit...')
-                        % len(self.expected_clients))
-
-            for client in self.expected_clients.__reversed__():
-                self.clients_to_quit.append(client)
-            self.timer_quit.start()
-
-        self.trashed_clients.clear()
-        self.send_gui(rg.trash.CLEAR)
-
-        self._wait_and_go_to(
-            30000, (self.close_substep1, clear_all_clients), ray.WaitFor.QUIT)
-
-    def close_substep1(self, clear_all_clients=False):
-        for client in self.expected_clients:
-            client.kill()
-
-        self._wait_and_go_to(1000, (self.close_substep2, clear_all_clients),
-                         ray.WaitFor.QUIT)
-
-    def close_substep2(self, clear_all_clients=False):
-        self._clean_expected()
-
-        # remember in recent sessions
-        # only if session has been open at least 30 seconds
-        # to prevent remember when session is open just for a little script
-        if time.time() - self._time_at_open > 30:
-            self.remember_as_recent()
-
-        if clear_all_clients:
-            self._set_path(None)
-            
-        self.next_function()
 
     def close_done(self):
         self.canvas_saver.unload_session()
@@ -815,14 +557,14 @@ class OperatingSession(Session):
     def new(self, new_session_name: str):
         self.send_gui_message(
             _translate('GUIMSG', "Creating new session \"%s\"")
-            % new_session_name)
+                % new_session_name)
         spath = self.root / new_session_name
 
         if self._is_path_in_a_session_dir(spath):
             self._send_error(
                 ray.Err.SESSION_IN_SESSION_DIR,
-                """Can't create session in a dir containing a session
-for better organization.""")
+                "Can't create session in a dir containing a session "
+                "for better organization.")
             return
 
         try:
@@ -843,33 +585,6 @@ for better organization.""")
         self._send_reply("Created.")
         self.set_server_status(ray.ServerStatus.READY)
         self.steps_osp = None
-
-    # def init_snapshot(self, spath: Path, snapshot: str):
-    #     self.set_server_status(ray.ServerStatus.REWIND)
-    #     if self.snapshoter.load(spath, snapshot, self.init_snapshot_error):
-    #         self.next_function()
-
-    # def init_snapshot_error(self, err: ray.Err, info_str='', exit_code=0):
-    #     m = _translate('Snapshot Error', "Snapshot error")
-    #     if err == ray.Err.SUBPROCESS_UNTERMINATED:
-    #         m = _translate('Snapshot Error',
-    #                        "command didn't stop normally:\n%s") % info_str
-    #     elif err == ray.Err.SUBPROCESS_CRASH:
-    #         m = _translate('Snapshot Error',
-    #                        "command crashes:\n%s") % info_str
-    #     elif err == ray.Err.SUBPROCESS_EXITCODE:
-    #         m = _translate('Snapshot Error',
-    #                        "command exit with the error code %i:\n%s") \
-    #             % (exit_code, info_str)
-    #     elif err == ray.Err.NO_SUCH_FILE:
-    #         m = _translate('Snapshot Error',
-    #                        "error reading file:\n%s") % info_str
-    #     self.message(m)
-    #     self.send_gui_message(m)
-    #     self._send_error(err, m)
-
-    #     self.set_server_status(ray.ServerStatus.OFF)
-    #     self.steps_order.clear()
 
     def duplicate(self, new_session_full_name: str):
         if self._clients_have_errors():
@@ -2147,13 +1862,6 @@ for better organization.""")
     def switch_client(self, client: Client):
         client.switch()
         self.next_function()
-
-    def load_client_snapshot(self, client_id, snapshot):
-        self.set_server_status(ray.ServerStatus.REWIND)
-        if self.snapshoter.load_client_exclusive(
-                client_id, snapshot, self.load_client_snapshot_error):
-            self.set_server_status(ray.ServerStatus.READY)
-            self.next_function()
 
     def load_client_snapshot_error(
             self, err: ray.Err, info_str='', exit_code=0):

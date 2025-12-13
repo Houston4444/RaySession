@@ -27,6 +27,10 @@ class SessionOp:
     def _clean_up_session_ops(self):
         self.session.steps_osp = None
         self.session.steps_order.clear()
+        if self.session.path is None:
+            self.session.set_server_status(ray.ServerStatus.OFF)
+        else:
+            self.session.set_server_status(ray.ServerStatus.READY)
 
     def start(self):
         _logger.debug(f'Start step {self._sub_step_name(0)}')
@@ -37,6 +41,10 @@ class SessionOp:
         self.start()
     
     def next(self, duration: int, wait_for: ray.WaitFor, redondant=False):
+        '''Once `wait_for` is not pertinent anymore or if `duration`
+        has past, execute the next function of self.routine.
+        
+        If `duration` is negative, there is no timeout.'''
         _logger.debug(
             f'{self.class_name}.{self.routine[self.func_n].__name__} finished')
 

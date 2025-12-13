@@ -3,7 +3,7 @@ from pathlib import Path
 from osclib import OscPack
 
 from session_operating import OperatingSession
-from session_op import SessionOpSave, SessionOpLoad
+from session_op import SessionOpSave, SessionOpLoad, SessionOpDuplicate
 
 
 class DummySession(OperatingSession):
@@ -30,11 +30,12 @@ class DummySession(OperatingSession):
 
     def dummy_duplicate(self, osp: OscPack):
         self.steps_osp = osp
-        session_to_load, new_session_full_name, sess_root = osp.args
+        osp_args: tuple[str, str, str] = osp.args # type:ignore
+        session_to_load, new_session_full_name, sess_root = osp_args
         self.steps_order = [(self.preload, session_to_load),
                             self.take_place,
                             SessionOpLoad(self),
-                            (self.duplicate, new_session_full_name),
+                            SessionOpDuplicate(self, new_session_full_name),
                             self.duplicate_only_done]
         self.next_function()
 
