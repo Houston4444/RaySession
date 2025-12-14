@@ -80,7 +80,7 @@ class SaveSessionTemplate(SessionOp):
         session.send_gui_message(
             _translate('GUIMSG', 'start session copy to template...'))
         
-        err = session.file_copier.start_session_copy_2(session.path, spath)
+        err = session.file_copier.start_session_copy(session.path, spath)
         if err is not ray.Err.OK:
             self.error(
                 err, 

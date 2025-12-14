@@ -46,7 +46,6 @@ class FileCopier(ServerSender):
 
         self._client_id = ''
         self._src_is_factory = False
-        self._next_function: Optional[Callable] = None
         self._abort_function: Optional[Callable] = None
         self._next_args = list[Any]()
         self._copy_files = list[CopyFile]()
@@ -175,11 +174,7 @@ class FileCopier(ServerSender):
         else:
             self._is_active = False
             self._send_copy_state_to_gui(0)
-
             self.session.files_copy_finished()
-            if self._next_function:
-                self._next_function(*self._next_args)
-
             return
 
         self._next_process()
@@ -202,74 +197,7 @@ class FileCopier(ServerSender):
 
         self._timer.start()
 
-    def _start(self, src_list: Union[Path, list[Path]], dest_dir: Path,
-               next_function: Callable, abort_function: Callable,
-               next_args=[]):
-        self._abort_function = abort_function
-        self._next_function = next_function
-        self._next_args = next_args
-
-        self._aborted = False
-        self._copy_size = 0
-        self._copy_files.clear()
-
-        dest_path_exists = dest_dir.exists()
-        if dest_path_exists:
-            if not dest_dir.is_dir():
-                #TODO send error, but it should not append
-                self._abort_function(*self._next_args)
-                return
-
-        if isinstance(src_list, Path):
-            src_dir = src_list
-            src_list = list[Path]()
-
-            if not src_dir.is_dir():
-                self._abort_function(*self._next_args)
-                return
-
-            try:
-                tmp_list = src_dir.iterdir()            
-            except:
-                self._abort_function(*self._next_args)
-                return
-
-            for path in tmp_list:
-                if path.name == '.ray-snapshots':
-                    continue
-
-                src_list.append(path)
-
-            if not dest_path_exists:
-                try:
-                    dest_dir.mkdir(parents=True)
-                except:
-                    self._abort_function(*self._next_args)
-                    return
-
-        for orig_path in src_list:
-            copy_file = CopyFile()
-            copy_file.state = CopyState.OFF
-            copy_file.orig_path = orig_path
-            copy_file.size = self._get_file_size(orig_path)
-
-            self._copy_size += copy_file.size
-
-            if dest_path_exists:
-                copy_file.dest_path = dest_dir / orig_path.name
-            else:
-                # WARNING works only with one file !!!
-                copy_file.dest_path = dest_dir
-
-            self._copy_files.append(copy_file)
-
-        if self._copy_files:
-            self._send_copy_state_to_gui(1)
-            self._next_process()
-        else:
-            self._next_function(*self._next_args)
-
-    def _start_2(
+    def _start(
             self, src_list: Path | list[Path], dest_dir: Path) -> ray.Err:
         self._aborted = False
         self._copy_size = 0
@@ -335,28 +263,17 @@ class FileCopier(ServerSender):
 
     def start_client_copy(
             self, client_id: str, src_list: list[Path], dest_dir: Path,
-            next_function: Callable, abort_function: Callable,
-            next_args=[], src_is_factory=False):
+            src_is_factory=False) -> ray.Err:
         self._client_id = client_id
         self._src_is_factory = src_is_factory
-        self._start(src_list, dest_dir, next_function,
-                    abort_function, next_args)
+        return self._start(src_list, dest_dir)
 
     def start_session_copy(
-            self, src_dir: Path, dest_dir: Path,
-            next_function: Callable, abort_function: Callable, next_args=[],
-            src_is_factory=False):
-        self._client_id = ''
-        self._src_is_factory = src_is_factory
-        self._start(src_dir, dest_dir, next_function,
-                    abort_function, next_args)
-
-    def start_session_copy_2(
             self, src_dir: Path, dest_dir: Path,
             src_is_factory=False) -> ray.Err:
         self._client_id = ''
         self._src_is_factory = src_is_factory
-        return self._start_2(src_dir, dest_dir)
+        return self._start(src_dir, dest_dir)
 
     def abort(self, abort_function: Optional[Callable] =None, next_args=[]):
         if abort_function:

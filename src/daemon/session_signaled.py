@@ -620,21 +620,22 @@ class SignaledSession(OperatingSession):
     @session_operation((r.server.NEW_SESSION, nsm.server.NEW), 's|ss')
     def _ray_server_new_session(self, osp: OscPack):
         if len(osp.args) == 2 and osp.args[1]:
-            session_name: str
-            session_name, template_name = osp.args # type:ignore
+            osp_args: tuple[str, str] = osp.args # type:ignore
+            session_name, template_name = osp_args
 
             spath = self.root / session_name
 
             if not spath.exists():
-                self.steps_order = [sop.Save(self),
-                                    sop.CloseNoSaveClients(self),
-                                    sop.SaveSnapshot(self),
-                                    (self.prepare_template, *osp.args, False),
-                                    (self.preload, session_name),
-                                    sop.Close(self),
-                                    self.take_place,
-                                    sop.Load(self),
-                                    self.new_done]
+                self.steps_order = [
+                    sop.Save(self),
+                    sop.CloseNoSaveClients(self),
+                    sop.SaveSnapshot(self),
+                    sop.PrepareTemplate(self, session_name, template_name),
+                    (self.preload, session_name),
+                    sop.Close(self),
+                    self.take_place,
+                    sop.Load(self),
+                    self.new_done]
                 return
 
         self.steps_order = [sop.Save(self),
@@ -700,8 +701,7 @@ class SignaledSession(OperatingSession):
             self.steps_order += [sop.SaveSnapshot(self, outing=True)]
 
         if template_name:
-            self.steps_order += [(self.prepare_template, session_name,
-                                 template_name, True)]
+            self.steps_order += [sop.PrepareTemplate(self, session_name, template_name, net=True)]
 
         self.steps_order += [
             (self.preload, session_name),
@@ -1299,36 +1299,49 @@ class SignaledSession(OperatingSession):
             self.send(*osp.error(), ray.Err.NOT_NOW,
                       "Impossible to add client now")
 
-    @manage(r.session.ADD_CLIENT_TEMPLATE, 'isss')
+    @manage(r.session.ADD_CLIENT_TEMPLATE, 'iss*')
     def _ray_session_add_client_template(self, osp: OscPack):
         if self.path is None:
             self.send(*osp.error(), ray.Err.NO_SESSION_OPEN,
                       "Cannot add to session because no session is loaded.")
             return
 
-        factory = bool(osp.args[0])
-        template_name: str = osp.args[1] #type:ignore
-        auto_start = \
-            bool(len(osp.args) <= 2 or osp.args[2] != 'not_start') #type:ignore
-        unique_id: str = osp.args[3] if len(osp.args) > 3 else '' #type:ignore
+        if self.steps_order or self.file_copier.active:
+            self.send(*osp.error(), ray.Err.NOT_NOW, "Session is busy")
+            return
+
+        osp_args: tuple[int, str] = osp.args # type:ignore
+        rest: list[str]
+        factory, template_name, *rest = osp_args
+        factory = bool(factory)
+        auto_start, unique_id = False, ''
+        if len(rest) >= 1:
+            auto_start = bool(rest[0] != 'not_start')
+        if len(rest) >= 2:
+            unique_id = rest[1]
 
         if unique_id:
             if not unique_id.replace('_', '').isalnum():
                 self.send(*osp.error(),
-                            ray.Err.CREATE_FAILED,
-                            f"client_id {unique_id} is not alphanumeric")
+                          ray.Err.CREATE_FAILED,
+                          f"client_id {unique_id} is not alphanumeric")
                 return
 
             # Check if client_id already exists
             for client in self.clients + self.trashed_clients:
                 if client.client_id == unique_id:
-                    self.send(*osp.error(),
+                    self.send(
+                        *osp.error(),
                         ray.Err.CREATE_FAILED,
                         f"client_id {unique_id} is already used")
                     return
 
-        self.add_client_template(
-            osp, template_name, factory, auto_start, unique_id)
+        self.steps_order = [
+            sop.AddClientTemplate(
+                self, template_name, factory,
+                auto_start=auto_start, unique_id=unique_id, osp=osp)]
+
+        self.next_function()
 
     @manage(r.session.ADD_FACTORY_CLIENT_TEMPLATE, 'ss*')
     def _ray_session_add_factory_client_template(self, osp: OscPack):
@@ -1367,7 +1380,7 @@ class SignaledSession(OperatingSession):
                 f'no client {client_id} found in session {other_session}')
             return
 
-        self.steps_order = [(self.add_other_session_client, client)]
+        self.steps_order = [sop.AddOtherSessionClient(self, client, osp=osp)]
 
     @manage(r.session.REORDER_CLIENTS, 'ss*')
     def _ray_session_reorder_clients(self, osp: OscPack):
@@ -1592,7 +1605,7 @@ class SignaledSession(OperatingSession):
             self.send(*osp.reply(), 'client saved')
 
     @client_action(r.client.SAVE_AS_TEMPLATE, 'ss')
-    def _ray_client_save_as_template(self, osp: OscPack, client:Client):
+    def _ray_client_save_as_template(self, osp: OscPack, client: Client):
         template_name: str = osp.args[1] #type:ignore
 
         if self.file_copier.is_active():
@@ -1601,7 +1614,7 @@ class SignaledSession(OperatingSession):
 
         self.steps_osp = osp
         self.steps_order = [
-            (self.save_client_as_template, client, template_name)]
+            sop.SaveClientAsTemplate(self, client, template_name, osp=osp)]
         
         self.next_function()
 

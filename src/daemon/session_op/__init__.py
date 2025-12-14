@@ -1,5 +1,8 @@
 from .session_op import SessionOp
+from .add_client_template import AddClientTemplate
+from .add_other_session_client import AddOtherSessionClient
 from .save import Save
+from .save_client_as_template import SaveClientAsTemplate
 from .save_session_template import SaveSessionTemplate
 from .save_snapshot import SaveSnapshot
 from .load import Load
@@ -7,3 +10,4 @@ from .load_snapshot import LoadSnapshot
 from .close import Close
 from .close_no_save_clients import CloseNoSaveClients
 from .duplicate import Duplicate
+from .prepare_template import PrepareTemplate

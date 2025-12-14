@@ -79,7 +79,7 @@ class Duplicate(SessionOp):
         # lock the directory of the new session created
         multi_daemon_file.add_locked_path(spath)
 
-        err = session.file_copier.start_session_copy_2(session.path, spath)
+        err = session.file_copier.start_session_copy(session.path, spath)
         if err is not ray.Err.OK:
             multi_daemon_file.unlock_path(spath)
             self.error(

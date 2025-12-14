@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Callable
 
 import ray
+from osclib import OscPack
 
 if TYPE_CHECKING:
     from session_operating import OperatingSession
@@ -11,8 +12,18 @@ _logger = logging.getLogger(__name__)
 
 
 class SessionOp:
-    def __init__(self, session: 'OperatingSession'):
+    '''Session operation that may contains many functions to run
+    in the order of its `routine`. Theses functions can be separated
+    in time execution, if wait for clients replies, file copy or other
+    is required.
+    '''
+    def __init__(
+            self, session: 'OperatingSession', osp: OscPack | None =None):
+        '''if `osp` is set, replies and errors will be sent
+        to the osp.src_addr, otherwise, they will be sent to the
+        session.steps_osp.src_addr'''
         self.session = session
+        self.osp = osp
         self.routine = list[Callable]()
         self.func_n = 0
         self.script_step: str = ''
@@ -25,6 +36,9 @@ class SessionOp:
         return f'{self.class_name}.{self.routine[index].__name__}'
     
     def _clean_up_session_ops(self):
+        if self.osp is not None:
+            return
+        
         self.session.steps_osp = None
         self.session.steps_order.clear()
         if self.session.path is None:
@@ -54,6 +68,11 @@ class SessionOp:
             wait_for, redondant=redondant)
 
     def reply(self, msg: str):
+        '''Final reply of the operation.'''
+        if self.osp is not None:
+            self.session.send_even_dummy(*self.osp.reply(), msg)
+            return
+
         if self.session.steps_osp is not None:        
             self.session.send_even_dummy(
                 *self.session.steps_osp.reply(), msg)
@@ -61,6 +80,11 @@ class SessionOp:
         self._clean_up_session_ops()
         
     def error(self, err: ray.Err, msg: str):
+        '''reply an error to the operation asker'''
+        if self.osp is not None:
+            self.session.send_even_dummy(*self.osp.error(), err, msg)
+            return
+
         if self.session.steps_osp is not None:
             self.session.send_even_dummy(
             *self.session.steps_osp.error(), err, msg)
