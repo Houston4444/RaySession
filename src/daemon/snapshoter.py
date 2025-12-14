@@ -213,7 +213,7 @@ class Snapshoter(QObject):
         if self.session.path is None:
             return ray.Err.NO_SESSION_OPEN
 
-        file_path = self.exclude_file
+        file_path = self.history_file
 
         try:
             tree = ET.parse(file_path)
