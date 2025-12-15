@@ -19,12 +19,12 @@ _translate = QCoreApplication.translate
 class ExitNow(SessionOp):
     def __init__(self, session: 'OperatingSession'):
         super().__init__(session)
-        self.routine = [self.exit_now, self.exit_now_step_2]
+        self.routine = [self.wait_patchbay, self.quit_app]
 
-    def exit_now(self):
+    def wait_patchbay(self):
         self.next(1000, ray.WaitFor.PATCHBAY_QUIT)
         
-    def exit_now_step_2(self):
+    def quit_app(self):
         session = self.session
         session.set_server_status(ray.ServerStatus.OFF)
         session._set_path(None)

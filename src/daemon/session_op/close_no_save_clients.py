@@ -18,11 +18,11 @@ class CloseNoSaveClients(SessionOp):
     def __init__(self, session: 'OperatingSession'):
         super().__init__(session)
         self.routine = [
-            self.close_no_save_clients,
-            self.close_no_save_clients_substep1,
-            self.close_no_save_clients_substep2]
+            self.close_gracefully_windows,
+            self.wait_user_to_close_clients,
+            self.go_to_next_function]
 
-    def close_no_save_clients(self):
+    def close_gracefully_windows(self):
         session = self.session
         session._clean_expected()
 
@@ -45,12 +45,13 @@ class CloseNoSaveClients(SessionOp):
             session.send_gui_message(
                 _translate(
                     'GUIMSG',
-                    'waiting for no saveable clients to be closed gracefully...'))
+                    'waiting for no saveable clients '
+                    'to be closed gracefully...'))
 
         duration = int(1000 * math.sqrt(len(session.expected_clients)))
         self.next(duration, ray.WaitFor.QUIT)
 
-    def close_no_save_clients_substep1(self):
+    def wait_user_to_close_clients(self):
         session = self.session
         session._clean_expected()
         has_nosave_clients = False
@@ -70,5 +71,5 @@ class CloseNoSaveClients(SessionOp):
         # Timer (2mn) is restarted if an expected client has been closed
         self.next(120000, ray.WaitFor.QUIT, redondant=True)
         
-    def close_no_save_clients_substep2(self):
+    def go_to_next_function(self):
         self.session.next_function()

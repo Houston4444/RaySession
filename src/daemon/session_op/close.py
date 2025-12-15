@@ -23,14 +23,14 @@ class Close(SessionOp):
         self.script_step = 'close'
         self.clear_all_clients = clear_all_clients
         self.routine = [
-            self.close, self.close_substep1, self.close_substep2]
+            self.stop_clients, self.kill_clients, self.final_adjusts]
 
     def start_from_script(self, arguments: list[str]):
         if 'close_all' in arguments:
             self.clear_all_clients = True
         self.start()
             
-    def close(self):
+    def stop_clients(self):
         session = self.session
         session.expected_clients.clear()
 
@@ -99,14 +99,14 @@ class Close(SessionOp):
 
         self.next(30000, ray.WaitFor.QUIT)
 
-    def close_substep1(self):
+    def kill_clients(self):
         session = self.session
         for client in session.expected_clients:
             client.kill()
 
         self.next(1000, ray.WaitFor.QUIT)
 
-    def close_substep2(self):
+    def final_adjusts(self):
         session = self.session
         session._clean_expected()
 

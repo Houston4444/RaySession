@@ -34,10 +34,10 @@ class AddClientTemplate(SessionOp):
         self.unique_id = unique_id
         self.client: Client | None = None
         
-        self.routine = [self.add_client_template,
-                        self.add_client_template_step_1]
+        self.routine = [self.copy_template,
+                        self.adjust_files]
 
-    def add_client_template(self):
+    def copy_template(self):
         session = self.session
         if session.path is None:
             raise NoSessionPath
@@ -139,7 +139,7 @@ class AddClientTemplate(SessionOp):
         self.client = client
         self.next(-1, ray.WaitFor.FILE_COPY)
 
-    def add_client_template_step_1(self):
+    def adjust_files(self):
         session = self.session
         client = self.client
         if client is None:

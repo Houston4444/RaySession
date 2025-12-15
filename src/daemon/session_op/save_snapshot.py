@@ -28,9 +28,9 @@ class SaveSnapshot(SessionOp):
         self.force = force
         self.outing = outing
         self.error_is_minor = error_is_minor
-        self.routine = [self.snapshot, self.snapshot_substep1]
+        self.routine = [self.add_files, self.commit_files]
 
-    def snapshot(self):
+    def add_files(self):
         session = self.session
         
         if not self.force:
@@ -72,7 +72,7 @@ class SaveSnapshot(SessionOp):
         # 15mn for the command git add .
         self.next(900000, ray.WaitFor.SNAPSHOT_ADD)
 
-    def snapshot_substep1(self):
+    def commit_files(self):
         session = self.session
         
         if session.snapshoter.adder_aborted:

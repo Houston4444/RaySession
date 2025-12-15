@@ -19,23 +19,23 @@ class TerminateStepScripter(SessionOp):
     def __init__(self, session: 'OperatingSession'):
         super().__init__(session)
         self.routine = [
-            self.terminate_step_scripter,
-            self.terminate_step_scripter_substep2,
-            self.terminate_step_scripter_substep3]
+            self.stop_step_scripter,
+            self.kill_step_scripter,
+            self.go_to_next]
 
-    def terminate_step_scripter(self):
+    def stop_step_scripter(self):
         session = self.session
         if session.step_scripter.is_running():
             session.step_scripter.terminate()
 
         self.next(5000, ray.WaitFor.SCRIPT_QUIT)
 
-    def terminate_step_scripter_substep2(self):
+    def kill_step_scripter(self):
         session = self.session
         if session.step_scripter.is_running():
             session.step_scripter.kill()
 
         self.next(1000, ray.WaitFor.SCRIPT_QUIT)
 
-    def terminate_step_scripter_substep3(self):
+    def go_to_next(self):
         self.session.next_function()

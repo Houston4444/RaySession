@@ -22,7 +22,7 @@ class Save(SessionOp):
         self.script_step = 'save'
         self.outing = outing
         self.save_clients = save_clients
-        self.routine = [self.save, self.save_substep1]
+        self.routine = [self.save_the_clients, self.save_the_session]
 
     def start_from_script(self, arguments: list[str]):
         if 'without_clients' in arguments:
@@ -30,7 +30,7 @@ class Save(SessionOp):
             self.save_clients = False
         self.start()
 
-    def save(self):
+    def save_the_clients(self):
         session = self.session
 
         if session.path is None:
@@ -65,7 +65,7 @@ class Save(SessionOp):
 
         self.next(10000, ray.WaitFor.REPLY)
 
-    def save_substep1(self):
+    def save_the_session(self):
         session = self.session
         session._clean_expected()
 

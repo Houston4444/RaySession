@@ -22,9 +22,9 @@ class PrepareTemplate(SessionOp):
         self.new_session_name = new_session_name
         self.template_name = template_name
         self.net = net
-        self.routine = [self.prepare_template, self.prepare_template_substep1]
+        self.routine = [self.copy_template, self.adjust_files]
 
-    def prepare_template(self):
+    def copy_template(self):
         session = self.session
         template_root = TemplateRoots.user_sessions
         if self.net:
@@ -85,7 +85,7 @@ class PrepareTemplate(SessionOp):
         
         self.next(-1, ray.WaitFor.FILE_COPY)
 
-    def prepare_template_substep1(self):
+    def adjust_files(self):
         session = self.session
         if session.file_copier.aborted:
             self.error(ray.Err.ABORT_ORDERED, "Prepare template aborted")
@@ -94,15 +94,5 @@ class PrepareTemplate(SessionOp):
         session.adjust_files_after_copy(
             self.new_session_name, ray.Template.SESSION_LOAD)
         session.next_function()
-
-    # def prepare_template_aborted(self, new_session_full_name: str):
-    #     self.steps_order.clear()
-    #     if self.path:
-    #         self.set_server_status(ray.ServerStatus.READY)
-    #     else:
-    #         self.set_server_status(ray.ServerStatus.OFF)
-
-    #         self._set_path(None)
-    #         self.send_gui(rg.session.NAME, '', '')
 
         

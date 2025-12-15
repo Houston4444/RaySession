@@ -24,10 +24,10 @@ class SaveSessionTemplate(SessionOp):
         super().__init__(session)
         self.template_name = template_name
         self.net = net
-        self.routine = [self.save_session_template,
-                        self.save_session_template_substep_1]
+        self.routine = [self.copy_session_folder,
+                        self.adjust_files]
 
-    def save_session_template(self):
+    def copy_session_folder(self):
         session = self.session
         if session.path is None:
             raise NoSessionPath
@@ -92,7 +92,7 @@ class SaveSessionTemplate(SessionOp):
         
         self.next(-1, ray.WaitFor.FILE_COPY)
 
-    def save_session_template_substep_1(self):
+    def adjust_files(self):
         session = self.session
         if session.file_copier.aborted:
             self.error(ray.Err.ABORT_ORDERED, "Session template aborted")

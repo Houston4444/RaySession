@@ -24,15 +24,18 @@ class Load(SessionOp):
         self.script_step = 'load'
         self.open_off = open_off
         self.routine = [
-            self.load, self.load_substep2, self.load_substep3,
-            self.load_substep4, self.load_substep5]
+            self.stop_clients,
+            self.kill_clients,
+            self.switch_or_start_clients,
+            self.wait_client_replies,
+            self.final_adjusts]
 
     def start_from_script(self, arguments: list[str]):
         if 'open_off' in arguments:
             self.open_off = True
         self.start()
     
-    def load(self, open_off=False):
+    def stop_clients(self, open_off=False):
         session = self.session
         session._clean_expected()
         session.clients_to_quit.clear()
@@ -60,14 +63,14 @@ class Load(SessionOp):
         session.timer_quit.start()
         self.next(5000, ray.WaitFor.QUIT)
 
-    def load_substep2(self):
+    def kill_clients(self):
         session = self.session
         for client in session.expected_clients:
             client.kill()
             
         self.next(1000, ray.WaitFor.QUIT)
 
-    def load_substep3(self):
+    def switch_or_start_clients(self):
         session = self.session
         session._clean_expected()
 
@@ -194,7 +197,7 @@ class Load(SessionOp):
 
         self.next(wait_time, ray.WaitFor.ANNOUNCE)
 
-    def load_substep4(self):
+    def wait_client_replies(self):
         session = self.session
         for client in session.expected_clients:
             if not client.executable in RS.non_active_clients:
@@ -231,7 +234,7 @@ class Load(SessionOp):
 
         self.next(wait_time, ray.WaitFor.REPLY)
 
-    def load_substep5(self):
+    def final_adjusts(self):
         session = self.session
         session._clean_expected()
 

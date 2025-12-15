@@ -29,10 +29,10 @@ class AddOtherSessionClient(SessionOp):
         self.client = client
         self.new_client: Client | None = None
         self.tmp_work_dir: Path | None = None
-        self.routine = [self.add_other_session_client,
-                        self.add_other_session_client_step_1]
+        self.routine = [self.copy_other_client,
+                        self.rename_files]
 
-    def add_other_session_client(self):
+    def copy_other_client(self):
         session = self.session
         client = self.client
 
@@ -73,8 +73,8 @@ class AddOtherSessionClient(SessionOp):
         if err is not ray.Err.OK:
             self.error(
                 err,
-                _translate('error',
-                           "Impossible to copy client files"))
+                _translate(
+                    'error', "Impossible to copy client files"))
             return
         
         self.new_client = new_client
@@ -82,7 +82,7 @@ class AddOtherSessionClient(SessionOp):
         
         self.next(-1, ray.WaitFor.FILE_COPY)
 
-    def add_other_session_client_step_1(
+    def rename_files(
             self):
         session = self.session
         client = self.client

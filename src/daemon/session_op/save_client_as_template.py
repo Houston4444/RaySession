@@ -32,10 +32,10 @@ class SaveClientAsTemplate(SessionOp):
         super().__init__(session, osp)
         self.client = client
         self.template_name = template_name
-        self.routine = [self.save_client_as_template,
-                        self.save_client_as_template_step_1]
+        self.routine = [self.copy_client_to_template,
+                        self.adjust_files]
 
-    def save_client_as_template(self):
+    def copy_client_to_template(self):
         session = self.session
         client = self.client
 
@@ -83,7 +83,7 @@ class SaveClientAsTemplate(SessionOp):
             
         self.next(-1, ray.WaitFor.FILE_COPY)
 
-    def save_client_as_template_step_1(self):
+    def adjust_files(self):
         session = self.session
         client = self.client
         client.set_status(client.status) # see set_status to see why

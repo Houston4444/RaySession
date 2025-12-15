@@ -24,12 +24,12 @@ class Duplicate(SessionOp):
     def __init__(self, session: 'OperatingSession', new_session_name: str):
         super().__init__(session)
         self.new_session_name = new_session_name
-        self.routine = [self.duplicate,
-                        self.duplicate_substep1,
-                        self.duplicate_substep2,
-                        self.duplicate_substep3]
+        self.routine = [self.start_network_sessions_copy,
+                        self.copy_session_folder,
+                        self.wait_network_sessions_copy,
+                        self.rename_files]
 
-    def duplicate(self):
+    def start_network_sessions_copy(self):
         session = self.session
         
         if session._clients_have_errors():
@@ -66,7 +66,7 @@ class Duplicate(SessionOp):
 
         self.next(2000, ray.WaitFor.DUPLICATE_START)
 
-    def duplicate_substep1(self):
+    def copy_session_folder(self):
         session = self.session        
         if session.path is None:
             raise NoSessionPath
@@ -92,7 +92,7 @@ class Duplicate(SessionOp):
         
         self.next(-1, ray.WaitFor.FILE_COPY)
 
-    def duplicate_substep2(self):
+    def wait_network_sessions_copy(self):
         session = self.session
         
         if session.file_copier.aborted:
@@ -133,7 +133,7 @@ class Duplicate(SessionOp):
 
         self.next(-1, ray.WaitFor.DUPLICATE_FINISH) # 1 Hour
 
-    def duplicate_substep3(self):
+    def rename_files(self):
         session = self.session
         session.adjust_files_after_copy(
             self.new_session_name, ray.Template.NONE)
