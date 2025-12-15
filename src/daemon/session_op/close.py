@@ -113,7 +113,7 @@ class Close(SessionOp):
         # remember in recent sessions
         # only if session has been open at least 30 seconds
         # to prevent remember when session is open just for a little script
-        if time.time() - session._time_at_open > 30:
+        if time.time() - session._time_at_open > 30.0:
             session.remember_as_recent()
 
         if self.clear_all_clients:

@@ -174,7 +174,7 @@ class SignaledSession(OperatingSession):
         self.dummy_sessions = list[DummySession]()
         self._next_dummy_id = 1
         
-        self._folder_sizes_and_dates = []
+        self._folder_sizes_and_dates = list[dict[str, str | int]]()
         
         self._cache_folder_sizes_path = (
             xdg.xdg_cache_home() / ray.APP_TITLE / 'folder_sizes.json')
@@ -631,20 +631,23 @@ class SignaledSession(OperatingSession):
                     sop.CloseNoSaveClients(self),
                     sop.SaveSnapshot(self),
                     sop.PrepareTemplate(self, session_name, template_name),
-                    (self.preload, session_name),
+                    sop.Preload(self, session_name),
                     sop.Close(self),
-                    self.take_place,
+                    sop.TakePlace(self),
                     sop.Load(self),
                     self.new_done]
                 return
 
-        self.steps_order = [sop.Save(self),
-                            sop.CloseNoSaveClients(self),
-                            sop.SaveSnapshot(self),
-                            sop.Close(self),
-                            (self.new, osp.args[0]),
-                            sop.Save(self),
-                            self.new_done]
+        session_name: str = osp.args[0] # type:ignore
+
+        self.steps_order = [
+            sop.Save(self),
+            sop.CloseNoSaveClients(self),
+            sop.SaveSnapshot(self),
+            sop.Close(self),
+            sop.New(self, session_name),
+            sop.Save(self),
+            self.new_done]
 
     @session_operation((r.server.OPEN_SESSION, nsm.server.OPEN), 's|si|sis')
     def _ray_server_open_session(self, osp: OscPack, open_off=False):
@@ -663,10 +666,9 @@ class SignaledSession(OperatingSession):
             self._send_error(ray.Err.CREATE_FAILED, 'invalid session name.')
             return
 
-        if template_name:
-            if '/' in template_name:
-                self._send_error(ray.Err.CREATE_FAILED, 'invalid template name')
-                return
+        if template_name and '/' in template_name:
+            self._send_error(ray.Err.CREATE_FAILED, 'invalid template name')
+            return
 
         spath = self.root / session_name
 
@@ -693,20 +695,22 @@ class SignaledSession(OperatingSession):
         self.steps_order = []
 
         if save_previous:
-            self.steps_order += [sop.Save(self, outing=True)]
-
-        self.steps_order += [sop.CloseNoSaveClients(self)]
-
-        if save_previous:
-            self.steps_order += [sop.SaveSnapshot(self, outing=True)]
+            self.steps_order += [
+                sop.Save(self, outing=True),
+                sop.CloseNoSaveClients(self),
+                sop.SaveSnapshot(self, outing=True)]
+        else:
+            self.steps_order += [sop.CloseNoSaveClients(self)]
 
         if template_name:
-            self.steps_order += [sop.PrepareTemplate(self, session_name, template_name, net=True)]
+            self.steps_order += [
+                sop.PrepareTemplate(
+                    self, session_name, template_name, net=True)]
 
         self.steps_order += [
-            (self.preload, session_name),
+            sop.Preload(self, session_name),
             sop.Close(self, clear_all_clients=open_off),
-            self.take_place,
+            sop.TakePlace(self),
             sop.Load(self, open_off=open_off),
             self.load_done]
 
@@ -995,8 +999,10 @@ class SignaledSession(OperatingSession):
     def _ray_server_quit(self, osp: OscPack):
         patchbay_dmn_mng.daemon_exit()
         self.steps_osp = osp
-        self.steps_order = [self.terminate_step_scripter,
-                            sop.Close(self), self.exit_now]
+        self.steps_order = [
+            sop.TerminateStepScripter(self),
+            sop.Close(self),
+            sop.ExitNow(self)]
 
         if self.file_copier.is_active():
             self.file_copier.abort(self.next_function, [])
@@ -1048,9 +1054,9 @@ class SignaledSession(OperatingSession):
                             sop.CloseNoSaveClients(self),
                             sop.SaveSnapshot(self),
                             sop.Duplicate(self, new_session_full_name),
-                            (self.preload, new_session_full_name),
+                            sop.Preload(self, new_session_full_name),
                             sop.Close(self),
-                            self.take_place,
+                            sop.TakePlace(self),
                             sop.Load(self),
                             self.duplicate_done]
 
@@ -1101,8 +1107,8 @@ class SignaledSession(OperatingSession):
             sop.SaveSnapshot(self, rewind_snapshot=snapshot, force=True),
             sop.Close(self, clear_all_clients=True),
             sop.LoadSnapshot(self, snapshot),
-            (self.preload, str(self.path)),
-            self.take_place,
+            sop.Preload(self, str(self.path)),
+            sop.TakePlace(self),
             sop.Load(self),
             self.load_done]
 
@@ -1399,7 +1405,8 @@ class SignaledSession(OperatingSession):
     @manage(r.session.CLEAR_CLIENTS, 's*')
     def _ray_session_clear_clients(self, osp: OscPack):
         if not self.load_locked:
-            self.send(*osp.error(), ray.Err.NOT_NOW,
+            self.send(
+                *osp.error(), ray.Err.NOT_NOW,
                 "clear_clients has to be used only during the load script !")
             return
 
@@ -1612,7 +1619,6 @@ class SignaledSession(OperatingSession):
             self.send_error_copy_running(osp)
             return
 
-        self.steps_osp = osp
         self.steps_order = [
             sop.SaveClientAsTemplate(self, client, template_name, osp=osp)]
         
@@ -1704,7 +1710,8 @@ class SignaledSession(OperatingSession):
                 if client.is_running:
                     self.steps_order = [
                         sop.Save(self),
-                        sop.SaveSnapshot(self, rewind_snapshot=snapshot, force=True),
+                        sop.SaveSnapshot(
+                            self, rewind_snapshot=snapshot, force=True),
                         self.before_close_client_for_snapshot,
                         (self.close_client, client),
                         sop.LoadSnapshot(self, snapshot, client_id=client_id),
@@ -1892,8 +1899,9 @@ class SignaledSession(OperatingSession):
             return
 
         if new_client_id in self.forbidden_ids_set:
-            self.send(*osp.error(), ray.Err.BAD_PROJECT,
-                      f'client_id {new_client_id} is forbidden in this session')
+            self.send(
+                *osp.error(), ray.Err.BAD_PROJECT,
+                f'client_id {new_client_id} is forbidden in this session')
             return
 
         if client.is_running:
@@ -2095,10 +2103,11 @@ class SignaledSession(OperatingSession):
                 recent_sessions.remove(sess)
 
     def server_open_session_at_start(self, session_name):
-        self.steps_order = [(self.preload, session_name),
-                            self.take_place,
-                            sop.Load(self),
-                            self.load_done]
+        self.steps_order = [
+            sop.Preload(self, session_name),
+            sop.TakePlace(self),
+            sop.Load(self),
+            self.load_done]
         self.next_function()
 
     def dummy_load_and_template(
@@ -2116,7 +2125,9 @@ class SignaledSession(OperatingSession):
             self.file_copier.abort()
 
         self.terminated_yet = True
-        self.steps_order = [self.terminate_step_scripter,
-                            sop.Close(self), self.exit_now]
+        self.steps_order = [
+            sop.TerminateStepScripter(self),
+            sop.Close(self),
+            sop.ExitNow(self)]
 
         self.next_function()

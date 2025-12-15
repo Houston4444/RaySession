@@ -1,0 +1,61 @@
+import logging
+import subprocess
+from typing import TYPE_CHECKING
+
+from qtpy.QtCore import QCoreApplication
+
+import ray
+
+from daemon_tools import NoSessionPath
+
+from .session_op import SessionOp
+
+if TYPE_CHECKING:
+    from session_operating import OperatingSession
+
+
+_logger = logging.getLogger(__name__)
+_translate = QCoreApplication.translate
+
+
+class Rename(SessionOp):
+    def __init__(self, session: 'OperatingSession', new_session_name: str):
+        super().__init__(session)
+        self.new_session_name = new_session_name
+        self.routine = [self.rename]
+
+    def rename(self):
+        session = self.session
+        if session.path is None:
+            raise NoSessionPath
+
+        spath = session.path.parent / self.new_session_name
+        if spath.exists():
+            self.error(
+                ray.Err.CREATE_FAILED,
+                _translate(
+                    'rename',
+                    "Folder %s already exists,\n"
+                    "Impossible to rename session.")
+                        % self.new_session_name)
+            return
+        
+        try:
+            subprocess.run(['mv', session.path, spath])
+        except:
+            self.error(
+                ray.Err.GENERAL_ERROR,
+                "failed to rename session")
+            return
+        
+        session._set_path(spath)
+
+        session.send_gui_message(
+            _translate('GUIMSG', 'Session directory is now: %s')
+                % session.path)
+        
+        for client in session.clients + session.trashed_clients:
+            client.adjust_files_after_copy(
+                self.new_session_name, ray.Template.RENAME)
+
+        session.next_function()

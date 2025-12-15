@@ -21,56 +21,63 @@ class DummySession(OperatingSession):
         self.is_dummy = True
         self.canvas_saver.is_dummy = True
 
-    def dummy_load_and_template(self, session_full_name, template_name):
-        self.steps_order = [(self.preload, session_full_name),
-                            self.take_place,
-                            sop.Load(self),
-                            sop.SaveSessionTemplate(self, template_name, net=True)]
+    def dummy_load_and_template(self, session_full_name: str, template_name: str):
+        self.steps_order = [
+            sop.Preload(self, session_full_name),
+            sop.TakePlace(self),
+            sop.Load(self),
+            sop.SaveSessionTemplate(self, template_name, net=True)]
         self.next_function()
 
     def dummy_duplicate(self, osp: OscPack):
         self.steps_osp = osp
         osp_args: tuple[str, str, str] = osp.args # type:ignore
         session_to_load, new_session_full_name, sess_root = osp_args
-        self.steps_order = [(self.preload, session_to_load),
-                            self.take_place,
-                            sop.Load(self),
-                            sop.Duplicate(self, new_session_full_name),
-                            self.duplicate_only_done]
+        self.steps_order = [
+            sop.Preload(self, session_to_load),
+            sop.TakePlace(self),
+            sop.Load(self),
+            sop.Duplicate(self, new_session_full_name),
+            self.duplicate_only_done]
         self.next_function()
 
     def ray_server_save_session_template(
             self, osp: OscPack, session_name: str, template_name: str, net: bool):
         self.steps_osp = osp
-        self.steps_order = [(self.preload, session_name),
-                            self.take_place,
-                            sop.Load(self),
-                            sop.SaveSessionTemplate(self, template_name, net=net)]
+        self.steps_order = [
+            sop.Preload(self, session_name),
+            sop.TakePlace(self),
+            sop.Load(self),
+            sop.SaveSessionTemplate(self, template_name, net=net)]
         self.next_function()
 
     def ray_server_rename_session(self, osp: OscPack):
         self.steps_osp = osp
-        full_session_name, new_session_name = osp.args
+        osp_args: tuple[str, str] = osp.args # type:ignore
+        full_session_name, new_session_name = osp_args
 
-        self.steps_order = [(self.preload, full_session_name),
-                            self.take_place,
-                            sop.Load(self),
-                            (self.rename, new_session_name),
-                            sop.Save(self),
-                            (self.rename_done, new_session_name)]
+        self.steps_order = [
+            sop.Preload(self, full_session_name),
+            sop.TakePlace(self),
+            sop.Load(self),
+            sop.Rename(self, new_session_name),
+            sop.Save(self),
+            (self.rename_done, new_session_name)]
         self.next_function()
     
     def ray_server_get_session_preview(
             self, osp: OscPack, folder_sizes: list):
-        session_name = osp.args[0]
-        self.steps_order = [(self.preload, session_name, False),
-                            self.take_place,
-                            sop.Load(self),
-                            (self.send_preview, osp.src_addr, folder_sizes)]
+        session_name: str = osp.args[0] # type:ignore
+        self.steps_order = [
+            sop.Preload(self, session_name, auto_create=False),
+            sop.TakePlace(self),
+            sop.Load(self),
+            (self.send_preview, osp.src_addr, folder_sizes)]
         self.next_function()
     
-    def dummy_load(self, session_name):
-        self.steps_order = [(self.preload, session_name, False),
-                            self.take_place,
-                            sop.Load(self)]
+    def dummy_load(self, session_name: str):
+        self.steps_order = [
+            sop.Preload(self, session_name, auto_create=False),
+            sop.TakePlace(self),
+            sop.Load(self)]
         self.next_function()

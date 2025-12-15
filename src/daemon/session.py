@@ -69,7 +69,7 @@ class Session(ServerSender):
         self.bookmarker = BookMarker()
         self.desktops_memory = DesktopsMemory(self)
         
-        self._time_at_open = 0
+        self._time_at_open = 0.0
 
     def set_renameable(self, renameable:bool):
         server = self.get_server()
