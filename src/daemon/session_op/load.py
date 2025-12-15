@@ -18,8 +18,7 @@ _translate = QCoreApplication.translate
 
 
 class Load(SessionOp):
-    def __init__(self, session: 'OperatingSession',
-                 open_off=False):
+    def __init__(self, session: 'OperatingSession', open_off=False):
         super().__init__(session)
         self.script_step = 'load'
         self.open_off = open_off

@@ -11,7 +11,6 @@ import xml.etree.ElementTree as ET
 from qtpy.QtCore import QCoreApplication, QTimer
 
 # Imports from src/shared
-from osclib import Address, MegaSend
 from osclib.bases import OscPack
 import ray
 from xml_tools import XmlElement
@@ -37,6 +36,8 @@ _translate = QCoreApplication.translate
 
 
 class OperatingSession(Session):
+    steps_order: list[sop.SessionOp]
+    
     def __init__(self, root: Path, session_id=0):
         Session.__init__(self, root, session_id)
         self.wait_for = ray.WaitFor.NONE
@@ -69,7 +70,7 @@ class OperatingSession(Session):
         self.steps_osp: Optional[OscPack] = None
         'Stock the OscPack of the long operation running (if any).'
 
-        self.steps_order = list[sop.SessionOp | Callable | tuple[Callable | Any, ...]]()
+        self.steps_order = list[sop.SessionOp]()
 
         self.terminated_yet = False
 
@@ -219,42 +220,29 @@ class OperatingSession(Session):
             return
 
         next_item = self.steps_order[0]
-        next_function = next_item
+        next_function = next_item.start
         arguments = []
-
-        if isinstance(next_item, (tuple, list)):
-            if not next_item:
-                return
-
-            next_function = next_item[0]
-            if len(next_item) > 1:
-                arguments = next_item[1:]
-
-        elif isinstance(next_item, sop.SessionOp):
-            next_function = next_item.start
 
         if (self.has_server_option(ray.Option.SESSION_SCRIPTS)
                 and not self.step_scripter.is_running()
                 and self.path is not None
                 and not from_run_step):
-            if isinstance(next_function, sop.SessionOp):
-                if not (isinstance(next_function, sop.Load)
-                        and next_function.open_off):
-                    if (next_function.script_step
-                            and self.steps_osp is not None
-                            and self.step_scripter.start(
-                                next_function.script_step, arguments,
-                                self.steps_osp.src_addr,
-                                self.steps_osp.path)):
-                        self.set_server_status(ray.ServerStatus.SCRIPT)
-                        return
+            if not (isinstance(next_item, sop.Load)
+                    and next_item.open_off):
+                if (next_item.script_step
+                        and self.steps_osp is not None
+                        and self.step_scripter.start(
+                            next_item.script_step,
+                            self.steps_osp.src_addr,
+                            self.steps_osp.path)):
+                    self.set_server_status(ray.ServerStatus.SCRIPT)
+                    return
 
         if (from_run_step and next_function
                 and self.step_scripter.is_running()):
-            if isinstance(next_function, sop.SessionOp):
-                if next_function.script_step == self.step_scripter.get_step():
-                    self.step_scripter.set_stepper_has_call(True)
-                next_function.start_from_script(run_step_args)
+            if next_item.script_step == self.step_scripter.get_step():
+                self.step_scripter.set_stepper_has_call(True)
+            next_item.start_from_script(run_step_args)
 
         self.steps_order.__delitem__(0)
         _logger.debug(

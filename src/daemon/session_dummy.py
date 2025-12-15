@@ -15,6 +15,7 @@ class DummySession(OperatingSession):
     All clients are dummy and can't be started.
     Their file copier is not dummy, it can send OSC messages to gui,
     That is why we need a session_id to find it '''
+    steps_order: list[sop.SessionOp]
 
     def __init__(self, root: Path, session_id=0):
         OperatingSession.__init__(self, root, session_id)

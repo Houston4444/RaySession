@@ -152,7 +152,7 @@ class SignaledSession(OperatingSession):
     '''There is only one possible instance of SignaledSession
     This is not the case for Session and OperatingSession.
     This session receives signals from OSC server.'''
-    steps_order: list[sop.SessionOp | Callable | tuple[Callable | Any, ...]]
+    steps_order: list[sop.SessionOp]
     
     def __init__(self, root: Path):
         OperatingSession.__init__(self, root)
@@ -992,7 +992,7 @@ class SignaledSession(OperatingSession):
         self.steps_order = [sop.Close(self, clear_all_clients=True),
                             sop.Success(self, msg='Aborted')]
 
-        
+
         if self.file_copier.is_active():
             self.file_copier.abort(self.next_function, [])
         else:

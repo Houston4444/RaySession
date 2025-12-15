@@ -134,7 +134,7 @@ class StepScripter(Scripter):
         self.session.step_scripter_finished()
         self._stepper_has_call = False
 
-    def start(self, step_str: str, arguments, src_addr=None, src_path='') -> bool:
+    def start(self, step_str: str, src_addr=None, src_path='') -> bool:
         if self.is_running():
             return False
 
@@ -173,7 +173,7 @@ class StepScripter(Scripter):
         process_env.insert('RAY_SESSION_PATH', str(self.session.path))
 
         self._process.setProcessEnvironment(process_env)
-        self._process.start(str(script_path), [str(a) for a in arguments])
+        self._process.start(str(script_path))
         return True
 
     def get_step(self) -> str:
