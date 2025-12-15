@@ -12,6 +12,7 @@ from .new import New
 from .preload import Preload
 from .prepare_template import PrepareTemplate
 from .rename import Rename
+from .rename_full_client import RenameFullClient
 from .save import Save
 from .save_client_as_template import SaveClientAsTemplate
 from .save_session_template import SaveSessionTemplate

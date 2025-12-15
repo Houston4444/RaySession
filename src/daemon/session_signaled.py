@@ -1904,35 +1904,14 @@ class SignaledSession(OperatingSession):
                 f'client_id {new_client_id} is forbidden in this session')
             return
 
-        if client.is_running:
-            if client.status is not ray.ClientStatus.READY:
-                self.send(*osp.error(), ray.Err.NOT_NOW,
-                          f'client_id {new_client_id} is not ready')
-                return
-
-            elif client.can_switch:
-                self.steps_order = [
-                    (self.save_client_and_patchers, client),
-                    (self.rename_full_client, client,
-                     new_client_name, new_client_id),
-                    (self.switch_client, client),
-                    (self.rename_full_client_done, client)]
-            else:
-                self.steps_order = [
-                    (self.save_client_and_patchers, client),
-                    (self.close_client, client),
-                    (self.rename_full_client, client,
-                     new_client_name, new_client_id),
-                    (self.restart_client, client),
-                    (self.rename_full_client_done, client)
-                ]
-        else:
-            self.steps_order = [
-                (self.rename_full_client, client, new_client_name, new_client_id),
-                (self.rename_full_client_done, client)
-            ]
-
-        self.next_function()
+        if client.is_running and client.status is not ray.ClientStatus.READY:
+            self.send(*osp.error(), ray.Err.NOT_NOW,
+                      f'client_id {new_client_id} is not ready')
+            return
+        
+        rename_full_client = sop.RenameFullClient(
+            self, client, new_client_name, new_client_id)
+        rename_full_client.start()
 
     @client_action(r.client.CHANGE_ID, 'ss')
     def _ray_client_change_id(self, osp: OscPack, client: Client):

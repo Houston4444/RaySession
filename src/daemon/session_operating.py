@@ -640,74 +640,6 @@ class OperatingSession(Session):
         self.set_server_status(ray.ServerStatus.READY)
         self.steps_osp = None
 
-    def save_client_and_patchers(self, client: Client):
-        for oth_client in self.clients:
-            if (oth_client is client or 
-                    (oth_client.is_running and oth_client.can_patcher)):
-                self.expected_clients.append(oth_client)
-                oth_client.save()
-        
-        self._wait_and_go_to(10000, self.next_function, ray.WaitFor.REPLY)
-
-    def rename_full_client(
-            self, client: Client, new_name: str, new_client_id: str):
-        if self.path is None:
-            _logger.error('Impossible to rename full client, no path !!!')
-            return
-        
-        tmp_client = Client(self)
-        tmp_client.eat_attributes(client)
-        tmp_client.client_id = new_client_id
-        tmp_client.jack_naming = ray.JackNaming.LONG
-        
-        client.set_status(ray.ClientStatus.REMOVED)
-        
-        client._rename_files(
-            self.path,
-            self.name, self.name,
-            client.prefix, tmp_client.prefix,
-            client.client_id, tmp_client.client_id,
-            client.links_dirname, tmp_client.links_dirname)
-
-        ex_jack_name = client.jack_client_name
-        ex_client_id = client.client_id
-        new_jack_name = tmp_client.jack_client_name
-
-        client.client_id = new_client_id
-        client.jack_naming = ray.JackNaming.LONG
-        client.label = new_name
-        self._update_forbidden_ids_set()
-
-        if new_jack_name != ex_jack_name:
-            rewrite_jack_patch_files(
-                self, ex_client_id, new_client_id,
-                ex_jack_name, new_jack_name)
-            self.canvas_saver.client_jack_name_changed(
-                ex_jack_name, new_jack_name)
-
-        client.sent_to_gui = False
-        client.send_gui_client_properties()
-        self.send_gui(rg.session.SORT_CLIENTS,
-                      *[c.client_id for c in self.clients])
-
-        # we need to save session file here
-        # else, if session is aborted
-        # client won't find its files at next restart
-        self._save_session_file()
-
-        self.send_monitor_event('id_changed_to:' + new_client_id, ex_client_id)
-        self.next_function()
-        
-    def rename_full_client_done(self, client: Client):
-        self.message("Done")
-        self._send_reply("full client rename done.")
-        self.set_server_status(ray.ServerStatus.READY)
-        self.steps_osp = None
-
-    def restart_client(self, client: Client):
-        client.start()
-        self._wait_and_go_to(0, (self.next_function, client), ray.WaitFor.NONE)
-
     def before_close_client_for_snapshot(self):
         self.set_server_status(ray.ServerStatus.READY)
         self.next_function()
@@ -725,10 +657,6 @@ class OperatingSession(Session):
             client.kill()
 
         self._wait_and_go_to(1000, self.next_function, ray.WaitFor.STOP_ONE)
-
-    def switch_client(self, client: Client):
-        client.switch()
-        self.next_function()
 
     def load_client_snapshot_error(
             self, err: ray.Err, info_str='', exit_code=0):
