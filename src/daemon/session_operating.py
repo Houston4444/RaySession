@@ -386,12 +386,6 @@ class OperatingSession(Session):
         
         self.send_even_dummy(*self.steps_osp.error(), err, error_message)
 
-    def _send_minor_error(self, err: ray.Err, error_message: str):
-        if self.steps_osp is None:
-            return
-        
-        self.send_even_dummy(*self.steps_osp.error(), err, error_message)
-
     def step_scripter_finished(self):
         if self.wait_for is ray.WaitFor.SCRIPT_QUIT:
             self.timer.setSingleShot(True)
@@ -549,14 +543,3 @@ class OperatingSession(Session):
             self.set_server_status(ray.ServerStatus.OFF)
 
         self.steps_order.clear()
-
-    def duplicate_only_done(self):
-        if self.steps_osp is None:
-            _logger.warning(
-                'Impossible to reply duplicate_only_done '
-                'because OscPack is None')
-            return
-
-        self.send(self.steps_osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1.0)
-        self._send_reply("Duplicated only done.")
-        self.steps_osp = None

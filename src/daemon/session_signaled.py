@@ -976,11 +976,11 @@ class SignaledSession(OperatingSession):
                         new_session_full_name: str = \
                             self.steps_osp.args[0] #type:ignore
                         self.duplicate_aborted(new_session_full_name)
-                    case ns.CLOSE|ns.ABORT|ns.QUIT:
+                    case ns.CLOSE |ns.ABORT | ns.QUIT:
                         # let the current close works here
-                        self.send(*osp.error(),
-                                ray.Err.OPERATION_PENDING,
-                                "An operation pending.")
+                        self.send(
+                            *osp.error(), ray.Err.OPERATION_PENDING,
+                            "An operation pending.")
                         return
             else:
                 self._send_error(
@@ -992,6 +992,7 @@ class SignaledSession(OperatingSession):
         self.steps_order = [sop.Close(self, clear_all_clients=True),
                             sop.Success(self, msg='Aborted')]
 
+        
         if self.file_copier.is_active():
             self.file_copier.abort(self.next_function, [])
         else:
@@ -1085,10 +1086,11 @@ class SignaledSession(OperatingSession):
 
             self.steps_osp = osp
 
-            self.steps_order = [sop.Save(self),
-                                sop.SaveSnapshot(self),
-                                sop.Duplicate(self, new_session),
-                                self.duplicate_only_done]
+            self.steps_order = [
+                sop.Save(self),
+                sop.SaveSnapshot(self),
+                sop.Duplicate(self, new_session),
+                sop.Success(self, msg='Duplicate only done')]
 
             self.next_function()
 
@@ -1538,7 +1540,7 @@ class SignaledSession(OperatingSession):
             return
 
         self.run_step_addr = osp.src_addr
-        self.next_function(True, osp.args)
+        self.next_function(from_run_step=True, run_step_args=osp.args)
 
     @client_action(r.client.STOP, 's')
     def _ray_client_stop(self, osp: OscPack, client:Client):

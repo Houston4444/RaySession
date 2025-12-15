@@ -113,9 +113,8 @@ class Duplicate(SessionOp):
                 return
             
             self.error(
-                ray.Err.ABORT_ORDERED,
-                _translate('error',
-                           'Copy was aborted by user'))
+                ray.Err.COPY_ABORTED,
+                _translate('error', 'Copy was aborted by user'))
             return
         
         session._clean_expected()
@@ -141,6 +140,10 @@ class Duplicate(SessionOp):
 
         # unlock the directory of the new session created
         multi_daemon_file.unlock_path(session.root / self.new_session_name)
+        
+        if session.steps_osp is not None:
+            session.send(
+                session.steps_osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1.0)
         
         session.next_function()
 

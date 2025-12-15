@@ -38,7 +38,7 @@ class DummySession(OperatingSession):
             sop.TakePlace(self),
             sop.Load(self),
             sop.Duplicate(self, new_session_full_name),
-            self.duplicate_only_done]
+            sop.Success(self, msg='Duplicate only done')]
         self.next_function()
 
     def ray_server_save_session_template(

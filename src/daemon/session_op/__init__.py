@@ -1,5 +1,6 @@
 from .session_op import SessionOp
 
+from .abort_copy import AbortCopy
 from .add_client_template import AddClientTemplate
 from .add_other_session_client import AddOtherSessionClient
 from .clear_clients import ClearClients

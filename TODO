@@ -83,6 +83,13 @@ scenarios:
         Dans la GUI pour les patchers:
             permettre de basculer de scenario keyword
 
+restructuration du coeur:
+    Attention au run_step_addr (peut être run_step_osp)
+    Les actions de client viennent s'intercaler dans l'action de session.
+    renommage des fonctions internes des SessionOp
+    fusion session / session_operating
+    voir si _translate peut être récupéré ailleurs (une ligne d'import évitée)
+
 
 
 
