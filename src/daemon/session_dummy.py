@@ -66,13 +66,13 @@ class DummySession(OperatingSession):
         self.next_function()
     
     def ray_server_get_session_preview(
-            self, osp: OscPack, folder_sizes: list):
+            self, osp: OscPack, folder_sizes: list[dict[str, str | int]]):
         session_name: str = osp.args[0] # type:ignore
         self.steps_order = [
             sop.Preload(self, session_name, auto_create=False),
             sop.TakePlace(self),
             sop.Load(self),
-            (self.send_preview, osp.src_addr, folder_sizes)]
+            sop.SendPreview(self, osp.src_addr, folder_sizes)]
         self.next_function()
     
     def dummy_load(self, session_name: str):

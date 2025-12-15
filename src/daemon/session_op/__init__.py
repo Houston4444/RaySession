@@ -2,6 +2,7 @@ from .session_op import SessionOp
 
 from .add_client_template import AddClientTemplate
 from .add_other_session_client import AddOtherSessionClient
+from .clear_clients import ClearClients
 from .close import Close
 from .close_no_save_clients import CloseNoSaveClients
 from .duplicate import Duplicate
@@ -17,5 +18,6 @@ from .save import Save
 from .save_client_as_template import SaveClientAsTemplate
 from .save_session_template import SaveSessionTemplate
 from .save_snapshot import SaveSnapshot
+from .send_preview import SendPreview
 from .take_place import TakePlace
 from .terminate_step_scripter import TerminateStepScripter

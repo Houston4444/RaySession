@@ -1410,7 +1410,8 @@ class SignaledSession(OperatingSession):
                 "clear_clients has to be used only during the load script !")
             return
 
-        self.clear_clients(osp)
+        clear_clients = sop.ClearClients(self, osp)
+        clear_clients.start()
 
     @manage(r.session.LIST_SNAPSHOTS, '')
     def _ray_session_list_snapshots(self, osp: OscPack, client_id=""):
@@ -1707,25 +1708,34 @@ class SignaledSession(OperatingSession):
 
         for client in self.clients:
             if client.client_id == client_id:
-                if client.is_running:
-                    self.steps_order = [
-                        sop.Save(self),
-                        sop.SaveSnapshot(
-                            self, rewind_snapshot=snapshot, force=True),
-                        self.before_close_client_for_snapshot,
-                        (self.close_client, client),
-                        sop.LoadSnapshot(self, snapshot, client_id=client_id),
-                        (self.start_client, client),
-                        self.load_client_snapshot_done]
-                else:
-                    self.steps_order = [
-                        sop.Save(self),
-                        sop.SaveSnapshot(self, rewind_snapshot=snapshot, force=True),
-                        sop.LoadSnapshot(self, snapshot, client_id=client_id),
-                        self.load_client_snapshot_done]
                 break
         else:
             self.send_error_no_client(osp, client_id)
+            return
+
+        self.steps_order = [
+            sop.Save(self),
+            sop.SaveSnapshot(self, rewind_snapshot=snapshot, force=True),
+            sop.LoadSnapshot(self, snapshot, client_id=client_id),
+            self.load_client_snapshot_done]        
+
+        # if client.is_running:
+        #     self.steps_order = [
+        #         sop.Save(self),
+        #         sop.SaveSnapshot(
+        #             self, rewind_snapshot=snapshot, force=True),
+        #         self.before_close_client_for_snapshot,
+        #         (self.close_client, client),
+        #         sop.LoadSnapshot(self, snapshot, client_id=client_id),
+        #         (self.start_client, client),
+        #         self.load_client_snapshot_done]
+        # else:
+        #     self.steps_order = [
+        #         sop.Save(self),
+        #         sop.SaveSnapshot(
+        #             self, rewind_snapshot=snapshot, force=True),
+        #         sop.LoadSnapshot(self, snapshot, client_id=client_id),
+        #         self.load_client_snapshot_done]
 
     @client_action(r.client.IS_STARTED, 's')
     def _ray_client_is_started(self, osp: OscPack, client:Client):

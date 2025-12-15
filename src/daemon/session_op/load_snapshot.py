@@ -4,6 +4,8 @@ from qtpy.QtCore import QCoreApplication
 
 import ray
 
+from client import Client
+
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
@@ -19,10 +21,38 @@ class LoadSnapshot(SessionOp):
         super().__init__(session)
         self.snapshot_name = snapshot_name
         self.client_id = client_id
-        self.routine = [self.load_snapshot]
+        self.routine = [self.close_client,
+                        self.kill_client,
+                        self.load_snapshot]
+
+        self.client: Client | None = None
+        self._client_was_running = False
+
+    def close_client(self):
+        if self.client_id:
+            session = self.session            
+            for client in session.clients:
+                if client.client_id == self.client_id:
+                    self.client = client
+                    break
+
+            if self.client is not None and self.client.is_running:
+                self._client_was_running = True
+                session.set_server_status(ray.ServerStatus.READY)
+                session.expected_clients.append(self.client)
+                self.client.stop()
+
+        self.next(30000, ray.WaitFor.STOP_ONE)
+        
+    def kill_client(self):
+        if self.client is not None and self.client.is_running:
+            self.client.kill()
+            
+        self.next(1000, ray.WaitFor.STOP_ONE)
 
     def load_snapshot(self):
         session = self.session
+        session._clean_expected()
         if self.session.path is None:
             session.next_function()
             return
@@ -37,8 +67,10 @@ class LoadSnapshot(SessionOp):
                 self.session.path, self.snapshot_name)
             
         if err is ray.Err.OK:
-            if self.client_id:
+            if self.client is not None:
                 session.set_server_status(ray.ServerStatus.READY)
+                if self._client_was_running:
+                    self.client.start()
             session.next_function()
             return
         

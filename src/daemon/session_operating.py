@@ -1,13 +1,8 @@
 
 # Imports from standard library
 import functools
-from io import TextIOWrapper
 import logging
-import math
 import os
-import shutil
-import subprocess
-import time
 from typing import Callable, Any, Optional
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -16,7 +11,7 @@ import xml.etree.ElementTree as ET
 from qtpy.QtCore import QCoreApplication, QTimer
 
 # Imports from src/shared
-from osclib import Address, MegaSend, is_valid_osc_url
+from osclib import Address, MegaSend
 from osclib.bases import OscPack
 import ray
 from xml_tools import XmlElement
@@ -28,10 +23,6 @@ import osc_paths.nsm as nsm
 # Local imports
 import multi_daemon_file
 from client import Client
-from daemon_tools import (
-    NoSessionPath, TemplateRoots, RS, Terminal, highlight_text)
-import ardour_templates
-from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
 from session import Session
 import session_op as sop
@@ -366,7 +357,6 @@ class OperatingSession(Session):
         self.timer.start(0)
 
     def files_copy_finished(self):
-        print('gile copy finsihed', self.wait_for)
         if self.wait_for is ray.WaitFor.FILE_COPY:
             self.wait_for = ray.WaitFor.NONE
             self.timer.setSingleShot(True)
@@ -574,7 +564,8 @@ class OperatingSession(Session):
                 # so, send the only known error
                 self._send_error(ray.Err.NO_SUCH_FILE, "No such file.")
 
-            self.send(self.steps_osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1.0)
+            self.send(self.steps_osp.src_addr,
+                      r.net_daemon.DUPLICATE_STATE, 1.0)
 
         self.set_server_status(ray.ServerStatus.READY)
         self.steps_osp = None
@@ -640,208 +631,7 @@ class OperatingSession(Session):
         self.set_server_status(ray.ServerStatus.READY)
         self.steps_osp = None
 
-    def before_close_client_for_snapshot(self):
-        self.set_server_status(ray.ServerStatus.READY)
-        self.next_function()
-    
-    def close_client(self, client: Client):
-        self.expected_clients.append(client)
-        client.stop()
-
-        self._wait_and_go_to(
-            30000, (self.close_client_substep1, client),
-            ray.WaitFor.STOP_ONE)
-
-    def close_client_substep1(self, client: Client):
-        if client in self.expected_clients:
-            client.kill()
-
-        self._wait_and_go_to(1000, self.next_function, ray.WaitFor.STOP_ONE)
-
-    def load_client_snapshot_error(
-            self, err: ray.Err, info_str='', exit_code=0):
-        m = _translate('Snapshot Error', "Snapshot error")
-        match err:
-            case ray.Err.SUBPROCESS_UNTERMINATED:
-                m = _translate(
-                    'Snapshot Error',
-                    "command didn't stop normally:\n%s") % info_str
-            case ray.Err.SUBPROCESS_CRASH:
-                m = _translate(
-                    'Snapshot Error', "command crashes:\n%s") % info_str
-            case ray.Err.SUBPROCESS_EXITCODE:
-                m = _translate(
-                    'Snapshot Error',
-                    "command exit with the error code %i:\n%s") \
-                        % (exit_code, info_str)
-            case ray.Err.NO_SUCH_FILE:
-                m = _translate(
-                    'Snapshot Error', "error reading file:\n%s") % info_str
-
-        self.message(m)
-        self.send_gui_message(m)
-        self._send_error(err, m)
-
-        self.set_server_status(ray.ServerStatus.OFF)
-        self.steps_order.clear()
-
     def load_client_snapshot_done(self):
         if self.steps_osp is None:
             return
         self.send(*self.steps_osp.reply(), 'Client snapshot loaded')
-
-    def start_client(self, client: Client):
-        client.start()
-        self.next_function()
-
-    def clear_clients(self, osp: OscPack):
-        client_ids: list[str] = osp.args # type:ignore
-        self.clients_to_quit.clear()
-        self.expected_clients.clear()
-
-        for client in self.clients:
-            if client.client_id in client_ids or not client_ids:
-                self.clients_to_quit.append(client)
-                self.expected_clients.append(client)
-
-        self.timer_quit.start()
-
-        self._wait_and_go_to(
-            5000,
-            (self.clear_clients_substep2, osp),
-            ray.WaitFor.QUIT)
-
-    def clear_clients_substep2(self, osp: OscPack):
-        for client in self.expected_clients:
-            client.kill()
-
-        self._wait_and_go_to(
-            1000, (self.clear_clients_substep3, osp), ray.WaitFor.QUIT)
-
-    def clear_clients_substep3(self, osp: OscPack):
-        self.send(*osp.reply(), 'Clients cleared')
-        
-    def send_preview(self, src_addr: Address, folder_sizes: list):
-        def send_state(preview_state: ray.PreviewState):
-            self.send_even_dummy(
-                src_addr, rg.preview.STATE,
-                preview_state.value) 
-        
-        if self.path is None:
-            return
-        
-        # prevent long list of OSC sends if preview order already changed
-        server = self.get_server_even_dummy()
-        if server and server.session_to_preview != self.short_path_name:
-            return
-        
-        self.send_even_dummy(src_addr, rg.preview.CLEAR)        
-        send_state(ray.PreviewState.STARTED)
-        
-        self.send_even_dummy(
-            src_addr, rg.preview.NOTES, self.notes)
-        send_state(ray.PreviewState.NOTES)
-
-        ms = MegaSend('session_preview')
-
-        for client in self.clients:
-            ms.add(rg.preview.client.UPDATE,
-                   *client.spread())
-            
-            ms.add(rg.preview.client.IS_STARTED,
-                   client.client_id, int(client.auto_start))
-            
-            if client.is_ray_hack:
-                ms.add(rg.preview.client.RAY_HACK_UPDATE,
-                       client.client_id, *client.ray_hack.spread())
-
-            elif client.is_ray_net:
-                ms.add(rg.preview.client.RAY_NET_UPDATE,
-                       client.client_id, *client.ray_net.spread())
-                
-        self.mega_send(src_addr, ms)
-
-        send_state(ray.PreviewState.CLIENTS)
-
-        mss = MegaSend('snapshots_preview')
-
-        for snapshot in self.snapshoter.list():
-            mss.add(rg.preview.SNAPSHOT, snapshot)
-        
-        self.mega_send(src_addr, mss)
-        
-        send_state(ray.PreviewState.SNAPSHOTS)
-
-        # re check here if preview has not changed before calculate session size
-        if server and server.session_to_preview != self.short_path_name:
-            return
-
-        total_size = 0
-        size_unreadable = False
-
-        # get last modified session folder to prevent recalculate
-        # if we already know its size
-        modified = int(os.path.getmtime(self.path))
-
-        # check if size is already in memory
-        for folder_size in folder_sizes:
-            if folder_size['path'] == str(self.path):
-                if folder_size['modified'] == modified:
-                    total_size = folder_size['size']
-                break
-
-        # calculate session size
-        if not total_size:
-            for root, dirs, files in os.walk(self.path):
-                # check each loop if it is still pertinent to walk
-                if (server 
-                        and (server.session_to_preview
-                             != self.short_path_name)):
-                    return
-
-                # exclude symlinks directories from count
-                dirs[:] = [dir for dir in dirs
-                        if not os.path.islink(os.path.join(root, dir))]
-
-                for file_path in files:
-                    full_file_path = os.path.join(root, file_path)
-                    
-                    # ignore file if it is a symlink
-                    if os.path.islink(os.path.join(root, file_path)):
-                        continue
-
-                    file_size = 0
-                    try:
-                        file_size = os.path.getsize(full_file_path)
-                    except:
-                        _logger.warning(
-                            f'Unable to read {full_file_path} size')
-                        size_unreadable = True
-                        break
-
-                    total_size += os.path.getsize(full_file_path)
-                
-                if size_unreadable:
-                    total_size = -1
-                    break
-        
-        for folder_size in folder_sizes:
-            if folder_size['path'] == str(self.path):
-                folder_size['modified'] = modified
-                folder_size['size'] = total_size
-                break
-        else:
-            folder_sizes.append(
-                {'path': str(self.path),
-                 'modified': modified,
-                 'size': total_size})
-
-        self.send_even_dummy(
-            src_addr, rg.preview.SESSION_SIZE, total_size)
-
-        send_state(ray.PreviewState.FOLDER_SIZE)
-
-        self.send_even_dummy(
-            src_addr, rg.preview.STATE, 2)
-
-        del self
