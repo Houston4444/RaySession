@@ -538,7 +538,7 @@ class RayNet:
     daemon_url = ''
     session_root = ''
     session_template = ''
-    duplicate_state = -1
+    duplicate_state = -1.0
     running_daemon_url = ''
     running_session_root =''
     ARG_TYPES = 'sss'
@@ -550,10 +550,10 @@ class RayNet:
         return ray_net
 
     def update(self, daemon_url, session_root, session_template):
-        self.daemon_url = daemon_url
-        self.session_root = session_root
-        self.session_template = session_template
+        self.daemon_url = str(daemon_url)
+        self.session_root = str(session_root)
+        self.session_template = str(session_template)
 
-    def spread(self)->tuple:
+    def spread(self) -> tuple:
         return (self.daemon_url, self.session_root, self.session_template)
 

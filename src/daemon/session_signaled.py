@@ -635,7 +635,7 @@ class SignaledSession(OperatingSession):
                     sop.Close(self),
                     sop.TakePlace(self),
                     sop.Load(self),
-                    self.new_done]
+                    sop.Success(self, msg='Session created')]
                 return
 
         session_name: str = osp.args[0] # type:ignore
@@ -647,7 +647,7 @@ class SignaledSession(OperatingSession):
             sop.Close(self),
             sop.New(self, session_name),
             sop.Save(self),
-            self.new_done]
+            sop.Success(self, msg='Session created')]
 
     @session_operation((r.server.OPEN_SESSION, nsm.server.OPEN), 's|si|sis')
     def _ray_server_open_session(self, osp: OscPack, open_off=False):
@@ -712,7 +712,7 @@ class SignaledSession(OperatingSession):
             sop.Close(self, clear_all_clients=open_off),
             sop.TakePlace(self),
             sop.Load(self, open_off=open_off),
-            self.load_done]
+            sop.Success(self, msg='Session loaded')]
 
     @manage(r.server.OPEN_SESSION_OFF, 's|si')
     def _ray_server_open_session_off(self, osp: OscPack):
@@ -893,7 +893,9 @@ class SignaledSession(OperatingSession):
     def _ray_session_save(self, osp: OscPack):        
         # self.steps_order = [self.save, self.snapshot, self.save_done]
         self.steps_order = [
-            sop.Save(self), sop.SaveSnapshot(self), self.save_done]
+            sop.Save(self),
+            sop.SaveSnapshot(self),
+            sop.Success(self, msg='Saved')]
 
     @session_operation(r.session.SAVE_AS_TEMPLATE, 's')
     def _ray_session_save_as_template(self, osp: OscPack):
@@ -929,7 +931,7 @@ class SignaledSession(OperatingSession):
             sop.SaveSnapshot(
                 self, snapshot_name=snapshot_name,
                 force=True, error_is_minor=False),
-            self.snapshot_done]
+            sop.Success(self, msg='Snapshot taken')]
 
     @session_operation((r.session.CLOSE, nsm.server.CLOSE), '')
     def _ray_session_close(self, osp: OscPack):
@@ -937,7 +939,7 @@ class SignaledSession(OperatingSession):
                             sop.CloseNoSaveClients(self),
                             sop.SaveSnapshot(self),
                             sop.Close(self, clear_all_clients=True),
-                            self.close_done]
+                            sop.Success(self, msg='Closed')]
 
     @manage((r.session.ABORT, nsm.server.ABORT), '')
     def _ray_session_abort(self, osp: OscPack):
@@ -988,7 +990,7 @@ class SignaledSession(OperatingSession):
 
         self.steps_osp = osp
         self.steps_order = [sop.Close(self, clear_all_clients=True),
-                            self.abort_done]
+                            sop.Success(self, msg='Aborted')]
 
         if self.file_copier.is_active():
             self.file_copier.abort(self.next_function, [])
@@ -1050,15 +1052,16 @@ class SignaledSession(OperatingSession):
                         % highlight_text(new_session_full_name))
             return
 
-        self.steps_order = [sop.Save(self),
-                            sop.CloseNoSaveClients(self),
-                            sop.SaveSnapshot(self),
-                            sop.Duplicate(self, new_session_full_name),
-                            sop.Preload(self, new_session_full_name),
-                            sop.Close(self),
-                            sop.TakePlace(self),
-                            sop.Load(self),
-                            self.duplicate_done]
+        self.steps_order = [
+            sop.Save(self),
+            sop.CloseNoSaveClients(self),
+            sop.SaveSnapshot(self),
+            sop.Duplicate(self, new_session_full_name),
+            sop.Preload(self, new_session_full_name),
+            sop.Close(self),
+            sop.TakePlace(self),
+            sop.Load(self),
+            sop.Success(self, msg='Session duplicated')]
 
     @manage(r.session.DUPLICATE_ONLY, 'sss')
     def _ray_session_duplicate_only(self, osp: OscPack):
@@ -1067,7 +1070,7 @@ class SignaledSession(OperatingSession):
         spath = Path(sess_root) / new_session
 
         if spath.exists():
-            self.send(osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1)
+            self.send(osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1.0)
             self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       _translate('GUIMSG', "%s already exists !")
                         % highlight_text(str(spath)))
@@ -1077,7 +1080,7 @@ class SignaledSession(OperatingSession):
                 and session_to_load == self.short_path_name):
             if (self.steps_order
                     or self.file_copier.is_active()):
-                self.send(osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1)
+                self.send(osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1.0)
                 return
 
             self.steps_osp = osp
@@ -1110,7 +1113,7 @@ class SignaledSession(OperatingSession):
             sop.Preload(self, str(self.path)),
             sop.TakePlace(self),
             sop.Load(self),
-            self.load_done]
+            sop.Success(self, msg='Session loaded')]
 
     @manage(r.session.RENAME, 's')
     def _ray_session_rename(self, osp: OscPack):
@@ -1717,25 +1720,7 @@ class SignaledSession(OperatingSession):
             sop.Save(self),
             sop.SaveSnapshot(self, rewind_snapshot=snapshot, force=True),
             sop.LoadSnapshot(self, snapshot, client_id=client_id),
-            self.load_client_snapshot_done]        
-
-        # if client.is_running:
-        #     self.steps_order = [
-        #         sop.Save(self),
-        #         sop.SaveSnapshot(
-        #             self, rewind_snapshot=snapshot, force=True),
-        #         self.before_close_client_for_snapshot,
-        #         (self.close_client, client),
-        #         sop.LoadSnapshot(self, snapshot, client_id=client_id),
-        #         (self.start_client, client),
-        #         self.load_client_snapshot_done]
-        # else:
-        #     self.steps_order = [
-        #         sop.Save(self),
-        #         sop.SaveSnapshot(
-        #             self, rewind_snapshot=snapshot, force=True),
-        #         sop.LoadSnapshot(self, snapshot, client_id=client_id),
-        #         self.load_client_snapshot_done]
+            sop.Success(self, msg='Client snapshot loaded')]        
 
     @client_action(r.client.IS_STARTED, 's')
     def _ray_client_is_started(self, osp: OscPack, client:Client):
@@ -2059,7 +2044,7 @@ class SignaledSession(OperatingSession):
 
     @manage(r.net_daemon.DUPLICATE_STATE, 'f')
     def _ray_net_daemon_duplicate_state(self, osp: OscPack):
-        state: int = osp.args[0] #type:ignore
+        state: float = osp.args[0] #type:ignore
         for client in self.clients:
             if (client.is_ray_net
                     and client.ray_net.daemon_url
@@ -2096,7 +2081,7 @@ class SignaledSession(OperatingSession):
             sop.Preload(self, session_name),
             sop.TakePlace(self),
             sop.Load(self),
-            self.load_done]
+            sop.Success(self, msg='Session loaded')]
         self.next_function()
 
     def dummy_load_and_template(

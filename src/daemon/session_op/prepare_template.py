@@ -39,7 +39,7 @@ class PrepareTemplate(SessionOp):
             template_path = TemplateRoots.factory_sessions / template_name
 
         if not template_path.is_dir():
-            session._send_minor_error(
+            self.minor_error(
                 ray.Err.GENERAL_ERROR,
                 _translate("error", "No template named %s")
                     % template_name)

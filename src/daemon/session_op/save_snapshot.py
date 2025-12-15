@@ -63,7 +63,7 @@ class SaveSnapshot(SessionOp):
                     m = _translate('Snapshot Error', 'Unknown error')
             
             if self.error_is_minor:
-                session._send_minor_error(err, m)
+                self.minor_error(err, m)
                 session.next_function()
             else:
                 self.error(err, m)
@@ -100,7 +100,7 @@ class SaveSnapshot(SessionOp):
         if err is not ray.Err.OK:
             session.message(m)
             if self.error_is_minor:
-                session._send_minor_error(err, m)
+                self.minor_error(err, m)
             else:
                 self.error(err, m)
                 return

@@ -406,7 +406,7 @@ class OperatingSession(Session):
                 self.steps_order.clear()
                 self.steps_order = [
                     sop.Close(self, clear_all_clients=True),
-                    self.abort_done]
+                    sop.Success(self, msg='Aborted')]
 
                 # Fake the next_function to come from run_step message
                 # This way, we are sure the close step
@@ -431,8 +431,8 @@ class OperatingSession(Session):
         return client
 
     def adjust_files_after_copy(
-            self, new_session_full_name: str, template_mode: ray.Template):
-        new_session_short_path = Path(new_session_full_name)
+            self, new_session_name: str, template_mode: ray.Template):
+        new_session_short_path = Path(new_session_name)
         
         if new_session_short_path.is_absolute():
             spath = new_session_short_path
@@ -484,19 +484,7 @@ class OperatingSession(Session):
             return
 
         for client in tmp_clients:
-            client.adjust_files_after_copy(new_session_full_name, template_mode)
-
-    ############################## COMPLEX OPERATIONS ###################
-    # All functions are splitted when we need to wait clients
-    # for something (announce, reply, quit).
-    # For example, at the end of save(), timer is launched,
-    # then, when timer is timeout or when all client replied,
-    # save_substep1 is launched.
-
-    def save_done(self):
-        self.message("Done.")
-        self._send_reply("Saved.")
-        self.set_server_status(ray.ServerStatus.READY)
+            client.adjust_files_after_copy(new_session_name, template_mode)
 
     def save_error(self, err_saving: ray.Err):
         self.message("Failed")
@@ -512,43 +500,6 @@ class OperatingSession(Session):
 
         self.set_server_status(ray.ServerStatus.READY)
         self.steps_order.clear()
-        self.steps_osp = None
-
-    def snapshot_done(self):
-        self.set_server_status(ray.ServerStatus.READY)
-        self._send_reply("Snapshot taken.")
-
-    def close_done(self):
-        self.canvas_saver.unload_session()
-        self._clean_expected()
-        self.clients.clear()
-        self._set_path(None)
-        self.send_gui(rg.session.NAME, '', '')
-        self.send_gui(rg.session.NOTES, '')
-        self.send_gui(rg.session.NOTES_HIDDEN)
-        self._no_future()
-        self._send_reply("Closed.")
-        self.message("Done")
-        self.set_server_status(ray.ServerStatus.OFF)
-        self.steps_osp = None
-
-    def abort_done(self):
-        self._clean_expected()
-        self.clients.clear()
-        self._set_path(None)
-        self.send_gui(rg.session.NAME, '', '')
-        self.send_gui(rg.session.NOTES, '')
-        self.send_gui(rg.session.NOTES_HIDDEN)
-        self._no_future()
-        self._send_reply("Aborted.")
-        self.message("Done")
-        self.set_server_status(ray.ServerStatus.OFF)
-        self.steps_osp = None
-
-    def new_done(self):
-        self.send_gui_message(_translate('GUIMSG', 'Session is ready'))
-        self._send_reply("Created.")
-        self.set_server_status(ray.ServerStatus.READY)
         self.steps_osp = None
 
     def duplicate_aborted(self, new_session_full_name: str):
@@ -567,21 +518,6 @@ class OperatingSession(Session):
             self.send(self.steps_osp.src_addr,
                       r.net_daemon.DUPLICATE_STATE, 1.0)
 
-        self.set_server_status(ray.ServerStatus.READY)
-        self.steps_osp = None
-
-    def rename_done(self, new_session_name: str):
-        self.send_gui_message(
-            _translate('GUIMSG', 'Session %s has been renamed to %s .')
-            % (self.name, new_session_name))
-        self._send_reply(
-            f"Session '{self.name}' has been renamed '"
-            f"to '{new_session_name}'.")
-        self.steps_osp = None
-
-    def load_done(self):
-        self._send_reply("Loaded.")
-        self.message("Done")
         self.set_server_status(ray.ServerStatus.READY)
         self.steps_osp = None
 
@@ -621,17 +557,6 @@ class OperatingSession(Session):
                 'because OscPack is None')
             return
 
-        self.send(self.steps_osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1)
+        self.send(self.steps_osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1.0)
         self._send_reply("Duplicated only done.")
         self.steps_osp = None
-
-    def duplicate_done(self):
-        self.message("Done")
-        self._send_reply("Duplicated.")
-        self.set_server_status(ray.ServerStatus.READY)
-        self.steps_osp = None
-
-    def load_client_snapshot_done(self):
-        if self.steps_osp is None:
-            return
-        self.send(*self.steps_osp.reply(), 'Client snapshot loaded')

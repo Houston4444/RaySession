@@ -1088,7 +1088,7 @@ class OscServerThread(ClientCommunicating):
 
     @validator(r.session.DUPLICATE_ONLY, 'sss')
     def _sess_duplicate_only(self, osp: OscPack):
-        self.send(osp.src_addr, r.net_daemon.DUPLICATE_STATE, 0)
+        self.send(osp.src_addr, r.net_daemon.DUPLICATE_STATE, 0.0)
 
     @validator(r.session.RENAME, 's', no_sess="No session to rename.")
     def _sess_rename(self, osp: OscPack):

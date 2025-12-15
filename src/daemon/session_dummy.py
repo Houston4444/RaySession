@@ -62,7 +62,7 @@ class DummySession(OperatingSession):
             sop.Load(self),
             sop.Rename(self, new_session_name),
             sop.Save(self),
-            (self.rename_done, new_session_name)]
+            sop.Success(self, msg='Session renamed')]
         self.next_function()
     
     def ray_server_get_session_preview(

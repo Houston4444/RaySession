@@ -29,6 +29,8 @@ class Rename(SessionOp):
         if session.path is None:
             raise NoSessionPath
 
+        old_name = session.name
+
         spath = session.path.parent / self.new_session_name
         if spath.exists():
             self.error(
@@ -49,7 +51,9 @@ class Rename(SessionOp):
             return
         
         session._set_path(spath)
-
+        session.send_gui_message(
+            _translate('GUIMSG', 'Session %s has been renamed to %s .')
+            % (old_name, self.new_session_name))
         session.send_gui_message(
             _translate('GUIMSG', 'Session directory is now: %s')
                 % session.path)

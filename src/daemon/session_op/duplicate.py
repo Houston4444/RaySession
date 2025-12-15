@@ -46,7 +46,7 @@ class Duplicate(SessionOp):
 
         for client in session.clients:
             if client.is_ray_net:
-                client.ray_net.duplicate_state = -1
+                client.ray_net.duplicate_state = -1.0
                 if (client.ray_net.daemon_url
                         and is_valid_osc_url(client.ray_net.daemon_url)):
                     session.send(

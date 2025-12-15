@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QCoreApplication
-
 from osclib import OscPack
 import ray
 
@@ -9,9 +7,6 @@ from .session_op import SessionOp
 
 if TYPE_CHECKING:
     from session_operating import OperatingSession
-
-
-_translate = QCoreApplication.translate
 
 
 class ClearClients(SessionOp):

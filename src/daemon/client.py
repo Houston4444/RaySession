@@ -337,7 +337,7 @@ class Client(ServerSender, ray.ClientData):
         self.send_gui(rg.client.STATUS, self.client_id, self.status.value)
 
     def _net_daemon_out_of_time(self):
-        self.ray_net.duplicate_state = -1
+        self.ray_net.duplicate_state = -1.0
 
         if self.session.wait_for is ray.WaitFor.DUPLICATE_FINISH:
             self.session.end_timer_if_last_expected(self)

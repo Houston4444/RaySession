@@ -2,6 +2,8 @@ import logging
 from typing import TYPE_CHECKING, Callable
 
 import ray
+import osc_paths
+import osc_paths.ray.gui as rg
 from osclib import OscPack
 
 if TYPE_CHECKING:
@@ -38,13 +40,19 @@ class SessionOp:
     def _clean_up_session_ops(self):
         if self.osp is not None:
             return
-        
-        self.session.steps_osp = None
-        self.session.steps_order.clear()
-        if self.session.path is None:
-            self.session.set_server_status(ray.ServerStatus.OFF)
+
+        session = self.session
+
+        session.steps_osp = None
+        session.steps_order.clear()
+        if session.path is None:
+            session.canvas_saver.unload_session()
+            session.set_server_status(ray.ServerStatus.OFF)
+            session.send_gui(rg.session.NAME, '', '')
+            session.send_gui(rg.session.NOTES, '')
+            session.send_gui(rg.session.NOTES_HIDDEN)
         else:
-            self.session.set_server_status(ray.ServerStatus.READY)
+            session.set_server_status(ray.ServerStatus.READY)
 
     def start(self):
         _logger.debug(f'Start step {self._sub_step_name(0)}')
@@ -68,7 +76,8 @@ class SessionOp:
             wait_for, redondant=redondant)
 
     def reply(self, msg: str):
-        '''Final reply of the operation.'''
+        '''send final reply of the operation
+        and cleanup session attributes.'''
         if self.osp is not None:
             self.session.send_even_dummy(*self.osp.reply(), msg)
             return
@@ -80,7 +89,7 @@ class SessionOp:
         self._clean_up_session_ops()
         
     def error(self, err: ray.Err, msg: str):
-        '''reply an error to the operation asker'''
+        '''reply an error to the operation asker, and abort the operation'''
         if self.osp is not None:
             self.session.send_even_dummy(*self.osp.error(), err, msg)
             return
@@ -91,3 +100,14 @@ class SessionOp:
             
         self._clean_up_session_ops()
 
+    def minor_error(self, err: ray.Err, msg: str):
+        '''post a minor error to the operation asker'''
+        osp = self.session.steps_osp
+        if self.osp is not None:
+            osp = self.osp
+        
+        if osp is None:
+            return
+        
+        self.session.send_even_dummy(
+            osp.src_addr, osp.path, osc_paths.MINOR_ERROR, err, msg)    
