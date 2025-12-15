@@ -98,14 +98,14 @@ class Close(SessionOp):
         session.trashed_clients.clear()
         session.send_gui(rg.trash.CLEAR)
 
-        self.next(30000, ray.WaitFor.QUIT)
+        self.next(ray.WaitFor.QUIT, timeout=30000)
 
     def kill_clients(self):
         session = self.session
         for client in session.expected_clients:
             client.kill()
 
-        self.next(1000, ray.WaitFor.QUIT)
+        self.next(ray.WaitFor.QUIT, timeout=1000)
 
     def final_adjusts(self):
         session = self.session

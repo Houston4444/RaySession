@@ -49,7 +49,7 @@ class CloseNoSaveClients(SessionOp):
                     'to be closed gracefully...'))
 
         duration = int(1000 * math.sqrt(len(session.expected_clients)))
-        self.next(duration, ray.WaitFor.QUIT)
+        self.next(ray.WaitFor.QUIT, timeout=duration)
 
     def wait_user_to_close_clients(self):
         session = self.session
@@ -69,7 +69,7 @@ class CloseNoSaveClients(SessionOp):
                 'waiting you to close yourself unsaveable clients...'))
 
         # Timer (2mn) is restarted if an expected client has been closed
-        self.next(120000, ray.WaitFor.QUIT, redondant=True)
+        self.next(ray.WaitFor.QUIT, timeout=120000, redondant=True)
         
     def go_to_next_function(self):
         self.session.next_function()

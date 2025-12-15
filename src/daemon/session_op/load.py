@@ -61,14 +61,14 @@ class Load(SessionOp):
                 client.switch_state = ray.SwitchState.NEEDED
 
         session.timer_quit.start()
-        self.next(5000, ray.WaitFor.QUIT)
+        self.next(ray.WaitFor.QUIT, timeout=5000)
 
     def kill_clients(self):
         session = self.session
         for client in session.expected_clients:
             client.kill()
             
-        self.next(1000, ray.WaitFor.QUIT)
+        self.next(ray.WaitFor.QUIT, timeout=1000)
 
     def switch_or_start_clients(self):
         session = self.session
@@ -197,7 +197,7 @@ class Load(SessionOp):
 
         wait_time = 4000 + len(session.expected_clients) * 1000
 
-        self.next(wait_time, ray.WaitFor.ANNOUNCE)
+        self.next(ray.WaitFor.ANNOUNCE, timeout=wait_time)
 
     def wait_client_replies(self):
         session = self.session
@@ -234,7 +234,7 @@ class Load(SessionOp):
         for client in session.expected_clients:
             wait_time = int(max(2 * 1000 * client.last_open_duration, wait_time))
 
-        self.next(wait_time, ray.WaitFor.REPLY)
+        self.next(ray.WaitFor.REPLY, timeout=wait_time)
 
     def final_adjusts(self):
         session = self.session

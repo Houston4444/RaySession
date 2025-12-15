@@ -64,7 +64,7 @@ class Duplicate(SessionOp):
                     'GUIMSG',
                     'waiting for network daemons to start duplicate...'))
 
-        self.next(2000, ray.WaitFor.DUPLICATE_START)
+        self.next(ray.WaitFor.DUPLICATE_START, timeout=2000)
 
     def copy_session_folder(self):
         session = self.session        
@@ -90,7 +90,7 @@ class Duplicate(SessionOp):
                         session.path, spath))
             return
         
-        self.next(-1, ray.WaitFor.FILE_COPY)
+        self.next(ray.WaitFor.FILE_COPY)
 
     def wait_network_sessions_copy(self):
         session = self.session
@@ -131,7 +131,7 @@ class Duplicate(SessionOp):
                 _translate('GUIMSG',
                            'waiting for network daemons to finish duplicate'))
 
-        self.next(-1, ray.WaitFor.DUPLICATE_FINISH) # 1 Hour
+        self.next(ray.WaitFor.DUPLICATE_FINISH) # 1 Hour
 
     def rename_files(self):
         session = self.session

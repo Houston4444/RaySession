@@ -17,7 +17,7 @@ class AbortCopy(SessionOp):
         if self.session.file_copier.is_active():
             self.session.file_copier.abort()
             
-        self.next(-1, ray.WaitFor.FILE_COPY)
+        self.next(ray.WaitFor.FILE_COPY)
         
     def abort_copy_done(self):
         self.session.next_function()

@@ -81,7 +81,7 @@ class SaveClientAsTemplate(SessionOp):
                                'Failed to save client as template'))
                 return
             
-        self.next(-1, ray.WaitFor.FILE_COPY)
+        self.next(ray.WaitFor.FILE_COPY)
 
     def adjust_files(self):
         session = self.session

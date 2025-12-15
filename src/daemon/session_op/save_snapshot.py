@@ -69,8 +69,7 @@ class SaveSnapshot(SessionOp):
                 self.error(err, m)
             return
         
-        # 15mn for the command git add .
-        self.next(900000, ray.WaitFor.SNAPSHOT_ADD)
+        self.next(ray.WaitFor.SNAPSHOT_ADD)
 
     def commit_files(self):
         session = self.session

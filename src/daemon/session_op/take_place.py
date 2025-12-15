@@ -1,8 +1,5 @@
-import logging
 import time
 from typing import TYPE_CHECKING
-
-from qtpy.QtCore import QCoreApplication
 
 import osc_paths.ray.gui as rg
 import ray
@@ -13,10 +10,6 @@ from .session_op import SessionOp
 
 if TYPE_CHECKING:
     from session_operating import OperatingSession
-
-
-_logger = logging.getLogger(__name__)
-_translate = QCoreApplication.translate
 
 
 class TakePlace(SessionOp):

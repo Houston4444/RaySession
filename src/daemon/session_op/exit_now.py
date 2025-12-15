@@ -22,7 +22,7 @@ class ExitNow(SessionOp):
         self.routine = [self.wait_patchbay, self.quit_app]
 
     def wait_patchbay(self):
-        self.next(1000, ray.WaitFor.PATCHBAY_QUIT)
+        self.next(ray.WaitFor.PATCHBAY_QUIT, timeout=1000)
         
     def quit_app(self):
         session = self.session

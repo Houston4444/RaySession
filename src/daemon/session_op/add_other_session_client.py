@@ -80,7 +80,7 @@ class AddOtherSessionClient(SessionOp):
         self.new_client = new_client
         self.tmp_work_dir = tmp_work_dir
         
-        self.next(-1, ray.WaitFor.FILE_COPY)
+        self.next(ray.WaitFor.FILE_COPY)
 
     def rename_files(
             self):

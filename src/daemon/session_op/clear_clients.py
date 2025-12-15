@@ -31,13 +31,13 @@ class ClearClients(SessionOp):
                 session.expected_clients.append(client)
 
         session.timer_quit.start()
-        self.next(5000, ray.WaitFor.QUIT)
+        self.next(ray.WaitFor.QUIT, timeout=5000)
 
     def kill_clients(self):
         for client in self.session.expected_clients:
             client.kill()
 
-        self.next(1000, ray.WaitFor.QUIT)
+        self.next(ray.WaitFor.QUIT, timeout=1000)
 
     def final_reply(self):
         self.reply('Clients cleared')

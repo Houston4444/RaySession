@@ -42,13 +42,13 @@ class LoadSnapshot(SessionOp):
                 session.expected_clients.append(self.client)
                 self.client.stop()
 
-        self.next(30000, ray.WaitFor.STOP_ONE)
+        self.next(ray.WaitFor.STOP_ONE, timeout=30000)
         
     def kill_client(self):
         if self.client is not None and self.client.is_running:
             self.client.kill()
             
-        self.next(1000, ray.WaitFor.STOP_ONE)
+        self.next(ray.WaitFor.STOP_ONE, timeout=1000)
 
     def load_snapshot(self):
         session = self.session

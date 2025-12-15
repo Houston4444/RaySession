@@ -59,20 +59,20 @@ class SessionOp:
         self.func_n = 0
         self.routine[0]()
     
-    def start_from_script(self, arguments: list[str]):
+    def start_from_script(self, script_osp: OscPack):
         self.start()
-    
-    def next(self, duration: int, wait_for: ray.WaitFor, redondant=False):
+
+    def next(self, wait_for=ray.WaitFor.NONE, timeout=-1, redondant=False):
         '''Once `wait_for` is not pertinent anymore or if `duration`
         has past, execute the next function of self.routine.
         
         If `duration` is negative, there is no timeout.'''
         _logger.debug(
-            f'{self.class_name}.{self.routine[self.func_n].__name__} finished')
+            f'{self._sub_step_name(self.func_n)} finished')
 
         self.func_n += 1
         self.session._wait_and_go_to(
-            duration, self.routine[self.func_n],
+            timeout, self.routine[self.func_n],
             wait_for, redondant=redondant)
 
     def reply(self, msg: str):

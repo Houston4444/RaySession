@@ -64,7 +64,7 @@ class Save(SessionOp):
                                    'waiting for %i clients to save...')
                             % len(session.expected_clients))
 
-        self.next(10000, ray.WaitFor.REPLY)
+        self.next(ray.WaitFor.REPLY, 10000)
 
     def save_the_session(self):
         session = self.session

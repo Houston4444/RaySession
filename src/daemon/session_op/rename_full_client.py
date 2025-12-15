@@ -42,7 +42,7 @@ class RenameFullClient(SessionOp):
                 session.expected_clients.append(client)
                 client.save()
         
-        self.next(10000, ray.WaitFor.REPLY)
+        self.next(ray.WaitFor.REPLY, timeout=10000)
 
     def stop_client(self):
         session = self.session
@@ -53,13 +53,13 @@ class RenameFullClient(SessionOp):
             session.expected_clients.append(self.client)
             self.client.stop()
 
-        self.next(30000, ray.WaitFor.STOP_ONE)
+        self.next(ray.WaitFor.STOP_ONE, timeout=30000)
 
     def kill_client(self):
         if self.client in self.session.expected_clients:
             self.client.kill()
         
-        self.next(1000, ray.WaitFor.STOP_ONE)
+        self.next(ray.WaitFor.STOP_ONE, timeout=1000)
 
     def rename_full_client(self):
         session = self.session

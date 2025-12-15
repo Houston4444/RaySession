@@ -137,7 +137,7 @@ class AddClientTemplate(SessionOp):
                 return
         
         self.client = client
-        self.next(-1, ray.WaitFor.FILE_COPY)
+        self.next(ray.WaitFor.FILE_COPY)
 
     def adjust_files(self):
         session = self.session
