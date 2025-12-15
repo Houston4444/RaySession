@@ -117,7 +117,7 @@ class Duplicate(SessionOp):
                 _translate('error', 'Copy was aborted by user'))
             return
         
-        session._clean_expected()
+        session.clean_expected()
         session.send_gui_message(
             _translate('GUIMSG', '...session copy finished.'))
 

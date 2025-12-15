@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QCoreApplication
+from osclib.bases import OscPack
 
 import ray
 import osc_paths.ray.gui as rg
@@ -29,14 +30,14 @@ class Load(SessionOp):
             self.wait_client_replies,
             self.final_adjusts]
 
-    def start_from_script(self, arguments: list[str]):
-        if 'open_off' in arguments:
+    def start_from_script(self, script_osp: OscPack):
+        if 'open_off' in script_osp.args:
             self.open_off = True
         self.start()
     
     def stop_clients(self, open_off=False):
         session = self.session
-        session._clean_expected()
+        session.clean_expected()
         session.clients_to_quit.clear()
 
         # first quit unneeded clients
@@ -71,7 +72,7 @@ class Load(SessionOp):
 
     def switch_or_start_clients(self):
         session = self.session
-        session._clean_expected()
+        session.clean_expected()
 
         session.load_locked = False
         session.send_gui_message(
@@ -134,7 +135,8 @@ class Load(SessionOp):
             if client:
                 client.switch_state = ray.SwitchState.DONE
                 session.send_monitor_event(
-                    f"switched_to:{future_client.client_id}", client.client_id)
+                    f"switched_to:{future_client.client_id}",
+                    client.client_id)
                 client.client_id = future_client.client_id
                 client.eat_attributes(future_client)
                 has_switch = True
@@ -163,9 +165,10 @@ class Load(SessionOp):
         # Note that a monitor client starting here with the session
         # will not receive theses messages, because it is not known as capable
         # of ':monitor:' yet.
-        # However, a monitor client capable of :switch: will get theses messages.
-        # An outside monitor (saved in server.monitor_list) will get theses messages
-        # in all cases. 
+        # However, a monitor client capable of :switch: 
+        # will get theses messages.
+        # An outside monitor (saved in server.monitor_list) 
+        # will get theses messages in all cases. 
         server = session.get_server()
         if server is not None:
             for monitor_addr in server.monitor_list:
@@ -204,7 +207,7 @@ class Load(SessionOp):
 
         RS.settings.setValue('daemon/non_active_list', RS.non_active_clients)
 
-        session._clean_expected()
+        session.clean_expected()
 
         session.set_server_status(ray.ServerStatus.OPEN)
 
@@ -235,7 +238,7 @@ class Load(SessionOp):
 
     def final_adjusts(self):
         session = self.session
-        session._clean_expected()
+        session.clean_expected()
 
         if session.has_server_option(ray.Option.DESKTOPS_MEMORY):
             session.desktops_memory.replace()

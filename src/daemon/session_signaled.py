@@ -989,14 +989,11 @@ class SignaledSession(OperatingSession):
                                'abort ordered from elsewhere, sorry !'))
 
         self.steps_osp = osp
-        self.steps_order = [sop.Close(self, clear_all_clients=True),
-                            sop.Success(self, msg='Aborted')]
-
-
-        if self.file_copier.is_active():
-            self.file_copier.abort(self.next_function, [])
-        else:
-            self.next_function()
+        self.steps_order = [
+            sop.AbortCopy(self),
+            sop.Close(self, clear_all_clients=True),
+            sop.Success(self, msg='Aborted')]
+        self.next_function()
 
     @manage((r.server.QUIT, nsm.server.QUIT), '')
     def _ray_server_quit(self, osp: OscPack):
@@ -1020,7 +1017,7 @@ class SignaledSession(OperatingSession):
         self.timer.stop()
         self.timer_waituser_progress.stop()
         self.steps_order.clear()
-        self._clean_expected()
+        self.clean_expected()
         self.set_server_status(ray.ServerStatus.READY)
 
     @manage(r.session.SKIP_WAIT_USER, '')
@@ -1030,7 +1027,7 @@ class SignaledSession(OperatingSession):
 
         self.timer.stop()
         self.timer_waituser_progress.stop()
-        self._clean_expected()
+        self.clean_expected()
         self.next_function()
 
     @session_operation((r.session.DUPLICATE, nsm.server.DUPLICATE), 's')
@@ -1539,8 +1536,7 @@ class SignaledSession(OperatingSession):
                       'No operation pending !')
             return
 
-        self.run_step_addr = osp.src_addr
-        self.next_function(from_run_step=True, run_step_args=osp.args)
+        self.next_function(script_osp=osp)
 
     @client_action(r.client.STOP, 's')
     def _ray_client_stop(self, osp: OscPack, client:Client):

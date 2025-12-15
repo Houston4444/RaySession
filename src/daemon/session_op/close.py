@@ -2,6 +2,7 @@ import time
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QCoreApplication
+from osclib.bases import OscPack
 
 import ray
 import osc_paths.ray.gui as rg
@@ -25,8 +26,8 @@ class Close(SessionOp):
         self.routine = [
             self.stop_clients, self.kill_clients, self.final_adjusts]
 
-    def start_from_script(self, arguments: list[str]):
-        if 'close_all' in arguments:
+    def start_from_script(self, script_osp: OscPack):
+        if 'close_all' in script_osp.args:
             self.clear_all_clients = True
         self.start()
             
@@ -108,7 +109,7 @@ class Close(SessionOp):
 
     def final_adjusts(self):
         session = self.session
-        session._clean_expected()
+        session.clean_expected()
 
         # remember in recent sessions
         # only if session has been open at least 30 seconds

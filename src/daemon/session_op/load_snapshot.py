@@ -52,7 +52,7 @@ class LoadSnapshot(SessionOp):
 
     def load_snapshot(self):
         session = self.session
-        session._clean_expected()
+        session.clean_expected()
         if self.session.path is None:
             session.next_function()
             return

@@ -84,30 +84,18 @@ class OperatingSession(Session):
         self.window_waiter.setInterval(200)
         self.window_waiter.timeout.connect(self._check_windows_appears)
 
-        self.run_step_addr = None
+        self.script_osp: OscPack | None = None
 
         self.switching_session = False
 
     def _wait_and_go_to(
-            self, duration: int,
-            follow: tuple[Callable, Any] | list[Callable] | Callable,
+            self, duration: int, follow: Callable,
             wait_for: ray.WaitFor, redondant=False):
         self.timer.stop()
 
         # we need to delete timer to change the timeout connect
         del self.timer
         self.timer = QTimer()
-
-        if isinstance(follow, (list, tuple)):
-            if len(follow) == 0:
-                return
-
-            if len(follow) == 1:
-                follow = follow[0]
-            else:
-                follow = functools.partial(follow[0], *follow[1:])
-
-        # follow: Callable
 
         if wait_for in (ray.WaitFor.SCRIPT_QUIT,
                         ray.WaitFor.PATCHBAY_QUIT,
@@ -190,7 +178,7 @@ class OperatingSession(Session):
 
             self.timer_waituser_progress.stop()
 
-    def _clean_expected(self):
+    def clean_expected(self):
         if self.expected_clients:
             client_names = [c.gui_msg_style for c in self.expected_clients]
 
@@ -209,45 +197,46 @@ class OperatingSession(Session):
 
         self.wait_for = ray.WaitFor.NONE
 
-    def next_function(self, from_run_step=False, run_step_args=[]):
-        if self.run_step_addr and not from_run_step:
-            self.send(self.run_step_addr, osc_paths.REPLY,
-                      r.session.RUN_STEP, 'step done')
-            self.run_step_addr = None
+    def next_function(self, script_osp: OscPack | None =None,
+                      script_forbidden=False):
+        if self.script_osp is not None and script_osp is None:
+            self.send(*self.script_osp.reply(), 'step done')
+            self.script_osp = None
             return
+
+        if script_osp is not None:
+            self.script_osp = script_osp
 
         if not self.steps_order:
             return
 
-        next_item = self.steps_order[0]
-        next_function = next_item.start
-        arguments = []
+        next_sop = self.steps_order[0]
 
         if (self.has_server_option(ray.Option.SESSION_SCRIPTS)
+                and not script_forbidden
                 and not self.step_scripter.is_running()
                 and self.path is not None
-                and not from_run_step):
-            if not (isinstance(next_item, sop.Load)
-                    and next_item.open_off):
-                if (next_item.script_step
+                and script_osp is None):
+            if not (isinstance(next_sop, sop.Load)
+                    and next_sop.open_off):
+                if (next_sop.script_step
                         and self.steps_osp is not None
                         and self.step_scripter.start(
-                            next_item.script_step,
-                            self.steps_osp.src_addr,
-                            self.steps_osp.path)):
+                            next_sop.script_step)):
                     self.set_server_status(ray.ServerStatus.SCRIPT)
                     return
-
-        if (from_run_step and next_function
-                and self.step_scripter.is_running()):
-            if next_item.script_step == self.step_scripter.get_step():
-                self.step_scripter.set_stepper_has_call(True)
-            next_item.start_from_script(run_step_args)
-
+                
         self.steps_order.__delitem__(0)
+
+        if (script_osp is not None and self.step_scripter.is_running()):
+            if next_sop.script_step == self.step_scripter.get_step():
+                self.step_scripter.set_stepper_has_call(True)
+            next_sop.start_from_script(script_osp)
+            return
+
         _logger.debug(
-            f'next_function: {next_function.__name__}')  # type: ignore
-        next_function(*arguments) # type: ignore
+            f'next session operation: {next_sop.__class__.__name__}')
+        next_sop.start()
 
     def _timer_launch_timeout(self):
         if self.clients_to_launch:
@@ -361,13 +350,11 @@ class OperatingSession(Session):
         # clear process order to allow other new operations
         self.steps_order.clear()
 
-        if self.run_step_addr:
+        if self.script_osp is not None:
             if err is ray.Err.OK:
-                self.send(self.run_step_addr, osc_paths.REPLY,
-                          r.session.RUN_STEP, error_message)
+                self.send(*self.script_osp.reply(), error_message)
             else:
-                self.send(self.run_step_addr, osc_paths.ERROR,
-                          r.session.RUN_STEP, err, error_message)
+                self.send(*self.script_osp.error(), err, error_message)
             
         if self.steps_osp is None:
             return
@@ -390,10 +377,7 @@ class OperatingSession(Session):
                     sop.Close(self, clear_all_clients=True),
                     sop.Success(self, msg='Aborted')]
 
-                # Fake the next_function to come from run_step message
-                # This way, we are sure the close step
-                # is not runned with a script.
-                self.next_function(True)
+                self.next_function(script_forbidden=True)
                 return
 
             if self.steps_order:

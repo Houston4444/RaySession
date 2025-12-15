@@ -24,7 +24,7 @@ class CloseNoSaveClients(SessionOp):
 
     def close_gracefully_windows(self):
         session = self.session
-        session._clean_expected()
+        session.clean_expected()
 
         if session.has_server_option(ray.Option.HAS_WMCTRL):
             has_nosave_clients = False
@@ -53,7 +53,7 @@ class CloseNoSaveClients(SessionOp):
 
     def wait_user_to_close_clients(self):
         session = self.session
-        session._clean_expected()
+        session.clean_expected()
         has_nosave_clients = False
 
         for client in session.clients:

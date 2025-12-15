@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QCoreApplication
+from osclib.bases import OscPack
 
 import ray
 
@@ -24,8 +25,8 @@ class Save(SessionOp):
         self.save_clients = save_clients
         self.routine = [self.save_the_clients, self.save_the_session]
 
-    def start_from_script(self, arguments: list[str]):
-        if 'without_clients' in arguments:
+    def start_from_script(self, script_osp: OscPack):
+        if 'without_clients' in script_osp.args:
             self.outing = False
             self.save_clients = False
         self.start()
@@ -67,7 +68,7 @@ class Save(SessionOp):
 
     def save_the_session(self):
         session = self.session
-        session._clean_expected()
+        session.clean_expected()
 
         if self.save_clients and self.outing:
             for client in session.clients:
