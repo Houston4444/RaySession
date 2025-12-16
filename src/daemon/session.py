@@ -24,7 +24,6 @@ import osc_paths.nsm as nsm
 # Local imports
 from bookmarker import BookMarker
 from desktops_memory import DesktopsMemory
-from snapshoter import Snapshoter
 import multi_daemon_file
 from signaler import Signaler
 from server_sender import ServerSender
@@ -136,7 +135,7 @@ class Session(ServerSender):
         self.future_session_path = Path()
         self.future_session_name = ''
         self.future_trashed_clients.clear()
-        self.future_notes = ""
+        self.future_notes = ''
         self.future_notes_shown = False
 
     @property
@@ -395,7 +394,7 @@ class Session(ServerSender):
         
         return ray.Err.OK
 
-    def generate_abstract_client_id(self, wanted_id:str) -> str:
+    def generate_abstract_client_id(self, wanted_id: str) -> str:
         '''generates a client_id from wanted_id
         not regarding the existing ids in the session
         or session directory. Useful for templates'''
@@ -441,7 +440,7 @@ class Session(ServerSender):
             
         return wanted_id
 
-    def generate_client_id(self, wanted_id="", abstract=False) -> str:
+    def generate_client_id(self, wanted_id='') -> str:
         self._update_forbidden_ids_set()
         wanted_id = Path(wanted_id).name
 
@@ -458,11 +457,11 @@ class Session(ServerSender):
                 return wanted_id
 
             n = 2
-            while "%s_%i" % (wanted_id, n) in self.forbidden_ids_set:
+            while f'{wanted_id}_{n}' in self.forbidden_ids_set:
                 n += 1
 
             self.forbidden_ids_set.add(wanted_id)
-            return "%s_%i" % (wanted_id, n)
+            return f'{wanted_id}_{n}'
 
         client_id = 'n'
         for l in range(4):
