@@ -42,7 +42,7 @@ for module in dir.iterdir():
                 used_keys.add('standard')
             
             if 'third' not in used_keys:
-                if impmodule in ('qtpy',):
+                if impmodule in ('qtpy', 'ruamel'):
                     out_lines.append(comments['third'])
                     used_keys.add('third')
             
