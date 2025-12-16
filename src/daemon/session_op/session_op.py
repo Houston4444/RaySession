@@ -1,6 +1,8 @@
+# Imports from standard library
 import logging
 from typing import TYPE_CHECKING, Callable
 
+# Imports from src/shared
 import ray
 import osc_paths
 import osc_paths.ray.gui as rg

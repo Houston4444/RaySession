@@ -1,12 +1,16 @@
+# Imports from standard library
 import os
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtCore import QCoreApplication
 
+# Imports from src/shared
 import ray
 from osclib import Address
 import osc_paths.ray as r
 
+# Local imports
 from daemon_tools import highlight_text, NoSessionPath, TemplateRoots
 
 from .session_op import SessionOp
@@ -111,4 +115,3 @@ class SaveSessionTemplate(SessionOp):
             % highlight_text(self.template_name))
 
         self.reply('Saved as template.')
-

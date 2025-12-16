@@ -1,17 +1,20 @@
+# Imports from standard library
 import logging
 import os
 import shutil
 from typing import TYPE_CHECKING
 import xml.etree.ElementTree as ET
 
+# third party imports
 from qtpy.QtCore import QCoreApplication
-from osclib.bases import OscPack
 
-import ray
-from osclib import Address
+# Imports from src/shared
+from osclib import Address, OscPack
 import osc_paths.ray as r
+import ray
 from xml_tools import XmlElement
 
+# Local imports
 from client import Client
 from daemon_tools import highlight_text, TemplateRoots
 

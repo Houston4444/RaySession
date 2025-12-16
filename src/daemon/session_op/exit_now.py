@@ -1,11 +1,15 @@
+# Imports from standard library
 import logging
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtCore import QCoreApplication
 
+# Imports from src/shared
 import osc_paths.ray.gui as rg
 import ray
 
+# Local imports
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
@@ -32,4 +36,3 @@ class ExitNow(SessionOp):
         session._send_reply("Bye Bye...")
         session.send_gui(rg.server.DISANNOUNCE)
         QCoreApplication.quit()
-

@@ -1,12 +1,16 @@
+# Imports from standard library
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtCore import QCoreApplication
-from osclib.bases import OscPack
 
-import ray
-import osc_paths.ray.gui as rg
+# Imports from src/shared
+from osclib import OscPack
 import osc_paths.nsm as nsm
+import osc_paths.ray.gui as rg
+import ray
 
+# Local imports
 from daemon_tools import highlight_text, RS
 
 from .session_op import SessionOp

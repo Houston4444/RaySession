@@ -1,8 +1,11 @@
+# Imports from standard library
 from typing import TYPE_CHECKING
 
+# Imports from src/shared
 from osclib import OscPack
 import ray
 
+# Local imports
 from .session_op import SessionOp
 
 if TYPE_CHECKING:

@@ -1,10 +1,14 @@
+# Imports from standard library
 import math
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtCore import QCoreApplication
 
+# Imports from src/shared
 import ray
 
+# Local imports
 from .session_op import SessionOp
 
 if TYPE_CHECKING:

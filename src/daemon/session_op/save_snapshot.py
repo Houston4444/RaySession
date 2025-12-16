@@ -1,12 +1,16 @@
+# Imports from standard library
 import logging
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtCore import QCoreApplication
 
-import ray
+# Imports from src/shared
 import osc_paths
 import osc_paths.ray as r
+import ray
 
+# Local imports
 from snapshoter import full_ref_for_gui
 
 from .session_op import SessionOp

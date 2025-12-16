@@ -1,14 +1,18 @@
+# Imports from standard library
 import logging
 import os
 from pathlib import Path
 import shutil
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtCore import QCoreApplication
-from osclib.bases import OscPack
 
+# Imports from src/shared
+from osclib import OscPack
 import ray
 
+# Local imports
 from client import Client
 from daemon_tools import NoSessionPath
 

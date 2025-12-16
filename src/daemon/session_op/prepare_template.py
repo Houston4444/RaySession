@@ -1,9 +1,13 @@
+# Imports from standard library
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtCore import QCoreApplication
 
+# Imports from src/shared
 import ray
 
+# Local imports
 from daemon_tools import TemplateRoots
 
 from .session_op import SessionOp

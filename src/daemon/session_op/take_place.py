@@ -1,9 +1,12 @@
+# Imports from standard library
 import time
 from typing import TYPE_CHECKING
 
+# Imports from src/shared
 import osc_paths.ray.gui as rg
 import ray
 
+# Local imports
 from daemon_tools import NoSessionPath
 
 from .session_op import SessionOp

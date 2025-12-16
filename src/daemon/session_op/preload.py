@@ -1,3 +1,4 @@
+# Imports from standard library
 from io import TextIOWrapper
 import logging
 import os
@@ -5,12 +6,15 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 import xml.etree.ElementTree as ET
 
+# third party imports
 from qtpy.QtCore import QCoreApplication
 
+# Imports from src/shared
 import osc_paths.ray.gui as rg
 import ray
 from xml_tools import XmlElement
 
+# Local imports
 from client import Client
 from daemon_tools import Terminal
 import multi_daemon_file

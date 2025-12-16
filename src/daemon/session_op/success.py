@@ -1,5 +1,7 @@
+# Imports from standard library
 from typing import TYPE_CHECKING
 
+# Local imports
 from .session_op import SessionOp
 
 if TYPE_CHECKING:

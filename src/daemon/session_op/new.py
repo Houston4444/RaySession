@@ -1,11 +1,15 @@
+# Imports from standard library
 import logging
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtCore import QCoreApplication
 
+# Imports from src/shared
 import osc_paths.ray.gui as rg
 import ray
 
+# Local imports
 from daemon_tools import highlight_text
 
 from .session_op import SessionOp

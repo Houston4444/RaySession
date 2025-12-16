@@ -1,22 +1,20 @@
+# Imports from standard library
 import logging
 import os
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QCoreApplication
-
+# Imports from src/shared
 import osc_paths.ray.gui as rg
 from osclib import Address, MegaSend
 import ray
 
-from daemon_tools import highlight_text
-
+# Local imports
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
     from session_operating import OperatingSession
 
 
-_translate = QCoreApplication.translate
 _logger = logging.getLogger(__name__)
 
 

@@ -1,13 +1,17 @@
+# Imports from standard library
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtCore import QCoreApplication
 
+# Imports from src/shared
 import ray
 from osclib import Address, is_valid_osc_url
 import osc_paths.nsm as nsm
 import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 
+# Local imports
 from daemon_tools import highlight_text, NoSessionPath
 import multi_daemon_file
 

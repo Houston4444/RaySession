@@ -1,11 +1,15 @@
+# Imports from standard library
 import logging
 from typing import TYPE_CHECKING
 
+# third party imports
 from qtpy.QtCore import QCoreApplication
 
-import ray
+# Imports from src/shared
 import osc_paths.ray.gui as rg
+import ray
 
+# Local imports
 from client import Client
 from patch_rewriter import rewrite_jack_patch_files
 
