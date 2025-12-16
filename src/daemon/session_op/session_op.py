@@ -79,7 +79,7 @@ class SessionOp:
                 self.routine[self.func_n]
             return
         
-        self.session._wait_and_go_to(
+        self.session.wait_and_go_to(
             self, wait_for, timeout, redondant=redondant)
 
     def run_next(self):

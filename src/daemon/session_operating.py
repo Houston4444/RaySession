@@ -88,7 +88,7 @@ class OperatingSession(Session):
 
         self.switching_session = False
 
-    def _wait_and_go_to(
+    def wait_and_go_to(
             self, session_op: sop.SessionOp, wait_for: ray.WaitFor,
             timeout: int | None =None, redondant=False):
         self.timer.stop()
@@ -162,6 +162,11 @@ class OperatingSession(Session):
         else:
             session_op.run_next()
 
+    def _forget_timer(self):
+        self.timer.setSingleShot(True)
+        self.timer.stop()
+        self.timer.start(0)
+
     def end_timer_if_last_expected(self, client: Client):
         if self.wait_for is ray.WaitFor.QUIT and client in self.clients:
             self._remove_client(client)
@@ -176,10 +181,7 @@ class OperatingSession(Session):
                     self.timer_waituser_progress.start()
 
         if not self.expected_clients:
-            self.timer.setSingleShot(True)
-            self.timer.stop()
-            self.timer.start(0)
-
+            self._forget_timer()
             self.timer_waituser_progress.stop()
 
     def clean_expected(self):
@@ -324,9 +326,7 @@ class OperatingSession(Session):
 
     def patchbay_process_finished(self):
         if self.wait_for is ray.WaitFor.PATCHBAY_QUIT:
-            self.timer.setSingleShot(True)
-            self.timer.stop()
-            self.timer.start(0)
+            self._forget_timer()
 
     def snapshoter_add_finished(self):
         '`git add .` snapshoter command is finished'
@@ -335,17 +335,13 @@ class OperatingSession(Session):
                 'git add command ended while nothing is waiting for it')
             return
         
-        self.wait_for = ray.WaitFor.NONE        
-        self.timer.setSingleShot(True)
-        self.timer.stop()
-        self.timer.start(0)
+        self.wait_for = ray.WaitFor.NONE
+        self._forget_timer()        
 
     def files_copy_finished(self):
         if self.wait_for is ray.WaitFor.FILE_COPY:
             self.wait_for = ray.WaitFor.NONE
-            self.timer.setSingleShot(True)
-            self.timer.stop()
-            self.timer.start(0)
+            self._forget_timer()
 
     def _send_reply(self, *args: str):
         if self.steps_osp is None:
@@ -370,9 +366,8 @@ class OperatingSession(Session):
 
     def step_scripter_finished(self):
         if self.wait_for is ray.WaitFor.SCRIPT_QUIT:
-            self.timer.setSingleShot(True)
-            self.timer.stop()
-            self.timer.start(0)
+            self.wait_for = ray.WaitFor.NONE
+            self._forget_timer()
             return
 
         if not self.step_scripter.stepper_has_called():
