@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QCoreApplication
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
     from session_operating import OperatingSession
 
 
+_logger = logging.getLogger(__name__)
 _translate = QCoreApplication.translate
 
 
@@ -37,7 +39,8 @@ class SaveSnapshot(SessionOp):
             if not (session.has_server_option(ray.Option.SNAPSHOTS)
                     and not session.snapshoter.is_auto_snapshot_prevented()
                     and session.snapshoter.has_changes()):
-                session.next_function()
+                _logger.info('No changes, no snapshot.')
+                session.next_session_op()
                 return
 
         if self.outing:
@@ -64,7 +67,7 @@ class SaveSnapshot(SessionOp):
             
             if self.error_is_minor:
                 self.minor_error(err, m)
-                session.next_function()
+                session.next_session_op()
             else:
                 self.error(err, m)
             return
@@ -114,7 +117,7 @@ class SaveSnapshot(SessionOp):
 
         session.send_gui_message(
             _translate('GUIMSG', '...Snapshot finished.'))
-        session.next_function()
+        self.next()
 
     def _snapshot_error_msg(
             self, err: ray.Err, command: str, exit_code: int) -> str:

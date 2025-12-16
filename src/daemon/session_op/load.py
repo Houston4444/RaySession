@@ -264,5 +264,5 @@ class Load(SessionOp):
                         and not client.gui_has_been_visible):
                     client.send_to_self_address(nsm.client.SHOW_OPTIONAL_GUI)
 
-        session.next_function()
+        self.next()
     

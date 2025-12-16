@@ -20,4 +20,4 @@ class AbortCopy(SessionOp):
         self.next(ray.WaitFor.FILE_COPY)
         
     def abort_copy_done(self):
-        self.session.next_function()
+        self.next()

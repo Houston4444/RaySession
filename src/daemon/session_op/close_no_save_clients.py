@@ -72,4 +72,4 @@ class CloseNoSaveClients(SessionOp):
         self.next(ray.WaitFor.QUIT, timeout=120000, redondant=True)
         
     def go_to_next_function(self):
-        self.session.next_function()
+        self.next()

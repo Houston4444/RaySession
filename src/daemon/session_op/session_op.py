@@ -29,6 +29,7 @@ class SessionOp:
         self.routine = list[Callable]()
         self.func_n = 0
         self.script_step: str = ''
+        self.script_osp: OscPack | None = None
     
     @property
     def class_name(self) -> str:
@@ -60,20 +61,34 @@ class SessionOp:
         self.routine[0]()
     
     def start_from_script(self, script_osp: OscPack):
+        self.script_osp = script_osp
         self.start()
 
-    def next(self, wait_for=ray.WaitFor.NONE, timeout=-1, redondant=False):
-        '''Once `wait_for` is not pertinent anymore or if `duration`
-        has past, execute the next function of self.routine.
-        
-        If `duration` is negative, there is no timeout.'''
-        _logger.debug(
-            f'{self._sub_step_name(self.func_n)} finished')
-
+    def next(self, wait_for=ray.WaitFor.NONE,
+             timeout: int | None =None, redondant=False):
+        '''Once `wait_for` is not pertinent anymore or if `timeout`
+        has past, execute the next function of self.routine.'''
         self.func_n += 1
+        
+        if wait_for is ray.WaitFor.NONE:
+            if self.func_n >= len(self.routine):
+                self.session.next_session_op()
+            else:
+                self.routine[self.func_n]
+            return
+        
         self.session._wait_and_go_to(
-            timeout, self.routine[self.func_n],
-            wait_for, redondant=redondant)
+            self, wait_for, timeout, redondant=redondant)
+
+    def run_next(self):
+        if self.func_n >= len(self.routine):
+            _logger.error(
+                f'{self.__class__.__name__}.run_step called '
+                'while its job is completed')
+            return
+        
+        _logger.debug(f'Start step {self._sub_step_name(self.func_n)}')
+        self.routine[self.func_n]()
 
     def reply(self, msg: str):
         '''send final reply of the operation
@@ -90,6 +105,8 @@ class SessionOp:
         
     def error(self, err: ray.Err, msg: str):
         '''reply an error to the operation asker, and abort the operation'''
+        _logger.error(
+            f'{self.__class__.__name__} error Err.{err.name}\n{msg}')
         if self.osp is not None:
             self.session.send_even_dummy(*self.osp.error(), err, msg)
             return

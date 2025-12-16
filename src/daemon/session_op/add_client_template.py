@@ -34,8 +34,7 @@ class AddClientTemplate(SessionOp):
         self.unique_id = unique_id
         self.client: Client | None = None
         
-        self.routine = [self.copy_template,
-                        self.adjust_files]
+        self.routine = [self.copy_template, self.adjust_files]
 
     def copy_template(self):
         session = self.session

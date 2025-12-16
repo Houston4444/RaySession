@@ -49,4 +49,4 @@ class New(SessionOp):
         session._set_path(spath)
         session.send_gui(
             rg.session.NAME, session.name, str(session.path))
-        session.next_function()
+        self.next()

@@ -35,7 +35,7 @@ class Save(SessionOp):
         session = self.session
 
         if session.path is None:
-            session.next_function()
+            session.next_session_op()
             return
 
         if self.outing:
@@ -78,7 +78,7 @@ class Save(SessionOp):
                     return
 
         if session.path is None:
-            session.next_function()
+            session.next_session_op()
             return
 
         err = session._save_session_file()
@@ -108,7 +108,7 @@ class Save(SessionOp):
                 % session.short_path_name)
         session.message(f'Session {session.short_path_name} saved.')
 
-        session.next_function()
+        self.next()
 
     def save_error(self, err_saving: ray.Err):
         session = self.session

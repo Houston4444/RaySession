@@ -1,5 +1,6 @@
 
 # Imports from standard library
+import logging
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
@@ -21,6 +22,7 @@ if TYPE_CHECKING:
     from client import Client
 
 
+_logger = logging.getLogger(__name__)
 _translate = QCoreApplication.translate
 
 
@@ -129,7 +131,8 @@ class StepScripter(Scripter):
     def _process_started(self):
         pass
 
-    def _process_finished(self, exit_code, exit_status):
+    def _process_finished(self, exit_code: int, exit_status):
+        _logger.debug(f'step scripter {self.get_step()} process finished')
         Scripter._process_finished(self, exit_code, exit_status)
         self.session.step_scripter_finished()
         self._stepper_has_call = False

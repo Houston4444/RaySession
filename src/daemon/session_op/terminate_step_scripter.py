@@ -31,4 +31,4 @@ class TerminateStepScripter(SessionOp):
         self.next(ray.WaitFor.SCRIPT_QUIT, timeout=1000)
 
     def go_to_next(self):
-        self.session.next_function()
+        self.next()

@@ -235,4 +235,4 @@ class Preload(SessionOp):
         session.future_session_name = sess_name
         session.switching_session = bool(session.path is not None)
 
-        session.next_function()
+        self.next()

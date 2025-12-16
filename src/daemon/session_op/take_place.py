@@ -56,4 +56,4 @@ class TakePlace(SessionOp):
 
         session._time_at_open = time.time()
 
-        session.next_function()
+        self.next()

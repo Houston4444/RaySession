@@ -145,6 +145,6 @@ class Duplicate(SessionOp):
             session.send(
                 session.steps_osp.src_addr, r.net_daemon.DUPLICATE_STATE, 1.0)
         
-        session.next_function()
+        self.next()
 
         

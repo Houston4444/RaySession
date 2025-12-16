@@ -99,7 +99,7 @@ def session_operation(path: str | tuple[str, ...], types: str):
             if not sess.steps_order:
                 sess.steps_osp = None
 
-            sess.next_function()
+            sess.next_session_op()
 
             return response
         
@@ -993,21 +993,19 @@ class SignaledSession(OperatingSession):
             sop.AbortCopy(self),
             sop.Close(self, clear_all_clients=True),
             sop.Success(self, msg='Aborted')]
-        self.next_function()
+        self.next_session_op()
 
     @manage((r.server.QUIT, nsm.server.QUIT), '')
     def _ray_server_quit(self, osp: OscPack):
         patchbay_dmn_mng.daemon_exit()
         self.steps_osp = osp
         self.steps_order = [
+            sop.AbortCopy(self),
             sop.TerminateStepScripter(self),
             sop.Close(self),
             sop.ExitNow(self)]
 
-        if self.file_copier.is_active():
-            self.file_copier.abort(self.next_function, [])
-        else:
-            self.next_function()
+        self.next_session_op()
 
     @manage(r.session.CANCEL_CLOSE, '')
     def _ray_session_cancel_close(self, osp: OscPack):
@@ -1028,7 +1026,7 @@ class SignaledSession(OperatingSession):
         self.timer.stop()
         self.timer_waituser_progress.stop()
         self.clean_expected()
-        self.next_function()
+        self.next_session_op()
 
     @session_operation((r.session.DUPLICATE, nsm.server.DUPLICATE), 's')
     def _ray_session_duplicate(self, osp: OscPack):
@@ -1089,7 +1087,7 @@ class SignaledSession(OperatingSession):
                 sop.Duplicate(self, new_session),
                 sop.Success(self, msg='Duplicate only done')]
 
-            self.next_function()
+            self.next_session_op()
 
         else:
             tmp_session = self._new_dummy_session(Path(sess_root))
@@ -1349,7 +1347,7 @@ class SignaledSession(OperatingSession):
                 self, template_name, factory,
                 auto_start=auto_start, unique_id=unique_id, osp=osp)]
 
-        self.next_function()
+        self.next_session_op()
 
     @manage(r.session.ADD_FACTORY_CLIENT_TEMPLATE, 'ss*')
     def _ray_session_add_factory_client_template(self, osp: OscPack):
@@ -1536,7 +1534,7 @@ class SignaledSession(OperatingSession):
                       'No operation pending !')
             return
 
-        self.next_function(script_osp=osp)
+        self.next_session_op(script_osp=osp)
 
     @client_action(r.client.STOP, 's')
     def _ray_client_stop(self, osp: OscPack, client:Client):
@@ -1624,7 +1622,7 @@ class SignaledSession(OperatingSession):
         self.steps_order = [
             sop.SaveClientAsTemplate(self, client, template_name, osp=osp)]
         
-        self.next_function()
+        self.next_session_op()
 
     @client_action(r.client.SHOW_OPTIONAL_GUI, 's')
     def _ray_client_show_optional_gui(self, osp: OscPack, client:Client):
@@ -2080,7 +2078,7 @@ class SignaledSession(OperatingSession):
             sop.TakePlace(self),
             sop.Load(self),
             sop.Success(self, msg='Session loaded')]
-        self.next_function()
+        self.next_session_op()
 
     def dummy_load_and_template(
             self, session_name: str, template_name: str, sess_root: str):
@@ -2102,4 +2100,4 @@ class SignaledSession(OperatingSession):
             sop.Close(self),
             sop.ExitNow(self)]
 
-        self.next_function()
+        self.next_session_op()

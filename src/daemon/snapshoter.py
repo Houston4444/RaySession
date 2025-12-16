@@ -4,7 +4,7 @@ import os
 import socket
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Optional
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element
 
@@ -14,8 +14,6 @@ from qtpy.QtCore import Slot, QProcess, QObject, QDateTime # type:ignore
 # Imports from src/shared
 import ray
 from xml_tools import XmlElement
-import osc_paths
-import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 
 # Local imports
@@ -86,7 +84,7 @@ class Snapshoter(QObject):
 
     def _changes_checker_standard_output(self):
         standard_output = self._changes_checker.readAllStandardOutput().data()
-        self._n_file_changed += len(standard_output.splitlines()) -1
+        self._n_file_changed += len(standard_output.splitlines())
 
     def _adder_standard_output(self):
         standard_output = self._adder_process.readAllStandardOutput().data()
@@ -95,10 +93,11 @@ class Snapshoter(QObject):
         if not self._n_file_changed:
             return
 
-        self._n_file_treated += len(standard_output.splitlines()) -1
+        self._n_file_treated += len(standard_output.splitlines())
 
-        self.session.send_gui(rg.server.PROGRESS,
-                              self._n_file_treated / self._n_file_changed)
+        self.session.send_gui(
+            rg.server.PROGRESS,
+            (self._n_file_treated + 1) / self._n_file_changed)
 
     @Slot()
     def _adder_finished(self):
@@ -473,6 +472,7 @@ class Snapshoter(QObject):
             return False
 
         if not self._is_init():
+            _logger.info('session git project is not init.')
             return True
 
         if self._changes_checker.state() != QProcess.ProcessState.NotRunning:

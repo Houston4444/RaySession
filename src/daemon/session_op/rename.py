@@ -62,4 +62,4 @@ class Rename(SessionOp):
             client.adjust_files_after_copy(
                 self.new_session_name, ray.Template.RENAME)
 
-        session.next_function()
+        self.next()

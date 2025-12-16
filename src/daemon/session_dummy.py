@@ -28,7 +28,7 @@ class DummySession(OperatingSession):
             sop.TakePlace(self),
             sop.Load(self),
             sop.SaveSessionTemplate(self, template_name, net=True)]
-        self.next_function()
+        self.next_session_op()
 
     def dummy_duplicate(self, osp: OscPack):
         self.steps_osp = osp
@@ -40,7 +40,7 @@ class DummySession(OperatingSession):
             sop.Load(self),
             sop.Duplicate(self, new_session_full_name),
             sop.Success(self, msg='Duplicate only done')]
-        self.next_function()
+        self.next_session_op()
 
     def ray_server_save_session_template(
             self, osp: OscPack, session_name: str, template_name: str, net: bool):
@@ -50,7 +50,7 @@ class DummySession(OperatingSession):
             sop.TakePlace(self),
             sop.Load(self),
             sop.SaveSessionTemplate(self, template_name, net=net)]
-        self.next_function()
+        self.next_session_op()
 
     def ray_server_rename_session(self, osp: OscPack):
         self.steps_osp = osp
@@ -64,7 +64,7 @@ class DummySession(OperatingSession):
             sop.Rename(self, new_session_name),
             sop.Save(self),
             sop.Success(self, msg='Session renamed')]
-        self.next_function()
+        self.next_session_op()
     
     def ray_server_get_session_preview(
             self, osp: OscPack, folder_sizes: list[dict[str, str | int]]):
@@ -74,11 +74,11 @@ class DummySession(OperatingSession):
             sop.TakePlace(self),
             sop.Load(self),
             sop.SendPreview(self, osp.src_addr, folder_sizes)]
-        self.next_function()
+        self.next_session_op()
     
     def dummy_load(self, session_name: str):
         self.steps_order = [
             sop.Preload(self, session_name, auto_create=False),
             sop.TakePlace(self),
             sop.Load(self)]
-        self.next_function()
+        self.next_session_op()

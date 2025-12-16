@@ -89,8 +89,8 @@ class OperatingSession(Session):
         self.switching_session = False
 
     def _wait_and_go_to(
-            self, duration: int, follow: Callable,
-            wait_for: ray.WaitFor, redondant=False):
+            self, session_op: sop.SessionOp, wait_for: ray.WaitFor,
+            timeout: int | None =None, redondant=False):
         self.timer.stop()
 
         # we need to delete timer to change the timeout connect
@@ -104,26 +104,26 @@ class OperatingSession(Session):
             match wait_for:
                 case ray.WaitFor.SCRIPT_QUIT:
                     if not self.step_scripter.is_running():
-                        follow()
+                        session_op.run_next()
                         return
                 case ray.WaitFor.PATCHBAY_QUIT:
                     if not patchbay_dmn_mng.is_running():
-                        follow()
+                        session_op.run_next()
                         return
                 case ray.WaitFor.SNAPSHOT_ADD:
                     if not self.snapshoter.adder_running:
-                        follow()
+                        session_op.run_next()
                         return
                 case ray.WaitFor.FILE_COPY:
                     if not self.file_copier.is_active():
-                        follow()
+                        session_op.run_next()
                         return
 
             self.wait_for = wait_for
             self.timer.setSingleShot(True)
-            self.timer.timeout.connect(follow)
-            if duration >= 0:
-                self.timer.start(duration)
+            self.timer.timeout.connect(session_op.run_next)
+            if timeout is not None:
+                self.timer.start(timeout)
             return
 
         if self.expected_clients:
@@ -131,20 +131,24 @@ class OperatingSession(Session):
 
             if wait_for is ray.WaitFor.ANNOUNCE:
                 if n_expected == 1:
-                    message = _translate('GUIMSG',
+                    message = _translate(
+                        'GUIMSG',
                         'waiting announce from %s...'
                             % self.expected_clients[0].gui_msg_style)
                 else:
-                    message = _translate('GUIMSG',
+                    message = _translate(
+                        'GUIMSG',
                         'waiting announce from %i clients...' % n_expected)
                 self.send_gui_message(message)
             elif wait_for is ray.WaitFor.QUIT:
                 if n_expected == 1:
-                    message = _translate('GUIMSG',
+                    message = _translate(
+                        'GUIMSG',
                         'waiting for %s to stop...'
                             % self.expected_clients[0].gui_msg_style)
                 else:
-                    message = _translate('GUIMSG',
+                    message = _translate(
+                        'GUIMSG',
                         'waiting for %i clients to stop...' % n_expected)
                 self.send_gui_message(message)
 
@@ -152,11 +156,11 @@ class OperatingSession(Session):
 
             self.wait_for = wait_for
             self.timer.setSingleShot(True)
-            self.timer.timeout.connect(follow)
-            if duration >= 0:
-                self.timer.start(duration)
+            self.timer.timeout.connect(session_op.run_next)
+            if timeout is not None:
+                self.timer.start(timeout)
         else:
-            follow()
+            session_op.run_next()
 
     def end_timer_if_last_expected(self, client: Client):
         if self.wait_for is ray.WaitFor.QUIT and client in self.clients:
@@ -197,9 +201,10 @@ class OperatingSession(Session):
 
         self.wait_for = ray.WaitFor.NONE
 
-    def next_function(self, script_osp: OscPack | None =None,
-                      script_forbidden=False):
+    def next_session_op(self, script_osp: OscPack | None =None,
+                        script_forbidden=False):
         if self.script_osp is not None and script_osp is None:
+            self.set_server_status(ray.ServerStatus.SCRIPT)
             self.send(*self.script_osp.reply(), 'step done')
             self.script_osp = None
             return
@@ -211,26 +216,28 @@ class OperatingSession(Session):
             return
 
         next_sop = self.steps_order[0]
-
+        if script_osp is not None:
+            self.script_osp = script_osp
+                
         if (self.has_server_option(ray.Option.SESSION_SCRIPTS)
                 and not script_forbidden
                 and not self.step_scripter.is_running()
                 and self.path is not None
-                and script_osp is None):
-            if not (isinstance(next_sop, sop.Load)
-                    and next_sop.open_off):
-                if (next_sop.script_step
-                        and self.steps_osp is not None
-                        and self.step_scripter.start(
-                            next_sop.script_step)):
-                    self.set_server_status(ray.ServerStatus.SCRIPT)
-                    return
-                
+                and script_osp is None
+                and not (isinstance(next_sop, sop.Load)
+                         and next_sop.open_off)
+                and next_sop.script_step
+                and self.steps_osp is not None
+                and self.step_scripter.start(next_sop.script_step)):
+            self.set_server_status(ray.ServerStatus.SCRIPT)
+            return
+
         self.steps_order.__delitem__(0)
 
-        if (script_osp is not None and self.step_scripter.is_running()):
-            if next_sop.script_step == self.step_scripter.get_step():
-                self.step_scripter.set_stepper_has_call(True)
+        if (script_osp is not None
+                and self.step_scripter.is_running()
+                and next_sop.script_step == self.step_scripter.get_step()):
+            self.step_scripter.set_stepper_has_call(True)
             next_sop.start_from_script(script_osp)
             return
 
@@ -377,13 +384,13 @@ class OperatingSession(Session):
                     sop.Close(self, clear_all_clients=True),
                     sop.Success(self, msg='Aborted')]
 
-                self.next_function(script_forbidden=True)
+                self.next_session_op(script_forbidden=True)
                 return
 
             if self.steps_order:
                 self.steps_order.__delitem__(0)
 
-        self.next_function()
+        self.next_session_op()
 
     def _new_client(self, executable: str, client_id=None) -> Client:
         client = Client(self)

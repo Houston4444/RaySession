@@ -36,7 +36,7 @@ class Close(SessionOp):
         session.expected_clients.clear()
 
         if session.path is None:
-            session.next_function()
+            session.next_session_op()
             return
 
         # clients we will keep alive
@@ -120,4 +120,4 @@ class Close(SessionOp):
         if self.clear_all_clients:
             session._set_path(None)
             
-        session.next_function()
+        self.next()

@@ -54,7 +54,7 @@ class LoadSnapshot(SessionOp):
         session = self.session
         session.clean_expected()
         if self.session.path is None:
-            session.next_function()
+            session.next_session_op()
             return
         
         session.set_server_status(ray.ServerStatus.REWIND)
@@ -71,7 +71,7 @@ class LoadSnapshot(SessionOp):
                 session.set_server_status(ray.ServerStatus.READY)
                 if self._client_was_running:
                     self.client.start()
-            session.next_function()
+            self.next()
             return
         
         m = _translate('Snapshot Error', "Snapshot error")

@@ -43,7 +43,7 @@ class PrepareTemplate(SessionOp):
                 ray.Err.GENERAL_ERROR,
                 _translate("error", "No template named %s")
                     % template_name)
-            session.next_function()
+            session.next_session_op()
             return
 
         spath = session.root / self.new_session_name
@@ -93,6 +93,6 @@ class PrepareTemplate(SessionOp):
         
         session.adjust_files_after_copy(
             self.new_session_name, ray.Template.SESSION_LOAD)
-        session.next_function()
+        self.next()
 
         
