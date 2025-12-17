@@ -104,7 +104,7 @@ def _get_dict_for_this() -> dict[str, str | int | bool | list[str]]:
         'has_gui': _main.server.has_gui(),
         'version': ray.VERSION,
         'local_gui_pids': _main.server.get_local_gui_pid_list(),
-        'locked_sessions': _main.locked_sess_paths
+        'locked_sessions': list(_main.locked_sess_paths)
     }
     
     return ret_dict
