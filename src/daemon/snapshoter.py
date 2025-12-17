@@ -434,7 +434,7 @@ class Snapshoter(QObject):
             # don't list snapshot from client before session renamed
             if client_id and session_name != self.session.name:
                 client = self.session.get_client(client_id)
-                if (client
+                if (client is not None
                         and (client.prefix_mode
                              is ray.PrefixMode.SESSION_NAME)):
                     continue

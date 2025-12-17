@@ -22,7 +22,7 @@ class TakePlace(SessionOp):
 
     def take_place(self):
         session = self.session
-        session._set_path(
+        session.set_path(
             session.future_session_path,
             session.future_session_name)
 
@@ -36,7 +36,7 @@ class TakePlace(SessionOp):
                            + session.future_trashed_clients):
                 client.adjust_files_after_copy(
                     str(session.path), ray.Template.RENAME)
-            session._set_path(session.future_session_path)
+            session.set_path(session.future_session_path)
             
             # session has been renamed and client files have been moved
             # save session file is required here, else clients could not

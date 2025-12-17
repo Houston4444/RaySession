@@ -81,7 +81,7 @@ class Duplicate(SessionOp):
             _translate('GUIMSG', 'start session copy...'))
 
         # lock the directory of the new session created
-        multi_daemon_file.add_locked_path(spath)
+        multi_daemon_file.lock_path(spath)
 
         err = session.file_copier.start_session_copy(session.path, spath)
         if err is not ray.Err.OK:
@@ -139,8 +139,12 @@ class Duplicate(SessionOp):
 
     def rename_files(self):
         session = self.session
-        session.adjust_files_after_copy(
+        err, err_msg = session.adjust_files_after_copy(
             self.new_session_name, ray.Template.NONE)
+
+        if err is not ray.Err.OK:
+            self.error(err, err_msg)
+            return
 
         # unlock the directory of the new session created
         multi_daemon_file.unlock_path(session.root / self.new_session_name)

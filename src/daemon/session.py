@@ -105,7 +105,7 @@ class Session(ServerSender):
         else:
             Terminal.message(string)
 
-    def _set_path(self, session_path: Optional[Path], session_name=''):
+    def set_path(self, session_path: Path | None, session_name=''):
         if not self.is_dummy:
             if self.path:
                 self.bookmarker.remove_all(self.path)
@@ -130,7 +130,8 @@ class Session(ServerSender):
                 self.bookmarker.set_daemon_port(self.get_server_port())
                 self.bookmarker.make_all(self.path)
 
-    def _no_future(self):
+    def no_future(self):
+        'reset all attributes related to the future session (self.future_*)'
         self.future_clients.clear()
         self.future_session_path = Path()
         self.future_session_name = ''
@@ -170,7 +171,7 @@ class Session(ServerSender):
             self.send_gui(rg.server.RECENT_SESSIONS,
                           *self.recent_sessions[self.root])
 
-    def get_client(self, client_id: str) -> Optional[Client]:
+    def get_client(self, client_id: str) -> Client | None:
         for client in self.clients:
             if client.client_id == client_id:
                 return client

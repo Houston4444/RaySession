@@ -50,7 +50,7 @@ class New(SessionOp):
             return
 
         session.set_server_status(ray.ServerStatus.NEW)
-        session._set_path(spath)
+        session.set_path(spath)
         session.send_gui(
             rg.session.NAME, session.name, str(session.path))
         self.next()

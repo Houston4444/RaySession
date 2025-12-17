@@ -31,7 +31,7 @@ class ExitNow(SessionOp):
     def quit_app(self):
         session = self.session
         session.set_server_status(ray.ServerStatus.OFF)
-        session._set_path(None)
+        session.set_path(None)
         session.message("Bye Bye...")
         session._send_reply("Bye Bye...")
         session.send_gui(rg.server.DISANNOUNCE)

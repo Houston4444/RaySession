@@ -95,8 +95,12 @@ class PrepareTemplate(SessionOp):
             self.error(ray.Err.ABORT_ORDERED, "Prepare template aborted")
             return
         
-        session.adjust_files_after_copy(
+        err, err_msg = session.adjust_files_after_copy(
             self.new_session_name, ray.Template.SESSION_LOAD)
+        
+        if err is not ray.Err.OK:
+            self.error(err, err_msg)
+            return
         self.next()
 
         

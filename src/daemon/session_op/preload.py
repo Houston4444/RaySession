@@ -37,6 +37,28 @@ class Preload(SessionOp):
         self.auto_create = auto_create
         self.routine = [self.preload]
 
+    def load_error(self, err_loading: ray.Err):
+        self.session.message("Load session failed")
+        m = _translate('Load Error', "Unknown error")
+        match err_loading:
+            case ray.Err.CREATE_FAILED:
+                m = _translate('Load Error', "Could not create session file!")
+            case ray.Err.SESSION_LOCKED:
+                m = _translate(
+                    'Load Error', "Session is locked by another process!")
+            case ray.Err.NO_SUCH_FILE:
+                m = _translate(
+                    'Load Error', "The named session does not exist.")
+            case ray.Err.BAD_PROJECT:
+                m = _translate('Load Error', "Could not load session file.")
+            case ray.Err.SESSION_IN_SESSION_DIR:
+                m = _translate(
+                    'Load Error',
+                    "Can't create session in a dir containing a session\n"
+                    + "for better organization.")
+
+        self.error(err_loading, m)
+    
     def preload(self):
         '''load session data in self.future*
         (clients, trashed_clients, session_path, session_name)'''
@@ -48,7 +70,7 @@ class Preload(SessionOp):
             spath = session.root / session_short_path
 
         if spath == session.path:
-            session.load_error(ray.Err.SESSION_LOCKED)
+            self.load_error(ray.Err.SESSION_LOCKED)
             return
 
         session_ray_file = spath / 'raysession.xml'
@@ -76,11 +98,11 @@ class Preload(SessionOp):
                         if file_ in ('raysession.xml', 'session.nsm'):
                             # dir contains a session inside,
                             # do not try to load it
-                            session.load_error(ray.Err.SESSION_IN_SESSION_DIR)
+                            self.load_error(ray.Err.SESSION_IN_SESSION_DIR)
                             return
         else:
             if not self.auto_create:
-                session.load_error(ray.Err.NO_SUCH_FILE)
+                self.load_error(ray.Err.NO_SUCH_FILE)
                 return
             
             # session directory doesn't exists,
@@ -89,18 +111,18 @@ class Preload(SessionOp):
             if session._is_path_in_a_session_dir(spath):
                 # prevent to create a session in a session directory
                 # for better user organization
-                session.load_error(ray.Err.SESSION_IN_SESSION_DIR)
+                self.load_error(ray.Err.SESSION_IN_SESSION_DIR)
                 return
 
             try:
                 spath.mkdir(parents=True)
             except:
-                session.load_error(ray.Err.CREATE_FAILED)
+                self.load_error(ray.Err.CREATE_FAILED)
                 return
 
         if not multi_daemon_file.is_free_for_session(spath):
             Terminal.warning(f"Session {spath} is used by another daemon")
-            session.load_error(ray.Err.SESSION_LOCKED)
+            self.load_error(ray.Err.SESSION_LOCKED)
             return
 
         session.message("Attempting to open %s" % spath)
@@ -138,12 +160,12 @@ class Preload(SessionOp):
                     tree.write(session_ray_file)                    
                 except BaseException as e:
                     _logger.error(str(e))
-                    session.load_error(ray.Err.CREATE_FAILED)
+                    self.load_error(ray.Err.CREATE_FAILED)
                     return
                 else:
                     is_ray_file = True
 
-        session._no_future()
+        session.no_future()
         sess_name = ""
 
         if is_ray_file:
@@ -151,12 +173,12 @@ class Preload(SessionOp):
                 tree = ET.parse(session_ray_file)
             except BaseException as e:
                 _logger.error(str(e))
-                session.load_error(ray.Err.BAD_PROJECT)
+                self.load_error(ray.Err.BAD_PROJECT)
                 return
             
             root = tree.getroot()
             if root.tag != 'RAYSESSION':
-                session.load_error(ray.Err.BAD_PROJECT)
+                self.load_error(ray.Err.BAD_PROJECT)
                 return
 
             xroot = XmlElement(root)
@@ -203,7 +225,7 @@ class Preload(SessionOp):
             lock_file = spath / '.lock'
             if lock_file.is_file():
                 Terminal.warning("Session %s is locked by another process")
-                session.load_error(ray.Err.SESSION_LOCKED)
+                self.load_error(ray.Err.SESSION_LOCKED)
                 return
 
             if nsm_file is not None:

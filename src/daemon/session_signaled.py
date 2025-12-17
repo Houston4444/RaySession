@@ -965,18 +965,33 @@ class SignaledSession(OperatingSession):
 
                 match self.steps_osp.path:
                     case ns.SAVE:
-                        self.save_error(ray.Err.CREATE_FAILED)
+                        self._send_error(
+                            ray.Err.CREATE_FAILED,
+                            _translate(
+                                'GUIMSG',
+                                "Can't save session, "
+                                "session file is unwriteable !"))
                     case ns.OPEN:
-                        self.load_error(ray.Err.SESSION_LOCKED)
+                        self._send_error(
+                            ray.Err.SESSION_LOCKED,
+                            _translate(
+                                'Load Error',
+                                "Session is locked by another process!"))
                     case ns.NEW:
                         self._send_error(
                             ray.Err.CREATE_FAILED,
                             "Could not create the session directory")
                     case ns.DUPLICATE:
-                        new_session_full_name: str = \
+                        new_session_name: str = \
                             self.steps_osp.args[0] #type:ignore
-                        self.duplicate_aborted(new_session_full_name)
-                    case ns.CLOSE |ns.ABORT | ns.QUIT:
+
+                        # unlock the directory of the aborted session
+                        multi_daemon_file.unlock_path(self.root / new_session_name)
+
+                        self._send_error(ray.Err.NO_SUCH_FILE, "No such file.")
+                        self.set_server_status(ray.ServerStatus.READY)
+                        
+                    case ns.CLOSE | ns.ABORT | ns.QUIT:
                         # let the current close works here
                         self.send(
                             *osp.error(), ray.Err.OPERATION_PENDING,
@@ -1148,7 +1163,7 @@ class SignaledSession(OperatingSession):
             try:
                 spath = self.path.parent / new_session_name
                 subprocess.run(['mv', self.path, spath])
-                self._set_path(spath)
+                self.set_path(spath)
 
                 self.send_gui_message(
                     _translate('GUIMSG', 'Session directory is now: %s')
@@ -1524,7 +1539,7 @@ class SignaledSession(OperatingSession):
               'No stepper script running, run run_step from session scripts')
             return
 
-        if self.step_scripter.stepper_has_called():
+        if self.step_scripter.called_run_step:
             self.send(*osp.error(), ray.Err.GENERAL_ERROR,
              'step already done. Run run_step only one time in the script')
             return

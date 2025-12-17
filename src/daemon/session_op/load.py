@@ -182,7 +182,7 @@ class Load(SessionOp):
                 if client.addr and client.is_running and client.can_monitor:
                     session.send_initial_monitor(client.addr, True)
 
-        session._no_future()
+        session.no_future()
 
         if has_switch:
             session.set_server_status(ray.ServerStatus.SWITCH)

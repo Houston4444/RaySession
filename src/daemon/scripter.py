@@ -3,7 +3,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Literal, Optional
 
 # third party imports
 from qtpy.QtCore import QProcess, QProcessEnvironment, QCoreApplication
@@ -106,9 +106,11 @@ class StepScripter(Scripter):
     def __init__(self, session: 'OperatingSession'):
         Scripter.__init__(self)
         self.session = session
-        self.is_dummy = self.session.is_dummy
-        self._step_str = ''
-        self._stepper_has_call = False
+        self.step = ''
+        "Can be `load`, `save` or `close`"
+        self.called_run_step = False
+        """True if the script called `ray_control run_step` since the start
+        of its execution."""
 
     def _get_script_dirs(self, spath: Path) -> tuple[Path, Path]:
         base_path = spath
@@ -132,12 +134,12 @@ class StepScripter(Scripter):
         pass
 
     def _process_finished(self, exit_code: int, exit_status):
-        _logger.debug(f'step scripter {self.get_step()} process finished')
+        _logger.debug(f'step scripter {self.step} process finished')
         Scripter._process_finished(self, exit_code, exit_status)
         self.session.step_scripter_finished()
-        self._stepper_has_call = False
+        self.called_run_step = False
 
-    def start(self, step_str: str) -> bool:
+    def start(self, step: str) -> bool:
         if self.is_running():
             return False
 
@@ -149,13 +151,13 @@ class StepScripter(Scripter):
         future_scripts_dir, future_parent_scripts_dir = \
             self._get_script_dirs(self.session.future_session_path)
 
-        script_path = scripts_dir / f'{step_str}.sh'
+        script_path = scripts_dir / f'{step}.sh'
         
         if not os.access(script_path, os.X_OK):
             return False
 
-        self._stepper_has_call = False
-        self._step_str = step_str
+        self.called_run_step = False
+        self.step = step
 
         self.send_gui_message(
             _translate('GUIMSG', '--- Custom step script %s started...')
@@ -175,16 +177,6 @@ class StepScripter(Scripter):
         self._process.setProcessEnvironment(process_env)
         self._process.start(str(script_path), [])
         return True
-
-    def get_step(self) -> str:
-        "script step: 'load', 'save' or 'close'"
-        return self._step_str
-
-    def stepper_has_called(self) -> bool:
-        return self._stepper_has_call
-
-    def set_stepper_has_call(self, call: bool):
-        self._stepper_has_call = call
 
 
 class ClientScripter(Scripter):

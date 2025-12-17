@@ -61,8 +61,7 @@ def _open_file() -> bool:
     if not FILE_PATH.exists():
         FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
         # give read/write access for all users
-        os.chmod(FILE_PATH.parent, 0o777)
-        
+        os.chmod(FILE_PATH.parent, 0o777)        
         return False
 
     try:
@@ -71,13 +70,13 @@ def _open_file() -> bool:
             assert isinstance(json_list, list)
             for dmn in json_list:
                 assert isinstance(dmn, dict)
-            _main.json_list = json_list
-        return True
-
     except:
         _remove_file()
         _main.json_list = None
         return False
+    else:
+        _main.json_list = json_list
+        return True
 
 def _write_file():
     if _main.json_list is None:
@@ -90,7 +89,7 @@ def _write_file():
         _logger.warning(f'failed to write {FILE_PATH}\n{str(e)}')
         return
 
-def _get_dict_for_this() -> dict[str, str | int | bool]:
+def _get_dict_for_this() -> dict[str, str | int | bool | list[str]]:
     if _main.server is None or _main.session is None:
         return {}
     
@@ -104,12 +103,10 @@ def _get_dict_for_this() -> dict[str, str | int | bool]:
         'not_default': _main.server.is_nsm_locked or _main.server.not_default,
         'has_gui': _main.server.has_gui(),
         'version': ray.VERSION,
-        'local_gui_pids': _main.server.get_local_gui_pid_list()
+        'local_gui_pids': _main.server.get_local_gui_pid_list(),
+        'locked_sessions': _main.locked_sess_paths
     }
     
-    ret_dict['locked_sessions'] = list[str]()
-    for locked_path in _main.locked_sess_paths:
-        ret_dict['locked_sessions'].append(locked_path)
     return ret_dict
 
 def _clean_dirty_pids():
@@ -217,7 +214,7 @@ def get_all_session_paths() -> list[str]:
     
     return all_session_paths
 
-def add_locked_path(path: Path):
+def lock_path(path: Path):
     _main.locked_sess_paths.add(str(path))
     update()
 

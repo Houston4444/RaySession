@@ -122,6 +122,6 @@ class Close(SessionOp):
             session.remember_as_recent()
 
         if self.clear_all_clients:
-            session._set_path(None)
+            session.set_path(None)
             
         self.next()

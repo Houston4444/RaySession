@@ -238,8 +238,8 @@ class OperatingSession(Session):
 
         if (script_osp is not None
                 and self.step_scripter.is_running()
-                and next_sop.script_step == self.step_scripter.get_step()):
-            self.step_scripter.set_stepper_has_call(True)
+                and next_sop.script_step == self.step_scripter.step):
+            self.step_scripter.called_run_step = True
             next_sop.start_from_script(script_osp)
             return
 
@@ -370,10 +370,9 @@ class OperatingSession(Session):
             self._forget_timer()
             return
 
-        if not self.step_scripter.stepper_has_called():
-            # script has not call
-            # the next_function (save, close, load)
-            if self.step_scripter.get_step() in ('load', 'close'):
+        if not self.step_scripter.called_run_step:
+            # script has not call run_step
+            if self.step_scripter.step in ('load', 'close'):
                 self.steps_order.clear()
                 self.steps_order = [
                     sop.Close(self, clear_all_clients=True),
@@ -399,7 +398,8 @@ class OperatingSession(Session):
         return client
 
     def adjust_files_after_copy(
-            self, new_session_name: str, template_mode: ray.Template):
+            self, new_session_name: str,
+            template_mode: ray.Template) -> tuple[ray.Err, str]:
         new_session_short_path = Path(new_session_name)
         
         if new_session_short_path.is_absolute():
@@ -414,16 +414,16 @@ class OperatingSession(Session):
             tree = ET.parse(session_file)
         except Exception as e:
             _logger.error(str(e))
-            self._send_error(
+            return (
                 ray.Err.BAD_PROJECT,
                 _translate("error", "impossible to read %s as a XML file")
                     % session_file)
-            return
         
         root = tree.getroot()
         if root.tag != 'RAYSESSION':
-            self.load_error(ray.Err.BAD_PROJECT)
-            return
+            return (
+                ray.Err.BAD_PROJECT,
+                _translate("error", "wrong XML format, no 'RAYSESSION' tag"))
         
         root.attrib['name'] = spath.name
 
@@ -445,75 +445,12 @@ class OperatingSession(Session):
             tree.write(session_file)
         except BaseException as e:
             _logger.error(str(e))
-            self._send_error(
-                ray.Err.CREATE_FAILED,
-                _translate("error", "impossible to write XML file %s")
-                    % session_file)
-            return
+            return (ray.Err.CREATE_FAILED,
+                    _translate("error", "impossible to write XML file %s")
+                        % session_file)
 
         for client in tmp_clients:
             client.adjust_files_after_copy(new_session_name, template_mode)
+        
+        return ray.Err.OK, ''
 
-    def save_error(self, err_saving: ray.Err):
-        self.message("Failed")
-        m = _translate('Load Error', "Unknown error")
-
-        if err_saving == ray.Err.CREATE_FAILED:
-            m = _translate(
-                'GUIMSG', "Can't save session, session file is unwriteable !")
-
-        self.message(m)
-        self.send_gui_message(m)
-        self._send_error(ray.Err.CREATE_FAILED, m)
-
-        self.set_server_status(ray.ServerStatus.READY)
-        self.steps_order.clear()
-        self.steps_osp = None
-
-    def duplicate_aborted(self, new_session_full_name: str):
-        self.steps_order.clear()
-
-        # unlock the directory of the aborted session
-        multi_daemon_file.unlock_path(self.root / new_session_full_name)
-
-        if self.steps_osp is not None:
-            if self.steps_osp.path == nsm.server.DUPLICATE:
-                # for nsm server control API compatibility
-                # abort duplication is not possible in Non/New NSM
-                # so, send the only known error
-                self._send_error(ray.Err.NO_SUCH_FILE, "No such file.")
-
-            self.send(self.steps_osp.src_addr,
-                      r.net_daemon.DUPLICATE_STATE, 1.0)
-
-        self.set_server_status(ray.ServerStatus.READY)
-        self.steps_osp = None
-
-    def load_error(self, err_loading: ray.Err):
-        self.message("Failed")
-        m = _translate('Load Error', "Unknown error")
-        match err_loading:
-            case ray.Err.CREATE_FAILED:
-                m = _translate('Load Error', "Could not create session file!")
-            case ray.Err.SESSION_LOCKED:
-                m = _translate(
-                    'Load Error', "Session is locked by another process!")
-            case ray.Err.NO_SUCH_FILE:
-                m = _translate(
-                    'Load Error', "The named session does not exist.")
-            case ray.Err.BAD_PROJECT:
-                m = _translate('Load Error', "Could not load session file.")
-            case ray.Err.SESSION_IN_SESSION_DIR:
-                m = _translate(
-                    'Load Error',
-                    "Can't create session in a dir containing a session\n"
-                    + "for better organization.")
-
-        self._send_error(err_loading, m)
-
-        if self.path:
-            self.set_server_status(ray.ServerStatus.READY)
-        else:
-            self.set_server_status(ray.ServerStatus.OFF)
-
-        self.steps_order.clear()

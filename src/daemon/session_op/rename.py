@@ -54,7 +54,7 @@ class Rename(SessionOp):
                 "failed to rename session")
             return
         
-        session._set_path(spath)
+        session.set_path(spath)
         session.send_gui_message(
             _translate('GUIMSG', 'Session %s has been renamed to %s .')
             % (old_name, self.new_session_name))

@@ -46,13 +46,11 @@ class SaveSessionTemplate(SessionOp):
         #overwrite existing template
         if spath.is_dir():            
             if not os.access(spath, os.W_OK):
-                session._send_error(
+                self.error(
                     ray.Err.GENERAL_ERROR,
                     _translate(
                         "error",
                         "Impossible to save template, unwriteable file !"))
-
-                session.set_server_status(ray.ServerStatus.READY)
                 return
 
             spath.rmdir()
