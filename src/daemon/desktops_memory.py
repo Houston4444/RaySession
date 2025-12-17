@@ -16,7 +16,7 @@ from xml_tools import XmlElement
 from daemon_tools import is_pid_child_of
 
 if TYPE_CHECKING:
-    from session_tmpy import SessionTmpy
+    from session import Session
 
 
 def move_win(win_id, desktop_from, desktop_to):
@@ -42,7 +42,7 @@ class WindowProperties:
 
 
 class DesktopsMemory:
-    def __init__(self, session: 'SessionTmpy'):
+    def __init__(self, session: 'Session'):
         self.session = session
 
         self._active_window_list = list[WindowProperties]()

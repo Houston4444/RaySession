@@ -10,13 +10,13 @@ import json
 import ray
 
 if TYPE_CHECKING:
-    from session_tmpy import SessionTmpy
+    from session import Session
     from osc_server_thread import OscServerThread
 
 
 class _Main:
     def __init__(self):
-        self.session: 'Optional[SessionTmpy]' = None
+        self.session: 'Optional[Session]' = None
         self.server: 'Optional[OscServerThread]' = None
         self.json_list: Optional[list[dict]] = None
         self.locked_sess_paths = set[str]()
@@ -123,7 +123,7 @@ def _clean_dirty_pids():
     for dmn in rm_dmns:
         _main.json_list.remove(dmn)
 
-def init(session :'SessionTmpy', server: 'OscServerThread'):
+def init(session :'Session', server: 'OscServerThread'):
     _main.session = session
     _main.server = server
 
