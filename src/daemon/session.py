@@ -966,17 +966,6 @@ class Session(ServerSender):
 
         self.next_session_op()
 
-    def _new_client(self, executable: str, client_id=None) -> Client:
-        client = Client(self)
-        client.executable = executable
-        client.name = Path(executable).name
-        client.client_id = client_id
-        if not client_id:
-            client.client_id = self.generate_client_id(executable)
-
-        self.clients.append(client)
-        return client
-
     def adjust_files_after_copy(
             self, new_session_name: str,
             template_mode: ray.Template) -> tuple[ray.Err, str]:

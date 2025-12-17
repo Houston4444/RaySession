@@ -230,10 +230,8 @@ class SignaledSession(Session):
 
     @manage(nsm.server.ANNOUNCE, 'sssiii')
     def _nsm_server_announce(self, osp: OscPack):
-        client_name, capabilities, executable_path, major, minor, pid = \
-            osp.args # type:ignore
-        executable_path: str
-        pid: int
+        osp_args: tuple[str, str, str, int, int, int] = osp.args # type:ignore
+        client_name, capabilities, executable, major, minor, pid = osp_args
 
         if self.wait_for is ray.WaitFor.QUIT:
             if osp.path.startswith('/nsm/server/'):
@@ -243,7 +241,7 @@ class SignaledSession(Session):
                           + "for this application to join.")
             return
 
-        def find_the_client() -> Optional[Client]:
+        def find_the_client() -> Client | None:
             # we can't be absolutely sure that the announcer is the good one
             # but if client announce a known PID,
             # we can be sure of which client is announcing
@@ -251,7 +249,7 @@ class SignaledSession(Session):
                 # this client is internal for sure
                 for client in self.clients:
                     if (client.protocol is ray.Protocol.INTERNAL
-                            and client.executable == executable_path
+                            and client.executable == executable
                             and client._internal is not None
                             and client._internal.running
                             and not client.nsm_active):
@@ -275,19 +273,25 @@ class SignaledSession(Session):
             for client in self.clients:
                 if (client.launched_in_terminal
                         and client.process_drowned
-                        and client.executable == executable_path):
+                        and client.executable == executable):
                     # when launched in terminal
                     # the client process can be stopped
-                    # because the terminal process is 'linked' to an existing instance
-                    # then, we may can say this stopped client is the good one,
-                    # and we declare it as external because we won't check its process
-                    # state with QProcess.state().
+                    # because the terminal process is 'linked'
+                    # to an existing instance.
+                    # then, we may can say this stopped client
+                    # is the good one, and we declare it as external because
+                    # we won't check its process state with QProcess.state().
                     client.server_announce(osp, True)
                     break
             else:
                 # Client launched externally from daemon
                 # by command : $:NSM_URL=url executable
-                client = self._new_client(executable_path)
+                client = Client(self)
+                client.executable = executable
+                client.name = Path(executable).name
+                client.client_id = self.generate_client_id(executable)
+
+                self.clients.append(client)
                 self.externals_timer.start()
                 self.send_monitor_event('joined', client.client_id)
                 client.server_announce(osp, True)
