@@ -21,7 +21,7 @@ from daemon_tools import highlight_text, TemplateRoots
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ _translate = QCoreApplication.translate
 
 
 class SaveClientAsTemplate(SessionOp):
-    def __init__(self, session: 'OperatingSession',
+    def __init__(self, session: 'Session',
                  client: Client, template_name: str,
                  osp: OscPack | None =None):
         super().__init__(session, osp)

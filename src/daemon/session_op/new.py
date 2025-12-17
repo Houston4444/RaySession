@@ -15,7 +15,7 @@ from daemon_tools import highlight_text
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ _translate = QCoreApplication.translate
 
 
 class New(SessionOp):
-    def __init__(self, session: 'OperatingSession', session_name: str):
+    def __init__(self, session: 'Session', session_name: str):
         super().__init__(session)
         self.session_name = session_name
         self.routine = [self.new]

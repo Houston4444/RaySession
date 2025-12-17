@@ -15,14 +15,14 @@ from client import Client
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _translate = QCoreApplication.translate
 
 
 class Close(SessionOp):
-    def __init__(self, session: 'OperatingSession',
+    def __init__(self, session: 'Session',
                  clear_all_clients=False):
         super().__init__(session)
         self.script_step = 'close'

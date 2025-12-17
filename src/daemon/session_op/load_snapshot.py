@@ -13,14 +13,14 @@ from client import Client
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _translate = QCoreApplication.translate
 
 
 class LoadSnapshot(SessionOp):
-    def __init__(self, session: 'OperatingSession',
+    def __init__(self, session: 'Session',
                  snapshot_name: str, client_id=''):
         super().__init__(session)
         self.snapshot_name = snapshot_name

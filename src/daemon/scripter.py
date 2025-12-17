@@ -18,7 +18,7 @@ from daemon_tools import Terminal, highlight_text
 from server_sender import ServerSender
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
     from client import Client
 
 
@@ -103,7 +103,7 @@ class StepScripter(Scripter):
     Scripts are executable shell scripts in ray-scripts/
     (load.sh, save.sh, close.sh).'''
     
-    def __init__(self, session: 'OperatingSession'):
+    def __init__(self, session: 'Session'):
         Scripter.__init__(self)
         self.session = session
         self.step = ''

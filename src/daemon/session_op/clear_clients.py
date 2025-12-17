@@ -9,13 +9,13 @@ import ray
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 class ClearClients(SessionOp):
     '''Stop and kill if necessary all client,
     usable only from the load script.'''
-    def __init__(self, session: 'OperatingSession', osp: OscPack):
+    def __init__(self, session: 'Session', osp: OscPack):
         super().__init__(session, osp=osp)
         self.routine = [self.stop_clients,
                         self.kill_clients,

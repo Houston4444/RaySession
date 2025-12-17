@@ -15,7 +15,7 @@ import ray
 from jack_renaming_tools import Renamer
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 _logger = logging.getLogger(__name__)
 
@@ -188,7 +188,7 @@ def _xml_rewrite(xml_path: Path, old_client_id: str, new_client_id: str,
         _logger.error(f"Unable to rewrite the patch file {xml_path}")
 
 def rewrite_jack_patch_files(
-        session: 'OperatingSession',
+        session: 'Session',
         old_client_id: str, new_client_id: str,
         old_jack_name: str, new_jack_name: str):
     for client in session.clients + session.trashed_clients:

@@ -27,7 +27,7 @@ import multi_daemon_file
 from signaler import Signaler
 from daemon_tools import (
     NoSessionPath, Terminal, RS, is_pid_child_of, highlight_text)
-from session_operating import OperatingSession
+from session import Session
 import session_op as sop
 from patch_rewriter import rewrite_jack_patch_files
 import patchbay_dmn_mng
@@ -148,14 +148,14 @@ def client_action(path: str, types: str):
     return decorated
 
 
-class SignaledSession(OperatingSession):
+class SignaledSession(Session):
     '''There is only one possible instance of SignaledSession
     This is not the case for Session and OperatingSession.
     This session receives signals from OSC server.'''
     steps_order: list[sop.SessionOp]
     
     def __init__(self, root: Path):
-        OperatingSession.__init__(self, root)
+        Session.__init__(self, root)
 
         signaler.osc_recv.connect(self.osc_receive)
         signaler.dummy_load_and_template.connect(self.dummy_load_and_template)
@@ -1175,7 +1175,7 @@ class SignaledSession(OperatingSession):
         # because session just has been renamed
         # and clients dependant of the session name
         # would not find there files if session is aborted just after
-        self._save_session_file()
+        self.save_session_file()
 
         self.send_gui_message(
             _translate('GUIMSG', 'Session %s has been renamed to %s .')
@@ -1810,7 +1810,7 @@ class SignaledSession(OperatingSession):
         # we need to save session file here
         # else, if session is aborted
         # client won't find its files at next restart
-        self._save_session_file()
+        self.save_session_file()
 
         self.send(*osp.reply(), 'prefix changed')
 
@@ -1884,7 +1884,7 @@ class SignaledSession(OperatingSession):
         # we need to save session file here
         # else, if session is aborted
         # client won't find its files at next restart
-        self._save_session_file()
+        self.save_session_file()
 
         self.send_monitor_event('id_changed_to:' + new_client_id, ex_client_id)
         self.send(*osp.reply(), 'client id changed')
@@ -1975,7 +1975,7 @@ class SignaledSession(OperatingSession):
         # we need to save session file here
         # else, if session is aborted
         # client won't find its files at next restart
-        self._save_session_file()
+        self.save_session_file()
 
         self.send_monitor_event('id_changed_to:' + new_client_id, ex_client_id)
         self.send(*osp.reply(), 'client id changed')
@@ -2025,7 +2025,7 @@ class SignaledSession(OperatingSession):
                 continue
 
         self.trashed_clients.remove(client)
-        self._save_session_file()
+        self.save_session_file()
 
         self.send(*osp.reply(), "client definitely removed")
         self.send_monitor_event('removed', client_id)

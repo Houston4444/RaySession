@@ -20,7 +20,7 @@ import osc_paths.ray.gui as rg
 from daemon_tools import NoSessionPath, Terminal
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ def full_ref_for_gui(ref, name: str, rw_ref: str, rw_name='', ss_name=''):
 
 
 class Snapshoter(QObject):
-    def __init__(self, session: 'OperatingSession'):
+    def __init__(self, session: 'Session'):
         QObject.__init__(self)
         self.session = session
 

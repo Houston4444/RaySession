@@ -8,11 +8,11 @@ import ray
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 class AbortCopy(SessionOp):
-    def __init__(self, session: 'OperatingSession'):
+    def __init__(self, session: 'Session'):
         super().__init__(session)
         self.routine = [self.abort_copy, self.abort_copy_done]
 

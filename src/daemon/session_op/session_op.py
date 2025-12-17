@@ -9,7 +9,7 @@ import osc_paths.ray.gui as rg
 from osclib import OscPack
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ class SessionOp:
     is required.
     '''
     def __init__(
-            self, session: 'OperatingSession', osp: OscPack | None =None):
+            self, session: 'Session', osp: OscPack | None =None):
         '''if `osp` is set, replies and errors will be sent
         to the osp.src_addr, otherwise, they will be sent to the
         session.steps_osp.src_addr'''

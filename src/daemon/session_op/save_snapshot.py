@@ -16,7 +16,7 @@ from snapshoter import full_ref_for_gui
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ _translate = QCoreApplication.translate
 
 
 class SaveSnapshot(SessionOp):
-    def __init__(self, session: 'OperatingSession',
+    def __init__(self, session: 'Session',
                  snapshot_name='', rewind_snapshot='',
                  force=False, outing=False,
                  error_is_minor=True):

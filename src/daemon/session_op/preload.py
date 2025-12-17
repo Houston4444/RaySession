@@ -22,7 +22,7 @@ import multi_daemon_file
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ _translate = QCoreApplication.translate
 
 
 class Preload(SessionOp):
-    def __init__(self, session: 'OperatingSession',
+    def __init__(self, session: 'Session',
                  session_name: str, auto_create=True):
         super().__init__(session)
         self.session_name = session_name

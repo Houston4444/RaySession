@@ -12,11 +12,11 @@ from daemon_tools import NoSessionPath
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 class TakePlace(SessionOp):
-    def __init__(self, session: 'OperatingSession'):
+    def __init__(self, session: 'Session'):
         super().__init__(session)
         self.routine = [self.take_place]
 
@@ -41,7 +41,7 @@ class TakePlace(SessionOp):
             # session has been renamed and client files have been moved
             # save session file is required here, else clients could not
             # find their files at reload (after session abort).
-            session._save_session_file()
+            session.save_session_file()
 
         session.send_gui(rg.session.NAME, session.name, str(session.path))
         session.trashed_clients.clear()

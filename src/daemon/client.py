@@ -40,7 +40,7 @@ from internal_client import InternalClient
 # 'Session' is not importable simply because it would be
 # a circular import.
 if TYPE_CHECKING:
-    from .session_operating import OperatingSession
+    from .session import Session
 
 
 class OscSrc(Enum):
@@ -119,7 +119,7 @@ class Client(ServerSender, ray.ClientData):
     ray_hack: ray.RayHack
     ray_net: ray.RayNet
 
-    def __init__(self, parent_session: 'OperatingSession'):
+    def __init__(self, parent_session: 'Session'):
         ServerSender.__init__(self)
         self.session = parent_session
         self.is_dummy = self.session.is_dummy

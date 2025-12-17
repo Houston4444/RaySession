@@ -13,14 +13,14 @@ from daemon_tools import TemplateRoots
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _translate = QCoreApplication.translate
 
 
 class PrepareTemplate(SessionOp):
-    def __init__(self, session: 'OperatingSession',
+    def __init__(self, session: 'Session',
                  new_session_name: str, template_name: str, net=False):
         super().__init__(session)
         self.new_session_name = new_session_name

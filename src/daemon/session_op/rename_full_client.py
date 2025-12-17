@@ -16,7 +16,7 @@ from patch_rewriter import rewrite_jack_patch_files
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _translate = QCoreApplication.translate
@@ -24,7 +24,7 @@ _logger = logging.getLogger(__name__)
 
 
 class RenameFullClient(SessionOp):
-    def __init__(self, session: 'OperatingSession', client: Client,
+    def __init__(self, session: 'Session', client: Client,
                  new_name: str, new_client_id: str):
         super().__init__(session)
         self.client = client
@@ -112,7 +112,7 @@ class RenameFullClient(SessionOp):
         # we need to save session file here
         # else, if session is aborted
         # client won't find its files at next restart
-        session._save_session_file()
+        session.save_session_file()
 
         session.send_monitor_event(
             'id_changed_to:' + self.new_client_id, ex_client_id)

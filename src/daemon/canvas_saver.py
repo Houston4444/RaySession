@@ -22,7 +22,7 @@ from daemon_tools import RS
 from server_sender import ServerSender
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
     from osc_server_thread import Gui
 
 
@@ -49,7 +49,7 @@ def _get_version_tuple_json_dict(json_contents: dict) -> tuple[int, int, int]:
 
 
 class CanvasSaver(ServerSender):
-    def __init__(self, session: 'OperatingSession'):
+    def __init__(self, session: 'Session'):
         ServerSender.__init__(self)
         self.session = session
 

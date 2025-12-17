@@ -13,7 +13,7 @@ import ray
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ _translate = QCoreApplication.translate
 
 
 class ExitNow(SessionOp):
-    def __init__(self, session: 'OperatingSession'):
+    def __init__(self, session: 'Session'):
         super().__init__(session)
         self.routine = [self.wait_patchbay, self.quit_app]
 

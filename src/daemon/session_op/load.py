@@ -16,14 +16,14 @@ from daemon_tools import highlight_text, RS
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _translate = QCoreApplication.translate
 
 
 class Load(SessionOp):
-    def __init__(self, session: 'OperatingSession', open_off=False):
+    def __init__(self, session: 'Session', open_off=False):
         super().__init__(session)
         self.script_step = 'load'
         self.open_off = open_off

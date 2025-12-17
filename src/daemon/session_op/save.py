@@ -14,14 +14,14 @@ from daemon_tools import highlight_text
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _translate = QCoreApplication.translate
 
 
 class Save(SessionOp):
-    def __init__(self, session: 'OperatingSession',
+    def __init__(self, session: 'Session',
                  outing=False, save_clients=True):
         super().__init__(session)
         self.script_step = 'save'
@@ -85,7 +85,7 @@ class Save(SessionOp):
             session.next_session_op()
             return
 
-        err = session._save_session_file()
+        err = session.save_session_file()
         if err:
             self.save_error(ray.Err.CREATE_FAILED)
             return

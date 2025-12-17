@@ -20,7 +20,7 @@ import osc_paths.ray.gui as rg
 from server_sender import ServerSender
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class CopyFile:
 
 
 class FileCopier(ServerSender):
-    def __init__(self, session: 'OperatingSession'):
+    def __init__(self, session: 'Session'):
         ServerSender.__init__(self)
         self.session = session
 

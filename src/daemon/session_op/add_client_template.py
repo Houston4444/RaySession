@@ -19,7 +19,7 @@ from daemon_tools import NoSessionPath, RS, highlight_text
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ _translate = QCoreApplication.translate
 
 class AddClientTemplate(SessionOp):
     def __init__(
-            self, session: 'OperatingSession', template_name: str,
+            self, session: 'Session', template_name: str,
             factory: bool, auto_start=True, unique_id='',
             osp: OscPack | None =None):
         super().__init__(session, osp)

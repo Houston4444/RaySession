@@ -18,14 +18,14 @@ import multi_daemon_file
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _translate = QCoreApplication.translate
 
 
 class Duplicate(SessionOp):
-    def __init__(self, session: 'OperatingSession', new_session_name: str):
+    def __init__(self, session: 'Session', new_session_name: str):
         super().__init__(session)
         self.new_session_name = new_session_name
         self.routine = [self.start_network_sessions_copy,

@@ -19,7 +19,7 @@ from daemon_tools import NoSessionPath
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ _translate = QCoreApplication.translate
 
 
 class AddOtherSessionClient(SessionOp):
-    def __init__(self, session: 'OperatingSession', client: Client,
+    def __init__(self, session: 'Session', client: Client,
                  osp: OscPack | None =None):
         super().__init__(session, osp)
         self.client = client

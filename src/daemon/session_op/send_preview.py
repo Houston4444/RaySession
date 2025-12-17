@@ -12,14 +12,14 @@ import ray
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _logger = logging.getLogger(__name__)
 
 
 class SendPreview(SessionOp):
-    def __init__(self, session: 'OperatingSession', src_addr: Address,
+    def __init__(self, session: 'Session', src_addr: Address,
                  folder_sizes: list[dict[str, str | int]]):
         super().__init__(session)
         self.src_addr = src_addr

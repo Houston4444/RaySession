@@ -2,11 +2,11 @@ from pathlib import Path
 
 from osclib import OscPack
 
-from session_operating import OperatingSession
+from session import Session
 import session_op as sop
 
 
-class DummySession(OperatingSession):
+class DummySession(Session):
     '''A dummy session allows to make such operations on not current session.
     
     It is used for session preview, or duplicate a session for example.
@@ -18,7 +18,7 @@ class DummySession(OperatingSession):
     steps_order: list[sop.SessionOp]
 
     def __init__(self, root: Path, session_id=0):
-        OperatingSession.__init__(self, root, session_id)
+        Session.__init__(self, root, session_id)
         self.is_dummy = True
         self.canvas_saver.is_dummy = True
 

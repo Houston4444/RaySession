@@ -16,14 +16,14 @@ from daemon_tools import highlight_text, NoSessionPath, TemplateRoots
 from .session_op import SessionOp
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _translate = QCoreApplication.translate
 
 
 class SaveSessionTemplate(SessionOp):
-    def __init__(self, session: 'OperatingSession',
+    def __init__(self, session: 'Session',
                  template_name: str, net=False):
         super().__init__(session)
         self.template_name = template_name
