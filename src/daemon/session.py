@@ -578,7 +578,7 @@ class Session(ServerSender):
         self.send_gui(rg.session.SORT_CLIENTS,
                       *[c.client_id for c in self.clients])
 
-    def _is_path_in_a_session_dir(self, spath: Path):
+    def is_path_in_a_session_dir(self, spath: Path):
         if self.is_nsm_locked() and os.getenv('NSM_URL'):
             return False
 
@@ -586,8 +586,9 @@ class Session(ServerSender):
         
         while base_path.parent != base_path:
             base_path = base_path.parent
-            if Path(base_path / 'raysession.xml').is_file():
-                return True
+            for filename in 'raysession.yaml', 'raysession.xml':
+                if Path(base_path / filename).is_file():
+                    return True
             
         return False
         

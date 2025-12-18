@@ -58,7 +58,7 @@ class PrepareTemplate(SessionOp):
                 _translate("error", "Folder\n%s\nalready exists") % spath)
             return
 
-        if session._is_path_in_a_session_dir(spath):
+        if session.is_path_in_a_session_dir(spath):
             self.error(
                 ray.Err.SESSION_IN_SESSION_DIR,
                 _translate(

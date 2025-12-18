@@ -35,7 +35,7 @@ class New(SessionOp):
                 % highlight_text(self.session_name))
         spath = session.root / self.session_name
 
-        if session._is_path_in_a_session_dir(spath):
+        if session.is_path_in_a_session_dir(spath):
             self.error(
                 ray.Err.SESSION_IN_SESSION_DIR,
                 "Can't create session in a dir containing a session "

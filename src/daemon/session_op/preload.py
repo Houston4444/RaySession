@@ -1,5 +1,4 @@
 # Imports from standard library
-from io import TextIOWrapper
 import logging
 import os
 from pathlib import Path
@@ -24,6 +23,9 @@ from .session_op import SessionOp
 if TYPE_CHECKING:
     from session import Session
 
+_YAML_FILE = 'raysession.yaml'
+_XML_FILE = 'raysession.xml'
+_NSM_FILE = 'session.nsm'
 
 _logger = logging.getLogger(__name__)
 _translate = QCoreApplication.translate
@@ -73,16 +75,16 @@ class Preload(SessionOp):
             self.load_error(ray.Err.SESSION_LOCKED)
             return
 
-        session_ray_file = spath / 'raysession.xml'
-        session_nsm_file = spath / 'session.nsm'
+        sess_yaml_file = spath / _YAML_FILE
+        sess_xml_file = spath / _XML_FILE
+        sess_nsm_file = spath / _NSM_FILE
 
         if spath.exists():
             # session directory exists
-            for sess_file in session_ray_file, session_nsm_file:
+            for sess_file in sess_yaml_file, sess_xml_file, sess_nsm_file:
                 if sess_file.exists():
                     break
             else:
-
                 # session directory doesn't contains session file.
                 # Check if it contains another session file in a subfolder
                 # and in this case, prevent to create this session
@@ -95,7 +97,7 @@ class Preload(SessionOp):
                         continue
 
                     for file_ in files:
-                        if file_ in ('raysession.xml', 'session.nsm'):
+                        if file_ in (_YAML_FILE, _XML_FILE, _NSM_FILE):
                             # dir contains a session inside,
                             # do not try to load it
                             self.load_error(ray.Err.SESSION_IN_SESSION_DIR)
@@ -108,7 +110,7 @@ class Preload(SessionOp):
             # session directory doesn't exists,
             # create this session.            
             
-            if session._is_path_in_a_session_dir(spath):
+            if session.is_path_in_a_session_dir(spath):
                 # prevent to create a session in a session directory
                 # for better user organization
                 self.load_error(ray.Err.SESSION_IN_SESSION_DIR)
@@ -125,27 +127,29 @@ class Preload(SessionOp):
             self.load_error(ray.Err.SESSION_LOCKED)
             return
 
-        session.message("Attempting to open %s" % spath)
+        session.message(f'Attempting to open {spath}')
 
         # change session file only for raysession launched with NSM_URL env
         # Not sure that this feature is really useful.
         # Any cases, It's important to rename it
         # because we want to prevent session creation in a session folder
         if session.is_nsm_locked() and os.getenv('NSM_URL'):
-            session_ray_file = spath / 'raysubsession.xml'
+            sess_yaml_file = spath / 'raysubsession.yaml'
+            sess_xml_file = spath / 'raysubsession.xml'
 
-        nsm_file: TextIOWrapper | None = None
+        nsm_contents = ''
         is_ray_file = True
         
         try:
-            tree = ET.parse(session_ray_file)
+            tree = ET.parse(sess_xml_file)
         except BaseException as e:
             _logger.info(str(e))
             is_ray_file = False
 
         if not is_ray_file:
             try:
-                nsm_file = open(session_nsm_file, 'r')
+                with open(sess_nsm_file, 'r') as f:
+                    nsm_contents = f.read()
             except BaseException as e:
                 _logger.info(str(e))
 
@@ -157,7 +161,7 @@ class Preload(SessionOp):
                 tree = ET.ElementTree(root)
 
                 try:
-                    tree.write(session_ray_file)                    
+                    tree.write(sess_xml_file)                    
                 except BaseException as e:
                     _logger.error(str(e))
                     self.load_error(ray.Err.CREATE_FAILED)
@@ -170,7 +174,7 @@ class Preload(SessionOp):
 
         if is_ray_file:
             try:
-                tree = ET.parse(session_ray_file)
+                tree = ET.parse(sess_xml_file)
             except BaseException as e:
                 _logger.error(str(e))
                 self.load_error(ray.Err.BAD_PROJECT)
@@ -224,12 +228,14 @@ class Preload(SessionOp):
             # prevent to load a locked NSM session
             lock_file = spath / '.lock'
             if lock_file.is_file():
-                Terminal.warning("Session %s is locked by another process")
+                Terminal.warning(
+                    f'Session {self.session_name} is locked '
+                    'by another process')
                 self.load_error(ray.Err.SESSION_LOCKED)
                 return
 
-            if nsm_file is not None:
-                for line in nsm_file.read().splitlines():
+            if nsm_contents:
+                for line in nsm_contents.splitlines():
                     elements = line.split(':')
                     if len(elements) >= 3:
                         client = Client(session)
@@ -242,7 +248,6 @@ class Preload(SessionOp):
 
                         session.future_clients.append(client)
 
-                nsm_file.close()
             session.send_gui(rg.session.IS_NSM)
 
         if not session.is_dummy:
@@ -251,11 +256,17 @@ class Preload(SessionOp):
         full_notes_path = spath / ray.NOTES_PATH
 
         if (full_notes_path.is_file()
-                and os.access(full_notes_path, os.R_OK)): 
-            notes_file = open(full_notes_path)
-            # limit notes characters to 65000 to prevent OSC message accidents
-            session.future_notes = notes_file.read(65000)
-            notes_file.close()
+                and os.access(full_notes_path, os.R_OK)):
+            try:
+                with open(full_notes_path) as notes_file:
+                    # limit notes characters to 65000 
+                    # to prevent OSC message accidents
+                    session.future_notes = notes_file.read(65000)
+            except BaseException as e:
+                _logger.warning(
+                    f'Failed to load session notes in {full_notes_path}\n'
+                    f'{str(e)}')
+                session.future_notes = ''
 
         session.future_session_path = spath
         session.future_session_name = sess_name
