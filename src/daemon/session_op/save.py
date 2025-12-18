@@ -87,7 +87,12 @@ class Save(SessionOp):
 
         err = session.save_session_file()
         if err:
-            self.save_error(ray.Err.CREATE_FAILED)
+            session.message('Save session failed')
+            m =  _translate(
+                    'GUIMSG',
+                    "Can't save session, session file is unwriteable !")
+            session.send_gui_message(m)
+            self.error(ray.Err.CREATE_FAILED, m)
             return
 
         session.canvas_saver.save_json_session_canvas(session.path)
@@ -114,18 +119,4 @@ class Save(SessionOp):
 
         self.next()
 
-    def save_error(self, err_saving: ray.Err):
-        session = self.session
-        session.message("Failed")
-        m = _translate('Load Error', "Unknown error")
-
-        if err_saving is ray.Err.CREATE_FAILED:
-            m = _translate(
-                'GUIMSG', "Can't save session, session file is unwriteable !")
-
-        session.message(m)
-        session.send_gui_message(m)
-        session.set_server_status(ray.ServerStatus.READY)
-        
-        self.error(ray.Err.CREATE_FAILED, m)
         
