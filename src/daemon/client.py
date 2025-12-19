@@ -571,9 +571,6 @@ class Client(ServerSender, ray.ClientData):
             self.ray_net.daemon_url = c.string('net_daemon_url')
             self.ray_net.session_root = c.string('net_session_root')
             self.ray_net.session_template = c.string('net_session_template')
-            self.ray_net.daemon_url = c.string('net_daemon_url')
-            self.ray_net.session_root = c.string('net_session_root')
-            self.ray_net.session_template = c.string('net_session_template')
 
         if self.is_ray_net:
             # neeeded only to know if RAY_NET client is capable of switch
@@ -686,6 +683,102 @@ class Client(ServerSender, ray.ClientData):
             for data in self.custom_data:
                 sub_child[data] = self.custom_data[data] # type:ignore
             ET.dump(c.el)
+
+    def read_yaml_properties(self, map: CommentedMap):
+        self.executable = str(map.get('executable', ''))
+        self.arguments = str(map.get('arguments', ''))
+        self.pre_env = str(map.get('pre_env', ''))
+        self.name = str(map.get('name', ''))
+        self.desktop_file = str(map.get('desktop_file', ''))
+        self.label = str(map.get('label', ''))
+        self.description = str(map.get('description', ''))
+        self.icon = str(map.get('icon', ''))
+        self.in_terminal = bool(map.get('in_terminal', False) == True)
+        self.auto_start = bool(map.get('launched', True) == True)
+        self.check_last_save = bool(map.get('check_last_save', True) == True)
+        self.start_gui_hidden = bool(map.get('gui_visible', True) == False)
+        self.template_origin = str(map.get('template_origin', ''))
+
+        self.jack_naming = ray.JackNaming(
+            int(map.get('jack_naming', True) == True))
+        self.prefix_mode = ray.PrefixMode(
+            str(map.get('prefix_mode', 'client_name')))
+
+        # ensure client has a name
+        if not self.name:
+            self.name = Path(self.executable).name
+
+        self.update_infos_from_desktop_file()
+
+        ign_exts = str(map.get('ignored_extensions', '')).split(' ')
+        unign_exts = str(map.get('unignored_extensions', '')).split(' ')
+
+        global_exts = ray.GIT_IGNORED_EXTENSIONS.split(' ')
+        self.ignored_extensions = ""
+
+        for ext in global_exts:
+            if ext and not ext in unign_exts:
+                self.ignored_extensions += f' {ext}'
+
+        for ext in ign_exts:
+            if ext and not ext in global_exts:
+                self.ignored_extensions += f' {ext}'
+
+        try:
+            self.last_open_duration = float(
+                map.get('last_open_duration', 0.0))
+        except BaseException as e:
+            _logger.warning('last_open_duration is not a float')
+            self.last_open_duration = 0.0
+
+        if self.prefix_mode is ray.PrefixMode.CUSTOM:
+            self.custom_prefix = str(map.get('custom_prefix', ''))
+
+        self.protocol = ray.Protocol.from_string(map.get('protocol', 'NSM'))
+
+        if self.protocol is ray.Protocol.RAY_HACK:
+            self.ray_hack.config_file = str(map.get('config_file', ''))
+            try:
+                self.ray_hack.save_sig = int(map.get('save_signal', 0))
+            except:
+                self.ray_hack.save_sig = 0
+            try:
+                self.ray_hack.stop_sig = int(map.get('stop_signal', 0))
+            except:
+                self.ray_hack.stop_sig = signal.SIGTERM.value
+            
+            self.ray_hack.wait_win = bool(
+                map.get('wait_window', False) == True)
+            try:
+                no_save_level = int(map.get('no_save_level', 0))
+            except:
+                no_save_level = 0
+            
+            if 0 <= no_save_level <= 2:
+                self.ray_hack.no_save_level = no_save_level
+
+        if self.protocol is ray.Protocol.RAY_NET:
+            self.ray_net.daemon_url = str(map.get('net_daemon_url', ''))
+            self.ray_net.session_root = str(map.get('net_session_root', ''))
+            self.ray_net.session_template = str(
+                map.get('net_session_template', ''))
+
+            # neeeded only to know if RAY_NET client is capable of switch
+            self.executable = ray.RAYNET_BIN
+            if self.ray_net.daemon_url and self.ray_net.session_root:
+                self.arguments = self.get_ray_net_arguments_line()
+
+        if map.get('id') is not None:
+            # session uses "id" for absolutely needed client_id
+            self.client_id = str(map.get('id'))
+        else:
+            # template uses "client_id" for wanted client_id
+            self.client_id = self.session.generate_client_id(
+                str(map.get('client_id', '')))
+
+        custom_data = map.get('custom_data')
+        if isinstance(custom_data, CommentedMap):
+            self.custom_data = custom_data.copy()
 
     def write_yaml_properties(self, map: CommentedMap):
         protocol = self.protocol

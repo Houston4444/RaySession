@@ -8,6 +8,7 @@ import warnings
 
 # third party imports
 from qtpy.QtCore import QProcess
+from ruamel.yaml.comments import CommentedSeq, CommentedMap
 
 # Imports from src/shared
 from xml_tools import XmlElement
@@ -198,6 +199,24 @@ class DesktopsMemory:
             if desktop.lstrip('-').isdigit():
                 win.desktop = int(desktop)
             
+            self.saved_windows.append(win)
+
+    def read_yaml(self, seq: CommentedSeq):
+        self.saved_windows.clear()
+        
+        for w in seq:
+            if not isinstance(w, CommentedMap):
+                continue
+            
+            win = WindowProperties()
+            win.wclass = str(w.get('class', ''))
+            win.name = str(w.get('name', ''))
+            try:
+                desktop = int(w.get('desktop', 0))
+            except:
+                desktop = 0 
+            win.desktop = desktop
+                
             self.saved_windows.append(win)
 
     def has_window(self, pid: int) -> bool:
