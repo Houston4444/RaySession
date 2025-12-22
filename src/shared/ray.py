@@ -277,7 +277,7 @@ class Favorite:
 
 
 def version_to_tuple(version_str: str) -> tuple[int, int, int]:
-    version_list = []
+    version_list = list[int]()
     for c in version_str.split('.'):
         if not c.isdigit():
             return (0, 0, 0)

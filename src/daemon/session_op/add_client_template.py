@@ -154,6 +154,19 @@ class AddClientTemplate(SessionOp):
                        _translate('GUIMSG', 'Copy has been aborted !'))
             return
         
+        if session.path is None:
+            raise NoSessionPath
+        
+        # remove the yaml template file present in the client folder
+        # if it exists. 
+        template_file = session.path / 'ray_client_template.yaml'
+        try:
+            template_file.unlink(missing_ok=True)
+        except BaseException as e:
+            self.minor_error(
+                ray.Err.CREATE_FAILED,
+                f'Failed to remove {template_file} after copy')
+        
         client.adjust_files_after_copy(session.name, ray.Template.CLIENT_LOAD)
 
         if client.auto_start:

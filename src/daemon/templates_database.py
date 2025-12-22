@@ -2,6 +2,7 @@
 # Imports from standard library
 import os
 from pathlib import Path
+from re import template
 import shutil
 from typing import TYPE_CHECKING, Iterator, TypedDict
 import logging
@@ -9,6 +10,8 @@ import xml.etree.ElementTree as ET
 
 # third party imports
 from qtpy.QtCore import QProcess, QCoreApplication
+from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap
 
 # Imports from src/shared
 import ray
@@ -39,7 +42,22 @@ class NsmDesktopExec(TypedDict):
     desktop_file: str
     nsm_capable: bool
     skipped: bool
+
+
+class YamxlElement:
+    def __init__(self, element: XmlElement | CommentedMap):
+        self.el = element
     
+    def string(self, key: str, default='') -> str:
+        if isinstance(self.el, CommentedMap):
+            return str(self.el.get(key, default=default))        
+        return self.el.string(key, default=default)
+
+    def bool(self, key: str, default=False) -> bool:
+        if isinstance(self.el, CommentedMap):
+            return bool(self.el.get(key, default=default))
+        return self.el.bool(key, default=default)
+
 
 def _get_search_template_dirs(factory: bool) -> list[Path]:
     if factory:
@@ -236,195 +254,328 @@ def _list_xml_elements(base: str) -> Iterator[tuple[Path, XmlElement]]:
                 _logger.error(
                     'Rewrite user client templates XML file failed')
 
-def rebuild_templates_database(session: 'Session', base: str):        
+def _process_element(
+        template_name: str, c: YamxlElement,
+        from_desktop_execs:list[NsmDesktopExec], session: 'Session',
+        template_names: set[str], templates_database: list[AppTemplate],
+        search_path: Path, base: str):
+    executable = c.string('executable')
+    protocol = ray.Protocol.from_string(c.string('protocol'))
+
+    # check if we wan't this template to be erased by a .desktop file
+    # with X-NSM-Capable=true
+    erased_by_nsm_desktop = c.bool('erased_by_nsm_desktop')
+    
+    nsm_desktop_prior_found = False
+    
+    # With 'needs_nsm_desktop_file', this template will be provided only if
+    # a *.desktop file with the same executable contains X-NSM-Capable=true
+    needs_nsm_desktop_file = c.bool('needs_nsm_desktop_file')
+    has_nsm_desktop = False
+
+    # Parse .desktop files in memory
+    for fde in from_desktop_execs:
+        if fde['executable'] == executable:
+            has_nsm_desktop = True
+            
+            if erased_by_nsm_desktop:
+                # This template won't be provided
+                nsm_desktop_prior_found = True
+            else:
+                # The .desktop file will be skipped,
+                # we use this template instead
+                fde['skipped'] = True
+            break
+    else:
+        # No *.desktop file with same executable as this template
+        if needs_nsm_desktop_file:
+            # This template needs a *.desktop file with X-NSM-Capable
+            # and there is no one, skip this template
+            return
+
+    if nsm_desktop_prior_found:
+        return
+
+    # check if needed executables are present
+    if protocol is not ray.Protocol.RAY_NET:
+        if not executable:
+            return
+        
+        try_exec_line = c.string('try-exec')
+        try_execs = try_exec_line.split(';') if try_exec_line else []
+        
+        if not has_nsm_desktop:
+            try_execs.append(executable)
+
+        try_exec_ok = True
+
+        for try_exec in try_execs:
+            if not try_exec:
+                continue
+            
+            if not shutil.which(try_exec):
+                try_exec_ok = False
+                break
+        
+        if not try_exec_ok:
+            return
+
+    if not has_nsm_desktop:
+        # search for nsm.server.ANNOUNCE in executable binary
+        # if it is asked by "check_nsm_bin" key
+        if c.bool('check_nsm_bin'):
+            which_exec = shutil.which(executable)
+            if which_exec:
+                result = QProcess.execute(
+                    'grep', ['-q', nsm.server.ANNOUNCE,
+                            which_exec])
+                if result:
+                    return
+
+        # check if a version is at least required for this template
+        # don't use needed-version without check how the program acts !
+        needed_version = c.string('needed-version')
+
+        if (needed_version.startswith('.')
+                or needed_version.endswith('.')
+                or not needed_version.replace('.', '').isdigit()):
+            # needed-version not writed correctly, ignores it
+            needed_version = ''
+
+        if needed_version:
+            version_process = QProcess()
+            version_process.start(executable, ['--version'])
+            version_process.waitForFinished(500)
+
+            # do not allow program --version to be longer than 500ms
+            if version_process.state() != QProcess.ProcessState.NotRunning:
+                version_process.terminate()
+                version_process.waitForFinished(500)
+                return
+
+            full_program_version = str(
+                version_process.readAllStandardOutput(), # type:ignore
+                encoding='utf-8')
+
+            previous_is_digit = False
+            program_version = ''
+
+            for character in full_program_version:
+                if character.isdigit():
+                    program_version += character
+                    previous_is_digit = True
+                elif character == '.':
+                    if previous_is_digit:
+                        program_version += character
+                    previous_is_digit = False
+                else:
+                    if program_version:
+                        break
+
+            if not program_version:
+                return
+
+            neededs = [int(s) for s in needed_version.split('.')]
+            progvss = [int(s) for s in program_version.split('.')]
+
+            if neededs > progvss:
+                # program is too old, ignore this template
+                return
+
+    template_client = Client(session)
+    if isinstance(c.el, CommentedMap):
+        template_client.read_yaml_properties(c.el)
+    else:
+        template_client.read_xml_properties(c.el)
+
+    template_client.client_id = c.string('client_id')        
+    if not template_client.client_id:
+        template_client.client_id = session.generate_abstract_client_id(
+            template_client.executable)
+    template_client.update_infos_from_desktop_file()
+    
+    display_name = ''
+    if c.bool('tp_display_name_is_label'):
+        display_name = template_client.label
+
+    _logger.info(f'Client template "{template_name}" found.')
+    template_names.add(template_name)
+    templates_database.append(AppTemplate(
+        template_name, template_client, display_name, search_path))
+    
+    # for Ardour, list ardour templates
+    if base == 'factory' and c.bool('list_ardour_templates'):
+        for ard_tp_path in ardour_templates.list_templates_from_exec(
+                template_client.executable):
+            ard_template_client = Client(session)
+            ard_template_client.eat_attributes(template_client)
+            ard_template_client.client_id = template_client.client_id
+
+            descrip_prefix = _translate(
+                'ardour_tp', 'Session template "%s"') % ard_tp_path.name
+
+            dsc = descrip_prefix
+            dsc += '.'
+            
+            tp_dsc = ardour_templates.get_description(ard_tp_path)
+            if tp_dsc:
+                dsc += '\n\n'
+                dsc += tp_dsc
+            
+            ard_template_client.description = dsc
+
+            ard_template_name = \
+                f"/ardour_tp/{template_name}/{ard_tp_path.name}"
+            ard_display_name = f"{template_name} -> {ard_tp_path.name}"
+
+            templates_database.append(AppTemplate(
+                ard_template_name, ard_template_client,
+                ard_display_name, search_path))
+
+def rebuild_templates_database(session: 'Session', base: str):
     # discovery start
     templates_database = session.get_client_templates_database(base)
     templates_database.clear()
     
     template_names = set[str]()
-    template_execs = set[str]()
-    
-    for search_path, c in _list_xml_elements(base):
-        template_execs.add(c.string('executable'))
-
     from_desktop_execs = list[NsmDesktopExec]()
-    if base == 'factory':
+    factory = bool(base == 'factory')
+    if factory:
         from_desktop_execs = _first_desktops_scan()
+    
+    yaml = YAML()
+    
+    _logger.info(f'Search {base} client template')
+    
+    search_paths = _get_search_template_dirs(factory)
+    for search_path in search_paths:
+        _logger.debug(f'search client templates in {search_path}')
 
-    for search_path, c in _list_xml_elements(base):
-        template_name = c.string('template-name')
+        # first parse all folders in search path,
+        # if the folder contains ray_client_template.yaml, then it is
+        # a client template.
+        for template_dir in search_path.iterdir():
+            t_yaml_file = template_dir / 'ray_client_template.yaml'
+            if not t_yaml_file.is_file():
+                continue
 
-        if (not template_name
-                or '/' in template_name
-                or template_name in template_names):
+            template_name = template_dir.name
+            if template_name in template_names:
+                _logger.debug(f'"{template_name}" skipped, it already exists')
+                continue
+            
+            try:
+                with open(t_yaml_file, 'r') as f:
+                    t_map = yaml.load(f)
+                    assert isinstance(t_map, CommentedMap)
+            except BaseException as e:
+                _logger.error(
+                    f'Fail to read {t_yaml_file} as a yaml file,\n'
+                    f'{str(e)}')
+                continue
+            
+            yamxl = YamxlElement(t_map)
+            app = yamxl.string('app')
+            version = yamxl.string('version')
+            
+            if app.upper() != 'RAY-CLIENT-TEMPLATE':
+                continue
+
+            _logger.debug(f'check "{template_name}" from {t_yaml_file}')
+            _process_element(template_name, yamxl, from_desktop_execs,
+                             session, template_names, templates_database,
+                             search_path, base)
+
+        # look if there is a global client_templates.yaml file directly
+        # in search path, and parse clietn templates from it
+        glob_yaml_file = search_path / 'client_templates.yaml'
+        if glob_yaml_file.is_file():        
+            try:
+                with open(glob_yaml_file, 'r') as f:
+                    ts_map = yaml.load(glob_yaml_file)
+                    assert isinstance(ts_map, CommentedMap)
+            except BaseException as e:
+                _logger.error(
+                    f'Fail to read {glob_yaml_file} as a yaml file,\n'
+                    f'{str(e)}')
+                continue
+            
+            app = str(ts_map.get('app', ''))
+            version = str(ts_map.get('version'))
+            if app.upper() != 'RAY-CLIENT-TEMPLATES':
+                continue
+            
+            templates = ts_map.get('templates')
+            if not isinstance(templates, CommentedMap):
+                continue
+            
+            for template_name, t_map in templates:
+                if not template_name or '/' in template_name:
+                    continue            
+                if not isinstance(t_map, CommentedMap):
+                    continue
+                _logger.debug(
+                    f'check "{template_name}" from {glob_yaml_file}')
+                _process_element(template_name, YamxlElement(t_map),
+                                from_desktop_execs, session, template_names,
+                                templates_database, search_path, base)
             continue
 
-        executable = c.string('executable')
-        protocol = ray.Protocol.from_string(c.string('protocol'))
-
-        # check if we wan't this template to be erased by a .desktop file
-        # with X-NSM-Capable=true
-        erased_by_nsm_desktop = c.bool('erased_by_nsm_desktop')
+        # process XML file if it exists and if yaml file does not exists
+        xml_rewritten = False
+        xml_templates_file = search_path / 'client_templates.xml'
+        if not xml_templates_file.is_file():
+            continue
         
-        nsm_desktop_prior_found = False
+        if not os.access(xml_templates_file, os.R_OK):
+            _logger.error(
+                f'No access to {xml_templates_file} in {search_path}, '
+                'ignore it')
+            continue
         
-        # With 'needs_nsm_desktop_file', this template will be provided only if
-        # a *.desktop file with the same executable contains X-NSM-Capable=true
-        needs_nsm_desktop_file = c.bool('needs_nsm_desktop_file')
-        has_nsm_desktop = False
-
-        # Parse .desktop files in memory
-        for fde in from_desktop_execs:
-            if fde['executable'] == executable:
-                has_nsm_desktop = True
-                
-                if erased_by_nsm_desktop:
-                    # This template won't be provided
-                    nsm_desktop_prior_found = True
-                else:
-                    # The .desktop file will be skipped,
-                    # we use this template instead
-                    fde['skipped'] = True
-                break
-        else:
-            # No *.desktop file with same executable as this template
-            if needs_nsm_desktop_file:
-                # This template needs a *.desktop file with X-NSM-Capable
-                # and there is no one, skip this template
-                continue
-
-        if nsm_desktop_prior_found:
+        try:
+            tree = ET.parse(xml_templates_file)
+        except BaseException as e:
+            _logger.error(
+                f"{xml_templates_file} is not a valid xml file\n{str(e)}")
             continue
 
-        # check if needed executables are present
-        if protocol is not ray.Protocol.RAY_NET:
-            if not executable:
+        root = tree.getroot()
+        if root.tag != 'RAY-CLIENT-TEMPLATES':
+            continue
+        
+        if not factory and root.attrib.get('VERSION') != ray.VERSION:
+            # we may rewrite user client templates file
+            xml_rewritten = _should_rewrite_user_templates_file(
+                root, xml_templates_file)
+        
+        xroot = XmlElement(root)
+        erased_by_nsm_desktop_global = xroot.bool(
+            'erased_by_nsm_desktop_file')
+
+        for c in xroot.iter():
+            if c.el.tag != 'Client-Template':
                 continue
             
-            try_exec_line = c.string('try-exec')
-            try_exec_list = try_exec_line.split(';') if try_exec_line else []
+            if (erased_by_nsm_desktop_global
+                    and not c.bool('erased_by_nsm_desktop_file')):
+                c.set_bool('erased_by_nsm_desktop_file', True)
             
-            if not has_nsm_desktop:
-                try_exec_list.append(executable)
+            template_name = c.string('template-name')
+            _logger.debug(
+                f'check "{template_name}" from {xml_templates_file}')
+            _process_element(
+                template_name, YamxlElement(c),
+                from_desktop_execs, session, template_names,
+            templates_database, search_path, base)
 
-            try_exec_ok = True
-
-            for try_exec in try_exec_list:
-                if not try_exec:
-                    continue
-                
-                if not shutil.which(try_exec):
-                    try_exec_ok = False
-                    break
-            
-            if not try_exec_ok:
-                continue
-
-        if not has_nsm_desktop:
-            # search for nsm.server.ANNOUNCE in executable binary
-            # if it is asked by "check_nsm_bin" key
-            if c.bool('check_nsm_bin'):
-                which_exec = shutil.which(executable)
-                if which_exec:
-                    result = QProcess.execute(
-                        'grep', ['-q', nsm.server.ANNOUNCE,
-                                which_exec])
-                    if result:
-                        continue
-
-            # check if a version is at least required for this template
-            # don't use needed-version without check how the program acts !
-            needed_version = c.string('needed-version')
-
-            if (needed_version.startswith('.')
-                    or needed_version.endswith('.')
-                    or not needed_version.replace('.', '').isdigit()):
-                # needed-version not writed correctly, ignores it
-                needed_version = ''
-
-            if needed_version:
-                version_process = QProcess()
-                version_process.start(executable, ['--version'])
-                version_process.waitForFinished(500)
-
-                # do not allow program --version to be longer than 500ms
-                if version_process.state() != QProcess.ProcessState.NotRunning:
-                    version_process.terminate()
-                    version_process.waitForFinished(500)
-                    continue
-
-                full_program_version = str(
-                    version_process.readAllStandardOutput(), # type:ignore
-                    encoding='utf-8')
-
-                previous_is_digit = False
-                program_version = ''
-
-                for character in full_program_version:
-                    if character.isdigit():
-                        program_version += character
-                        previous_is_digit = True
-                    elif character == '.':
-                        if previous_is_digit:
-                            program_version += character
-                        previous_is_digit = False
-                    else:
-                        if program_version:
-                            break
-
-                if not program_version:
-                    continue
-
-                neededs = [int(s) for s in needed_version.split('.')]
-                progvss = [int(s) for s in program_version.split('.')]
-
-                if neededs > progvss:
-                    # program is too old, ignore this template
-                    continue
-
-        template_client = Client(session)
-        template_client.read_xml_properties(c)
-        template_client.client_id = c.string('client_id')        
-        if not template_client.client_id:
-            template_client.client_id = session.generate_abstract_client_id(
-                template_client.executable)
-        template_client.update_infos_from_desktop_file()
-        
-        display_name = ''
-        if c.bool('tp_display_name_is_label'):
-            display_name = template_client.label
-
-        template_names.add(template_name)
-        templates_database.append(AppTemplate(
-            template_name, template_client, display_name, search_path))
-        
-        # for Ardour, list ardour templates
-        if base == 'factory' and c.bool('list_ardour_templates'):
-            for ard_tp_path in ardour_templates.list_templates_from_exec(
-                    template_client.executable):
-                ard_template_client = Client(session)
-                ard_template_client.eat_attributes(template_client)
-                ard_template_client.client_id = template_client.client_id
-
-                descrip_prefix = _translate(
-                    'ardour_tp', 'Session template "%s"') % ard_tp_path.name
-
-                dsc = descrip_prefix
-                dsc += '.'
-                
-                tp_dsc = ardour_templates.get_description(ard_tp_path)
-                if tp_dsc:
-                    dsc += '\n\n'
-                    dsc += tp_dsc
-                
-                ard_template_client.description = dsc
-
-                ard_template_name = f"/ardour_tp/{template_name}/{ard_tp_path.name}"
-                ard_display_name = f"{template_name} -> {ard_tp_path.name}"
-
-                templates_database.append(AppTemplate(
-                    ard_template_name, ard_template_client,
-                    ard_display_name, search_path))
+        if xml_rewritten:
+            _logger.info('rewrite user client templates XML file')
+            try:
+                tree.write(xml_templates_file)
+            except:
+                _logger.error(
+                    'Rewrite user client templates XML file failed')
                     
     # add fake templates from desktop files
     for fde in from_desktop_execs:

@@ -768,19 +768,15 @@ class Client(ServerSender, ray.ClientData):
             if self.ray_net.daemon_url and self.ray_net.session_root:
                 self.arguments = self.get_ray_net_arguments_line()
 
-        if map.get('id') is not None:
-            # session uses "id" for absolutely needed client_id
-            self.client_id = str(map.get('id'))
-        else:
-            # template uses "client_id" for wanted client_id
-            self.client_id = self.session.generate_client_id(
-                str(map.get('client_id', '')))
+        # template uses "client_id" for wanted client_id
+        self.client_id = self.session.generate_client_id(
+            str(map.get('client_id', '')))
 
         custom_data = map.get('custom_data')
         if isinstance(custom_data, CommentedMap):
             self.custom_data = custom_data.copy()
 
-    def write_yaml_properties(self, map: CommentedMap):
+    def write_yaml_properties(self, map: CommentedMap, for_template=False):
         protocol = self.protocol
         internal_mode = ray.InternalMode.FOLLOW_PROTOCOL
         server = self.get_server()
@@ -789,7 +785,7 @@ class Client(ServerSender, ray.ClientData):
         if internal_mode is not ray.InternalMode.FOLLOW_PROTOCOL:
             protocol = self.protocol_orig
 
-        map.clear()
+        # map.clear()
         if protocol is not ray.Protocol.NSM:
             map['protocol'] = self.protocol.to_string()
         
@@ -827,16 +823,21 @@ class Client(ServerSender, ray.ClientData):
         if self.in_terminal:
             map['in_terminal'] = True
 
-        if self.template_origin:
+        if not for_template and self.template_origin:
             map['template_origin'] = self.template_origin
 
         match protocol:
             case ray.Protocol.RAY_HACK:
-                map['config_file'] = self.ray_hack.config_file
-                map['save_signal'] = self.ray_hack.save_sig
-                map['stop_signal'] = self.ray_hack.stop_sig
-                map['wait_win'] = self.ray_hack.wait_win
-                map['no_save_level'] = self.ray_hack.no_save_level
+                if self.ray_hack.config_file:
+                    map['config_file'] = self.ray_hack.config_file
+                if self.ray_hack.save_sig:
+                    map['save_signal'] = self.ray_hack.save_sig
+                if self.ray_hack.stop_sig != signal.SIGTERM.value:
+                    map['stop_signal'] = self.ray_hack.stop_sig
+                if self.ray_hack.wait_win:
+                    map['wait_win'] = self.ray_hack.wait_win
+                if self.ray_hack.no_save_level:
+                    map['no_save_level'] = self.ray_hack.no_save_level
 
             case ray.Protocol.RAY_NET:
                 map['net_daemon_url'] = self.ray_net.daemon_url
@@ -857,7 +858,7 @@ class Client(ServerSender, ray.ClientData):
             if unignored:
                 map['unignored_extensions'] = unignored
 
-        if self.last_open_duration >= 5.0:
+        if not for_template and self.last_open_duration >= 5.0:
             map['last_open_duration'] = float(
                 '%.3f' % self.last_open_duration)
 

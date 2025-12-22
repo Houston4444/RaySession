@@ -7,6 +7,8 @@ import xml.etree.ElementTree as ET
 
 # third party imports
 from qtpy.QtCore import QCoreApplication
+from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap
 
 # Imports from src/shared
 from osclib import Address, OscPack
@@ -102,6 +104,32 @@ class SaveClientAsTemplate(SessionOp):
                 self.template_name, ray.Template.CLIENT_SAVE)
 
         user_clients_path = TemplateRoots.user_clients
+        yaml_file = (user_clients_path
+                     / self.template_name
+                     / 'ray_client_template.yaml')
+        yaml = YAML()
+        
+        yaml_map = CommentedMap()
+        
+        yaml_map['app'] = 'RAY-CLIENT-TEMPLATE'
+        yaml_map['version'] = ray.VERSION
+        client.write_yaml_properties(yaml_map, for_template=True)
+        yaml_map['client_id'] = client.short_client_id(client.client_id)
+        if not client.is_running:
+            yaml_map['launched'] = False
+        
+        try:
+            with open(yaml_file, 'w') as f:
+                yaml.dump(yaml_map, f)
+        except BaseException as e:
+            _logger.error(f'Failed to write {yaml_file}\n{str(e)}')
+            self.error(
+                ray.Err.CREATE_FAILED,
+                _translate('error',
+                           'Failed to create client template, '
+                           'Failed to write %s' % yaml_file))
+            return
+        
         xml_file = user_clients_path / 'client_templates.xml'
 
         # security check

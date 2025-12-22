@@ -88,7 +88,7 @@ restructuration du coeur:
     fusion session / session_operating
     voir si _translate peut être récupéré ailleurs (une ligne d'import évitée)
 
-
+essayer de faire planter le lancement de la session pour corriger le souci, parfois le statut du serveur reste sur ouverture ou lancement, jamais le timer ne se termine.
 
 
 
