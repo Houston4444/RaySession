@@ -106,6 +106,9 @@ class Session(ServerSender):
         'Stock the OscPack of the long operation running (if any).'
 
         self.steps_order = list[sop.SessionOp]()
+        self._cur_session_op: sop.SessionOp | None = None
+        '''Is only used to prevent destruction of the current session_op
+        when the timer waits for some client or session actions.'''
 
         self.terminated_yet = False
 
@@ -672,6 +675,7 @@ class Session(ServerSender):
     def wait_and_go_to(
             self, session_op: sop.SessionOp, wait_for: ray.WaitFor,
             timeout: int | None =None, redondant=False):
+        self._cur_session_op = session_op
         self.timer.stop()
 
         # we need to delete timer to change the timeout connect
