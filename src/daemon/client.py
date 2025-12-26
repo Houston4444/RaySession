@@ -743,7 +743,8 @@ class Client(ServerSender, ray.ClientData):
             except:
                 self.ray_hack.save_sig = 0
             try:
-                self.ray_hack.stop_sig = int(map.get('stop_signal', 0))
+                self.ray_hack.stop_sig = int(
+                    map.get('stop_signal', signal.SIGTERM.value))
             except:
                 self.ray_hack.stop_sig = signal.SIGTERM.value
             
@@ -1499,7 +1500,7 @@ class Client(ServerSender, ray.ClientData):
             if self.can_optional_gui:
                 self.start_gui_hidden = not bool(self.gui_visible)
 
-    def stop(self, osp: Optional[OscPack]=None):
+    def stop(self, osp: OscPack | None =None):
         if self.switch_state is ray.SwitchState.NEEDED:
             if osp is not None:
                 self.send(*osp.error(), ray.Err.NOT_NOW,
