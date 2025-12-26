@@ -58,11 +58,10 @@ templates:
   GxTuner:
     protocol: Ray-Hack
     executable: carla-single
-    arguments: "http://guitarix.sourceforge.net/plugins/gxtuner#tuner\n"
+    arguments: http://guitarix.sourceforge.net/plugins/gxtuner#tuner
     label: GxTuner
     icon: carla
     check_last_save: false
-    prefix_mode: SESSION_NAME
     jack_naming: false
     config_file: anything
     save_signal: 10
