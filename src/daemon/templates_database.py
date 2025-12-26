@@ -505,20 +505,26 @@ def rebuild_templates_database(session: 'Session', base: str):
             if app.upper() != 'RAY-CLIENT-TEMPLATES':
                 continue
             
+            erased_by_nsm_desktop_global = bool(
+                ts_map.get('erased_by_nsm_desktop_file', False))
+            
             templates = ts_map.get('templates')
             if not isinstance(templates, CommentedMap):
                 continue
             
-            for template_name, t_map in templates:
-                if not template_name or '/' in template_name:
+            for template_name, t_map in templates.items():
+                if not isinstance(template_name, str) or '/' in template_name:
                     continue            
                 if not isinstance(t_map, CommentedMap):
                     continue
                 _logger.debug(
                     f'check "{template_name}" from {glob_yaml_file}')
+                if (t_map.get('erased_by_nsm_desktop') is not False
+                        and erased_by_nsm_desktop_global):
+                    t_map['erased_by_nsm_desktop'] = True
                 _process_element(template_name, YamxlElement(t_map),
-                                from_desktop_execs, session, template_names,
-                                templates_database, search_path, base)
+                                 from_desktop_execs, session, template_names,
+                                 templates_database, search_path, base)
             continue
 
         # process XML file if it exists and if yaml file does not exists
@@ -558,8 +564,8 @@ def rebuild_templates_database(session: 'Session', base: str):
                 continue
             
             if (erased_by_nsm_desktop_global
-                    and not c.bool('erased_by_nsm_desktop_file')):
-                c.set_bool('erased_by_nsm_desktop_file', True)
+                    and not c.bool('erased_by_nsm_desktop')):
+                c.set_bool('erased_by_nsm_desktop', True)
             
             template_name = c.string('template-name')
             _logger.debug(

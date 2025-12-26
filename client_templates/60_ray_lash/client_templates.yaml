@@ -1,0 +1,121 @@
+# This file contains templates for programs not known as NSM compatible for a long, and compatible with LASH
+# This means that even without NSM protocol, theses programs will save their file when we ask to.
+# Note that if one of these programs have been found as NSM compatible in a previous file (for example: 40_ray_nsm),
+# its template here will be igored.
+
+# If the attribute 'erased_by_nsm_desktop_file' is true,
+# then the template will be ignored if a .desktop file containing X-NSM-Capable=true
+# and the same executable has been detected.
+# As you can see, 'erased_by_nsm_desktop_file' is set to true globally in RAY-CLIENT-TEMPLATES node,
+# but can be cancel if Client-Template node has 'erased_by_nsm_desktop_file' set to false.
+
+app: RAY-CLIENT-TEMPLATES
+version: 0.18.0
+erased_by_nsm_desktop_file: true
+templates:
+  Hydrogen:
+    protocol: Ray-Hack
+    executable: hydrogen
+    arguments: -n -s "$CONFIG_FILE"
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    config_file: $RAY_SESSION_NAME.h2song
+    save_signal: 10
+    wait_win: true
+    client_id: hydrogen
+  Rosegarden:
+    protocol: Ray-Hack
+    executable: rosegarden
+    arguments: '"$CONFIG_FILE"'
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    config_file: $RAY_SESSION_NAME.rg
+    save_signal: 10
+    wait_win: true
+    desktop_file: com.rosegardenmusic.rosegarden
+    client_id: rosegarden
+  Guitarix:
+    protocol: Ray-Hack
+    executable: guitarix
+    arguments: -f "$CONFIG_FILE"
+    label: Guitarix
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    config_file: $RAY_SESSION_NAME.conf
+    save_signal: 10
+    wait_win: true
+    client_id: guitarix
+  Qsampler:
+    protocol: Ray-Hack
+    executable: qsampler
+    arguments: '"$CONFIG_FILE"'
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    config_file: $RAY_SESSION_NAME.lscp
+    save_signal: 10
+    wait_win: true
+    client_id: qsampler
+  GxTuner:
+    protocol: Ray-Hack
+    executable: carla-single
+    arguments: "http://guitarix.sourceforge.net/plugins/gxtuner#tuner\n"
+    label: GxTuner
+    icon: carla
+    check_last_save: false
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    config_file: anything
+    save_signal: 10
+    wait_win: true
+    try-exec: guitarix
+    client_id: tuner
+  CalfJACKHost:
+    protocol: Ray-Hack
+    executable: calfjackhost
+    arguments: -c "$RAY_JACK_CLIENT_NAME" --load "$CONFIG_FILE"
+    label: Calf JACK Host
+    config_file: $RAY_SESSION_NAME.calf
+    save_signal: 10
+    wait_win: true
+    desktop_file: calf
+    tp_display_name_is_label: true
+    client_id: calf
+  Seq24:
+    protocol: Ray-Hack
+    executable: seq24
+    arguments: '"$CONFIG_FILE"'
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    config_file: $RAY_SESSION_NAME.midi
+    save_signal: 10
+    wait_win: true
+    client_id: seq24
+  Sequencer64:
+    protocol: Ray-Hack
+    executable: seq64
+    arguments: -m "$CONFIG_FILE"
+    label: Sequencer64
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    config_file: $RAY_SESSION_NAME.midi
+    save_signal: 10
+    desktop_file: sequencer64
+    client_id: seq64
+  Rakarrack-plus:
+    protocol: Ray-Hack
+    executable: rakarrack-plus
+    arguments: -l "$CONFIG_FILE" -j "$RAY_JACK_CLIENT_NAME"
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    config_file: $RAY_SESSION_NAME.rkr
+    save_signal: 10
+    client_id: r_plus
+  QMidiRoute:
+    protocol: Ray-Hack
+    executable: qmidiroute
+    arguments: '"$CONFIG_FILE"'
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    config_file: $RAY_SESSION_NAME.qmr
+    save_signal: 10
+    client_id: qmidiroute

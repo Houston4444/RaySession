@@ -85,10 +85,12 @@ scenarios:
 
 restructuration du coeur:
     Les actions de client viennent s'intercaler dans l'action de session.
-    fusion session / session_operating
     voir si _translate peut être récupéré ailleurs (une ligne d'import évitée)
 
-essayer de faire planter le lancement de la session pour corriger le souci, parfois le statut du serveur reste sur ouverture ou lancement, jamais le timer ne se termine.
+essayer de faire planter le lancement de la session pour corriger le souci, parfois le statut du serveur reste sur ouverture ou lancement, jamais le timer ne se termine. marauty reste en lancement systématiquement la 1ère fois.
+Voir le signal d'extinction de ray-hack, semble cassé.
+Épurer les templates très vieux (Guitarix Ray-Hack, Ardour5...), ajouter Mixbus et Ardour récents.
+ray_client_template.yaml -> client_template.yaml
 
 
 

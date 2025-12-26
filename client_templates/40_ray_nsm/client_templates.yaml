@@ -1,0 +1,226 @@
+# This file contains all default templates of known NSM compatible programs.
+# For programs not known as compatible, or recently compatibles,
+# the key "check_nsm_bin" asks the server to search in program's binary
+# if there is a /nsm/server/announce message. Thanks to Nils Hilbricht (aka nilshi) for this idea
+# In all cases, template will be available only if the executable value is in PATH
+# and if the template-name has not already been added
+app: RAY-CLIENT-TEMPLATES
+version: 0.18.0
+templates:
+  Hydrogen:
+    executable: hydrogen
+    needed-version: '1.1'
+    client_id: hydrogen
+  Ardour:
+    executable: ardour
+    icon: ardour
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: ardour
+  Ardour8:
+    executable: Ardour8
+    icon: ardour
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: ardour
+  ardour8:
+    executable: ardour8
+    icon: ardour
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: ardour
+  Ardour7:
+    executable: Ardour7
+    icon: ardour
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: ardour
+  ardour7:
+    executable: ardour7
+    icon: ardour
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: ardour
+  Ardour6:
+    executable: Ardour6
+    icon: ardour
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: ardour
+  ardour6:
+    executable: ardour6
+    icon: ardour
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: ardour
+  Ardour5:
+    executable: Ardour5
+    icon: ardour
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    client_id: ardour
+  ardour5:
+    executable: ardour5
+    icon: ardour
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    client_id: ardour
+  Mixbus9:
+    executable: Mixbus9
+    label: Mixbus9
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: mixbus
+  Mixbus8:
+    executable: Mixbus8
+    label: Mixbus8
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: mixbus
+  Mixbus32c9:
+    executable: Mixbus32c9
+    label: Mixbus32c9
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: mixbus32c
+  Mixbus32c8:
+    executable: Mixbus32c8
+    label: Mixbus32c8
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: mixbus32c
+  amsynth:
+    executable: amsynth
+    check_nsm_bin: true
+    client_id: amsynth
+  Carla:
+    executable: carla-jack-multi
+    label: Carla
+    client_id: Carla
+  Carla-Rack:
+    executable: carla-rack
+    client_id: rack
+  Carla-Patchbay:
+    executable: carla-patchbay
+    client_id: patchbay
+  Non-Mixer:
+    executable: non-mixer
+    client_id: nonmixer
+  Qtractor:
+    executable: qtractor
+    prefix_mode: SESSION_NAME
+    client_id: qtractor
+  Guitarix:
+    executable: guitarix
+    check_nsm_bin: true
+    client_id: guitarix
+  Non-Timeline:
+    executable: non-timeline
+    prefix_mode: SESSION_NAME
+    client_id: timeline
+  Luppp:
+    executable: luppp
+    unignored_extensions: .wav
+    client_id: luppp
+  ZynAddSubFX:
+    executable: zynaddsubfx
+    desktop_file: zynaddsubfx-jack
+    client_id: zynaddsub
+  synthv1:
+    executable: synthv1_jack
+    client_id: synthv1
+  samplv1:
+    executable: samplv1_jack
+    unignored_extensions: .wav .flac .ogg .mp3
+    client_id: samplv1
+  drumkv1:
+    executable: drumkv1_jack
+    client_id: drumkv1
+  padthv1:
+    executable: padthv1_jack
+    client_id: padthv1
+  ams:
+    executable: ams
+    client_id: ams
+  SooperLooper:
+    executable: sooperlooper_nsm
+    arguments: --follow-jack-naming
+    unignored_extensions: .wav
+    desktop_file: sooperlooper
+    try-exec: sooperlooper;slgui
+    client_id: sooperlooper
+  SooperLooper + Transport:
+    executable: sooperlooper_nsm
+    arguments: --transport_workaround --follow-jack-naming
+    unignored_extensions: .wav
+    desktop_file: sooperlooper
+    try-exec: sooperlooper;slgui
+    client_id: sooperlooper
+  Non-Sequencer:
+    executable: non-sequencer
+    client_id: sequencer
+  JACK Connections:
+    protocol: Internal
+    executable: ray-jackpatch
+    jack_naming: false
+    tp_display_name_is_label: true
+    client_id: patch
+  ALSA Connections:
+    protocol: Internal
+    executable: ray-alsapatch
+    jack_naming: false
+    tp_display_name_is_label: true
+    client_id: alsapatch
+  Network Session:
+    protocol: Ray-Net
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    desktop_file: ray-network
+    tp_display_name_is_label: true
+    client_id: network
+  ADLjack:
+    executable: adljack
+    client_id: adl
+  ADLplug:
+    executable: ADLplug
+    client_id: adlplug
+  OPNplug:
+    executable: OPNplug
+    client_id: opnplug
+  Petri-Foo:
+    executable: petri-foo
+    client_id: petrifoo
+  Shuriken:
+    executable: shuriken
+    icon: shuriken
+    client_id: shuriken
+  Patroneo:
+    executable: patroneo
+    client_id: patroneo
+  Fluajho:
+    executable: fluajho
+    client_id: fluajho
+  Vico:
+    executable: vico
+    client_id: vico
+  Mamba:
+    executable: mamba
+    client_id: mamba
+  XTuner:
+    executable: xtuner
+    check_last_save: false
+    client_id: xtuner
+  seq192:
+    executable: seq192
+    client_id: seq192
