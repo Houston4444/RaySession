@@ -50,12 +50,11 @@ def signal_handler(sig, frame):
         session.terminate()
 
 
-# if __name__ == '__main__':
 if True:
     # set logger handlers
     _log_handler = LogStreamHandler()
     _log_handler.setFormatter(logging.Formatter(
-        f"%(levelname)s:%(name)s - %(message)s"))
+        f"%(levelname)s:%(name)s line %(lineno)d - %(message)s"))
     _logger.addHandler(_log_handler)
     
     # add RaySession/src/bin to $PATH

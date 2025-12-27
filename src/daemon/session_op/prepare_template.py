@@ -39,7 +39,7 @@ class PrepareTemplate(SessionOp):
 
         template_name = self.template_name
         if is_factory:
-            template_name = self.template_name.replace('///', '')
+            template_name = self.template_name[3:]
             template_path = TemplateRoots.factory_sessions / template_name
 
         if not template_path.is_dir():

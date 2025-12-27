@@ -173,13 +173,11 @@ templates:
   JACK Connections:
     protocol: Internal
     executable: ray-jackpatch
-    jack_naming: false
     tp_display_name_is_label: true
     client_id: patch
   ALSA Connections:
     protocol: Internal
     executable: ray-alsapatch
-    jack_naming: false
     tp_display_name_is_label: true
     client_id: alsapatch
   Network Session:

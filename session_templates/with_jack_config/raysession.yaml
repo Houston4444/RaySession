@@ -1,0 +1,7 @@
+app: RAYSESSION
+version: 0.18.0
+name: with_jack_config
+clients:
+  patch:
+    protocol: Internal
+    executable: ray-jackpatch

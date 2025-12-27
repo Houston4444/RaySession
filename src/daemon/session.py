@@ -982,46 +982,94 @@ class Session(ServerSender):
             spath = self.root / new_session_short_path
 
         # create tmp clients from raysession.xml to adjust files after copy
-        session_file = spath / 'raysession.xml'
+        yaml_session_file = spath / 'raysession.yaml'
+        xml_session_file = spath / 'raysession.xml'
 
-        try:
-            tree = ET.parse(session_file)
-        except Exception as e:
-            _logger.error(str(e))
-            return (
-                ray.Err.BAD_PROJECT,
-                _translate("error", "impossible to read %s as a XML file")
-                    % session_file)
-        
-        root = tree.getroot()
-        if root.tag != 'RAYSESSION':
-            return (
-                ray.Err.BAD_PROJECT,
-                _translate("error", "wrong XML format, no 'RAYSESSION' tag"))
-        
-        root.attrib['name'] = spath.name
-
+        yaml = YAML()
         tmp_clients = list[Client]()
-        
-        for child in root:
-            if not child.tag in ('Clients', 'RemovedClients'):
-                continue
 
-            for client_xml in child:
+        if yaml_session_file.is_file():
+            try:
+                with open(yaml_session_file, 'r') as f:
+                    session_map = yaml.load(f)
+                assert isinstance(session_map, CommentedMap)
+            except BaseException as e:
+                _logger.error(str(e))
+                return (
+                    ray.Err.BAD_PROJECT,
+                    _translate("error",
+                               "impossible to read %s as a YAML session file")
+                    % xml_session_file)
+            
+            if session_map.get('app') != 'RAYSESSION':
+                return (
+                    ray.Err.BAD_PROJECT,
+                    _translate(
+                        "error", "wrong YAML format, not a RAYSESSION app"))
+                
+            session_map['name'] = spath.name
+            clients_map = session_map.get('clients')
+            if not isinstance(clients_map, CommentedMap):
+                return ray.Err.OK, ''
+            
+            for client_id, cmap in clients_map.items():
+                if not (isinstance(client_id, str)
+                        and isinstance(cmap, CommentedMap)):
+                    continue
                 client = Client(self)
-                client.read_xml_properties(XmlElement(client_xml))
+                client.read_yaml_properties(cmap)
                 if not client.executable:
                     continue
-            
+                client.client_id = client_id
                 tmp_clients.append(client)
+                
+            try:
+                with open(yaml_session_file, 'w') as f:
+                    yaml.dump(session_map, f)
+            except BaseException as e:
+                return (
+                    ray.Err.CREATE_FAILED,
+                    _translate("error", "impossible to write YAML file %s")
+                        % xml_session_file)
+                
+        elif xml_session_file.is_file():
+            try:
+                tree = ET.parse(xml_session_file)
+            except Exception as e:
+                _logger.error(str(e))
+                return (
+                    ray.Err.BAD_PROJECT,
+                    _translate("error", "impossible to read %s as a XML file")
+                        % xml_session_file)
+            
+            root = tree.getroot()
+            if root.tag != 'RAYSESSION':
+                return (
+                    ray.Err.BAD_PROJECT,
+                    _translate("error",
+                               "wrong XML format, no 'RAYSESSION' tag"))
+            
+            root.attrib['name'] = spath.name
 
-        try:
-            tree.write(session_file)
-        except BaseException as e:
-            _logger.error(str(e))
-            return (ray.Err.CREATE_FAILED,
-                    _translate("error", "impossible to write XML file %s")
-                        % session_file)
+            for child in root:
+                if not child.tag in ('Clients', 'RemovedClients'):
+                    continue
+
+                for client_xml in child:
+                    client = Client(self)
+                    client.read_xml_properties(XmlElement(client_xml))
+                    if not client.executable:
+                        continue
+                
+                    tmp_clients.append(client)
+
+            try:
+                tree.write(xml_session_file)
+            except BaseException as e:
+                _logger.error(str(e))
+                return (ray.Err.CREATE_FAILED,
+                        _translate("error", "impossible to write XML file %s")
+                            % xml_session_file)
 
         for client in tmp_clients:
             client.adjust_files_after_copy(new_session_name, template_mode)
