@@ -200,59 +200,6 @@ def _should_rewrite_user_templates_file(
 
     return True
 
-def _list_xml_elements(base: str) -> Iterator[tuple[Path, XmlElement]]:
-    factory = bool(base == 'factory')
-    search_paths = _get_search_template_dirs(factory)
-    
-    for search_path in search_paths:
-        file_rewritten = False
-        templates_file = search_path / 'client_templates.xml'
-        if not templates_file.is_file():
-            continue
-        
-        if not os.access(templates_file, os.R_OK):
-            _logger.error(
-                f"No access to {templates_file} in {search_path}, ignore it")
-            continue
-        
-        try:
-            tree = ET.parse(templates_file)
-        except BaseException as e:
-            _logger.error(
-                f"{templates_file} is not a valid xml file\n{str(e)}")
-            continue
-
-        root = tree.getroot()
-        if root.tag != 'RAY-CLIENT-TEMPLATES':
-            continue
-        
-        if not factory and root.attrib.get('VERSION') != ray.VERSION:
-            # we may rewrite user client templates file
-            file_rewritten = _should_rewrite_user_templates_file(
-                root, templates_file)
-        
-        xroot = XmlElement(root)
-        erased_by_nsm_desktop_global = xroot.bool(
-            'erased_by_nsm_desktop_file')
-
-        for c in xroot.iter():
-            if c.el.tag != 'Client-Template':
-                continue
-            
-            if (erased_by_nsm_desktop_global
-                    and not c.bool('erased_by_nsm_desktop_file')):
-                c.set_bool('erased_by_nsm_desktop_file', True)
-                
-            yield search_path, c
-
-        if file_rewritten:
-            _logger.info('rewrite user client templates XML file')
-            try:
-                tree.write(templates_file)
-            except:
-                _logger.error(
-                    'Rewrite user client templates XML file failed')
-
 def _process_element(
         template_name: str, c: YamxlElement,
         from_desktop_execs:list[NsmDesktopExec], session: 'Session',
@@ -600,16 +547,13 @@ def rebuild_templates_database(session: 'Session', base: str):
             continue
 
         template_name = '/' + fde['executable']
-        display_name = fde['name']
 
         template_client = Client(session)
         template_client.executable = fde['executable']
         template_client.desktop_file = fde['desktop_file']
         template_client.client_id = session.generate_abstract_client_id(
             fde['executable'])
-        
-        # this client has probably not been tested in RS
-        # let it behaves as in NSM
+
         template_client.prefix_mode = ray.PrefixMode.CLIENT_NAME
         template_client.jack_naming = ray.JackNaming.LONG
         template_client.update_infos_from_desktop_file()
@@ -617,5 +561,4 @@ def rebuild_templates_database(session: 'Session', base: str):
         template_names.add(template_name)
         templates_database.append(AppTemplate(
             template_name, template_client, fde['name'], Path()))
-
 

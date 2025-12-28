@@ -734,47 +734,6 @@ class OscServerThread(ClientCommunicating):
         template_name: str = osp.args[0] # type:ignore
         templates_root = TemplateRoots.user_clients
         templates_file = templates_root / 'client_templates.xml'
-
-        if not templates_file.is_file():
-            self.send(*osp.error(), ray.Err.NO_SUCH_FILE,
-                      "file %s is missing !" % templates_file)
-            return False
-
-        if not os.access(templates_file, os.W_OK):
-            self.send(*osp.error(), ray.Err.NO_SUCH_FILE,
-                      "file %s in unwriteable !" % templates_file)
-            return False
-
-        tree = ET.parse(templates_file)
-        root = tree.getroot()
-
-        if root.tag != 'RAY-CLIENT-TEMPLATES':
-            self.send(*osp.error(), ray.Err.BAD_PROJECT,
-                      "file %s is not write correctly !" % templates_file)
-            return False
-
-        xroot = XmlElement(root)
-
-        for c in xroot.iter():
-            if c.el.tag != 'Client-Template':
-                continue
-            
-            if c.string('template-name') == template_name:
-                break
-        else:
-            self.send(*osp.error(), ray.Err.NO_SUCH_FILE,
-                      "No template \"%s\" to remove !" % template_name)
-            return False
-        
-        root.remove(c.el)
-        
-        try:
-            tree.write(templates_file)
-        except BaseException as e:
-            _logger.error(str(e))
-            self.send(*osp.error(), ray.Err.CREATE_FAILED,
-                      "Impossible to rewrite user client templates xml file")
-            return False
         
         templates_dir = templates_root / template_name
         if templates_dir.is_dir():
@@ -784,7 +743,43 @@ class OscServerThread(ClientCommunicating):
                 _logger.error(str(e))
                 self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Failed to remove the folder %s" % str(templates_dir))
-                return False
+                return
+
+        if templates_file.is_file():
+            try:
+                tree = ET.parse(templates_file)
+                root = tree.getroot()
+                assert root.tag == 'RAY-CLIENT-TEMPLATES'
+            except:
+                self.send(
+                    *osp.error(), ray.Err.BAD_PROJECT,
+                    f"file {templates_file} is not written correctly !")
+                return
+
+            xroot = XmlElement(root)
+
+            for c in xroot.iter():
+                if c.el.tag != 'Client-Template':
+                    continue
+                
+                if c.string('template-name') == template_name:
+                    break
+            else:
+                # template does not exist in xml file, no problem
+                self.send(*osp.reply(),
+                  f'template "{template_name}" removed.')
+                return
+            
+            root.remove(c.el)
+            
+            try:
+                tree.write(templates_file)
+            except BaseException as e:
+                _logger.error(str(e))
+                self.send(
+                    *osp.error(), ray.Err.CREATE_FAILED,
+                    "Impossible to rewrite user client templates xml file")
+                return
 
         self.send(*osp.reply(),
                   f'template "{template_name}" removed.')

@@ -330,21 +330,10 @@ class Session(ServerSender):
             return ray.Err.NO_SESSION_OPEN
 
         session_path = self.path
-        session_file = session_path / 'raysession.xml'
-
-        if self.is_nsm_locked() and os.getenv('NSM_URL'):
-            session_file = session_path / 'raysubsession.xml'
-
-        if session_file.is_file() and not os.access(session_file, os.W_OK):
-            return ray.Err.CREATE_FAILED
         
-        session_file_yaml = session_path / 'raysession.yaml'
+        session_file = session_path / 'raysession.yaml'
         if self.is_nsm_locked() and os.getenv('NSM_URL'):
-            session_file_yaml = session_path / 'raysubsession.yaml'
-        
-        # if (session_file_yaml.is_file()
-        #         and not os.access(session_file_yaml, os.W_OK)):
-        #     return ray.Err.CREATE_FAILED
+            session_file = session_path / 'raysubsession.yaml'
 
         main_map = CommentedMap()
         main_map['app'] = 'RAYSESSION'
@@ -391,63 +380,68 @@ class Session(ServerSender):
                 wmap['desktop'] = win.desktop
         
         yaml = YAML()
-        yaml.dump(main_map, session_file_yaml)
-
-        root = ET.Element('RAYSESSION')
-        xroot = XmlElement(root)
-        xroot.set_str('VERSION', ray.VERSION)
-        xroot.set_str('name', self.name)
-        if self.notes_shown:
-            xroot.set_bool('notes_shown', True)
-        
-        cs = xroot.new_child('Clients')
-        rcs = xroot.new_child('RemovedClients')
-        ws = xroot.new_child('Windows')
-        
-        # save clients attributes
-        for client in self.clients:
-            c = cs.new_child('client')
-            c.set_str('id', client.client_id)
-            
-            launched = bool(
-                client.is_running
-                or (client.auto_start
-                    and not client.has_been_started))
-            c.set_bool('launched', launched)            
-            client.write_xml_properties(c)
-        
-        # save trashed clients attributes
-        for client in self.trashed_clients:
-            c = rcs.new_child('client')
-            c.set_str('id', client.client_id)
-            client.write_xml_properties(c)
-            
-        # save desktop memory of windows if needed
-        if self.has_server_option(ray.Option.DESKTOPS_MEMORY):
-            self.desktops_memory.save()
-            
-        for win in self.desktops_memory.saved_windows:
-            w = ws.new_child('window')
-            w.set_str('class', win.wclass)
-            w.set_str('name', win.name)
-            w.set_int('desktop', win.desktop)
-
-        tree = ET.ElementTree(root)
-        ET.indent(tree, level=0)
-
         try:
-            f = BytesIO()
-            tree.write(f)
-            header = ("<?xml version='1.0' encoding='UTF-8'?>\n"
-                      "<!DOCTYPE RAYSESSION>\n")
-            text = header + f.getvalue().decode()
-            
-            with open(session_file, 'w') as f:
-                f.write(text)
-
+            yaml.dump(main_map, session_file)
         except BaseException as e:
-            _logger.error(str(e))
+            _logger.error(f'Failed to save session file {session_file}')
+            _logger.error(f'{str(e)}')
             return ray.Err.CREATE_FAILED
+
+        # root = ET.Element('RAYSESSION')
+        # xroot = XmlElement(root)
+        # xroot.set_str('VERSION', ray.VERSION)
+        # xroot.set_str('name', self.name)
+        # if self.notes_shown:
+        #     xroot.set_bool('notes_shown', True)
+        
+        # cs = xroot.new_child('Clients')
+        # rcs = xroot.new_child('RemovedClients')
+        # ws = xroot.new_child('Windows')
+        
+        # # save clients attributes
+        # for client in self.clients:
+        #     c = cs.new_child('client')
+        #     c.set_str('id', client.client_id)
+            
+        #     launched = bool(
+        #         client.is_running
+        #         or (client.auto_start
+        #             and not client.has_been_started))
+        #     c.set_bool('launched', launched)            
+        #     client.write_xml_properties(c)
+        
+        # # save trashed clients attributes
+        # for client in self.trashed_clients:
+        #     c = rcs.new_child('client')
+        #     c.set_str('id', client.client_id)
+        #     client.write_xml_properties(c)
+            
+        # # save desktop memory of windows if needed
+        # if self.has_server_option(ray.Option.DESKTOPS_MEMORY):
+        #     self.desktops_memory.save()
+            
+        # for win in self.desktops_memory.saved_windows:
+        #     w = ws.new_child('window')
+        #     w.set_str('class', win.wclass)
+        #     w.set_str('name', win.name)
+        #     w.set_int('desktop', win.desktop)
+
+        # tree = ET.ElementTree(root)
+        # ET.indent(tree, level=0)
+
+        # try:
+        #     f = BytesIO()
+        #     tree.write(f)
+        #     header = ("<?xml version='1.0' encoding='UTF-8'?>\n"
+        #               "<!DOCTYPE RAYSESSION>\n")
+        #     text = header + f.getvalue().decode()
+            
+        #     with open(session_file, 'w') as f:
+        #         f.write(text)
+
+        # except BaseException as e:
+        #     _logger.error(str(e))
+        #     return ray.Err.CREATE_FAILED
         
         return ray.Err.OK
 
