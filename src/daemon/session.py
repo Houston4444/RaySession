@@ -43,8 +43,6 @@ _translate = QCoreApplication.translate
 
 
 class Session(ServerSender):
-    steps_order: list[sop.SessionOp]
-    
     def __init__(self, root: Path, session_id=0):
         ServerSender.__init__(self)
         self.root = root
@@ -105,10 +103,12 @@ class Session(ServerSender):
         self.steps_osp: Optional[OscPack] = None
         'Stock the OscPack of the long operation running (if any).'
 
-        self.steps_order = list[sop.SessionOp]()
-        self._cur_session_op: sop.SessionOp | None = None
+        self.cur_session_op: sop.SessionOp | None = None
         '''Is only used to prevent destruction of the current session_op
         when the timer waits for some client or session actions.'''
+        self.session_ops = list[sop.SessionOp]()
+        '''Contains the SessionOp list to run once self.cur_session_op
+        is finished.'''
 
         self.terminated_yet = False
 
@@ -675,7 +675,6 @@ class Session(ServerSender):
     def wait_and_go_to(
             self, session_op: sop.SessionOp, wait_for: ray.WaitFor,
             timeout: int | None =None, redondant=False):
-        self._cur_session_op = session_op
         self.timer.stop()
 
         # we need to delete timer to change the timeout connect
@@ -799,10 +798,10 @@ class Session(ServerSender):
         if script_osp is not None:
             self.script_osp = script_osp
 
-        if not self.steps_order:
+        if not self.session_ops:
             return
 
-        next_sop = self.steps_order[0]
+        next_sop = self.session_ops[0]
         if script_osp is not None:
             self.script_osp = script_osp
                 
@@ -819,7 +818,8 @@ class Session(ServerSender):
             self.set_server_status(ray.ServerStatus.SCRIPT)
             return
 
-        self.steps_order.__delitem__(0)
+        self.cur_session_op = next_sop
+        self.session_ops.__delitem__(0)
 
         if (script_osp is not None
                 and self.step_scripter.is_running()
@@ -936,7 +936,7 @@ class Session(ServerSender):
         
     def _send_error(self, err: ray.Err, error_message: str):
         # clear process order to allow other new operations
-        self.steps_order.clear()
+        self.session_ops.clear()
 
         if self.script_osp is not None:
             if err is ray.Err.OK:
@@ -958,16 +958,16 @@ class Session(ServerSender):
         if not self.step_scripter.called_run_step:
             # script has not call run_step
             if self.step_scripter.step in ('load', 'close'):
-                self.steps_order.clear()
-                self.steps_order = [
+                self.session_ops.clear()
+                self.session_ops = [
                     sop.Close(self, clear_all_clients=True),
                     sop.Success(self, msg='Aborted')]
 
                 self.next_session_op(script_forbidden=True)
                 return
 
-            if self.steps_order:
-                self.steps_order.__delitem__(0)
+            if self.session_ops:
+                self.session_ops.__delitem__(0)
 
         self.next_session_op()
 

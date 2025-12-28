@@ -1242,7 +1242,7 @@ class OscServerThread(ClientCommunicating):
                       "and restart operation !")
             return True
 
-        if self.session.steps_order:
+        if self.session.session_ops:
             self.send(*osp.error(), ray.Err.OPERATION_PENDING,
                       "An operation pending.")
             return True

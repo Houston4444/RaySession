@@ -47,7 +47,9 @@ class SessionOp:
         session = self.session
 
         session.steps_osp = None
-        session.steps_order.clear()
+        session.session_ops.clear()
+        session.cur_session_op = None
+
         if session.path is None:
             session.canvas_saver.unload_session()
             session.set_server_status(ray.ServerStatus.OFF)
