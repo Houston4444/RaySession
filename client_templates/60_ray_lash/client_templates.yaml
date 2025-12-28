@@ -1,17 +1,22 @@
-# This file contains templates for programs not known as NSM compatible for a long, and compatible with LASH
-# This means that even without NSM protocol, theses programs will save their file when we ask to.
-# Note that if one of these programs have been found as NSM compatible in a previous file (for example: 40_ray_nsm),
-# its template here will be igored.
+# This file contains templates for programs not known as NSM compatible 
+# for a long, and compatible with LASH.
+# This means that even without NSM protocol,
+# theses programs will save their file when we ask to.
+# Note that if one of these programs have been found as NSM compatible
+# in a previous file (for example: 40_ray_nsm), 
+# its template here will be ignored.
 
-# If the attribute 'erased_by_nsm_desktop_file' is true,
-# then the template will be ignored if a .desktop file containing X-NSM-Capable=true
+# If the attribute 'erased_by_nsm_desktop' is true,
+# then the template will be ignored if a .desktop file
+# containing X-NSM-Capable=true exists
 # and the same executable has been detected.
-# As you can see, 'erased_by_nsm_desktop_file' is set to true globally in RAY-CLIENT-TEMPLATES node,
-# but can be cancel if Client-Template node has 'erased_by_nsm_desktop_file' set to false.
+# As you can see, 'erased_by_nsm_desktop' is set to true globally,
+# but can be cancel if the template map
+# has 'erased_by_nsm_desktop' set to false.
 
 app: RAY-CLIENT-TEMPLATES
 version: 0.18.0
-erased_by_nsm_desktop_file: true
+erased_by_nsm_desktop: true
 templates:
   Hydrogen:
     protocol: Ray-Hack
@@ -34,17 +39,17 @@ templates:
     wait_win: true
     desktop_file: com.rosegardenmusic.rosegarden
     client_id: rosegarden
-  Guitarix:
-    protocol: Ray-Hack
-    executable: guitarix
-    arguments: -f "$CONFIG_FILE"
-    label: Guitarix
-    prefix_mode: SESSION_NAME
-    jack_naming: false
-    config_file: $RAY_SESSION_NAME.conf
-    save_signal: 10
-    wait_win: true
-    client_id: guitarix
+  # Guitarix:
+  #   protocol: Ray-Hack
+  #   executable: guitarix
+  #   arguments: -f "$CONFIG_FILE"
+  #   label: Guitarix
+  #   prefix_mode: SESSION_NAME
+  #   jack_naming: false
+  #   config_file: $RAY_SESSION_NAME.conf
+  #   save_signal: 10
+  #   wait_win: true
+  #   client_id: guitarix
   Qsampler:
     protocol: Ray-Hack
     executable: qsampler
@@ -66,7 +71,8 @@ templates:
     config_file: anything
     save_signal: 10
     wait_win: true
-    try-exec: guitarix
+    try_exec:
+      - guitarix
     client_id: tuner
   CalfJACKHost:
     protocol: Ray-Hack
@@ -100,15 +106,15 @@ templates:
     save_signal: 10
     desktop_file: sequencer64
     client_id: seq64
-  Rakarrack-plus:
-    protocol: Ray-Hack
-    executable: rakarrack-plus
-    arguments: -l "$CONFIG_FILE" -j "$RAY_JACK_CLIENT_NAME"
-    prefix_mode: SESSION_NAME
-    jack_naming: false
-    config_file: $RAY_SESSION_NAME.rkr
-    save_signal: 10
-    client_id: r_plus
+  # Rakarrack-plus:
+  #   protocol: Ray-Hack
+  #   executable: rakarrack-plus
+  #   arguments: -l "$CONFIG_FILE" -j "$RAY_JACK_CLIENT_NAME"
+  #   prefix_mode: SESSION_NAME
+  #   jack_naming: false
+  #   config_file: $RAY_SESSION_NAME.rkr
+  #   save_signal: 10
+  #   client_id: r_plus
   QMidiRoute:
     protocol: Ray-Hack
     executable: qmidiroute

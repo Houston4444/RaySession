@@ -9,10 +9,24 @@ version: 0.18.0
 templates:
   Hydrogen:
     executable: hydrogen
-    needed-version: '1.1'
+    needed_version: '1.1'
     client_id: hydrogen
   Ardour:
     executable: ardour
+    icon: ardour
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: ardour
+  Ardour9:
+    executable: Ardour9
+    icon: ardour
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: ardour
+  ardour9:
+    executable: ardour9
     icon: ardour
     prefix_mode: SESSION_NAME
     jack_naming: false
@@ -60,18 +74,20 @@ templates:
     jack_naming: false
     list_ardour_templates: true
     client_id: ardour
-  Ardour5:
-    executable: Ardour5
-    icon: ardour
+  Mixbus11:
+    executable: Mixbus11
+    label: Mixbus11
     prefix_mode: SESSION_NAME
     jack_naming: false
-    client_id: ardour
-  ardour5:
-    executable: ardour5
-    icon: ardour
+    list_ardour_templates: true
+    client_id: mixbus
+  Mixbus10:
+    executable: Mixbus10
+    label: Mixbus10
     prefix_mode: SESSION_NAME
     jack_naming: false
-    client_id: ardour
+    list_ardour_templates: true
+    client_id: mixbus
   Mixbus9:
     executable: Mixbus9
     label: Mixbus9
@@ -86,6 +102,20 @@ templates:
     jack_naming: false
     list_ardour_templates: true
     client_id: mixbus
+  Mixbus32c11:
+    executable: Mixbus32c11
+    label: Mixbus32c11
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: mixbus32c
+  Mixbus32c10:
+    executable: Mixbus32c10
+    label: Mixbus32c10
+    prefix_mode: SESSION_NAME
+    jack_naming: false
+    list_ardour_templates: true
+    client_id: mixbus32c
   Mixbus32c9:
     executable: Mixbus32c9
     label: Mixbus32c9
@@ -121,10 +151,10 @@ templates:
     executable: qtractor
     prefix_mode: SESSION_NAME
     client_id: qtractor
-  Guitarix:
-    executable: guitarix
-    check_nsm_bin: true
-    client_id: guitarix
+  # Guitarix:
+  #   executable: guitarix
+  #   check_nsm_bin: true
+  #   client_id: guitarix
   Non-Timeline:
     executable: non-timeline
     prefix_mode: SESSION_NAME
@@ -137,19 +167,19 @@ templates:
     executable: zynaddsubfx
     desktop_file: zynaddsubfx-jack
     client_id: zynaddsub
-  synthv1:
-    executable: synthv1_jack
-    client_id: synthv1
+  # synthv1:
+  #   executable: synthv1_jack
+  #   client_id: synthv1
   samplv1:
     executable: samplv1_jack
     unignored_extensions: .wav .flac .ogg .mp3
     client_id: samplv1
-  drumkv1:
-    executable: drumkv1_jack
-    client_id: drumkv1
-  padthv1:
-    executable: padthv1_jack
-    client_id: padthv1
+  # drumkv1:
+  #   executable: drumkv1_jack
+  #   client_id: drumkv1
+  # padthv1:
+  #   executable: padthv1_jack
+  #   client_id: padthv1
   ams:
     executable: ams
     client_id: ams
@@ -158,18 +188,22 @@ templates:
     arguments: --follow-jack-naming
     unignored_extensions: .wav
     desktop_file: sooperlooper
-    try-exec: sooperlooper;slgui
+    try_exec: 
+    - sooperlooper
+    - slgui
     client_id: sooperlooper
   SooperLooper + Transport:
     executable: sooperlooper_nsm
     arguments: --transport_workaround --follow-jack-naming
     unignored_extensions: .wav
     desktop_file: sooperlooper
-    try-exec: sooperlooper;slgui
+    try_exec:
+    - sooperlooper
+    - slgui
     client_id: sooperlooper
-  Non-Sequencer:
-    executable: non-sequencer
-    client_id: sequencer
+  # Non-Sequencer:
+  #   executable: non-sequencer
+  #   client_id: sequencer
   JACK Connections:
     protocol: Internal
     executable: ray-jackpatch

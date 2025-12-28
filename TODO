@@ -87,8 +87,6 @@ restructuration du coeur:
     Les actions de client viennent s'intercaler dans l'action de session.
     voir si _translate peut être récupéré ailleurs (une ligne d'import évitée)
 
-Épurer les templates très vieux (Guitarix Ray-Hack, Ardour5...), ajouter Mixbus et Ardour récents.
-ray_client_template.yaml -> client_template.yaml
 
 
 

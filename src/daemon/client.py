@@ -700,7 +700,7 @@ class Client(ServerSender, ray.ClientData):
         self.template_origin = str(map.get('template_origin', ''))
 
         self.jack_naming = ray.JackNaming(
-            int(map.get('jack_naming', True) == True))
+            int(map.get('long_jack_naming', True) == True))
         self.prefix_mode = ray.PrefixMode(
             str(map.get('prefix_mode', 'client_name')))
 
@@ -819,7 +819,7 @@ class Client(ServerSender, ray.ClientData):
             map['gui_visible'] = not self.start_gui_hidden
 
         if self.jack_naming is not ray.JackNaming.LONG:
-            map['jack_naming'] = False
+            map['long_jack_naming'] = False
 
         if self.in_terminal:
             map['in_terminal'] = True

@@ -2,7 +2,6 @@
 # Imports from standard library
 import os
 from pathlib import Path
-from re import template
 import shutil
 from typing import TYPE_CHECKING, Iterator, TypedDict
 import logging
@@ -11,7 +10,7 @@ import xml.etree.ElementTree as ET
 # third party imports
 from qtpy.QtCore import QProcess, QCoreApplication
 from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
 # Imports from src/shared
 import ray
@@ -301,8 +300,17 @@ def _process_element(
         if not executable:
             return
         
-        try_exec_line = c.string('try-exec')
-        try_execs = try_exec_line.split(';') if try_exec_line else []
+        if isinstance(c.el, CommentedMap):
+            try_execs = list[str]()
+            try_execs_seq = c.el.get('try_exec')
+            if isinstance(try_execs_seq, CommentedSeq):
+                for try_exec in try_execs_seq:
+                    if isinstance(try_exec, str):
+                        try_execs.append(try_exec)
+        
+        else:          
+            try_exec_line = c.string('try-exec')
+            try_execs = try_exec_line.split(';') if try_exec_line else []
         
         if not has_nsm_desktop:
             try_execs.append(executable)
@@ -334,7 +342,10 @@ def _process_element(
 
         # check if a version is at least required for this template
         # don't use needed-version without check how the program acts !
-        needed_version = c.string('needed-version')
+        if isinstance(c.el, CommentedMap):
+            needed_version = c.string('needed_version')
+        else:
+            needed_version = c.string('needed-version')
 
         if (needed_version.startswith('.')
                 or needed_version.endswith('.')
@@ -506,7 +517,7 @@ def rebuild_templates_database(session: 'Session', base: str):
                 continue
             
             erased_by_nsm_desktop_global = bool(
-                ts_map.get('erased_by_nsm_desktop_file', False))
+                ts_map.get('erased_by_nsm_desktop', False))
             
             templates = ts_map.get('templates')
             if not isinstance(templates, CommentedMap):
