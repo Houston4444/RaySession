@@ -1008,21 +1008,22 @@ class Session(ServerSender):
                         "error", "wrong YAML format, not a RAYSESSION app"))
                 
             session_map['name'] = spath.name
-            clients_map = session_map.get('clients')
-            if not isinstance(clients_map, CommentedMap):
-                return ray.Err.OK, ''
+
+            for clients_key in 'clients', 'trashed_clients':
+                clients_map = session_map.get(clients_key)
+                if not isinstance(clients_map, CommentedMap):
+                    continue
+                for client_id, cmap in clients_map.items():
+                    if not (isinstance(client_id, str)
+                            and isinstance(cmap, CommentedMap)):
+                        continue
+                    client = Client(self)
+                    client.read_yaml_properties(cmap)
+                    if not client.executable:
+                        continue
+                    client.client_id = client_id
+                    tmp_clients.append(client)
             
-            for client_id, cmap in clients_map.items():
-                if not (isinstance(client_id, str)
-                        and isinstance(cmap, CommentedMap)):
-                    continue
-                client = Client(self)
-                client.read_yaml_properties(cmap)
-                if not client.executable:
-                    continue
-                client.client_id = client_id
-                tmp_clients.append(client)
-                
             try:
                 with open(yaml_session_file, 'w') as f:
                     yaml.dump(session_map, f)
