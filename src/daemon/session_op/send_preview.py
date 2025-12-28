@@ -34,10 +34,10 @@ class SendPreview(SessionOp):
             session.send_even_dummy(
                 self.src_addr, rg.preview.STATE,
                 preview_state.value) 
-        
+
         if session.path is None:
             return
-        
+
         # prevent long list of OSC sends if preview order already changed
         server = session.get_server_even_dummy()
         if server and server.session_to_preview != session.short_path_name:
