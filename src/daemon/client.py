@@ -35,6 +35,7 @@ from daemon_tools  import (
 from signaler import Signaler
 from scripter import ClientScripter
 from internal_client import InternalClient
+from yaml_tools import YamlMap
 
 # only used to identify session functions in the IDE
 # 'Session' is not importable simply because it would be
@@ -685,24 +686,25 @@ class Client(ServerSender, ray.ClientData):
             ET.dump(c.el)
 
     def read_yaml_properties(self, map: CommentedMap):
-        self.executable = str(map.get('executable', ''))
-        self.arguments = str(map.get('arguments', ''))
-        self.pre_env = str(map.get('pre_env', ''))
-        self.name = str(map.get('name', ''))
-        self.desktop_file = str(map.get('desktop_file', ''))
-        self.label = str(map.get('label', ''))
-        self.description = str(map.get('description', ''))
-        self.icon = str(map.get('icon', ''))
-        self.in_terminal = bool(map.get('in_terminal', False) == True)
-        self.auto_start = bool(map.get('launched', True) == True)
-        self.check_last_save = bool(map.get('check_last_save', True) == True)
-        self.start_gui_hidden = bool(map.get('gui_visible', True) == False)
-        self.template_origin = str(map.get('template_origin', ''))
+        ymap = YamlMap(map)
+        self.executable = ymap.string('executable')
+        self.arguments = ymap.string('arguments')
+        self.pre_env = ymap.string('pre_env')
+        self.name = ymap.string('name')
+        self.desktop_file = ymap.string('desktop_file')
+        self.label = ymap.string('label')
+        self.description = ymap.string('description')
+        self.icon = ymap.string('icon')
+        self.in_terminal = ymap.bool('in_terminal')
+        self.auto_start = ymap.bool('launched', True)
+        self.check_last_save = ymap.bool('check_last_save', True)
+        self.start_gui_hidden = not ymap.bool('gui_visible', True)
+        self.template_origin = ymap.string('template_origin')
 
         self.jack_naming = ray.JackNaming(
-            int(map.get('long_jack_naming', True) == True))
+            int(ymap.bool('long_jack_naming', True)))
         self.prefix_mode = ray.PrefixMode(
-            str(map.get('prefix_mode', 'client_name')))
+            ymap.string('prefix_mode', 'client_name'))
 
         # ensure client has a name
         if not self.name:
@@ -710,8 +712,8 @@ class Client(ServerSender, ray.ClientData):
 
         self.update_infos_from_desktop_file()
 
-        ign_exts = str(map.get('ignored_extensions', '')).split(' ')
-        unign_exts = str(map.get('unignored_extensions', '')).split(' ')
+        ign_exts = ymap.string('ignored_extensions').split(' ')
+        unign_exts = ymap.string('unignored_extensions').split(' ')
 
         global_exts = ray.GIT_IGNORED_EXTENSIONS.split(' ')
         self.ignored_extensions = ""
@@ -724,45 +726,29 @@ class Client(ServerSender, ray.ClientData):
             if ext and not ext in global_exts:
                 self.ignored_extensions += f' {ext}'
 
-        try:
-            self.last_open_duration = float(
-                map.get('last_open_duration', 0.0))
-        except BaseException as e:
-            _logger.warning('last_open_duration is not a float')
-            self.last_open_duration = 0.0
+        self.last_open_duration = ymap.float('last_open_duration')
 
         if self.prefix_mode is ray.PrefixMode.CUSTOM:
-            self.custom_prefix = str(map.get('custom_prefix', ''))
+            self.custom_prefix = ymap.string('custom_prefix')
 
-        self.protocol = ray.Protocol.from_string(map.get('protocol', 'NSM'))
+        self.protocol = ray.Protocol.from_string(
+            ymap.string('protocol', 'NSM'))
 
         if self.protocol is ray.Protocol.RAY_HACK:
-            self.ray_hack.config_file = str(map.get('config_file', ''))
-            try:
-                self.ray_hack.save_sig = int(map.get('save_signal', 0))
-            except:
-                self.ray_hack.save_sig = 0
-            try:
-                self.ray_hack.stop_sig = int(
-                    map.get('stop_signal', signal.SIGTERM.value))
-            except:
-                self.ray_hack.stop_sig = signal.SIGTERM.value
-            
-            self.ray_hack.wait_win = bool(
-                map.get('wait_window', False) == True)
-            try:
-                no_save_level = int(map.get('no_save_level', 0))
-            except:
-                no_save_level = 0
-            
+            self.ray_hack.config_file = ymap.string('config_file')
+            self.ray_hack.save_sig = ymap.int('save_signal')
+            self.ray_hack.stop_sig = ymap.int(
+                'stop_signal', signal.SIGTERM.value)
+            self.ray_hack.wait_win = ymap.bool('wait_window')
+            no_save_level = ymap.int('no_save_level')
             if 0 <= no_save_level <= 2:
                 self.ray_hack.no_save_level = no_save_level
 
         if self.protocol is ray.Protocol.RAY_NET:
-            self.ray_net.daemon_url = str(map.get('net_daemon_url', ''))
-            self.ray_net.session_root = str(map.get('net_session_root', ''))
-            self.ray_net.session_template = str(
-                map.get('net_session_template', ''))
+            self.ray_net.daemon_url = ymap.string('net_daemon_url')
+            self.ray_net.session_root = ymap.string('net_daemon_url')
+            self.ray_net.session_template = ymap.string(
+                'net_session_template')
 
             # neeeded only to know if RAY_NET client is capable of switch
             self.executable = ray.RAYNET_BIN
@@ -771,7 +757,7 @@ class Client(ServerSender, ray.ClientData):
 
         # template uses "client_id" for wanted client_id
         self.client_id = self.session.generate_client_id(
-            str(map.get('client_id', '')))
+            ymap.string('client_id'))
 
         custom_data = map.get('custom_data')
         if isinstance(custom_data, CommentedMap):
