@@ -27,16 +27,19 @@ class SwitchClientAlternative(SessionOp):
                  client: Client, client_id: str, save_client=False):
         super().__init__(session)
         self.client = client
-        print('on init ', self.client.client_id)
         self.client_id = client_id
         'the client_id to switch to'
         self.save_client = save_client
+        self._was_running = False
         self._tmp_dir: Path | None = None
-        self._client_running = False
         self._new_client: Client | None = None
         self.routine = [
-            self.save_the_client, self.copy_client, self.rename_files]
-        
+            self.save_the_client,
+            self.stop_client,
+            self.kill_client,
+            self.copy_client,
+            self.rename_files]
+
     def save_the_client(self):
         client = self.client
         if (self.save_client and client.is_running
@@ -44,7 +47,33 @@ class SwitchClientAlternative(SessionOp):
             client.save()
             
         self.next(ray.WaitFor.REPLY, timeout=5000)
+
+    def stop_client(self):
+        session = self.session
+        client = self.client
+        session.expected_clients.clear()
         
+        for trashed_client in session.trashed_clients:
+            if trashed_client.client_id == self.client_id:
+                self._new_client = trashed_client
+                break
+
+        if (client.is_running
+                and not (client.can_switch
+                         and (self._new_client is None
+                              or client.can_switch_with(self._new_client)))):
+            self._was_running = True
+            session.expected_clients.append(self.client)
+            self.client.stop()
+
+        self.next(ray.WaitFor.STOP_ONE, timeout=30000)
+
+    def kill_client(self):
+        if self.client in self.session.expected_clients:
+            self.client.kill()
+        
+        self.next(ray.WaitFor.STOP_ONE, timeout=1000)
+
     def copy_client(self):
         session = self.session
         client = self.client
@@ -52,11 +81,7 @@ class SwitchClientAlternative(SessionOp):
         if session.path is None:
             raise NoSessionPath
         
-        for client in session.trashed_clients:
-            if client.client_id == self.client_id:
-                self._new_client = client
-                break
-        else:
+        if self._new_client is None:
             self._new_client = Client(session)
             self._new_client.eat_attributes(client)
             self._new_client.client_id = self.client_id
@@ -113,7 +138,6 @@ class SwitchClientAlternative(SessionOp):
                 self.minor_error(
                     ray.Err.CREATE_FAILED,
                     f'failed to remove {self._tmp_dir}, not so strong')
-        switch = client.can_switch_with(self._new_client)
         
         client.set_status(ray.ClientStatus.REMOVED)
         tmp_client = Client(session)
@@ -135,10 +159,9 @@ class SwitchClientAlternative(SessionOp):
             *[c.client_id for c in session.clients])
         
         if client.is_running:
-            if switch:
-                client.switch()
-            else:
-                client.stop()
+            client.switch()
+        elif self._was_running:
+            client.start()
         
         self.reply(f'client {tmp_client.client_id} switched to '
                    f'alternative {self.client_id}')
