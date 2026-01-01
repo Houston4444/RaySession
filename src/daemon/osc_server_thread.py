@@ -84,6 +84,7 @@ METHODS_DICT = {
     r.client.CHANGE_ADVANCED_PROPERTIES: 'ssisi',
     r.client.CHANGE_ID: 'ss',
     r.client.FULL_RENAME: 'ss',
+    r.client.SWITCH_ALTERNATIVE: 'ss',
     r.client.GET_CUSTOM_DATA: 'ss',
     r.client.GET_DESCRIPTION: 's',
     r.client.GET_PID: 's',

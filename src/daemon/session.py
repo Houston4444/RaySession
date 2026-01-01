@@ -1,6 +1,5 @@
 
 # Imports from standard library
-from io import BytesIO
 import logging
 import os
 import random

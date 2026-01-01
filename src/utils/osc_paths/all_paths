@@ -34,6 +34,7 @@
 /ray/client/change_id
 /ray/client/change_prefix
 /ray/client/full_rename
+/ray/client/switch_alternative ss
 /ray/client/get_custom_data
 /ray/client/get_description
 /ray/client/get_pid

@@ -19,6 +19,7 @@ from .save import Save
 from .save_client_as_template import SaveClientAsTemplate
 from .save_session_template import SaveSessionTemplate
 from .save_snapshot import SaveSnapshot
+from .switch_client_alternative import SwitchClientAlternative
 from .send_preview import SendPreview
 from .success import Success
 from .take_place import TakePlace

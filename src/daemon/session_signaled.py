@@ -1921,6 +1921,24 @@ class SignaledSession(Session):
             self, client, new_client_name, new_client_id)
         rename_full_client.start()
 
+    @client_action(r.client.SWITCH_ALTERNATIVE, 'ss')
+    def _ray_client_switch_alternative(self, osp: OscPack, client: Client):
+        alter_client_id: str = osp.args[1] # type:ignore
+        for trashed_client in self.trashed_clients:
+            if trashed_client.client_id == alter_client_id:
+                break
+        else:
+            if alter_client_id in self.forbidden_ids_set:
+                self.send(*osp.error(), ray.Err.BAD_PROJECT,
+                          f'client_id {alter_client_id} is not available')
+                return
+
+        self.steps_osp = osp
+        self.session_ops = [
+            sop.SwitchClientAlternative(self, client, alter_client_id)]
+
+        self.next_session_op()
+
     @client_action(r.client.CHANGE_ID, 'ss')
     def _ray_client_change_id(self, osp: OscPack, client: Client):
         if client.is_running:

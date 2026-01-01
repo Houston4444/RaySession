@@ -1572,13 +1572,13 @@ class Client(ServerSender, ray.ClientData):
         self.gui_has_been_visible = self.gui_visible
 
     def switch(self):
-        client_project_path = self.project_path
+        project_path = self.project_path
         self.send_gui_client_properties()
         self.message(
-            f'Commanding {self.name} to switch "{client_project_path}"')
+            f'Commanding {self.name} to switch "{project_path}"')
 
         self.send_to_self_address(
-            nsm.client.OPEN, str(client_project_path),
+            nsm.client.OPEN, str(project_path),
             self.session.name, self.jack_client_name)
 
         self.pending_command = ray.Command.OPEN
@@ -1586,7 +1586,7 @@ class Client(ServerSender, ray.ClientData):
         self.set_status(ray.ClientStatus.SWITCH)
         if self.can_optional_gui:
             self.send_gui(rg.client.GUI_VISIBLE,
-                           self.client_id, int(self.gui_visible))
+                          self.client_id, int(self.gui_visible))
 
     def can_switch_with(self, other_client: 'Client') -> bool:
         if self.protocol is ray.Protocol.RAY_HACK:

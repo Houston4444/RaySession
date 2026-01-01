@@ -12,6 +12,7 @@ import ray
 # Local imports
 from client import Client
 from patch_rewriter import rewrite_jack_patch_files
+from daemon_tools import NoSessionPath
 
 from .session_op import SessionOp
 
@@ -69,10 +70,7 @@ class RenameFullClient(SessionOp):
         session = self.session
         client = self.client
         if session.path is None:
-            _logger.error('Impossible to rename full client, no path !!!')
-            self.error(ray.Err.NO_SESSION_OPEN, 
-                       'Impossible to rename full client, no path !!!')
-            return
+            raise NoSessionPath
         
         tmp_client = Client(session)
         tmp_client.eat_attributes(client)
@@ -106,8 +104,9 @@ class RenameFullClient(SessionOp):
 
         client.sent_to_gui = False
         client.send_gui_client_properties()
-        session.send_gui(rg.session.SORT_CLIENTS,
-                      *[c.client_id for c in session.clients])
+        session.send_gui(
+            rg.session.SORT_CLIENTS,
+            *[c.client_id for c in session.clients])
 
         # we need to save session file here
         # else, if session is aborted
