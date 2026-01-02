@@ -91,15 +91,20 @@ restructuration du coeur:
 alternatives:
     problèmes à voir:
         démon:
-            interdiction de nouveau client_id avec l'id d'une alternative
-            prend tous les attributs du client sauf ceux spécifiés
-            monitor: client_id_switch doit pouvoir gérer ça
-            sauvegarde: au changement d'alternative, l'original devient alternative
+            <!-- interdiction de nouveau client_id avec l'id d'une alternative -->
+            <!-- prend tous les attributs du client sauf ceux spécifiés -->
+            <!-- monitor: client_id_switch doit pouvoir gérer ça -->
+            <!-- sauvegarde: au changement d'alternative, l'original devient alternative -->
+            attention aux links_dir de Carla !
+            envois GUI les alternative_groups
+            copier les connexions (optionel) lors de la création
         GUI:
             menu contextuel
             fenêtre client_properties, comment faire ?
         ray_control:
             basculer, éventuellement créer l'alternative si possible
+
+        
 
 
 

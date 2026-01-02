@@ -87,6 +87,7 @@ class ClientSlot(QFrame):
 
         self.ui.actionReturnToAPreviousState.setVisible(
             self.main_win.has_git)
+        self.ui.actionFindBoxesInPatchbay.setEnabled(False)
 
         self.ui.iconButton.setMenu(self._menu) # type:ignore
         
@@ -364,80 +365,86 @@ class ClientSlot(QFrame):
 
         ray_hack = bool(self.client.protocol is ray.Protocol.RAY_HACK)
 
-        if status in (
-                ray.ClientStatus.LAUNCH,
-                ray.ClientStatus.OPEN,
-                ray.ClientStatus.SWITCH,
-                ray.ClientStatus.NOOP,
-                ray.ClientStatus.LOSE):
-            self.ui.startButton.setEnabled(False)
-            self.ui.stopButton.setEnabled(True)
-            self.ui.saveButton.setEnabled(False)
-            self.ui.closeButton.setEnabled(False)
-            self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
-            self.ui.ClientName.setEnabled(True)
-            self.ui.toolButtonGUI.setEnabled(True)
-            self._gray_icon(False)
+        match status:
+            case (ray.ClientStatus.LAUNCH | ray.ClientStatus.OPEN
+                  | ray.ClientStatus.SWITCH | ray.ClientStatus.NOOP
+                  | ray.ClientStatus.LOSE):
+                self.ui.startButton.setEnabled(False)
+                self.ui.stopButton.setEnabled(True)
+                self.ui.saveButton.setEnabled(False)
+                self.ui.closeButton.setEnabled(False)
+                self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
+                self.ui.ClientName.setEnabled(True)
+                self.ui.toolButtonGUI.setEnabled(True)
+                self._gray_icon(False)
 
-            if self._very_short:
-                self.ui.startButton.setVisible(False)
-                self.ui.stopButton.setVisible(True)
+                if self._very_short:
+                    self.ui.startButton.setVisible(False)
+                    self.ui.stopButton.setVisible(True)
+                    
+                self.ui.actionFindBoxesInPatchbay.setEnabled(True)
 
-        elif status is ray.ClientStatus.READY:
-            self.ui.startButton.setEnabled(False)
-            self.ui.stopButton.setEnabled(True)
-            self.ui.closeButton.setEnabled(False)
-            self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
-            self.ui.ClientName.setEnabled(True)
-            self.ui.toolButtonGUI.setEnabled(True)
-            self.ui.saveButton.setEnabled(True)
-            self._gray_icon(False)
+            case ray.ClientStatus.READY:
+                self.ui.startButton.setEnabled(False)
+                self.ui.stopButton.setEnabled(True)
+                self.ui.closeButton.setEnabled(False)
+                self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
+                self.ui.ClientName.setEnabled(True)
+                self.ui.toolButtonGUI.setEnabled(True)
+                self.ui.saveButton.setEnabled(True)
+                self._gray_icon(False)
 
-            if self._very_short:
-                self.ui.startButton.setVisible(False)
-                self.ui.stopButton.setVisible(True)
+                if self._very_short:
+                    self.ui.startButton.setVisible(False)
+                    self.ui.stopButton.setVisible(True)
+                
+                self.ui.actionFindBoxesInPatchbay.setEnabled(True)
 
-        elif status is ray.ClientStatus.STOPPED:
-            self.ui.startButton.setEnabled(True)
-            self.ui.stopButton.setEnabled(False)
-            self.ui.saveButton.setEnabled(False)
-            self.ui.closeButton.setEnabled(True)
-            self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
-            self.ui.ClientName.setEnabled(False)
-            self.ui.toolButtonGUI.setEnabled(False)
-            self._gray_icon(True)
+            case ray.ClientStatus.STOPPED:
+                self.ui.startButton.setEnabled(True)
+                self.ui.stopButton.setEnabled(False)
+                self.ui.saveButton.setEnabled(False)
+                self.ui.closeButton.setEnabled(True)
+                self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
+                self.ui.ClientName.setEnabled(False)
+                self.ui.toolButtonGUI.setEnabled(False)
+                self._gray_icon(True)
 
-            if self._very_short:
-                self.ui.startButton.setVisible(True)
-                self.ui.stopButton.setVisible(False)
+                if self._very_short:
+                    self.ui.startButton.setVisible(True)
+                    self.ui.stopButton.setVisible(False)
 
-            self.ui.saveButton.setIcon(self._save_icon) # type:ignore
-            self.ui.stopButton.setIcon(self._stop_icon) # type:ignore
-            self._stop_is_kill = False
+                self.ui.saveButton.setIcon(self._save_icon) # type:ignore
+                self.ui.stopButton.setIcon(self._stop_icon) # type:ignore
+                self._stop_is_kill = False
 
-            if not ray_hack:
-                self.set_gui_state(False)
+                if not ray_hack:
+                    self.set_gui_state(False)
+                    
+                self.ui.actionFindBoxesInPatchbay.setEnabled(False)
 
-        elif status is ray.ClientStatus.PRECOPY:
-            self.ui.startButton.setEnabled(False)
-            self.ui.stopButton.setEnabled(False)
-            self.ui.saveButton.setEnabled(False)
-            self.ui.closeButton.setEnabled(True)
-            self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
-            self.ui.ClientName.setEnabled(False)
-            self.ui.toolButtonGUI.setEnabled(False)
-            self._gray_icon(True)
+            case ray.ClientStatus.PRECOPY:
+                self.ui.startButton.setEnabled(False)
+                self.ui.stopButton.setEnabled(False)
+                self.ui.saveButton.setEnabled(False)
+                self.ui.closeButton.setEnabled(True)
+                self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
+                self.ui.ClientName.setEnabled(False)
+                self.ui.toolButtonGUI.setEnabled(False)
+                self._gray_icon(True)
 
-            if self._very_short:
-                self.ui.startButton.setVisible(True)
-                self.ui.stopButton.setVisible(False)
+                if self._very_short:
+                    self.ui.startButton.setVisible(True)
+                    self.ui.stopButton.setVisible(False)
 
-            self.ui.saveButton.setIcon(self._save_icon) # type:ignore
-            self.ui.stopButton.setIcon(self._stop_icon) # type:ignore
-            self._stop_is_kill = False
+                self.ui.saveButton.setIcon(self._save_icon) # type:ignore
+                self.ui.stopButton.setIcon(self._stop_icon) # type:ignore
+                self._stop_is_kill = False
+                
+                self.ui.actionFindBoxesInPatchbay.setEnabled(False)
 
-        elif status is ray.ClientStatus.COPY:
-            self.ui.saveButton.setEnabled(False)
+            case ray.ClientStatus.COPY:
+                self.ui.saveButton.setEnabled(False)
 
     def allow_kill(self):
         self._stop_is_kill = True
