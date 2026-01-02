@@ -86,7 +86,11 @@ class SwitchClientAlternative(SessionOp):
             self._new_client.eat_attributes(client)
             self._new_client.client_id = self.client_id
             pretty_id = self.client_id.replace('_', ' ')
+            ex_pretty_id = client.client_id.replace('_', ' ')
             if pretty_id not in self._new_client.label:
+                if self._new_client.label.endswith(f' ({ex_pretty_id})'):
+                    self._new_client.label = \
+                        self._new_client.label.rpartition(' (')[0]
                 self._new_client.label += f' ({pretty_id})'
             session.trashed_clients.append(self._new_client)
 
@@ -141,6 +145,45 @@ class SwitchClientAlternative(SessionOp):
                 self.minor_error(
                     ray.Err.CREATE_FAILED,
                     f'failed to remove {self._tmp_dir}, not so strong')
+        
+        has_id_1, has_id_2, together = False, False, False
+        for alter_group in session.alternative_groups:
+            if client.client_id in alter_group:
+                has_id_1 = True
+                if self.client_id in alter_group:
+                    has_id_1, has_id_2, together = True, True, True
+                    break
+            elif self.client_id in alter_group:
+                has_id_2 = True
+                
+        if together:
+            pass
+        elif has_id_1 and has_id_2:
+            for alter_group in session.alternative_groups:
+                alter_group.discard(client.client_id)
+                alter_group.discard(self.client_id)
+        
+            for alter_group in session.alternative_groups.copy():
+                if len(alter_group) < 2:
+                    session.alternative_groups.remove(alter_group)
+        
+            session.alternative_groups.append(
+                {client.client_id, self.client_id})
+            
+        elif has_id_1:
+            for alter_group in session.alternative_groups:
+                if client.client_id in alter_group:
+                    alter_group.add(self.client_id)
+                    break
+        
+        elif has_id_2:
+            for alter_group in session.alternative_groups:
+                if self.client_id in alter_group:
+                    alter_group.add(client.client_id)
+                    break
+        else:
+            session.alternative_groups.append(
+                {client.client_id, self.client_id})
         
         client.set_status(ray.ClientStatus.REMOVED)
         tmp_client = Client(session)

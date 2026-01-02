@@ -20,6 +20,7 @@ from xml_tools import XmlElement
 from client import Client
 from daemon_tools import Terminal
 import multi_daemon_file
+from yaml_tools import YamlMap
 
 from .session_op import SessionOp
 
@@ -182,7 +183,7 @@ class Preload(SessionOp):
                 file_type = _FileType.YAML
 
         session.no_future()
-        sess_name = ""
+        sess_name = ''
         client_ids = set[str]()
 
         if file_type is _FileType.YAML:
@@ -200,14 +201,15 @@ class Preload(SessionOp):
                 self.load_error(ray.Err.BAD_PROJECT)
                 return
             
-            if sess_dict.get('app') != ray.APP_TITLE.upper():
+            sess_map = YamlMap(sess_dict)
+            
+            if sess_map.string('app') != ray.APP_TITLE.upper():
                 _logger.error(f'{sess_yaml_file} is not for {ray.APP_TITLE}')
                 self.load_error(ray.Err.BAD_PROJECT)
                 return
             
-            sess_name = sess_dict.get('name', '')
-            if sess_dict.get('notes_shown') is True:
-                session.future_notes_shown = True
+            sess_name = sess_map.string('name')
+            session.future_notes_shown = sess_map.bool('notes_shown')
             
             for section in 'clients', 'trashed_clients':
                 clients_map = sess_dict.get(section)
@@ -221,9 +223,10 @@ class Preload(SessionOp):
                         client.read_yaml_properties(client_map)
                         if not client.executable:
                             continue
-                        if client.client_id in client_ids:
+                        if client_id in client_ids:
                             continue
                         client.client_id = client_id
+                        client_ids.add(client_id)
                         
                         if section == 'clients':
                             session.future_clients.append(client)

@@ -109,6 +109,8 @@ class Session(ServerSender):
         '''Contains the SessionOp list to run once self.cur_session_op
         is finished.'''
 
+        self.alternative_groups = list[set[str]]()
+
         self.terminated_yet = False
 
         # externals are clients not launched from the daemon
@@ -365,6 +367,10 @@ class Session(ServerSender):
                 trashed_clients_map[client.client_id] = client_map
             
             main_map['trashed_clients'] = trashed_clients_map
+        
+        alter_groups_seq = [sorted(ag) for ag in self.alternative_groups]
+        if alter_groups_seq:
+            main_map['alternative_groups'] = alter_groups_seq
         
         # save desktop memory of windows if needed
         if self.has_server_option(ray.Option.DESKTOPS_MEMORY):
@@ -1070,3 +1076,21 @@ class Session(ServerSender):
         
         return ray.Err.OK, ''
 
+    def get_client_from_id(self, client_id: str) -> Client | None:
+        '''if it exists, return the client in self.clients
+        with this `client_id`. If `client_id` is in trash, and is
+        an alternative to a client in self.clients, return this matching
+        client in self.clients'''
+        for client in self.clients:
+            if client.client_id == client_id:
+                return client
+        
+        client_ids = set([c.client_id for c in self.clients])
+        
+        for alter_group in self.alternative_groups:
+            if client_id in alter_group:
+                for alt_client_id in alter_group:
+                    if alt_client_id in client_ids:
+                        for client in self.clients:
+                            if client.client_id == alt_client_id:
+                                return client

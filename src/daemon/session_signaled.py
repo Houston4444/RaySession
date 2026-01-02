@@ -130,17 +130,13 @@ def client_action(path: str, types: str):
                 osp: OscPack
 
             client_id: str = osp.args[0] # type:ignore
-            client: Client
+            # client: Client
 
-            for client in sess.clients:
-                if client.client_id == client_id:
-                    response = func(*args, client, **kwargs)
-                    break
-            else:
+            client = sess.get_client_from_id(client_id)
+            if client is None:
                 sess.send_error_no_client(osp, client_id)
                 return
-
-            return response
+            return func(*args, client, **kwargs)
         
         _managed_funcs[path] = wrapper
         
