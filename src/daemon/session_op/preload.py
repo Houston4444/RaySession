@@ -232,7 +232,19 @@ class Preload(SessionOp):
                             session.future_clients.append(client)
                         else:
                             session.future_trashed_clients.append(client)
-             
+            
+            alter_groups = sess_dict.get('alternative_groups')
+            if isinstance(alter_groups, CommentedSeq):
+                for alter_group in alter_groups:
+                    new_alter_group = set[str]()
+                    if isinstance(alter_group, CommentedSeq):
+                        for client_id in alter_group:
+                            if isinstance(client_id, str):
+                                new_alter_group.add(client_id)
+                    if len(new_alter_group) >= 2:
+                        session.future_alternative_groups.append(
+                            new_alter_group)
+            
             windows_seq = sess_dict.get('windows')
             if isinstance(windows_seq, CommentedSeq):
                 session.desktops_memory.read_yaml(windows_seq)

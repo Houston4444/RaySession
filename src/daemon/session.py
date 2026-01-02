@@ -62,6 +62,7 @@ class Session(ServerSender):
         self.future_notes = ''
         self.notes_shown = False
         self.future_notes_shown = False
+        self.future_alternative_groups = list[set[str]]()
         self.load_locked = False
 
         self.is_renameable = True
@@ -195,6 +196,7 @@ class Session(ServerSender):
         self.future_trashed_clients.clear()
         self.future_notes = ''
         self.future_notes_shown = False
+        self.future_alternative_groups.clear()
 
     @property
     def short_path_name(self) -> str:
