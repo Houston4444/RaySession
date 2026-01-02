@@ -85,6 +85,9 @@ class SwitchClientAlternative(SessionOp):
             self._new_client = Client(session)
             self._new_client.eat_attributes(client)
             self._new_client.client_id = self.client_id
+            pretty_id = self.client_id.replace('_', ' ')
+            if pretty_id not in self._new_client.label:
+                self._new_client.label += f' ({pretty_id})'
             session.trashed_clients.append(self._new_client)
 
             self._tmp_dir = session.path / f'.client_copy.{self.client_id}'
