@@ -95,7 +95,7 @@ class Client(ServerSender, ray.ClientData):
 
     last_save_time = 0.00
     last_dirty = 0.00
-    _last_announce_time = 0.00
+    _last_open_time = 0.00
     last_open_duration = 0.00
 
     has_been_started = False
@@ -963,7 +963,7 @@ class Client(ServerSender, ray.ClientData):
                         % self.gui_msg_style)
 
                 self.last_open_duration = \
-                    time.time() - self._last_announce_time
+                    time.time() - self._last_open_time
 
                 self._send_reply_to_caller(OscSrc.OPEN, 'client opened')
 
@@ -1577,6 +1577,8 @@ class Client(ServerSender, ray.ClientData):
         self.message(
             f'Commanding {self.name} to switch "{project_path}"')
 
+        self._last_open_time = time.time()
+
         self.send_to_self_address(
             nsm.client.OPEN, str(project_path),
             self.session.name, self.jack_client_name)
@@ -2024,4 +2026,4 @@ class Client(ServerSender, ray.ClientData):
 
         self.pending_command = ray.Command.OPEN
 
-        self._last_announce_time = time.time()
+        self._last_open_time = time.time()
