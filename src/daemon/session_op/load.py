@@ -56,8 +56,8 @@ class Load(SessionOp):
         for client in session.clients.__reversed__():
             if (open_off
                     or not client.is_running
-                    or (client.is_reply_pending()
-                        and not client.is_dumb_client())
+                    or (client.is_reply_pending
+                        and not client.is_dumb)
                     or client.switch_state is not ray.SwitchState.RESERVED):
                 session.clients_to_quit.append(client)
                 session.expected_clients.append(client)
@@ -216,9 +216,9 @@ class Load(SessionOp):
         session.set_server_status(ray.ServerStatus.OPEN)
 
         for client in session.clients:
-            if client.nsm_active and client.is_reply_pending():
+            if client.nsm_active and client.is_reply_pending:
                 session.expected_clients.append(client)
-            elif client.is_running and client.is_dumb_client():
+            elif client.is_running and client.is_dumb:
                 client.set_status(ray.ClientStatus.NOOP)
 
         if session.expected_clients:

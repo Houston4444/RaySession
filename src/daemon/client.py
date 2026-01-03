@@ -207,11 +207,10 @@ class Client(ServerSender, ray.ClientData):
 
         self._send_reply_to_caller(OscSrc.START, 'client started')
 
-        if self.is_ray_hack:
-            if self.ray_hack.config_file:
-                self.pending_command = ray.Command.OPEN
-                self.set_status(ray.ClientStatus.OPEN)
-                QTimer.singleShot(500, self._ray_hack_near_ready)
+        if self.is_ray_hack and self.ray_hack.config_file:
+            self.pending_command = ray.Command.OPEN
+            self.set_status(ray.ClientStatus.OPEN)
+            QTimer.singleShot(500, self._ray_hack_near_ready)
 
     def _process_finished(self, exit_code: int, exit_status: QProcess.ExitStatus):
         if (self.launched_in_terminal
@@ -926,57 +925,60 @@ class Client(ServerSender, ray.ClientData):
                 f'Client "{self.name}" replied with error: '
                 f'{message} ({errcode})')
 
-            if self.pending_command is ray.Command.SAVE:
-                self._send_error_to_caller(
-                    OscSrc.SAVE, ray.Err.GENERAL_ERROR,
-                    _translate('GUIMSG', '%s failed to save!')
-                        % self.gui_msg_style)
-                
-                self.session.send_monitor_event(
-                    'save_error', self.client_id)
+            match self.pending_command:
+                case ray.Command.SAVE:
+                    self._send_error_to_caller(
+                        OscSrc.SAVE, ray.Err.GENERAL_ERROR,
+                        _translate('GUIMSG', '%s failed to save!')
+                            % self.gui_msg_style)
+                    
+                    self.session.send_monitor_event(
+                        'save_error', self.client_id)
 
-            elif self.pending_command is ray.Command.OPEN:
-                self._send_error_to_caller(
-                    OscSrc.OPEN, ray.Err.GENERAL_ERROR,
-                    _translate('GUIMSG', '%s failed to open!')
-                        % self.gui_msg_style)
-                
-                self.session.send_monitor_event(
-                    'open_error', self.client_id)
+                case ray.Command.OPEN:
+                    self._send_error_to_caller(
+                        OscSrc.OPEN, ray.Err.GENERAL_ERROR,
+                        _translate('GUIMSG', '%s failed to open!')
+                            % self.gui_msg_style)
+                    
+                    self.session.send_monitor_event(
+                        'open_error', self.client_id)
 
             self.set_status(ray.ClientStatus.ERROR)
         else:
-            if self.pending_command is ray.Command.SAVE:
-                self.last_save_time = time.time()
+            match self.pending_command:
+                case ray.Command.SAVE:
+                    self.last_save_time = time.time()
 
-                self.send_gui_message(
-                    _translate('GUIMSG', '  %s: saved')
-                        % self.gui_msg_style)
+                    self.send_gui_message(
+                        _translate('GUIMSG', '  %s: saved')
+                            % self.gui_msg_style)
 
-                self._send_reply_to_caller(OscSrc.SAVE, 'client saved.')
-                self.session.send_monitor_event(
-                    'saved', self.client_id)
+                    self._send_reply_to_caller(OscSrc.SAVE, 'client saved.')
+                    self.session.send_monitor_event(
+                        'saved', self.client_id)
 
-            elif self.pending_command is ray.Command.OPEN:
-                self.send_gui_message(
-                    _translate('GUIMSG', '  %s: project loaded')
-                        % self.gui_msg_style)
+                case ray.Command.OPEN:
+                    self.send_gui_message(
+                        _translate('GUIMSG', '  %s: project loaded')
+                            % self.gui_msg_style)
 
-                self.last_open_duration = \
-                    time.time() - self._last_open_time
+                    self.last_open_duration = \
+                        time.time() - self._last_open_time
 
-                self._send_reply_to_caller(OscSrc.OPEN, 'client opened')
+                    self._send_reply_to_caller(OscSrc.OPEN, 'client opened')
 
-                self.session.send_monitor_event(
-                    'ready', self.client_id)
+                    self.session.send_monitor_event(
+                        'ready', self.client_id)
 
-                if self.has_server_option(ray.Option.GUI_STATES):
-                    if (self.session.wait_for is ray.WaitFor.NONE
-                            and self.can_optional_gui
-                            and not self.start_gui_hidden
-                            and not self.gui_visible
-                            and not self.gui_has_been_visible):
-                        self.send_to_self_address(nsm.client.SHOW_OPTIONAL_GUI)
+                    if self.has_server_option(ray.Option.GUI_STATES):
+                        if (self.session.wait_for is ray.WaitFor.NONE
+                                and self.can_optional_gui
+                                and not self.start_gui_hidden
+                                and not self.gui_visible
+                                and not self.gui_has_been_visible):
+                            self.send_to_self_address(
+                                nsm.client.SHOW_OPTIONAL_GUI)
 
             self.set_status(ray.ClientStatus.READY)
 
@@ -996,10 +998,12 @@ class Client(ServerSender, ray.ClientData):
     def has_error(self) -> bool:
         return bool(self._reply_errcode)
 
+    @property
     def is_reply_pending(self) -> bool:
         return self.pending_command is not ray.Command.NONE
 
-    def is_dumb_client(self) -> bool:
+    @property
+    def is_dumb(self) -> bool:
         if self.is_ray_hack:
             return False
 
@@ -1287,7 +1291,7 @@ class Client(ServerSender, ray.ClientData):
             self._send_error_to_caller(OscSrc.OPEN, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s is exiting.') % self.gui_msg_style)
 
-        if self.is_running and self.is_dumb_client():
+        if self.is_running and self.is_dumb:
             self._send_error_to_caller(
                 OscSrc.OPEN, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s seems to can not open')
@@ -1425,7 +1429,7 @@ class Client(ServerSender, ray.ClientData):
         self.scripter.terminate()
 
     def tell_client_session_is_loaded(self):
-        if self.nsm_active and not self.is_dumb_client():
+        if self.nsm_active and not self.is_dumb:
             self.message("Telling client %s that session is loaded."
                          % self.name)
             self.send_to_self_address(nsm.client.SESSION_IS_LOADED)
@@ -1480,7 +1484,7 @@ class Client(ServerSender, ray.ClientData):
                 self.pending_command = ray.Command.SAVE
                 self.set_status(ray.ClientStatus.SAVE)
 
-            elif self.is_dumb_client():
+            elif self.is_dumb:
                 self.set_status(ray.ClientStatus.NOOP)
 
             if self.can_optional_gui:
@@ -1598,7 +1602,7 @@ class Client(ServerSender, ray.ClientData):
             return False
 
         if not ((self.nsm_active and self.can_switch)
-                or (self.is_dumb_client() and self.is_running)):
+                or (self.is_dumb and self.is_running)):
             return False
 
         if self.is_ray_net:

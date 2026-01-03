@@ -42,8 +42,7 @@ class SwitchClientAlternative(SessionOp):
 
     def save_the_client(self):
         client = self.client
-        if (self.save_client and client.is_running
-                and not client.is_dumb_client()):
+        if self.save_client and client.is_running and not client.is_dumb:
             client.save()
             
         self.next(ray.WaitFor.REPLY, timeout=5000)
