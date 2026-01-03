@@ -104,6 +104,7 @@ alternatives:
         ray_control:
             basculer, éventuellement créer l'alternative si possible
 
+Attention: client_tools.rename_files n'est jamais sécurisé
         
 
 

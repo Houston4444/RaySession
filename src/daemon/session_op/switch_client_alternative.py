@@ -122,17 +122,15 @@ class SwitchClientAlternative(SessionOp):
             raise NoSessionPath
         
         if self._tmp_dir is not None:
+            client._rename_files(
+                self._tmp_dir, session.name, session.name,
+                client.prefix, self._new_client.prefix,
+                client.client_id, self.client_id,
+                client.links_dirname, self._new_client.links_dirname)
+
             for file_path in self._tmp_dir.iterdir():
                 try:
-                    if file_path.name == client.project_path.name:
-                        file_path.rename(
-                            session.path / self._new_client.project_path.name)
-                    else:
-                        file_path.rename(
-                            session.path
-                            / file_path.name.replace(
-                                client.project_path.name + '.',
-                                self._new_client.project_path.name + '.'))
+                    file_path.rename(file_path.parents[1] / file_path.name)
                 except:
                     self.error(ray.Err.CREATE_FAILED,
                             f'Failed to copy {file_path.name}')

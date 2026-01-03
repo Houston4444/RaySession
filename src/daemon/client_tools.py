@@ -23,11 +23,11 @@ def rename_client_files(
         old_client_links_dir: str, new_client_links_dir: str):
 
     # rename client script dir
-    scripts_dir = spath / f"{ray.SCRIPTS_DIR}.{old_client_id}"
+    scripts_dir = spath / f'{ray.SCRIPTS_DIR}.{old_client_id}'
     if os.access(scripts_dir, os.W_OK) and old_client_id != new_client_id:
-        scripts_dir = scripts_dir.rename(f"{ray.SCRIPTS_DIR}.{new_client_id}")
+        scripts_dir = scripts_dir.rename(f'{ray.SCRIPTS_DIR}.{new_client_id}')
 
-    project_path = spath / f"{old_prefix}.{old_client_id}"
+    project_path = spath / f'{old_prefix}.{old_client_id}'
 
     files_to_rename = list[tuple[Path, Path]]()
     do_rename = True
