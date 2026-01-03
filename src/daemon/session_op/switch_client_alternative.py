@@ -12,6 +12,7 @@ import osc_paths.ray.gui as rg
 # Local imports
 from client import Client
 from daemon_tools import NoSessionPath
+import patch_rewriter
 
 from .session_op import SessionOp
 
@@ -122,6 +123,7 @@ class SwitchClientAlternative(SessionOp):
             raise NoSessionPath
         
         if self._tmp_dir is not None:
+            # The client has been copied
             client._rename_files(
                 self._tmp_dir, session.name, session.name,
                 client.prefix, self._new_client.prefix,
@@ -142,6 +144,10 @@ class SwitchClientAlternative(SessionOp):
                 self.minor_error(
                     ray.Err.CREATE_FAILED,
                     f'failed to remove {self._tmp_dir}, not so strong')
+                
+            patch_rewriter.copy_connections(
+                session, client.client_id, self.client_id,
+                client.jack_client_name, self._new_client.jack_client_name)
         
         has_id_1, has_id_2, together = False, False, False
         for alter_group in session.alternative_groups:

@@ -21,8 +21,7 @@ _logger = logging.getLogger(__name__)
 
 
 def _yaml_rewrite(
-        yaml_path: Path, old_client_id: str, new_client_id: str,
-        old_jack_name: str, new_jack_name: str):
+        yaml_path: Path, renamer: Renamer):
     if not os.access(yaml_path, os.W_OK):
         return
     
@@ -42,8 +41,8 @@ def _yaml_rewrite(
     
     _logger.debug(f"Check yaml rewrite for {yaml_path}")
     
-    renamer = Renamer(
-        old_client_id, new_client_id, old_jack_name, new_jack_name)
+    # renamer = Renamer(
+    #     old_client_id, new_client_id, old_jack_name, new_jack_name)
     
     scenarios = patch_map.get('scenarios')
     if isinstance(scenarios, CommentedSeq):
@@ -127,23 +126,82 @@ def _yaml_rewrite(
     
     brothers = patch_map.get('nsm_brothers')
     if isinstance(brothers, dict):
-        if old_client_id in brothers.keys():
-            brothers.pop(old_client_id)
-        brothers[new_client_id] = new_jack_name
+        if renamer.old_client_id in brothers.keys():
+            brothers.pop(renamer.old_client_id)
+        brothers[renamer.new_client_id] = renamer.new_jack_name
     
     try:
         with open(yaml_path, 'w') as f:
             _logger.info(
                 f'patch file {yaml_path} rewritten '
-                f'for client {old_client_id} -> {new_client_id}')
+                f'for client {renamer.old_client_id} '
+                f'-> {renamer.new_client_id}')
             yaml.dump(patch_map, f)
-            # f.write(yaml.dump(patch_map))
     except:
         _logger.error(
             f"Unable to rewrite the patch file {yaml_path}")
 
-def _xml_rewrite(xml_path: Path, old_client_id: str, new_client_id: str,
-                 old_jack_name: str, new_jack_name: str):
+def _yaml_copy_connections(yaml_path: Path, renamer: Renamer):
+    if not os.access(yaml_path, os.W_OK):
+        return
+    
+    yaml = YAML()
+    
+    try:
+        with open(yaml_path, 'r') as f:
+            contents = f.read()
+            patch_map = yaml.load(contents)
+            assert isinstance(patch_map, CommentedMap)
+            patch_app = patch_map.get('app')
+            assert patch_app in ('RAY-JACKPATCH', 'RAY-ALSAPATCH')
+    except:
+        _logger.info(f"Will not rewrite {yaml_path} "
+                     f"because it seems to not be a patcher file")
+        return
+    
+    _logger.debug(f"Check yaml rewrite for {yaml_path}")
+    
+    has_modifs = False
+    
+    for section in 'connections', 'forbidden_connections':
+        conns_seq = patch_map.get(section)
+        if not isinstance(conns_seq, CommentedSeq):
+            continue
+        
+        conns_to_add = list[dict[str, str]]()
+        
+        for conn_map in conns_seq:
+            if not isinstance(conn_map, CommentedMap):
+                continue
+            
+            port_from = conn_map.get('from')
+            port_to = conn_map.get('to')
+            if isinstance(port_from, str) and isinstance(port_to, str):
+                new_port_form = renamer.port_renamed(port_from)
+                new_port_to = renamer.port_renamed(port_to)
+                
+                if new_port_form != port_from or new_port_to != port_to:
+                    conns_to_add.append(
+                        {'from': new_port_form, 'to': new_port_to})
+        
+        if conns_to_add:
+            has_modifs = True
+            for conn_map in conns_to_add:
+                conns_seq.append(conn_map)
+                
+    if has_modifs:
+        try:
+            with open(yaml_path, 'w') as f:
+                _logger.info(
+                    f'patch file {yaml_path} rewritten '
+                    f'for client {renamer.old_client_id} '
+                    f'+-> {renamer.new_client_id}')
+                yaml.dump(patch_map, f)
+        except:
+            _logger.error(
+                f"Unable to rewrite the patch file {yaml_path}")
+
+def _xml_rewrite(xml_path: Path, renamer: Renamer):
     if not os.access(xml_path, os.W_OK):
         return
     
@@ -156,8 +214,6 @@ def _xml_rewrite(xml_path: Path, old_client_id: str, new_client_id: str,
         return
 
     has_modifs = False
-    renamer = Renamer(old_client_id, new_client_id,
-                      old_jack_name, new_jack_name)
 
     for child in root:
         if child.tag == 'connection':
@@ -167,11 +223,11 @@ def _xml_rewrite(xml_path: Path, old_client_id: str, new_client_id: str,
             if renamer.port_belongs(port_from):                
                 has_modifs = True
                 child.attrib['from'] = renamer.port_renamed(port_from)
-                child.attrib['nsm_client_from'] = new_client_id
+                child.attrib['nsm_client_from'] = renamer.new_client_id
             if renamer.port_belongs(port_to):
                 has_modifs = True
                 child.attrib['to'] = renamer.port_renamed(port_to)
-                child.attrib['nsm_client_to'] = new_client_id
+                child.attrib['nsm_client_to'] = renamer.new_client_id
 
     if not has_modifs:
         return
@@ -191,25 +247,40 @@ def rewrite_jack_patch_files(
         session: 'Session',
         old_client_id: str, new_client_id: str,
         old_jack_name: str, new_jack_name: str):
+    '''rewrite all project files for ray-jackpatch or ray-alsapatch
+    when a client is renamed'''
+    renamer = Renamer(
+        old_client_id, new_client_id, old_jack_name, new_jack_name)
+
     for client in session.clients + session.trashed_clients:
         if client.protocol not in (ray.Protocol.NSM, ray.Protocol.INTERNAL):
             continue
 
-        yaml_path = Path(str(client.project_path) + '.yaml')        
+        yaml_path = Path(str(client.project_path) + '.yaml')
         if yaml_path.exists():
-            _yaml_rewrite(yaml_path, old_client_id, new_client_id,
-                          old_jack_name, new_jack_name)
+            _yaml_rewrite(yaml_path, renamer)
             continue
         
         xml_path = Path(str(client.project_path) + '.xml')
         if xml_path.exists():
-            _xml_rewrite(xml_path, old_client_id, new_client_id,
-                         old_jack_name, new_jack_name)
+            _xml_rewrite(xml_path, renamer)
             continue
-        
-        
 
-        
+def copy_connections(
+        session: 'Session', old_client_id: str, new_client_id: str,
+        old_jack_name: str, new_jack_name: str):
+    renamer = Renamer(
+        old_client_id, new_client_id, old_jack_name, new_jack_name)
+    
+    for client in session.clients + session.trashed_clients:
+        if client.protocol not in (ray.Protocol.NSM, ray.Protocol.INTERNAL):
+            continue
+
+        yaml_path = Path(str(client.project_path) + '.yaml')
+        if yaml_path.exists():
+            _yaml_copy_connections(yaml_path, renamer)
+            continue
+
 
             
             
