@@ -3,10 +3,10 @@
 from typing import TYPE_CHECKING
 
 # third party imports
-from qtpy.QtWidgets import QFrame, QMenu, QBoxLayout
+from qtpy.QtWidgets import QFrame, QMenu, QBoxLayout, QAction # type:ignore
 from qtpy.QtGui import (
     QIcon, QFontMetrics, QContextMenuEvent, QMouseEvent)
-from qtpy.QtCore import QSize, Qt, Signal # type:ignore
+from qtpy.QtCore import QSize, Qt, Signal, Slot # type:ignore
 
 # Imports from src/shared
 import ray
@@ -25,7 +25,58 @@ import ui.client_slot
 if TYPE_CHECKING:
     from gui_client import Client
     from list_widget_clients import ListWidgetClients, ClientItem
+    from qtpy.QtGui import QAction
 
+
+class AlternativesMenu(QMenu):
+    def __init__(self, parent: QMenu, client: 'Client'):
+        super().__init__(parent)
+        self.client = client
+        # self.
+        self.setTitle(_translate('client_slot', 'Alternatives'))
+        self.setIcon(QIcon.fromTheme('widget-alternatives'))
+        self.aboutToShow.connect(self._fill_alternatives)
+    
+    def _fill_alternatives(self):
+        self.clear()
+        session = self.client.session
+        for alter_group in session.alternative_groups:
+            if self.client.client_id not in alter_group:
+                continue
+            
+            for alt_id in alter_group:
+                if alt_id == self.client.client_id:
+                    continue
+                for trashed_client in session.trashed_clients:
+                    if trashed_client.client_id == alt_id:
+                        act = QAction(self)
+                        act.setIcon(get_app_icon(trashed_client.icon, self))
+                        act.setText(trashed_client.label)
+                        act.setData(alt_id)
+                        act.triggered.connect(self._alternative_selected)
+                        self.addAction(act)
+                        break
+            break
+        
+        self.addSeparator()
+        new_act = QAction(self)
+        new_act.setIcon(QIcon.fromTheme('list-add'))
+        new_act.setText(_translate('alternatives', 'New Alternative'))
+        new_act.triggered.connect(self._new_alternative)
+        self.addAction(new_act)
+
+    @Slot()
+    def _alternative_selected(self):
+        alt_id: str = self.sender().data() # type:ignore
+        server = GuiServerThread.instance()
+        if server:
+            server.to_daemon(
+                r.client.SWITCH_ALTERNATIVE, self.client.client_id, alt_id)
+        
+    @Slot()
+    def _new_alternative(self):
+        print('yalo pour une nouvelle alternative')
+    
 
 class ClientSlot(QFrame):
     clicked = Signal(str)
@@ -71,36 +122,17 @@ class ClientSlot(QFrame):
             self.client.show_properties_dialog)
 
         self._menu = QMenu(self)
+        self._alternatives_menu = AlternativesMenu(self._menu, client)
 
         self._menu.addAction(
             self.ui.actionSaveAsApplicationTemplate) # type:ignore
+        self._menu.addMenu(self._alternatives_menu)
         self._menu.addAction(
             self.ui.actionRename) # type:ignore
         self._menu.addAction(
             self.ui.actionReturnToAPreviousState) # type:ignore
         self._menu.addAction(
             self.ui.actionFindBoxesInPatchbay) # type:ignore
-        
-        alternatives_menu = QMenu(self._menu)
-        alternatives_menu.setTitle(_translate('client_slot', 'Alternatives'))
-        alternatives_menu.setIcon(QIcon.fromTheme('widget-alternatives'))
-        
-        for alter_group in self.client.session.alternative_groups:
-            if self.client.client_id in alter_group:
-                for client_id in sorted(alter_group):
-                    if client_id != self.client.client_id:
-                        for trashed_client in self.client.session.trashed_clients:
-                            if trashed_client.client_id == client_id:
-                                trashed_client.icon
-                                alternatives_menu.addAction(
-                                    QIcon.fromTheme(trashed_client.icon),
-                                    trashed_client.label)
-                                break
-        
-        alternatives_menu.addAction(
-            self.ui.actionNewAlternative) # type:ignore
-        self._menu.addMenu(alternatives_menu)
-
         self._menu.addAction(
             self.ui.actionProperties) # type:ignore
 
