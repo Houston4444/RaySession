@@ -97,7 +97,7 @@ class RayPatchbayCallbacker(Callbacker):
         if group is None:
             return
 
-        for client in self.mng.session.client_list:
+        for client in self.mng.session.clients:
             if group_belongs_to_client(group.name, client.jack_client_name):
                 show = 'show' if visible else 'hide'
                 self.mng.send_to_daemon(
@@ -111,7 +111,7 @@ class RayPatchbayCallbacker(Callbacker):
         if group is None:
             return
         
-        for client in self.mng.session.client_list:
+        for client in self.mng.session.clients:
             if group_belongs_to_client(group.name, client.jack_client_name):
                 item = client.widget.list_widget_item
                 item.setSelected(True)
@@ -240,7 +240,7 @@ class RayPatchbayManager(PatchbayManager):
             client_ids = text.rpartition(':')[2].split(' ')
             jack_client_names = list[str]()
             
-            for client in self.session.client_list:
+            for client in self.session.clients:
                 if (client.status is not ray.ClientStatus.STOPPED
                         and client.client_id in client_ids):
                     jack_client_names.append(client.jack_client_name)
@@ -329,7 +329,7 @@ class RayPatchbayManager(PatchbayManager):
 
     def get_corrected_a2j_group_name(self, group_name: str) -> str:
         # fix a2j wrongly substitute '.' with space
-        for client in self.session.client_list:
+        for client in self.session.clients:
             if (client.status is not ray.ClientStatus.STOPPED
                     and '.' in client.jack_client_name
                     and (client.jack_client_name.replace('.', ' ', 1)
@@ -339,7 +339,7 @@ class RayPatchbayManager(PatchbayManager):
         return group_name
 
     def set_group_as_nsm_client(self, group: Group):
-        for client in self.session.client_list:
+        for client in self.session.clients:
             if group_belongs_to_client(group.name, client.jack_client_name):
                 group.set_client_icon(client.icon)
                 
@@ -490,7 +490,7 @@ class RayPatchbayManager(PatchbayManager):
         self.change_view(self.view_number)
     
     def optional_gui_state_changed(self, client_id: str, visible: bool):
-        for client in self.session.client_list:
+        for client in self.session.clients:
             if client.client_id == client_id:
                 for group in self.groups:
                     if group_belongs_to_client(group.name, client.jack_client_name):

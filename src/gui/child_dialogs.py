@@ -1029,7 +1029,7 @@ class ClientRenameDialog(ChildDialog):
         session = self.client.session
         ok = True
         
-        for cl in session.client_list:
+        for cl in session.clients:
             if cl.client_id == out_id:
                 self.ui.buttonBox.button(
                     QDialogButtonBox.StandardButton.Ok).setEnabled(False) # type:ignore

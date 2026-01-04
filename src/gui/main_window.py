@@ -616,7 +616,7 @@ class MainWindow(QMainWindow):
         self._set_option(ray.Option.GUI_STATES, state)
 
     def _flash_open(self):
-        for client in self.session.client_list:
+        for client in self.session.clients:
             if client.status is ray.ClientStatus.OPEN:
                 client.widget.flash_if_open(self._flash_open_bool)
 
@@ -1441,7 +1441,7 @@ class MainWindow(QMainWindow):
 
     def client_status_changed(self, client_id: str, status: ray.ClientStatus):
         # launch/stop flashing status if 'open'
-        for client in self.session.client_list:
+        for client in self.session.clients:
             if client.status is ray.ClientStatus.OPEN:
                 if not self._timer_flicker_open.isActive():
                     self._timer_flicker_open.start()
@@ -1451,7 +1451,7 @@ class MainWindow(QMainWindow):
 
         # launch/stop timer_raisewin if keep focus
         if self._keep_focus:
-            for client in self.session.client_list:
+            for client in self.session.clients:
                 if client.status is ray.ClientStatus.OPEN:
                     if not self._timer_raisewin.isActive():
                         self._timer_raisewin.start()
