@@ -38,8 +38,9 @@ class ClientItem(QListWidgetItem):
     def __gt__(self, other: 'ClientItem'):
         return self.sort_number > other.sort_number
 
-    def get_client_id(self):
-        return self.widget.get_client_id()
+    @property
+    def client_id(self):
+        return self.widget.client_id
 
 
 class ListWidgetClients(QListWidget):
@@ -74,7 +75,7 @@ class ListWidgetClients(QListWidget):
     def remove_client_widget(self, client_id):
         for i in range(self.count()):
             item: ClientItem = self.item(i) # type:ignore
-            if item.get_client_id() == client_id:
+            if item.client_id == client_id:
                 widget = item.widget
                 self.takeItem(i)
                 del item
@@ -83,7 +84,7 @@ class ListWidgetClients(QListWidget):
     def client_properties_state_changed(self, client_id: str, visible: bool):
         for i in range(self.count()):
             item: ClientItem = self.item(i)
-            if item.get_client_id() == client_id:
+            if item.client_id == client_id:
                 widget = item.widget
                 widget.set_hack_button_state(visible)
                 break
@@ -106,16 +107,11 @@ class ListWidgetClients(QListWidget):
     def dropEvent(self, event):
         QListWidget.dropEvent(self, event)
 
-        client_ids_list = []
-
-        for i in range(self.count()):
-            item: ClientItem = self.item(i)
-            client_id = item.get_client_id()
-            client_ids_list.append(client_id)
-
         server = GuiServerThread.instance()
         if server:
-            server.to_daemon(r.session.REORDER_CLIENTS, *client_ids_list)
+            server.to_daemon(
+                r.session.REORDER_CLIENTS,
+                *[self.item(i).client_id for i in range(self.count())])
 
     def mousePressEvent(self, event):
         if not self.itemAt(event.pos()):

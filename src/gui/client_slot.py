@@ -147,9 +147,9 @@ class ClientSlot(QFrame):
 
     def _change_gui_state(self):
         if self._gui_state:
-            self.to_daemon(r.client.HIDE_OPTIONAL_GUI, self.get_client_id())
+            self.to_daemon(r.client.HIDE_OPTIONAL_GUI, self.client_id)
         else:
-            self.to_daemon(r.client.SHOW_OPTIONAL_GUI, self.get_client_id())
+            self.to_daemon(r.client.SHOW_OPTIONAL_GUI, self.client_id)
 
     def _order_hack_visibility(self, state):
         if self.client.protocol is not ray.Protocol.RAY_HACK:
@@ -161,25 +161,25 @@ class ClientSlot(QFrame):
             self.client.close_properties_dialog()
 
     def _start_client(self):
-        self.to_daemon(r.client.RESUME, self.get_client_id())
+        self.to_daemon(r.client.RESUME, self.client_id)
 
     def _stop_client(self):
         if self._stop_is_kill:
-            self.to_daemon(r.client.KILL, self.get_client_id())
+            self.to_daemon(r.client.KILL, self.client_id)
             return
 
         # we need to prevent accidental stop with a window confirmation
         # under conditions
-        self.main_win.stop_client(self.get_client_id())
+        self.main_win.stop_client(self.client_id)
 
     def _save_client(self):
-        self.to_daemon(r.client.SAVE, self.get_client_id())
+        self.to_daemon(r.client.SAVE, self.client_id)
 
     def _trash_client(self):
-        self.to_daemon(r.client.TRASH, self.get_client_id())
+        self.to_daemon(r.client.TRASH, self.client_id)
 
     def _abort_copy(self):
-        self.main_win.abort_copy_client(self.get_client_id())
+        self.main_win.abort_copy_client(self.client_id)
 
     def _save_as_application_template(self):
         dialog = child_dialogs.SaveTemplateClientDialog(
@@ -190,22 +190,21 @@ class ClientSlot(QFrame):
 
         template_name = dialog.get_template_name()
         self.to_daemon(r.client.SAVE_AS_TEMPLATE,
-                       self.get_client_id(), template_name)
+                       self.client_id, template_name)
 
     def _open_snapshots_dialog(self):
-        dialog = snapshots_dialog.ClientSnapshotsDialog(self.main_win,
-                                                        self.client)
+        dialog = snapshots_dialog.ClientSnapshotsDialog(
+            self.main_win, self.client)
         dialog.exec()
         if dialog.result():
             snapshot = dialog.get_selected_snapshot()
             if snapshot is None:
                 return
             self.to_daemon(r.client.OPEN_SNAPSHOT,
-                          self.get_client_id(), snapshot)
+                          self.client_id, snapshot)
 
     def _find_patchbay_boxes(self):
-        self.main_win.set_patchbay_filter_text(
-            'client:' + self.get_client_id())
+        self.main_win.set_patchbay_filter_text('client:' + self.client_id)
         self.list_widget_item.setSelected(True)
 
     def _rename_dialog(self):
@@ -263,7 +262,8 @@ class ClientSlot(QFrame):
         else:
             self.ui.iconButton.setIcon(self._icon_on) # type:ignore
 
-    def get_client_id(self) -> str:
+    @property
+    def client_id(self) -> str:
         return self.client.client_id
 
     def update_layout(self):
