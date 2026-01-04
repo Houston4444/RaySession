@@ -53,6 +53,12 @@ class Patcher:
                 = None
         '''if not None, contains the JACK client name of the NSM client
         before renaming, and the new NSM client_id.'''
+
+        self.new_alternative: \
+            None | tuple[NsmClientName, JackClientBaseName, NsmClientName] \
+                = None
+        '''if not None, contains the JACK client name of the NSM client
+        to copy connections, and the new NSM client_id.'''
         
         self.continuous_save = continuous_save
         '''if False, all connections are loosed if they have not been saved
@@ -780,6 +786,18 @@ class Patcher:
 
                 self.client_changing_id = None
             
+            elif (self.new_alternative is not None
+                    and self.new_alternative[2] == client_id):
+                ex_jack_name = self.new_alternative[1]
+                for conn in list(self.conns_rm_by_port):
+                    if one_port_belongs_to_client(conn, ex_jack_name):
+                        self.conns_rm_by_port.discard(conn)
+                
+                self.scenarios_mng.nsm_brother_new_alternative(
+                    *self.new_alternative, jack_name)
+
+                self.new_alternative = None
+            
         else:
             n_clients = is_started
             if len(self.brothers_dict) != n_clients:
@@ -813,6 +831,14 @@ class Patcher:
             case s if s.startswith('id_changed_to:'):
                 if client_id in self.brothers_dict.keys():
                     self.client_changing_id = (
+                        client_id,
+                        self.brothers_dict[client_id],
+                        event.partition(':')[2])
+                self.nsm_server.send_monitor_reset()
+                
+            case s if s.startswith('new_alternative:'):
+                if client_id in self.brothers_dict.keys():
+                    self.new_alternative = (
                         client_id,
                         self.brothers_dict[client_id],
                         event.partition(':')[2])

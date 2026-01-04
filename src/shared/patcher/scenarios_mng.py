@@ -550,6 +550,30 @@ class ScenariosManager:
         
         self.reload_scenario()
 
+    def nsm_brother_new_alternative(
+            self,
+            ex_client_id: NsmClientName, ex_jack_name: JackClientBaseName,
+            new_client_id: NsmClientName, new_jack_name: JackClientBaseName):
+        renamer = Renamer(ex_client_id, new_client_id,
+                          ex_jack_name, new_jack_name)
+
+        for scenario in self.scenarios:
+            for conns in scenario.saved_conns, scenario.forbidden_conns:
+                for conn in list(conns):
+                    if renamer.one_port_belongs(conn):
+                        new_conn = renamer.ports_renamed(conn)
+                        if isinstance(scenario, Scenario):
+                            if scenario.mode is ScenarioMode.REDIRECTIONS:
+                                if scenario.must_stock_conn(new_conn):
+                                    conns.add(new_conn)
+                            elif scenario.mode is ScenarioMode.CONNECT_DOMAIN:
+                                if scenario._belongs_to_domain(new_conn):
+                                    conns.add(new_conn)
+                        else:
+                            conns.add(new_conn)
+                        
+        self.reload_scenario()
+
     def nsm_brother_id_changed(
             self,
             ex_client_id: NsmClientName, ex_jack_name: JackClientBaseName,

@@ -207,6 +207,9 @@ class SwitchClientAlternative(SessionOp):
             rg.session.SORT_CLIENTS,
             *[c.client_id for c in session.clients])
         
+        session.send_monitor_event(
+            'new_alternative:' + self.client_id, tmp_client.client_id)
+        
         if client.is_running:
             client.switch()
         elif self._was_running:
