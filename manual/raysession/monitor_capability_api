@@ -37,6 +37,7 @@ stopped_by_server
 stopped_by_itself
 switched_to:new_client_id
 id_changed_to:new_client_id
+new_alternative:new_client_id
 removed
 open_error
 save_error

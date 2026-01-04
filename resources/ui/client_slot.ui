@@ -613,6 +613,14 @@ QToolButton {border: none}</string>
     <string>Find boxes in patchbay</string>
    </property>
   </action>
+  <action name="actionNewAlternative">
+   <property name="icon">
+    <iconset theme="list-add"/>
+   </property>
+   <property name="text">
+    <string>New Alternative</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>

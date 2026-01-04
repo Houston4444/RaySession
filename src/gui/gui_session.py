@@ -53,6 +53,7 @@ class Session:
     def __init__(self):
         self.client_list = list[Client]()
         self.trashed_clients = list[TrashedClient]()
+        self.alternative_groups = list[set[str]]()
         self.favorite_list = list[ray.Favorite]()
         self.recent_sessions = list[str]()
         self.name = ''
@@ -85,7 +86,7 @@ class Session:
 
         return self.path
 
-    def get_client(self, client_id: str) -> Optional[Client]:
+    def get_client(self, client_id: str) -> Client | None:
         for client in self.client_list:
             if client.client_id == client_id:
                 return client
@@ -339,6 +340,24 @@ class SignaledSession(Session):
         for client in self.client_list:
             client.re_create_widget()
             client.widget.update_status(client.status)
+
+    @manage(rg.session.ALTERNATIVE_GROUPS, 's*')
+    def _session_alternative_groups(self, osp: OscPack):
+        args: list[str] = osp.args # type:ignore
+        self.alternative_groups.clear()
+
+        current_set = set[str]()
+        for arg in args:
+            if arg == '':
+                self.alternative_groups.append(current_set.copy())
+                current_set.clear()
+                continue
+            current_set.add(arg)
+            
+        if current_set:
+            self.alternative_groups.append(current_set.copy())
+            
+        print('alternative_groups', self.alternative_groups)
 
     @manage(rg.client.NEW, ray.ClientData.ARG_TYPES)
     def _client_new(self, osp: OscPack):

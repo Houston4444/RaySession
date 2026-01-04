@@ -45,6 +45,7 @@ METHODS_DICT = {
     rg.session.IS_NSM: '',
     rg.session.RENAMEABLE: 'i',
     rg.session.SORT_CLIENTS: 's*',
+    rg.session.ALTERNATIVE_GROUPS: 's*',
     rg.client.NEW: ray.ClientData.ARG_TYPES,
     rg.client.UPDATE: ray.ClientData.ARG_TYPES,
     rg.client.RAY_HACK_UPDATE: 's' + ray.RayHack.ARG_TYPES,

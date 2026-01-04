@@ -47,8 +47,12 @@ class TakePlace(SessionOp):
         session.trashed_clients.clear()
         
         session.alternative_groups.clear()
+        alter_list = list[str]()
         for alter_group in session.future_alternative_groups:
             session.alternative_groups.append(alter_group)
+            alter_list += list(alter_group)
+            alter_list.append('')
+        session.send_gui(rg.session.ALTERNATIVE_GROUPS, *alter_list)
 
         session.notes = session.future_notes
         session.send_gui(rg.session.NOTES, session.notes)

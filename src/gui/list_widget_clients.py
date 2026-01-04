@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING
 
 # third party imports
 from qtpy.QtWidgets import (QListWidget, QListWidgetItem,
-                             QFrame, QMenu, QBoxLayout)
+                            QFrame, QMenu, QBoxLayout)
 from qtpy.QtGui import (QIcon, QFontMetrics, QContextMenuEvent,
-                         QMouseEvent, QKeyEvent)
+                        QMouseEvent, QKeyEvent)
 from qtpy.QtCore import Slot, QSize, Qt, Signal # type:ignore
 
 # Imports from src/shared
@@ -82,6 +82,26 @@ class ClientSlot(QFrame):
             self.ui.actionReturnToAPreviousState) # type:ignore
         self._menu.addAction(
             self.ui.actionFindBoxesInPatchbay) # type:ignore
+        
+        alternatives_menu = QMenu(self._menu)
+        alternatives_menu.setTitle(_translate('client_slot', 'Alternatives'))
+        alternatives_menu.setIcon(QIcon.fromTheme('widget-alternatives'))
+        
+        for alter_group in self.client.session.alternative_groups:
+            if self.client.client_id in alter_group:
+                for client_id in sorted(alter_group):
+                    if client_id != self.client.client_id:
+                        for trashed_client in self.client.session.trashed_clients:
+                            if trashed_client.client_id == client_id:
+                                trashed_client.icon
+                                alternatives_menu.addAction(
+                                    QIcon.fromTheme(trashed_client.icon),
+                                    trashed_client.label)
+                                break
+        
+        alternatives_menu.addAction(self.ui.actionNewAlternative) # type:ignore
+        self._menu.addMenu(alternatives_menu)
+
         self._menu.addAction(
             self.ui.actionProperties) # type:ignore
 
@@ -206,7 +226,6 @@ class ClientSlot(QFrame):
             self.client.label = label
             self.client.send_properties_to_daemon()
 
-
     def _set_very_short(self, yesno: bool):
         self._very_short = yesno
 
@@ -245,7 +264,7 @@ class ClientSlot(QFrame):
         else:
             self.ui.iconButton.setIcon(self._icon_on) # type:ignore
 
-    def get_client_id(self):
+    def get_client_id(self) -> str:
         return self.client.client_id
 
     def update_layout(self):
@@ -502,7 +521,8 @@ class ClientSlot(QFrame):
 
 class ClientItem(QListWidgetItem):
     def __init__(self, parent: 'ListWidgetClients', client_data):
-        QListWidgetItem.__init__(self, parent, QListWidgetItem.ItemType.UserType + 1)
+        QListWidgetItem.__init__(
+            self, parent, QListWidgetItem.ItemType.UserType + 1)
 
         self.sort_number = 0
         self.widget = ClientSlot(parent, self, client_data)
@@ -526,7 +546,7 @@ class ListWidgetClients(QListWidget):
         self.session = None
 
     @classmethod
-    def to_daemon(self, *args):
+    def to_daemon(cls, *args):
         server = GuiServerThread.instance()
         if server:
             server.to_daemon(*args)

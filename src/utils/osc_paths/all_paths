@@ -123,6 +123,7 @@
 /ray/gui/session/notes_shown
 /ray/gui/session/renameable
 /ray/gui/session/sort_clients
+/ray/gui/session/alternative_groups s*
 /ray/gui/trash/add
 /ray/gui/trash/clear
 /ray/gui/trash/ray_hack_update
