@@ -23,9 +23,10 @@ import ray
 import osc_paths.ray as r
 
 # Local imports
-import child_dialogs
+import child_dialogs_tmp
+from child_dialogs_tmp import ChildDialog
+import dialogs
 from gui_tools import CommandLineArgs, ray_icon, is_dark_theme
-from child_dialogs import ChildDialog
 from client_properties_dialog import ClientPropertiesDialog
 from snapshots_dialog import (
     Snapshot, SnapGroup, SnGroup)
@@ -215,9 +216,9 @@ class SessionFolder:
         return self.item.find_item_with(sess_name)
 
 
-class SaveSessionTemplateDialog(child_dialogs.SaveTemplateSessionDialog):
+class SaveSessionTemplateDialog(child_dialogs_tmp.SaveTemplateSessionDialog):
     def __init__(self, parent):
-        child_dialogs.SaveTemplateSessionDialog.__init__(self, parent)
+        child_dialogs_tmp.SaveTemplateSessionDialog.__init__(self, parent)
         self._server_will_accept = True
 
     def _server_status_changed(self, server_status: ray.ServerStatus):
@@ -228,9 +229,9 @@ class SaveSessionTemplateDialog(child_dialogs.SaveTemplateSessionDialog):
         self.ui.labelLabel.setText(session_name)
 
 
-class DuplicateDialog(child_dialogs.NewSessionDialog):
+class DuplicateDialog(dialogs.NewSessionDialog):
     def __init__(self, parent):
-        child_dialogs.NewSessionDialog.__init__(
+        dialogs.NewSessionDialog.__init__(
             self, parent, duplicate_window=True)
         self._server_will_accept = True
         self.ui.toolButtonFolder.setEnabled(False)
@@ -242,7 +243,7 @@ class DuplicateDialog(child_dialogs.NewSessionDialog):
         pass
     
     def _add_sessions_to_list(self, session_names: list):
-        child_dialogs.NewSessionDialog._add_sessions_to_list(self, session_names)
+        dialogs.NewSessionDialog._add_sessions_to_list(self, session_names)
         if not session_names:
             subfolder, sep, after = self._original_session_name.rpartition('/')
             

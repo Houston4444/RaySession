@@ -13,7 +13,7 @@ import ray
 import osc_paths.ray as r
 
 # Local imports
-import child_dialogs
+import child_dialogs_tmp
 import snapshots_dialog
 from gui_server_thread import GuiServerThread
 from gui_tools import (client_status_string, _translate, is_dark_theme,
@@ -75,7 +75,7 @@ class AlternativesMenu(QMenu):
         
     @Slot()
     def _new_alternative(self):
-        dialog = child_dialogs.ClientRenameDialog(
+        dialog = child_dialogs_tmp.ClientRenameDialog(
             self.client.session.main_win, self.client)
         if not dialog.exec():
             return
@@ -224,7 +224,7 @@ class ClientSlot(QFrame):
         self.main_win.abort_copy_client(self.client_id)
 
     def _save_as_application_template(self):
-        dialog = child_dialogs.SaveTemplateClientDialog(
+        dialog = child_dialogs_tmp.SaveTemplateClientDialog(
             self.main_win, self.client)
         dialog.exec()
         if not dialog.result():
@@ -250,7 +250,7 @@ class ClientSlot(QFrame):
         self.list_widget_item.setSelected(True)
 
     def _rename_dialog(self):
-        dialog = child_dialogs.ClientRenameDialog(self.main_win,
+        dialog = child_dialogs_tmp.ClientRenameDialog(self.main_win,
                                                   self.client)
         dialog.exec()
         if dialog.result():

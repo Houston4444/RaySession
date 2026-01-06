@@ -17,8 +17,8 @@ import client_properties_dialog
 import osc_paths.ray as r
 
 # Local imports
+from child_dialogs_tmp import ChildDialog
 from gui_tools import RS, _translate, is_dark_theme, get_app_icon
-from child_dialogs import ChildDialog
 
 # Import UIs made with Qt-Designer
 import ui.template_slot

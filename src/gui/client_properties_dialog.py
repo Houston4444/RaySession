@@ -16,7 +16,7 @@ import osc_paths.ray as r
 
 # Local imports
 from gui_tools import _translate, client_status_string, get_app_icon
-from child_dialogs import ChildDialog
+from child_dialogs_tmp import ChildDialog
 from client_prop_adv_dialog import AdvancedPropertiesDialog
 
 # Import UIs made with Qt-Designer

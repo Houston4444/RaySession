@@ -12,7 +12,7 @@ import ray
 import osc_paths.ray as r
 
 # Local imports
-from child_dialogs import ChildDialog
+from child_dialogs_tmp import ChildDialog
 from gui_server_thread import GuiServerThread
 from gui_tools import RS
 

@@ -30,7 +30,8 @@ import osc_paths.ray.gui as rg
 # Local imports
 import add_application_dialog
 import open_session_dialog
-import child_dialogs
+import child_dialogs_tmp
+import dialogs
 import snapshots_dialog
 import preferences_dialog
 import list_widget_clients
@@ -633,7 +634,7 @@ class MainWindow(QMainWindow):
 
         if self.session.is_running():
             self.show()
-            dialog = child_dialogs.QuitAppDialog(self)
+            dialog = child_dialogs_tmp.QuitAppDialog(self)
             dialog.exec()
             if not dialog.result():
                 return False
@@ -649,7 +650,7 @@ class MainWindow(QMainWindow):
         # before open dialog
         self.show()
 
-        dialog = child_dialogs.NewSessionDialog(self)
+        dialog = dialogs.NewSessionDialog(self)
         dialog.exec()
         if not dialog.result():
             return
@@ -673,7 +674,7 @@ class MainWindow(QMainWindow):
                     session_path = "%s/%s" % (CommandLineArgs.session_root,
                                               session_short_path)
 
-                    dialog = child_dialogs.JackConfigInfoDialog(
+                    dialog = child_dialogs_tmp.JackConfigInfoDialog(
                         self, session_path)
                     dialog.exec()
                     if not dialog.result():
@@ -694,7 +695,7 @@ class MainWindow(QMainWindow):
                     session_path = "%s/%s" % (CommandLineArgs.session_root,
                                               session_short_path)
 
-                    dialog = child_dialogs.SessionScriptsInfoDialog(
+                    dialog = child_dialogs_tmp.SessionScriptsInfoDialog(
                         self, session_path)
                     dialog.exec()
                     if not dialog.result():
@@ -726,7 +727,7 @@ class MainWindow(QMainWindow):
 
     def _abort_session(self):
         self.show()
-        dialog = child_dialogs.AbortSessionDialog(self)
+        dialog = child_dialogs_tmp.AbortSessionDialog(self)
         dialog.exec()
 
         if dialog.result():
@@ -746,7 +747,7 @@ class MainWindow(QMainWindow):
         self.ui.stackedWidgetSessionName.toggle_edit()
 
     def _duplicate_session(self):
-        dialog = child_dialogs.NewSessionDialog(self, True)
+        dialog = dialogs.NewSessionDialog(self, True)
         dialog.exec()
         if not dialog.result():
             return
@@ -755,7 +756,7 @@ class MainWindow(QMainWindow):
         self.to_daemon(r.session.DUPLICATE, session_name)
 
     def _save_template_session(self):
-        dialog = child_dialogs.SaveTemplateSessionDialog(self)
+        dialog = child_dialogs_tmp.SaveTemplateSessionDialog(self)
         dialog.exec()
         if not dialog.result():
             return
@@ -775,7 +776,7 @@ class MainWindow(QMainWindow):
         self.to_daemon(r.session.OPEN_SNAPSHOT, snapshot)
 
     def _about_raysession(self):
-        dialog = child_dialogs.AboutRaySessionDialog(self)
+        dialog = child_dialogs_tmp.AboutRaySessionDialog(self)
         dialog.exec()
 
     def _online_manual(self):
@@ -837,7 +838,7 @@ class MainWindow(QMainWindow):
                 ray.ServerStatus.OFF):
             return
 
-        dialog = child_dialogs.NewExecutableDialog(self)
+        dialog = child_dialogs_tmp.NewExecutableDialog(self)
         dialog.exec()
         if not dialog.result():
             return
@@ -914,7 +915,7 @@ class MainWindow(QMainWindow):
             if not self.server_copying:
                 return
 
-            dialog = child_dialogs.AbortServerCopyDialog(self)
+            dialog = child_dialogs_tmp.AbortServerCopyDialog(self)
             dialog.exec()
 
             if not dialog.result():
@@ -927,7 +928,7 @@ class MainWindow(QMainWindow):
             self._show_snapshot_progress_dialog()
 
         elif status is ray.ServerStatus.WAIT_USER:
-            dialog = child_dialogs.WaitingCloseUserDialog(self)
+            dialog = child_dialogs_tmp.WaitingCloseUserDialog(self)
             dialog.exec()
 
     def _rename_session_conditionnaly(self, new_session_name):
@@ -938,7 +939,7 @@ class MainWindow(QMainWindow):
             return
         self._progress_dialog_visible = True
 
-        dialog = child_dialogs.SnapShotProgressDialog(self)
+        dialog = child_dialogs_tmp.SnapShotProgressDialog(self)
         dialog.server_progress(self.server_progress)
         dialog.exec()
 
@@ -960,7 +961,7 @@ class MainWindow(QMainWindow):
                 session_path = subprocess.run(
                     ['ray_control', 'get_session_path'], capture_output=True)
                 if session_path.stdout:
-                    dialog = child_dialogs.WrongVersionLocalDialog(self)
+                    dialog = child_dialogs_tmp.WrongVersionLocalDialog(self)
                     dialog.exec()
                     if dialog.result():
                         subprocess.run(['ray_control', 'quit'])
@@ -971,7 +972,7 @@ class MainWindow(QMainWindow):
                     self._quit_app_now()
                 return
         
-        dialog = child_dialogs.DaemonUrlWindow(self, err_code, ex_url)
+        dialog = child_dialogs_tmp.DaemonUrlWindow(self, err_code, ex_url)
         dialog.exec()
         if not dialog.result():
             if (CommandLineArgs.under_nsm
@@ -1108,7 +1109,7 @@ class MainWindow(QMainWindow):
 
         if server_status is ray.ServerStatus.WAIT_USER:
             if not RS.is_hidden(RS.HD_WaitCloseUser):
-                dialog = child_dialogs.WaitingCloseUserDialog(self)
+                dialog = child_dialogs_tmp.WaitingCloseUserDialog(self)
                 dialog.exec()
 
     def _build_systray_menu(self):
@@ -1363,7 +1364,7 @@ class MainWindow(QMainWindow):
         self.has_git = has_git
 
     def donate(self, display_no_again=False):
-        dialog = child_dialogs.DonationsDialog(self, display_no_again)
+        dialog = child_dialogs_tmp.DonationsDialog(self, display_no_again)
         dialog.exec()
 
     def _show_preferences_dialog(self):
@@ -1381,7 +1382,7 @@ class MainWindow(QMainWindow):
                 self.notes_dialog.close()
         else:
             if self.notes_dialog is None:
-                self.notes_dialog = child_dialogs.SessionNotesDialog(self)
+                self.notes_dialog = child_dialogs_tmp.SessionNotesDialog(self)
             self.notes_dialog.show()
             icon_str = 'notes-editing'
 
@@ -1397,7 +1398,7 @@ class MainWindow(QMainWindow):
             if (client.protocol is ray.Protocol.RAY_HACK
                     and client.ray_hack is not None
                     and client.ray_hack.relevant_no_save_level()):
-                dialog = child_dialogs.StopClientNoSaveDialog(self, client_id)
+                dialog = child_dialogs_tmp.StopClientNoSaveDialog(self, client_id)
                 dialog.exec()
                 if not dialog.result():
                     return
@@ -1405,14 +1406,14 @@ class MainWindow(QMainWindow):
             elif client.status is ray.ClientStatus.READY:
                 if client.has_dirty:
                     if client.dirty_state:
-                        dialog = child_dialogs.StopClientDialog(self, client_id)
+                        dialog = child_dialogs_tmp.StopClientDialog(self, client_id)
                         dialog.exec()
                         if not dialog.result():
                             return
 
                 # last save (or start) more than 60 seconds ago
                 elif (time.time() - client.last_save) >= 60:
-                    dialog = child_dialogs.StopClientDialog(self, client_id)
+                    dialog = child_dialogs_tmp.StopClientDialog(self, client_id)
                     dialog.exec()
                     if not dialog.result():
                         return
@@ -1431,7 +1432,7 @@ class MainWindow(QMainWindow):
                 ray.ClientStatus.COPY, ray.ClientStatus.PRECOPY):
             return
 
-        dialog = child_dialogs.AbortClientCopyDialog(self, client_id)
+        dialog = child_dialogs_tmp.AbortClientCopyDialog(self, client_id)
         dialog.exec()
 
         if not dialog.result():
@@ -1510,7 +1511,7 @@ class MainWindow(QMainWindow):
             # ahah, dirty way to prevent a dialog once again
             self._startup_time -= 5
 
-            dialog = child_dialogs.StartupDialog(self)
+            dialog = child_dialogs_tmp.StartupDialog(self)
             dialog.exec()
 
             if dialog.result():
@@ -1525,14 +1526,14 @@ class MainWindow(QMainWindow):
                 RS.set_hidden(RS.HD_StartupRecentSessions)
 
     def error_message(self, message: str):
-        error_dialog = child_dialogs.ErrorDialog(self, message)
+        error_dialog = child_dialogs_tmp.ErrorDialog(self, message)
         error_dialog.exec()
 
     def opening_nsm_session(self):
         if RS.is_hidden(RS.HD_OpenNsmSession):
             return
 
-        dialog = child_dialogs.OpenNsmSessionInfoDialog(self)
+        dialog = child_dialogs_tmp.OpenNsmSessionInfoDialog(self)
         dialog.exec()
 
     def trash_add(self, trashed_client: TrashedClient):
@@ -1582,7 +1583,7 @@ class MainWindow(QMainWindow):
         else:
             return
 
-        dialog = child_dialogs.ClientTrashDialog(self, trashed_client)
+        dialog = child_dialogs_tmp.ClientTrashDialog(self, trashed_client)
         dialog.exec()
         if not dialog.result():
             return
@@ -1634,7 +1635,7 @@ class MainWindow(QMainWindow):
             self._script_info_dialog = None
 
         if not self._script_info_dialog:
-            self._script_info_dialog = child_dialogs.ScriptInfoDialog(self)
+            self._script_info_dialog = child_dialogs_tmp.ScriptInfoDialog(self)
 
         self._script_info_dialog.set_info_label(text)
         self._script_info_dialog.show()
@@ -1654,7 +1655,7 @@ class MainWindow(QMainWindow):
                 osc_paths.ERROR, rg.SCRIPT_USER_ACTION,
                 ray.Err.NOT_NOW, 'another script_user_action take place')
 
-        self._script_action_dialog = child_dialogs.ScriptUserActionDialog(self)
+        self._script_action_dialog = child_dialogs_tmp.ScriptUserActionDialog(self)
         self._script_action_dialog.set_main_text(text)
         self._script_action_dialog.show()
 
@@ -1720,7 +1721,7 @@ class MainWindow(QMainWindow):
 
         if self._systray.isVisible() and self.session.is_running():
             if not RS.is_hidden(RS.HD_SystrayClose):
-                dialog = child_dialogs.SystrayCloseDialog(self)
+                dialog = child_dialogs_tmp.SystrayCloseDialog(self)
                 dialog.exec()
 
                 if not dialog.result():

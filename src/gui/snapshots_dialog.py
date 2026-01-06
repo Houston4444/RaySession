@@ -11,7 +11,7 @@ from qtpy.QtWidgets import QDialogButtonBox, QTreeWidgetItem
 import osc_paths.ray as r
 
 # Local imports
-from child_dialogs import ChildDialog
+from child_dialogs_tmp import ChildDialog
 from gui_tools import _translate, RS
 
 # Import UIs made with Qt-Designer
