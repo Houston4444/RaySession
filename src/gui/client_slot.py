@@ -75,7 +75,17 @@ class AlternativesMenu(QMenu):
         
     @Slot()
     def _new_alternative(self):
-        print('yalo pour une nouvelle alternative')
+        dialog = child_dialogs.ClientRenameDialog(
+            self.client.session.main_win, self.client)
+        if not dialog.exec():
+            return
+
+        new_client_id = dialog.get_new_label()
+        server = GuiServerThread.instance()
+        if server:
+            server.to_daemon(
+                r.client.SWITCH_ALTERNATIVE, self.client.client_id,
+                new_client_id.replace(' ', '_'))
     
 
 class ClientSlot(QFrame):

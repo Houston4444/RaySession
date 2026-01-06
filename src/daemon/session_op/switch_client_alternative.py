@@ -10,6 +10,7 @@ import ray
 import osc_paths.ray.gui as rg
 
 # Local imports
+import alternatives
 from client import Client
 from daemon_tools import NoSessionPath
 import patch_rewriter
@@ -149,45 +150,8 @@ class SwitchClientAlternative(SessionOp):
                 session, client.client_id, self.client_id,
                 client.jack_client_name, self._new_client.jack_client_name)
         
-        has_id_1, has_id_2, together = False, False, False
-        for alter_group in session.alternative_groups:
-            if client.client_id in alter_group:
-                has_id_1 = True
-                if self.client_id in alter_group:
-                    has_id_1, has_id_2, together = True, True, True
-                    break
-            elif self.client_id in alter_group:
-                has_id_2 = True
-                
-        if together:
-            pass
-        elif has_id_1 and has_id_2:
-            for alter_group in session.alternative_groups:
-                alter_group.discard(client.client_id)
-                alter_group.discard(self.client_id)
-        
-            for alter_group in session.alternative_groups.copy():
-                if len(alter_group) < 2:
-                    session.alternative_groups.remove(alter_group)
-        
-            session.alternative_groups.append(
-                {client.client_id, self.client_id})
-            
-        elif has_id_1:
-            for alter_group in session.alternative_groups:
-                if client.client_id in alter_group:
-                    alter_group.add(self.client_id)
-                    break
-        
-        elif has_id_2:
-            for alter_group in session.alternative_groups:
-                if self.client_id in alter_group:
-                    alter_group.add(client.client_id)
-                    break
-        else:
-            session.alternative_groups.append(
-                {client.client_id, self.client_id})
-        
+        alternatives.add_alternative(
+            session, client.client_id, self.client_id)
         client.set_status(ray.ClientStatus.REMOVED)
         tmp_client = Client(session)
         tmp_client.eat_attributes(client)
@@ -201,6 +165,7 @@ class SwitchClientAlternative(SessionOp):
         new_client_index = session.trashed_clients.index(self._new_client)
         session.trashed_clients.remove(self._new_client)
         session.trashed_clients.insert(new_client_index, self._new_client)
+        session.send_gui(rg.trash.ADD, *self._new_client.spread())
         client.sent_to_gui = False
         client.send_gui_client_properties()
         session.send_gui(

@@ -22,6 +22,7 @@ import osc_paths.ray.gui as rg
 import osc_paths.nsm as nsm
 
 # Local imports
+import alternatives
 from client import Client
 import multi_daemon_file
 from signaler import Signaler
@@ -2007,6 +2008,7 @@ class SignaledSession(Session):
             if client.client_id == osp.args[0]:
                 if self._restore_client(client):
                     self.send(*osp.reply(), "client restored")
+                    alternatives.remove_alternative(self, client.client_id)
                 else:
                     self.send(*osp.error(), ray.Err.NOT_NOW,
                               "Session is in a loading locked state")
@@ -2044,6 +2046,7 @@ class SignaledSession(Session):
         self.save_session_file()
 
         self.send(*osp.reply(), "client definitely removed")
+        alternatives.remove_alternative(self, client_id)
         self.send_monitor_event('removed', client_id)
 
     @manage(r.trashed_client.REMOVE_KEEP_FILES, 's')
@@ -2067,6 +2070,7 @@ class SignaledSession(Session):
         self.trashed_clients.remove(client)
 
         self.send(*osp.reply(), "client removed")
+        alternatives.remove_alternative(self, client_id)
         self.send_monitor_event('removed', client_id)
 
     @manage(r.net_daemon.DUPLICATE_STATE, 'f')
