@@ -634,7 +634,7 @@ class MainWindow(QMainWindow):
 
         if self.session.is_running():
             self.show()
-            dialog = child_dialogs_tmp.QuitAppDialog(self)
+            dialog = dialogs.QuitAppDialog(self)
             dialog.exec()
             if not dialog.result():
                 return False
@@ -727,7 +727,7 @@ class MainWindow(QMainWindow):
 
     def _abort_session(self):
         self.show()
-        dialog = child_dialogs_tmp.AbortSessionDialog(self)
+        dialog = dialogs.AbortSessionDialog(self)
         dialog.exec()
 
         if dialog.result():
@@ -756,7 +756,7 @@ class MainWindow(QMainWindow):
         self.to_daemon(r.session.DUPLICATE, session_name)
 
     def _save_template_session(self):
-        dialog = child_dialogs_tmp.SaveTemplateSessionDialog(self)
+        dialog = dialogs.SaveTemplateSessionDialog(self)
         dialog.exec()
         if not dialog.result():
             return
@@ -776,7 +776,7 @@ class MainWindow(QMainWindow):
         self.to_daemon(r.session.OPEN_SNAPSHOT, snapshot)
 
     def _about_raysession(self):
-        dialog = child_dialogs_tmp.AboutRaySessionDialog(self)
+        dialog = dialogs.AboutRaySessionDialog(self)
         dialog.exec()
 
     def _online_manual(self):
@@ -838,7 +838,7 @@ class MainWindow(QMainWindow):
                 ray.ServerStatus.OFF):
             return
 
-        dialog = child_dialogs_tmp.NewExecutableDialog(self)
+        dialog = dialogs.NewExecutableDialog(self)
         dialog.exec()
         if not dialog.result():
             return
@@ -915,7 +915,7 @@ class MainWindow(QMainWindow):
             if not self.server_copying:
                 return
 
-            dialog = child_dialogs_tmp.AbortServerCopyDialog(self)
+            dialog = dialogs.AbortServerCopyDialog(self)
             dialog.exec()
 
             if not dialog.result():
@@ -961,7 +961,7 @@ class MainWindow(QMainWindow):
                 session_path = subprocess.run(
                     ['ray_control', 'get_session_path'], capture_output=True)
                 if session_path.stdout:
-                    dialog = child_dialogs_tmp.WrongVersionLocalDialog(self)
+                    dialog = dialogs.WrongVersionLocalDialog(self)
                     dialog.exec()
                     if dialog.result():
                         subprocess.run(['ray_control', 'quit'])
@@ -1382,7 +1382,7 @@ class MainWindow(QMainWindow):
                 self.notes_dialog.close()
         else:
             if self.notes_dialog is None:
-                self.notes_dialog = child_dialogs_tmp.SessionNotesDialog(self)
+                self.notes_dialog = dialogs.SessionNotesDialog(self)
             self.notes_dialog.show()
             icon_str = 'notes-editing'
 
@@ -1398,7 +1398,7 @@ class MainWindow(QMainWindow):
             if (client.protocol is ray.Protocol.RAY_HACK
                     and client.ray_hack is not None
                     and client.ray_hack.relevant_no_save_level()):
-                dialog = child_dialogs_tmp.StopClientNoSaveDialog(self, client_id)
+                dialog = dialogs.StopClientNoSaveDialog(self, client_id)
                 dialog.exec()
                 if not dialog.result():
                     return
@@ -1406,14 +1406,14 @@ class MainWindow(QMainWindow):
             elif client.status is ray.ClientStatus.READY:
                 if client.has_dirty:
                     if client.dirty_state:
-                        dialog = child_dialogs_tmp.StopClientDialog(self, client_id)
+                        dialog = dialogs.StopClientDialog(self, client_id)
                         dialog.exec()
                         if not dialog.result():
                             return
 
                 # last save (or start) more than 60 seconds ago
                 elif (time.time() - client.last_save) >= 60:
-                    dialog = child_dialogs_tmp.StopClientDialog(self, client_id)
+                    dialog = dialogs.StopClientDialog(self, client_id)
                     dialog.exec()
                     if not dialog.result():
                         return
@@ -1432,7 +1432,7 @@ class MainWindow(QMainWindow):
                 ray.ClientStatus.COPY, ray.ClientStatus.PRECOPY):
             return
 
-        dialog = child_dialogs_tmp.AbortClientCopyDialog(self, client_id)
+        dialog = dialogs.AbortClientCopyDialog(self, client_id)
         dialog.exec()
 
         if not dialog.result():
@@ -1533,7 +1533,7 @@ class MainWindow(QMainWindow):
         if RS.is_hidden(RS.HD_OpenNsmSession):
             return
 
-        dialog = child_dialogs_tmp.OpenNsmSessionInfoDialog(self)
+        dialog = dialogs.OpenNsmSessionInfoDialog(self)
         dialog.exec()
 
     def trash_add(self, trashed_client: TrashedClient):
@@ -1583,7 +1583,7 @@ class MainWindow(QMainWindow):
         else:
             return
 
-        dialog = child_dialogs_tmp.ClientTrashDialog(self, trashed_client)
+        dialog = dialogs.ClientTrashDialog(self, trashed_client)
         dialog.exec()
         if not dialog.result():
             return

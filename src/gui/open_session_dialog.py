@@ -216,16 +216,16 @@ class SessionFolder:
         return self.item.find_item_with(sess_name)
 
 
-class SaveSessionTemplateDialog(child_dialogs_tmp.SaveTemplateSessionDialog):
+class SaveSessionTemplateDialog(dialogs.SaveTemplateSessionDialog):
     def __init__(self, parent):
-        child_dialogs_tmp.SaveTemplateSessionDialog.__init__(self, parent)
+        super().__init__(parent)
         self._server_will_accept = True
 
     def _server_status_changed(self, server_status: ray.ServerStatus):
         # server will always accept, whatever the status
         pass
     
-    def set_original_session_name(self, session_name:str):
+    def set_original_session_name(self, session_name: str):
         self.ui.labelLabel.setText(session_name)
 
 
