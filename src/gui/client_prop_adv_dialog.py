@@ -12,7 +12,11 @@ import ray
 import osc_paths.ray as r
 
 # Local imports
+import time
+bef = time.time()
 from dialogs import ChildDialog
+aft = time.time()
+print('dialogs import', aft - bef)
 from gui_server_thread import GuiServerThread
 
 # Import UIs made with Qt-Designer

@@ -29,7 +29,6 @@ import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 
 # Local imports
-import add_application_dialog
 import open_session_dialog
 import dialogs
 import snapshots_dialog
@@ -819,7 +818,7 @@ class MainWindow(QMainWindow):
                 ray.ServerStatus.OFF):
             return
 
-        dialog = add_application_dialog.AddApplicationDialog(self)
+        dialog = dialogs.AddApplicationDialog(self)
         dialog.exec()
         dialog.save_check_boxes()
 

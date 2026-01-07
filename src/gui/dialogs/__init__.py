@@ -1,8 +1,9 @@
 from .child_dialog import ChildDialog
 
-from .about_raysession import AboutRaySessionDialog
 from .abort_copy import AbortServerCopyDialog, AbortClientCopyDialog
 from .abort_session import AbortSessionDialog
+from .about_raysession import AboutRaySessionDialog
+from .add_application import AddApplicationDialog
 from .client_rename import ClientRenameDialog
 from .client_trash import ClientTrashDialog
 from .daemon_url import DaemonUrlDialog
@@ -12,6 +13,7 @@ from .jack_config_info import JackConfigInfoDialog
 from .new_executable import NewExecutableDialog
 from .new_session import NewSessionDialog
 from .open_nsm_info import OpenNsmSessionInfoDialog
+# from .open_session import OpenSessionDialog
 from .quit_app import QuitAppDialog
 from .save_template import SaveTemplateClientDialog, SaveTemplateSessionDialog
 from .script_info import ScriptInfoDialog

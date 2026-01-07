@@ -80,16 +80,17 @@ class ClientPropertiesDialog(ChildDialog):
 
     def _get_capacities_line(self):
         capas_en = [c for c in self.client.capabilities.split(':') if c]
-        capas_tr = []
+        capas_tr = list[str]()
         for capa in capas_en:
-            if capa == 'switch':
-                capa_tr = _translate('capabilities', 'switch')
-            elif capa == 'dirty':
-                capa_tr = _translate('capabilities', 'dirty')
-            elif capa == 'optional-gui':
-                capa_tr = _translate('capabilities', 'optional-gui')
-            else:
-                capa_tr = capa
+            match capa:
+                case 'switch':
+                    capa_tr = _translate('capabilities', 'switch')
+                case 'dirty':
+                    capa_tr = _translate('capabilities', 'dirty')
+                case 'optional-gui':
+                    capa_tr = _translate('capabilities', 'optional-gui')
+                case _:
+                    capa_tr = capa
 
             capas_tr.append(capa_tr)
 
