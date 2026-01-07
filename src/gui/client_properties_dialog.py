@@ -15,9 +15,9 @@ from osclib import is_valid_osc_url
 import osc_paths.ray as r
 
 # Local imports
-from gui_tools import _translate, client_status_string, get_app_icon
-from child_dialogs_tmp import ChildDialog
 from client_prop_adv_dialog import AdvancedPropertiesDialog
+from dialogs import ChildDialog
+from gui_tools import _translate, client_status_string, get_app_icon
 
 # Import UIs made with Qt-Designer
 import ui.ray_hack_copy

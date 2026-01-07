@@ -12,7 +12,7 @@ import ray
 import osc_paths.ray as r
 
 # Local imports
-from child_dialogs_tmp import ChildDialog
+from dialogs import ChildDialog
 from gui_server_thread import GuiServerThread
 
 # Import UIs made with Qt-Designer

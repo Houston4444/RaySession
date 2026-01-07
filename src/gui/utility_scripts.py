@@ -14,9 +14,9 @@ from qtpy.QtCore import QProcess, QProcessEnvironment
 import ray
 
 # Local imports
+from dialogs import ChildDialog
 from gui_tools import CommandLineArgs, RS
 from open_session_dialog import OpenSessionDialog
-from child_dialogs_tmp import ChildDialog
 
 # Import UIs made with Qt-Designer
 import ui.ardour_convert
@@ -37,7 +37,7 @@ class ArdourConversionDialog(ChildDialog):
         self.ui = ui.ardour_convert.Ui_Dialog()
         self.ui.setupUi(self)
         
-    def not_again_value(self)->bool:
+    def not_again_value(self) -> bool:
         return self.ui.checkBoxNotAgain.isChecked()
 
 
@@ -113,7 +113,7 @@ class RayToNsmDialog(ChildDialog):
     def _set_on_choose_current_session(self):
         self.choose_current_session = True
     
-    def get_check_arguments(self)->list:
+    def get_check_arguments(self) -> list[str]:
         if self.ui.checkBoxJackPatch.isChecked():
             return ['--replace-jackpatch']
         

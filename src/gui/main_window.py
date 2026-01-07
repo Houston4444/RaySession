@@ -1,8 +1,9 @@
 
 # Imports from standard library
-from typing import TYPE_CHECKING, Optional
-import time
+from pathlib import Path
 import subprocess
+import time
+from typing import TYPE_CHECKING, Optional
 
 # third party imports
 from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt # type:ignore
@@ -30,7 +31,6 @@ import osc_paths.ray.gui as rg
 # Local imports
 import add_application_dialog
 import open_session_dialog
-import child_dialogs_tmp
 import dialogs
 import snapshots_dialog
 import preferences_dialog
@@ -414,8 +414,10 @@ class MainWindow(QMainWindow):
 
         self.set_nsm_locked(CommandLineArgs.under_nsm)
 
-        self._script_info_dialog = None
-        self._script_action_dialog = None
+        self._script_info_dialog: \
+            dialogs.ScriptInfoDialog | None = None
+        self._script_action_dialog: \
+            dialogs.ScriptUserActionDialog | None = None
 
         # disable "keep focus" if daemon is not on this machine (it takes no
         # sense in this case)
@@ -657,7 +659,6 @@ class MainWindow(QMainWindow):
 
         session_short_path = dialog.get_session_short_path()
         template_name = dialog.get_template_name()
-        subfolder = session_short_path.rpartition('/')[0]
 
         RS.settings.setValue('last_used_template', template_name)
 
@@ -671,16 +672,16 @@ class MainWindow(QMainWindow):
                     # display jack_config_script info dialog
                     # and manage ray-jack_checker auto_start
 
-                    session_path = "%s/%s" % (CommandLineArgs.session_root,
-                                              session_short_path)
-
-                    dialog = child_dialogs_tmp.JackConfigInfoDialog(
+                    session_path = \
+                        Path(CommandLineArgs.session_root) / session_short_path
+                    dialog = dialogs.JackConfigInfoDialog(
                         self, session_path)
                     dialog.exec()
                     if not dialog.result():
                         return
 
-                    RS.set_hidden(RS.HD_JackConfigScript, dialog.not_again_value())
+                    RS.set_hidden(
+                        RS.HD_JackConfigScript, dialog.not_again_value())
 
                     autostart_jack_checker = dialog.auto_start_value()
                     action = 'set_jack_checker_autostart'
@@ -692,10 +693,10 @@ class MainWindow(QMainWindow):
             elif template_name == '///' + ray.FACTORY_SESSION_TEMPLATES[2]:
                 if not RS.is_hidden(RS.HD_SessionScripts):
                     # display session scripts info dialog
-                    session_path = "%s/%s" % (CommandLineArgs.session_root,
-                                              session_short_path)
+                    session_path = \
+                        Path(CommandLineArgs.session_root) / session_short_path
 
-                    dialog = child_dialogs_tmp.SessionScriptsInfoDialog(
+                    dialog = dialogs.SessionScriptsInfoDialog(
                         self, session_path)
                     dialog.exec()
                     if not dialog.result():
@@ -928,7 +929,7 @@ class MainWindow(QMainWindow):
             self._show_snapshot_progress_dialog()
 
         elif status is ray.ServerStatus.WAIT_USER:
-            dialog = child_dialogs_tmp.WaitingCloseUserDialog(self)
+            dialog = dialogs.WaitingCloseUserDialog(self)
             dialog.exec()
 
     def _rename_session_conditionnaly(self, new_session_name):
@@ -937,9 +938,10 @@ class MainWindow(QMainWindow):
     def _show_snapshot_progress_dialog(self):
         if self._progress_dialog_visible:
             return
+
         self._progress_dialog_visible = True
 
-        dialog = child_dialogs_tmp.SnapShotProgressDialog(self)
+        dialog = dialogs.SnapShotProgressDialog(self)
         dialog.server_progress(self.server_progress)
         dialog.exec()
 
@@ -972,7 +974,7 @@ class MainWindow(QMainWindow):
                     self._quit_app_now()
                 return
         
-        dialog = child_dialogs_tmp.DaemonUrlWindow(self, err_code, ex_url)
+        dialog = dialogs.DaemonUrlDialog(self, err_code, ex_url)
         dialog.exec()
         if not dialog.result():
             if (CommandLineArgs.under_nsm
@@ -1109,7 +1111,7 @@ class MainWindow(QMainWindow):
 
         if server_status is ray.ServerStatus.WAIT_USER:
             if not RS.is_hidden(RS.HD_WaitCloseUser):
-                dialog = child_dialogs_tmp.WaitingCloseUserDialog(self)
+                dialog = dialogs.WaitingCloseUserDialog(self)
                 dialog.exec()
 
     def _build_systray_menu(self):
@@ -1364,7 +1366,7 @@ class MainWindow(QMainWindow):
         self.has_git = has_git
 
     def donate(self, display_no_again=False):
-        dialog = child_dialogs_tmp.DonationsDialog(self, display_no_again)
+        dialog = dialogs.DonationsDialog(self, display_no_again)
         dialog.exec()
 
     def _show_preferences_dialog(self):
@@ -1511,7 +1513,7 @@ class MainWindow(QMainWindow):
             # ahah, dirty way to prevent a dialog once again
             self._startup_time -= 5
 
-            dialog = child_dialogs_tmp.StartupDialog(self)
+            dialog = dialogs.StartupDialog(self)
             dialog.exec()
 
             if dialog.result():
@@ -1526,7 +1528,7 @@ class MainWindow(QMainWindow):
                 RS.set_hidden(RS.HD_StartupRecentSessions)
 
     def error_message(self, message: str):
-        error_dialog = child_dialogs_tmp.ErrorDialog(self, message)
+        error_dialog = dialogs.ErrorDialog(self, message)
         error_dialog.exec()
 
     def opening_nsm_session(self):
@@ -1629,33 +1631,25 @@ class MainWindow(QMainWindow):
             bool(enable and self.session.favorite_list))
         self._build_systray_menu()
 
-    def show_script_info(self, text):
-        if self._script_info_dialog and self._script_info_dialog.should_be_removed():
-            del self._script_info_dialog
-            self._script_info_dialog = None
-
-        if not self._script_info_dialog:
-            self._script_info_dialog = child_dialogs_tmp.ScriptInfoDialog(self)
-
+    def show_script_info(self, text: str):
+        if self._script_info_dialog is None:
+            self._script_info_dialog = dialogs.ScriptInfoDialog(self)
         self._script_info_dialog.set_info_label(text)
         self._script_info_dialog.show()
 
     def hide_script_info_dialog(self):
         if self._script_info_dialog is not None:
             self._script_info_dialog.close()
-
-        del self._script_info_dialog
         self._script_info_dialog = None
 
     def show_script_user_action_dialog(self, text: str):
         if self._script_action_dialog is not None:
             self._script_action_dialog.close()
-            del self._script_action_dialog
             self.to_daemon(
                 osc_paths.ERROR, rg.SCRIPT_USER_ACTION,
                 ray.Err.NOT_NOW, 'another script_user_action take place')
 
-        self._script_action_dialog = child_dialogs_tmp.ScriptUserActionDialog(self)
+        self._script_action_dialog = dialogs.ScriptUserActionDialog(self)
         self._script_action_dialog.set_main_text(text)
         self._script_action_dialog.show()
 
@@ -1721,7 +1715,7 @@ class MainWindow(QMainWindow):
 
         if self._systray.isVisible() and self.session.is_running():
             if not RS.is_hidden(RS.HD_SystrayClose):
-                dialog = child_dialogs_tmp.SystrayCloseDialog(self)
+                dialog = dialogs.SystrayCloseDialog(self)
                 dialog.exec()
 
                 if not dialog.result():

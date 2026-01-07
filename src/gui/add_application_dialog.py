@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     # FIX : QAction not found by pylance
     from qtpy.QtGui import QAction, QShortcut
 from qtpy.QtWidgets import (QDialogButtonBox, QListWidget, QListWidgetItem,
-                             QFrame, QMenu, QAction, QShortcut) # type:ignore
+                            QFrame, QMenu, QAction, QShortcut) # type:ignore
 
 # Imports from src/shared
 import ray
@@ -17,7 +17,7 @@ import client_properties_dialog
 import osc_paths.ray as r
 
 # Local imports
-from child_dialogs_tmp import ChildDialog
+from dialogs import ChildDialog
 from gui_tools import RS, _translate, is_dark_theme, get_app_icon
 
 # Import UIs made with Qt-Designer

@@ -115,7 +115,6 @@ class RenameFullClient(SessionOp):
 
         session.send_monitor_event(
             'id_changed_to:' + self.new_client_id, ex_client_id)
-        # session.next_function()
     
         if client.is_running:
             client.switch()

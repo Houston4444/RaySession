@@ -109,6 +109,8 @@ Attention: client_tools.rename_files n'est jamais sécurisé
 When you create a new alternative, the current client is copied and placed in the trash, and the copied client is loaded. If you want to go back to the previous client, simply click on the client icon, select 'Alternatives' and select the previous client.
 
 Pas bien: Un QMessageBox d'erreur de root est construit pour chaque fenêtre, à revoir.
+not_again_value très récurrent
+JackConfigInfo et SessionScriptInfo très similaires
 
 
 

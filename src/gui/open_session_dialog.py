@@ -23,8 +23,7 @@ import ray
 import osc_paths.ray as r
 
 # Local imports
-import child_dialogs_tmp
-from child_dialogs_tmp import ChildDialog
+from dialogs import ChildDialog
 import dialogs
 from gui_tools import CommandLineArgs, ray_icon, is_dark_theme
 from client_properties_dialog import ClientPropertiesDialog
