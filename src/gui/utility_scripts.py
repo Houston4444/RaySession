@@ -135,25 +135,22 @@ class UtilityScriptLauncher:
         terminal = ''
 
         # make prior most appropriate terminal
-        if current_desktop == 'GNOME':
-            pass
-
-        elif current_desktop == 'KDE':
-            terminals.remove('konsole')
-            terminals.insert(0, 'konsole')
-
-        elif current_desktop == 'MATE':
-            terminals.remove('mate-terminal')
-            terminals.insert(0, 'mate-terminal')
-
-        elif current_desktop == 'XFCE':
-            terminals.remove('xfce4-terminal')
-            terminals.insert(0, 'xfce4-terminal')
-            terminals.insert(0, 'xfce-terminal')
-
-        elif current_desktop == 'LXDE':
-            terminals.remove('lxterminal')
-            terminals.insert(0, 'lxterminal')
+        match current_desktop:
+            case 'GNOME':
+                pass
+            case 'KDE':
+                terminals.remove('konsole')
+                terminals.insert(0, 'konsole')
+            case 'MATE':
+                terminals.remove('mate-terminal')
+                terminals.insert(0, 'mate-terminal')
+            case 'XFCE':
+                terminals.remove('xfce4-terminal')
+                terminals.insert(0, 'xfce4-terminal')
+                terminals.insert(0, 'xfce-terminal')
+            case 'LXDE':
+                terminals.remove('lxterminal')
+                terminals.insert(0, 'lxterminal')
 
         # search executable for terminals
         for term in terminals:

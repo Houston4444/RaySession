@@ -5,9 +5,9 @@ from qtpy.QtGui import QIcon
 import osc_paths.ray as r
 import ray
 
-import client_properties_dialog
 from gui_tools import _translate
 from .child_dialog import ChildDialog
+from .client_properties import ClientPropertiesDialog
 
 import ui.client_trash
 
@@ -64,9 +64,8 @@ class ClientTrashDialog(ChildDialog):
         self.reject()
 
     def _show_properties(self):
-        properties_dialog = \
-            client_properties_dialog.ClientPropertiesDialog.create(
-                self, self.client_data)
+        properties_dialog = ClientPropertiesDialog.create(
+            self, self.client_data)
         properties_dialog.update_contents()
         properties_dialog.lock_widgets()
         properties_dialog.show()

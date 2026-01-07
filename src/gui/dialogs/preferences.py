@@ -12,9 +12,9 @@ import ray
 import osc_paths.ray as r
 
 # Local imports
-from dialogs import ChildDialog
 from gui_server_thread import GuiServerThread
 from gui_tools import RS
+from .child_dialog import ChildDialog
 
 # Import UIs made with Qt-Designer
 import ui.settings
@@ -142,8 +142,10 @@ class PreferencesDialog(ChildDialog):
         button = QMessageBox.question(
             self,
             _translate('hidden_dialogs', 'Make reappear dialog windows'),
-            _translate('hidden_dialogs',
-                       'Do you want to make reappear all dialogs you wanted to hide ?'))
+            _translate(
+                'hidden_dialogs',
+                'Do you want to make reappear all dialogs '
+                'you wanted to hide ?'))
         
         if button == QMessageBox.StandardButton.Yes:
             RS.reset_hiddens()

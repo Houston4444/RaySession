@@ -15,9 +15,10 @@ from osclib import is_valid_osc_url
 import osc_paths.ray as r
 
 # Local imports
-from client_prop_adv_dialog import AdvancedPropertiesDialog
-from dialogs import ChildDialog
 from gui_tools import _translate, client_status_string, get_app_icon
+from .child_dialog import ChildDialog
+from .client_prop_adv import AdvancedPropertiesDialog
+
 
 # Import UIs made with Qt-Designer
 import ui.ray_hack_copy
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
 
 class RayHackCopyDialog(ChildDialog):
     def __init__(self, parent):
-        ChildDialog.__init__(self, parent)
+        super().__init__(parent)
         self.ui = ui.ray_hack_copy.Ui_Dialog()
         self.ui.setupUi(self)
 
@@ -52,7 +53,7 @@ class RayHackCopyDialog(ChildDialog):
 
 class ClientPropertiesDialog(ChildDialog):
     def __init__(self, parent, client: ray.ClientData):
-        ChildDialog.__init__(self, parent)
+        super().__init__(parent)
         self.ui = ui.client_properties.Ui_Dialog()
         self.ui.setupUi(self)
 
@@ -165,9 +166,10 @@ class ClientPropertiesDialog(ChildDialog):
         self.ui.pushButtonSaveChanges.setFocus()
         super().showEvent(a0)
 
+
 class NsmClientPropertiesDialog(ClientPropertiesDialog):
     def __init__(self, parent, client):
-        ClientPropertiesDialog.__init__(self, parent, client)
+        super().__init__(parent, client)
         
         self.nsmui_frame = QFrame()
         self.nsmui = ui.nsm_properties.Ui_Frame()
@@ -218,7 +220,7 @@ class NsmClientPropertiesDialog(ClientPropertiesDialog):
 
 class RayHackClientPropertiesDialog(ClientPropertiesDialog):
     def __init__(self, parent, client):
-        ClientPropertiesDialog.__init__(self, parent, client)
+        super().__init__(parent, client)
 
         self.ray_hack_frame = QFrame()
         self.rhack = ui.ray_hack_properties.Ui_Frame()
@@ -392,7 +394,8 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
 
         self.client.executable = self.rhack.lineEditExecutable.text()
         self.client.arguments = self.rhack.lineEditArguments.text()
-        self.client.ray_hack.config_file = self.rhack.lineEditConfigFile.text()
+        self.client.ray_hack.config_file = \
+            self.rhack.lineEditConfigFile.text()
 
         if TYPE_CHECKING:
             assert isinstance(self.client, Client)
@@ -408,7 +411,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
                        self.rhack.comboSaveSig.currentData())
 
     def lock_widgets(self):
-        ClientPropertiesDialog.lock_widgets(self)
+        super().lock_widgets()
         self.rhack.lineEditExecutable.setReadOnly(True)
         self.rhack.lineEditConfigFile.setReadOnly(True)
         self.rhack.lineEditArguments.setReadOnly(True)
@@ -515,7 +518,7 @@ class RayHackClientPropertiesDialog(ClientPropertiesDialog):
 
 class RayNetClientPropertiesDialog(ClientPropertiesDialog):
     def __init__(self, parent, client):
-        ClientPropertiesDialog.__init__(self, parent, client)
+        super().__init__(parent, client)
 
         self.ray_net_frame = QFrame()
         self.rnet = ui.ray_net_properties.Ui_Frame()
@@ -528,7 +531,7 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
         self.ui.tabWidget.setTabText(1, 'Ray-Net')
 
     def lock_widgets(self):
-        ClientPropertiesDialog.lock_widgets(self)
+        super().lock_widgets()
         self.rnet.lineEditDaemonUrl.setReadOnly(True)
         self.rnet.lineEditSessionRoot.setReadOnly(True)
         self.rnet.lineEditTemplate.setReadOnly(True)
@@ -537,12 +540,14 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
         if self.client.ray_net is None:
             return
         
-        ClientPropertiesDialog.update_contents(self)
+        super().update_contents()
         self.rnet.labelClientName.setText(self.client.name)
         self.rnet.labelCapabilities.setText(self._get_capacities_line())
         self.rnet.lineEditDaemonUrl.setText(self.client.ray_net.daemon_url)
-        self.rnet.lineEditSessionRoot.setText(self.client.ray_net.session_root)
-        self.rnet.lineEditTemplate.setText(self.client.ray_net.session_template)
+        self.rnet.lineEditSessionRoot.setText(
+            self.client.ray_net.session_root)
+        self.rnet.lineEditTemplate.setText(
+            self.client.ray_net.session_template)
 
     def _save_changes(self):
         if self.client.ray_net is None:
@@ -562,7 +567,7 @@ class RayNetClientPropertiesDialog(ClientPropertiesDialog):
         if TYPE_CHECKING:
             assert isinstance(self.client, Client)
         self.client.send_ray_net()
-        ClientPropertiesDialog._save_changes(self)
+        super()._save_changes()
 
     def _change_icon_with_text(self, text: str):
         icon = get_app_icon(text, self)

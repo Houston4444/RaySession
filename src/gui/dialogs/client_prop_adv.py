@@ -12,18 +12,14 @@ import ray
 import osc_paths.ray as r
 
 # Local imports
-import time
-bef = time.time()
-from dialogs import ChildDialog
-aft = time.time()
-print('dialogs import', aft - bef)
 from gui_server_thread import GuiServerThread
+from .child_dialog import ChildDialog
 
 # Import UIs made with Qt-Designer
 import ui.client_advanced_properties
 
 if TYPE_CHECKING:
-    from client_properties_dialog import ClientPropertiesDialog
+    from .client_properties import ClientPropertiesDialog
     from gui_client import Client, TrashedClient
 
 
@@ -72,11 +68,14 @@ class AdvancedPropertiesDialog(ChildDialog):
             client.status_changed.connect(self._client_status_changed)
         
         self._update_preview()
+
+    @property
+    def _apply_button(self):
+        return self.ui.buttonBox.button(
+            QDialogButtonBox.StandardButton.Ok) # type:ignore
     
-    # Slot(int)
     def _client_status_changed(self, status: ray.ClientStatus):
-        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply).setEnabled( # type:ignore
-            status is ray.ClientStatus.STOPPED)
+        self._apply_button.setEnabled(status is ray.ClientStatus.STOPPED)
     
     @Slot()
     def _client_id_line_edited(self):
@@ -85,14 +84,16 @@ class AdvancedPropertiesDialog(ChildDialog):
         self._update_preview()
     
     def _update_preview(self, *args):
-        if self.ui.comboBoxPrefixMode.currentIndex() == ray.PrefixMode.SESSION_NAME.value:
+        if (self.ui.comboBoxPrefixMode.currentIndex()
+                == ray.PrefixMode.SESSION_NAME.value):
             if self._client_is_real:
                 if TYPE_CHECKING:
                     assert isinstance(self._client, (Client, TrashedClient))
                 prefix_str = self._client.session.name
             else:
                 prefix_str = "SESSION NAME"
-        elif self.ui.comboBoxPrefixMode.currentIndex() == ray.PrefixMode.CLIENT_NAME.value:
+        elif (self.ui.comboBoxPrefixMode.currentIndex()
+                == ray.PrefixMode.CLIENT_NAME.value):
             prefix_str = self._client.name
         else:
             prefix_str = self.ui.lineEditCustomPrefix.text()
@@ -116,8 +117,7 @@ class AdvancedPropertiesDialog(ChildDialog):
         self._update_preview()
 
     def _button_box_clicked(self, button: QAbstractButton):
-        if button is self.ui.buttonBox.button(
-                QDialogButtonBox.StandardButton.Apply): # type:ignore
+        if button is self._apply_button: # type:ignore
             server = GuiServerThread.instance()
             if server is not None:
                 server.to_daemon(
@@ -135,5 +135,4 @@ class AdvancedPropertiesDialog(ChildDialog):
         self.ui.comboBoxPrefixMode.setEnabled(False)
         self.ui.lineEditCustomPrefix.setReadOnly(True)
         self.ui.checkBoxLongJackNaming.setEnabled(False)
-        self.ui.buttonBox.button(
-            QDialogButtonBox.StandardButton.Apply).setEnabled(False) # type:ignore
+        self._apply_button.setEnabled(False)

@@ -235,7 +235,7 @@ class ClientSlot(QFrame):
                        self.client_id, template_name)
 
     def _open_snapshots_dialog(self):
-        dialog = snapshots_dialog.ClientSnapshotsDialog(
+        dialog = dialogs.ClientSnapshotsDialog(
             self.main_win, self.client)
         dialog.exec()
         if dialog.result():

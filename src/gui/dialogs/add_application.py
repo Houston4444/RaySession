@@ -13,12 +13,12 @@ from qtpy.QtWidgets import (QDialogButtonBox, QListWidget, QListWidgetItem,
 
 # Imports from src/shared
 import ray
-import client_properties_dialog
 import osc_paths.ray as r
 
 # Local imports
-from dialogs import ChildDialog
 from gui_tools import RS, _translate, is_dark_theme, get_app_icon
+from .child_dialog import ChildDialog
+from .client_properties import ClientPropertiesDialog
 
 # Import UIs made with Qt-Designer
 import ui.template_slot
@@ -550,7 +550,7 @@ class AddApplicationDialog(ChildDialog):
         if item is None:
             return
 
-        properties_dialog = client_properties_dialog.ClientPropertiesDialog.create(
+        properties_dialog = ClientPropertiesDialog.create(
             self, item.client_data)
         properties_dialog.update_contents()
         properties_dialog.set_for_template(item.data(TEMPLATE_NAME_DATA))

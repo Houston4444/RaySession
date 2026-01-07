@@ -32,7 +32,6 @@ import osc_paths.ray.gui as rg
 import open_session_dialog
 import dialogs
 import snapshots_dialog
-import preferences_dialog
 import list_widget_clients
 from gui_tools import (
     RS, ray_icon, CommandLineArgs, _translate, server_status_string,
@@ -464,7 +463,7 @@ class MainWindow(QMainWindow):
             self._systray.show()
 
         self.preferences_dialog: \
-            Optional[preferences_dialog.PreferencesDialog] = None
+            Optional[dialogs.PreferencesDialog] = None
 
         self._startup_time = time.time()
 
@@ -765,7 +764,7 @@ class MainWindow(QMainWindow):
         self.to_daemon(r.session.SAVE_AS_TEMPLATE, session_template_name)
 
     def _return_to_a_previous_state(self):
-        dialog = snapshots_dialog.SessionSnapshotsDialog(self)
+        dialog = dialogs.SessionSnapshotsDialog(self)
         dialog.exec()
         if not dialog.result():
             return
@@ -1370,7 +1369,7 @@ class MainWindow(QMainWindow):
 
     def _show_preferences_dialog(self):
         if self.preferences_dialog is None:
-            self.preferences_dialog = preferences_dialog.PreferencesDialog(self)
+            self.preferences_dialog = dialogs.PreferencesDialog(self)
         
         self.preferences_dialog.show()
 

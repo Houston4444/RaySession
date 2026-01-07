@@ -23,12 +23,9 @@ import ray
 import osc_paths.ray as r
 
 # Local imports
-from dialogs import ChildDialog
+from dialogs import ChildDialog, Snapshot, SnapGroup, SnGroup, ClientPropertiesDialog
 import dialogs
 from gui_tools import CommandLineArgs, ray_icon, is_dark_theme
-from client_properties_dialog import ClientPropertiesDialog
-from snapshots_dialog import (
-    Snapshot, SnapGroup, SnGroup)
 
 # Import UIs made with Qt-Designer
 import ui.open_session

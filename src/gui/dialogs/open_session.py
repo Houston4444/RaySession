@@ -24,10 +24,10 @@ import osc_paths.ray as r
 
 # Local imports
 from gui_tools import CommandLineArgs, ray_icon, is_dark_theme
-from client_properties_dialog import ClientPropertiesDialog
 from snapshots_dialog import (
     Snapshot, SnapGroup, SnGroup)
 from .child_dialog import ChildDialog
+from .client_properties import ClientPropertiesDialog
 from .new_session import NewSessionDialog
 from .save_template import SaveTemplateSessionDialog
 
