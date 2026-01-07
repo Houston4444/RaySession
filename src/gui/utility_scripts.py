@@ -14,9 +14,8 @@ from qtpy.QtCore import QProcess, QProcessEnvironment
 import ray
 
 # Local imports
-from dialogs import ChildDialog
+from dialogs import ChildDialog, OpenSessionDialog
 from gui_tools import CommandLineArgs, RS
-from open_session_dialog import OpenSessionDialog
 
 # Import UIs made with Qt-Designer
 import ui.ardour_convert

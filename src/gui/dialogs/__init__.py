@@ -1,6 +1,5 @@
 import time
 
-beg = time.time()
 from .child_dialog import ChildDialog
 
 from .abort_copy import AbortServerCopyDialog, AbortClientCopyDialog
@@ -18,7 +17,7 @@ from .jack_config_info import JackConfigInfoDialog
 from .new_executable import NewExecutableDialog
 from .new_session import NewSessionDialog
 from .open_nsm_info import OpenNsmSessionInfoDialog
-# from .open_session import OpenSessionDialog
+from .open_session import OpenSessionDialog
 from .preferences import PreferencesDialog
 from .quit_app import QuitAppDialog
 from .save_template import SaveTemplateClientDialog, SaveTemplateSessionDialog
@@ -34,7 +33,3 @@ from .stop_client import StopClientDialog, StopClientNoSaveDialog
 from .systray_close import SystrayCloseDialog
 from .waiting_close_user import WaitingCloseUserDialog
 from .wrong_version_local import WrongVersionLocalDialog
-
-end = time.time()
-
-print('dialogs import', end - beg)

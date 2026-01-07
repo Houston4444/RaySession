@@ -14,7 +14,6 @@ import osc_paths.ray as r
 
 # Local imports
 import dialogs
-import snapshots_dialog
 from gui_server_thread import GuiServerThread
 from gui_tools import (client_status_string, _translate, is_dark_theme,
                        ray_icon, split_in_two, get_app_icon)

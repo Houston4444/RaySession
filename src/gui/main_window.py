@@ -29,9 +29,7 @@ import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 
 # Local imports
-import open_session_dialog
 import dialogs
-import snapshots_dialog
 import list_widget_clients
 from gui_tools import (
     RS, ray_icon, CommandLineArgs, _translate, server_status_string,
@@ -709,7 +707,7 @@ class MainWindow(QMainWindow):
         # before open dialog
         self.show()
 
-        dialog = open_session_dialog.OpenSessionDialog(self)
+        dialog = dialogs.OpenSessionDialog(self)
         dialog.exec()
         if not dialog.result():
             return
