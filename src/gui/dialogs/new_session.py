@@ -100,7 +100,8 @@ class NewSessionDialog(ChildDialog):
         if server_status is not ray.ServerStatus.OFF:
             if self._root_folder_file_dialog is not None:
                 self._root_folder_file_dialog.reject()
-            self._root_folder_message_box.reject()
+            if self._root_folder_message_box is not None:
+                self._root_folder_message_box.reject()
 
         self._prevent_ok()
 

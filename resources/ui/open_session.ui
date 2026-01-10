@@ -537,12 +537,12 @@ QToolButton {border: none}</string>
   <customwidget>
    <class>OpenSessionFilterBar</class>
    <extends>QLineEdit</extends>
-   <header>surclassed_widgets</header>
+   <header>promoted_widgets</header>
   </customwidget>
   <customwidget>
    <class>PreviewFrame</class>
    <extends>QFrame</extends>
-   <header>surclassed_widgets</header>
+   <header>promoted_widgets</header>
    <container>1</container>
   </customwidget>
   <customwidget>
@@ -553,7 +553,7 @@ QToolButton {border: none}</string>
   <customwidget>
    <class>StackedSessionName</class>
    <extends>QStackedWidget</extends>
-   <header>surclassed_widgets</header>
+   <header>promoted_widgets</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
