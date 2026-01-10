@@ -60,7 +60,7 @@
   <customwidget>
    <class>ListWidgetPreviewClients</class>
    <extends>QListWidget</extends>
-   <header>list_widget_preview_clients</header>
+   <header>promoted_widgets</header>
   </customwidget>
  </customwidgets>
  <resources/>

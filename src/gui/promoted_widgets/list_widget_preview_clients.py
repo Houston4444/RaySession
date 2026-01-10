@@ -14,7 +14,7 @@ from gui_tools import _translate, split_in_two, get_app_icon
 import ui.preview_client_slot
 
 
-class ClientSlot(QFrame):
+class _ClientSlot(QFrame):
     def __init__(self, list_widget: 'ListWidgetPreviewClients',
                  list_widget_item, client: ray.ClientData):
         super().__init__()
@@ -147,20 +147,20 @@ class ClientSlot(QFrame):
         event.accept()
 
 
-class ClientItem(QListWidgetItem):
+class _ClientItem(QListWidgetItem):
     def __init__(self, parent: 'ListWidgetPreviewClients', client_data):
         super().__init__(parent, QListWidgetItem.ItemType.UserType + 1)
 
         self.sort_number = 0
-        self.widget = ClientSlot(parent, self, client_data)
+        self.widget = _ClientSlot(parent, self, client_data)
 
         parent.setItemWidget(self, self.widget)
         self.setSizeHint(QSize(100, 45))
 
-    def __lt__(self, other: 'ClientItem'):
+    def __lt__(self, other: '_ClientItem'):
         return self.sort_number < other.sort_number
 
-    def __gt__(self, other: 'ClientItem'):
+    def __gt__(self, other: '_ClientItem'):
         return self.sort_number > other.sort_number
 
 
@@ -178,11 +178,11 @@ class ListWidgetPreviewClients(QListWidget):
         self.server_status = server_status
         for i in range(self.count()):
             item = self.item(i)
-            if isinstance(item, ClientItem):
+            if isinstance(item, _ClientItem):
                 item.widget.server_status_changed(server_status)
 
     def create_client_widget(self, client_data):
-        item = ClientItem(self, client_data)
+        item = _ClientItem(self, client_data)
         item.sort_number = self._last_n
         item.widget.server_status_changed(self.server_status)
         self._last_n += 1
@@ -191,7 +191,7 @@ class ListWidgetPreviewClients(QListWidget):
     def remove_client_widget(self, client_id):
         for i in range(self.count()):
             item = self.item(i)
-            if (isinstance(item, ClientItem)
+            if (isinstance(item, _ClientItem)
                     and item.widget.client_id == client_id):
                 widget = item.widget
                 self.takeItem(i)
@@ -209,7 +209,7 @@ class ListWidgetPreviewClients(QListWidget):
         for i in range(self.count()):
             item = self.item(i)
             widget = self.itemWidget(item)
-            if isinstance(widget, ClientSlot):
+            if isinstance(widget, _ClientSlot):
                 widget.update_layout()
 
 
