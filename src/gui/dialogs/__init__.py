@@ -31,5 +31,6 @@ from .snapshots import (SessionSnapshotsDialog, ClientSnapshotsDialog,
 from .startup_dialog import StartupDialog
 from .stop_client import StopClientDialog, StopClientNoSaveDialog
 from .systray_close import SystrayCloseDialog
+from .trash import TrashDialog
 from .waiting_close_user import WaitingCloseUserDialog
 from .wrong_version_local import WrongVersionLocalDialog

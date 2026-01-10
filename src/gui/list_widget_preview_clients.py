@@ -8,7 +8,6 @@ from qtpy.QtCore import QSize, Signal # type:ignore
 import ray
 
 # Local imports
-from gui_server_thread import GuiServerThread
 from gui_tools import _translate, split_in_two, get_app_icon
 
 # Import UIs made with Qt-Designer
@@ -18,7 +17,7 @@ import ui.preview_client_slot
 class ClientSlot(QFrame):
     def __init__(self, list_widget: 'ListWidgetPreviewClients',
                  list_widget_item, client: ray.ClientData):
-        QFrame.__init__(self)
+        super().__init__()
         self.ui = ui.preview_client_slot.Ui_ClientSlotWidget()
         self.ui.setupUi(self)
 
@@ -35,19 +34,14 @@ class ClientSlot(QFrame):
             self._properties_request)
 
         self._menu = QMenu(self)
-        self._menu.addAction(self.ui.actionAddToTheCurrentSession) # type:ignore
+        self._menu.addAction(
+            self.ui.actionAddToTheCurrentSession) # type:ignore
         self._menu.addAction(self.ui.actionProperties) # type:ignore
 
         self.ui.iconButton.setMenu(self._menu) # type:ignore
         self.update_client_data()
         
         self._server_status = ray.ServerStatus.OFF
-
-    @classmethod
-    def to_daemon(cls, *args):
-        server = GuiServerThread.instance()
-        if server:
-            server.to_daemon(*args)
 
     def _gray_icon(self, gray: bool):
         if gray:
@@ -56,10 +50,10 @@ class ClientSlot(QFrame):
             self.ui.iconButton.setIcon(self._icon_on) # type:ignore
 
     def _properties_request(self):
-        self._list_widget.properties_request.emit(self.get_client_id())
+        self._list_widget.properties_request.emit(self.client_id)
 
     def _add_to_the_current_session(self):
-        self._list_widget.add_to_session_request.emit(self.get_client_id())
+        self._list_widget.add_to_session_request.emit(self.client_id)
 
     def set_launched(self, launched: bool):
         self._gray_icon(not launched)
@@ -69,12 +63,14 @@ class ClientSlot(QFrame):
         self.ui.actionAddToTheCurrentSession.setEnabled(
             server_status is ray.ServerStatus.READY)
 
-    def get_client_id(self):
+    @property
+    def client_id(self):
         return self.client.client_id
 
     def update_layout(self):
         font = self.ui.ClientName.font()
-        main_size = QFontMetrics(font).horizontalAdvance(self.client.prettier_name())
+        main_size = QFontMetrics(font).horizontalAdvance(
+            self.client.prettier_name())
 
         layout_width = self._list_widget.width()
 
@@ -121,27 +117,29 @@ class ClientSlot(QFrame):
         self.update_layout()
 
         # set tool tip
-        tool_tip = "<html><head/><body>"
-        tool_tip += "<p><span style=\" font-weight:600;\">%s<br></span>" \
-            % self.client.name
-        tool_tip += "<span style=\" font-style:italic;\">%s</span></p>" \
-            % self.client.description
-        tool_tip += "<p></p>"
-        tool_tip += "<p>%s : %s<br>" \
-            % (_translate('client_slot', 'Protocol'),
-               self.client.protocol.to_string())
-        tool_tip += "%s : %s<br>" \
-            % (_translate('client_slot', 'Executable'),
-               self.client.executable)
-        tool_tip += "%s : %s</p>" \
-            % (_translate('client_slot', 'client id'), self.client.client_id)
-        tool_tip += "</body></html>"
+        tr_protocol = _translate('client_slot', 'Protocol')
+        tr_executable = _translate('client_slot', 'Executable')
+        tr_client_id = _translate('client_slot', 'client id')
+
+        tool_tip = (
+            "<html><head/><body>"
+            "<p><span style=\" font-weight:600;\">"
+            f"{self.client.name}<br></span>"
+            "<span style=\" font-style:italic;\">"
+            f"{self.client.description}</span></p>"
+            "<p></p>"
+            f"<p>{tr_protocol} : {self.client.protocol.to_string()}<br>"
+            f"{tr_executable} : {self.client.executable}<br>"
+            f"{tr_client_id} : {self.client_id}</p>"
+            "</body></html>"
+        )
 
         self.ui.ClientName.setToolTip(tool_tip)
 
         # set icon
         self._icon_on = get_app_icon(self.client.icon, self)
-        self._icon_off = QIcon(self._icon_on.pixmap(32, 32, QIcon.Mode.Disabled))
+        self._icon_off = QIcon(
+            self._icon_on.pixmap(32, 32, QIcon.Mode.Disabled))
         self._gray_icon(False)
 
     def contextMenuEvent(self, event: QContextMenuEvent):
@@ -151,7 +149,7 @@ class ClientSlot(QFrame):
 
 class ClientItem(QListWidgetItem):
     def __init__(self, parent: 'ListWidgetPreviewClients', client_data):
-        QListWidgetItem.__init__(self, parent, QListWidgetItem.ItemType.UserType + 1)
+        super().__init__(parent, QListWidgetItem.ItemType.UserType + 1)
 
         self.sort_number = 0
         self.widget = ClientSlot(parent, self, client_data)
@@ -165,31 +163,23 @@ class ClientItem(QListWidgetItem):
     def __gt__(self, other: 'ClientItem'):
         return self.sort_number > other.sort_number
 
-    def get_client_id(self):
-        return self.widget.get_client_id()
-
 
 class ListWidgetPreviewClients(QListWidget):
     properties_request = Signal(str)
     add_to_session_request = Signal(str)
 
     def __init__(self, parent):
-        QListWidget.__init__(self, parent)
+        super().__init__(parent)
         self._last_n = 0
         self.session = None
         self.server_status = ray.ServerStatus.OFF
 
-    @classmethod
-    def to_daemon(self, *args):
-        server = GuiServerThread.instance()
-        if server:
-            server.to_daemon(*args)
-
     def server_status_changed(self, server_status: ray.ServerStatus):
         self.server_status = server_status
         for i in range(self.count()):
-            item: ClientItem = self.item(i)
-            item.widget.server_status_changed(server_status)
+            item = self.item(i)
+            if isinstance(item, ClientItem):
+                item.widget.server_status_changed(server_status)
 
     def create_client_widget(self, client_data):
         item = ClientItem(self, client_data)
@@ -200,29 +190,26 @@ class ListWidgetPreviewClients(QListWidget):
 
     def remove_client_widget(self, client_id):
         for i in range(self.count()):
-            item: ClientItem = self.item(i)
-            if item.get_client_id() == client_id:
+            item = self.item(i)
+            if (isinstance(item, ClientItem)
+                    and item.widget.client_id == client_id):
                 widget = item.widget
                 self.takeItem(i)
                 del item
                 break
 
-    def item(self, index: int) -> ClientItem:
-        return super().item(index) # type:ignore
-
     def mousePressEvent(self, event: QMouseEvent):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
 
-        QListWidget.mousePressEvent(self, event)
-
+        super().mousePressEvent(event)
 
     def resizeEvent(self, event):
-        QListWidget.resizeEvent(self, event)
+        super().resizeEvent(event)
         for i in range(self.count()):
-            item: ClientItem = self.item(i)
-            widget: ClientSlot = self.itemWidget(item) # type:ignore
-            if widget is not None:
+            item = self.item(i)
+            widget = self.itemWidget(item)
+            if isinstance(widget, ClientSlot):
                 widget.update_layout()
 
 

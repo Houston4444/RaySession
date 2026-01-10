@@ -19,13 +19,12 @@ from gui_server_thread import GuiServerThread
 from gui_tools import _translate, get_app_icon
 
 if TYPE_CHECKING:
-    from gui_session import Session
+    from gui_session import SignaledSession
 
 
 class ClientItem(QListWidgetItem):
     def __init__(self, parent: 'ListWidgetClients', client_data):
-        QListWidgetItem.__init__(
-            self, parent, QListWidgetItem.ItemType.UserType + 1)
+        super().__init__(parent, QListWidgetItem.ItemType.UserType + 1)
 
         self.sort_number = 0
         self.widget = ClientSlot(parent, self, client_data)
@@ -45,7 +44,7 @@ class ClientItem(QListWidgetItem):
 
 class ListWidgetClients(QListWidget):
     def __init__(self, parent):
-        QListWidget.__init__(self, parent)
+        super().__init__(parent)
         self._last_n = 0
         self.session = None
 
@@ -89,7 +88,7 @@ class ListWidgetClients(QListWidget):
                 widget.set_hack_button_state(visible)
                 break
 
-    def set_session(self, session: 'Session'):
+    def set_session(self, session: 'SignaledSession'):
         self.session = session
 
     def patchbay_is_shown(self, yesno: bool):
@@ -105,19 +104,17 @@ class ListWidgetClients(QListWidget):
         return super().currentItem() # type:ignore
 
     def dropEvent(self, event):
-        QListWidget.dropEvent(self, event)
+        super().dropEvent(event)
 
-        server = GuiServerThread.instance()
-        if server:
-            server.to_daemon(
-                r.session.REORDER_CLIENTS,
-                *[self.item(i).client_id for i in range(self.count())])
+        self.to_daemon(
+            r.session.REORDER_CLIENTS,
+            *[self.item(i).client_id for i in range(self.count())])
 
     def mousePressEvent(self, event):
         if not self.itemAt(event.pos()):
             self.setCurrentRow(-1)
 
-        QListWidget.mousePressEvent(self, event)
+        super().mousePressEvent(event)
 
     def contextMenuEvent(self, event: QContextMenuEvent):
         if not self.itemAt(event.pos()):
@@ -136,7 +133,8 @@ class ListWidgetClients(QListWidget):
 
                 for favorite in self.session.favorite_list:
                     act_app = fav_menu.addAction(
-                        get_app_icon(favorite.icon, self), favorite.display_name)
+                        get_app_icon(favorite.icon, self),
+                        favorite.display_name)
                     act_app.setData([favorite.name, favorite.factory])
                     act_app.triggered.connect(self._launch_favorite)
 
@@ -152,7 +150,7 @@ class ListWidgetClients(QListWidget):
             return
 
     def resizeEvent(self, event):
-        QListWidget.resizeEvent(self, event)
+        super().resizeEvent(event)
         for i in range(self.count()):
             item: ClientItem = self.item(i) # type:ignore
             widget: ClientSlot = self.itemWidget(item) # type:ignore

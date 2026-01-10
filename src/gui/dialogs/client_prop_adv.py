@@ -72,7 +72,7 @@ class AdvancedPropertiesDialog(ChildDialog):
     @property
     def _apply_button(self):
         return self.ui.buttonBox.button(
-            QDialogButtonBox.StandardButton.Ok) # type:ignore
+            QDialogButtonBox.StandardButton.Apply) # type:ignore
     
     def _client_status_changed(self, status: ray.ClientStatus):
         self._apply_button.setEnabled(status is ray.ClientStatus.STOPPED)

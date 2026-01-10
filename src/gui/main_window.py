@@ -299,10 +299,11 @@ class MainWindow(QMainWindow):
         self.ui.menuAdd.addMenu(self._favorites_menu)
 
         # set trash menu
+        self.ui.trashButton.clicked.connect(self._show_trash)
         self._trash_menu = QMenu()
-        self.ui.trashButton.setPopupMode(
-            QToolButton.ToolButtonPopupMode.InstantPopup)
-        self.ui.trashButton.setMenu(self._trash_menu)
+        # self.ui.trashButton.setPopupMode(
+        #     QToolButton.ToolButtonPopupMode.InstantPopup)
+        # self.ui.trashButton.setMenu(self._trash_menu)
 
         # connect OSC signals from daemon
         sg = self.session.signaler
@@ -464,6 +465,10 @@ class MainWindow(QMainWindow):
             Optional[dialogs.PreferencesDialog] = None
 
         self._startup_time = time.time()
+
+    def _show_trash(self):
+        dialog = dialogs.TrashDialog(self)
+        dialog.show()
 
     def _splitter_session_vs_messages_moved(self, pos: int, index: int):
         self.ui.actionToggleShowMessages.setChecked(

@@ -2,6 +2,7 @@
 # Imports from standard library
 import os
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 # third party imports
@@ -33,10 +34,7 @@ class ChildDialog(QDialog):
         self.signaler.server_copying.connect(self._server_copying)
 
         self._root_folder_file_dialog: QFileDialog | None = None
-        self._root_folder_message_box = QMessageBox(
-            QMessageBox.Icon.Critical,
-            _translate('root_folder_dialogs', 'unwritable dir'),
-            '', QMessageBox.StandardButton.NoButton, self)
+        self._root_folder_message_box: QMessageBox | None = None
 
         self.server_copying = parent.server_copying
 
@@ -79,29 +77,33 @@ class ChildDialog(QDialog):
         if not selected_files:
             return
 
-        root_folder = selected_files[0]
+        root_folder = Path(selected_files[0])
 
         # Security, kde dialogs sends $HOME if user type a folder path
         # that doesn't already exists.
-        if os.getenv('HOME') and root_folder == os.getenv('HOME'):
+        if root_folder == Path.home():
             return
 
-        self._root_folder_message_box.setText(
+        self._root_folder_message_box = QMessageBox(
+            QMessageBox.Icon.Critical,
             _translate(
                 'root_folder_dialogs',
                 "<p>You have no permissions for %s,"
                 "<br>choose another directory !</p>")
-                    % root_folder)
+                    % root_folder,
+            '', QMessageBox.StandardButton.NoButton, self)
 
-        if not os.path.exists(root_folder):
+        if not root_folder.exists():
             try:
-                os.makedirs(root_folder)
+                root_folder.mkdir(parents=True)
             except:
                 self._root_folder_message_box.exec()
+                self._root_folder_message_box = None
                 return
 
         if not os.access(root_folder, os.W_OK):
             self._root_folder_message_box.exec()
+            self._root_folder_message_box = None
             return
 
         RS.settings.setValue('default_session_root', root_folder)
@@ -115,10 +117,10 @@ class ChildDialog(QDialog):
         
         if parent is not None and self.isActiveWindow():
             parent.mouse_is_inside = False
-        QDialog.leaveEvent(self, event)
+        super().leaveEvent(event)
 
     def enterEvent(self, event):
         parent = self.parent()
         if parent is not None:
             parent.mouse_is_inside = True
-        QDialog.enterEvent(self, event)
+        super().enterEvent(event)

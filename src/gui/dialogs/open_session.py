@@ -433,7 +433,8 @@ class OpenSessionDialog(ChildDialog):
         if server_status is not ray.ServerStatus.OFF:
             if self._root_folder_file_dialog is not None:
                 self._root_folder_file_dialog.reject()
-            self._root_folder_message_box.reject()
+            if self._root_folder_message_box is not None:
+                self._root_folder_message_box.reject()
 
         self.ui.checkBoxSaveCurrentSession.setVisible(
             server_status is ray.ServerStatus.READY)
@@ -861,7 +862,8 @@ class OpenSessionDialog(ChildDialog):
         self._session_renaming = ('', '')
         current_name = ''
 
-        item: Optional[SessionItem] = self.ui.sessionList.currentItem() # type:ignore
+        item: Optional[SessionItem] = \
+            self.ui.sessionList.currentItem() # type:ignore
         if item is not None:
             current_name = item.data(COLUMN_NAME, Qt.ItemDataRole.UserRole)
 
