@@ -171,7 +171,6 @@ class ListWidgetTrashClients(QListWidget):
     def __init__(self, parent):
         super().__init__(parent)
         self._last_n = 0
-        self.session = None
         self.server_status = ray.ServerStatus.OFF
 
     def server_status_changed(self, server_status: ray.ServerStatus):
