@@ -4,42 +4,22 @@
 from typing import TYPE_CHECKING
 
 # third party imports
-from qtpy.QtWidgets import (
-    QListWidget, QListWidgetItem, QMenu)
-from qtpy.QtGui import QIcon, QContextMenuEvent, QKeyEvent
-from qtpy.QtCore import Slot, QSize, Qt # type:ignore
+from qtpy.QtCore import QSize, Qt, Slot # type:ignore
+from qtpy.QtGui import QContextMenuEvent, QIcon, QKeyEvent
+from qtpy.QtWidgets import QListWidget, QListWidgetItem, QMenu
 
 # Imports from src/shared
 import ray
 import osc_paths.ray as r
 
 # Local imports
-from client_slot import ClientSlot
 from gui_server_thread import GuiServerThread
 from gui_tools import _translate, get_app_icon
+from .client_slot import ClientSlot
+from .client_item import ClientItem
 
 if TYPE_CHECKING:
     from gui_session import SignaledSession
-
-
-class ClientItem(QListWidgetItem):
-    def __init__(self, parent: 'ListWidgetClients', client_data):
-        super().__init__(parent, QListWidgetItem.ItemType.UserType + 1)
-
-        self.sort_number = 0
-        self.widget = ClientSlot(parent, self, client_data)
-        parent.setItemWidget(self, self.widget)
-        self.setSizeHint(QSize(100, 45))
-
-    def __lt__(self, other: 'ClientItem'):
-        return self.sort_number < other.sort_number
-
-    def __gt__(self, other: 'ClientItem'):
-        return self.sort_number > other.sort_number
-
-    @property
-    def client_id(self):
-        return self.widget.client_id
 
 
 class ListWidgetClients(QListWidget):

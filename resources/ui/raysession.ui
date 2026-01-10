@@ -1573,7 +1573,7 @@ Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.</stri
   <customwidget>
    <class>ListWidgetClients</class>
    <extends>QListWidget</extends>
-   <header>list_widget_clients</header>
+   <header>promoted_widgets</header>
   </customwidget>
   <customwidget>
    <class>StatusBarNegativ</class>

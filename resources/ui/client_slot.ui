@@ -626,12 +626,12 @@ QToolButton {border: none}</string>
   <customwidget>
    <class>StatusBar</class>
    <extends>QLineEdit</extends>
-   <header>promoted_widgets</header>
+   <header>promoted_widgets.status_bar</header>
   </customwidget>
   <customwidget>
    <class>RayHackButton</class>
    <extends>QToolButton</extends>
-   <header location="global">promoted_widgets</header>
+   <header location="global">promoted_widgets.ray_hack_button</header>
   </customwidget>
  </customwidgets>
  <resources>

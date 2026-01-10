@@ -30,12 +30,12 @@ import osc_paths.ray.gui as rg
 
 # Local imports
 import dialogs
-import list_widget_clients
 from gui_tools import (
     RS, ray_icon, CommandLineArgs, _translate, server_status_string,
     is_dark_theme, get_code_root, get_app_icon)
 from gui_client import TrashedClient
 from gui_server_thread import GuiServerThread
+from promoted_widgets.list_widget_clients.client_item import ClientItem
 from utility_scripts import UtilityScriptLauncher
 
 # Import UIs made with Qt-Designer
@@ -1279,10 +1279,12 @@ class MainWindow(QMainWindow):
         # until user resize the window)
         # It has to be modified when ui_raysession is modified.
 
+        import promoted_widgets
+
         self.ui.listWidget.clear()
         self.ui.verticalLayout.removeWidget(self.ui.listWidget)
         del self.ui.listWidget
-        self.ui.listWidget = list_widget_clients.ListWidgetClients(
+        self.ui.listWidget = promoted_widgets.ListWidgetClients(
             self.ui.frameCurrentSession)
         self.ui.listWidget.setAcceptDrops(True)
         self.ui.listWidget.setStyleSheet("QFrame{border:none}")
@@ -1331,7 +1333,7 @@ class MainWindow(QMainWindow):
         self.ui.frameCurrentSession.setStyleSheet(frame_style_sheet)
 
     def _list_widget_item_changed(
-            self, current: list_widget_clients.ClientItem, previous):
+            self, current: ClientItem | None, previous):
         if current is None:
             return
 

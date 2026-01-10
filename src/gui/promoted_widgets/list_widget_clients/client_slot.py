@@ -23,7 +23,8 @@ import ui.client_slot
 
 if TYPE_CHECKING:
     from gui_client import Client
-    from list_widget_clients import ListWidgetClients, ClientItem
+    from .client_item import ClientItem
+    from .list_widget_clients import ListWidgetClients
     from qtpy.QtGui import QAction
 
 
