@@ -14,7 +14,7 @@ class TrashDialog(ChildDialog):
     def _fill_trash(self):
         session = self.parent().session
         
-        self.ui.listWidgetPreview.clear()
+        self.ui.listWidgetTrash.clear()
         
         for trashed_client in session.trashed_clients:
-            self.ui.listWidgetPreview.create_client_widget(trashed_client)
+            self.ui.listWidgetTrash.create_client_widget(trashed_client)
