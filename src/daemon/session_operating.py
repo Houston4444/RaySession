@@ -5,6 +5,7 @@ from io import TextIOWrapper
 import logging
 import math
 import os
+import shutil
 import subprocess
 import time
 from typing import Callable, Any, Union, Optional
@@ -971,7 +972,21 @@ for better organization.""")
                 self.set_server_status(ray.ServerStatus.READY)
                 return
 
-            spath.rmdir()
+            try:
+                shutil.rmtree(spath)
+            except BaseException as e:
+                _logger.error(
+                    f'Failed to remove {spath}, '
+                    'impossible to copy session folder')
+                self._send_error(
+                    ray.Err.CREATE_FAILED,
+                    _translate(
+                        "error",
+                        "Impossible to save template, "
+                        "failed to remove existing folder"))
+
+                self.set_server_status(ray.ServerStatus.READY)
+                return
 
         if not template_root.exists():
             template_root.mkdir(parents=True)
