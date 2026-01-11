@@ -1,5 +1,7 @@
 # Imports from standard library
+import logging
 import os
+import shutil
 from typing import TYPE_CHECKING
 
 # third party imports
@@ -19,6 +21,7 @@ if TYPE_CHECKING:
     from session import Session
 
 
+_logger = logging.getLogger(__name__)
 _translate = QCoreApplication.translate
 
 
@@ -53,7 +56,19 @@ class SaveSessionTemplate(SessionOp):
                         "Impossible to save template, unwriteable file !"))
                 return
 
-            spath.rmdir()
+            try:
+                shutil.rmtree(spath)
+            except BaseException as e:
+                _logger.error(
+                    f'Failed to remove {spath}, '
+                    'impossible to copy session folder')
+                self.error(
+                    ray.Err.CREATE_FAILED,
+                    _translate(
+                        "error",
+                        "Impossible to save template, "
+                        "failed to remove existing folder"))
+                return
 
         if not template_root.exists():
             template_root.mkdir(parents=True)
