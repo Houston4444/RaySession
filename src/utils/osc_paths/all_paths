@@ -188,7 +188,7 @@
 /ray/server/patchbay_daemon_ready
     The patchbay daemon sends this message to the daemon
     when it is ready to receive custom names
-/ray/server/change_root
+/ray/server/change_root s
 /ray/server/clear_client_templates_database
 /ray/server/controller_announce
 /ray/server/controller_disannounce
