@@ -54,6 +54,15 @@ class OscServer(BunServer):
                     self._stop_daemon(self._stop_port_list[0])
                 return
         
+        if reply_path.rpartition('/')[2].partition('_')[0] in ('list', 'get'):
+            if len(osp.args) >= 2:
+                if not isinstance(self.ret, list):
+                    self.ret = []
+                self.ret += osp.args[1:]
+            else:
+                self.op_done = True
+            return
+        
         self.op_done = True
         ret = osp.args[1:]
         match len(ret):
@@ -89,6 +98,10 @@ class OscServer(BunServer):
         if self._stop_port_list:
             self._stop_daemon(self._stop_port_list[0])
     
+    def send(self, *args):
+        self.op_done = False
+        super().send(*args)
+    
     def send_it(self, daemon_addr, path: str, *args):
         match path.rpartition('/')[2].partition('_')[0]:
             case 'has':
@@ -102,25 +115,4 @@ class OscServer(BunServer):
         
         self.expected_rets[path] = exp_ret
 
-def send_and_wait(path: str, *args):
-    rc_proc = subprocess.run(
-        ['ray_control', 'get_port'], capture_output=True)
-    sport_bytes = rc_proc.stdout
-    print(f'{sport_bytes=}')
-    if sport_bytes is None:
-        return
-    
-    sport_str = sport_bytes.decode()
-    if sport_str.endswith('\n'):
-        sport_str = sport_str[:-1]
-    if not sport_str.isdigit():
-        return
-    
-    server_port = int(sport_str)
-    print(f'{server_port=}')
-    osc_server = OscServer()
-    osc_server.send(server_port, path, *args)
-    while not osc_server.op_done:
-        osc_server.recv(50)
-    
-    return osc_server.ret
+

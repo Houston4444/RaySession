@@ -4,13 +4,21 @@
 It does not manages the `ray_control` executable, it gives access to
 the same functions, but in python, not in shell.'''
 
+import logging
 import os
 from pathlib import Path
 import subprocess
 import time
+import types
+
+import osc_paths.ray as r
 
 from . import utils
 from .sender import OscServer
+
+server = types.ModuleType('server')
+session = types.ModuleType('session')
+_logger = logging.getLogger(__name__)
 
 
 class NoServerStarted(Exception):
@@ -212,9 +220,39 @@ def _update_daemons():
             break
     else:
         m.daemon_started = False
+
+def _send_and_wait(path: str, *args, start_server=False):
+    _update_daemons()
+    if not m.daemon_started:
+        if start_server:
+            _start_daemon()
+            _update_daemons()
+            print('yopuuii', m.daemon_started, path)
+        else:
+            raise NoServerStarted
+
+    print(f'{m.daemon_port=} {path=} {args=}')
+    m.sender.send(m.daemon_port, path, *args)
+    while not m.sender.op_done:
+        m.sender.recv(50)
     
+    return m.sender.ret
+
+def create_function(osc_path: str, start_server=False):
+    return lambda *args: _send_and_wait(
+        osc_path, *args, start_server=start_server)
+
 
 if True:
+    for var, value in r.server.__dict__.items():
+        if isinstance(value, str) and value.startswith('/ray/server/'):
+            setattr(server, var.lower(),
+                    create_function(value, start_server=True))
+
+    for var, value in r.session.__dict__.items():
+        if isinstance(value, str) and value.startswith('/ray/session/'):
+            setattr(session, var.lower(), create_function(value))
+    
     utils.add_self_bin_to_path()
     
     m.wanted_port = 0

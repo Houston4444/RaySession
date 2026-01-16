@@ -97,7 +97,7 @@ class OscServer(Server):
                 out_message = ""
                 for session in sessions:
                     out_message += "%s\n" % session
-                sys.stdout.write(out_message)
+                sys.stdout.write('\n'.join(sessions) + '\n')
                 return
             else:
                 self._final_err = 0
