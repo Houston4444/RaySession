@@ -153,16 +153,16 @@ if True:
                             gui_pid=CommandLineArgs.gui_pid,
                             tcp_addr=CommandLineArgs.gui_tcp_url)        
 
-    # announce to ray_control if launched from it.
-    if CommandLineArgs.control_url:
-        server.announce_controller(CommandLineArgs.control_url)
-
     if server.jack_export_naming & Naming.CUSTOM:
         patchbay_dmn_mng.start()
 
     # create or update multi_daemon_file in /tmp
     multi_daemon_file.init(session, server)    
     multi_daemon_file.update()
+
+    # announce to ray_control if launched from it.
+    if CommandLineArgs.control_url:
+        server.announce_controller(CommandLineArgs.control_url)
 
     # clean bookmarks created by crashed daemons
     session.bookmarker.clean(multi_daemon_file.get_all_session_paths())

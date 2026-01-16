@@ -41,7 +41,7 @@ class Daemon:
     has_local_gui = 0
     
     def __init__(self):
-        self.local_gui_pids = []
+        self.local_gui_pids = list[int]()
 
 
 CONTROL_OPERATIONS = (
@@ -58,30 +58,9 @@ CONTROL_OPERATIONS = (
     'has_local_gui',
     'has_gui')
 
-SERVER_OPERATIONS = (
-    'quit',
-    'change_root',
-    'set_terminal_command',
-    'list_session_templates',
-    'list_user_client_templates',
-    'list_factory_client_templates',
-    'remove_client_template',
-    'list_sessions',
-    'new_session',
-    'open_session',
-    'open_session_off',
-    'save_session_template',
-    'rename_session',
-    'set_options',
-    'has_option',
-    'script_info',
-    'hide_script_info',
-    'script_user_action',
-    'auto_export_custom_names',
-    'export_custom_names',
-    'import_pretty_names',
-    'clear_pretty_names',
-    'set_patch_keyword')
+SERVER_OPERATIONS = tuple(
+    [p.rpartition('/')[2] for p in r.server.__dict__.values()
+     if isinstance(p, str) and p.startswith('/ray/server/')])
 
 
 def signal_handler(sig, frame):
@@ -92,10 +71,10 @@ def signal_handler(sig, frame):
 def add_self_bin_to_path():
     # Add raysession/src/bin to $PATH to can use ray executables after make
     # Warning, will works only if link to this file is in RaySession/*/*/*.py
-    this_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)))
-    bin_path = "%s/bin" % os.path.dirname(this_path)
-    if not os.environ['PATH'].startswith("%s:" % bin_path):
-        os.environ['PATH'] = "%s:%s" % (bin_path, os.environ['PATH'])
+    bin_path = Path(__file__).parents[1] / 'bin'
+    path_env = os.environ.get('PATH', '')
+    if path_env.split(':')[0] != str(bin_path):
+        os.environ['PATH'] = f'{bin_path}:{path_env}'
 
 def pid_exists(pid: int | str) -> bool:
     if isinstance(pid, str):
@@ -316,7 +295,7 @@ if True:
                      'open_snapshot', 'rename', 'add_executable',
                      'add_client_template', 'script_info'):
         if not arg_list:
-            sys.stderr.write('operation %s needs argument(s).\n' % operation)
+            sys.stderr.write(f'operation {operation} needs argument(s).\n')
             sys.exit(100)
 
     exit_code = 0
@@ -436,7 +415,7 @@ if True:
     elif not daemon_started:
         at_port = ''
         if daemon_port:
-            at_port = "at port %i" % daemon_port
+            at_port = f'at port {daemon_port}'
 
         match operation_type:
             case OperationType.SERVER:
@@ -507,17 +486,18 @@ if True:
         if detach:
             sys.exit(0)
     else:
-        session_root = "%s/Ray Sessions" % os.getenv('HOME')
+        session_root = Path.home() / 'Ray Sessions'
         try:
-            settings_file = open(
-                "%s/.config/RaySession/RaySession.conf" % os.getenv('HOME'), 'r')
-            contents = settings_file.read()
-            for line in contents.split('\n'):
+            config_file = Path.home() / '.config/RaySession/RaySession.conf'
+            with open(config_file, 'r') as f:
+                contents = f.read()
+        except:
+            pass
+        else:
+            for line in contents.splitlines():
                 if line.startswith('default_session_root='):
                     session_root = line.partition('=')[2]
                     break
-        except:
-            pass
 
         # start a daemon because no one is running
         import subprocess # see top of the file

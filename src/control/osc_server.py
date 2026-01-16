@@ -27,7 +27,7 @@ def highlight_text(string):
 class OscServer(Server):
     def __init__(self, detach=False):
         Server.__init__(self)
-        self.m_daemon_address = None
+        self._daemon_address = None
         self.add_method(osc_paths.REPLY, None, self.reply_message)
         self.add_method(osc_paths.ERROR, 'sis', self.error_message)
         self.add_method(osc_paths.MINOR_ERROR, 'sis',
@@ -68,7 +68,7 @@ class OscServer(Server):
                     stopped_port = self._stop_port_list.pop(0)
 
                     if self._stop_port_list:
-                        self.stop_daemon(self._stop_port_list[0])
+                        self._stop_daemon(self._stop_port_list[0])
                     else:
                         self._final_err = 0
                     return
@@ -130,12 +130,12 @@ class OscServer(Server):
         message = args[0]
         sys.stdout.write("%s\n" % message)
 
-    def ray_control_server_announce(self, path, args, types, src_addr):
-        sys.stderr.write('--- Daemon started at port %i ---\n'
-                         % src_addr.port)
+    def ray_control_server_announce(
+            self, path, args, types, src_addr: Address):
+        sys.stderr.write(f'--- Daemon started at port {src_addr.port} ---\n')
 
         self._wait_for_start = False
-        self.m_daemon_address = src_addr
+        self._daemon_address = src_addr
 
         if self._wait_for_start_only:
             self._final_err = 0
@@ -144,19 +144,19 @@ class OscServer(Server):
         self.send_order_message()
 
     def set_daemon_address(self, daemon_port):
-        self.m_daemon_address = Address(daemon_port)
+        self._daemon_address = Address(daemon_port)
         self._wait_for_announce = True
         self._announce_time = time.time()
         self.to_daemon(r.server.CONTROLLER_ANNOUNCE, os.getpid())
 
     def get_daemon_port(self):
-        if self.m_daemon_address:
-            return self.m_daemon_address.port
+        if self._daemon_address:
+            return self._daemon_address.port
         return None
 
     def to_daemon(self, *args):
-        if self.m_daemon_address:
-            self.send(self.m_daemon_address, *args)
+        if self._daemon_address:
+            self.send(self._daemon_address, *args)
 
     def set_order_path_args(self, path, args):
         self._osc_order_path = path
@@ -201,15 +201,15 @@ class OscServer(Server):
 
         return False
 
-    def stop_daemon(self, port):
-        sys.stderr.write('--- Stopping daemon at port %i ---\n' % port)
+    def _stop_daemon(self, port: int):
+        sys.stderr.write(f'--- Stopping daemon at port {port} ---\n')
         self.set_daemon_address(port)
         self.to_daemon(r.server.QUIT)
 
     def stop_daemons(self, stop_port_list: list[int]):
         self._stop_port_list = stop_port_list
         if self._stop_port_list:
-            self.stop_daemon(self._stop_port_list[0])
+            self._stop_daemon(self._stop_port_list[0])
 
     def disannounce_to_daemon(self):
         self.to_daemon(r.server.CONTROLLER_DISANNOUNCE)

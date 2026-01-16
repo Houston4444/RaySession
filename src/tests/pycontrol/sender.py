@@ -1,4 +1,6 @@
+from enum import Enum
 import subprocess
+from typing import Any
 
 from osclib import BunServer, OscPack
 
@@ -6,6 +8,13 @@ from osclib import BunServer, OscPack
 class RayError(Exception):
     def __init__(self) -> None:
         super().__init__(f"Operation failed !!!")
+
+
+class ExpectedRetType(Enum):
+    NONE = 0
+    BOOL = 1
+    SINGLE = 2
+    LIST = 3
 
 
 class OscServer(BunServer):
@@ -16,9 +25,9 @@ class OscServer(BunServer):
         self.add_nice_method('/error', 'sis', self.get_error)
         self.op_done = False
         self.ret = None
+        self.expected_rets = dict[str, ExpectedRetType]()
     
     def get_reply(self, osp: OscPack):
-        print('yalouu', osp.path, osp.args)
         self.op_done = True
         ret = osp.args[1:]
         match len(ret):
@@ -32,11 +41,23 @@ class OscServer(BunServer):
     def get_error(self, osp: OscPack):
         print('ohnonnn', osp.path, osp.args)
         self.op_done = True
-
+        
+    def send_it(self, daemon_addr, path: str, *args):
+        match path.rpartition('/')[2].partition('_')[0]:
+            case 'has':
+                exp_ret = ExpectedRetType.BOOL
+            case 'list':
+                exp_ret = ExpectedRetType.LIST
+            case 'get':
+                exp_ret = ExpectedRetType.SINGLE
+            case _:
+                exp_ret = ExpectedRetType.NONE
+        
+        self.expected_rets[path] = exp_ret
 
 def send_and_wait(path: str, *args):
-    rc_proc = subprocess.run(['ray_control', 'get_port'],
-                                capture_output=True)
+    rc_proc = subprocess.run(
+        ['ray_control', 'get_port'], capture_output=True)
     sport_bytes = rc_proc.stdout
     print(f'{sport_bytes=}')
     if sport_bytes is None:
@@ -51,7 +72,6 @@ def send_and_wait(path: str, *args):
     server_port = int(sport_str)
     print(f'{server_port=}')
     osc_server = OscServer()
-    print('pallouu', path, args)
     osc_server.send(server_port, path, *args)
     while not osc_server.op_done:
         osc_server.recv(50)
