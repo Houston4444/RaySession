@@ -43,10 +43,11 @@ for line in contents.splitlines():
         continue
 
     osc_path, _, pre_types_ = line.partition(' ')
-    if osc_path.startswith('/ray/'):
+    if osc_path.startswith('/nsm/'):
+    # if osc_path.startswith('/ray/'):
         s_min = osc_path[5:].replace('/', '.')
         beg, _, end = s_min.rpartition('.')
-        search_ = f'r.{beg}.{end.upper()}'
+        search_ = f'nsm.{beg}.{end.upper()}'
         types_ = find_types(search_)
 
         

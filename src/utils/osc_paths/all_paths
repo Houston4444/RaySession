@@ -5,28 +5,28 @@
 /nsm/client/hide_optional_gui
 /nsm/client/is_clean
 /nsm/client/is_dirty
-/nsm/client/label
-/nsm/client/message
+/nsm/client/label s
+/nsm/client/message is
 /nsm/client/monitor/client_event
 /nsm/client/monitor/client_state
 /nsm/client/monitor/client_updated
-/nsm/client/network_properties
+/nsm/client/network_properties ss
 /nsm/client/open
-/nsm/client/progress
+/nsm/client/progress f
 /nsm/client/save
 /nsm/client/session_is_loaded
 /nsm/client/show_optional_gui
 /nsm/client/patch_keyword s
 /nsm/server/abort
-/nsm/server/add
-/nsm/server/announce
-/nsm/server/broadcast
+/nsm/server/add s
+/nsm/server/announce sssiii
+/nsm/server/broadcast s.*
 /nsm/server/close
-/nsm/server/duplicate
+/nsm/server/duplicate s
 /nsm/server/list
 /nsm/server/monitor_reset
-/nsm/server/new
-/nsm/server/open
+/nsm/server/new s
+/nsm/server/open s
 /nsm/server/quit
 /nsm/server/save
 /osc/ping
