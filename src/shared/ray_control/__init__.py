@@ -10,14 +10,21 @@ from pathlib import Path
 import subprocess
 import time
 import types
+import sys
+from typing import TYPE_CHECKING
 
 import osc_paths.ray as r
 
 from . import utils
 from .sender import OscServer
 
-server = types.ModuleType('server')
-session = types.ModuleType('session')
+if TYPE_CHECKING:
+    from server import *
+
+
+client = types.ModuleType('client')
+trashed_client = types.ModuleType('trashed_client')
+
 _logger = logging.getLogger(__name__)
 
 
@@ -227,7 +234,6 @@ def _send_and_wait(path: str, *args, start_server=False):
         if start_server:
             _start_daemon()
             _update_daemons()
-            print('yopuuii', m.daemon_started, path)
         else:
             raise NoServerStarted
 
@@ -244,14 +250,25 @@ def create_function(osc_path: str, start_server=False):
 
 
 if True:
+    print(__name__, __package__, sys.modules[__name__])
     for var, value in r.server.__dict__.items():
         if isinstance(value, str) and value.startswith('/ray/server/'):
-            setattr(server, var.lower(),
+            setattr(sys.modules[__name__], var.lower(),
                     create_function(value, start_server=True))
 
     for var, value in r.session.__dict__.items():
         if isinstance(value, str) and value.startswith('/ray/session/'):
-            setattr(session, var.lower(), create_function(value))
+            setattr(sys.modules[__name__], var.lower(), create_function(value))
+    
+    for var, value in r.client.__dict__.items():
+        if isinstance(value, str) and value.startswith('/ray/client/'):
+            setattr(client, var.lower(), create_function(value))
+            
+    for var, value in r.trashed_client.__dict__.items():
+        if isinstance(value, str) and value.startswith('/ray/trashed_client/'):
+            setattr(trashed_client, var.lower(), create_function(value))
+    # from .server import *
+    # from .session import *
     
     utils.add_self_bin_to_path()
     

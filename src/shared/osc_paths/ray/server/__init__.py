@@ -13,6 +13,8 @@ PATCHBAY_DAEMON_READY = '/ray/server/patchbay_daemon_ready'
 when it is ready to receive custom names'''
 
 CHANGE_ROOT = '/ray/server/change_root'
+' (arg types: s)'
+
 CLEAR_CLIENT_TEMPLATES_DATABASE = '/ray/server/clear_client_templates_database'
 CONTROLLER_ANNOUNCE = '/ray/server/controller_announce'
 CONTROLLER_DISANNOUNCE = '/ray/server/controller_disannounce'
@@ -32,6 +34,8 @@ MONITOR_QUIT = '/ray/server/monitor_quit'
 NEW_SESSION = '/ray/server/new_session'
 OPEN_FILE_MANAGER_AT = '/ray/server/open_file_manager_at'
 OPEN_SESSION = '/ray/server/open_session'
+' (arg types: s|si|sis)'
+
 OPEN_SESSION_OFF = '/ray/server/open_session_off'
 QUIT = '/ray/server/quit'
 REMOVE_CLIENT_TEMPLATE = '/ray/server/remove_client_template'

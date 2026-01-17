@@ -1,6 +1,5 @@
 from enum import Enum
 import logging
-import subprocess
 import sys
 
 from osclib import BunServer, OscPack, Address
@@ -10,10 +9,6 @@ import osc_paths.ray as r
 
 _logger = logging.getLogger(__name__)
 
-
-class RayError(Exception):
-    def __init__(self) -> None:
-        super().__init__(f"Operation failed !!!")
 
 
 class ExpectedRetType(Enum):
@@ -54,14 +49,21 @@ class OscServer(BunServer):
                     self._stop_daemon(self._stop_port_list[0])
                 return
         
-        if reply_path.rpartition('/')[2].partition('_')[0] in ('list', 'get'):
-            if len(osp.args) >= 2:
-                if not isinstance(self.ret, list):
-                    self.ret = []
-                self.ret += osp.args[1:]
-            else:
-                self.op_done = True
-            return
+        match reply_path.rpartition('/')[2].partition('_')[0]:
+            case 'list':
+                if len(osp.args) >= 2:
+                    if not isinstance(self.ret, list):
+                        self.ret = []
+                    self.ret += osp.args[1:]
+                else:
+                    self.op_done = True
+                return
+
+            case 'get':
+                if len(osp.args) == 2:
+                    self.ret = osp.args[1]
+                    self.op_done = True
+                    return
         
         self.op_done = True
         ret = osp.args[1:]

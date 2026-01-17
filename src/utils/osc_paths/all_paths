@@ -207,7 +207,7 @@
 /ray/server/monitor_quit
 /ray/server/new_session
 /ray/server/open_file_manager_at
-/ray/server/open_session
+/ray/server/open_session s|si|sis
 /ray/server/open_session_off
 /ray/server/patchbay/clear_absents_in_view
 /ray/server/patchbay/save_group_position
