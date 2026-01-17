@@ -6,3 +6,4 @@
 
 DETAILS = '/ray/gui/listed_session/details'
 SCRIPTED_DIR = '/ray/gui/listed_session/scripted_dir'
+' (arg types: si)'

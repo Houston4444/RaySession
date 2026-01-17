@@ -5,14 +5,37 @@
 
 
 DIRTY = '/ray/gui/client/dirty'
+' (arg types: si)'
+
 GUI_VISIBLE = '/ray/gui/client/gui_visible'
+' (arg types: si)'
+
 HAS_OPTIONAL_GUI = '/ray/gui/client/has_optional_gui'
+' (arg types: s)'
+
 MESSAGE = '/ray/gui/client/message'
+' (arg types: sis)'
+
 NEW = '/ray/gui/client/new'
+' (arg types: sissssissssssisssii)'
+
 PROGRESS = '/ray/gui/client/progress'
+' (arg types: sf)'
+
 RAY_HACK_UPDATE = '/ray/gui/client/ray_hack_update'
+' (arg types: ssiiiisi)'
+
 RAY_NET_UPDATE = '/ray/gui/client/ray_net_update'
+' (arg types: session_is_loaded)'
+
 STATUS = '/ray/gui/client/status'
+' (arg types: si)'
+
 STILL_RUNNING = '/ray/gui/client/still_running'
+' (arg types: s)'
+
 SWITCH = '/ray/gui/client/switch'
+' (arg types: ss)'
+
 UPDATE = '/ray/gui/client/update'
+' (arg types: sissssissssssisssii)'

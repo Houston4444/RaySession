@@ -5,17 +5,41 @@
 
 
 ANNOUNCE = '/ray/gui/server/announce'
+' (arg types: siisis)'
+
 COPYING = '/ray/gui/server/copying'
+' (arg types: i)'
+
 DISANNOUNCE = '/ray/gui/server/disannounce'
 MESSAGE = '/ray/gui/server/message'
+' (arg types: s)'
+
 NSM_LOCKED = '/ray/gui/server/nsm_locked'
+' (arg types: i)'
+
 OPTIONS = '/ray/gui/server/options'
+' (arg types: i)'
+
 PARRALLEL_COPY_PROGRESS = '/ray/gui/server/parrallel_copy_progress'
+' (arg types: if)'
+
 PARRALLEL_COPY_STATE = '/ray/gui/server/parrallel_copy_state'
+' (arg types: ii)'
+
 PROGRESS = '/ray/gui/server/progress'
+' (arg types: f)'
+
 RECENT_SESSIONS = '/ray/gui/server/recent_sessions'
+' (arg types: s*)'
+
 ROOT = '/ray/gui/server/root'
+' (arg types: s)'
+
 STATUS = '/ray/gui/server/status'
+' (arg types: i)'
+
 TERMINAL_COMMAND = '/ray/gui/server/terminal_command'
+' (arg types: s)'
+
 AUTO_EXPORT_CUSTOM_NAMES = '/ray/gui/server/auto_export_custom_names'
 'informs the GUI that "auto export custom names" option has changed (arg types: i)'

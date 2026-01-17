@@ -10,10 +10,18 @@ HIDE_OPTIONAL_GUI = '/nsm/client/hide_optional_gui'
 IS_CLEAN = '/nsm/client/is_clean'
 IS_DIRTY = '/nsm/client/is_dirty'
 LABEL = '/nsm/client/label'
+' (arg types: s)'
+
 MESSAGE = '/nsm/client/message'
+' (arg types: is)'
+
 NETWORK_PROPERTIES = '/nsm/client/network_properties'
+' (arg types: ss)'
+
 OPEN = '/nsm/client/open'
 PROGRESS = '/nsm/client/progress'
+' (arg types: f)'
+
 SAVE = '/nsm/client/save'
 SESSION_IS_LOADED = '/nsm/client/session_is_loaded'
 SHOW_OPTIONAL_GUI = '/nsm/client/show_optional_gui'

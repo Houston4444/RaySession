@@ -22,8 +22,11 @@ HEADER = '''
 types_py = {
     's': 'str',
     'i': 'int',
+    'h': 'int',
     'f': 'float',
     'b': 'bytes',
+    'T': 'bool',
+    'F': 'bool',
     '.': 'OscArg'
 }
 

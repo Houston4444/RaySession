@@ -689,17 +689,15 @@ class OscServerThread(ClientCommunicating):
 
         pathlist = path.split(':')
         for pathdir in pathlist:
-            if os.path.isdir(pathdir):
-                listexe = os.listdir(pathdir)
-                for exe in listexe:
-                    fullexe = pathdir + '/' + exe
-
-                    if (exe not in exec_set
-                            and os.path.isfile(fullexe)
-                            and os.access(fullexe, os.X_OK)):
-                        exec_set.add(exe)
-                        tmp_exec_list.append(exe)
-                        n += len(exe)
+            path_dir = Path(pathdir)
+            if path_dir.is_dir():
+                for exe in path_dir.iterdir():
+                    if (exe.name not in exec_set
+                            and exe.is_file()
+                            and os.access(exe, os.X_OK)):
+                        exec_set.add(exe.name)
+                        tmp_exec_list.append(exe.name)
+                        n += len(exe.name)
 
                         if n >= 20000:
                             self.send(*osp.reply(), *tmp_exec_list)
@@ -708,6 +706,7 @@ class OscServerThread(ClientCommunicating):
 
         if tmp_exec_list:
             self.send(*osp.reply(), *tmp_exec_list)
+        self.send(*osp.reply())
 
     @directos(r.server.LIST_SESSION_TEMPLATES, '')
     def _srv_list_session_templates(self, osp: OscPack):
@@ -971,7 +970,7 @@ class OscServerThread(ClientCommunicating):
 
         self.send_gui(rg.server.AUTO_EXPORT_CUSTOM_NAMES,
                       self.jack_export_naming.value)
-        self.send(*osp.reply(), 'auto-export pretty_names changed')
+        self.send(*osp.reply(), 'auto-export custom_names changed')
         
         # start patchbay daemon in main thread if it is not started yet
         return not patchbay_dmn_mng.is_running()

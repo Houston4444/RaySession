@@ -5,3 +5,4 @@
 
 
 DUPLICATE_STATE = '/ray/net_daemon/duplicate_state'
+' (arg types: f)'

@@ -5,7 +5,14 @@
 
 
 ADD = '/ray/gui/trash/add'
+' (arg types: sissssissssssisssii)'
+
 CLEAR = '/ray/gui/trash/clear'
 RAY_HACK_UPDATE = '/ray/gui/trash/ray_hack_update'
+' (arg types: ssiiiisi)'
+
 RAY_NET_UPDATE = '/ray/gui/trash/ray_net_update'
+' (arg types: ssss)'
+
 REMOVE = '/ray/gui/trash/remove'
+' (arg types: s)'

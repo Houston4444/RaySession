@@ -6,13 +6,25 @@
 
 ABORT = '/nsm/server/abort'
 ADD = '/nsm/server/add'
+' (arg types: s)'
+
 ANNOUNCE = '/nsm/server/announce'
+' (arg types: sssiii)'
+
 BROADCAST = '/nsm/server/broadcast'
+' (arg types: s.*)'
+
 CLOSE = '/nsm/server/close'
 DUPLICATE = '/nsm/server/duplicate'
+' (arg types: s)'
+
 LIST = '/nsm/server/list'
 MONITOR_RESET = '/nsm/server/monitor_reset'
 NEW = '/nsm/server/new'
+' (arg types: s)'
+
 OPEN = '/nsm/server/open'
+' (arg types: s)'
+
 QUIT = '/nsm/server/quit'
 SAVE = '/nsm/server/save'

@@ -6,31 +6,66 @@
 
 ABORT = '/ray/session/abort'
 ADD_CLIENT_TEMPLATE = '/ray/session/add_client_template'
+' (arg types: isss)'
+
 ADD_EXEC = '/ray/session/add_exec'
+' (arg types: siiissi|ss*)'
+
 ADD_EXECUTABLE = '/ray/session/add_executable'
+' (arg types: siiissi|ss*)'
+
 ADD_FACTORY_CLIENT_TEMPLATE = '/ray/session/add_factory_client_template'
+' (arg types: ss*)'
+
 ADD_OTHER_SESSION_CLIENT = '/ray/session/add_other_session_client'
+' (arg types: ss)'
+
 ADD_USER_CLIENT_TEMPLATE = '/ray/session/add_user_client_template'
+' (arg types: ss*)'
+
 CANCEL_CLOSE = '/ray/session/cancel_close'
 CLEAR_CLIENTS = '/ray/session/clear_clients'
+' (arg types: s*)'
+
 CLOSE = '/ray/session/close'
 DUPLICATE = '/ray/session/duplicate'
+' (arg types: s)'
+
 DUPLICATE_ONLY = '/ray/session/duplicate_only'
+' (arg types: sss)'
+
 GET_NOTES = '/ray/session/get_notes'
 GET_SESSION_NAME = '/ray/session/get_session_name'
 HIDE_NOTES = '/ray/session/hide_notes'
 LIST_CLIENTS = '/ray/session/list_clients'
+' (arg types: s*)'
+
 LIST_SNAPSHOTS = '/ray/session/list_snapshots'
 LIST_TRASHED_CLIENTS = '/ray/session/list_trashed_clients'
 OPEN_FOLDER = '/ray/session/open_folder'
 OPEN_SNAPSHOT = '/ray/session/open_snapshot'
+' (arg types: s)'
+
 RENAME = '/ray/session/rename'
+' (arg types: s)'
+
 REORDER_CLIENTS = '/ray/session/reorder_clients'
+' (arg types: ss*)'
+
 RUN_STEP = '/ray/session/run_step'
+' (arg types: s*)'
+
 SAVE = '/ray/session/save'
 SAVE_AS_TEMPLATE = '/ray/session/save_as_template'
+' (arg types: s)'
+
 SET_AUTO_SNAPSHOT = '/ray/session/set_auto_snapshot'
+' (arg types: i)'
+
 SET_NOTES = '/ray/session/set_notes'
+' (arg types: s)'
+
 SHOW_NOTES = '/ray/session/show_notes'
 SKIP_WAIT_USER = '/ray/session/skip_wait_user'
 TAKE_SNAPSHOT = '/ray/session/take_snapshot'
+' (arg types: s|si)'

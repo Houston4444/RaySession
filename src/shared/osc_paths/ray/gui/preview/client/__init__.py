@@ -5,6 +5,8 @@
 
 
 IS_STARTED = '/ray/gui/preview/client/is_started'
+' (arg types: si)'
+
 RAY_HACK_UPDATE = '/ray/gui/preview/client/ray_hack_update'
 RAY_NET_UPDATE = '/ray/gui/preview/client/ray_net_update'
 UPDATE = '/ray/gui/preview/client/update'

@@ -3,13 +3,13 @@ from typing import overload
 def abort_copy() -> bool:
     ...
 
-def abort_parrallel_copy() -> bool:
+def abort_parrallel_copy(arg_1: int) -> bool:
     ...
 
 def abort_snapshot() -> bool:
     ...
 
-def ask_for_patchbay() -> bool:
+def ask_for_patchbay(arg_1: str) -> bool:
     ...
 
 def patchbay_daemon_ready() -> bool:
@@ -21,31 +21,31 @@ def change_root(arg_1: str) -> bool:
 def clear_client_templates_database() -> bool:
     ...
 
-def controller_announce() -> bool:
+def controller_announce(arg_1: int) -> bool:
     ...
 
 def controller_disannounce() -> bool:
     ...
 
-def exotic_action() -> bool:
+def exotic_action(arg_1: str) -> bool:
     ...
 
-def get_session_preview() -> str:
+def get_session_preview(arg_1: str) -> str:
     ...
 
-def gui_announce() -> bool:
+def gui_announce(arg_1: str, arg_2: int, arg_3: str, arg_4: int, arg_5: int, arg_6: str) -> bool:
     ...
 
 def gui_disannounce() -> bool:
     ...
 
-def has_option() -> bool:
+def has_option(arg_1: str) -> bool:
     ...
 
 def hide_script_info() -> bool:
     ...
 
-def list_factory_client_templates() -> list[str]:
+def list_factory_client_templates(*args: str) -> list[str]:
     ...
 
 def list_path() -> list[str]:
@@ -54,10 +54,15 @@ def list_path() -> list[str]:
 def list_session_templates() -> list[str]:
     ...
 
+@overload
 def list_sessions() -> list[str]:
     ...
 
-def list_user_client_templates() -> list[str]:
+@overload
+def list_sessions(arg_1: int) -> list[str]:
+    ...
+
+def list_user_client_templates(*args: str) -> list[str]:
     ...
 
 def monitor_announce() -> bool:
@@ -66,10 +71,15 @@ def monitor_announce() -> bool:
 def monitor_quit() -> bool:
     ...
 
-def new_session() -> bool:
+@overload
+def new_session(arg_1: str) -> bool:
     ...
 
-def open_file_manager_at() -> bool:
+@overload
+def new_session(arg_1: str, arg_2: str) -> bool:
+    ...
+
+def open_file_manager_at(arg_1: str) -> bool:
     ...
 
 @overload
@@ -84,37 +94,47 @@ def open_session(arg_1: str, arg_2: int) -> bool:
 def open_session(arg_1: str, arg_2: int, arg_3: str) -> bool:
     ...
 
-def open_session_off() -> bool:
+@overload
+def open_session_off(arg_1: str) -> bool:
+    ...
+
+@overload
+def open_session_off(arg_1: str, arg_2: int) -> bool:
     ...
 
 def quit() -> bool:
     ...
 
-def remove_client_template() -> bool:
+def remove_client_template(arg_1: str) -> bool:
     ...
 
-def rename_session() -> bool:
+def rename_session(arg_1: str, arg_2: str) -> bool:
     ...
 
-def save_session_template() -> bool:
+@overload
+def save_session_template(arg_1: str, arg_2: str) -> bool:
     ...
 
-def script_info() -> bool:
+@overload
+def save_session_template(arg_1: str, arg_2: str, arg_3: str) -> bool:
     ...
 
-def script_user_action() -> bool:
+def script_info(arg_1: str) -> bool:
+    ...
+
+def script_user_action(arg_1: str) -> bool:
     ...
 
 def set_nsm_locked() -> bool:
     ...
 
-def set_option() -> bool:
+def set_option(arg_1: int) -> bool:
     ...
 
-def set_options() -> bool:
+def set_options(arg_1: str, *args: str) -> bool:
     ...
 
-def set_terminal_command() -> bool:
+def set_terminal_command(arg_1: str) -> bool:
     ...
 
 def export_custom_names() -> bool:
@@ -126,7 +146,7 @@ def import_pretty_names() -> bool:
 def clear_pretty_names() -> bool:
     ...
 
-def auto_export_custom_names(arg_1: int) -> bool:
+def auto_export_custom_names(arg_1: str) -> bool:
     ...
 
 def set_patch_keyword(arg_1: str) -> bool:

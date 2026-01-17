@@ -6,8 +6,12 @@ from . import patchbay
 
 ABORT_COPY = '/ray/server/abort_copy'
 ABORT_PARRALLEL_COPY = '/ray/server/abort_parrallel_copy'
+' (arg types: i)'
+
 ABORT_SNAPSHOT = '/ray/server/abort_snapshot'
 ASK_FOR_PATCHBAY = '/ray/server/ask_for_patchbay'
+' (arg types: s)'
+
 PATCHBAY_DAEMON_READY = '/ray/server/patchbay_daemon_ready'
 '''The patchbay daemon sends this message to the daemon
 when it is ready to receive custom names'''
@@ -17,36 +21,74 @@ CHANGE_ROOT = '/ray/server/change_root'
 
 CLEAR_CLIENT_TEMPLATES_DATABASE = '/ray/server/clear_client_templates_database'
 CONTROLLER_ANNOUNCE = '/ray/server/controller_announce'
+' (arg types: i)'
+
 CONTROLLER_DISANNOUNCE = '/ray/server/controller_disannounce'
 EXOTIC_ACTION = '/ray/server/exotic_action'
+' (arg types: s)'
+
 GET_SESSION_PREVIEW = '/ray/server/get_session_preview'
+' (arg types: s)'
+
 GUI_ANNOUNCE = '/ray/server/gui_announce'
+' (arg types: sisiis)'
+
 GUI_DISANNOUNCE = '/ray/server/gui_disannounce'
 HAS_OPTION = '/ray/server/has_option'
+' (arg types: s)'
+
 HIDE_SCRIPT_INFO = '/ray/server/hide_script_info'
 LIST_FACTORY_CLIENT_TEMPLATES = '/ray/server/list_factory_client_templates'
+' (arg types: s*)'
+
 LIST_PATH = '/ray/server/list_path'
 LIST_SESSION_TEMPLATES = '/ray/server/list_session_templates'
 LIST_SESSIONS = '/ray/server/list_sessions'
+' (arg types: |i)'
+
 LIST_USER_CLIENT_TEMPLATES = '/ray/server/list_user_client_templates'
+' (arg types: s*)'
+
 MONITOR_ANNOUNCE = '/ray/server/monitor_announce'
 MONITOR_QUIT = '/ray/server/monitor_quit'
 NEW_SESSION = '/ray/server/new_session'
+' (arg types: s|ss)'
+
 OPEN_FILE_MANAGER_AT = '/ray/server/open_file_manager_at'
+' (arg types: s)'
+
 OPEN_SESSION = '/ray/server/open_session'
 ' (arg types: s|si|sis)'
 
 OPEN_SESSION_OFF = '/ray/server/open_session_off'
+' (arg types: s|si)'
+
 QUIT = '/ray/server/quit'
 REMOVE_CLIENT_TEMPLATE = '/ray/server/remove_client_template'
+' (arg types: s)'
+
 RENAME_SESSION = '/ray/server/rename_session'
+' (arg types: ss)'
+
 SAVE_SESSION_TEMPLATE = '/ray/server/save_session_template'
+' (arg types: ss|sss)'
+
 SCRIPT_INFO = '/ray/server/script_info'
+' (arg types: s)'
+
 SCRIPT_USER_ACTION = '/ray/server/script_user_action'
+' (arg types: s)'
+
 SET_NSM_LOCKED = '/ray/server/set_nsm_locked'
 SET_OPTION = '/ray/server/set_option'
+' (arg types: i)'
+
 SET_OPTIONS = '/ray/server/set_options'
+' (arg types: ss*)'
+
 SET_TERMINAL_COMMAND = '/ray/server/set_terminal_command'
+' (arg types: s)'
+
 EXPORT_CUSTOM_NAMES = '/ray/server/export_custom_names'
 'Export the custom names of clients and ports to JACK pretty-name metadatas'
 
@@ -60,7 +102,7 @@ auto_export_custom_names if it is set.'''
 
 AUTO_EXPORT_CUSTOM_NAMES = '/ray/server/auto_export_custom_names'
 '''Enable/disable auto-export of ports and clients custom names
-to JACK pretty-name metadatas (arg types: i)'''
+to JACK pretty-name metadatas (arg types: s)'''
 
 SET_PATCH_KEYWORD = '/ray/server/set_patch_keyword'
 '''set the patch keyword which could change the

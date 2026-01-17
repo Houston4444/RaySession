@@ -5,36 +5,97 @@
 
 
 CHANGE_ADVANCED_PROPERTIES = '/ray/client/change_advanced_properties'
+' (arg types: ssisi)'
+
 CHANGE_ID = '/ray/client/change_id'
+' (arg types: ss)'
+
 CHANGE_PREFIX = '/ray/client/change_prefix'
+' (arg types: si|ss|sis|sss)'
+
 FULL_RENAME = '/ray/client/full_rename'
+' (arg types: ss)'
+
 SWITCH_ALTERNATIVE = '/ray/client/switch_alternative'
 ' (arg types: ss)'
 
 GET_CUSTOM_DATA = '/ray/client/get_custom_data'
+' (arg types: ss)'
+
 GET_DESCRIPTION = '/ray/client/get_description'
+' (arg types: s)'
+
 GET_PID = '/ray/client/get_pid'
+' (arg types: s)'
+
 GET_PROPERTIES = '/ray/client/get_properties'
+' (arg types: s)'
+
 GET_TMP_DATA = '/ray/client/get_tmp_data'
+' (arg types: ss)'
+
 HIDE_OPTIONAL_GUI = '/ray/client/hide_optional_gui'
+' (arg types: s)'
+
 IS_STARTED = '/ray/client/is_started'
+' (arg types: s)'
+
 KILL = '/ray/client/kill'
+' (arg types: s)'
+
 LIST_FILES = '/ray/client/list_files'
+' (arg types: s)'
+
 LIST_SNAPSHOTS = '/ray/client/list_snapshots'
+' (arg types: s)'
+
 OPEN = '/ray/client/open'
+' (arg types: s)'
+
 OPEN_SNAPSHOT = '/ray/client/open_snapshot'
+' (arg types: ss)'
+
 RESUME = '/ray/client/resume'
+' (arg types: s)'
+
 SAVE = '/ray/client/save'
+' (arg types: s)'
+
 SAVE_AS_TEMPLATE = '/ray/client/save_as_template'
+' (arg types: ss)'
+
 SEND_SIGNAL = '/ray/client/send_signal'
+' (arg types: si)'
+
 SET_CUSTOM_DATA = '/ray/client/set_custom_data'
+' (arg types: sss)'
+
 SET_DESCRIPTION = '/ray/client/set_description'
+' (arg types: ss)'
+
 SET_PROPERTIES = '/ray/client/set_properties'
+' (arg types: sss*)'
+
 SET_TMP_DATA = '/ray/client/set_tmp_data'
+' (arg types: sss)'
+
 SHOW_OPTIONAL_GUI = '/ray/client/show_optional_gui'
+' (arg types: s)'
+
 START = '/ray/client/start'
+' (arg types: s)'
+
 STOP = '/ray/client/stop'
+' (arg types: s)'
+
 TRASH = '/ray/client/trash'
+' (arg types: s)'
+
 UPDATE_PROPERTIES = '/ray/client/update_properties'
+' (arg types: sissssissssssisssii)'
+
 UPDATE_RAY_HACK_PROPERTIES = '/ray/client/update_ray_hack_properties'
+' (arg types: ssiiiisi)'
+
 UPDATE_RAY_NET_PROPERTIES = '/ray/client/update_ray_net_properties'
+' (arg types: ssss)'

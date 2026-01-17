@@ -5,13 +5,23 @@
 
 
 AUTO_SNAPSHOT = '/ray/gui/session/auto_snapshot'
+' (arg types: i)'
+
 DUPLICATE_ONLY = '/ray/gui/session/duplicate_only'
 IS_NSM = '/ray/gui/session/is_nsm'
 NAME = '/ray/gui/session/name'
+' (arg types: ss)'
+
 NOTES = '/ray/gui/session/notes'
+' (arg types: s)'
+
 NOTES_HIDDEN = '/ray/gui/session/notes_hidden'
 NOTES_SHOWN = '/ray/gui/session/notes_shown'
 RENAMEABLE = '/ray/gui/session/renameable'
+' (arg types: i)'
+
 SORT_CLIENTS = '/ray/gui/session/sort_clients'
+' (arg types: s*)'
+
 ALTERNATIVE_GROUPS = '/ray/gui/session/alternative_groups'
 ' (arg types: s*)'
