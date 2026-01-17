@@ -1,7 +1,7 @@
 from pathlib import Path
 
 all_paths_path = Path(__file__).parents[1] / 'osc_paths' / 'all_paths'
-ost_path = Path(__file__).parents[2] / 'daemon' / 'osc_server_thread.py'
+ost_path = Path(__file__).parents[2] / 'gui' / 'gui_server_thread.py'
 
 with open(all_paths_path, 'r') as f:
     contents = f.read()
@@ -43,13 +43,14 @@ for line in contents.splitlines():
         continue
 
     osc_path, _, pre_types_ = line.partition(' ')
-    if osc_path.startswith('/nsm/'):
-    # if osc_path.startswith('/ray/'):
-        s_min = osc_path[5:].replace('/', '.')
+    # if osc_path.startswith('/nsm/'):
+    if osc_path.startswith('/ray/gui/'):
+        s_min = osc_path[9:].replace('/', '.')
         beg, _, end = s_min.rpartition('.')
-        search_ = f'nsm.{beg}.{end.upper()}'
+        search_ = f'rg.{beg}.{end.upper()}'
         types_ = find_types(search_)
 
+        print('OUlli', search_, ':', types_)
         
         if pre_types_ and types_ is not None and pre_types_ != types_:
             print('-Attnenntion chg de types')
@@ -57,7 +58,9 @@ for line in contents.splitlines():
         
         if types_ is None:
             out_lines.append(line)
-            if not osc_path.startswith(('/ray/gui/', '/ray/patchbay/',
+            if not osc_path.startswith(('/ray/server/', '/ray/session',
+                                        '/ray/client', '/ray/trashed_client',
+                                        '/ray/patchbay/',
                                         '/ray/control/', '/ray/monitor/')):
                 print('rien trouvé pour:')
                 print(osc_path)
@@ -72,9 +75,9 @@ for line in contents.splitlines():
     else:
         out_lines.append(line)
 
-print('')
-print('')
-print('\n'.join(out_lines))
+# print('')
+# print('')
+# print('\n'.join(out_lines))
 
 with open(all_paths_path, 'w') as f:
     f.write('\n'.join(out_lines))

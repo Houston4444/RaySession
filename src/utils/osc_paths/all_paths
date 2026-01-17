@@ -66,69 +66,69 @@
 /ray/control/server_announce
 /ray/favorites/add ssis
 /ray/favorites/remove si
-/ray/gui/client/dirty
-/ray/gui/client/gui_visible
-/ray/gui/client/has_optional_gui
-/ray/gui/client/message
-/ray/gui/client/new
-/ray/gui/client/progress
-/ray/gui/client/ray_hack_update
-/ray/gui/client/ray_net_update
-/ray/gui/client/status
-/ray/gui/client/still_running
-/ray/gui/client/switch
-/ray/gui/client/update
-/ray/gui/client_template/ray_hack_update
-/ray/gui/client_template/ray_net_update
-/ray/gui/client_template/update
-/ray/gui/favorites/added
-/ray/gui/favorites/removed
+/ray/gui/client/dirty si
+/ray/gui/client/gui_visible si
+/ray/gui/client/has_optional_gui s
+/ray/gui/client/message sis
+/ray/gui/client/new sissssissssssisssii
+/ray/gui/client/progress sf
+/ray/gui/client/ray_hack_update ssiiiisi
+/ray/gui/client/ray_net_update session_is_loaded
+/ray/gui/client/status si
+/ray/gui/client/still_running s
+/ray/gui/client/switch ss
+/ray/gui/client/update sissssissssssisssii
+/ray/gui/client_template/ray_hack_update issiiiisi
+/ray/gui/client_template/ray_net_update issss
+/ray/gui/client_template/update isssissssissssssisssii
+/ray/gui/favorites/added ssis
+/ray/gui/favorites/removed si
 /ray/gui/hide_script_info
 /ray/gui/hide_script_user_action
 /ray/gui/listed_session/details
-/ray/gui/listed_session/scripted_dir
+/ray/gui/listed_session/scripted_dir si
 /ray/gui/preview/clear
-/ray/gui/preview/client/is_started
+/ray/gui/preview/client/is_started si
 /ray/gui/preview/client/ray_hack_update
 /ray/gui/preview/client/ray_net_update
 /ray/gui/preview/client/update
-/ray/gui/preview/notes
+/ray/gui/preview/notes s
 /ray/gui/preview/session_size
-/ray/gui/preview/snapshot
-/ray/gui/preview/state
+/ray/gui/preview/snapshot s
+/ray/gui/preview/state i
 /ray/gui/script_info    s
     Ask the GUI to show a dialog with arg as text.
 /ray/gui/script_user_action
-/ray/gui/server/announce
-/ray/gui/server/copying
+/ray/gui/server/announce siisis
+/ray/gui/server/copying i
 /ray/gui/server/disannounce
-/ray/gui/server/message
-/ray/gui/server/nsm_locked
-/ray/gui/server/options
-/ray/gui/server/parrallel_copy_progress
-/ray/gui/server/parrallel_copy_state
-/ray/gui/server/progress
-/ray/gui/server/recent_sessions
-/ray/gui/server/root
-/ray/gui/server/status
-/ray/gui/server/terminal_command
+/ray/gui/server/message s
+/ray/gui/server/nsm_locked i
+/ray/gui/server/options i
+/ray/gui/server/parrallel_copy_progress if
+/ray/gui/server/parrallel_copy_state ii
+/ray/gui/server/progress f
+/ray/gui/server/recent_sessions s*
+/ray/gui/server/root s
+/ray/gui/server/status i
+/ray/gui/server/terminal_command s
 /ray/gui/server/auto_export_custom_names i
     informs the GUI that "auto export custom names" option has changed 
-/ray/gui/session/auto_snapshot
+/ray/gui/session/auto_snapshot i
 /ray/gui/session/duplicate_only
 /ray/gui/session/is_nsm
-/ray/gui/session/name
-/ray/gui/session/notes
+/ray/gui/session/name ss
+/ray/gui/session/notes s
 /ray/gui/session/notes_hidden
 /ray/gui/session/notes_shown
-/ray/gui/session/renameable
-/ray/gui/session/sort_clients
+/ray/gui/session/renameable i
+/ray/gui/session/sort_clients s*
 /ray/gui/session/alternative_groups s*
-/ray/gui/trash/add
+/ray/gui/trash/add sissssissssssisssii
 /ray/gui/trash/clear
-/ray/gui/trash/ray_hack_update
-/ray/gui/trash/ray_net_update
-/ray/gui/trash/remove
+/ray/gui/trash/ray_hack_update ssiiiisi
+/ray/gui/trash/ray_net_update ssss
+/ray/gui/trash/remove s
 /ray/monitor/client_event
 /ray/monitor/client_state
 /ray/monitor/client_updated
