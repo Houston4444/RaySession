@@ -1297,7 +1297,7 @@ class Client(ServerSender, ray.ClientData):
                 _translate('GUIMSG', '%s seems to can not open')
                     % self.gui_msg_style)
 
-        duration = max(8000, int(2 * self.last_open_duration))
+        duration = max(8000, int(2 * 1000 * self.last_open_duration))
         self._open_timer.setInterval(duration)
         self._open_timer.start()
 
