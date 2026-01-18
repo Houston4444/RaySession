@@ -84,8 +84,8 @@ class OscServer(Server):
                 snapshots: list[str] = args[1:] # type:ignore
                 out_message = ""
                 for snapshot_and_info in snapshots:
-                    snapshot, slash, info = snapshot_and_info.partition(':')
-                    out_message += "%s\n" % snapshot
+                    snapshot = snapshot_and_info.partition(':')[0]
+                    out_message += f'{snapshot}\n'
                 sys.stdout.write(out_message)
                 return
             else:

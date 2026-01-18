@@ -419,7 +419,7 @@ class SignaledSession(Session):
         if self.root not in self.recent_sessions.keys():
             self.recent_sessions[self.root] = []
         self.send_gui(rg.server.RECENT_SESSIONS,
-                       *self.recent_sessions[self.root])
+                      *self.recent_sessions[self.root])
 
     def _ray_server_list_client_templates(self, osp: OscPack):
         # if osp.src_addr is an announced ray GUI

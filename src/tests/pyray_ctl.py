@@ -11,10 +11,32 @@ print('go list')
 print('zeorgp', ray_control.list_daemons())
 print('tozolopi', ray_control.list_session_templates())
 
-ray_control.auto_export_custom_names('false')
-print('ok done')
-change_root = ray_control.change_root('/home/Koalo Géant')
-print(f'{change_root=}')
+zoupi = ray_control.auto_export_custom_names('false')
+print('ok done', zoupi)
+# change_root = ray_control.change_root('/home/houstonlzk5/Koalo Géant')
+# print(f'{change_root=}')
+
+# ray_control.abort()
+# ray_control.open_session_off('mignognon')
+# for facto in ray_control.list_factory_client_templates():
+#     print('client tp', facto)
+#     # client_id = ray_control.add_factory_client_template(facto)
+#     # print(ray_control.client.get_properties(client_id))
+#     # break
+    
+ray_control.open_session('tests/feel_good')
+# client_id = ray_control.add_factory_client_template('Ardour')
+# ray_control.client.open(client_id)
+# print('tout il est prêt !')
+
+ray_control.client.stop('ardour_4')
+ray_control.client.open('ardour_4')
+
+# for client_id in ray_control.list_clients():
+#     ray_control.client.stop(client_id)
+# for client_template in ray_control.list_user_client_templates():
+    # ray_control.add_exe
+
 # ray_control.open_session('tests/encore_t')
 # ray_control.clear_pretty_names()
 # client_id = ray_control.add_executable('ray-jackpatch')

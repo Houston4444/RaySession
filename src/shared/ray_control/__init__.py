@@ -18,12 +18,14 @@ import osc_paths.ray as r
 from . import utils
 from .sender import OscServer
 
-if TYPE_CHECKING:
-    from server import *
-
-
 client = types.ModuleType('client')
 trashed_client = types.ModuleType('trashed_client')
+
+if TYPE_CHECKING:
+    from server import *
+    from session import *
+    import client
+    import trashed_client
 
 _logger = logging.getLogger(__name__)
 
