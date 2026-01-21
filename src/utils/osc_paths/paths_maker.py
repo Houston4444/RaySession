@@ -82,6 +82,13 @@ def write_ray_control_pyi(
     out_lines.append('')
     out_lines.append('')
 
+    if name == 'Client':
+        out_lines.append('import client')
+        out_lines.append('')
+        out_lines.append(f'class {name}:')
+        out_lines.append('    client_id: str')
+        out_lines.append('')
+
     for osc_path in file_prepare.osc_paths:
         types_split = osc_path.types.split('|')
         for i, types_spl in enumerate(types_split):
@@ -94,8 +101,13 @@ def write_ray_control_pyi(
                     else:
                         arg_types.append('*args')
                 else:
-                    if name in ('client', 'trashed_client') and j == 0:
-                        arg_types.append(f'client_id: str')
+                    if j == 0:
+                        if name in ('client', 'trashed_client'):
+                            arg_types.append(f'client_id: str')
+                        elif name == 'Client':
+                            arg_types.append('self')
+                        else:
+                            arg_types.append(f'arg_{j+1}: {types_py[l]}')
                     else:
                         arg_types.append(f'arg_{j+1}: {types_py[l]}')
 
@@ -117,7 +129,7 @@ def write_ray_control_pyi(
                     ret_type = ' -> bool'
             
             if i == 0:
-                out_lines.append(f'@_osc(r.{name}.{osc_path.key})')
+                out_lines.append(f'@_osc(r.{name.lower()}.{osc_path.key})')
 
             if '|' in osc_path.types:
                 out_lines.append('@overload')
@@ -129,10 +141,19 @@ def write_ray_control_pyi(
             if i + 1 == len(types_split):
                 out_lines.append('')
     
-    server_pyi = \
+    if name == 'Client':
+        out_lines_ = list[str]()
+        for i, line in enumerate(out_lines):
+            if i < 10:
+                out_lines_.append(line)
+            else:
+                out_lines_.append('    ' + line)
+        out_lines = out_lines_
+    
+    name_pyi = \
         Path(__file__).parents[2] / f'shared/ray_control/{name}.pyi'
     
-    with open(server_pyi, 'w') as f:
+    with open(name_pyi, 'w') as f:
         f.write('\n'.join(out_lines))
 
 
@@ -185,3 +206,5 @@ if __name__ == '__main__':
                 and path.name in ('server', 'session',
                                   'client', 'trashed_client')):
             write_ray_control_pyi(path, file_prepare, path.name)
+            if path.name == 'client':
+                write_ray_control_pyi(path, file_prepare, 'Client')

@@ -4,14 +4,13 @@
 It does not manages the `ray_control` executable, it gives access to
 the same functions, but in python, not in shell.'''
 
-import logging
 import os
 from pathlib import Path
 import subprocess
 import time
 import types
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import osc_paths.ray as r
 
@@ -26,8 +25,6 @@ if TYPE_CHECKING:
     from session import *
     import client
     import trashed_client
-
-_logger = logging.getLogger(__name__)
 
 
 class NoServerStarted(Exception):
@@ -49,6 +46,36 @@ class MainObject:
     daemon_process: subprocess.Popen | None = None
     daemon_list = list[utils.Daemon]()
     sender = OscServer()
+
+
+class Client:
+    def __init__(self, client_id: str) -> None:
+        self.client_id = client_id
+        
+    @property
+    def executable(self) -> str:
+        props = client.get_properties(self.client_id)
+        for line in props.splitlines():
+            if line.startswith('executable:'):
+                return line.partition(':')[2]
+        return ''
+    
+    @executable.setter
+    def executable(self, value: str):
+        props = client.get_properties(self.client_id)
+        if not isinstance(props, str):
+            return
+        
+        split_props = props.splitlines()
+        for i, line in enumerate(split_props):
+            if line.startswith('executable:'):
+                split_props[i] = f'executable:{value}'
+        
+        client.set_properties(self.client_id, '\n'.join(split_props))
+
+
+if TYPE_CHECKING:
+    from Client import Client
 
 
 m = MainObject()
@@ -239,7 +266,7 @@ def _send_and_wait(path: str, *args, start_server=False):
         else:
             raise NoServerStarted
 
-    print(f'{m.daemon_port=} {path=} {args=}')
+    # print(f'{m.daemon_port=} {path=} {args=}')
     m.sender.send(m.daemon_port, path, *args)
     while not m.sender.op_done:
         m.sender.recv(50)
@@ -250,34 +277,90 @@ def create_function(osc_path: str, start_server=False):
     return lambda *args: _send_and_wait(
         osc_path, *args, start_server=start_server)
 
+# def _send_and_wait_cl(self: Client, path: str, *args):
+#     _update_daemons()
+#     if not m.daemon_started:
+#         raise NoServerStarted
 
-if True:
-    print(__name__, __package__, sys.modules[__name__])
-    for var, value in r.server.__dict__.items():
-        if isinstance(value, str) and value.startswith('/ray/server/'):
-            setattr(sys.modules[__name__], var.lower(),
-                    create_function(value, start_server=True))
+#     print(f'{m.daemon_port=} {path=} {args=}')
+#     m.sender.send(m.daemon_port, path, self.client_id, *args)
+#     while not m.sender.op_done:
+#         m.sender.recv(50)
+    
+#     return m.sender.ret
 
-    for var, value in r.session.__dict__.items():
-        if isinstance(value, str) and value.startswith('/ray/session/'):
-            setattr(sys.modules[__name__], var.lower(), create_function(value))
-    
-    for var, value in r.client.__dict__.items():
-        if isinstance(value, str) and value.startswith('/ray/client/'):
-            setattr(client, var.lower(), create_function(value))
-            
-    for var, value in r.trashed_client.__dict__.items():
-        if isinstance(value, str) and value.startswith('/ray/trashed_client/'):
-            setattr(trashed_client, var.lower(), create_function(value))
-    # from .server import *
-    # from .session import *
-    
-    utils.add_self_bin_to_path()
-    
-    m.wanted_port = 0
+# def create_function_cl(osc_path: str):
+#     return lambda *args: _send_and_wait_cl(osc_path, *args)
 
-    dport = os.getenv('RAY_CONTROL_PORT')
-    if dport is not None and dport.isdigit():
-        m.wanted_port = int(dport)
+
+for var, value in r.server.__dict__.items():
+    if isinstance(value, str) and value.startswith('/ray/server/'):
+        setattr(sys.modules[__name__], var.lower(),
+                create_function(value, start_server=True))
+
+for var, value in r.session.__dict__.items():
+    if isinstance(value, str) and value.startswith('/ray/session/'):
+        setattr(sys.modules[__name__], var.lower(), create_function(value))
+
+client_funcs = dict[str, Callable]()
+
+for var, value in r.client.__dict__.items():
+    if isinstance(value, str) and value.startswith('/ray/client/'):
+        client_func = create_function(value)
+        client_funcs[var.lower()] = client_func
+        setattr(client, var.lower(), client_func)
+        
+for var, value in r.trashed_client.__dict__.items():
+    if isinstance(value, str) and value.startswith('/ray/trashed_client/'):
+        client_func = create_function(value)
+        client_funcs[var.lower()] = client_func
+        setattr(trashed_client, var.lower(), client_func)
+
+func_names = set(client_funcs.keys())
+for func_name in func_names:
+    def generate_method(name):
+        def method(self: 'Client', *args):
+            client_func = client_funcs[name]
+            return client_func(self.client_id, *args)
+        return method
+    setattr(Client, func_name, generate_method(func_name))
+
+
+def clients(started: bool | None =None,
+            active: bool | None =None,
+            auto_start: bool | None=None,
+            no_save_level: bool | None =None) -> list[Client]:
+    d = {'started': started,
+         'active': active,
+         'auto_start': auto_start,
+         'no_save_level': no_save_level}
+    options = list[str]()
+    for key, value in d.items():
+        if value is not None:
+            if value:
+                options.append(key)
+            else:
+                options.append('not_' + key)
+    print(f'{options=}')
+    return [Client(client_id) for client_id in list_clients(*options)]
+
+def trashed_clients() -> list[Client]:
+    return [Client(client_id) for client_id in list_trashed_clients()]
+
+# from .server import *
+# from .session import *
+
+utils.add_self_bin_to_path()
+
+m.wanted_port = 0
+
+dport = os.getenv('RAY_CONTROL_PORT')
+if dport is not None and dport.isdigit():
+    m.wanted_port = int(dport)
+
+_update_daemons()
     
-    _update_daemons()
+
+
+# Client._generate_subs()
+    

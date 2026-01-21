@@ -1,6 +1,8 @@
+from distutils.log import error
 from enum import Enum
 import logging
 import sys
+import time
 
 from osclib import BunServer, OscPack, Address
 import osc_paths
@@ -8,7 +10,6 @@ import osc_paths.ray as r
 
 
 _logger = logging.getLogger(__name__)
-
 
 
 class ExpectedRetType(Enum):
@@ -37,17 +38,24 @@ class OscServer(BunServer):
         self.op_done = False
         self.ret = None
         self.expected_rets = dict[str, ExpectedRetType]()
+        self._waited_path = ''
     
     def _reply(self, osp: OscPack):
         reply_path: str = osp.args[0] # type:ignore
         
+        # print(osp.path, osp.args)
+        
         if reply_path == r.server.QUIT:
             if osp.src_addr.port == self._stop_port_list[0]:
-                stopped_port = self._stop_port_list.pop(0)
-
+                self._stop_port_list.pop(0)
                 if self._stop_port_list:
                     self._stop_daemon(self._stop_port_list[0])
                 return
+        
+        if reply_path != self._waited_path:
+            _logger.warning(f'waiting {self._waited_path}, '
+                            f'reply from {reply_path}')
+            return
         
         match reply_path.rpartition('/')[2].partition('_')[0]:
             case 'list':
@@ -62,21 +70,25 @@ class OscServer(BunServer):
             case 'get':
                 if len(osp.args) == 2:
                     self.ret = osp.args[1]
+                    return
+                if len(osp.args) == 1:
                     self.op_done = True
                     return
         
         self.op_done = True
-        ret = osp.args[1:]
-        match len(ret):
-            case 0:
-                self.ret = None
-            case 1:
-                self.ret = ret[0]
-            case _:
-                self.ret = ret
+        self.ret = True
         
     def _error(self, osp: OscPack):
+        # print(osp.path, osp.args)
+        
+        error_path: str = osp.args[0] # type:ignore
+        if error_path != self._waited_path:
+            _logger.warning(f'waiting {self._waited_path}, '
+                            f'error from {error_path}')
+            return
+
         self.op_done = True
+        self.ret = False
     
     def _minor_error(self, osp: OscPack):
         ...
@@ -100,9 +112,18 @@ class OscServer(BunServer):
         if self._stop_port_list:
             self._stop_daemon(self._stop_port_list[0])
     
-    def send(self, *args):
+    def send(self, port: int | Address, path: str, *args):
         self.op_done = False
-        super().send(*args)
+
+        self._waited_path: str = path
+        match path.rpartition('/')[2].partition('_')[0]:
+            case 'list':
+                self.ret = []
+            case 'get', 'has':
+                self.ret = ''
+            case _:
+                self.ret = False
+        super().send(port, path, *args)
     
     def send_it(self, daemon_addr, path: str, *args):
         match path.rpartition('/')[2].partition('_')[0]:

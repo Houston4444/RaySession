@@ -5,11 +5,15 @@ sys.path.insert(0, str(Path(__file__).parents[1] / 'shared'))
 
 import ray_control
 
+
+
+    
+
 print('go start')
 ray_control.start()
 print('go list')
-print('zeorgp', ray_control.list_daemons())
-print('tozolopi', ray_control.list_session_templates())
+# print('zeorgp', ray_control.list_daemons())
+# print('tozolopi', ray_control.list_session_templates())
 
 zoupi = ray_control.auto_export_custom_names('false')
 print('ok done', zoupi)
@@ -29,8 +33,27 @@ ray_control.open_session('tests/feel_good')
 # ray_control.client.open(client_id)
 # print('tout il est prêt !')
 
-ray_control.client.stop('ardour_4')
-ray_control.client.open('ardour_4')
+client = ray_control.Client('ardour_4')
+print('yoappz', client.client_id, client.executable)
+print('toulili', ray_control.clients(started=True))
+
+import time
+beg = time.time()
+execut = client.executable
+# print(f'{execut=}')
+client.executable = '/usr/bin/ardour'
+execut2 = client.executable
+# print(f'{execut2=}')
+
+aft = time.time()
+print(aft - beg)
+# client = ray_control.Client('ardour_4')
+# client.start()
+# client.stop()
+# client.open()
+
+# ray_control.client.stop('ardour_4')
+# ray_control.client.open('ardour_4')
 
 # for client_id in ray_control.list_clients():
 #     ray_control.client.stop(client_id)
