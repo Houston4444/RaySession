@@ -2106,7 +2106,10 @@ class SignaledSession(Session):
             return
         
         for sess in recent_sessions.copy():
-            if not Path(self.root / sess / 'raysession.xml').exists():
+            for file_name in 'raysession.yaml', 'raysession.xml':
+                if Path(self.root / sess / file_name).exists():
+                    break
+            else:
                 recent_sessions.remove(sess)
 
     def server_open_session_at_start(self, session_name):
