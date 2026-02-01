@@ -495,9 +495,9 @@ class SignaledSession(Session):
 
     @manage(r.server.LIST_SESSIONS, '|i')
     def _ray_server_list_sessions(self, osp: OscPack):
-        with_net = False
         last_sent_time = time.time()
 
+        with_net = False
         if osp.args:
             with_net = bool(osp.args[0])
 
@@ -526,7 +526,8 @@ class SignaledSession(Session):
                 continue
 
             for file in files:
-                if file in ('raysession.xml', 'session.nsm'):
+                if file in (
+                        'raysession.yaml', 'raysession.xml', 'session.nsm'):
                     # prevent search in sub directories
                     dirs.clear()
 
@@ -610,7 +611,8 @@ class SignaledSession(Session):
                     continue
 
                 for file in files:
-                    if file in ('raysession.xml', 'session.nsm'):
+                    if file in ('raysession.yaml', 'raysession.xml',
+                                'session.nsm'):
                         basefolder = str(Path(root).relative_to(self.root))
                         self.send(*osp.reply(), basefolder)
 
