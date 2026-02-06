@@ -209,6 +209,7 @@ class PatchbayDaemonServer(BunServer):
         for connection in self.pe.connections:
             ms.add(rpm.CONNECTION_ADDED,
                    connection[0], connection[1])
+            print('Aoofofzeof', rpm.CONNECTION_ADDED, connection)
 
         for uuid, key_dict in self.pe.metadatas.items():
             for key, value in key_dict.items():
