@@ -407,6 +407,9 @@ def rebuild_templates_database(session: 'Session', base: str):
     
     search_paths = _get_search_template_dirs(factory)
     for search_path in search_paths:
+        if not search_path.is_dir():
+            continue
+        
         _logger.debug(f'search client templates in {search_path}')
 
         # first parse all folders in search path,
