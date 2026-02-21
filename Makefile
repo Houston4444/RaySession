@@ -152,7 +152,6 @@ pure_install:
 	install -d $(DEST_RAY)/$(_DIR)/
 	install -d $(DEST_RAY)/$(PATCHBAY_DIR)/locale/
 	install -d $(DESTDIR)/etc/xdg/raysession/client_templates/
-# 	install -d $(DESTDIR)/etc/bash_completion.d
 	install -d $(DESTDIR)$(PREFIX)/share/bash-completion/completions/
 	
 	# Install icons
