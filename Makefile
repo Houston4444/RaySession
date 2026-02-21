@@ -138,6 +138,8 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/raysession.svg
 	rm -rf $(DESTDIR)/etc/xdg/raysession/client_templates/40_ray_nsm
 	rm -rf $(DESTDIR)/etc/xdg/raysession/client_templates/60_ray_lash
+	rm -f $(DESTDIR)/etc/bash_completion.d/ray_completion.sh
+	rm -f $(DESTDIR)$(PREFIX)/share/bash-completion/completions/ray_control
 	rm -rf $(DEST_RAY)
 
 pure_install:
@@ -150,7 +152,8 @@ pure_install:
 	install -d $(DEST_RAY)/$(_DIR)/
 	install -d $(DEST_RAY)/$(PATCHBAY_DIR)/locale/
 	install -d $(DESTDIR)/etc/xdg/raysession/client_templates/
-	install -d $(DESTDIR)/etc/bash_completion.d
+# 	install -d $(DESTDIR)/etc/bash_completion.d
+	install -d $(DESTDIR)$(PREFIX)/share/bash-completion/completions/
 	
 	# Install icons
 	for sz in $(ICON_SIZES);do \
@@ -168,9 +171,9 @@ pure_install:
 	cp -r data              $(DEST_RAY)/
 
 	# Copy completion script
-	cp -r src/completion/ray_completion.sh $(DESTDIR)/etc/bash_completion.d/
+	cp -r src/completion/ray_completion.sh $(DESTDIR)$(PREFIX)/share/bash-completion/completions/ray_control
 	sed -i "s|XXX_PYCOMPLETION_XXX|$(DEST_RAY)/src/completion|" \
-		$(DESTDIR)/etc/bash_completion.d/ray_completion.sh
+		$(DESTDIR)$(PREFIX)/share/bash-completion/completions/ray_control
 
 	# Copy patchbay themes, manual and lib
 	cp -r HoustonPatchbay/themes $(DEST_RAY)/$(PATCHBAY_DIR)/

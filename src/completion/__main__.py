@@ -217,8 +217,8 @@ def complete_control(comp_words: list[str]) -> str:
     return ''
 
 if __name__ == '__main__':
-    with open('ray_comp_log', 'w') as f:
-        f.write('')
+    # with open('ray_comp_log', 'w') as f:
+    #     f.write('')
     
     app, *args = sys.argv[1:]
     crade_log(args)
