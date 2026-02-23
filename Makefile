@@ -170,8 +170,8 @@ pure_install:
 	cp -r data              $(DEST_RAY)/
 
 	# Copy completion script
-	cp -r src/completion/ray_completion.sh $(DESTDIR)$(PREFIX)/share/bash-completion/completions/ray_control
-	sed -i "s|XXX_PYCOMPLETION_XXX|$(DEST_RAY)/src/completion|" \
+	cp src/completion/ray_completion.sh $(DESTDIR)$(PREFIX)/share/bash-completion/completions/ray_control
+	sed -i "s|XXX_PYCOMPLETION_XXX|$(PREFIX)/share/raysession/src/completion|" \
 		$(DESTDIR)$(PREFIX)/share/bash-completion/completions/ray_control
 
 	# Copy patchbay themes, manual and lib
