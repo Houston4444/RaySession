@@ -1,3 +1,14 @@
+0.17.3 / 2026-02-21
+    Little bug fixes release.
+
+    Bug fixes:
+        CV ports were considered as regular Audio ports until a patchbay refresh
+        Some connection were missing in the graph after a pipewire quantum (buffer size) change
+        ray_control bash completion moved to a more correct place (at install)
+
+0.17.2 / 2025-12-29
+    Mainly one bug fix, sometimes the patch could crash if a JACK port disappears when listing JACK ports. It has more chances to happen at session switch.
+
 0.17.1 / 2025-11-09
     Important Bug Fixes release. The update is highly recommended because some connections may have been lost during session save with v0.17.0.
 
