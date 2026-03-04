@@ -154,26 +154,12 @@ def are_on_same_machine(
         return True
 
     LOCAL_ADDRS = ('127.0.0.1', '127.0.1.1', '::1')
-
-    if host1 in LOCAL_ADDRS and host2 in LOCAL_ADDRS:
-        return True
-
     ip = get_machine_192()
-
-    if ip not in (resolve_host(address1.hostname),
-                  resolve_host(address2.hostname)):
-        return False
-
-    if ip == resolve_host(address1.hostname) == resolve_host(address2.hostname):
-        # on some systems (as fedora),
-        # socket.gethostbyname returns a 192.168.. url
-        return True
-
-    for host in (address1.hostname, address2.hostname):
-        if resolve_host(host) in LOCAL_ADDRS and host == ip:
-            return True
-
-    return False
+    
+    for host in host1, host2:
+        if not (host == ip or host in LOCAL_ADDRS):
+            return False
+    return True
 
 def are_same_osc_port(url1: str | Address, url2: str | Address) -> bool:
     if isinstance(url1, Address):
