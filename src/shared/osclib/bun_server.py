@@ -2,14 +2,12 @@ from dataclasses import dataclass
 import inspect
 import json
 import logging
-from operator import is_
 import os
 from queue import Queue, Empty
-import random
 import tempfile
 import time
 from threading import Thread, current_thread
-from typing import Callable, Type, Union, Optional
+from typing import Callable, Union, Optional
 
 from osclib import OscTypes
 
@@ -240,8 +238,8 @@ class BunServer:
                     'to a fake server')
         
         elif dest_port:
-            # communication between two BunServer in the same process
-            # avoid OSC communication, directly enqueue the message
+            # communication between two BunServer in the same process.
+            # Avoid OSC communication, directly enqueue the message
             # the receiver will take it at recv.
             dest, path, *other_args = args
             _process_port_queues[dest_port].put(

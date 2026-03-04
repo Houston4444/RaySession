@@ -140,7 +140,8 @@ def are_on_same_machine(
         for family in (socket.AF_INET, socket.AF_INET6):
             result = None
             try:
-                result = socket.getaddrinfo(name, None, family, socket.SOCK_DGRAM)
+                result = socket.getaddrinfo(
+                    name, None, family, socket.SOCK_DGRAM)
             except socket.gaierror:
                 continue
             if result:
