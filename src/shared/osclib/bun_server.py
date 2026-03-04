@@ -14,7 +14,7 @@ from osclib import OscTypes
 from .bases import (
     OscArg, OscMulTypes, OscPack, OscPath, Server, Address, Message, Bundle,
     MegaSend, get_types_with_args, types_validator, UDP)
-from .funcs import are_on_same_machine
+from .funcs import is_on_this_machine
 from .bun_tools import number_of_args, MethodsAdder, MegaSendChecker
 
 _logger = logging.getLogger(__name__)
@@ -220,7 +220,7 @@ class BunServer:
 
         if isinstance(dest, Address):
             if (dest.port in _process_port_queues
-                    and are_on_same_machine(self.url, dest)
+                    and is_on_this_machine(dest)
                     and dest.protocol == UDP):
                 dest_port: int = dest.port # type:ignore
         elif isinstance(dest, int):
@@ -428,7 +428,7 @@ class BunServer:
 
             if isinstance(url, Address):
                 if (url.port in _process_port_queues
-                        and are_on_same_machine(self.url, url)
+                        and is_on_this_machine(url)
                         and url.protocol == UDP):
                     dest_port: int = url.port # type:ignore
             elif isinstance(url, int):
@@ -438,7 +438,7 @@ class BunServer:
                 dport = url.rpartition(':')[2].partition('/')[0]
                 proto_str = url.partition('.')[2].partition(':')[0]
                 if (dport.isdigit() and int(dport) in _process_port_queues
-                        and are_on_same_machine(self.url, url)
+                        and is_on_this_machine(url)
                         and proto_str.lower() == 'udp'):
                     dest_port = int(dport)
 
@@ -482,8 +482,8 @@ class BunServer:
             if isinstance(url, int):
                 is_local = True
             elif isinstance(url, (str, Address)):
-                is_local = are_on_same_machine(self.url, url)
-            
+                is_local = is_on_this_machine(url)
+
             if is_local:
                 tmp_file = tempfile.NamedTemporaryFile(
                     mode='w+t', delete=False)

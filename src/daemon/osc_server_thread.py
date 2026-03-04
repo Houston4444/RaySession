@@ -20,7 +20,7 @@ from patshared import GroupPos, Naming
 # Imports from src/shared
 from osclib import (
     Address, BunServerThread, MegaSend, get_net_url, Message,
-    OscPack, are_on_same_machine, are_same_osc_port, send, TCP,
+    OscPack, is_on_this_machine, are_same_osc_port, TCP,
     verified_address, OscMulTypes)
 import ray
 from xml_tools import XmlElement
@@ -1376,7 +1376,7 @@ class OscServerThread(ClientCommunicating):
         has_gui = False
 
         for gui in self.gui_list:
-            if are_on_same_machine(self.url, gui.addr.url):
+            if is_on_this_machine(gui.addr):
                 # we've got a local GUI
                 return 3
 
@@ -1389,7 +1389,7 @@ class OscServerThread(ClientCommunicating):
 
     def get_local_gui_pid_list(self) -> list[int]:
         return [g.pid for g in self.gui_list
-                if are_on_same_machine(g.addr, self.url)]
+                if is_on_this_machine(g.addr)]
 
     def is_gui_address(self, addr: Address) -> bool:
         for gui in self.gui_list:

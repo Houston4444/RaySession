@@ -5,8 +5,25 @@ from typing import Union
 from .bases import Server, UDP, TCP, UNIX, Address, send
 
 _mach192_dict = {'ip': '', 'read_done': False}
+_urls_on_this_machine = dict[str, bool]()
+
 
 def _read_machine_192() -> str:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    ip = ''
+    
+    try:
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        assert isinstance(ip, str) and ip.startswith('192.168.')
+    except BaseException:
+        pass
+    finally:
+        s.close()
+        
+    if ip:
+        return ip
+    
     try:
         ips = subprocess.check_output(
             ['ip', 'route', 'get', '1']).decode()
@@ -34,7 +51,11 @@ def get_machine_192() -> str:
     if _mach192_dict['read_done']:
         return _mach192_dict['ip']
     
+    import time
+    bef = time.time()
     _mach192_dict['ip'] = _read_machine_192()
+    aft = time.time()
+    print('read machine 192', aft - bef)
     _mach192_dict['read_done'] = True
     return _mach192_dict['ip']
 
@@ -75,7 +96,7 @@ def is_valid_osc_url(url: str) -> bool:
     except BaseException:
         return False
     
-def verified_address(url: str) -> Union[Address, str]:
+def verified_address(url: str) -> Address | str:
     '''check osc Address with the given url.
     return an Address if ok, else return an error message'''
 
@@ -90,7 +111,7 @@ def verified_address(url: str) -> Union[Address, str]:
     except BaseException:
         return f"{url} is an unknown osc url"
 
-def verified_address_from_port(port: int) -> Union[Address, str]:
+def verified_address_from_port(port: int) -> Address | str:
     '''check osc Address with the given port number.
     return an Address if ok, else return an error message'''
 
@@ -109,6 +130,38 @@ def verified_address_from_port(port: int) -> Union[Address, str]:
         return address
     except BaseException:
         return f"{port} is an unknown osc port"
+
+def resolve_host(name: str) -> str:
+    for family in (socket.AF_INET, socket.AF_INET6):
+        result = None
+        try:
+            result = socket.getaddrinfo(
+                name, None, family, socket.SOCK_DGRAM)
+        except socket.gaierror:
+            continue
+        if result:
+            return result[0][4][0]
+    return name
+
+def is_on_this_machine(url: str | Address) -> bool:
+    if isinstance(url, Address):
+        address = url
+        url = address.url
+    
+    on_this_machine = _urls_on_this_machine.get(url)
+    if on_this_machine is None:
+        try:
+            address = Address(url)
+        except BaseException:
+            on_this_machine = False
+        else:
+            host = resolve_host(address.hostname)
+            if host in ('127.0.0.1', '127.0.1.1', '::1'):
+                on_this_machine = True
+            else:
+                on_this_machine = host == get_machine_192()
+        _urls_on_this_machine[url] = on_this_machine
+    return on_this_machine
 
 def are_on_same_machine(
         url1: str | Address, url2: str | Address) -> bool:
@@ -135,18 +188,6 @@ def are_on_same_machine(
 
     if address1.hostname == address2.hostname:
         return True
-
-    def resolve_host(name: str) -> str:
-        for family in (socket.AF_INET, socket.AF_INET6):
-            result = None
-            try:
-                result = socket.getaddrinfo(
-                    name, None, family, socket.SOCK_DGRAM)
-            except socket.gaierror:
-                continue
-            if result:
-                return result[0][4][0]
-        return name
 
     host1 = resolve_host(address1.hostname)
     host2 = resolve_host(address2.hostname)

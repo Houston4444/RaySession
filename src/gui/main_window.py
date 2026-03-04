@@ -21,7 +21,7 @@ from patchbay.bases.elements import ToolDisplayed
 from patchbay.tools_widgets import PatchbayToolsWidget, TextWithIcons
 
 # Imports from src/shared
-from osclib import are_on_same_machine
+from osclib import is_on_this_machine
 import ray
 import osc_paths
 import osc_paths.ray as r
@@ -951,8 +951,7 @@ class MainWindow(QMainWindow):
 
     def _show_daemon_url_window(self, err_code, ex_url=''):
         if not CommandLineArgs.under_nsm:
-            server = GuiServerThread.instance()
-            if server and are_on_same_machine(server.url, ex_url):
+            if is_on_this_machine(ex_url):
                 # here we are in the case daemon and GUI have not the same VERSION
                 # If a session is running, inform user
                 # else, just stop the daemon and quit
