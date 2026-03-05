@@ -1,3 +1,12 @@
+0.17.4 / 2026-03-0X
+    Bug fixes again.
+    
+    Bug fixes:
+        remake session management works on fedora, it was broken because some OSC ports were wrongly considered as non local
+        ray_control completion install was broken
+        fix GUI freeze (infinite loop) if a port background is black in the theme
+
+
 0.17.3 / 2026-02-21
     Little bug fixes release.
 
