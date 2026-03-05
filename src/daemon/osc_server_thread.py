@@ -344,7 +344,7 @@ class ClientCommunicating(BunServerThread):
                     or not client.is_running()):
                 continue
 
-            if not are_same_osc_port(client.addr.url, osp.src_addr.url):
+            if not are_same_osc_port(client.addr, osp.src_addr):
                 self.send(client.addr, Message(*osp.args)) # type:ignore
 
             # TODO broadcast to slave daemons
@@ -855,7 +855,7 @@ class OscServerThread(ClientCommunicating):
             self.options &= ~option        
 
         for gui in self.gui_list:
-            if not are_same_osc_port(gui.addr.url, osp.src_addr.url):
+            if not are_same_osc_port(gui.addr, osp.src_addr):
                 self.send(gui.addr, rg.server.OPTIONS,
                           self.options.value)
 
@@ -893,7 +893,7 @@ class OscServerThread(ClientCommunicating):
                     self.options &= ~option
 
         for gui in self.gui_list:
-            if not are_same_osc_port(gui.addr.url, osp.src_addr.url):
+            if not are_same_osc_port(gui.addr, osp.src_addr):
                 self.send(gui.addr, rg.server.OPTIONS,
                           self.options.value)
 
@@ -1012,7 +1012,7 @@ class OscServerThread(ClientCommunicating):
     def _srv_patchbay_save_group_position(self, osp: OscPack):
         # here send to others GUI the new group position
         for gui in self.gui_list:
-            if not are_same_osc_port(gui.addr.url, osp.src_addr.url):
+            if not are_same_osc_port(gui.addr, osp.src_addr):
                 self.send(
                     gui.addr,
                     r.patchbay.monitor.UPDATE_GROUP_POSITION,
@@ -1098,7 +1098,7 @@ class OscServerThread(ClientCommunicating):
         self.session.notes = osp.args[0]
 
         for gui in self.gui_list:
-            if not are_same_osc_port(gui.addr.url, osp.src_addr.url):
+            if not are_same_osc_port(gui.addr, osp.src_addr):
                 self.send(gui.addr, rg.session.NOTES,
                           self.session.notes)
 
@@ -1393,7 +1393,7 @@ class OscServerThread(ClientCommunicating):
 
     def is_gui_address(self, addr: Address) -> bool:
         for gui in self.gui_list:
-            if are_same_osc_port(gui.addr.url, addr.url):
+            if are_same_osc_port(gui.addr, addr):
                 return True
         return False
 

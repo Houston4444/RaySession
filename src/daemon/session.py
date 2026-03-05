@@ -493,7 +493,7 @@ class Session(ServerSender):
         for client in self.clients:
             if (monitor_is_client
                     and client.addr is not None
-                    and are_same_osc_port(client.addr.url, monitor_addr.url)):
+                    and are_same_osc_port(client.addr, monitor_addr)):
                 continue
 
             self.send(

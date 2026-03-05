@@ -2045,7 +2045,7 @@ class SignaledSession(OperatingSession):
             if (client.is_ray_net
                     and client.ray_net.daemon_url
                     and are_same_osc_port(client.ray_net.daemon_url,
-                                          osp.src_addr.url)):
+                                          osp.src_addr)):
                 client.ray_net.duplicate_state = state
                 client.net_daemon_copy_timer.stop()
                 break

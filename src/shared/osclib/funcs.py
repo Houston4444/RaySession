@@ -51,11 +51,7 @@ def get_machine_192() -> str:
     if _mach192_dict['read_done']:
         return _mach192_dict['ip']
     
-    import time
-    bef = time.time()
     _mach192_dict['ip'] = _read_machine_192()
-    aft = time.time()
-    print('read machine 192', aft - bef)
     _mach192_dict['read_done'] = True
     return _mach192_dict['ip']
 
@@ -204,27 +200,42 @@ def are_on_same_machine(
     return True
 
 def are_same_osc_port(url1: str | Address, url2: str | Address) -> bool:
+    addr1, addr2 = None, None
     if isinstance(url1, Address):
-        url1 = url1.url
+        addr1 = url1
+        url1 = addr1.url
     if isinstance(url2, Address):
-        url2 = url2.url
-    
+        addr2 = url2
+        url2 = addr2.url
+        
     if url1 == url2:
         return True
-
-    try:
-        address1 = Address(url1)
-        address2 = Address(url2)
-    except BaseException:
+    
+    if addr1 is None:
+        try:
+            addr1 = Address(url1)
+        except BaseException:
+            return False
+    
+    if addr2 is None:
+        try:
+            addr2 = Address(url2)
+        except BaseException:
+            return False
+        
+    if addr1.protocol is not addr2.protocol:
         return False
-
-    if address1.port != address2.port:
+    if addr1.port != addr2.port:
         return False
-
-    if are_on_same_machine(url1, url2):
-        return True
-
-    return False
+    
+    url1_on_machine = is_on_this_machine(url1)
+    url2_on_machine = is_on_this_machine(url2)
+    if url1_on_machine:
+        return url2_on_machine
+    elif url2_on_machine:
+        return False
+    
+    return resolve_host(url1) == resolve_host(url2)
 
 def get_net_url(port: Union[int, str], protocol=UDP) -> str:
     '''get the url address of a port under a form where

@@ -31,14 +31,15 @@ class PatchbayDaemonServer(BunServer):
     
     @bun_manage(r.patchbay.ADD_GUI, 's')
     def _ray_patchbay_add_gui(self, osp: OscPack):
-        self.add_gui(osp.args[0])
+        gui_url: str = osp.args[0] # type:ignore
+        self.add_gui(gui_url)
 
     @bun_manage(r.patchbay.GUI_DISANNOUNCE, 's')
     def _ray_patchbay_gui_disannounce(self, osp: OscPack):
-        url: str = osp.args[0]
+        url: str = osp.args[0] # type:ignore
 
         for gui_addr in self.gui_list:
-            if are_same_osc_port(gui_addr.url, osp.src_addr.url):
+            if are_same_osc_port(gui_addr, osp.src_addr):
                 # possible because we break the loop
                 self.gui_list.remove(gui_addr)
                 break
