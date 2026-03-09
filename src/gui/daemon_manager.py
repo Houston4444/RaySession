@@ -241,7 +241,10 @@ class DaemonManager(QObject):
         self.is_local = bool(self.address.hostname == socket.gethostname())
 
     def start(self):
+        _logger.debug("GUI starts or chooses the daemon")
+        
         if self.launched_before:
+            _logger.debug("daemon launched before the session, call it")
             self._call_daemon()
             return
 
@@ -299,6 +302,7 @@ class DaemonManager(QObject):
             arguments.append('--config-dir')
             arguments.append(CommandLineArgs.config_dir)
 
+        _logger.debug(f'GUI starts ray-daemon with arguments {arguments}')
         self._process.startDetached('ray-daemon', arguments)
         #self.process.start('konsole', ['-e', 'ray-daemon'] + arguments)
 
