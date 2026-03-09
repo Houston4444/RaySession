@@ -1,11 +1,15 @@
+import logging
 import socket
 import subprocess
 from typing import Union
 
 from .bases import Server, UDP, TCP, UNIX, Address, send
 
+_logger = logging.getLogger(__name__)
+
 _mach192_dict = {'ip': '', 'read_done': False}
 _urls_on_this_machine = dict[str, bool]()
+_hosts_on_this_machine = dict[str, bool]()
 
 
 def _read_machine_192() -> str:
@@ -151,13 +155,28 @@ def is_on_this_machine(url: str | Address) -> bool:
         except BaseException:
             on_this_machine = False
         else:
-            host = resolve_host(address.hostname)
-            if host in ('127.0.0.1', '127.0.1.1', '::1'):
-                on_this_machine = True
+            host_on_this_machine = _hosts_on_this_machine.get(
+                address.hostname)
+            if host_on_this_machine is None:
+                host = resolve_host(address.hostname)
+                if host in ('127.0.0.1', '127.0.1.1', '::1'):
+                    on_this_machine = True
+                else:
+                    on_this_machine = host == get_machine_192()
+                _hosts_on_this_machine[address.hostname] = on_this_machine
             else:
-                on_this_machine = host == get_machine_192()
+                on_this_machine = host_on_this_machine
         _urls_on_this_machine[url] = on_this_machine
     return on_this_machine
+
+def set_on_this_machine(url: str):
+    try:
+        addr = Address(url)
+    except BaseException:
+        _logger.warning(f'Failed to set "{url}" on this machine')
+        return
+    
+    _hosts_on_this_machine[addr.hostname] = True
 
 def are_on_same_machine(
         url1: str | Address, url2: str | Address) -> bool:

@@ -14,7 +14,7 @@ from osclib import OscTypes
 from .bases import (
     OscArg, OscMulTypes, OscPack, OscPath, Server, Address, Message, Bundle,
     MegaSend, get_types_with_args, types_validator, UDP)
-from .funcs import is_on_this_machine
+from .funcs import is_on_this_machine, set_on_this_machine
 from .bun_tools import number_of_args, MethodsAdder, MegaSendChecker
 
 _logger = logging.getLogger(__name__)
@@ -94,6 +94,7 @@ class BunServer:
             else:
                 self.sv = Server(port=port, proto=proto,
                                  reg_methods=reg_methods)
+            set_on_this_machine(self.sv.url)
 
             self.add_method('/_bundle_head', 'hii',
                             self.__bundle_head) # type:ignore
