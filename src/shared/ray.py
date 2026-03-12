@@ -283,8 +283,9 @@ def version_to_tuple(version_str: str) -> tuple[int, int, int]:
 def add_self_bin_to_path():
     # Add RaySession/src/bin to $PATH to can use ray executables after make
     # Warning, will works only if link to this file is in RaySession/*/*/*.py
-    bin_path = Path(__file__).parent.parent / 'bin'
+    bin_path = Path(__file__).parents[1] / 'bin'
     path_env = os.getenv('PATH')
+    print(f'{bin_path=}, {path_env=}')
     if path_env is None:
         # if it happens, very few chances that system works correctly
         os.environ['PATH'] = f'{bin_path}'
@@ -292,6 +293,8 @@ def add_self_bin_to_path():
     
     if str(bin_path) not in path_env.split(':'):
         os.environ['PATH'] = f'{bin_path}:{path_env}'
+    
+    print('PATH:', os.environ.get('PATH'))
 
 def get_list_in_settings(settings: 'QSettings', path: str) -> list:
     '''getting a QSettings value of list type seems to not works
