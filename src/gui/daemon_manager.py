@@ -2,13 +2,14 @@
 # Imports from standard library
 import os
 import socket
+import subprocess
 import sys
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 import logging
 import json
 
 # third party imports
-from qtpy.QtCore import QObject, QProcess, QTimer
+from qtpy.QtCore import QObject, QTimer
 from qtpy.QtWidgets import QApplication
 
 # Imports from src/shared
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
-def _get_port_gui_free() -> Optional[int]:
+def _get_port_gui_free() -> int | None:
     MULTI_DAEMON_FILE = '/tmp/RaySession/multi-daemon.json'
     try:
         with open(MULTI_DAEMON_FILE, 'r') as f:
@@ -77,6 +78,7 @@ def _get_port_gui_free() -> Optional[int]:
             if not has_local_gui:
                 return port
 
+
 class DaemonManager(QObject):
     def __init__(self, session: 'SignaledSession'):
         QObject.__init__(self)
@@ -84,11 +86,12 @@ class DaemonManager(QObject):
         self.signaler = self.session.signaler
         self.main_win = None
 
-        self._process = QProcess()
+        self._process: subprocess.Popen | None = None
 
-        self._process.errorOccurred.connect(self._error_in_process)
-        self._process.setProcessChannelMode(
-            QProcess.ProcessChannelMode.ForwardedChannels)
+        self._daemon_process_checker = QTimer()
+        self._daemon_process_checker.setInterval(2000)
+        self._daemon_process_checker.timeout.connect(
+            self._check_daemon_process)
 
         self._announce_timer = QTimer()
         self._announce_timer.setInterval(2000)
@@ -108,10 +111,20 @@ class DaemonManager(QObject):
         self.signaler.daemon_announce.connect(self._receive_announce)
         self.signaler.daemon_url_changed.connect(self._change_url)
 
-    def _error_in_process(self, error):
-        if self.main_win is None:
+    def _check_daemon_process(self):
+        if self._process is None:
+            self._daemon_process_checker.stop()
             return
-
+        
+        if self._process.poll() is None:
+            return
+        
+        if self.main_win is None:
+            _logger.error('Daemon crashed but there is no main window yet')
+            return
+        
+        _logger.error(
+            'The daemon is not running anymore, show daemon crash dialog')
         self.main_win.daemon_crash()
 
     def _change_url(self, new_url: str):
@@ -155,8 +168,9 @@ class DaemonManager(QObject):
             QApplication.quit()
 
     def _receive_announce(
-            self, src_addr: Address, version: str, server_status: ray.ServerStatus,
-            options: ray.Option, session_root: str, is_net_free: int):
+            self, src_addr: Address, version: str,
+            server_status: ray.ServerStatus, options: ray.Option,
+            session_root: str, is_net_free: int):
         self._announce_timer.stop()
 
         if version.split('.')[:2] != ray.VERSION.split('.')[:2]:
@@ -303,7 +317,8 @@ class DaemonManager(QObject):
             arguments.append(CommandLineArgs.config_dir)
 
         _logger.debug(f'GUI starts ray-daemon with arguments {arguments}')
-        self._process.startDetached('ray-daemon', arguments)
+        self._process = subprocess.Popen(['ray-daemon'] + arguments)
+        self._daemon_process_checker.start()
         #self.process.start('konsole', ['-e', 'ray-daemon'] + arguments)
 
     def stop(self):
