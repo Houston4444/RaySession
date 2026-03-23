@@ -149,6 +149,7 @@ install:
 	install -d $(DEST_RAY)/locale/
 	install -d $(DEST_RAY)/$(_DIR)/
 	install -d $(DEST_RAY)/$(PATCHBAY_DIR)/locale/
+	install -d $(DEST_RAY)/$(PATCHBAY_DIR)/themes/
 	install -d $(DESTDIR)/etc/xdg/raysession/client_templates/
 	install -d $(DESTDIR)$(PREFIX)/share/bash-completion/completions/
 	
