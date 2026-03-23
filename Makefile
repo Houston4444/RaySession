@@ -121,8 +121,6 @@ debug:
 
 # -------------------------
 
-install: uninstall pure_install
-
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/raysession
 	rm -f $(DESTDIR)$(PREFIX)/bin/ray-daemon
@@ -142,7 +140,7 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/share/bash-completion/completions/ray_control
 	rm -rf $(DEST_RAY)
 
-pure_install:
+install:
 	# Create directories
 	install -d $(DESTDIR)$(PREFIX)/bin/
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
