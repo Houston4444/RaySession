@@ -1,5 +1,3 @@
-#!/bin/bash
-
 has_pulse_jack(){
     # check if pulseaudio-module-jack is quite long (> 100ms on a correct machine)
     # So this state is stored in a tmp file.

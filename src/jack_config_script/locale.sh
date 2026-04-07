@@ -1,5 +1,3 @@
-#!/bin/bash
-
 case "$LANG" in
     en_*)
         tr_script_info_loadanyway(){
