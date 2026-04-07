@@ -21,7 +21,7 @@ if [ -z "$RAY_SESSION_PATH" ];then
 fi
 
 if [ -z "$RAY_SESSION_PATH" ];then
-    case "$operation" in 
+    case "$operation" in
         load|save)
             echo "this script has to be used by ray session scripts or this way :
 $0 operation [SESSION_PATH]

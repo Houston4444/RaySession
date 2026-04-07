@@ -74,7 +74,7 @@ class Bridge:
                 self.channels = value
         elif key == 'connect':
             self.connected = value
-    
+
     def get_load_module_string(self)->str:
         string = "load-module module-jack-%s" % self.type
         if self.channels:
@@ -84,7 +84,7 @@ class Bridge:
         if self.name:
             string += " client_name=\"%s\"" % self.name.replace('"', '\\"')
         return string
-    
+
     def get_save_string(self)->str:
         str_base = "pulseaudio_%s%s" % (self.type, self.number_in_file)
         save_list = []
@@ -95,7 +95,7 @@ class Bridge:
         if self.connected:
             save_list.append("%s_connect:%s" % (str_base, self.connected))
         return '\n'.join(save_list)
-        
+
 
 def rewrite_config_file(file_path: str, keys: dict):
     if not os.access(file_path, os.W_OK):
@@ -261,7 +261,7 @@ def get_save_string(existing_modules: list)->str:
                 bridge.number_in_file = str(n_source)
             n_source += 1
 
-    return '\n'.join([b.get_save_string() for b in existing_modules]) 
+    return '\n'.join([b.get_save_string() for b in existing_modules])
 
 def unload_and_load_modules(wanted_modules, existing_modules):
     """Unload unwanted PulseAudio JACK modules
@@ -319,7 +319,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         sys.stderr.write('argument required.\n')
         sys.exit(1)
-    
+
     # init the pulse config files if needed
     init_pulse_config_files()
 
@@ -334,7 +334,7 @@ if __name__ == '__main__':
 
     pactl_contents = pactl_prc.stdout.decode()
     existing_modules = pactl_contents_to_bridge_list(pactl_contents)
-    
+
     if sys.argv[1] == '--save':
         if pactl_prc.returncode:
             sys.exit()
@@ -346,4 +346,3 @@ if __name__ == '__main__':
         if pactl_prc.returncode:
             start_pulseaudio()
         unload_and_load_modules(wanted_modules, existing_modules)
-    
