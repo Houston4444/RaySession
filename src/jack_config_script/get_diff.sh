@@ -1,5 +1,3 @@
-#!/bin/bash
-
 source shared.sh || exit 0
 
 ray_operation=load

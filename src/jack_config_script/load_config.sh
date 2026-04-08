@@ -40,7 +40,7 @@ if $RAY_JACK_RELIABILITY_CHECK && [[ "$(current_value_of reliable_infos)" == 0 ]
             reconfigure_pulseaudio force as_it_just_was
         fi
     fi
-    
+
     exit 0
 fi
 
@@ -61,7 +61,7 @@ if has_different_value /driver/rate;then
         start_jack
         reconfigure_pulseaudio
     fi
-    
+
     exit 0
 fi
 
@@ -78,7 +78,7 @@ if [ -z "$(echo "$diff_parameters"|grep -e ^/engine/ -e ^/driver/ -e ^/internals
         set_jack_parameters
         start_jack
     fi
-    
+
     reconfigure_pulseaudio
 else
     check_device
