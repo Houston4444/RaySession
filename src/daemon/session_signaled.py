@@ -825,10 +825,9 @@ class SignaledSession(OperatingSession):
                 patchbay_dmn_mng.start(
                     one_shot_act=r.patchbay.CLEAR_ALL_PRETTY_NAMES)
 
-    @manage(r.server.patchbay.SAVE_GROUP_POSITION,
-            'i' + GroupPos.ARG_TYPES)
+    @manage(r.server.patchbay.SAVE_GROUP_POSITION, 'iiss')
     def _ray_server_patchbay_save_group_position(self, osp: OscPack):
-        self.canvas_saver.save_group_position(*osp.args)
+        self.canvas_saver.save_group_position(*osp.args) # type:ignore
 
     @manage(r.server.patchbay.SAVE_PORTGROUP, 'siiiss*')
     def _ray_server_patchbay_save_portgroup(self, osp: OscPack):

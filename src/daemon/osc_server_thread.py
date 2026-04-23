@@ -1007,8 +1007,7 @@ class OscServerThread(ClientCommunicating):
         return bool(
             patchbay_dmn_mng.state() is not patchbay_dmn_mng.State.LAUNCHED)
 
-    @validator(r.server.patchbay.SAVE_GROUP_POSITION,
-               'i' + GroupPos.ARG_TYPES)
+    @validator(r.server.patchbay.SAVE_GROUP_POSITION, 'iiss')
     def _srv_patchbay_save_group_position(self, osp: OscPack):
         # here send to others GUI the new group position
         for gui in self.gui_list:

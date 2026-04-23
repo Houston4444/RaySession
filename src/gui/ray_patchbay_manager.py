@@ -9,7 +9,7 @@ import logging
 # Imports from HoustonPatchbay
 from patshared import (
     GroupPos, PortgroupMem, PortMode, ViewData, Naming,
-    PrettyDiff, TransportWanted)
+    PrettyDiff, TransportWanted, PortTypesViewFlag)
 from patchbay.bases.elements import CanvasOptimize, CanvasOptimizeIt, ToolDisplayed
 from patchbay.bases.group import Group
 from patchbay import (
@@ -217,7 +217,8 @@ class RayPatchbayManager(PatchbayManager):
         super().save_group_position(gpos)
         self.send_to_daemon(
             r.server.patchbay.SAVE_GROUP_POSITION,
-            self.view_number, *gpos.to_arg_list())
+            self.view_number, gpos.port_types_view.value,
+            gpos.group_name, json.dumps(gpos.as_new_dict()))
 
     def save_portgroup_memory(self, pg_mem: PortgroupMem):
         super().save_portgroup_memory(pg_mem)
@@ -437,8 +438,12 @@ class RayPatchbayManager(PatchbayManager):
             self._last_selected_box_n = 0
 
     def update_group_position(self, *args):
-        view_number = args[0]        
-        gpos = GroupPos.from_arg_list(args[1:])
+        view_number = args[0]
+        port_types_view = PortTypesViewFlag(args[1])
+        group_name = args[2]
+        gpos = GroupPos.from_new_dict(
+            port_types_view, group_name, json.loads(args[3]))
+        
         view_data = self.views.get(view_number)
         
         if view_data is None:

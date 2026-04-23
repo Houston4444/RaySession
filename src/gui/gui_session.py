@@ -629,7 +629,7 @@ class SignaledSession(Session):
         args: tuple[str, str] = osp.args # type:ignore
         self.patchbay_manager.remove_connection(*args)
 
-    @manage(rpm.UPDATE_GROUP_POSITION, 'i' + GroupPos.ARG_TYPES)
+    @manage(rpm.UPDATE_GROUP_POSITION, 'iiss')
     def _patchbay_update_group_position(self, osp: OscPack):
         self.patchbay_manager.update_group_position(*osp.args)
 

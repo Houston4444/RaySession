@@ -148,7 +148,8 @@ class CanvasSaver(ServerSender):
                     view_num=view_number):
                 ms_gui.add(
                     rpm.UPDATE_GROUP_POSITION,
-                    view_number, *gpos.to_arg_list())
+                    view_number, gpos.port_types_view,
+                    gpos.group_name, json.dumps(gpos.as_new_dict()))
 
         # we send config pretty names, for the case we are switching session
         # to be sure to clear pretty-names coming from previous session
@@ -194,13 +195,15 @@ class CanvasSaver(ServerSender):
             for gpos in self.views_config.iter_group_poses(
                     view_num=view_index):
                 ms.add(rpm.UPDATE_GROUP_POSITION,
-                       view_index, *gpos.to_arg_list())
+                       view_index, gpos.port_types_view, gpos.group_name,
+                       json.dumps(gpos.as_new_dict()))
 
         for view_index in self.views_session.keys():
             for gpos in self.views_session.iter_group_poses(
                     view_num=view_index):
                 ms.add(rpm.UPDATE_GROUP_POSITION,
-                       view_index, *gpos.to_arg_list())
+                       view_index, gpos.port_types_view, gpos.group_name,
+                       json.dumps(gpos.as_new_dict()))
 
         # portgroups
         for pg_mem in self.portgroups.iter_all_portgroups():
@@ -233,10 +236,11 @@ class CanvasSaver(ServerSender):
         
         self.mega_send(gui.addr, ms)
 
-    def save_group_position(self, *args):
+    def save_group_position(
+            self, view_num: int, ptv_int: int, group_name: str, jstr: str):
         '''Save a group position sent by GUI'''
-        view_num = args[0]
-        gpos = GroupPos.from_arg_list(args[1:])
+        gpos = GroupPos.from_new_dict(
+            PortTypesViewFlag(ptv_int), group_name, json.loads(jstr))
         pv_gpos_ss = self.views_session.get_group_pos(
             view_num, gpos.port_types_view, gpos.group_name)
         gpos_cf = self.views_config.get_group_pos(
@@ -351,7 +355,8 @@ class CanvasSaver(ServerSender):
                     view_num=view_number):
                 ms_gui.add(
                     rpm.UPDATE_GROUP_POSITION,
-                    view_number, *gpos.to_arg_list())
+                    view_number, gpos.port_types_view,
+                    gpos.group_name, json.dumps(gpos.as_new_dict()))
         
         self.mega_send_gui(ms_gui)
         self.views_session.clear()
@@ -426,7 +431,9 @@ class CanvasSaver(ServerSender):
                     ptv_dict[new].group_name = new
                     self.send_gui(
                         rpm.UPDATE_GROUP_POSITION,
-                        view_num, *ptv_dict[new].to_arg_list()) 
+                        view_num, ptv_dict[new].port_types_view,
+                        ptv_dict[new].group_name,
+                        json.dumps(ptv_dict[new].as_new_dict())) 
 
     def send_custom_names_to_patchbay_daemon(self, osp: OscPack):
         custom_names = self.custom_names_config | self.custom_names_session

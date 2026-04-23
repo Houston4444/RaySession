@@ -81,7 +81,7 @@ METHODS_DICT = {
     rpm.SERVER_LOSE: '',
     rpm.CLIENT_NAME_AND_UUID: 'sh',
     rpm.TRANSPORT_POSITION: 'iiiiiif',
-    rpm.UPDATE_GROUP_POSITION: 'i' + GroupPos.ARG_TYPES,
+    rpm.UPDATE_GROUP_POSITION: 'iiss',
     rpm.VIEWS_CHANGED: 's',
     rpm.UPDATE_PORTGROUP: 'siiiss*',
     rpm.UPDATE_GROUP_CUSTOM_NAME: 'ss',
