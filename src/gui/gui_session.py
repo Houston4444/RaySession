@@ -63,6 +63,7 @@ class Session:
 
         self.is_renameable = True
 
+        self.main_win: 'MainWindow | None' = None
         self.signaler = Signaler()
         self.patchbay_manager = RayPatchbayManager(self)
 
@@ -117,6 +118,8 @@ class Session:
 
 
 class SignaledSession(Session):
+    main_win: 'MainWindow'
+    
     def __init__(self):
         Session.__init__(self)
         self.signaler.osc_receive.connect(self._osc_receive)

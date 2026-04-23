@@ -566,6 +566,8 @@ class RayPatchbayManager(PatchbayManager):
             self.pretty_diff_checker.full_update()
             
     def finish_init(self):
+        if self.session.main_win is None:
+            raise TypeError
         self.set_main_win(self.session.main_win)
         self._setup_canvas()
         self.set_canvas_menu(CanvasMenu(self))
