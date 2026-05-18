@@ -243,6 +243,14 @@ class Patcher:
                   full_client_id: str) -> tuple[Err, str]:
         _logger.info(f'Open file "{project_path}"')
         self.saved_connections.clear()
+        # brothers_dict is stale from the previous session at this point.
+        # Clear it and reset monitor_states_done so that:
+        # - late 'removed' events for the old session's clients don't match
+        #   any entry and silently strip connections from saved_connections.
+        # - the filter below doesn't drop connections whose NSM clients
+        #   haven't been announced yet for the new session.
+        self.glob.monitor_states_done = MonitorStates.NEVER_DONE
+        self.brothers_dict.clear()
 
         file_path = project_path + '.xml'
         self.glob.file_path = file_path
