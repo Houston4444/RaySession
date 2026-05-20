@@ -357,6 +357,22 @@ class Patcher:
         if not self.glob.file_path:
             return
 
+        # connection_list is updated asynchronously via JACK callbacks queued
+        # in ev_handler. Flush pending events now so connection_list reflects
+        # the real JACK state before we decide what to prune.
+        for event, args in self.engine.ev_handler.new_events():
+            match event:
+                case Event.PORT_ADDED:
+                    self.port_added(*args)
+                case Event.PORT_REMOVED:
+                    self.port_removed(*args)
+                case Event.PORT_RENAMED:
+                    self.port_renamed(*args)
+                case Event.CONNECTION_ADDED:
+                    self.connection_added(*args)
+                case Event.CONNECTION_REMOVED:
+                    self.connection_removed(*args)
+
         for connection in self.connection_list:
             if not connection in self.saved_connections:
                 self.saved_connections.append(connection)
