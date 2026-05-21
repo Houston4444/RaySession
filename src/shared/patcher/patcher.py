@@ -35,6 +35,7 @@ class Patcher:
         self.connection_list = list[tuple[FullPortName, FullPortName]]()
         self.saved_connections = list[tuple[FullPortName, FullPortName]]()
         self.to_disc_connections = list[tuple[FullPortName, FullPortName]]()
+        self.disconnected_connections = set[tuple[FullPortName, FullPortName]]()
         self.jack_ports = dict[PortMode, list[JackPort]]()
         for port_mode in (PortMode.NULL, PortMode.INPUT, PortMode.OUTPUT):
             self.jack_ports[port_mode] = list[JackPort]()
@@ -181,16 +182,18 @@ class Patcher:
         
     def connection_added(self, port_str_a: str, port_str_b: str):
         self.connection_list.append((port_str_a, port_str_b))
+        self.disconnected_connections.discard((port_str_a, port_str_b))
 
         if self.glob.pending_connection:
             self.may_make_one_connection()
 
         if (port_str_a, port_str_b) not in self.saved_connections:
             self.timer_dirty_check.start()
-            
+
     def connection_removed(self, port_str_a: str, port_str_b: str):
         if (port_str_a, port_str_b) in self.connection_list:
             self.connection_list.remove((port_str_a, port_str_b))
+            self.disconnected_connections.add((port_str_a, port_str_b))
 
         if self.to_disc_connections:
             self.may_make_one_connection()
@@ -243,6 +246,7 @@ class Patcher:
                   full_client_id: str) -> tuple[Err, str]:
         _logger.info(f'Open file "{project_path}"')
         self.saved_connections.clear()
+        self.disconnected_connections.clear()
         # brothers_dict is stale from the previous session at this point.
         # Clear it and reset monitor_states_done so that:
         # - late 'removed' events for the old session's clients don't match
@@ -377,12 +381,15 @@ class Patcher:
             if not connection in self.saved_connections:
                 self.saved_connections.append(connection)
 
-        # delete from saved connected all connections 
-        # when there ports are present and not currently connected    
+        # Forget a saved connection only when the user explicitly disconnected it
+        # (it was established at some point and then removed). Connections that
+        # were never successfully made — e.g. because a non-NSM client's ports
+        # weren't ready yet — must not be pruned here.
         del_list = list[tuple[str, str]]()
 
         for sv_con in self.saved_connections:
             if (not sv_con in self.connection_list
+                    and sv_con in self.disconnected_connections
                     and sv_con[0] in [
                         p.name for p in self.jack_ports[PortMode.OUTPUT]]
                     and sv_con[1] in [
