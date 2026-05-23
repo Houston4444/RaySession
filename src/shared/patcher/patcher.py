@@ -232,13 +232,22 @@ class Patcher:
 
                 self._logger.info(f'connect ports: {sv_con}')
                 self.engine.connect_ports(*sv_con)
+                # Schedule a retry: if connect_ports fails silently the
+                # CONNECTION_ADDED callback never fires, leaving pending_connection
+                # stuck and no further attempt made.
+                self.timer_connect_check.start()
                 one_connected = True
         else:
             self.glob.pending_connection = False
 
-            for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
-                for port in self.jack_ports[port_mode]:
-                    port.is_new = False
+            # Only clear is_new when no connection was attempted this round.
+            # If we called connect_ports at least once, keep is_new True so
+            # the retry timer (started above) can re-check whether the
+            # connection was actually confirmed.
+            if not one_connected:
+                for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
+                    for port in self.jack_ports[port_mode]:
+                        port.is_new = False
 
     # ---- NSM callbacks ----
 
@@ -351,6 +360,10 @@ class Patcher:
                 self.glob.allow_disconnections = True
 
             self.may_make_one_connection()
+            # Start the retry timer so connections are re-attempted 200 ms later
+            # even when all ports were already present and the first attempt
+            # failed silently (e.g. a transient PipeWire-JACK JackErrorCode).
+            self.timer_connect_check.start()
 
         self.glob.is_dirty = False
         self.glob.open_done_once = True
