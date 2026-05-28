@@ -195,6 +195,24 @@ class Patcher:
             self.connection_list.remove((port_str_a, port_str_b))
             self.disconnected_connections.add((port_str_a, port_str_b))
 
+            if (port_str_a, port_str_b) in self.saved_connections:
+                # A saved connection was removed unexpectedly (e.g. a client
+                # transiently disconnecting while reloading its state). Mark
+                # both ports as new so may_make_one_connection can retry even
+                # if neither port is freshly added.
+                self._logger.info(
+                    f'saved connection removed, will retry: '
+                    f'{debug_conn_str((port_str_a, port_str_b))}')
+                for port in self.jack_ports[PortMode.OUTPUT]:
+                    if port.name == port_str_a:
+                        port.is_new = True
+                        break
+                for port in self.jack_ports[PortMode.INPUT]:
+                    if port.name == port_str_b:
+                        port.is_new = True
+                        break
+                self.timer_connect_check.start()
+
         if self.to_disc_connections:
             self.may_make_one_connection()
 
