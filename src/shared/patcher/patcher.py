@@ -200,9 +200,13 @@ class Patcher:
                 # transiently disconnecting while reloading its state). Mark
                 # both ports as new so may_make_one_connection can retry even
                 # if neither port is freshly added.
+                # Also discard from disconnected_connections so that a
+                # save_file call during the retry window doesn't prune this
+                # connection from the XML before the retry succeeds.
                 self._logger.info(
                     f'saved connection removed, will retry: '
                     f'{debug_conn_str((port_str_a, port_str_b))}')
+                self.disconnected_connections.discard((port_str_a, port_str_b))
                 for port in self.jack_ports[PortMode.OUTPUT]:
                     if port.name == port_str_a:
                         port.is_new = True
