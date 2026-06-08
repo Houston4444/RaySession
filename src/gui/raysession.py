@@ -22,6 +22,10 @@ from qtpy.QtWidgets import QApplication
 from qtpy.QtGui import QIcon, QFontDatabase
 from qtpy.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo, QDir, Qt
 
+# imports from HoustonPatchbay
+import resourcer
+import resources
+
 # Imports from src/shared
 import ray
 from proc_name import set_proc_name
@@ -68,17 +72,19 @@ if True:
     
     set_proc_name(ray.APP_TITLE.lower())
     
-    resources_dir = Path(__file__).parents[2] / 'resources'
-    for prefix in 'fonts', 'scalable':
-        QDir.setSearchPaths(prefix, [str(resources_dir / prefix)])
+    # resources_dir = Path(__file__).parents[2] / 'resources'
+    # for prefix in 'fonts', 'scalable':
+    #     QDir.setSearchPaths(prefix, [str(resources_dir / prefix)])
+
+    resourcer.resources_paths.insert(
+        0, Path(__file__).parents[2] / 'resources')
 
     # set Qt Application
     app = QApplication(sys.argv)
     app.setApplicationName(ray.APP_TITLE)
     app.setApplicationVersion(ray.VERSION)
     app.setOrganizationName(ray.APP_TITLE)
-    app.setWindowIcon(QIcon(
-        f':main_icon/scalable/{ray.APP_TITLE.lower()}.svg'))
+    app.setWindowIcon(resourcer.main_icon())
     app.setQuitOnLastWindowClosed(False)
     app.setDesktopFileName(ray.APP_TITLE.lower())
 
@@ -108,8 +114,8 @@ if True:
         path_sys_translations = QLibraryInfo.location(
             QLibraryInfo.TranslationsPath)
 
-    QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
-    QFontDatabase.addApplicationFont(":/fonts/Ubuntu-C.ttf")
+    # QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
+    # QFontDatabase.addApplicationFont(":/fonts/Ubuntu-C.ttf")
 
     # get arguments
     parser = ArgParser()

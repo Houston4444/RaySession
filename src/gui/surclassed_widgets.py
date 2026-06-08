@@ -184,10 +184,8 @@ class StatusBar(QLineEdit):
         self._timer.setInterval(350)
         self._timer.timeout.connect(self._show_next_text)
 
-        self._ubuntu_font = QFont(
-            QFontDatabase.applicationFontFamilies(0)[0], 8)
-        self._ubuntu_font_cond = QFont(
-            QFontDatabase.applicationFontFamilies(1)[0], 8)
+        self._ubuntu_font = QFont('Ubuntu')
+        self._ubuntu_font_cond = QFont('Ubuntu Condensed')
         self._ubuntu_font.setBold(True)
         self._ubuntu_font_cond.setBold(True)
 
