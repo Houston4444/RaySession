@@ -14,6 +14,9 @@ from qtpy.QtGui import (
     QIcon, QPixmap, QGuiApplication, QKeyEvent, QDesktopServices)
 from qtpy.QtCore import Qt, QTimer, QUrl
 
+# imports from HoustonPatchbay
+import resourcer
+
 # Imports from src/shared
 from osclib import Address, verified_address
 import ray
@@ -26,6 +29,7 @@ import client_properties_dialog
 from gui_server_thread import GuiServerThread
 from gui_tools import (ErrDaemon, _translate, get_app_icon,
                        CommandLineArgs, RS, is_dark_theme)
+from rresources import scalables
 
 # Import UIs made with Qt-Designer
 import ui.new_session
@@ -1233,7 +1237,7 @@ class WaitingCloseUserDialog(ChildDialog):
 
         if is_dark_theme(self):
             self.ui.labelSaveIcon.setPixmap(
-                QPixmap(':scalable/breeze-dark/document-nosave.svg')) # type:ignore
+                resourcer.pixmap(rresources.breeze.DOCUMENT_NOSAVE, dark=True))
 
         self.ui.pushButtonOk.setFocus()
         self.ui.pushButtonUndo.clicked.connect(self._undo_close)
@@ -1261,9 +1265,9 @@ class DonationsDialog(ChildDialog):
         self.ui = ui.donations.Ui_Dialog()
         self.ui.setupUi(self)
 
-        dark = '-dark' if is_dark_theme(self) else ''
         self.ui.toolButtonImage.setIcon(
-            QIcon(f':scalable/breeze{dark}/handshake-deal.svg'))
+            resourcer.icon(scalables.misc.HANDSHAKE_DEAL,
+                           dark=is_dark_theme(self)))
 
         self.ui.toolButtonDonate.clicked.connect(self._donate)
 

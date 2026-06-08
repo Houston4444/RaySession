@@ -10,6 +10,9 @@ from qtpy.QtGui import (QIcon, QFontMetrics, QContextMenuEvent,
                          QMouseEvent, QKeyEvent)
 from qtpy.QtCore import Slot, QSize, Qt, Signal # type:ignore
 
+# imports from HoustonPatchbay
+import resourcer
+
 # Imports from src/shared
 import ray
 import osc_paths.ray as r
@@ -20,6 +23,7 @@ import snapshots_dialog
 from gui_server_thread import GuiServerThread
 from gui_tools import (client_status_string, _translate, is_dark_theme,
                        ray_icon, split_in_two, get_app_icon)
+from rresources import scalables
 
 # Import UIs made with Qt-Designer
 import ui.client_slot
@@ -606,7 +610,7 @@ class ListWidgetClients(QListWidget):
                         ray.ServerStatus.OUT_SNAPSHOT)):
                 menu = QMenu()
                 fav_menu = QMenu(_translate('menu', 'Favorites'), menu)
-                fav_menu.setIcon(QIcon(':scalable/breeze/star-yellow'))
+                fav_menu.setIcon(resourcer.icon(scalables.breeze.STAR_YELLOW))
 
                 for favorite in self.session.favorite_list:
                     act_app = fav_menu.addAction(

@@ -15,6 +15,9 @@ from qtpy.QtCore import Qt, QTimer, Signal # type:ignore
 # Imports from HoustonPatchbay
 from patchbay import PatchGraphicsView
 from patchbay.widgets import filter_frame, tool_bar
+import resourcer
+
+from rresources import scalables
 
 if TYPE_CHECKING:
     from gui_session import Session
@@ -290,15 +293,16 @@ class FavoriteToolButton(QToolButton):
         self._factory = True
         self._display_name = ''
         self._state = False
-        self._favicon_not = QIcon(':scalable/breeze/draw-star.svg')
-        self._favicon_yes = QIcon(':scalable/breeze/star-yellow.svg')
+        self._favicon_not = resourcer.icon(scalables.breeze.DRAW_STAR)
+        self._favicon_yes = resourcer.icon(scalables.breeze.STAR_YELLOW)
 
-        self.session: 'Optional[Session]' = None
+        self.session: 'Session | None' = None
 
         self.setIcon(self._favicon_not)
 
     def set_dark_theme(self):
-        self._favicon_not = QIcon(':scalable/breeze-dark/draw-star.svg')
+        self._favicon_not = resourcer.icon(
+            scalables.breeze.DRAW_STAR, dark=True)
         if not self._state:
             self.setIcon(self._favicon_not)
 

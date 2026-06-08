@@ -1,0 +1,40 @@
+from pathlib import Path
+
+# Imports from HoustonPatchbay
+from resources import *
+
+
+class breeze(breeze):
+    LINK = "breeze/link.svg"
+    LIST_REMOVE = "breeze/list-remove.svg"
+    DOCUMENT_SAVED = "breeze/document-saved.svg"
+    MEDIA_PLAYBACK_START = "breeze/media-playback-start.svg"
+    DOCUMENT_SAVE = "breeze/document-save.svg"
+    APPLICATION_MENU = "breeze/application-menu.svg"
+    NOTES_EDITING = "breeze/notes-editing.svg"
+    EMBLEM_SYMBOLIC_LINK = "breeze/emblem-symbolic-link.svg"
+    IM_USER = "breeze/im-user.svg"
+    FOLDER_NEW = "breeze/folder-new.svg"
+    MEDIA_SEEK_BACKWARD = "breeze/media-seek-backward.svg"
+    NOTES = "breeze/notes.svg"
+    DOCUMENT_EDIT = "breeze/document-edit.svg"
+    HINT = "breeze/hint.svg"
+    WINDOW_CLOSE = "breeze/window-close.svg"
+    TRASH_EMPTY = "breeze/trash-empty.svg"
+    DRAW_STAR = "breeze/draw-star.svg"
+    NOTES_NONEMPTY = "breeze/notes-nonempty.svg"
+    CONFIGURE = "breeze/configure.svg"
+    LIST_ADD = "breeze/list-add.svg"
+    RUN_INSTALL = "breeze/run-install.svg"
+    DOCUMENT_NOSAVE = "breeze/document-nosave.svg"
+    VIEW_LIST_ICONS = "breeze/view-list-icons.svg"
+    DOCUMENT_UNSAVED = "breeze/document-unsaved.svg"
+    DOCUMENT_OPEN = "breeze/document-open.svg"
+    DOCUMENT_SAVE_AS_TEMPLATE = "breeze/document-save-as-template.svg"
+    XML_NODE_DUPLICATE = "breeze/xml-node-duplicate.svg"
+    VISIBILITY = "breeze/visibility.svg"
+    MEDIA_PLAYBACK_STOP = "breeze/media-playback-stop.svg"
+    SYSTEM_FILE_MANAGER = "breeze/system-file-manager.svg"
+    MEDIA_PLAYBACK_STOP_RED = "breeze/media-playback-stop-red.svg"
+    STAR_YELLOW = "breeze/star-yellow.svg"
+    EMPTY_ICON = "breeze/empty-icon.svg"

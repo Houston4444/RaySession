@@ -11,6 +11,11 @@ if TYPE_CHECKING:
 from qtpy.QtWidgets import (QDialogButtonBox, QListWidget, QListWidgetItem,
                              QFrame, QMenu, QAction, QShortcut) # type:ignore
 
+
+# Imports from HoustonPatchbay
+import resourcer
+from rresources import scalables
+
 # Imports from src/shared
 import ray
 import client_properties_dialog
@@ -68,7 +73,7 @@ class TemplateSlot(QFrame):
 
         if is_dark_theme(self):
             self.ui.toolButtonUser.setIcon(
-                QIcon(':scalable/breeze-dark/im-user.svg')) # type:ignore
+                resourcer.icon(scalables.breeze.IM_USER, dark=True))
             self.ui.toolButtonFavorite.set_dark_theme()
 
     def update_client_data(self, *args):
@@ -232,10 +237,10 @@ class AddApplicationDialog(ChildDialog):
 
         if is_dark_theme(self):
             self.ui.toolButtonUser.setIcon(
-                QIcon(':scalable/breeze-dark/im-user.svg')) # type:ignore
+                resourcer.icon(scalables.breeze.IM_USER, dark=True))
             self.ui.toolButtonFavorite.set_dark_theme()
             self.ui.toolButtonNoSave.setIcon(
-                QIcon(':scalable/breeze-dark/document-nosave.svg'))
+                resourcer.icon(scalables.breeze.DOCUMENT_NOSAVE, dark=True))
 
         self.signaler.user_client_template_found.connect(
             self._add_user_templates)

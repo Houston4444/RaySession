@@ -19,6 +19,7 @@ from qtpy.QtWidgets import (
 # Imports from HoustonPatchbay
 from patchbay.bases.elements import ToolDisplayed
 from patchbay.tools_widgets import PatchbayToolsWidget, TextWithIcons
+import resourcer
 
 # Imports from src/shared
 from osclib import is_on_this_machine
@@ -39,6 +40,7 @@ from gui_tools import (
     is_dark_theme, get_code_root, get_app_icon)
 from gui_client import TrashedClient
 from gui_server_thread import GuiServerThread
+from rresources import scalables
 from utility_scripts import UtilityScriptLauncher
 
 # Import UIs made with Qt-Designer
@@ -295,7 +297,8 @@ class MainWindow(QMainWindow):
 
         # set favorites menu
         self._favorites_menu = QMenu(_translate('menu', 'Favorites'))
-        self._favorites_menu.setIcon(QIcon(':scalable/breeze/star-yellow'))
+        self._favorites_menu.setIcon(
+            resourcer.icon(scalables.breeze.STAR_YELLOW))
         self.ui.toolButtonFavorites.setPopupMode(
             QToolButton.ToolButtonPopupMode.InstantPopup)
         self.ui.toolButtonFavorites.setMenu(self._favorites_menu)
