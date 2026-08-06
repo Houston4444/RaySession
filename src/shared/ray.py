@@ -30,12 +30,14 @@ class PrefixMode(Enum):
     @classmethod
     def _missing_(cls, value: object) -> 'PrefixMode':
         if isinstance(value, str):
-            if value.lower() == 'client_name':
-                return PrefixMode.CLIENT_NAME
-            if value.lower() == 'session_name':
-                return PrefixMode.SESSION_NAME
-            if value.lower() == 'custom':
-                return PrefixMode.CUSTOM
+            match value.lower():
+                case 'client_name':
+                    return PrefixMode.CLIENT_NAME
+                case 'session_name':
+                    return PrefixMode.SESSION_NAME
+                case 'custom':
+                    return PrefixMode.CUSTOM
+                
         return PrefixMode.CLIENT_NAME
 
 
