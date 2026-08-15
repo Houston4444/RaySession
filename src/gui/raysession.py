@@ -114,8 +114,7 @@ if True:
         path_sys_translations = QLibraryInfo.location(
             QLibraryInfo.TranslationsPath)
 
-    # QFontDatabase.addApplicationFont(":/fonts/Ubuntu-R.ttf")
-    # QFontDatabase.addApplicationFont(":/fonts/Ubuntu-C.ttf")
+    resourcer.install_fonts()
 
     # get arguments
     parser = ArgParser()
