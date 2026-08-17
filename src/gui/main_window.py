@@ -1,5 +1,6 @@
 
 # Imports from standard library
+import logging
 from typing import TYPE_CHECKING, Optional
 import time
 import subprocess
@@ -8,6 +9,7 @@ import subprocess
 from qtpy.QtCore import QTimer, Slot, QUrl, QLocale, Qt # type:ignore
 from qtpy.QtGui import (QIcon, QDesktopServices, QFontMetrics,
                         QCloseEvent, QKeyEvent)
+
 if TYPE_CHECKING:
     # FIX : QAction not found by pylance
     from qtpy.QtGui import QAction, QShortcut
@@ -29,6 +31,7 @@ import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 
 # Local imports
+from rresources import scalables
 import add_application_dialog
 import open_session_dialog
 import child_dialogs
@@ -36,7 +39,7 @@ import snapshots_dialog
 import preferences_dialog
 import list_widget_clients
 from gui_tools import (
-    RS, ray_icon, CommandLineArgs, _translate, server_status_string,
+    RS, CommandLineArgs, _translate, server_status_string,
     is_dark_theme, get_code_root, get_app_icon)
 from gui_client import TrashedClient
 from gui_server_thread import GuiServerThread
@@ -49,6 +52,8 @@ import ui.raysession
 if TYPE_CHECKING:
     from .gui_session import SignaledSession
 
+
+_logger = logging.getLogger(__name__)
 
 UI_PATCHBAY_UNDEF = 0
 UI_PATCHBAY_HIDDEN = 1
@@ -319,73 +324,8 @@ class MainWindow(QMainWindow):
         sg.client_properties_state_changed.connect(
             self._client_properties_state_changed)
 
-        # set spare icons if system icons not available
-        dark = is_dark_theme(self)
-
-        if self.ui.actionNewSession.icon().isNull():
-            self.ui.actionNewSession.setIcon(
-                ray_icon('folder-new', dark))
-        if self.ui.actionOpenSession.icon().isNull():
-            self.ui.actionOpenSession.setIcon(
-                ray_icon('document-open', dark))
-
-        if self.ui.actionControlMenu.icon().isNull():
-            self.ui.actionControlMenu.setIcon(
-                QIcon.fromTheme('configuration_section'))
-            if self.ui.actionControlMenu.icon().isNull():
-                self.ui.actionControlMenu.setIcon(
-                    ray_icon('configure', dark))
-
-        if self.ui.actionOpenSessionFolder.icon().isNull():
-            self.ui.actionOpenSessionFolder.setIcon(
-                ray_icon('system-file-manager', dark))
-
-        if self.ui.actionAddApplication.icon().isNull():
-            self.ui.actionAddApplication.setIcon(
-                ray_icon('list-add', dark))
-
-        if self.ui.actionAddExecutable.icon().isNull():
-            self.ui.actionAddExecutable.setIcon(
-                QIcon.fromTheme('system-run'))
-            if self.ui.actionAddExecutable.icon().isNull():
-                self.ui.actionAddExecutable.setIcon(
-                    ray_icon('run-install'))
-
-        self.ui.actionReturnToAPreviousState.setIcon(
-            ray_icon('media-seek-backward', dark))
-
-        self.ui.actionRememberOptionalGuiStates.setIcon(
-            ray_icon('visibility', dark))
-        self.ui.trashButton.setIcon(
-            ray_icon('trash-empty', dark))
-        if self.ui.trashButton.icon().isNull():
-            self.ui.trashButton.setIcon(
-                ray_icon('trash', dark))
-
-        self.ui.actionDuplicateSession.setIcon(
-            ray_icon('xml-node-duplicate', dark))
-        self.ui.actionDuplicateSession_2.setIcon(
-            ray_icon('xml-node-duplicate', dark))
-        self.ui.actionSaveTemplateSession.setIcon(
-            ray_icon('document-save-as-template', dark))
-        self.ui.actionSaveTemplateSession_2.setIcon(
-            ray_icon('document-save-as-template', dark))
-        self.ui.actionCloseSession.setIcon(
-            ray_icon('window-close', dark))
-        self.ui.actionAbortSession.setIcon(
-            ray_icon('list-remove', dark))
-        self.ui.actionSaveSession.setIcon(
-            ray_icon('document-save', dark))
-        self.ui.toolButtonSaveSession.setIcon(
-            ray_icon('document-save', dark))
-        self.ui.actionSessionNotes.setIcon(
-            ray_icon('notes', dark))
-        self.ui.toolButtonNotes.setIcon(
-            ray_icon('notes', dark))
-        self.ui.actionDesktopsMemory.setIcon(
-            ray_icon('view-list-icons', dark))
-        self.ui.toolButtonSessionMenu.setIcon(
-            ray_icon('application-menu', dark))
+        self._set_action_icons()
+        
         self.ui.listWidget.set_session(self.session)
         self.ui.listWidget.currentItemChanged.connect(
             self._list_widget_item_changed)
@@ -468,6 +408,71 @@ class MainWindow(QMainWindow):
             Optional[preferences_dialog.PreferencesDialog] = None
 
         self._startup_time = time.time()
+
+    def _set_action_icons(self):
+        '''in __init__ only, set the icons on actions
+        depending on light or dark theme'''
+        dark = is_dark_theme(self)
+        
+        # for shorter syntax
+        u = self.ui
+        b = scalables.breeze
+        IF_NULL = 1
+        
+        act_icons: dict[QAction | QToolButton,
+                        str | tuple[int, str] | tuple[int, str, str]] = {
+            u.actionNewSession: (IF_NULL, b.FOLDER_NEW),
+            u.actionOpenSession: (IF_NULL, b.DOCUMENT_OPEN),
+            u.actionControlMenu: (IF_NULL, 'configuration-section', b.CONFIGURE),
+            u.actionOpenSessionFolder: (IF_NULL, b.SYSTEM_FILE_MANAGER),
+            u.actionAddApplication: (IF_NULL, b.LIST_ADD),
+            u.actionAddExecutable: (IF_NULL, 'system-run', b.RUN_INSTALL),
+            u.actionReturnToAPreviousState: b.MEDIA_SEEK_BACKWARD,
+            u.actionRememberOptionalGuiStates: b.VISIBILITY,
+            u.trashButton: b.TRASH_EMPTY,
+            u.actionDuplicateSession: b.XML_NODE_DUPLICATE,
+            u.actionDuplicateSession_2: b.XML_NODE_DUPLICATE,
+            u.actionSaveTemplateSession: b.DOCUMENT_SAVE_AS_TEMPLATE,
+            u.actionSaveTemplateSession_2: b.DOCUMENT_SAVE_AS_TEMPLATE,
+            u.actionCloseSession: b.WINDOW_CLOSE,
+            u.actionAbortSession: b.LIST_REMOVE,
+            u.actionSaveSession: b.DOCUMENT_SAVE,
+            u.actionSessionNotes: b.NOTES,
+            u.actionDesktopsMemory: b.VIEW_LIST_ICONS,
+            u.toolButtonSaveSession: b.DOCUMENT_SAVE,
+            u.toolButtonNotes: b.NOTES,
+            u.toolButtonSessionMenu: b.APPLICATION_MENU,
+        }
+        
+        for act, icon_tuple in act_icons.items():
+            if isinstance(icon_tuple, str):
+                act.setIcon(resourcer.icon(icon_tuple, dark=dark))
+                continue
+            
+            if not isinstance(icon_tuple, tuple):
+                _logger.warning(f'{icon_tuple=}, it is not a tuple, ignored')
+                continue
+
+            if_null = False
+            sys_icon_name = ''
+
+            if len(icon_tuple) == 2:
+                if_null, icon_name = icon_tuple
+            elif len(icon_tuple) == 3:
+                if_null, sys_icon_name, icon_name = icon_tuple
+            else:
+                _logger.warning(f'Too much elements in {icon_tuple=}')
+                continue
+            
+            if if_null and not act.icon().isNull():
+                continue
+            if sys_icon_name:
+                sys_icon = QIcon.fromTheme(sys_icon_name)
+                if not sys_icon.isNull():
+                    act.setIcon(sys_icon)
+                    continue
+            
+            act.setIcon(resourcer.icon(icon_name, dark=dark))
 
     def _splitter_session_vs_messages_moved(self, pos: int, index: int):
         self.ui.actionToggleShowMessages.setChecked(
@@ -1375,20 +1380,21 @@ class MainWindow(QMainWindow):
         self.preferences_dialog.show()
 
     def edit_notes(self, close=False):
-        icon_str = 'notes'
+        icon_str = scalables.breeze.NOTES
         if close:
             if self.session.notes:
-                icon_str = 'notes-nonempty'
-            if self.notes_dialog is not None and self.notes_dialog.isVisible():
+                icon_str = scalables.breeze.NOTES_NONEMPTY
+            if (self.notes_dialog is not None
+                    and self.notes_dialog.isVisible()):
                 self.notes_dialog.close()
         else:
             if self.notes_dialog is None:
                 self.notes_dialog = child_dialogs.SessionNotesDialog(self)
             self.notes_dialog.show()
-            icon_str = 'notes-editing'
+            icon_str = scalables.breeze.NOTES_EDITING
 
         self.ui.actionSessionNotes.setIcon(
-            ray_icon(icon_str, is_dark_theme(self)))
+            resourcer.icon(icon_str, dark=is_dark_theme(self)))
 
     def stop_client(self, client_id):
         client = self.session.get_client(client_id)
