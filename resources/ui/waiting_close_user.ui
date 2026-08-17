@@ -42,7 +42,7 @@
         <string/>
        </property>
        <property name="pixmap">
-        <pixmap resource="../resources.qrc">:/scalable/breeze/document-nosave.svg</pixmap>
+        <pixmap resource="../resources.qrc">:/scalables/light/breeze/document-nosave.svg</pixmap>
        </property>
       </widget>
      </item>

@@ -443,7 +443,7 @@ QToolButton {border: none}</string>
                          </property>
                          <property name="icon">
                           <iconset resource="../resources.qrc">
-                           <normaloff>:/scalable/breeze/star-yellow.svg</normaloff>:/scalable/breeze/star-yellow.svg</iconset>
+                           <normaloff>:/scalables/light/breeze/star-yellow.svg</normaloff>:/scalables/light/breeze/star-yellow.svg</iconset>
                          </property>
                         </widget>
                        </item>
@@ -590,7 +590,7 @@ QToolButton {border: none}</string>
                          </property>
                          <property name="icon">
                           <iconset theme="media-seek-backward" resource="../resources.qrc">
-                           <normaloff>:/scalable/breeze/document-save.svg</normaloff>:/scalable/breeze/document-save.svg</iconset>
+                           <normaloff>:/scalables/light/breeze/document-save.svg</normaloff>:/scalables/light/breeze/document-save.svg</iconset>
                          </property>
                          <property name="iconSize">
                           <size>
@@ -653,7 +653,7 @@ QToolButton {border: none}</string>
                          </property>
                          <property name="icon">
                           <iconset resource="../resources.qrc">
-                           <normaloff>:/scalable/breeze/document-save.svg</normaloff>:/scalable/breeze/document-save.svg</iconset>
+                           <normaloff>:/scalables/light/breeze/document-save.svg</normaloff>:/scalables/light/breeze/document-save.svg</iconset>
                          </property>
                          <property name="iconSize">
                           <size>
@@ -1156,8 +1156,8 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/scalable/breeze/window-close.svg</normaloff>
-     <disabledoff>:/scalable/breeze/disabled/window-close.svg</disabledoff>:/scalable/breeze/window-close.svg</iconset>
+     <normaloff>:/scalables/light/breeze/window-close.svg</normaloff>
+     <disabledoff>:/scalables/light/breeze/disabled/window-close.svg</disabledoff>:/scalables/light/breeze/window-close.svg</iconset>
    </property>
    <property name="text">
     <string>&amp;Close</string>
@@ -1175,9 +1175,9 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/scalable/breeze/list-remove.svg</normaloff>
-     <disabledoff>:/scalable/breeze/disabled/list-remove.svg</disabledoff>
-     <selectedoff>:/scalable/breeze/list-remove.svg</selectedoff>:/scalable/breeze/list-remove.svg</iconset>
+     <normaloff>:/scalables/light/breeze/list-remove.svg</normaloff>
+     <disabledoff>:/scalables/light/breeze/disabled/list-remove.svg</disabledoff>
+     <selectedoff>:/scalables/light/breeze/list-remove.svg</selectedoff>:/scalables/light/breeze/list-remove.svg</iconset>
    </property>
    <property name="text">
     <string>&amp;Abort</string>
@@ -1240,7 +1240,7 @@ QToolButton {border: none}</string>
    </property>
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/scalable/breeze/xml-node-duplicate.svg</normaloff>:/scalable/breeze/xml-node-duplicate.svg</iconset>
+     <normaloff>:/scalables/light/breeze/xml-node-duplicate.svg</normaloff>:/scalables/light/breeze/xml-node-duplicate.svg</iconset>
    </property>
    <property name="text">
     <string>&amp;Duplicate</string>
@@ -1337,7 +1337,7 @@ Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.</stri
    </property>
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/scalable/breeze/view-list-icons.svg</normaloff>:/scalable/breeze/view-list-icons.svg</iconset>
+     <normaloff>:/scalables/light/breeze/view-list-icons.svg</normaloff>:/scalables/light/breeze/view-list-icons.svg</iconset>
    </property>
    <property name="text">
     <string>&amp;Desktops Memory (requires wmctrl)</string>
@@ -1442,7 +1442,7 @@ Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.</stri
    </property>
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/scalable/breeze/xml-node-duplicate.svg</normaloff>:/scalable/breeze/xml-node-duplicate.svg</iconset>
+     <normaloff>:/scalables/light/breeze/xml-node-duplicate.svg</normaloff>:/scalables/light/breeze/xml-node-duplicate.svg</iconset>
    </property>
    <property name="text">
     <string>Duplicate the current session</string>

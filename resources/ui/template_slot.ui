@@ -73,7 +73,7 @@ QToolButton {border: none}</string>
      </property>
      <property name="icon">
       <iconset resource="../resources.qrc">
-       <normaloff>:/scalable/breeze/im-user.svg</normaloff>:/scalable/breeze/im-user.svg</iconset>
+       <normaloff>:/scalables/light/breeze/im-user.svg</normaloff>:/scalables/light/breeze/im-user.svg</iconset>
      </property>
      <property name="popupMode">
       <enum>QToolButton::InstantPopup</enum>
@@ -90,7 +90,7 @@ QToolButton {border: none}</string>
      </property>
      <property name="icon">
       <iconset resource="../resources.qrc">
-       <normaloff>:/scalable/breeze/draw-star.svg</normaloff>:/scalable/breeze/draw-star.svg</iconset>
+       <normaloff>:/scalables/light/breeze/draw-star.svg</normaloff>:/scalables/light/breeze/draw-star.svg</iconset>
      </property>
     </widget>
    </item>

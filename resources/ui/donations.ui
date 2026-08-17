@@ -26,7 +26,7 @@
        </property>
        <property name="icon">
         <iconset resource="../../HoustonPatchbay/resources/resources.qrc">
-         <normaloff>:/scalable/breeze/handshake-deal.svg</normaloff>:/scalable/breeze/handshake-deal.svg</iconset>
+         <normaloff>:/scalables/light/breeze/handshake-deal.svg</normaloff>:/scalables/light/breeze/handshake-deal.svg</iconset>
        </property>
        <property name="iconSize">
         <size>

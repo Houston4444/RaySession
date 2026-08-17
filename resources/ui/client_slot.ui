@@ -275,7 +275,7 @@ QToolButton {border: none}</string>
          </property>
          <property name="icon">
           <iconset>
-           <normaloff>:/scalable/breeze/layer-visible-on.png</normaloff>:/scalable/breeze/layer-visible-on.png</iconset>
+           <normaloff>:/scalables/light/breeze/layer-visible-on.png</normaloff>:/scalables/light/breeze/layer-visible-on.png</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -358,8 +358,8 @@ QToolButton {border: none}</string>
          </property>
          <property name="icon">
           <iconset resource="../resources.qrc">
-           <normaloff>:/scalable/breeze/media-playback-start.svg</normaloff>
-           <disabledoff>:/scalable/breeze/disabled/media-playback-start.svg</disabledoff>:/scalable/breeze/media-playback-start.svg</iconset>
+           <normaloff>:/scalables/light/breeze/media-playback-start.svg</normaloff>
+           <disabledoff>:/scalables/light/breeze/disabled/media-playback-start.svg</disabledoff>:/scalables/light/breeze/media-playback-start.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -397,8 +397,8 @@ QToolButton {border: none}</string>
          </property>
          <property name="icon">
           <iconset resource="../resources.qrc">
-           <normaloff>:/scalable/breeze/media-playback-stop.svg</normaloff>
-           <disabledoff>:/scalable/breeze/disabled/media-playback-stop.svg</disabledoff>:/scalable/breeze/media-playback-stop.svg</iconset>
+           <normaloff>:/scalables/light/breeze/media-playback-stop.svg</normaloff>
+           <disabledoff>:/scalables/light/breeze/disabled/media-playback-stop.svg</disabledoff>:/scalables/light/breeze/media-playback-stop.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -478,7 +478,7 @@ QToolButton {border: none}</string>
          </property>
          <property name="icon">
           <iconset resource="../resources.qrc">
-           <normaloff>:/scalable/breeze/document-save.svg</normaloff>:/scalable/breeze/document-save.svg</iconset>
+           <normaloff>:/scalables/light/breeze/document-save.svg</normaloff>:/scalables/light/breeze/document-save.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -531,7 +531,7 @@ QToolButton {border: none}</string>
            </property>
            <property name="icon">
             <iconset resource="../resources.qrc">
-             <normaloff>:/scalable/breeze/window-close.svg</normaloff>:/scalable/breeze/window-close.svg</iconset>
+             <normaloff>:/scalables/light/breeze/window-close.svg</normaloff>:/scalables/light/breeze/window-close.svg</iconset>
            </property>
           </widget>
          </item>
