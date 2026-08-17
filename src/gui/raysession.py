@@ -36,8 +36,8 @@ from gui_tools import (ArgParser, CommandLineArgs,
 from gui_server_thread import GuiServerThread
 from gui_session import SignaledSession
 
-# prevent to not find icon at startup
-import resources_rc
+# # prevent to not find icon at startup
+# import resources_rc
 
 _logger = logging.getLogger()
 session = None
@@ -72,9 +72,6 @@ if True:
     
     set_proc_name(ray.APP_TITLE.lower())
     
-    # resources_dir = Path(__file__).parents[2] / 'resources'
-    # for prefix in 'fonts', 'scalable':
-    #     QDir.setSearchPaths(prefix, [str(resources_dir / prefix)])
 
     resourcer.resources_paths.insert(
         0, Path(__file__).parents[2] / 'resources')
