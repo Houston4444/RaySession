@@ -1237,7 +1237,8 @@ class WaitingCloseUserDialog(ChildDialog):
 
         if is_dark_theme(self):
             self.ui.labelSaveIcon.setPixmap(
-                resourcer.pixmap(rresources.breeze.DOCUMENT_NOSAVE, dark=True))
+                resourcer.pixmap(
+                    scalables.breeze.DOCUMENT_NOSAVE, dark=True))
 
         self.ui.pushButtonOk.setFocus()
         self.ui.pushButtonUndo.clicked.connect(self._undo_close)

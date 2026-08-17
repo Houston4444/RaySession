@@ -51,9 +51,9 @@ class ClientSlot(QFrame):
 
     def _gray_icon(self, gray: bool):
         if gray:
-            self.ui.iconButton.setIcon(self._icon_off) # type:ignore
+            self.ui.iconButton.setIcon(self._icon_off)
         else:
-            self.ui.iconButton.setIcon(self._icon_on) # type:ignore
+            self.ui.iconButton.setIcon(self._icon_on)
 
     def _properties_request(self):
         self._list_widget.properties_request.emit(self.get_client_id())

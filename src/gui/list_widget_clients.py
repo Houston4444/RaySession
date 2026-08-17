@@ -96,23 +96,22 @@ class ClientSlot(QFrame):
         
         dark = is_dark_theme(self)
         
-        self._save_icon = ray_icon('document-save', dark)
-        self._saved_icon = ray_icon('document-saved', dark)
-        self._unsaved_icon = ray_icon('document-unsaved', dark)
-        self._no_save_icon = ray_icon('document-nosave', dark)
-        self._icon_visible = ray_icon('visibility', dark)
-        self._icon_invisible = ray_icon('hint', dark)
-        self._stop_icon = ray_icon('media-playback-stop', dark)
-        self._kill_icon = ray_icon('media-playback-stop_red', dark)
+        b = scalables.breeze
+        self._save_icon = resourcer.icon(b.DOCUMENT_SAVE, dark=dark)
+        self._saved_icon = resourcer.icon(b.DOCUMENT_SAVED, dark=dark)
+        self._unsaved_icon = resourcer.icon(b.DOCUMENT_UNSAVED, dark=dark)
+        self._no_save_icon = resourcer.icon(b.DOCUMENT_NOSAVE, dark=dark)
+        self._icon_visible = resourcer.icon(b.VISIBILITY, dark=dark)
+        self._icon_invisible = resourcer.icon(b.HINT, dark=dark)
+        self._stop_icon = resourcer.icon(b.MEDIA_PLAYBACK_STOP, dark=dark)
+        self._kill_icon = resourcer.icon(b.MEDIA_PLAYBACK_STOP_RED, dark=dark)
 
         self.ui.startButton.setIcon(
-            ray_icon('media-playback-start', dark)) # type:ignore
+            resourcer.icon(b.MEDIA_PLAYBACK_START, dark=dark))
         self.ui.closeButton.setIcon(
-            ray_icon('window-close', dark)) # type:ignore
-        self.ui.saveButton.setIcon(
-            self._save_icon) # type:ignore
-        self.ui.stopButton.setIcon(
-            self._stop_icon) # type:ignore
+            resourcer.icon(b.WINDOW_CLOSE, dark=dark))
+        self.ui.saveButton.setIcon(self._save_icon)
+        self.ui.stopButton.setIcon(self._stop_icon)
 
         if ':optional-gui:' in self.client.capabilities:
             self.set_gui_state(self.client.gui_state)
@@ -355,9 +354,9 @@ class ClientSlot(QFrame):
         if (self.client.protocol is ray.Protocol.RAY_HACK
                 and self.client.ray_hack is not None):
             if self.client.ray_hack.relevant_no_save_level():
-                self.ui.saveButton.setIcon(self._no_save_icon) # type:ignore
+                self.ui.saveButton.setIcon(self._no_save_icon)
             else:
-                self.ui.saveButton.setIcon(self._save_icon) # type:ignore
+                self.ui.saveButton.setIcon(self._save_icon)
 
     def update_status(self, status: ray.ClientStatus):
         self.ui.lineEditClientStatus.setText(client_status_string(status))
@@ -415,8 +414,8 @@ class ClientSlot(QFrame):
                 self.ui.startButton.setVisible(True)
                 self.ui.stopButton.setVisible(False)
 
-            self.ui.saveButton.setIcon(self._save_icon) # type:ignore
-            self.ui.stopButton.setIcon(self._stop_icon) # type:ignore
+            self.ui.saveButton.setIcon(self._save_icon)
+            self.ui.stopButton.setIcon(self._stop_icon)
             self._stop_is_kill = False
 
             if not ray_hack:
@@ -436,8 +435,8 @@ class ClientSlot(QFrame):
                 self.ui.startButton.setVisible(True)
                 self.ui.stopButton.setVisible(False)
 
-            self.ui.saveButton.setIcon(self._save_icon) # type:ignore
-            self.ui.stopButton.setIcon(self._stop_icon) # type:ignore
+            self.ui.saveButton.setIcon(self._save_icon)
+            self.ui.stopButton.setIcon(self._stop_icon)
             self._stop_is_kill = False
 
         elif status is ray.ClientStatus.COPY:
@@ -445,7 +444,7 @@ class ClientSlot(QFrame):
 
     def allow_kill(self):
         self._stop_is_kill = True
-        self.ui.stopButton.setIcon(self._kill_icon) # type:ignore
+        self.ui.stopButton.setIcon(self._kill_icon)
 
     def flash_if_open(self, flash: bool):
         if flash:
@@ -458,20 +457,20 @@ class ClientSlot(QFrame):
         self.ui.toolButtonHack.setChecked(state)
 
     def show_gui_button(self):
-        self.ui.toolButtonGUI.setIcon(self._icon_invisible) # type:ignore
+        self.ui.toolButtonGUI.setIcon(self._icon_invisible)
         self.ui.toolButtonGUI.setVisible(True)
 
     def set_gui_state(self, state: bool):
         if state:
-            self.ui.toolButtonGUI.setIcon(self._icon_visible) # type:ignore
+            self.ui.toolButtonGUI.setIcon(self._icon_visible)
         else:
-            self.ui.toolButtonGUI.setIcon(self._icon_invisible) # type:ignore
+            self.ui.toolButtonGUI.setIcon(self._icon_invisible)
 
         self._gui_state = state
 
     def set_dirty_state(self, dirty: bool):
         self.ui.saveButton.setIcon(
-            self._unsaved_icon if dirty else self._saved_icon) # type:ignore
+            self._unsaved_icon if dirty else self._saved_icon)
 
     def set_progress(self, progress: float):
         self.ui.lineEditClientStatus.set_progress(progress)

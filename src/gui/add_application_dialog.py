@@ -71,9 +71,10 @@ class TemplateSlot(QFrame):
             self._name, self.client_data.icon, self._factory,
             self.get_display_name())
 
-        if is_dark_theme(self):
-            self.ui.toolButtonUser.setIcon(
-                resourcer.icon(scalables.breeze.IM_USER, dark=True))
+        dark = is_dark_theme(self)
+        self.ui.toolButtonUser.setIcon(
+            resourcer.icon(scalables.breeze.IM_USER, dark=dark))
+        if dark:
             self.ui.toolButtonFavorite.set_dark_theme()
 
     def update_client_data(self, *args):
@@ -235,12 +236,14 @@ class AddApplicationDialog(ChildDialog):
             self._tool_button_advanced_clicked)
         self.ui.lineEditUniqueId.textEdited.connect(self._unique_id_edited)
 
-        if is_dark_theme(self):
-            self.ui.toolButtonUser.setIcon(
-                resourcer.icon(scalables.breeze.IM_USER, dark=True))
+        dark = is_dark_theme(self)
+
+        self.ui.toolButtonUser.setIcon(
+            resourcer.icon(scalables.breeze.IM_USER, dark=dark))
+        if dark:
             self.ui.toolButtonFavorite.set_dark_theme()
-            self.ui.toolButtonNoSave.setIcon(
-                resourcer.icon(scalables.breeze.DOCUMENT_NOSAVE, dark=True))
+        self.ui.toolButtonNoSave.setIcon(
+            resourcer.icon(scalables.breeze.DOCUMENT_NOSAVE, dark=dark))
 
         self.signaler.user_client_template_found.connect(
             self._add_user_templates)
