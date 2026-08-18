@@ -19,12 +19,10 @@ os.environ['QT_API'] = QT_API
 
 # third party imports
 from qtpy.QtWidgets import QApplication
-from qtpy.QtGui import QIcon, QFontDatabase
-from qtpy.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo, QDir, Qt
+from qtpy.QtCore import QLocale, QTranslator, QTimer, QLibraryInfo
 
 # imports from HoustonPatchbay
 import resourcer
-import resources
 
 # Imports from src/shared
 import ray
@@ -36,8 +34,6 @@ from gui_tools import (ArgParser, CommandLineArgs,
 from gui_server_thread import GuiServerThread
 from gui_session import SignaledSession
 
-# # prevent to not find icon at startup
-# import resources_rc
 
 _logger = logging.getLogger()
 session = None
@@ -69,9 +65,8 @@ if True:
     _log_handler.setFormatter(logging.Formatter(
         f"%(levelname)s:%(name)s - %(message)s"))
     _logger.addHandler(_log_handler)
-    
+
     set_proc_name(ray.APP_TITLE.lower())
-    
 
     resourcer.resources_paths.insert(
         0, Path(__file__).parents[2] / 'resources')
@@ -110,6 +105,8 @@ if True:
     else:
         path_sys_translations = QLibraryInfo.location(
             QLibraryInfo.TranslationsPath)
+    if sys_translator.load(QLocale(), 'qtbase', '_', path_sys_translations):
+        app.installTranslator(sys_translator)
 
     resourcer.install_fonts()
 
