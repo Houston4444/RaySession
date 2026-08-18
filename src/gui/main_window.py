@@ -442,6 +442,7 @@ class MainWindow(QMainWindow):
             u.toolButtonSaveSession: b.DOCUMENT_SAVE,
             u.toolButtonNotes: b.NOTES,
             u.toolButtonSessionMenu: b.APPLICATION_MENU,
+            u.toolButtonFavorites: b.STAR_YELLOW,
         }
         
         for act, icon_tuple in act_icons.items():
