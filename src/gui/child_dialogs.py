@@ -1269,6 +1269,8 @@ class DonationsDialog(ChildDialog):
         self.ui.toolButtonImage.setIcon(
             resourcer.icon(scalables.misc.HANDSHAKE_DEAL,
                            dark=is_dark_theme(self)))
+        self.ui.toolButtonDonate.setIcon(
+            resourcer.icon(scalables.misc.LIBERAPAY_LOGO_BLACK_ON_YELLOW))
 
         self.ui.toolButtonDonate.clicked.connect(self._donate)
 
