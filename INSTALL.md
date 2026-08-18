@@ -16,11 +16,7 @@ The required build dependencies are: (devel packages of these)
  - qtchooser (only for translations)
  - qttools5-dev-tools (only for translations, works for Qt5 and Qt6)
 
-The difficulty with Qt6 build (which is the default), is sometimes to get the following executables:
-- rcc
-- lrelease
-
-By chance, the compilation should work even if theses 2 tools are supposed to work with Qt5.
+The difficulty with Qt6 build (which is the default), is sometimes to get the `lrelease` executable. By chance, the compilation should work even if these tool is supposed to work with Qt5.
 
 
 On Debian and Ubuntu, use these commands as root to install all build
@@ -48,8 +44,6 @@ to build.  If you don't have 'lrelease' executable but 'lrelease-qt5' use:
 
 `$ make LRELEASE=lrelease-qt5`
 
-on Debian, you probably need to set RCC this way:
-`$ RCC=/usr/lib/qt6/libexec/rcc make`
 
 # Installing
 
