@@ -9,7 +9,6 @@ DEST_RAY := $(DESTDIR)$(PREFIX)/share/raysession
 
 LINK = ln -s -f
 LRELEASE ?= lrelease
-RCC ?= rcc
 QT_VERSION ?= 6
 
 # if you set QT_VERSION environment variable to 5 at the make command
@@ -19,18 +18,6 @@ ifeq ($(QT_VERSION), 6)
 	QT_API ?= PyQt6
 	PYUIC ?= pyuic6
 	PYLUPDATE ?= pylupdate6
-	RCC_EXEC := $(shell which $(RCC))
-	RCC_QT6_DEB := /usr/lib/qt6/libexec/rcc
-
-	ifeq (, ${RCC_EXEC})
-		RCC := ${RCC_QT6_DEB}
-	else
-		ifeq ($(shell readlink ${RCC_EXEC}), qtchooser)
-			ifeq ($(shell test -x ${RCC_QT6_DEB} | echo $$?), 0)
-				RCC := ${RCC_QT6_DEB}
-			endif
-		endif
-	endif
 
 	ifeq (, $(shell which $(LRELEASE)))
 		LRELEASE := lrelease-qt6
@@ -61,7 +48,7 @@ PATCHBAY_DIR=HoustonPatchbay
 
 # ---------------------
 
-all: PATCHBAY QT_PREPARE RES UI LOCALE
+all: PATCHBAY QT_PREPARE UI LOCALE
 
 PATCHBAY:
 	@(cd $(PATCHBAY_DIR) && $(MAKE))
@@ -76,13 +63,6 @@ QT_PREPARE:
     endif
 	install -d src/gui/ui
 
-# ---------------------
-# Resources
-
-RES: src/gui/resources_rc.py
-
-src/gui/resources_rc.py: resources/resources.qrc
-	${RCC} -g python $< |sed 's/ PySide. / qtpy /' > $@
 
 # ---------------------
 # UI code
@@ -148,7 +128,9 @@ install:
 	install -d $(DEST_RAY)/
 	install -d $(DEST_RAY)/locale/
 	install -d $(DEST_RAY)/$(_DIR)/
+	install -d $(DEST_RAY)/resources/
 	install -d $(DEST_RAY)/$(PATCHBAY_DIR)/locale/
+	install -d $(DEST_RAY)/$(PATCHBAY_DIR)/resources/
 	install -d $(DESTDIR)/etc/xdg/raysession/client_templates/
 	install -d $(DESTDIR)$(PREFIX)/share/bash-completion/completions/
 	
@@ -167,15 +149,23 @@ install:
 	cp -r session_scripts   $(DEST_RAY)/
 	cp -r data              $(DEST_RAY)/
 
+	# Copy resources
+	cp -r resources/app_icons $(DEST_RAY)/resources/
+	cp -r resources/fonts     $(DEST_RAY)/resources/
+	cp -r resources/main_icon $(DEST_RAY)/resources/
+	cp -r resources/scalables $(DEST_RAY)/resources/
+
 	# Copy completion script
 	cp src/completion/ray_completion.sh $(DESTDIR)$(PREFIX)/share/bash-completion/completions/ray_control
 	sed -i "s|XXX_PYCOMPLETION_XXX|$(PREFIX)/share/raysession/src/completion|" \
 		$(DESTDIR)$(PREFIX)/share/bash-completion/completions/ray_control
 
-	# Copy patchbay themes, manual and lib
+	# Copy patchbay themes, manual, resources and lib
 	cp -r HoustonPatchbay/themes $(DEST_RAY)/$(PATCHBAY_DIR)/
 	cp -r HoustonPatchbay/manual $(DEST_RAY)/$(PATCHBAY_DIR)/
 	cp -r HoustonPatchbay/source $(DEST_RAY)/$(PATCHBAY_DIR)/
+	cp -r HoustonPatchbay/resources/fonts $(DEST_RAY)/$(PATCHBAY_DIR)/resources/
+	cp -r HoustonPatchbay/resources/scalables $(DEST_RAY)/$(PATCHBAY_DIR)/resources/
 
 	# Copy Desktop Files
 	install -m 644 data/share/applications/*.desktop \

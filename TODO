@@ -37,3 +37,12 @@ _re_order_clients osp
 TRACKS:
     Attention PortTypesViewFlag et _missing_
     apply_only_diffs
+
+
+Revoir le zoom widget en theme light
+absence icon favorites
+re-orga dossier resources:
+    Séparer les resources copiées des autres,
+        ou compiler les resources en pickle
+
+suppr les modules test inutiles
