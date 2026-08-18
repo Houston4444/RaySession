@@ -1,5 +1,5 @@
 import logging
-from typing import Union, Callable
+from typing import Callable
 import os
 import signal
 import sys
@@ -8,6 +8,7 @@ from osclib import Address
 from patcher.patcher import Patcher
 from patcher.bases import EventHandler
 from nsm_client import NsmServer
+from proc_name import set_proc_name
 
 from .check_internal import IS_INTERNAL
 from .engine import Engine
@@ -29,18 +30,22 @@ def internal_prepare(
     '''Prepare the client, return an integer in case of error,
     otherwise the start_func and the stop_func.'''
     # set log level with exec arguments
+    continuous_save = True
+    
     if len(func_args) > 0:
         log_dict = {logging.INFO: '', logging.DEBUG: ''}
         read_level = 0
 
         for func_arg in func_args:
-            match func_args:
+            match func_arg:
                 case '-log'|'--log':
                     read_level = logging.INFO
                     continue
                 case '-dbg'|'--dbg':
                     read_level = logging.DEBUG
                     continue
+                case '--no-continuous-save'|'-ncs':
+                    continuous_save = False
             
             if read_level == 0:
                 continue
@@ -69,12 +74,13 @@ def internal_prepare(
     if not engine.init():
         return 2
 
-    nsm_server = NsmServer(
-        daemon_address, total_fake=IS_INTERNAL)
-    patcher = Patcher(engine, nsm_server, _logger)
+    nsm_server = NsmServer(daemon_address, total_fake=IS_INTERNAL)
+    patcher = Patcher(engine, nsm_server, _logger,
+                      continuous_save=continuous_save)
     return patcher.run_loop, patcher.stop, True, None
 
 def run():
+    set_proc_name('ray-jackpatch')
     ret = internal_prepare(*sys.argv[1:], nsm_url=os.getenv('NSM_URL', ''))
     if isinstance(ret, int):
         sys.exit(ret)

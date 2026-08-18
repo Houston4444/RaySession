@@ -124,8 +124,7 @@ class MethodsAdder:
             if len(types) != len(args):
                 continue
             
-            for i in range(len(types)):
-                c = types[i]
+            for i, c in enumerate(types):
                 a = args[i]
                 if isinstance(a, tuple) and len(a) == 2:
                     if a[0] != c:

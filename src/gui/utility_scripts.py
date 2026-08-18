@@ -14,9 +14,8 @@ from qtpy.QtCore import QProcess, QProcessEnvironment
 import ray
 
 # Local imports
+from dialogs import ChildDialog, OpenSessionDialog
 from gui_tools import CommandLineArgs, RS
-from open_session_dialog import OpenSessionDialog
-from child_dialogs import ChildDialog
 
 # Import UIs made with Qt-Designer
 import ui.ardour_convert
@@ -37,7 +36,7 @@ class ArdourConversionDialog(ChildDialog):
         self.ui = ui.ardour_convert.Ui_Dialog()
         self.ui.setupUi(self)
         
-    def not_again_value(self)->bool:
+    def not_again_value(self) -> bool:
         return self.ui.checkBoxNotAgain.isChecked()
 
 
@@ -113,7 +112,7 @@ class RayToNsmDialog(ChildDialog):
     def _set_on_choose_current_session(self):
         self.choose_current_session = True
     
-    def get_check_arguments(self)->list:
+    def get_check_arguments(self) -> list[str]:
         if self.ui.checkBoxJackPatch.isChecked():
             return ['--replace-jackpatch']
         
@@ -135,25 +134,22 @@ class UtilityScriptLauncher:
         terminal = ''
 
         # make prior most appropriate terminal
-        if current_desktop == 'GNOME':
-            pass
-
-        elif current_desktop == 'KDE':
-            terminals.remove('konsole')
-            terminals.insert(0, 'konsole')
-
-        elif current_desktop == 'MATE':
-            terminals.remove('mate-terminal')
-            terminals.insert(0, 'mate-terminal')
-
-        elif current_desktop == 'XFCE':
-            terminals.remove('xfce4-terminal')
-            terminals.insert(0, 'xfce4-terminal')
-            terminals.insert(0, 'xfce-terminal')
-
-        elif current_desktop == 'LXDE':
-            terminals.remove('lxterminal')
-            terminals.insert(0, 'lxterminal')
+        match current_desktop:
+            case 'GNOME':
+                pass
+            case 'KDE':
+                terminals.remove('konsole')
+                terminals.insert(0, 'konsole')
+            case 'MATE':
+                terminals.remove('mate-terminal')
+                terminals.insert(0, 'mate-terminal')
+            case 'XFCE':
+                terminals.remove('xfce4-terminal')
+                terminals.insert(0, 'xfce4-terminal')
+                terminals.insert(0, 'xfce-terminal')
+            case 'LXDE':
+                terminals.remove('lxterminal')
+                terminals.insert(0, 'lxterminal')
 
         # search executable for terminals
         for term in terminals:

@@ -5,10 +5,25 @@
 
 
 CLEAR_ABSENTS_IN_VIEW = '/ray/server/patchbay/clear_absents_in_view'
+' (arg types: s)'
+
 SAVE_GROUP_POSITION = '/ray/server/patchbay/save_group_position'
+' (arg types: iisiiiiiiiiiiiii)'
+
 SAVE_GROUP_CUSTOM_NAME = '/ray/server/patchbay/save_group_custom_name'
+' (arg types: sssi)'
+
 SAVE_PORT_CUSTOM_NAME = '/ray/server/patchbay/save_port_custom_name'
+' (arg types: sssi)'
+
 SAVE_PORTGROUP = '/ray/server/patchbay/save_portgroup'
+' (arg types: siiiss*)'
+
 VIEW_NUMBER_CHANGED = '/ray/server/patchbay/view_number_changed'
+' (arg types: ii)'
+
 VIEW_PTV_CHANGED = '/ray/server/patchbay/view_ptv_changed'
+' (arg types: ii)'
+
 VIEWS_CHANGED = '/ray/server/patchbay/views_changed'
+' (arg types: s)'

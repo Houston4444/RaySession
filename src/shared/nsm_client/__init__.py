@@ -34,6 +34,7 @@ class NsmCallback(IntEnum):
     MONITOR_CLIENT_STATE = 6
     MONITOR_CLIENT_EVENT = 7
     MONITOR_CLIENT_UPDATED = 8
+    PATCH_KEYWORD_CHANGED = 9
 
 
 class NsmServer(BunServer):
@@ -104,6 +105,10 @@ class NsmServer(BunServer):
     def _nsm_client_monitor_client_properties(self, osp: OscPack):
         self._exec_callback(NsmCallback.MONITOR_CLIENT_UPDATED, *osp.args)
     
+    @bun_manage(nsm.client.PATCH_KEYWORD, 's')
+    def _nsm_client_patch_keyword(self, osp: OscPack):
+        self._exec_callback(NsmCallback.PATCH_KEYWORD_CHANGED, *osp.args)
+    
     def set_callback(self, on_event: NsmCallback, func: Callable):
         self._callbacks[on_event] = func
 
@@ -150,3 +155,7 @@ class NsmServer(BunServer):
     def send_monitor_reset(self):
         if ':monitor:' in self._server_capabilities:
             self._send_to_daemon(nsm.server.MONITOR_RESET)
+
+    def send_message(self, priority: int, message: str):
+        # TODO check ':message:' capability
+        self._send_to_daemon(nsm.client.MESSAGE, priority, message)

@@ -1,9 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!DOCTYPE RAYSESSION>
-<RAYSESSION VERSION='0.17.0' name='withJACKPATCH'>
-  <Clients>
-    <client protocol="Internal" id="patch" executable="ray-jackpatch" name="JACK Patch Memory" prefix_mode="1" launched="1" icon="curve-connector"/>
-  </Clients>
-  <RemovedClients>
-  </RemovedClients>
-</RAYSESSION>

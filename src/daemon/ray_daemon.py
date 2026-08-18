@@ -50,12 +50,11 @@ def signal_handler(sig, frame):
         session.terminate()
 
 
-# if __name__ == '__main__':
 if True:
     # set logger handlers
     _log_handler = LogStreamHandler()
     _log_handler.setFormatter(logging.Formatter(
-        f"%(levelname)s:%(name)s - %(message)s"))
+        f"%(levelname)s:%(name)s line %(lineno)d - %(message)s"))
     _logger.addHandler(_log_handler)
     
     # add RaySession/src/bin to $PATH
@@ -154,16 +153,16 @@ if True:
                             gui_pid=CommandLineArgs.gui_pid,
                             tcp_addr=CommandLineArgs.gui_tcp_url)        
 
-    # announce to ray_control if launched from it.
-    if CommandLineArgs.control_url:
-        server.announce_controller(CommandLineArgs.control_url)
-
     if server.jack_export_naming & Naming.CUSTOM:
         patchbay_dmn_mng.start()
 
     # create or update multi_daemon_file in /tmp
     multi_daemon_file.init(session, server)    
     multi_daemon_file.update()
+
+    # announce to ray_control if launched from it.
+    if CommandLineArgs.control_url:
+        server.announce_controller(CommandLineArgs.control_url)
 
     # clean bookmarks created by crashed daemons
     session.bookmarker.clean(multi_daemon_file.get_all_session_paths())

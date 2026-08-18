@@ -1,0 +1,122 @@
+# Imports from standard library
+from typing import TYPE_CHECKING
+
+# third party imports
+from qtpy.QtCore import QCoreApplication
+
+# Imports from src/shared
+from osclib import OscPack
+import ray
+
+# Local imports
+from daemon_tools import highlight_text
+
+from .session_op import SessionOp
+
+if TYPE_CHECKING:
+    from session import Session
+
+
+_translate = QCoreApplication.translate
+
+
+class Save(SessionOp):
+    def __init__(self, session: 'Session',
+                 outing=False, save_clients=True):
+        super().__init__(session)
+        self.script_step = 'save'
+        self.outing = outing
+        self.save_clients = save_clients
+        self.routine = [self.save_the_clients, self.save_the_session]
+
+    def start_from_script(self, script_osp: OscPack):
+        if 'without_clients' in script_osp.args:
+            self.outing = False
+            self.save_clients = False
+        self.start()
+
+    def save_the_clients(self):
+        session = self.session
+
+        if session.path is None:
+            session.next_session_op()
+            return
+
+        if self.outing:
+            session.set_server_status(ray.ServerStatus.OUT_SAVE)
+        else:
+            session.set_server_status(ray.ServerStatus.SAVE)
+
+        session.send_gui_message(
+            _translate('GUIMSG', '-- Saving session %s --')
+                % highlight_text(session.short_path_name))
+
+        if self.save_clients:
+            for client in session.clients:
+                if client.can_save_now():
+                    session.expected_clients.append(client)
+                client.save()
+
+            if session.expected_clients:
+                if len(session.expected_clients) == 1:
+                    session.send_gui_message(
+                        _translate('GUIMSG', 'waiting for %s to save...')
+                            % session.expected_clients[0].gui_msg_style)
+                else:
+                    session.send_gui_message(
+                        _translate('GUIMSG',
+                                   'waiting for %i clients to save...')
+                            % len(session.expected_clients))
+
+        self.next(ray.WaitFor.REPLY, 10000)
+
+    def save_the_session(self):
+        session = self.session
+        session.clean_expected()
+
+        if self.save_clients and self.outing:
+            for client in session.clients:
+                if client.has_error():
+                    self.error(ray.Err.GENERAL_ERROR,
+                               'Some clients could not save')
+                    return
+
+        if session.path is None:
+            session.next_session_op()
+            return
+
+        err = session.save_session_file()
+        if err:
+            session.message('Save session failed')
+            m =  _translate(
+                    'GUIMSG',
+                    "Can't save session, session file is unwriteable !")
+            session.send_gui_message(m)
+            self.error(ray.Err.CREATE_FAILED, m)
+            return
+
+        session.canvas_saver.save_json_session_canvas(session.path)
+
+        full_notes_path = session.path / ray.NOTES_PATH
+
+        if session.notes:
+            try:
+                with open(full_notes_path, 'w') as notes_file:
+                    notes_file.write(session.notes)
+            except:
+                session.message(f'unable to save notes in {full_notes_path}')
+
+        elif full_notes_path.is_file():
+            try:
+                full_notes_path.unlink()
+            except:
+                session.message(f'unable to remove {full_notes_path}')
+
+        session.send_gui_message(
+            _translate('GUIMSG', "Session '%s' saved.")
+                % session.short_path_name)
+        session.message(f'Session {session.short_path_name} saved.')
+
+        self.next()
+
+        

@@ -148,6 +148,7 @@ class RS:
                     fav_dict.get('factory'),
                     display_name))
 
+
 class TemplateRoots:
     net_session_name = ".ray-net-session-templates"
     factory_sessions = get_code_root() / 'session_templates'

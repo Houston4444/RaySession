@@ -59,7 +59,7 @@ import resources_rc
 # # import raysession
 # import resources_rc
 # import snapshots_dialog
-# import surclassed_widgets
+# import promoted_widgets
 # import utility_scripts
 
 set_proc_name('ray_foot_mem')

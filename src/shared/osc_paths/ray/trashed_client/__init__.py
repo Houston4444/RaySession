@@ -5,5 +5,10 @@
 
 
 REMOVE_DEFINITELY = '/ray/trashed_client/remove_definitely'
+' (arg types: s)'
+
 REMOVE_KEEP_FILES = '/ray/trashed_client/remove_keep_files'
+' (arg types: s)'
+
 RESTORE = '/ray/trashed_client/restore'
+' (arg types: s)'

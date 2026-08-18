@@ -84,6 +84,7 @@ METHODS_DICT = {
     r.client.CHANGE_ADVANCED_PROPERTIES: 'ssisi',
     r.client.CHANGE_ID: 'ss',
     r.client.FULL_RENAME: 'ss',
+    r.client.SWITCH_ALTERNATIVE: 'ss',
     r.client.GET_CUSTOM_DATA: 'ss',
     r.client.GET_DESCRIPTION: 's',
     r.client.GET_PID: 's',
@@ -341,7 +342,7 @@ class ClientCommunicating(BunServerThread):
                 continue
 
             if (client.protocol is not ray.Protocol.NSM
-                    or not client.is_running()):
+                    or not client.is_running):
                 continue
 
             if not are_same_osc_port(client.addr, osp.src_addr):
@@ -403,8 +404,11 @@ class ClientCommunicating(BunServerThread):
         if not client:
             return False
 
+        osp_args: tuple[int, str] = osp.args # type:ignore 
+        priority, message = osp_args
+
         self.send_gui(rg.client.MESSAGE,
-                      client.client_id, osp.args[0], osp.args[1])
+                      client.client_id, priority, message)
 
     @validator(nsm.client.GUI_IS_HIDDEN, '')
     def _nsm_client_gui_is_hidden(self, osp: OscPack):
@@ -504,6 +508,11 @@ class OscServerThread(ClientCommunicating):
         self.internal_mode = ray.InternalMode.from_str(
             RS.settings.value(
                 'daemon/internal_mode', 'FOLLOW_PROTOCOL', type=str))
+
+        self.patcher_keyword = ''
+        '''This keyword can be used by patchers (ray-jackpatch, ray-alsapatch)
+        to switch scenario depending on their rules.
+        User can set it with `ray_control set_patch_keyword KEYWORD`.'''
 
         self.client_templates_database = {
             'factory': [], 'user': []}
@@ -680,17 +689,15 @@ class OscServerThread(ClientCommunicating):
 
         pathlist = path.split(':')
         for pathdir in pathlist:
-            if os.path.isdir(pathdir):
-                listexe = os.listdir(pathdir)
-                for exe in listexe:
-                    fullexe = pathdir + '/' + exe
-
-                    if (exe not in exec_set
-                            and os.path.isfile(fullexe)
-                            and os.access(fullexe, os.X_OK)):
-                        exec_set.add(exe)
-                        tmp_exec_list.append(exe)
-                        n += len(exe)
+            path_dir = Path(pathdir)
+            if path_dir.is_dir():
+                for exe in path_dir.iterdir():
+                    if (exe.name not in exec_set
+                            and exe.is_file()
+                            and os.access(exe, os.X_OK)):
+                        exec_set.add(exe.name)
+                        tmp_exec_list.append(exe.name)
+                        n += len(exe.name)
 
                         if n >= 20000:
                             self.send(*osp.reply(), *tmp_exec_list)
@@ -699,6 +706,7 @@ class OscServerThread(ClientCommunicating):
 
         if tmp_exec_list:
             self.send(*osp.reply(), *tmp_exec_list)
+        self.send(*osp.reply())
 
     @directos(r.server.LIST_SESSION_TEMPLATES, '')
     def _srv_list_session_templates(self, osp: OscPack):
@@ -726,47 +734,6 @@ class OscServerThread(ClientCommunicating):
         template_name: str = osp.args[0] # type:ignore
         templates_root = TemplateRoots.user_clients
         templates_file = templates_root / 'client_templates.xml'
-
-        if not templates_file.is_file():
-            self.send(*osp.error(), ray.Err.NO_SUCH_FILE,
-                      "file %s is missing !" % templates_file)
-            return False
-
-        if not os.access(templates_file, os.W_OK):
-            self.send(*osp.error(), ray.Err.NO_SUCH_FILE,
-                      "file %s in unwriteable !" % templates_file)
-            return False
-
-        tree = ET.parse(templates_file)
-        root = tree.getroot()
-
-        if root.tag != 'RAY-CLIENT-TEMPLATES':
-            self.send(*osp.error(), ray.Err.BAD_PROJECT,
-                      "file %s is not write correctly !" % templates_file)
-            return False
-
-        xroot = XmlElement(root)
-
-        for c in xroot.iter():
-            if c.el.tag != 'Client-Template':
-                continue
-            
-            if c.string('template-name') == template_name:
-                break
-        else:
-            self.send(*osp.error(), ray.Err.NO_SUCH_FILE,
-                      "No template \"%s\" to remove !" % template_name)
-            return False
-        
-        root.remove(c.el)
-        
-        try:
-            tree.write(templates_file)
-        except BaseException as e:
-            _logger.error(str(e))
-            self.send(*osp.error(), ray.Err.CREATE_FAILED,
-                      "Impossible to rewrite user client templates xml file")
-            return False
         
         templates_dir = templates_root / template_name
         if templates_dir.is_dir():
@@ -776,7 +743,43 @@ class OscServerThread(ClientCommunicating):
                 _logger.error(str(e))
                 self.send(*osp.error(), ray.Err.CREATE_FAILED,
                       "Failed to remove the folder %s" % str(templates_dir))
-                return False
+                return
+
+        if templates_file.is_file():
+            try:
+                tree = ET.parse(templates_file)
+                root = tree.getroot()
+                assert root.tag == 'RAY-CLIENT-TEMPLATES'
+            except:
+                self.send(
+                    *osp.error(), ray.Err.BAD_PROJECT,
+                    f"file {templates_file} is not written correctly !")
+                return
+
+            xroot = XmlElement(root)
+
+            for c in xroot.iter():
+                if c.el.tag != 'Client-Template':
+                    continue
+                
+                if c.string('template-name') == template_name:
+                    break
+            else:
+                # template does not exist in xml file, no problem
+                self.send(*osp.reply(),
+                  f'template "{template_name}" removed.')
+                return
+            
+            root.remove(c.el)
+            
+            try:
+                tree.write(templates_file)
+            except BaseException as e:
+                _logger.error(str(e))
+                self.send(
+                    *osp.error(), ray.Err.CREATE_FAILED,
+                    "Impossible to rewrite user client templates xml file")
+                return
 
         self.send(*osp.reply(),
                   f'template "{template_name}" removed.')
@@ -967,7 +970,7 @@ class OscServerThread(ClientCommunicating):
 
         self.send_gui(rg.server.AUTO_EXPORT_CUSTOM_NAMES,
                       self.jack_export_naming.value)
-        self.send(*osp.reply(), 'auto-export pretty_names changed')
+        self.send(*osp.reply(), 'auto-export custom_names changed')
         
         # start patchbay daemon in main thread if it is not started yet
         return not patchbay_dmn_mng.is_running()
@@ -1006,6 +1009,16 @@ class OscServerThread(ClientCommunicating):
         # start patchbay daemon in main thread if it is not started yet
         return bool(
             patchbay_dmn_mng.state() is not patchbay_dmn_mng.State.LAUNCHED)
+
+    @directos(r.server.SET_PATCH_KEYWORD, 's')
+    def _srv_set_patch_keyword(self, osp: OscPack):
+        keyword: str = osp.args[0] # type:ignore
+        self.patcher_keyword = keyword
+        for client in self.session.clients:
+            if client.nsm_active and client.can_patcher:
+                self.send(client.addr, nsm.client.PATCH_KEYWORD, keyword)
+        
+        self.send(*osp.reply(), 'keyword sent')
 
     @validator(r.server.patchbay.SAVE_GROUP_POSITION, 'iiss')
     def _srv_patchbay_save_group_position(self, osp: OscPack):
@@ -1069,7 +1082,7 @@ class OscServerThread(ClientCommunicating):
 
     @validator(r.session.DUPLICATE_ONLY, 'sss')
     def _sess_duplicate_only(self, osp: OscPack):
-        self.send(osp.src_addr, r.net_daemon.DUPLICATE_STATE, 0)
+        self.send(osp.src_addr, r.net_daemon.DUPLICATE_STATE, 0.0)
 
     @validator(r.session.RENAME, 's', no_sess="No session to rename.")
     def _sess_rename(self, osp: OscPack):
@@ -1223,7 +1236,7 @@ class OscServerThread(ClientCommunicating):
                       "and restart operation !")
             return True
 
-        if self.session.steps_order:
+        if self.session.session_ops:
             self.send(*osp.error(), ray.Err.OPERATION_PENDING,
                       "An operation pending.")
             return True

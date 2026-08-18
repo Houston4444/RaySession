@@ -16,8 +16,8 @@ import ray
 import osc_paths.ray as r
 
 # Local imports
+from dialogs import ClientPropertiesDialog
 from gui_server_thread import GuiServerThread
-from client_properties_dialog import ClientPropertiesDialog
 
 if TYPE_CHECKING:
     from gui_session import SignaledSession

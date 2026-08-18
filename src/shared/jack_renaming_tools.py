@@ -1,3 +1,43 @@
+from typing import Iterable, TypeVar
+
+
+T_StrItr = TypeVar('T_StrItr', tuple[str, ...], list[str], set[str])
+
+
+class Renamer:
+    '''Simple class that gives shorter access to public functions
+    of this module.
+    When a NSM client is renamed, it gives shorter code than call
+    same functions with always the same arguments.'''
+    def __init__(self, old_client_id: str, new_client_id: str,
+                 old_jack_name: str, new_jack_name: str):
+        self.old_client_id = old_client_id
+        self.new_client_id = new_client_id
+        self.old_jack_name = old_jack_name
+        self.new_jack_name = new_jack_name
+        
+    def port_belongs(self, port_name: str) -> bool:
+        'does `port_name` belongs to old client'
+        return port_belongs_to_client(port_name, self.old_jack_name)
+    
+    def one_port_belongs(self, port_names: T_StrItr) -> bool:
+        'does at least one port of `port_names` belongs to old client'
+        return one_port_belongs_to_client(port_names, self.old_jack_name)
+    
+    def port_renamed(self, port_name: str) -> str:
+        return port_name_client_replaced(
+            port_name, self.old_jack_name, self.new_jack_name)
+    
+    def ports_renamed(self, port_names: T_StrItr) -> T_StrItr:
+        return port_names_client_replaced(
+            port_names, self.old_jack_name, self.new_jack_name)
+        
+    def group_belongs(self, group_name: str) -> bool:
+        return group_belongs_to_client(group_name, self.old_jack_name)
+    
+    def group_renamed(self, group_name: str) -> str:
+        return group_name_client_replaced(
+            group_name, self.old_jack_name, self.new_jack_name)
 
 
 def group_belongs_to_client(group_name: str, jack_client_name: str):
@@ -44,8 +84,10 @@ def port_belongs_to_client(port_name: str, jack_client_name: str) -> bool:
 
         if bridge == 'a2j':
             search_str = jack_client_name.replace('.', ' ')
-            if group_name == search_str or group_name.startswith(search_str + '/'):
-                jclient_name = group_name.replace(search_str, jack_client_name, 1)
+            if (group_name == search_str
+                    or group_name.startswith(search_str + '/')):
+                jclient_name = group_name.replace(
+                    search_str, jack_client_name, 1)
         else:
             jclient_name = group_name
 
@@ -76,3 +118,42 @@ def port_name_client_replaced(
                 return "Midi-Bridge:" + ub_port_name
     
     return port_name
+
+def group_name_client_replaced(
+        group_name: str, old_client_jack_name: str,
+        new_client_jack_name: str) -> str:
+    if not group_belongs_to_client(group_name, old_client_jack_name):
+        return group_name
+    
+    return group_name.replace(old_client_jack_name, new_client_jack_name)
+
+def pattern_belongs_to_client(patt: str, jack_client_name: str) -> bool:
+    if ':' not in patt:
+        return False
+    
+    cl = patt.partition(':')[0]
+    for spec in r'^$*+?{}[]|()\\':
+        if spec in cl:
+            return False
+    
+    return group_belongs_to_client(
+        cl.replace('\\.', '.', 1), jack_client_name)
+
+def one_port_belongs_to_client(
+        ports: Iterable[str], jack_client_name: str) -> bool:
+    for port in ports:
+        if port_belongs_to_client(port, jack_client_name):
+            return True
+    return False
+
+def port_names_client_replaced(
+        ports: T_StrItr,
+        ex_client_name: str, new_client_name: str) -> T_StrItr:
+    out_list = [port_name_client_replaced(p, ex_client_name, new_client_name)
+                for p in ports]
+
+    if isinstance(ports, list):
+        return out_list
+    if isinstance(ports, tuple):
+        return tuple(out_list)
+    return set(out_list)

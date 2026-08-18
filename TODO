@@ -45,3 +45,87 @@ re-orga dossier resources:
         ou compiler les resources en pickle
 
 suppr les modules test inutiles
+YAML:
+    !! Attention pas dans la standard lib
+    patch_rewriter: écrire tout en YAML dans tous les cas
+    rm .xml quand yaml est écrit
+
+    nsm_brothers -> nsm_clients ?
+        events in internal jackpatch and alsapatch
+    forbidden_connections -> disconnections ?
+
+    appliquer modifs du __init__ du ray-jackpatch à l'alsapatch
+
+    timer avec pending_connection (si jamais la connexion n'arrive pas)
+
+    un beau YAML (saut de ligne entre les sections)
+    .bak si changement depuis ouverture
+    docu
+
+scenarios:
+    inclure $system ou aliases
+    rules (present_clients) (acccept pattern) (nsm_clients)
+
+    client_registration: voir jack_engine_remote et alsa.
+        ajouter les méthodes à la GUI pour éviter msgs inconnus
+    # revoir les déconnexions au démarrage (+option ou config)
+    # refaire les changements de nom de client au démarrage
+    # Attention aux types des ports de connection audio/midi
+    # Attention au renommage des ports
+    # ruamel, réécrire les commentaires sur connections
+    # bug: les connexions nouvelles ne sont pas reconnectés tant qu'on redémarre pas le patch
+        
+
+    Séparer en plusieurs fichiers:
+    - connections
+    - graph
+    - scenarios
+    - equivalences
+
+    # voir comportement à l'arrêt (retour aux connections d'origine)
+    # scenario par client NSM
+    # scenario par clé str envoyée
+    # removed conns from NSM client removed
+
+    Une grosse docu.
+
+    client.py reduction du fichier
+    d'abord créer les alternatives de client
+    ensuite voir: 
+        Dans la GUI pour les patchers:
+            permettre de basculer de scenario keyword
+
+restructuration du coeur:
+    Les actions de client viennent s'intercaler dans l'action de session.
+    voir si _translate peut être récupéré ailleurs (une ligne d'import évitée)
+
+
+alternatives:
+    problèmes à voir:
+        démon:
+            <!-- interdiction de nouveau client_id avec l'id d'une alternative -->
+            <!-- prend tous les attributs du client sauf ceux spécifiés -->
+            <!-- monitor: client_id_switch doit pouvoir gérer ça -->
+            <!-- sauvegarde: au changement d'alternative, l'original devient alternative -->
+            attention aux links_dir de Carla !
+            envois GUI les alternative_groups
+            copier les connexions (optionel) lors de la création
+        GUI:
+            menu contextuel
+            fenêtre client_properties, comment faire ?
+        ray_control:
+            basculer, éventuellement créer l'alternative si possible
+
+Attention: client_tools.rename_files n'est jamais sécurisé
+        
+When you create a new alternative, the current client is copied and placed in the trash, and the copied client is loaded. If you want to go back to the previous client, simply click on the client icon, select 'Alternatives' and select the previous client.
+
+not_again_value très récurrent
+JackConfigInfo et SessionScriptInfo très similaires
+
+PreviewFrame: vraiment utile ?
+
+
+
+
+

@@ -37,7 +37,6 @@ class PrefixMode(Enum):
                     return PrefixMode.SESSION_NAME
                 case 'custom':
                     return PrefixMode.CUSTOM
-                
         return PrefixMode.CLIENT_NAME
 
 
@@ -126,12 +125,13 @@ class Protocol(Enum):
     @staticmethod
     def from_string(string: str) -> 'Protocol':
         lo_str = string.lower()
-        if lo_str in ('ray_hack', 'ray-hack'):
-            return Protocol.RAY_HACK
-        if lo_str in ('ray_net', 'ray-net'):
-            return Protocol.RAY_NET
-        if lo_str == 'internal':
-            return Protocol.INTERNAL
+        match lo_str:
+            case 'ray_hack'|'ray-hack':
+                return Protocol.RAY_HACK
+            case 'ray_net'|'ray-net':
+                return Protocol.RAY_NET
+            case 'internal':
+                return Protocol.INTERNAL
         return Protocol.NSM
 
 
@@ -178,6 +178,7 @@ class Err(IntEnum):
     ABORT_ORDERED = -19
     COPY_ABORTED = -20
     SESSION_IN_SESSION_DIR = -21
+    GIT_ERROR = -22
     # check control/osc_server.py in case of changes !!!
 
 
@@ -199,6 +200,8 @@ class WaitFor(Enum):
     DUPLICATE_FINISH = 6
     SCRIPT_QUIT = 7
     PATCHBAY_QUIT = 8
+    SNAPSHOT_ADD = 9
+    FILE_COPY = 10
 
 
 class Template(Enum):
@@ -274,7 +277,7 @@ class Favorite:
 
 
 def version_to_tuple(version_str: str) -> tuple[int, int, int]:
-    version_list = []
+    version_list = list[int]()
     for c in version_str.split('.'):
         if not c.isdigit():
             return (0, 0, 0)
@@ -374,7 +377,7 @@ def get_window_manager() -> WindowManager:
 class ClientData:
     client_id = ''
     protocol = Protocol.NSM
-    executable_path = ''
+    executable = ''
     arguments = ''
     pre_env = ''
     name = ''
@@ -404,7 +407,7 @@ class ClientData:
     @staticmethod
     def spread_client(client: 'ClientData') -> tuple:
         return (client.client_id, client.protocol.value,
-                client.executable_path, client.arguments, client.pre_env,
+                client.executable, client.arguments, client.pre_env,
                 client.name, client.prefix_mode.value, client.custom_prefix,
                 client.desktop_file, client.label, client.description,
                 client.icon,
@@ -431,7 +434,7 @@ class ClientData:
                jack_client_name, jack_naming,
                in_terminal,
                secure=False):
-        self.executable_path = str(executable)
+        self.executable = str(executable)
         self.arguments = str(arguments)
         self.pre_env = str(pre_env)
 
@@ -456,7 +459,7 @@ class ClientData:
         if name:
             self.name = str(name)
         else:
-            self.name = os.path.basename(self.executable_path)
+            self.name = os.path.basename(self.executable)
         self.prefix_mode = PrefixMode(prefix_mode)
 
         if self.prefix_mode is PrefixMode.CUSTOM:
@@ -480,7 +483,7 @@ class ClientData:
         if (self.protocol is not Protocol.RAY_HACK
                 and self.name):
             return self.name
-        return self.executable_path
+        return self.executable
     
     @property
     def is_ray_hack(self) -> bool:
@@ -535,7 +538,7 @@ class RayNet:
     daemon_url = ''
     session_root = ''
     session_template = ''
-    duplicate_state = -1
+    duplicate_state = -1.0
     running_daemon_url = ''
     running_session_root =''
     ARG_TYPES = 'sss'
@@ -547,10 +550,10 @@ class RayNet:
         return ray_net
 
     def update(self, daemon_url, session_root, session_template):
-        self.daemon_url = daemon_url
-        self.session_root = session_root
-        self.session_template = session_template
+        self.daemon_url = str(daemon_url)
+        self.session_root = str(session_root)
+        self.session_template = str(session_template)
 
-    def spread(self)->tuple:
+    def spread(self) -> tuple:
         return (self.daemon_url, self.session_root, self.session_template)
 

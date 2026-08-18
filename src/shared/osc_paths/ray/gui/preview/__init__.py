@@ -6,6 +6,11 @@ from . import client
 
 CLEAR = '/ray/gui/preview/clear'
 NOTES = '/ray/gui/preview/notes'
+' (arg types: s)'
+
 SESSION_SIZE = '/ray/gui/preview/session_size'
 SNAPSHOT = '/ray/gui/preview/snapshot'
+' (arg types: s)'
+
 STATE = '/ray/gui/preview/state'
+' (arg types: i)'

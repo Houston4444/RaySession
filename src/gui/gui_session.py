@@ -51,8 +51,9 @@ def manage(path: str, types: OscMulTypes):
 
 class Session:
     def __init__(self):
-        self.client_list = list[Client]()
+        self.clients = list[Client]()
         self.trashed_clients = list[TrashedClient]()
+        self.alternative_groups = list[set[str]]()
         self.favorite_list = list[ray.Favorite]()
         self.recent_sessions = list[str]()
         self.name = ''
@@ -86,8 +87,8 @@ class Session:
 
         return self.path
 
-    def get_client(self, client_id: str) -> Optional[Client]:
-        for client in self.client_list:
+    def get_client(self, client_id: str) -> Client | None:
+        for client in self.clients:
             if client.client_id == client_id:
                 return client
 
@@ -182,7 +183,7 @@ class SignaledSession(Session):
 
     def set_daemon_options(self, options: ray.Option):
         self.main_win.set_daemon_options(options)
-        for client in self.client_list:
+        for client in self.clients:
             client.widget.set_daemon_options(options)
 
     def _osc_receive(self, osp: OscPack):
@@ -199,7 +200,7 @@ class SignaledSession(Session):
                         r.session.ADD_EXECUTABLE):
             client_id: str = args[1]
 
-            for client in self.client_list:
+            for client in self.clients:
                 if (client.client_id == client_id
                         and client.protocol is ray.Protocol.RAY_HACK):
                     client.show_properties_dialog(second_tab=True)
@@ -321,33 +322,59 @@ class SignaledSession(Session):
     @manage(rg.session.SORT_CLIENTS, 's*')
     def _session_sort_clients(self, osp: OscPack):
         args: list[str] = osp.args # type:ignore
+        if args == [c.client_id for c in self.clients]:
+            # no change between existing and new order
+            return
+
+        if len(args) != len(self.clients):
+            _logger.warning(f'{osp.path} inconsistent number of clients, '
+                            f'{len(args)} for {len(self.clients)} clients')
+            return
+
         new_client_list = list[Client]()
 
         for client_id in args:
             client = self.get_client(client_id)
-
             if not client:
+                _logger.warning(f'{osp.path}: no present client {client_id}')
                 return
 
             new_client_list.append(client)
 
-        if args == [c.client_id for c in self.client_list]:
-            # no change between existing and new order
-            return
+        self.clients.clear()
+        # old bug seems to be fixed in Qt, 
+        # see MainWindow.re_create_list_widget.
+        # self.main_win.re_create_list_widget()
+        self.main_win.ui.listWidget.clear()
 
-        self.client_list.clear()
-        self.main_win.re_create_list_widget()
-
-        self.client_list = new_client_list
-        for client in self.client_list:
+        self.clients = new_client_list
+        for client in self.clients:
             client.re_create_widget()
             client.widget.update_status(client.status)
+
+    @manage(rg.session.ALTERNATIVE_GROUPS, 's*')
+    def _session_alternative_groups(self, osp: OscPack):
+        args: list[str] = osp.args # type:ignore
+        self.alternative_groups.clear()
+
+        current_set = set[str]()
+        for arg in args:
+            if arg == '':
+                self.alternative_groups.append(current_set.copy())
+                current_set.clear()
+                continue
+            current_set.add(arg)
+            
+        if current_set:
+            self.alternative_groups.append(current_set.copy())
+            
+        print('alternative_groups', self.alternative_groups)
 
     @manage(rg.client.NEW, ray.ClientData.ARG_TYPES)
     def _client_new(self, osp: OscPack):
         client = Client(self, *osp.args[:2]) # type:ignore
         client.update_properties(*osp.args)
-        self.client_list.append(client)
+        self.clients.append(client)
 
     @manage(rg.client.UPDATE, ray.ClientData.ARG_TYPES)
     def _client_update(self, osp: OscPack):
@@ -374,7 +401,7 @@ class SignaledSession(Session):
     def _client_switch(self, osp: OscPack):
         args: tuple[str, str] = osp.args # type:ignore
         old_id, new_id = args
-        for client in self.client_list:
+        for client in self.clients:
             if client.client_id == old_id:
                 client.client_id = new_id
                 break
@@ -394,7 +421,7 @@ class SignaledSession(Session):
         if client.status is ray.ClientStatus.REMOVED:
             self.main_win.remove_client(client_id)
             client.close_properties_dialog()
-            self.client_list.remove(client)
+            self.clients.remove(client)
             del client
 
         self.main_win.client_status_changed(client_id, status)
@@ -434,6 +461,12 @@ class SignaledSession(Session):
         client = self.get_client(client_id)
         if client:
             client.allow_kill()
+
+    @manage(rg.client.MESSAGE, 'sis')
+    def _client_message(self, osp: OscPack):
+        osp_args: tuple[str, int, str] = osp.args # type:ignore
+        client_id, priority, message = osp_args
+        self.main_win.print_message(f'{client_id}: {message}')
 
     @manage(rg.trash.ADD, ray.ClientData.ARG_TYPES)
     def _trash_add(self, osp: OscPack):

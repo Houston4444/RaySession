@@ -1,8 +1,9 @@
 
 # Imports from standard library
+import logging
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Literal, Optional
 
 # third party imports
 from qtpy.QtCore import QProcess, QProcessEnvironment, QCoreApplication
@@ -17,10 +18,11 @@ from daemon_tools import Terminal, highlight_text
 from server_sender import ServerSender
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
     from client import Client
 
 
+_logger = logging.getLogger(__name__)
 _translate = QCoreApplication.translate
 
 
@@ -101,12 +103,14 @@ class StepScripter(Scripter):
     Scripts are executable shell scripts in ray-scripts/
     (load.sh, save.sh, close.sh).'''
     
-    def __init__(self, session: 'OperatingSession'):
+    def __init__(self, session: 'Session'):
         Scripter.__init__(self)
         self.session = session
-        self.is_dummy = self.session.is_dummy
-        self._step_str = ''
-        self._stepper_has_call = False
+        self.step = ''
+        "Can be `load`, `save` or `close`"
+        self.called_run_step = False
+        """True if the script called `ray_control run_step` since the start
+        of its execution."""
 
     def _get_script_dirs(self, spath: Path) -> tuple[Path, Path]:
         base_path = spath
@@ -129,12 +133,13 @@ class StepScripter(Scripter):
     def _process_started(self):
         pass
 
-    def _process_finished(self, exit_code, exit_status):
+    def _process_finished(self, exit_code: int, exit_status):
+        _logger.debug(f'step scripter {self.step} process finished')
         Scripter._process_finished(self, exit_code, exit_status)
         self.session.step_scripter_finished()
-        self._stepper_has_call = False
+        self.called_run_step = False
 
-    def start(self, step_str: str, arguments, src_addr=None, src_path='') -> bool:
+    def start(self, step: str) -> bool:
         if self.is_running():
             return False
 
@@ -146,16 +151,13 @@ class StepScripter(Scripter):
         future_scripts_dir, future_parent_scripts_dir = \
             self._get_script_dirs(self.session.future_session_path)
 
-        script_path = scripts_dir / f'{step_str}.sh'
+        script_path = scripts_dir / f'{step}.sh'
         
         if not os.access(script_path, os.X_OK):
             return False
 
-        self._src_addr = src_addr
-        self._src_path = src_path
-
-        self._stepper_has_call = False
-        self._step_str = step_str
+        self.called_run_step = False
+        self.step = step
 
         self.send_gui_message(
             _translate('GUIMSG', '--- Custom step script %s started...')
@@ -173,18 +175,8 @@ class StepScripter(Scripter):
         process_env.insert('RAY_SESSION_PATH', str(self.session.path))
 
         self._process.setProcessEnvironment(process_env)
-        self._process.start(str(script_path), [str(a) for a in arguments])
+        self._process.start(str(script_path), [])
         return True
-
-    def get_step(self) -> str:
-        "script step: 'load', 'save' or 'close'"
-        return self._step_str
-
-    def stepper_has_called(self) -> bool:
-        return self._stepper_has_call
-
-    def set_stepper_has_call(self, call: bool):
-        self._stepper_has_call = call
 
 
 class ClientScripter(Scripter):
@@ -240,7 +232,7 @@ class ClientScripter(Scripter):
         process_env.insert('RAY_CLIENT_SCRIPTS_DIR', str(scripts_dir))
         process_env.insert('RAY_CLIENT_ID', self._client.client_id)
         process_env.insert('RAY_CLIENT_EXECUTABLE',
-                           self._client.executable_path)
+                           self._client.executable)
         process_env.insert('RAY_CLIENT_ARGUMENTS', self._client.arguments)
         self._process.setProcessEnvironment(process_env)
 

@@ -59,7 +59,8 @@ class NsmChild:
                 server_nsm.saveReply()
                 self.wait_for_save = False
 
-    def _open(self, project_path: str, session_name: str, jack_client_name: str):
+    def _open(self, project_path: str, session_name: str,
+              jack_client_name: str):
         self.wait_for_open = True
         self.project_path = project_path
 

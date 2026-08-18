@@ -5,5 +5,10 @@
 
 
 RAY_HACK_UPDATE = '/ray/gui/client_template/ray_hack_update'
+' (arg types: issiiiisi)'
+
 RAY_NET_UPDATE = '/ray/gui/client_template/ray_net_update'
+' (arg types: issss)'
+
 UPDATE = '/ray/gui/client_template/update'
+' (arg types: isssissssissssssisssii)'

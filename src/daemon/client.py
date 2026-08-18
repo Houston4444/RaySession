@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Optional
 # third party imports
 from qtpy.QtCore import (QCoreApplication, QProcess,
                          QProcessEnvironment, QTimer)
+from ruamel.yaml.comments import CommentedMap
 
 # Imports from src/shared
 from osclib import Address, OscPack
@@ -27,27 +28,27 @@ import osc_paths.ray.gui as rg
 import osc_paths.nsm as nsm
 
 # Local imports
+import client_tools
 from server_sender import ServerSender
 from daemon_tools  import (
-    TemplateRoots, Terminal, RS, get_code_root,
-    highlight_text, exec_and_desktops)
+    NoSessionPath, Terminal, RS, get_code_root, exec_and_desktops)
 from signaler import Signaler
 from scripter import ClientScripter
 from internal_client import InternalClient
+from yaml_tools import YamlMap
 
 # only used to identify session functions in the IDE
 # 'Session' is not importable simply because it would be
 # a circular import.
 if TYPE_CHECKING:
-    from .session_operating import OperatingSession
+    from .session import Session
 
 
 class OscSrc(Enum):
     START = 0
     OPEN = 1
     SAVE = 2
-    SAVE_TP = 3
-    STOP = 4
+    STOP = 3
 
 
 NSM_API_VERSION_MAJOR = 1
@@ -67,7 +68,6 @@ class Client(ServerSender, ray.ClientData):
     # can be directly changed by OSC thread
     gui_visible = False
     gui_has_been_visible = False
-    show_gui_ordered = False
     dirty = 0
     progress = 0.0
 
@@ -95,7 +95,7 @@ class Client(ServerSender, ray.ClientData):
 
     last_save_time = 0.00
     last_dirty = 0.00
-    _last_announce_time = 0.00
+    _last_open_time = 0.00
     last_open_duration = 0.00
 
     has_been_started = False
@@ -120,13 +120,13 @@ class Client(ServerSender, ray.ClientData):
     ray_hack: ray.RayHack
     ray_net: ray.RayNet
 
-    def __init__(self, parent_session: 'OperatingSession'):
+    def __init__(self, parent_session: 'Session'):
         ServerSender.__init__(self)
         self.session = parent_session
         self.is_dummy = self.session.is_dummy
 
-        self.custom_data = {}
-        self.custom_tmp_data = {}
+        self.custom_data = dict[str, str]()
+        self.custom_tmp_data = dict[str, str]()
 
         self._process = QProcess()
         self._process.started.connect(self._process_started)
@@ -170,7 +170,7 @@ class Client(ServerSender, ray.ClientData):
     @staticmethod
     def short_client_id(wanted: str) -> str:
         if '_' in wanted:
-            begin, udsc, end = wanted.rpartition('_')
+            begin, _, end = wanted.rpartition('_')
 
             if not end:
                 return wanted
@@ -201,17 +201,16 @@ class Client(ServerSender, ray.ClientData):
         self.set_status(ray.ClientStatus.LAUNCH)
 
         self.send_gui_message(
-            _translate("GUIMSG", "  %s: launched") % self.gui_msg_style())
+            _translate("GUIMSG", "  %s: launched") % self.gui_msg_style)
 
         self.session.send_monitor_event('started', self.client_id)
 
         self._send_reply_to_caller(OscSrc.START, 'client started')
 
-        if self.is_ray_hack:
-            if self.ray_hack.config_file:
-                self.pending_command = ray.Command.OPEN
-                self.set_status(ray.ClientStatus.OPEN)
-                QTimer.singleShot(500, self._ray_hack_near_ready)
+        if self.is_ray_hack and self.ray_hack.config_file:
+            self.pending_command = ray.Command.OPEN
+            self.set_status(ray.ClientStatus.OPEN)
+            QTimer.singleShot(500, self._ray_hack_near_ready)
 
     def _process_finished(self, exit_code: int, exit_status: QProcess.ExitStatus):
         if (self.launched_in_terminal
@@ -234,14 +233,14 @@ class Client(ServerSender, ray.ClientData):
         if self.pending_command is ray.Command.STOP:
             self.send_gui_message(_translate('GUIMSG',
                                   "  %s: terminated by server instruction")
-                                  % self.gui_msg_style())
+                                  % self.gui_msg_style)
             
             self.session.send_monitor_event(
                 'stopped_by_server', self.client_id)
         else:
             self.send_gui_message(_translate('GUIMSG',
                                            "  %s: terminated itself.")
-                                    % self.gui_msg_style())
+                                    % self.gui_msg_style)
             
             self.session.send_monitor_event(
                 'stopped_by_itself', self.client_id)
@@ -250,7 +249,7 @@ class Client(ServerSender, ray.ClientData):
 
         for osc_src in (OscSrc.OPEN, OscSrc.SAVE):
             self._send_error_to_caller(osc_src, ray.Err.GENERAL_ERROR,
-                    _translate('GUIMSG', '%s died !' % self.gui_msg_style()))
+                    _translate('GUIMSG', '%s died !' % self.gui_msg_style))
 
         self.set_status(ray.ClientStatus.STOPPED)
 
@@ -271,7 +270,7 @@ class Client(ServerSender, ray.ClientData):
         if error == QProcess.ProcessError.FailedToStart:
             self.send_gui_message(
                 _translate('GUIMSG', "  %s: Failed to start !")
-                    % self.gui_msg_style())
+                    % self.gui_msg_style)
             self.nsm_active = False
             self.pid = 0
             self.set_status(ray.ClientStatus.STOPPED)
@@ -284,14 +283,14 @@ class Client(ServerSender, ray.ClientData):
                     error_message = _translate(
                         'client',
                         " %s: Failed to launch process !"
-                            % self.gui_msg_style())
+                            % self.gui_msg_style)
 
                 self.session._send_error(ray.Err.LAUNCH_FAILED, error_message)
 
             for osc_slot in (OscSrc.START, OscSrc.OPEN):
                 self._send_error_to_caller(osc_slot, ray.Err.LAUNCH_FAILED,
                     _translate('GUIMSG', '%s failed to launch')
-                        % self.gui_msg_style())
+                        % self.gui_msg_style)
 
             if self.session.wait_for is not ray.WaitFor.NONE:
                 self.session.end_timer_if_last_expected(self)
@@ -308,7 +307,8 @@ class Client(ServerSender, ray.ClientData):
             self._osc_srcs[slot] = None
 
             if (self.scripter.is_running()
-                    and self.scripter.pending_command() == self.pending_command):
+                    and self.scripter.pending_command()
+                        == self.pending_command):
                 self._osc_srcs[slot] = self.scripter.initial_caller()
 
         if slot is OscSrc.OPEN:
@@ -321,7 +321,7 @@ class Client(ServerSender, ray.ClientData):
             self._osc_srcs[slot] = None
 
             if (self.scripter.is_running()
-                    and self.scripter.pending_command() == self.pending_command):
+                    and self.scripter.pending_command() is self.pending_command):
                 self._osc_srcs[slot] = self.scripter.initial_caller()
 
         if slot is OscSrc.OPEN:
@@ -331,13 +331,13 @@ class Client(ServerSender, ray.ClientData):
         self._send_error_to_caller(OscSrc.OPEN,
             ray.Err.GENERAL_ERROR,
             _translate('GUIMSG', '%s is started but not active')
-                % self.gui_msg_style())
+                % self.gui_msg_style)
 
     def _send_status_to_gui(self):
         self.send_gui(rg.client.STATUS, self.client_id, self.status.value)
 
     def _net_daemon_out_of_time(self):
-        self.ray_net.duplicate_state = -1
+        self.ray_net.duplicate_state = -1.0
 
         if self.session.wait_for is ray.WaitFor.DUPLICATE_FINISH:
             self.session.end_timer_if_last_expected(self)
@@ -346,7 +346,7 @@ class Client(ServerSender, ray.ClientData):
         if not self.is_ray_hack:
             return
 
-        if not self.is_running():
+        if not self.is_running:
             return
 
         if self.ray_hack.wait_win:
@@ -368,7 +368,7 @@ class Client(ServerSender, ray.ClientData):
 
             self.send_gui_message(
                 _translate('GUIMSG', '  %s: saved')
-                    % self.gui_msg_style())
+                    % self.gui_msg_style)
 
             self._send_reply_to_caller(OscSrc.SAVE, 'client saved.')
 
@@ -393,8 +393,7 @@ class Client(ServerSender, ray.ClientData):
             found = False
 
             for searched in all_data:
-                for i in range(len(lang_strs)):
-                    lang_str = lang_strs[i]
+                for i, lang_str in enumerate(lang_strs):
                     if var == searched + lang_str:
                         all_data[searched][i] = value
                         found = True
@@ -405,21 +404,22 @@ class Client(ServerSender, ray.ClientData):
 
         for data in all_data:
             for str_value in all_data[data]:
-                if data == "Comment":
-                    if str_value and not self.description:
-                        self._desktop_description = str_value
-                        self.description = str_value
-                        break
-                elif data == "Name":
-                    if str_value and not self.label:
-                        self._desktop_label = str_value
-                        self.label = str_value
-                        break
-                elif data == "Icon":
-                    if str_value and not self.icon:
-                        self._desktop_icon = str_value
-                        self.icon = str_value
-                        break
+                match data:
+                    case 'Comment':
+                        if str_value and not self.description:
+                            self._desktop_description = str_value
+                            self.description = str_value
+                            break
+                    case 'Name':
+                        if str_value and not self.label:
+                            self._desktop_label = str_value
+                            self.label = str_value
+                            break
+                    case 'Icon':
+                        if str_value and not self.icon:
+                            self._desktop_icon = str_value
+                            self.icon = str_value
+                            break
 
     def _rename_files(
             self, spath: Path,
@@ -427,372 +427,28 @@ class Client(ServerSender, ray.ClientData):
             old_prefix: str, new_prefix: str,
             old_client_id: str, new_client_id: str,
             old_client_links_dir: str, new_client_links_dir: str):
+        client_tools.rename_client_files(
+            self, spath, old_session_name, new_session_name,
+            old_prefix, new_prefix, old_client_id, new_client_id,
+            old_client_links_dir, new_client_links_dir)
 
-        # rename client script dir
-        scripts_dir = spath / f"{ray.SCRIPTS_DIR}.{old_client_id}"
-        if os.access(scripts_dir, os.W_OK) and old_client_id != new_client_id:
-            scripts_dir = scripts_dir.rename(f"{ray.SCRIPTS_DIR}.{new_client_id}")
-
-        project_path = spath / f"{old_prefix}.{old_client_id}"
-
-        files_to_rename = list[tuple[Path, Path]]()
-        do_rename = True
-
-        if self.is_ray_hack:
-            if project_path.is_dir():
-                if not os.access(project_path, os.W_OK):
-                    do_rename = False
-                else:
-                    os.environ['RAY_SESSION_NAME'] = old_session_name
-                    os.environ['RAY_CLIENT_ID'] = old_client_id
-                    pre_config_file = os.path.expandvars(
-                        self.ray_hack.config_file)
-
-                    os.environ['RAY_SESSION_NAME'] = new_session_name
-                    os.environ['RAY_CLIENT_ID'] = new_client_id
-                    post_config_file = os.path.expandvars(
-                        self.ray_hack.config_file)
-
-                    os.unsetenv('RAY_SESSION_NAME')
-                    os.unsetenv('RAY_CLIENT_ID')
-
-                    full_pre_config_file = project_path / pre_config_file
-                    full_post_config_file = project_path / post_config_file
-
-                    if full_pre_config_file.exists():
-                        files_to_rename.append((full_pre_config_file,
-                                                full_post_config_file))
-
-                    files_to_rename.append(
-                        (project_path, spath / f"{new_prefix}.{new_client_id}"))
-        else:
-            for file_path in spath.iterdir():
-                if file_path.name.startswith(f"{old_prefix}.{old_client_id}."):
-                    if not os.access(file_path, os.W_OK):
-                        do_rename = False
-                        break
-
-                    endfile = file_path.name.replace(
-                        f"{old_prefix}.{old_client_id}.", '', 1)
-
-                    next_path = spath / f"{new_prefix}.{new_client_id}.{endfile}"
-
-                    if next_path != file_path:
-                        if next_path.exists():
-                            do_rename = False
-                            break
-                        
-                        files_to_rename.append((file_path, next_path))
-
-                elif file_path.name == f"{old_prefix}.{old_client_id}":
-                    if not os.access(file_path, os.W_OK):
-                        do_rename = False
-                        break
-
-                    next_path = spath / f"{new_prefix}.{new_client_id}"
-                    
-                    if next_path.exists():
-                        do_rename = False
-                        break
-
-                    # only for hydrogen
-                    hydrogen_file = (
-                        project_path / f"{old_prefix}.{old_client_id}.h2song")
-                    hydrogen_autosave = (
-                        project_path / f"{old_prefix}.{old_client_id}.autosave.h2song")
-
-                    if hydrogen_file.is_file() and os.access(hydrogen_file, os.W_OK):
-                        new_hydro_file = (
-                            project_path / f"{new_prefix}.{new_client_id}.h2song")
-                        
-                        if new_hydro_file != hydrogen_file:
-                            if new_hydro_file.exists():
-                                do_rename = False
-                                break
-
-                            files_to_rename.append((hydrogen_file, new_hydro_file))
-
-                    if (hydrogen_autosave.is_file()
-                            and os.access(hydrogen_autosave, os.W_OK)):
-                        new_hydro_autosave = (
-                            project_path
-                            / f"{new_prefix}.{new_client_id}.autosave.h2song")
-
-                        if new_hydro_autosave != hydrogen_autosave:
-                            if new_hydro_autosave.exists():
-                                do_rename = False
-                                break
-
-                            files_to_rename.append((hydrogen_autosave, new_hydro_autosave))
-
-                    # only for ardour
-                    ardour_file = project_path / f"{old_prefix}.ardour"
-                    ardour_bak = project_path / f"{old_prefix}.ardour.bak"
-                    ardour_audio = project_path / 'interchange' / project_path.name
-
-                    if ardour_file.is_file() and os.access(ardour_file, os.W_OK):
-                        new_ardour_file = project_path / f"{new_prefix}.ardour"
-                        if new_ardour_file != ardour_file:
-                            if new_ardour_file.exists():
-                                do_rename = False
-                                break
-
-                            files_to_rename.append((ardour_file, new_ardour_file))
-
-                            # change ardour session name
-                            try:
-                                tree = ET.parse(ardour_file)
-                                root = tree.getroot()
-                                if root.tag == 'Session':
-                                    root.attrib['name'] = new_prefix
-
-                                # write the file
-                                ET.indent(tree, level=0)
-                                tree.write(ardour_file)
-
-                            except:
-                                _logger.warning(
-                                    'Failed to change ardour session '
-                                    f'name to "{new_prefix}"')
-
-                    if ardour_bak.is_file() and os.access(ardour_bak, os.W_OK):
-                        new_ardour_bak = project_path / f"{new_prefix}.ardour.bak"
-                        if new_ardour_bak != ardour_bak:
-                            if new_ardour_bak.exists():
-                                do_rename = False
-                                break
-
-                            files_to_rename.append((ardour_bak, new_ardour_bak))
-
-                    if ardour_audio.is_dir() and os.access(ardour_audio, os.W_OK):
-                        new_ardour_audio = (
-                            project_path / 'interchange' / f"{new_prefix}.{new_client_id}")
-                        
-                        if new_ardour_audio != ardour_audio:
-                            if new_ardour_audio.exists():
-                                do_rename = False
-                                break
-
-                            files_to_rename.append((ardour_audio, new_ardour_audio))
-
-                    # for Vee One Suite
-                    for extfile in ('samplv1', 'synthv1', 'padthv1', 'drumkv1'):
-                        old_veeone_file = project_path / f"{old_session_name}.{extfile}"
-                        new_veeone_file = project_path / f"{new_session_name}.{extfile}"
-                        if new_veeone_file == old_veeone_file:
-                            continue
-
-                        if (old_veeone_file.is_file()
-                                and os.access(old_veeone_file, os.W_OK)):
-                            if new_veeone_file.exists():
-                                do_rename = False
-                                break
-
-                            files_to_rename.append((old_veeone_file,
-                                                    new_veeone_file))
-
-                    files_to_rename.append((spath / file_path, next_path))                    
-
-                elif file_path.name == old_client_links_dir:
-                    # this section only concerns Carla links dir
-                    # used to save links for convolutions files or soundfonts
-                    # or any other linked resource.
-                    if old_client_links_dir == new_client_links_dir:
-                        continue
-
-                    if not file_path.is_dir():
-                        continue
-                    
-                    if not os.access(file_path, os.W_OK):
-                        do_rename = False
-                        break
-
-                    full_new_links_dir = spath / new_client_links_dir
-                    if full_new_links_dir.exists():
-                        do_rename = False
-                        break
-
-                    files_to_rename.append((file_path, full_new_links_dir))
-
-        if not do_rename:
-            self.prefix_mode = ray.PrefixMode.CUSTOM
-            self.custom_prefix = old_prefix
-            _logger.warning(
-                f"daemon choose to not rename files for client_id {self.client_id}")
-            # it should not be a client_id problem here
-            return
-
-        # change last_used snapshot of ardour
-        instant_file = project_path / 'instant.xml'
-        if instant_file.is_file() and os.access(instant_file, os.W_OK):
-            try:
-                tree = ET.parse(instant_file)
-                root = tree.getroot()
-                if root.tag == 'instant':
-                    for child in root:
-                        if child.tag == 'LastUsedSnapshot':
-                            if child.attrib.get('name') == old_prefix:
-                                child.attrib['name'] = new_prefix
-                            break
-                
-                ET.indent(tree, level=0)
-                tree.write(instant_file)
-                
-            except:
-                _logger.warning(
-                    f'Failed to change Ardour LastUsedSnapshot in {instant_file}')
-
-        for now_path, next_path in files_to_rename:
-            _logger.info(f'renaming\n\tfile: {now_path}\n\tto:   {next_path}')
-            os.rename(now_path, next_path)
-
-    def _save_as_template_substep1(self, template_name: str):
-        self.set_status(self.status) # see set_status to see why
-
-        if self.prefix_mode is not ray.PrefixMode.CUSTOM:
-            self.adjust_files_after_copy(template_name,
-                                         ray.Template.CLIENT_SAVE)
-
-        user_clients_path = TemplateRoots.user_clients
-        xml_file = user_clients_path / 'client_templates.xml'
-
-        # security check
-        if xml_file.exists():
-            if not os.access(xml_file, os.W_OK):
-                self._send_error_to_caller(
-                    OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                    _translate('GUIMSG', '%s is not writeable !') % xml_file)
-                return
-
-            if xml_file.is_dir():
-                # should not be a dir, remove it !
-                _logger.info(
-                    f'removing {xml_file} because it is a dir, it must be a file')
-                try:
-                    shutil.rmtree(xml_file)
-                except:
-                    self._send_error_to_caller(
-                        OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                        _translate('GUIMSG', 'Failed to remove %s directory !') % xml_file)
-                    return
-
-        if not user_clients_path.is_dir():
-            try:
-                user_clients_path.mkdir(parents=True)
-            except BaseException as e:
-                _logger.error(str(e))
-                self._send_error_to_caller(
-                    OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                    _translate('GUIMSG', 'Failed to create directories for %s')
-                        % user_clients_path)
-                return
-
-        # create client_templates.xml if it does not exists
-        if not xml_file.is_file():
-            root = ET.Element('RAY-CLIENT-TEMPLATES')
-            tree = ET.ElementTree(root)
-            try:
-                tree.write(xml_file)
-            except:
-                _logger.error(
-                    'Failed to create user client templates xml file')
-                self._send_error_to_caller(
-                    OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                    _translate('GUIMSG', 'Failed to write xml file  %s')
-                        % str(xml_file))
-                return
-
-        try:
-            tree = ET.parse(xml_file)
-        except BaseException as e:
-            _logger.error(str(e))
-            self._send_error_to_caller(
-                OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                _translate('GUIMSG', '%s seems to not be a valid XML file.')
-                    % str(xml_file))
-            return
-
-        root = tree.getroot()
-        
-        if root.tag != 'RAY-CLIENT-TEMPLATES':
-            self._send_error_to_caller(
-                OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                _translate('GUIMSG', '%s is not a client templates XML file.')
-                    % str(xml_file))
-            return
-        
-        # remove the existant templates with the same name
-        to_rm_childs = list[ET.Element]()
-        for child in root:
-            if child.tag != 'Client-Template':
-                continue
-            
-            c = XmlElement(child)
-            if c.string('template-name') == template_name:
-                to_rm_childs.append(child)
-                
-        for child in to_rm_childs:
-            root.remove(child)
-
-        # create the client template item in xml file
-        c = XmlElement(ET.SubElement(root, 'Client-Template'))
-        self.write_xml_properties(c)
-        c.set_str('template-name', template_name)
-        c.set_str('client_id', self.short_client_id(self.client_id))
-        
-        if not self.is_running():
-            c.set_bool('launched', False)
-        
-        # write the file
-        ET.indent(tree, level=0)
-        
-        try:
-            tree.write(xml_file)
-        except Exception as e:
-            _logger.error(str(e))
-            self._send_error_to_caller(
-                OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                _translate('GUIMSG', 'Failed to write XML file %s.')
-                    % str(xml_file))
-            return
-
-        self.template_origin = template_name
-        self.send_gui_client_properties()
-
-        template_data_base_users = self.get_client_templates_database('user')
-        template_data_base_users.clear()
-
-        self.send_gui_message(
-            _translate('message', 'Client template %s created')
-                % template_name)
-
-        self._send_reply_to_caller(OscSrc.SAVE_TP, 'client template created')
-
-    def _save_as_template_aborted(self, template_name: str):
-        self.set_status(self.status)
-        self._send_error_to_caller(OscSrc.SAVE_TP, ray.Err.COPY_ABORTED,
-            _translate('GUIMSG', 'Copy has been aborted !'))
-
-    def get_links_dirname(self) -> str:
+    @property
+    def links_dirname(self) -> str:
         '''return the dir path used by carla for links such as
         audio convolutions or soundfonts'''
-        links_dir = self.get_jack_client_name()
-        for c in ('-', '.'):
-            links_dir = links_dir.replace(c, '_')
-        return links_dir
+        return self.jack_client_name.replace('-', '_').replace('.', '_')
 
     def send_to_self_address(self, *args):
-        if not self.addr:
+        if self.addr is None:
             return
 
         self.send(self.addr, *args)
 
     def message(self, message: str):
-        if self.session is None:
-            return
         self.session.message(message)
 
-    def get_jack_client_name(self) -> str:
+    @property
+    def jack_client_name(self) -> str:
         if self.is_ray_net:
             # ray-net will use jack_client_name for template
             # quite dirty, but this is the easier way
@@ -803,26 +459,24 @@ class Client(ServerSender, ray.ClientData):
         # else, jack connections could be lose
         # at NSM session import
         if self.jack_naming is ray.JackNaming.LONG:
-            return "%s.%s" % (self.name, self.client_id)
+            return f'{self.name}.{self.client_id}'
 
         jack_client_name = self.name
 
         # Mostly for ray_hack
         if not jack_client_name:
-            jack_client_name = os.path.basename(self.executable_path)
+            jack_client_name = os.path.basename(self.executable)
             jack_client_name.capitalize()
 
-        numid = ''
         if '_' in self.client_id:
             numid = self.client_id.rpartition('_')[2]
-        if numid.isdigit():
-            jack_client_name += '_'
-            jack_client_name += numid
+            if numid.isdigit():
+                jack_client_name += f'_{numid}'
 
         return jack_client_name
 
     def read_xml_properties(self, c: XmlElement):
-        self.executable_path = c.string('executable')
+        self.executable = c.string('executable')
         self.arguments = c.string('arguments')
         self.pre_env = c.string('pre_env')
         self.name = c.string('name')
@@ -846,7 +500,7 @@ class Client(ServerSender, ray.ClientData):
 
         # ensure client has a name
         if not self.name:
-            self.name = Path(self.executable_path).name
+            self.name = Path(self.executable).name
 
         self.update_infos_from_desktop_file()
 
@@ -887,7 +541,7 @@ class Client(ServerSender, ray.ClientData):
 
         # backward compatibility with network session
         if (self.protocol is ray.Protocol.NSM
-                and Path(self.executable_path).name == 'ray-network'):
+                and Path(self.executable).name == 'ray-network'):
             self.protocol = ray.Protocol.RAY_NET
 
             if self.arguments:
@@ -917,13 +571,10 @@ class Client(ServerSender, ray.ClientData):
             self.ray_net.daemon_url = c.string('net_daemon_url')
             self.ray_net.session_root = c.string('net_session_root')
             self.ray_net.session_template = c.string('net_session_template')
-            self.ray_net.daemon_url = c.string('net_daemon_url')
-            self.ray_net.session_root = c.string('net_session_root')
-            self.ray_net.session_template = c.string('net_session_template')
 
         if self.is_ray_net:
             # neeeded only to know if RAY_NET client is capable of switch
-            self.executable_path = ray.RAYNET_BIN
+            self.executable = ray.RAYNET_BIN
             if self.ray_net.daemon_url and self.ray_net.session_root:
                 self.arguments = self.get_ray_net_arguments_line()
 
@@ -941,7 +592,7 @@ class Client(ServerSender, ray.ClientData):
 
     def write_xml_properties(self, c: XmlElement):
         if not self.is_ray_net:
-            c.set_str('executable', self.executable_path)
+            c.set_str('executable', self.executable)
             if self.arguments:
                 c.set_str('arguments', self.arguments)
 
@@ -1033,6 +684,173 @@ class Client(ServerSender, ray.ClientData):
                 sub_child[data] = self.custom_data[data] # type:ignore
             ET.dump(c.el)
 
+    def read_yaml_properties(self, map: CommentedMap):
+        ymap = YamlMap(map)
+        self.executable = ymap.string('executable')
+        self.arguments = ymap.string('arguments')
+        self.pre_env = ymap.string('pre_env')
+        self.name = ymap.string('name')
+        self.desktop_file = ymap.string('desktop_file')
+        self.label = ymap.string('label')
+        self.description = ymap.string('description')
+        self.icon = ymap.string('icon')
+        self.in_terminal = ymap.bool('in_terminal')
+        self.auto_start = ymap.bool('launched', True)
+        self.check_last_save = ymap.bool('check_last_save', True)
+        self.start_gui_hidden = not ymap.bool('gui_visible', True)
+        self.template_origin = ymap.string('template_origin')
+
+        self.jack_naming = ray.JackNaming(
+            int(ymap.bool('long_jack_naming', True)))
+        self.prefix_mode = ray.PrefixMode(
+            ymap.string('prefix_mode', 'client_name'))
+
+        # ensure client has a name
+        if not self.name:
+            self.name = Path(self.executable).name
+
+        self.update_infos_from_desktop_file()
+
+        ign_exts = ymap.string('ignored_extensions').split(' ')
+        unign_exts = ymap.string('unignored_extensions').split(' ')
+
+        global_exts = ray.GIT_IGNORED_EXTENSIONS.split(' ')
+        self.ignored_extensions = ""
+
+        for ext in global_exts:
+            if ext and not ext in unign_exts:
+                self.ignored_extensions += f' {ext}'
+
+        for ext in ign_exts:
+            if ext and not ext in global_exts:
+                self.ignored_extensions += f' {ext}'
+
+        self.last_open_duration = ymap.float('last_open_duration')
+
+        if self.prefix_mode is ray.PrefixMode.CUSTOM:
+            self.custom_prefix = ymap.string('custom_prefix')
+
+        self.protocol = ray.Protocol.from_string(
+            ymap.string('protocol', 'NSM'))
+
+        if self.protocol is ray.Protocol.RAY_HACK:
+            self.ray_hack.config_file = ymap.string('config_file')
+            self.ray_hack.save_sig = ymap.int('save_signal')
+            self.ray_hack.stop_sig = ymap.int(
+                'stop_signal', signal.SIGTERM.value)
+            self.ray_hack.wait_win = ymap.bool('wait_window')
+            no_save_level = ymap.int('no_save_level')
+            if 0 <= no_save_level <= 2:
+                self.ray_hack.no_save_level = no_save_level
+
+        if self.protocol is ray.Protocol.RAY_NET:
+            self.ray_net.daemon_url = ymap.string('net_daemon_url')
+            self.ray_net.session_root = ymap.string('net_daemon_url')
+            self.ray_net.session_template = ymap.string(
+                'net_session_template')
+
+            # neeeded only to know if RAY_NET client is capable of switch
+            self.executable = ray.RAYNET_BIN
+            if self.ray_net.daemon_url and self.ray_net.session_root:
+                self.arguments = self.get_ray_net_arguments_line()
+
+        # template uses "client_id" for wanted client_id
+        self.client_id = self.session.generate_client_id(
+            ymap.string('client_id'))
+
+        custom_data = map.get('custom_data')
+        if isinstance(custom_data, CommentedMap):
+            self.custom_data = custom_data.copy()
+
+    def write_yaml_properties(self, map: CommentedMap, for_template=False):
+        protocol = self.protocol
+        internal_mode = ray.InternalMode.FOLLOW_PROTOCOL
+        server = self.get_server()
+        if server is not None:
+            internal_mode = server.internal_mode
+        if internal_mode is not ray.InternalMode.FOLLOW_PROTOCOL:
+            protocol = self.protocol_orig
+
+        # map.clear()
+        if protocol is not ray.Protocol.NSM:
+            map['protocol'] = self.protocol.to_string()
+        
+        if not self.is_ray_net:
+            map['executable'] = self.executable
+            if self.arguments:
+                map['arguments'] = self.arguments
+
+        if self.pre_env:
+            map['pre_env'] = self.pre_env
+
+        map['name'] = self.name
+        if self.desktop_file:
+            map['desktop_file'] = self.desktop_file
+        if self.label != self._desktop_label:
+            map['label'] = self.label
+        if self.description != self._desktop_description:
+            map['description'] = self.description
+        if self.icon != self._desktop_icon:
+            map['icon'] = self.icon
+        if not self.check_last_save:
+            map['check_last_save'] = False
+
+        if self.prefix_mode is not ray.PrefixMode.CLIENT_NAME:
+            map['prefix_mode'] = self.prefix_mode.name
+            if self.prefix_mode is ray.PrefixMode.CUSTOM:
+                map['custom_prefix'] = self.custom_prefix
+        
+        if self.can_optional_gui:
+            map['gui_visible'] = not self.start_gui_hidden
+
+        if self.jack_naming is not ray.JackNaming.LONG:
+            map['long_jack_naming'] = False
+
+        if self.in_terminal:
+            map['in_terminal'] = True
+
+        if not for_template and self.template_origin:
+            map['template_origin'] = self.template_origin
+
+        match protocol:
+            case ray.Protocol.RAY_HACK:
+                if self.ray_hack.config_file:
+                    map['config_file'] = self.ray_hack.config_file
+                if self.ray_hack.save_sig:
+                    map['save_signal'] = self.ray_hack.save_sig
+                if self.ray_hack.stop_sig != signal.SIGTERM.value:
+                    map['stop_signal'] = self.ray_hack.stop_sig
+                if self.ray_hack.wait_win:
+                    map['wait_win'] = self.ray_hack.wait_win
+                if self.ray_hack.no_save_level:
+                    map['no_save_level'] = self.ray_hack.no_save_level
+
+            case ray.Protocol.RAY_NET:
+                map['net_daemon_url'] = self.ray_net.daemon_url
+                map['net_session_root'] = self.ray_net.session_root
+                map['net_session_template'] = self.ray_net.session_template
+
+        if self.ignored_extensions != ray.GIT_IGNORED_EXTENSIONS:
+            ignored = ' '.join(
+                [c for c in self.ignored_extensions.split(' ')
+                 if c and c not in ray.GIT_IGNORED_EXTENSIONS.split(' ')])
+            unignored = ' '.join(
+                [g for g in ray.GIT_IGNORED_EXTENSIONS.split(' ')
+                 if g and g not in self.ignored_extensions.split(' ')])
+
+            if ignored:
+                map['ignored_extensions'] = ignored
+
+            if unignored:
+                map['unignored_extensions'] = unignored
+
+        if not for_template and self.last_open_duration >= 5.0:
+            map['last_open_duration'] = float(
+                '%.3f' % self.last_open_duration)
+
+        if self.custom_data:
+            map['custom_data'] = self.custom_data
+
     def transform_from_proxy_to_hack(
             self, spath: Path, sess_name: str) -> bool:
         '''before to load a session, if a client has for executable_path
@@ -1043,15 +861,17 @@ class Client(ServerSender, ray.ClientData):
         spath: the session Path of the future session.
         sess_name: the future session name'''
 
-        if self.executable_path != 'ray-proxy':
+        if self.executable != 'ray-proxy':
             return False
         
-        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
-            project_path = spath / f'{self.name}.{self.client_id}'
-        elif self.prefix_mode == ray.PrefixMode.SESSION_NAME:
-            project_path = spath / f'{sess_name}.{self.client_id}'
-        else:
-            project_path = spath / f'{self.custom_prefix}.{self.client_id}'
+        match self.prefix_mode:
+                
+            case ray.PrefixMode.CLIENT_NAME:
+                project_path = spath / f'{self.name}.{self.client_id}'
+            case ray.PrefixMode.SESSION_NAME:
+                project_path = spath / f'{sess_name}.{self.client_id}'
+            case _:
+                project_path = spath / f'{self.custom_prefix}.{self.client_id}'
         
         proxy_file = project_path / 'ray-proxy.xml'
 
@@ -1080,7 +900,7 @@ class Client(ServerSender, ray.ClientData):
             return False
 
         self.protocol = ray.Protocol.RAY_HACK
-        self.executable_path = executable
+        self.executable = executable
         self.arguments = arguments
         self.ray_hack.config_file = config_file
         self.ray_hack.no_save_level = no_save_level
@@ -1090,7 +910,7 @@ class Client(ServerSender, ray.ClientData):
             self.ray_hack.stop_sig = stop_signal
         self.ray_hack.wait_win = wait_window
                 
-        if self.prefix_mode == ray.PrefixMode.CLIENT_NAME:
+        if self.prefix_mode is ray.PrefixMode.CLIENT_NAME:
             self.prefix_mode = ray.PrefixMode.CUSTOM
             self.custom_prefix = self.name
 
@@ -1101,58 +921,64 @@ class Client(ServerSender, ray.ClientData):
         self._reply_errcode = errcode
 
         if self._reply_errcode:
-            self.message("Client \"%s\" replied with error: %s (%i)"
-                                % (self.name, message, errcode))
+            self.message(
+                f'Client "{self.name}" replied with error: '
+                f'{message} ({errcode})')
 
-            if self.pending_command is ray.Command.SAVE:
-                self._send_error_to_caller(OscSrc.SAVE, ray.Err.GENERAL_ERROR,
-                                    _translate('GUIMSG', '%s failed to save!')
-                                            % self.gui_msg_style())
-                
-                self.session.send_monitor_event(
-                    'save_error', self.client_id)
+            match self.pending_command:
+                case ray.Command.SAVE:
+                    self._send_error_to_caller(
+                        OscSrc.SAVE, ray.Err.GENERAL_ERROR,
+                        _translate('GUIMSG', '%s failed to save!')
+                            % self.gui_msg_style)
+                    
+                    self.session.send_monitor_event(
+                        'save_error', self.client_id)
 
-            elif self.pending_command is ray.Command.OPEN:
-                self._send_error_to_caller(OscSrc.OPEN, ray.Err.GENERAL_ERROR,
-                                    _translate('GUIMSG', '%s failed to open!')
-                                            % self.gui_msg_style())
-                
-                self.session.send_monitor_event(
-                    'open_error', self.client_id)
+                case ray.Command.OPEN:
+                    self._send_error_to_caller(
+                        OscSrc.OPEN, ray.Err.GENERAL_ERROR,
+                        _translate('GUIMSG', '%s failed to open!')
+                            % self.gui_msg_style)
+                    
+                    self.session.send_monitor_event(
+                        'open_error', self.client_id)
 
             self.set_status(ray.ClientStatus.ERROR)
         else:
-            if self.pending_command is ray.Command.SAVE:
-                self.last_save_time = time.time()
+            match self.pending_command:
+                case ray.Command.SAVE:
+                    self.last_save_time = time.time()
 
-                self.send_gui_message(
-                    _translate('GUIMSG', '  %s: saved')
-                        % self.gui_msg_style())
+                    self.send_gui_message(
+                        _translate('GUIMSG', '  %s: saved')
+                            % self.gui_msg_style)
 
-                self._send_reply_to_caller(OscSrc.SAVE, 'client saved.')
-                self.session.send_monitor_event(
-                    'saved', self.client_id)
+                    self._send_reply_to_caller(OscSrc.SAVE, 'client saved.')
+                    self.session.send_monitor_event(
+                        'saved', self.client_id)
 
-            elif self.pending_command is ray.Command.OPEN:
-                self.send_gui_message(
-                    _translate('GUIMSG', '  %s: project loaded')
-                        % self.gui_msg_style())
+                case ray.Command.OPEN:
+                    self.send_gui_message(
+                        _translate('GUIMSG', '  %s: project loaded')
+                            % self.gui_msg_style)
 
-                self.last_open_duration = \
-                    time.time() - self._last_announce_time
+                    self.last_open_duration = \
+                        time.time() - self._last_open_time
 
-                self._send_reply_to_caller(OscSrc.OPEN, 'client opened')
+                    self._send_reply_to_caller(OscSrc.OPEN, 'client opened')
 
-                self.session.send_monitor_event(
-                    'ready', self.client_id)
+                    self.session.send_monitor_event(
+                        'ready', self.client_id)
 
-                if self.has_server_option(ray.Option.GUI_STATES):
-                    if (self.session.wait_for is ray.WaitFor.NONE
-                            and self.can_optional_gui
-                            and not self.start_gui_hidden
-                            and not self.gui_visible
-                            and not self.gui_has_been_visible):
-                        self.send_to_self_address(nsm.client.SHOW_OPTIONAL_GUI)
+                    if self.has_server_option(ray.Option.GUI_STATES):
+                        if (self.session.wait_for is ray.WaitFor.NONE
+                                and self.can_optional_gui
+                                and not self.start_gui_hidden
+                                and not self.gui_visible
+                                and not self.gui_has_been_visible):
+                            self.send_to_self_address(
+                                nsm.client.SHOW_OPTIONAL_GUI)
 
             self.set_status(ray.ClientStatus.READY)
 
@@ -1165,17 +991,19 @@ class Client(ServerSender, ray.ClientData):
         if self.session.wait_for is ray.WaitFor.REPLY:
             self.session.end_timer_if_last_expected(self)
 
-    def set_label(self, label:str):
+    def set_label(self, label: str):
         self.label = label
         self.send_gui_client_properties()
 
     def has_error(self) -> bool:
         return bool(self._reply_errcode)
 
+    @property
     def is_reply_pending(self) -> bool:
         return self.pending_command is not ray.Command.NONE
 
-    def is_dumb_client(self) -> bool:
+    @property
+    def is_dumb(self) -> bool:
         if self.is_ray_hack:
             return False
 
@@ -1184,6 +1012,10 @@ class Client(ServerSender, ray.ClientData):
     @property
     def can_monitor(self):
         return ':monitor:' in self.capabilities
+    
+    @property
+    def can_patcher(self):
+        return ':patcher:' in self.capabilities 
     
     @property
     def can_switch(self):
@@ -1195,10 +1027,11 @@ class Client(ServerSender, ray.ClientData):
     
     @property
     def can_optional_gui(self):
-        return ':optional-gui' in self.capabilities
+        return ':optional-gui:' in self.capabilities
 
+    @property
     def gui_msg_style(self) -> str:
-        return "%s (%s)" % (self.name, self.client_id)
+        return f'{self.name} ({self.client_id})'
 
     def set_network_properties(
             self, net_daemon_url: str, net_session_root: str):
@@ -1235,24 +1068,25 @@ class Client(ServerSender, ray.ClientData):
 
     @property
     def prefix(self) -> str:
-        if self.prefix_mode is ray.PrefixMode.SESSION_NAME:
-            return self.session.name
-
-        if self.prefix_mode is ray.PrefixMode.CLIENT_NAME:
-            return self.name
-
-        if self.prefix_mode is ray.PrefixMode.CUSTOM:
-            return self.custom_prefix
-
+        match self.prefix_mode:
+            case ray.PrefixMode.SESSION_NAME:
+                return self.session.name
+            case ray.PrefixMode.CLIENT_NAME:
+                return self.name
+            case ray.PrefixMode.CUSTOM:
+                return self.custom_prefix
         return ''
 
-    def get_project_path(self) -> Optional[Path]:
+    @property
+    def project_path(self) -> Path:
+        '''Absolute Path of client possible project.
+        Raise NoSessionPath if client has no session path.'''
         if self.is_ray_net:
             return Path(self.session.short_path_name)
 
         spath = self.session.path
         if spath is None:
-            return None
+            raise NoSessionPath
 
         if self.prefix_mode is ray.PrefixMode.SESSION_NAME:
             return spath / f'{self.session.name}.{self.client_id}'
@@ -1267,29 +1101,30 @@ class Client(ServerSender, ray.ClientData):
         return spath / f'{self.session.name}.{self.client_id}'
 
     def set_default_git_ignored(self, executable=""):
-        executable = executable if executable else self.executable_path
-        executable = os.path.basename(executable)
+        executable = executable if executable else self.executable
+        executable = Path(executable).name
 
-        if executable.startswith(('ardour', 'Ardour')):
-            if len(executable) == 6:
-                self.ignored_extensions += " .mid"
-            elif len(executable) <= 8:
-                rest = executable[6:]
-                if rest.isdigit():
+        match executable:
+            case s if s.startswith(('ardour', 'Ardour')):
+                if len(executable) == 6:
                     self.ignored_extensions += " .mid"
-        elif executable == 'qtractor':
-            self.ignored_extensions += " .mid"
+                elif len(executable) <= 8:
+                    rest = executable[6:]
+                    if rest.isdigit():
+                        self.ignored_extensions += " .mid"
+            case 'qtractor':
+                self.ignored_extensions += " .mid"
 
-        elif executable in ('luppp', 'sooperlooper', 'sooperlooper_nsm'):
-            if '.wav' in self.ignored_extensions:
-                self.ignored_extensions = \
-                    self.ignored_extensions.replace('.wav', '')
-
-        elif executable == 'samplv1_jack':
-            for ext in ('.wav', '.flac', '.ogg', '.mp3'):
-                if ext in self.ignored_extensions:
+            case 'luppp' | 'sooperlooper' | 'sooperlooper_nsm':
+                if '.wav' in self.ignored_extensions:
                     self.ignored_extensions = \
-                        self.ignored_extensions.replace(ext, '')
+                        self.ignored_extensions.replace('.wav', '')
+
+            case 'samplv1_jack':
+                for ext in ('.wav', '.flac', '.ogg', '.mp3'):
+                    if ext in self.ignored_extensions:
+                        self.ignored_extensions = \
+                            self.ignored_extensions.replace(ext, '')
 
     def start(self, osp: Optional[OscPack]=None, wait_open_to_reply=False):
         if osp is not None and not wait_open_to_reply:
@@ -1300,20 +1135,21 @@ class Client(ServerSender, ray.ClientData):
         self.last_dirty = 0.00
         self.gui_has_been_visible = False
         self.gui_visible = False
-        self.show_gui_ordered = False
 
         if self.is_dummy:
             self._send_error_to_caller(OscSrc.START, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', "can't start %s, it is a dummy client !")
-                    % self.gui_msg_style())
+                    % self.gui_msg_style)
             return
 
         if (self.is_ray_net
                 and self.session.path is not None
                 and not self.session.root in self.session.path.parents):
             self._send_error_to_caller(OscSrc.START, ray.Err.GENERAL_ERROR,
-                _translate('GUIMSG',
-                    "Impossible to run Ray-Net client when session is not in root folder"))
+                _translate(
+                    'GUIMSG',
+                    "Impossible to run Ray-Net client "
+                    "when session is not in root folder"))
             return
 
         if self.scripter.start(ray.Command.START, osp,
@@ -1344,7 +1180,7 @@ class Client(ServerSender, ray.ClientData):
             if server is not None:
                 terminal_args = [
                     a.replace('RAY_TERMINAL_TITLE',
-                              f"{self.client_id} {self.executable_path}")
+                              f"{self.client_id} {self.executable}")
                     for a in shlex.split(server.terminal_command)]
 
         if self.is_ray_net:
@@ -1370,11 +1206,11 @@ class Client(ServerSender, ray.ClientData):
             env = os.environ.copy()
             env['RAY_SESSION_NAME'] = self.session.name
             env['RAY_CLIENT_ID'] = self.client_id
-            env['RAY_JACK_CLIENT_NAME'] = self.get_jack_client_name()
+            env['RAY_JACK_CLIENT_NAME'] = self.jack_client_name
             env['CONFIG_FILE'] = expand_vars(env, self.ray_hack.config_file)
-            env['PWD'] = str(self.get_project_path())
+            env['PWD'] = str(self.project_path)
             
-            ray_hack_pwd = self.get_project_path()
+            ray_hack_pwd = self.project_path
             if ray_hack_pwd is None:
                 _logger.error(
                     f"Ray-Hack client {self.client_id} can not have "
@@ -1398,33 +1234,31 @@ class Client(ServerSender, ray.ClientData):
         if self.arguments:
             arguments += shlex.split(arguments_line)
 
-        self.running_executable = self.executable_path
+        self.running_executable = self.executable
         self.running_arguments = self.arguments
 
         if self.is_ray_hack:
             self._process.setWorkingDirectory(str(ray_hack_pwd))
             process_env.insert('RAY_SESSION_NAME', self.session.name)
             process_env.insert('RAY_CLIENT_ID', self.client_id)
-
-            self.jack_client_name = self.get_jack_client_name()
             self.send_gui_client_properties()
 
         self.launched_in_terminal = self.in_terminal
-        if self.launched_in_terminal or self.executable_path in INTERNAL_EXECS:
+        if self.launched_in_terminal or self.executable in INTERNAL_EXECS:
             self.session.externals_timer.start()
 
         self.session.send_monitor_event(
             'start_request', self.client_id)
 
         self._process.setProcessEnvironment(process_env)
-        prog, *other_args = terminal_args + [self.executable_path] + arguments
+        prog, *other_args = terminal_args + [self.executable] + arguments
         
         internal_mode = ray.InternalMode.FOLLOW_PROTOCOL
         server = self.get_server()
         if server is not None:
             internal_mode = server.internal_mode
 
-        if self.executable_path in INTERNAL_EXECS:
+        if self.executable in INTERNAL_EXECS:
             self.protocol_orig = self.protocol
 
             if internal_mode is ray.InternalMode.FORCE_INTERNAL:
@@ -1434,7 +1268,7 @@ class Client(ServerSender, ray.ClientData):
 
             if self.protocol is ray.Protocol.INTERNAL:
                 self._internal = InternalClient(
-                    self.executable_path, tuple(arguments),
+                    self.executable, tuple(arguments),
                     self.get_server_url())
                 self._internal.start()
                 self.session.externals_timer.start()
@@ -1455,22 +1289,23 @@ class Client(ServerSender, ray.ClientData):
 
         if self.pending_command is ray.Command.STOP:
             self._send_error_to_caller(OscSrc.OPEN, ray.Err.GENERAL_ERROR,
-                _translate('GUIMSG', '%s is exiting.') % self.gui_msg_style())
+                _translate('GUIMSG', '%s is exiting.') % self.gui_msg_style)
 
-        if self.is_running() and self.is_dumb_client():
-            self._send_error_to_caller(OscSrc.OPEN, ray.Err.GENERAL_ERROR,
+        if self.is_running and self.is_dumb:
+            self._send_error_to_caller(
+                OscSrc.OPEN, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s seems to can not open')
-                    % self.gui_msg_style())
+                    % self.gui_msg_style)
 
-        duration = max(8000, int(2 * self.last_open_duration))
+        duration = max(8000, int(2 * 1000 * self.last_open_duration))
         self._open_timer.setInterval(duration)
         self._open_timer.start()
 
         if self.pending_command is ray.Command.OPEN:
             return
 
-        if not self.is_running():
-            if self.executable_path in RS.non_active_clients:
+        if not self.is_running:
+            if self.executable in RS.non_active_clients:
                 if osp is not None and osp.src_addr:
                     self._osc_srcs[OscSrc.START] = osp
                     self._osc_srcs[OscSrc.OPEN] = None
@@ -1479,7 +1314,7 @@ class Client(ServerSender, ray.ClientData):
             return
 
     def terminate(self):
-        if self.is_running():
+        if self.is_running:
             if self.is_external:
                 os.kill(self.pid, signal.SIGTERM)
             else:
@@ -1495,7 +1330,7 @@ class Client(ServerSender, ray.ClientData):
             os.kill(self.pid, signal.SIGKILL)
             return
 
-        if self.is_running():
+        if self.is_running:
             self._process.kill()
 
     def send_signal(self, sig: int, src_addr=None, src_path=""):
@@ -1504,20 +1339,21 @@ class Client(ServerSender, ray.ClientData):
         except:
             if src_addr:
                 self.send(src_addr, osc_paths.ERROR, src_path,
-                          ray.Err.GENERAL_ERROR, 'invalid signal %i' % sig)
+                          ray.Err.GENERAL_ERROR, f'invalid signal {sig}')
             return
 
-        if not self.is_running():
+        if not self.is_running:
             if src_addr:
                 self.send(src_addr, osc_paths.ERROR, src_path,
                           ray.Err.GENERAL_ERROR,
-                          'client %s is not running' % self.client_id)
+                          f'client {self.client_id} is not running')
             return
 
         os.kill(self.pid, sig)
         self.send(src_addr, osc_paths.REPLY, src_path, 'signal sent')
 
-    def is_running(self):
+    @property
+    def is_running(self) -> bool:
         if self.is_external:
             return True
         
@@ -1545,30 +1381,31 @@ class Client(ServerSender, ray.ClientData):
         scripter_pending_command = self.scripter.pending_command()
 
         if exit_code:
-            error_text = "script %s ended with an error code" \
-                            % self.scripter.get_path()
-            if scripter_pending_command is ray.Command.SAVE:
-                self._send_error_to_caller(OscSrc.SAVE, - exit_code,
-                                        error_text)
-            elif scripter_pending_command is ray.Command.START:
-                self._send_error_to_caller(OscSrc.START, - exit_code,
-                                        error_text)
-            elif scripter_pending_command is ray.Command.STOP:
-                self._send_error_to_caller(OscSrc.STOP, - exit_code,
-                                        error_text)
+            error_text = \
+                f'script {self.scripter.get_path()} ended with an error code'
+            match scripter_pending_command:
+                case ray.Command.SAVE:
+                    self._send_error_to_caller(
+                        OscSrc.SAVE, - exit_code, error_text)
+                case ray.Command.START:
+                    self._send_error_to_caller(
+                        OscSrc.START, - exit_code, error_text)
+                case ray.Command.STOP:
+                    self._send_error_to_caller(
+                        OscSrc.STOP, - exit_code, error_text)
         else:
-            if scripter_pending_command is ray.Command.SAVE:
-                self._send_reply_to_caller(OscSrc.SAVE, 'saved')
-            elif scripter_pending_command is ray.Command.START:
-                self._send_reply_to_caller(OscSrc.START, 'started')
-            elif scripter_pending_command is ray.Command.STOP:
-                self._send_reply_to_caller(OscSrc.STOP, 'stopped')
+            match scripter_pending_command:
+                case ray.Command.SAVE:
+                    self._send_reply_to_caller(OscSrc.SAVE, 'saved')
+                case ray.Command.START:
+                    self._send_reply_to_caller(OscSrc.START, 'started')
+                case ray.Command.STOP:
+                    self._send_reply_to_caller(OscSrc.STOP, 'stopped')
 
         if scripter_pending_command is self.pending_command:
             self.pending_command = ray.Command.NONE
 
-        if (scripter_pending_command is ray.Command.STOP
-                and self.is_running()):
+        if scripter_pending_command is ray.Command.STOP and self.is_running:
             # if stop script ends with a not stopped client
             # We must stop it, else it would prevent session close
             self.stop()
@@ -1579,7 +1416,7 @@ class Client(ServerSender, ray.ClientData):
     def ray_hack_ready(self):
         self.send_gui_message(
             _translate('GUIMSG', '  %s: project probably loaded')
-                % self.gui_msg_style())
+                % self.gui_msg_style)
 
         self._send_reply_to_caller(OscSrc.OPEN, 'client opened')
         self.pending_command = ray.Command.NONE
@@ -1592,7 +1429,7 @@ class Client(ServerSender, ray.ClientData):
         self.scripter.terminate()
 
     def tell_client_session_is_loaded(self):
-        if self.nsm_active and not self.is_dumb_client():
+        if self.nsm_active and not self.is_dumb:
             self.message("Telling client %s that session is loaded."
                          % self.name)
             self.send_to_self_address(nsm.client.SESSION_IS_LOADED)
@@ -1602,7 +1439,7 @@ class Client(ServerSender, ray.ClientData):
             if not self.ray_hack.saveable():
                 return False
 
-            return bool(self.is_running()
+            return bool(self.is_running
                         and self.pending_command is ray.Command.NONE)
 
         return self.nsm_active
@@ -1618,7 +1455,7 @@ class Client(ServerSender, ray.ClientData):
         if osp is not None:
             self._osc_srcs[OscSrc.SAVE] = osp
 
-        if self.is_running():
+        if self.is_running:
             if self.scripter.start(ray.Command.SAVE, osp,
                                    self._osc_srcs.get(OscSrc.SAVE)):
                 self.set_status(ray.ClientStatus.SCRIPT)
@@ -1627,9 +1464,9 @@ class Client(ServerSender, ray.ClientData):
         if self.pending_command is ray.Command.SAVE:
             self._send_error_to_caller(OscSrc.SAVE, ray.Err.GENERAL_ERROR,
                 _translate('GUIMSG', '%s is already saving, please wait!')
-                    % self.gui_msg_style())
+                    % self.gui_msg_style)
 
-        if self.is_running():
+        if self.is_running:
             self.session.send_monitor_event(
                 'save_request', self.client_id)
 
@@ -1641,19 +1478,19 @@ class Client(ServerSender, ray.ClientData):
                 QTimer.singleShot(300, self._ray_hack_saved)
 
             elif self.can_save_now():
-                self.message("Telling %s to save" % self.name)
+                self.message(f'Telling {self.client_id} to save')
                 self.send_to_self_address(nsm.client.SAVE)
 
                 self.pending_command = ray.Command.SAVE
                 self.set_status(ray.ClientStatus.SAVE)
 
-            elif self.is_dumb_client():
+            elif self.is_dumb:
                 self.set_status(ray.ClientStatus.NOOP)
 
             if self.can_optional_gui:
                 self.start_gui_hidden = not bool(self.gui_visible)
 
-    def stop(self, osp: Optional[OscPack]=None):
+    def stop(self, osp: OscPack | None =None):
         if self.switch_state is ray.SwitchState.NEEDED:
             if osp is not None:
                 self.send(*osp.error(), ray.Err.NOT_NOW,
@@ -1664,9 +1501,9 @@ class Client(ServerSender, ray.ClientData):
             self._osc_srcs[OscSrc.STOP] = osp
 
         self.send_gui_message(
-            _translate('GUIMSG', "  %s: stopping") % self.gui_msg_style())
+            _translate('GUIMSG', "  %s: stopping") % self.gui_msg_style)
 
-        if self.is_running():
+        if self.is_running:
             if self.scripter.start(ray.Command.STOP, osp,
                                    self._osc_srcs.get(OscSrc.STOP)):
                 self.set_status(ray.ClientStatus.SCRIPT)
@@ -1681,7 +1518,9 @@ class Client(ServerSender, ray.ClientData):
             self.session.send_monitor_event(
                 'stop_request', self.client_id)
 
-            if self.launched_in_terminal and self.pid_from_nsm:
+            if (self.protocol is ray.Protocol.NSM
+                    and self.launched_in_terminal
+                    and self.pid_from_nsm):
                 try:
                     os.kill(self.pid_from_nsm, signal.SIGTERM)
                 except ProcessLookupError:
@@ -1693,7 +1532,8 @@ class Client(ServerSender, ray.ClientData):
                 self._internal.stop()
             elif self.is_external:
                 os.kill(self.pid, signal.SIGTERM)
-            elif self.is_ray_hack and self.ray_hack.stop_sig != signal.SIGTERM.value:
+            elif (self.is_ray_hack
+                    and self.ray_hack.stop_sig != signal.SIGTERM.value):
                 os.kill(self._process.processId(), self.ray_hack.stop_sig)
             else:
                 self._process.terminate()
@@ -1701,8 +1541,8 @@ class Client(ServerSender, ray.ClientData):
             self._send_reply_to_caller(OscSrc.STOP, 'client stopped.')
 
     def quit(self):
-        self.message("Commanding %s to quit" % self.name)
-        if self.is_running():
+        self.message(f'Commanding {self.name} to quit')
+        if self.is_running:
             self.pending_command = ray.Command.STOP
             self.terminate()
             self.set_status(ray.ClientStatus.QUIT)
@@ -1712,7 +1552,7 @@ class Client(ServerSender, ray.ClientData):
 
     def eat_attributes(self, new_client: 'Client'):
         #self.client_id = new_client.client_id
-        self.executable_path = new_client.executable_path
+        self.executable = new_client.executable
         self.arguments = new_client.arguments
         self.name = new_client.name
         self.prefix_mode = new_client.prefix_mode
@@ -1736,14 +1576,15 @@ class Client(ServerSender, ray.ClientData):
         self.gui_has_been_visible = self.gui_visible
 
     def switch(self):
-        self.jack_client_name = self.get_jack_client_name()
-        client_project_path = self.get_project_path()
+        project_path = self.project_path
         self.send_gui_client_properties()
         self.message(
-            f'Commanding {self.name} to switch "{client_project_path}"')
+            f'Commanding {self.name} to switch "{project_path}"')
+
+        self._last_open_time = time.time()
 
         self.send_to_self_address(
-            nsm.client.OPEN, str(client_project_path),
+            nsm.client.OPEN, str(project_path),
             self.session.name, self.jack_client_name)
 
         self.pending_command = ray.Command.OPEN
@@ -1751,9 +1592,9 @@ class Client(ServerSender, ray.ClientData):
         self.set_status(ray.ClientStatus.SWITCH)
         if self.can_optional_gui:
             self.send_gui(rg.client.GUI_VISIBLE,
-                           self.client_id, int(self.gui_visible))
+                          self.client_id, int(self.gui_visible))
 
-    def can_switch_with(self, other_client: 'Client')->bool:
+    def can_switch_with(self, other_client: 'Client') -> bool:
         if self.protocol is ray.Protocol.RAY_HACK:
             return False
 
@@ -1761,7 +1602,7 @@ class Client(ServerSender, ray.ClientData):
             return False
 
         if not ((self.nsm_active and self.can_switch)
-                or (self.is_dumb_client() and self.is_running())):
+                or (self.is_dumb and self.is_running)):
             return False
 
         if self.is_ray_net:
@@ -1770,7 +1611,7 @@ class Client(ServerSender, ray.ClientData):
                         and self.ray_net.running_session_root
                             == other_client.ray_net.session_root)
 
-        return bool(self.running_executable == other_client.executable_path
+        return bool(self.running_executable == other_client.executable
                     and self.running_arguments == other_client.arguments)
 
     def send_gui_client_properties(self, removed=False):
@@ -1799,133 +1640,128 @@ class Client(ServerSender, ray.ClientData):
         for line in message.splitlines():
             prop, colon, value = line.partition(':')
 
-            if prop == 'client_id':
-                # do not change client_id !!!
-                continue
-            elif prop == 'executable':
-                self.executable_path = value
-            elif prop == 'environment':
-                self.pre_env = value
-            elif prop == 'arguments':
-                self.arguments = value
-            elif prop == 'name':
-                # do not change client name,
-                # It will be re-sent by client itself
-                continue
-            elif prop == 'prefix_mode':
-                if value.isdigit():
-                    self.prefix_mode = ray.PrefixMode(int(value))
-            elif prop == 'custom_prefix':
-                self.custom_prefix = value
-            elif prop == 'jack_naming':
-                if value.isdigit():
-                    self.jack_naming = ray.JackNaming(int(value))
-            elif prop == 'jack_name':
-                # do not change jack name
-                # only allow to change jack_naming
-                continue
-            elif prop == 'label':
-                self.label = value
-            elif prop == 'desktop_file':
-                self.desktop_file = value
-            elif prop == 'description':
-                # description could contains many lines
-                continue
-            elif prop == 'icon':
-                self.icon = value
-            elif prop == 'capabilities':
-                # do not change capabilities, no sense !
-                continue
-            elif prop == 'check_last_save':
-                if value.isdigit():
-                    self.check_last_save = bool(int(value))
-            elif prop == 'ignored_extensions':
-                self.ignored_extensions = value
-            elif prop == 'protocol':
-                # do not change protocol value
-                continue
+            match prop:
+                case 'client_id':
+                    # do not change client_id !!!
+                    continue
+                case 'executable':
+                    self.executable = value
+                case 'environment':
+                    self.pre_env = value
+                case 'arguments':
+                    self.arguments = value
+                case 'name':
+                    # do not change client name,
+                    # It will be re-sent by client itself
+                    continue
+                case 'prefix_mode':
+                    if value.isdigit():
+                        self.prefix_mode = ray.PrefixMode(int(value))
+                case 'custom_prefix':
+                    self.custom_prefix = value
+                case 'jack_naming':
+                    if value.isdigit():
+                        self.jack_naming = ray.JackNaming(int(value))
+                case 'jack_name':
+                    # do not change jack name
+                    # only allow to change jack_naming
+                    continue
+                case 'label':
+                    self.label = value
+                case 'desktop_file':
+                    self.desktop_file = value
+                case 'description':
+                    # description could contains many lines
+                    continue
+                case 'icon':
+                    self.icon = value
+                case 'capabilities':
+                    # do not change capabilities, no sense !
+                    continue
+                case 'check_last_save':
+                    if value.isdigit():
+                        self.check_last_save = bool(int(value))
+                case 'ignored_extensions':
+                    self.ignored_extensions = value
+                case 'protocol':
+                    # do not change protocol value
+                    continue
 
             if self.is_ray_hack:
-                if prop == 'config_file':
-                    self.ray_hack.config_file = value
-                elif prop == 'save_sig':
-                    try:
-                        sig = signal.Signals(int(value))
+                match prop:
+                    case 'config_file':
+                        self.ray_hack.config_file = value
+                    case 'save_sig':
+                        try:
+                            sig = signal.Signals(int(value))
+                        except ValueError:
+                            continue
                         self.ray_hack.save_sig = int(value)
-                    except:
-                        continue
-                elif prop == 'stop_sig':
-                    try:
-                        sig = signal.Signals(int(value))
+                    case 'stop_sig':
+                        try:
+                            sig = signal.Signals(int(value))
+                        except ValueError:
+                            continue
                         self.ray_hack.stop_sig = int(value)
-                    except:
-                        continue
-                elif prop == 'wait_win':
-                    self.ray_hack.wait_win = bool(
-                        value.lower() in ('1', 'true'))
-                elif prop == 'no_save_level':
-                    if value.isdigit() and 0 <= int(value) <= 2:
-                        self.ray_hack.no_save_level = int(value)
+                    case 'wait_win':
+                        self.ray_hack.wait_win = bool(
+                            value.lower() in ('1', 'true'))
+                    case 'no_save_level':
+                        if value.isdigit() and 0 <= int(value) <= 2:
+                            self.ray_hack.no_save_level = int(value)
 
             elif self.is_ray_net:
-                if prop == 'net_daemon_url':
-                    self.ray_net.daemon_url = value
-                elif prop == 'net_session_root':
-                    self.ray_net.session_root = value
-                elif prop == 'net_session_template':
-                    self.ray_net.session_template = value
+                match prop:
+                    case 'net_daemon_url':
+                        self.ray_net.daemon_url = value
+                    case 'net_session_root':
+                        self.ray_net.session_root = value
+                    case 'net_session_template':
+                        self.ray_net.session_template = value
 
         self.send_gui_client_properties()
 
-    def get_properties_message(self):
-        message = """client_id:%s
-protocol:%s
-executable:%s
-environment:%s
-arguments:%s
-name:%s
-prefix_mode:%i
-custom_prefix:%s
-jack_naming:%i
-jack_name:%s
-desktop_file:%s
-label:%s
-icon:%s
-check_last_save:%i
-ignored_extensions:%s""" % (self.client_id,
-                            self.protocol.to_string(),
-                            self.executable_path,
-                            self.pre_env,
-                            self.arguments,
-                            self.name,
-                            self.prefix_mode.value,
-                            self.custom_prefix,
-                            self.jack_naming.value,
-                            self.get_jack_client_name(),
-                            self.desktop_file,
-                            self.label,
-                            self.icon,
-                            int(self.check_last_save),
-                            self.ignored_extensions)
+    def get_properties_message(self) -> str:
+        message = (
+            f'client_id:{self.client_id}\n'
+            f'protocol:{self.protocol.to_string()}\n'
+            f'executable:{self.executable}\n'
+            f'environment:{self.pre_env}\n'
+            f'arguments:{self.arguments}\n'
+            f'name:{self.name}\n'
+            f'prefix_mode:{self.prefix_mode.value}\n'
+            f'custom_prefix:{self.custom_prefix}\n'
+            f'jack_naming:{self.jack_naming.value}\n'
+            f'jack_name:{self.jack_client_name}\n'
+            f'desktop_file:{self.desktop_file}\n'
+            f'label:{self.label}\n'
+            f'icon:{self.icon}\n'
+            f'check_last_save:{int(self.check_last_save)}\n'
+            f'ignored_extensions:{self.ignored_extensions}'
+        )
 
-        if self.protocol in (ray.Protocol.NSM, ray.Protocol.INTERNAL):
-            message += "\ncapabilities:%s" % self.capabilities
-        elif self.protocol is ray.Protocol.RAY_HACK:
-            message += """\nconfig_file:%s
-save_sig:%i
-stop_sig:%i
-wait_win:%i
-no_save_level:%i""" % (self.ray_hack.config_file,
-                       self.ray_hack.save_sig,
-                       self.ray_hack.stop_sig,
-                       int(self.ray_hack.wait_win),
-                       self.ray_hack.no_save_level)
-        elif self.protocol is ray.Protocol.RAY_NET:
-            message += """\nnet_daemon_url:%s
-net_session_root:%s
-net_session_template:%s""" % (self.ray_net.daemon_url,
-                              self.ray_net.session_root,
-                              self.ray_net.session_template)
+        match self.protocol:
+            case ray.Protocol.NSM | ray.Protocol.INTERNAL:
+                message += f'\ncapabilities:{self.capabilities}'
+
+            case ray.Protocol.RAY_HACK:
+                message += (
+                    '\n'
+                    f'config_file:{self.ray_hack.config_file}\n'
+                    f'save_sig:{self.ray_hack.save_sig}\n'
+                    f'stop_sig:{self.ray_hack.stop_sig}\n'
+                    f'wait_win:{int(self.ray_hack.wait_win)}\n'
+                    f'no_save_level:{self.ray_hack.no_save_level}'
+                )
+
+            case ray.Protocol.RAY_NET:
+                message += (
+                    '\n'
+                    f'net_daemon_url:{self.ray_net.daemon_url}\n'
+                    f'net_session_root:{self.ray_net.session_root}\n'
+                    f'net_session_template:{self.ray_net.session_template}'
+                )
+
         return message
 
     def relevant_no_save_level(self) -> int:
@@ -1936,15 +1772,15 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         return 0
 
-    def get_project_files(self) -> list[Path]:
-        client_files = list[Path]()
-        project_path = self.get_project_path()
-        if project_path is None:
-            return []
-
+    @property
+    def project_files(self) -> list[Path]:
+        '''list of client project files or directories currently existing'''
         spath = self.session.path
         if spath is None:
             return []
+
+        client_files = list[Path]()
+        project_path = self.project_path
 
         if project_path.exists():
             client_files.append(project_path)
@@ -1962,7 +1798,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         if scripts_dir.exists():
             client_files.append(scripts_dir)
 
-        full_links_dir = spath / self.get_links_dirname()
+        full_links_dir = spath / self.links_dirname
         if full_links_dir.exists():
             client_files.append(full_links_dir)
 
@@ -1977,10 +1813,10 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             return
 
         if not desktop_file:
-            desktop_file = exec_and_desktops.get(self.executable_path)
+            desktop_file = exec_and_desktops.get(self.executable)
 
         if not desktop_file:
-            desktop_file = os.path.basename(self.executable_path)
+            desktop_file = os.path.basename(self.executable)
 
         if not desktop_file.endswith('.desktop'):
             desktop_file += ".desktop"
@@ -2015,7 +1851,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             # if the executable is a symlink, we can search desktop file
             # finding the symlink target as executable in desktop file.
             alter_exec = None
-            full_exec = shutil.which(self.executable_path)
+            full_exec = shutil.which(self.executable)
 
             if full_exec is not None:
                 if Path(full_exec).is_symlink():
@@ -2049,7 +1885,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                     for line in contents.splitlines():
                         if line.startswith('Exec='):
                             value = line.partition('=')[2]
-                            if (self.executable_path in value.split()
+                            if (self.executable in value.split()
                                     or (alter_exec is not None
                                         and alter_exec in value.split())):
                                 desk_file_found = True
@@ -2065,134 +1901,8 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             else:
                 self.desktop_file = '//not_found'
 
-    def save_as_template(self, template_name: str, osp: Optional[OscPack]=None):
-        if osp is not None:
-            self._osc_srcs[OscSrc.SAVE_TP] = osp
-
-        #copy files
-        client_files = self.get_project_files()
-
-        template_dir = TemplateRoots.user_clients / template_name
-        if template_dir.exists():
-            try:
-                shutil.rmtree(template_dir)
-            except:
-                self._send_error_to_caller(
-                    OscSrc.SAVE_TP, ray.Err.CREATE_FAILED,
-                    _translate('GUIMSG', 'impossible to remove %s !')
-                    % highlight_text(template_dir))
-                return
-
-        template_dir.mkdir(parents=True)
-
-        if self.is_ray_net:
-            if self.ray_net.daemon_url:
-                self.ray_net.session_template = template_name
-                net_session_root = self.ray_net.session_root
-                if self.is_running():
-                    net_session_root = self.ray_net.running_session_root
-
-                self.send(Address(self.ray_net.daemon_url),
-                          r.server.SAVE_SESSION_TEMPLATE,
-                          self.session.name,
-                          template_name,
-                          net_session_root)
-
-        if client_files:
-            self.set_status(ray.ClientStatus.COPY)
-            self.session.file_copier.start_client_copy(
-                self.client_id, client_files, template_dir,
-                self._save_as_template_substep1,
-                self._save_as_template_aborted,
-                [template_name])
-        else:
-            self._save_as_template_substep1(template_name)
-
-    def eat_other_session_client(self, src_addr, osc_path, client: 'Client'):
-        # eat attributes but keep client_id
-        self.eat_attributes(client)
-
-        self.send_gui_client_properties()
-        
-        tmp_basedir = ".tmp_ray_workdir"
-        spath = self.session.path
-        
-        if spath is None:
-            self.send(src_addr, osc_paths.ERROR, osc_path, ray.Err.NO_SESSION_OPEN,
-                      "impossible to eat other session client, "
-                      "no session open")
-            return
-        
-        while Path(spath / tmp_basedir).exists():
-            tmp_basedir += 'X'
-        tmp_work_dir = spath / tmp_basedir
-        
-        try:
-            tmp_work_dir.mkdir(parents=True)
-        except:
-            self.send(
-                src_addr, osc_paths.ERROR, osc_path, ray.Err.CREATE_FAILED,
-                f"impossible to make a tmp workdir at {tmp_work_dir}. Abort.")
-            self.session._remove_client(self)
-            return
-
-        self.set_status(ray.ClientStatus.PRECOPY)
-        
-        self.session.file_copier.start_client_copy(
-            self.client_id,
-            client.get_project_files(),
-            tmp_work_dir,
-            self.eat_other_session_client_step_1,
-            self.eat_other_session_client_aborted,
-            [src_addr, osc_path, client, tmp_work_dir])
-
-    def eat_other_session_client_step_1(self, src_addr: Address, osc_path: str,
-                                        client: 'Client', tmp_work_dir: str):
-        self._rename_files(
-            Path(tmp_work_dir), client.session.name, self.session.name,
-            client.prefix, self.prefix,
-            client.client_id, self.client_id,
-            client.get_links_dirname(), self.get_links_dirname())
-
-        has_move_errors = False
-
-        for file_path in os.listdir(tmp_work_dir):
-            try:
-                os.rename("%s/%s" % (tmp_work_dir, file_path),
-                          "%s/%s" % (self.session.path, file_path))
-            except:
-                self.message(
-                    _translate(
-                        'client',
-                        'failed to move %s/%s to %s/%s, sorry.')
-                        % (tmp_work_dir, file_path, self.session.path, file_path))
-                has_move_errors = True
-        
-        if not has_move_errors:
-            try:
-                shutil.rmtree(tmp_work_dir)
-            except:
-                self.message(
-                    'client'
-                    'fail to remove temp directory %s. sorry.' % tmp_work_dir)
-
-        self.send(src_addr, osc_paths.REPLY, osc_path,
-                  "Client copied from another session")
-
-        if self.auto_start:
-            self.start()
-        else:
-            self.set_status(ray.ClientStatus.STOPPED)
-
-    def eat_other_session_client_aborted(self, src_addr, osc_path,
-                                         client, tmp_work_dir):
-        shutil.rmtree(tmp_work_dir)
-        self.session._remove_client(self)
-        self.send(src_addr, osc_paths.ERROR, osc_path, ray.Err.COPY_ABORTED,
-                  "Copy was aborted by user")
-
     def change_prefix(self, prefix_mode: ray.PrefixMode, custom_prefix: str):
-        if self.is_running():
+        if self.is_running:
             return
 
         old_prefix = self.session.name
@@ -2207,7 +1917,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         elif prefix_mode is ray.PrefixMode.CUSTOM:
             new_prefix = custom_prefix
 
-        links_dir = self.get_links_dirname()
+        links_dir = self.links_dirname
 
         if self.session.path is None:
             _logger.warning(
@@ -2229,80 +1939,8 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
     def adjust_files_after_copy(
             self, new_session_full_name: str,
             template_save=ray.Template.NONE):
-        spath = self.session.path
-        old_session_name = self.session.name
-        new_session_name = Path(new_session_full_name).name
-        new_client_id = self.client_id
-        old_client_id = self.client_id
-        new_client_links_dir = self.get_links_dirname()
-        old_client_links_dir = new_client_links_dir
-
-        X_SESSION_X = "XXX_SESSION_NAME_XXX"
-        X_CLIENT_ID_X = "XXX_CLIENT_ID_XXX"
-        X_CLIENT_LINKS_DIR_X = "XXX_CLIENT_LINKS_DIR_XXX"
-        'used for Carla links dir'
-
-        match template_save:
-            case ray.Template.NONE:
-                spath = self.session.root / new_session_full_name
-
-            case ray.Template.RENAME:
-                ...
-
-            case ray.Template.SESSION_SAVE:
-                spath = Path(new_session_full_name)
-                if not spath.is_absolute():
-                    spath = TemplateRoots.user_sessions / new_session_full_name
-                new_session_name = X_SESSION_X
-
-            case ray.Template.SESSION_SAVE_NET:
-                spath = (self.session.root
-                        / TemplateRoots.net_session_name
-                        / new_session_full_name)
-                new_session_name = X_SESSION_X
-
-            case ray.Template.SESSION_LOAD:
-                spath = self.session.root / new_session_full_name
-                old_session_name = X_SESSION_X
-
-            case ray.Template.SESSION_LOAD_NET:
-                spath = self.session.root / new_session_full_name
-                old_session_name = X_SESSION_X
-
-            case ray.Template.CLIENT_SAVE:
-                spath = TemplateRoots.user_clients / new_session_full_name
-                new_session_name = X_SESSION_X
-                new_client_id = X_CLIENT_ID_X
-                new_client_links_dir = X_CLIENT_LINKS_DIR_X
-
-            case ray.Template.CLIENT_LOAD:
-                spath = self.session.path
-                old_session_name = X_SESSION_X
-                old_client_id = X_CLIENT_ID_X
-                old_client_links_dir = X_CLIENT_LINKS_DIR_X
-
-        if spath is None:
-            _logger.error(
-                f'Impossible to adjust files after copy '
-                f'for client {self.client_id} : '
-                f'spath is None')
-            return
-
-        old_prefix = old_session_name
-        new_prefix = new_session_name
-        
-        match self.prefix_mode:
-            case ray.PrefixMode.CLIENT_NAME:
-                old_prefix = new_prefix = self.name
-            case ray.PrefixMode.CUSTOM:
-                old_prefix = new_prefix = self.custom_prefix
-
-        self._rename_files(
-            spath,
-            old_session_name, new_session_name,
-            old_prefix, new_prefix,
-            old_client_id, new_client_id,
-            old_client_links_dir, new_client_links_dir)
+        client_tools.adjust_files_after_copy(
+            self, new_session_full_name, template_save)
 
     def server_announce(self, osp: OscPack, is_new: bool):
         client_name, capabilities, executable_path, \
@@ -2315,7 +1953,8 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
         minor: int
         pid: int
 
-        _logger.debug(f'Client server announce "{client_name}" {executable_path} {pid}')
+        _logger.debug(
+            f'Client server announce "{client_name}" {executable_path} {pid}')
 
         if self.pending_command is ray.Command.STOP:
             # assume to not answer to a dying client.
@@ -2343,8 +1982,8 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             self.pid = pid
             self.running_executable = executable_path
 
-        if self.executable_path in RS.non_active_clients:
-            RS.non_active_clients.remove(self.executable_path)
+        if self.executable in RS.non_active_clients:
+            RS.non_active_clients.remove(self.executable)
 
         if self.protocol is ray.Protocol.NSM:
             self.message( 
@@ -2356,7 +1995,7 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
             return
 
         self.send_gui_message(
-            _translate('GUIMSG', "  %s: announced") % self.gui_msg_style())
+            _translate('GUIMSG', "  %s: announced") % self.gui_msg_style)
 
         # if this daemon is under another NSM session
         # do not enable server-control
@@ -2372,17 +2011,17 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
                   ray.APP_TITLE,
                   server_capabilities)
 
-        client_project_path = str(self.get_project_path())
-        self.jack_client_name = self.get_jack_client_name()
-
+        client_project_path = str(self.project_path)
         if self.is_ray_net:
             client_project_path = self.session.short_path_name
-            self.jack_client_name = self.ray_net.session_template
 
         self.send_gui_client_properties()
         self.set_status(ray.ClientStatus.OPEN)
 
-        if ':monitor:' in self.capabilities:
+        if self.can_patcher:
+            self.send(self.addr, nsm.client.PATCH_KEYWORD,
+                      server.patcher_keyword)
+        if self.can_monitor:
             self.session.send_initial_monitor(self.addr)
         self.session.send_monitor_client_update(self)
 
@@ -2391,4 +2030,4 @@ net_session_template:%s""" % (self.ray_net.daemon_url,
 
         self.pending_command = ray.Command.OPEN
 
-        self._last_announce_time = time.time()
+        self._last_open_time = time.time()

@@ -5,4 +5,7 @@
 
 
 ADDED = '/ray/gui/favorites/added'
+' (arg types: ssis)'
+
 REMOVED = '/ray/gui/favorites/removed'
+' (arg types: si)'

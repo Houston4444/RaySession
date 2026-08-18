@@ -20,7 +20,7 @@ import osc_paths.ray.gui as rg
 from server_sender import ServerSender
 
 if TYPE_CHECKING:
-    from session_operating import OperatingSession
+    from session import Session
 
 
 _logger = logging.getLogger(__name__)
@@ -40,13 +40,12 @@ class CopyFile:
 
 
 class FileCopier(ServerSender):
-    def __init__(self, session: 'OperatingSession'):
+    def __init__(self, session: 'Session'):
         ServerSender.__init__(self)
         self.session = session
 
         self._client_id = ''
         self._src_is_factory = False
-        self._next_function: Optional[Callable] = None
         self._abort_function: Optional[Callable] = None
         self._next_args = list[Any]()
         self._copy_files = list[CopyFile]()
@@ -65,6 +64,14 @@ class FileCopier(ServerSender):
 
         self._abort_src_addr: Optional[Address] = None
         self._abort_src_path = ''
+
+    @property
+    def active(self) -> bool:
+        return self._is_active
+    
+    @property
+    def aborted(self) -> bool:
+        return self._aborted
 
     def _get_file_size(self, filepath: Path) -> int:
         if not filepath.exists():
@@ -154,6 +161,8 @@ class FileCopier(ServerSender):
 
             self._is_active = False
             self._send_copy_state_to_gui(0)
+            
+            self.session.files_copy_finished()
             if self._abort_function is not None:
                 self._abort_function(*self._next_args)
             return
@@ -165,10 +174,7 @@ class FileCopier(ServerSender):
         else:
             self._is_active = False
             self._send_copy_state_to_gui(0)
-
-            if self._next_function:
-                self._next_function(*self._next_args)
-
+            self.session.files_copy_finished()
             return
 
         self._next_process()
@@ -191,13 +197,8 @@ class FileCopier(ServerSender):
 
         self._timer.start()
 
-    def _start(self, src_list: Union[Path, list[Path]], dest_dir: Path,
-               next_function: Callable, abort_function: Callable,
-               next_args=[]):
-        self._abort_function = abort_function
-        self._next_function = next_function
-        self._next_args = next_args
-
+    def _start(
+            self, src_list: Path | list[Path], dest_dir: Path) -> ray.Err:
         self._aborted = False
         self._copy_size = 0
         self._copy_files.clear()
@@ -205,23 +206,19 @@ class FileCopier(ServerSender):
         dest_path_exists = dest_dir.exists()
         if dest_path_exists:
             if not dest_dir.is_dir():
-                #TODO send error, but it should not append
-                self._abort_function(*self._next_args)
-                return
+                return ray.Err.BAD_PROJECT
 
         if isinstance(src_list, Path):
             src_dir = src_list
             src_list = list[Path]()
 
             if not src_dir.is_dir():
-                self._abort_function(*self._next_args)
-                return
+                return ray.Err.BAD_PROJECT
 
             try:
                 tmp_list = src_dir.iterdir()            
             except:
-                self._abort_function(*self._next_args)
-                return
+                return ray.Err.BAD_PROJECT
 
             for path in tmp_list:
                 if path.name == '.ray-snapshots':
@@ -233,8 +230,7 @@ class FileCopier(ServerSender):
                 try:
                     dest_dir.mkdir(parents=True)
                 except:
-                    self._abort_function(*self._next_args)
-                    return
+                    return ray.Err.CREATE_FAILED
 
         for orig_path in src_list:
             copy_file = CopyFile()
@@ -255,8 +251,8 @@ class FileCopier(ServerSender):
         if self._copy_files:
             self._send_copy_state_to_gui(1)
             self._next_process()
-        else:
-            self._next_function(*self._next_args)
+
+        return ray.Err.OK
 
     def _send_copy_state_to_gui(self, state: int):
         if self.session.session_id:
@@ -267,21 +263,17 @@ class FileCopier(ServerSender):
 
     def start_client_copy(
             self, client_id: str, src_list: list[Path], dest_dir: Path,
-            next_function: Callable, abort_function: Callable,
-            next_args=[], src_is_factory=False):
+            src_is_factory=False) -> ray.Err:
         self._client_id = client_id
         self._src_is_factory = src_is_factory
-        self._start(src_list, dest_dir, next_function,
-                    abort_function, next_args)
+        return self._start(src_list, dest_dir)
 
     def start_session_copy(
             self, src_dir: Path, dest_dir: Path,
-            next_function: Callable, abort_function: Callable, next_args=[],
-            src_is_factory=False):
+            src_is_factory=False) -> ray.Err:
         self._client_id = ''
         self._src_is_factory = src_is_factory
-        self._start(src_dir, dest_dir, next_function,
-                    abort_function, next_args)
+        return self._start(src_dir, dest_dir)
 
     def abort(self, abort_function: Optional[Callable] =None, next_args=[]):
         if abort_function:

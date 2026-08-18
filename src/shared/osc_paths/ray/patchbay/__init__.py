@@ -8,7 +8,14 @@ ACTIVATE_DSP_LOAD = '/ray/patchbay/activate_dsp_load'
 ACTIVATE_TRANSPORT = '/ray/patchbay/activate_transport'
 ADD_GUI = '/ray/patchbay/add_gui'
 CONNECT = '/ray/patchbay/connect'
+' (arg types: ss)'
+
+CONNECT_FAILED = '/ray/patchbay/connect_failed'
+' (arg types: ss)'
+
 DISCONNECT = '/ray/patchbay/disconnect'
+' (arg types: ss)'
+
 GROUP_CUSTOM_NAME = '/ray/patchbay/group_custom_name'
 GUI_DISANNOUNCE = '/ray/patchbay/gui_disannounce'
 PORT_CUSTOM_NAME = '/ray/patchbay/port_custom_name'

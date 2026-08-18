@@ -2,12 +2,16 @@
 # Imports from standard library
 from queue import Queue
 import time
-from enum import IntEnum
-from typing import Iterator, Optional, TypeAlias
+from enum import IntEnum, Enum
+import re
+from typing import Iterator, TypeAlias
 
+from patshared import PortMode, PortType
+from patch_engine import PatchEvent
 
 # Type aliases
 NsmClientName: TypeAlias = str
+'''simple NSM client id'''
 
 JackClientBaseName: TypeAlias = str
 '''base of a jack client name,
@@ -17,29 +21,21 @@ multiple JACK clients for the same NSM client'''
 FullPortName: TypeAlias = str
 'Full port name string under the form "jack_client_name:port_name"'
 
-
-class PortMode(IntEnum):
-    NULL = 0
-    OUTPUT = 1
-    INPUT = 2
+ConnectionStr: TypeAlias = tuple[FullPortName, FullPortName]
+PatternOrName: TypeAlias = FullPortName|re.Pattern[str]
+ConnectionPattern: TypeAlias = tuple[PatternOrName, PatternOrName]
 
 
-class PortType(IntEnum):
-    NULL = 0
-    AUDIO = 1
-    MIDI = 2
-
-
-class JackPort:
-    # is_new is used to prevent reconnections
-    # when a disconnection has not been saved and one new port append.
+class PortData:
     id = 0
     name = ''
     mode = PortMode.NULL
     type = PortType.NULL
     is_new = False
-    
-    
+    '''used to prevent reconnections
+    when a disconnection has not been saved and one new port append.'''
+
+
 class ProtoEngine:
     XML_TAG = 'RAY-PATCH'
     EXECUTABLE = 'ray-patch'
@@ -52,8 +48,8 @@ class ProtoEngine:
         return True
 
     def fill_ports_and_connections(
-            self, port_list: dict[PortMode, list[JackPort]],
-            connection_list: list[tuple[str, str]]):
+            self, port_list: dict[PortMode, list[PortData]],
+            connections: set[tuple[str, str]]):
         ...
     def connect_ports(self, port_out: str, port_in: str):
         ...
@@ -63,21 +59,17 @@ class ProtoEngine:
         ...
 
 
-class Event(IntEnum):
-    CLIENT_ADDED = 1
-    CLIENT_REMOVED = 2
-    PORT_ADDED = 3
-    PORT_REMOVED = 4
-    PORT_RENAMED = 5
-    CONNECTION_ADDED = 6
-    CONNECTION_REMOVED = 7
-    JACK_STOPPED = 8
-
-
 class MonitorStates(IntEnum):
     NEVER_DONE = 0
     UPDATING = 1
     DONE = 2
+
+
+class TerminateState(Enum):
+    NORMAL = 0
+    ASKED = 1
+    RESTORING = 2
+    LEAVING = 3
 
 
 class Timer:
@@ -104,41 +96,13 @@ class EventHandler:
     def __init__(self):
         self._event_queue = Queue()
     
-    def add_event(self, event: Event, *args):
+    def add_event(self, event: PatchEvent, *args):
         self._event_queue.put((event, args))
 
-    def new_events(self) -> Iterator[tuple[Event, tuple]]:
+    def new_events(self) -> Iterator[tuple[PatchEvent, tuple]]:
         while self._event_queue.qsize():
             yield self._event_queue.get()
 
-
-class Glob:
-    file_path = ''
-    is_dirty = False
-    dirty_state_sent = False
-    pending_connection = False
-    open_done_once = False
-    allow_disconnections = False
-    terminate = False
-    monitor_states_done = MonitorStates.NEVER_DONE
-    client_changing_id: Optional[tuple[str, str]] = None
-    
-    @classmethod
-    def reset(cls):
-        cls.file_path = ''
-        cls.is_dirty = False
-        cls.dirty_state_sent = False
-        cls.pending_connection = False
-        cls.open_done_once = False
-        cls.allow_disconnections = False
-        cls.terminate = False
-        cls.monitor_states_done = MonitorStates.NEVER_DONE
-        cls.client_changing_id = None
-    
-
-def b2str(src_bytes: bytes) -> str:
-    '''decode bytes to string'''
-    return str(src_bytes, encoding="utf-8")
 
 def debug_conn_str(conn: tuple[str, str]):
     return f"connection from '{conn[0]}' to '{conn[1]}'"

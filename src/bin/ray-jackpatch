@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 sys.path[0] = str(Path(__file__).parents[1] / 'clients')
+sys.path.insert(
+    1, str(Path(__file__).parents[2] / 'HoustonPatchbay' / 'source'))
 sys.path.insert(1, str(Path(__file__).parents[1] / 'shared'))
 
 if TYPE_CHECKING:

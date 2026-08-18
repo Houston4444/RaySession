@@ -1,6 +1,4 @@
 
-from typing import Optional
-
 # imports from shared
 from patcher.bases import EventHandler, ProtoEngine
 
