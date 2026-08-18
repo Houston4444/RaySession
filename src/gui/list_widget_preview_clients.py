@@ -180,7 +180,7 @@ class ListWidgetPreviewClients(QListWidget):
         self.server_status = ray.ServerStatus.OFF
 
     @classmethod
-    def to_daemon(self, *args):
+    def to_daemon(cls, *args):
         server = GuiServerThread.instance()
         if server:
             server.to_daemon(*args)
