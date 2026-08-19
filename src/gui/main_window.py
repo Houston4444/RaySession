@@ -32,17 +32,15 @@ import osc_paths.ray as r
 import osc_paths.ray.gui as rg
 
 # Local imports
-import add_application_dialog
-import open_session_dialog
-import child_dialogs
-import snapshots_dialog
-import preferences_dialog
-import list_widget_clients
+from rresources import scalables
+import dialogs
 from gui_tools import (
     RS, CommandLineArgs, _translate, server_status_string,
     is_dark_theme, get_code_root, get_app_icon)
 from gui_client import TrashedClient
 from gui_server_thread import GuiServerThread
+from promoted_widgets.list_widget_clients.client_item import ClientItem
+from rresources import scalables
 from utility_scripts import UtilityScriptLauncher
 
 # Import UIs made with Qt-Designer
@@ -596,7 +594,7 @@ class MainWindow(QMainWindow):
         self._show_preferences_dialog()
         if self.preferences_dialog is not None:
             self.preferences_dialog.set_on_tab(
-                preferences_dialog.PreferencesTab.SYSTRAY)
+                dialogs.PreferencesTab.SYSTRAY)
 
     def _raise_window(self):
         if self.mouse_is_inside:

@@ -18,7 +18,7 @@ from .new_executable import NewExecutableDialog
 from .new_session import NewSessionDialog
 from .open_nsm_info import OpenNsmSessionInfoDialog
 from .open_session import OpenSessionDialog
-from .preferences import PreferencesDialog
+from .preferences import PreferencesDialog, PreferencesTab
 from .quit_app import QuitAppDialog
 from .save_template import SaveTemplateClientDialog, SaveTemplateSessionDialog
 from .script_info import ScriptInfoDialog

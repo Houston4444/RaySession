@@ -1,4 +1,5 @@
 
+
 # Imports from standard library
 from typing import TYPE_CHECKING
 
@@ -6,7 +7,7 @@ from typing import TYPE_CHECKING
 from qtpy.QtWidgets import (QListWidget, QListWidgetItem,
                              QFrame, QMenu, QBoxLayout)
 from qtpy.QtGui import (QIcon, QFontMetrics, QContextMenuEvent,
-                         QMouseEvent, QKeyEvent, QAction)
+                         QMouseEvent, QKeyEvent)
 from qtpy.QtCore import Slot, QSize, Qt, Signal # type:ignore
 
 # imports from HoustonPatchbay
@@ -28,70 +29,8 @@ import ui.client_slot
 
 if TYPE_CHECKING:
     from gui_client import Client
-    from .client_item import ClientItem
-    from .list_widget_clients import ListWidgetClients
-    from qtpy.QtGui import QAction
+    from gui_session import Session
 
-
-class AlternativesMenu(QMenu):
-    def __init__(self, parent: QMenu, client: 'Client'):
-        super().__init__(parent)
-        self.client = client
-        # self.
-        self.setTitle(_translate('client_slot', 'Alternatives'))
-        self.setIcon(QIcon.fromTheme('widget-alternatives'))
-        self.aboutToShow.connect(self._fill_alternatives)
-    
-    def _fill_alternatives(self):
-        self.clear()
-        session = self.client.session
-        for alter_group in session.alternative_groups:
-            if self.client.client_id not in alter_group:
-                continue
-            
-            for alt_id in alter_group:
-                if alt_id == self.client.client_id:
-                    continue
-                for trashed_client in session.trashed_clients:
-                    if trashed_client.client_id == alt_id:
-                        act = QAction(self)
-                        act.setIcon(get_app_icon(trashed_client.icon, self))
-                        act.setText(trashed_client.label)
-                        act.setData(alt_id)
-                        act.triggered.connect(self._alternative_selected)
-                        self.addAction(act)
-                        break
-            break
-        
-        self.addSeparator()
-        new_act = QAction(self)
-        new_act.setIcon(QIcon.fromTheme('list-add'))
-        new_act.setText(_translate('alternatives', 'New Alternative'))
-        new_act.triggered.connect(self._new_alternative)
-        self.addAction(new_act)
-
-    @Slot()
-    def _alternative_selected(self):
-        alt_id: str = self.sender().data() # type:ignore
-        server = GuiServerThread.instance()
-        if server:
-            server.to_daemon(
-                r.client.SWITCH_ALTERNATIVE, self.client.client_id, alt_id)
-        
-    @Slot()
-    def _new_alternative(self):
-        dialog = dialogs.ClientRenameDialog(
-            self.client.session.main_win, self.client)
-        if not dialog.exec():
-            return
-
-        new_client_id = dialog.get_new_label()
-        server = GuiServerThread.instance()
-        if server:
-            server.to_daemon(
-                r.client.SWITCH_ALTERNATIVE, self.client.client_id,
-                new_client_id.replace(' ', '_'))
-    
 
 class ClientSlot(QFrame):
     clicked = Signal(str)
@@ -137,11 +76,9 @@ class ClientSlot(QFrame):
             self.client.show_properties_dialog)
 
         self._menu = QMenu(self)
-        self._alternatives_menu = AlternativesMenu(self._menu, client)
 
         self._menu.addAction(
             self.ui.actionSaveAsApplicationTemplate) # type:ignore
-        self._menu.addMenu(self._alternatives_menu)
         self._menu.addAction(
             self.ui.actionRename) # type:ignore
         self._menu.addAction(
@@ -153,7 +90,6 @@ class ClientSlot(QFrame):
 
         self.ui.actionReturnToAPreviousState.setVisible(
             self.main_win.has_git)
-        self.ui.actionFindBoxesInPatchbay.setEnabled(False)
 
         self.ui.iconButton.setMenu(self._menu) # type:ignore
         
@@ -193,9 +129,9 @@ class ClientSlot(QFrame):
 
     def _change_gui_state(self):
         if self._gui_state:
-            self.to_daemon(r.client.HIDE_OPTIONAL_GUI, self.client_id)
+            self.to_daemon(r.client.HIDE_OPTIONAL_GUI, self.get_client_id())
         else:
-            self.to_daemon(r.client.SHOW_OPTIONAL_GUI, self.client_id)
+            self.to_daemon(r.client.SHOW_OPTIONAL_GUI, self.get_client_id())
 
     def _order_hack_visibility(self, state):
         if self.client.protocol is not ray.Protocol.RAY_HACK:
@@ -207,25 +143,25 @@ class ClientSlot(QFrame):
             self.client.close_properties_dialog()
 
     def _start_client(self):
-        self.to_daemon(r.client.RESUME, self.client_id)
+        self.to_daemon(r.client.RESUME, self.get_client_id())
 
     def _stop_client(self):
         if self._stop_is_kill:
-            self.to_daemon(r.client.KILL, self.client_id)
+            self.to_daemon(r.client.KILL, self.get_client_id())
             return
 
         # we need to prevent accidental stop with a window confirmation
         # under conditions
-        self.main_win.stop_client(self.client_id)
+        self.main_win.stop_client(self.get_client_id())
 
     def _save_client(self):
-        self.to_daemon(r.client.SAVE, self.client_id)
+        self.to_daemon(r.client.SAVE, self.get_client_id())
 
     def _trash_client(self):
-        self.to_daemon(r.client.TRASH, self.client_id)
+        self.to_daemon(r.client.TRASH, self.get_client_id())
 
     def _abort_copy(self):
-        self.main_win.abort_copy_client(self.client_id)
+        self.main_win.abort_copy_client(self.get_client_id())
 
     def _save_as_application_template(self):
         dialog = dialogs.SaveTemplateClientDialog(
@@ -236,10 +172,10 @@ class ClientSlot(QFrame):
 
         template_name = dialog.get_template_name()
         self.to_daemon(r.client.SAVE_AS_TEMPLATE,
-                       self.client_id, template_name)
+                       self.get_client_id(), template_name)
 
     def _open_snapshots_dialog(self):
-        dialog = dialogs.ClientSnapshotsDialog(
+        dialog = dialogs.snapshots.ClientSnapshotsDialog(
             self.main_win, self.client)
         dialog.exec()
         if dialog.result():
@@ -247,10 +183,11 @@ class ClientSlot(QFrame):
             if snapshot is None:
                 return
             self.to_daemon(r.client.OPEN_SNAPSHOT,
-                          self.client_id, snapshot)
+                          self.get_client_id(), snapshot)
 
     def _find_patchbay_boxes(self):
-        self.main_win.set_patchbay_filter_text('client:' + self.client_id)
+        self.main_win.set_patchbay_filter_text(
+            'client:' + self.get_client_id())
         self.list_widget_item.setSelected(True)
 
     def _rename_dialog(self):
@@ -269,6 +206,7 @@ class ClientSlot(QFrame):
 
             self.client.label = label
             self.client.send_properties_to_daemon()
+
 
     def _set_very_short(self, yesno: bool):
         self._very_short = yesno
@@ -308,14 +246,12 @@ class ClientSlot(QFrame):
         else:
             self.ui.iconButton.setIcon(self._icon_on) # type:ignore
 
-    @property
-    def client_id(self) -> str:
+    def get_client_id(self):
         return self.client.client_id
 
     def update_layout(self):
         font = self.ui.ClientName.font()
-        main_size = QFontMetrics(font).horizontalAdvance(
-            self.client.prettier_name())
+        main_size = QFontMetrics(font).horizontalAdvance(self.client.prettier_name())
 
         layout_width = self.list_widget.width()
 
@@ -402,8 +338,7 @@ class ClientSlot(QFrame):
 
         # set icon
         self._icon_on = get_app_icon(self.client.icon, self)
-        self._icon_off = QIcon(
-            self._icon_on.pixmap(32, 32, QIcon.Mode.Disabled))
+        self._icon_off = QIcon(self._icon_on.pixmap(32, 32, QIcon.Mode.Disabled))
 
         self._gray_icon(
             bool(self.client.status in (
@@ -427,95 +362,84 @@ class ClientSlot(QFrame):
         self.ui.lineEditClientStatus.setEnabled(
             status is not ray.ClientStatus.STOPPED)
         self.ui.actionFindBoxesInPatchbay.setEnabled(
-            status not in (ray.ClientStatus.STOPPED,
-                           ray.ClientStatus.PRECOPY))
+            status not in (ray.ClientStatus.STOPPED, ray.ClientStatus.PRECOPY)) 
 
         ray_hack = bool(self.client.protocol is ray.Protocol.RAY_HACK)
 
-        match status:
-            case (ray.ClientStatus.LAUNCH | ray.ClientStatus.OPEN
-                  | ray.ClientStatus.SWITCH | ray.ClientStatus.NOOP
-                  | ray.ClientStatus.LOSE):
-                self.ui.startButton.setEnabled(False)
-                self.ui.stopButton.setEnabled(True)
-                self.ui.saveButton.setEnabled(False)
-                self.ui.closeButton.setEnabled(False)
-                self.ui.ClientName.setStyleSheet(
-                    'QLabel {font-weight : bold}')
-                self.ui.ClientName.setEnabled(True)
-                self.ui.toolButtonGUI.setEnabled(True)
-                self._gray_icon(False)
+        if status in (
+                ray.ClientStatus.LAUNCH,
+                ray.ClientStatus.OPEN,
+                ray.ClientStatus.SWITCH,
+                ray.ClientStatus.NOOP,
+                ray.ClientStatus.LOSE):
+            self.ui.startButton.setEnabled(False)
+            self.ui.stopButton.setEnabled(True)
+            self.ui.saveButton.setEnabled(False)
+            self.ui.closeButton.setEnabled(False)
+            self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
+            self.ui.ClientName.setEnabled(True)
+            self.ui.toolButtonGUI.setEnabled(True)
+            self._gray_icon(False)
 
-                if self._very_short:
-                    self.ui.startButton.setVisible(False)
-                    self.ui.stopButton.setVisible(True)
-                    
-                self.ui.actionFindBoxesInPatchbay.setEnabled(True)
+            if self._very_short:
+                self.ui.startButton.setVisible(False)
+                self.ui.stopButton.setVisible(True)
 
-            case ray.ClientStatus.READY:
-                self.ui.startButton.setEnabled(False)
-                self.ui.stopButton.setEnabled(True)
-                self.ui.closeButton.setEnabled(False)
-                self.ui.ClientName.setStyleSheet(
-                    'QLabel {font-weight : bold}')
-                self.ui.ClientName.setEnabled(True)
-                self.ui.toolButtonGUI.setEnabled(True)
-                self.ui.saveButton.setEnabled(True)
-                self._gray_icon(False)
+        elif status is ray.ClientStatus.READY:
+            self.ui.startButton.setEnabled(False)
+            self.ui.stopButton.setEnabled(True)
+            self.ui.closeButton.setEnabled(False)
+            self.ui.ClientName.setStyleSheet('QLabel {font-weight : bold}')
+            self.ui.ClientName.setEnabled(True)
+            self.ui.toolButtonGUI.setEnabled(True)
+            self.ui.saveButton.setEnabled(True)
+            self._gray_icon(False)
 
-                if self._very_short:
-                    self.ui.startButton.setVisible(False)
-                    self.ui.stopButton.setVisible(True)
-                
-                self.ui.actionFindBoxesInPatchbay.setEnabled(True)
+            if self._very_short:
+                self.ui.startButton.setVisible(False)
+                self.ui.stopButton.setVisible(True)
 
-            case ray.ClientStatus.STOPPED:
-                self.ui.startButton.setEnabled(True)
-                self.ui.stopButton.setEnabled(False)
-                self.ui.saveButton.setEnabled(False)
-                self.ui.closeButton.setEnabled(True)
-                self.ui.ClientName.setStyleSheet(
-                    'QLabel {font-weight : normal}')
-                self.ui.ClientName.setEnabled(False)
-                self.ui.toolButtonGUI.setEnabled(False)
-                self._gray_icon(True)
+        elif status is ray.ClientStatus.STOPPED:
+            self.ui.startButton.setEnabled(True)
+            self.ui.stopButton.setEnabled(False)
+            self.ui.saveButton.setEnabled(False)
+            self.ui.closeButton.setEnabled(True)
+            self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
+            self.ui.ClientName.setEnabled(False)
+            self.ui.toolButtonGUI.setEnabled(False)
+            self._gray_icon(True)
 
-                if self._very_short:
-                    self.ui.startButton.setVisible(True)
-                    self.ui.stopButton.setVisible(False)
+            if self._very_short:
+                self.ui.startButton.setVisible(True)
+                self.ui.stopButton.setVisible(False)
 
-                self.ui.saveButton.setIcon(self._save_icon)
-                self.ui.stopButton.setIcon(self._stop_icon)
-                self._stop_is_kill = False
+            self.ui.saveButton.setIcon(self._save_icon)
+            self.ui.stopButton.setIcon(self._stop_icon)
+            self._stop_is_kill = False
 
-                if not ray_hack:
-                    self.set_gui_state(False)
-                    
-                self.ui.actionFindBoxesInPatchbay.setEnabled(False)
+            if not ray_hack:
+                self.set_gui_state(False)
 
-            case ray.ClientStatus.PRECOPY:
-                self.ui.startButton.setEnabled(False)
-                self.ui.stopButton.setEnabled(False)
-                self.ui.saveButton.setEnabled(False)
-                self.ui.closeButton.setEnabled(True)
-                self.ui.ClientName.setStyleSheet(
-                    'QLabel {font-weight : normal}')
-                self.ui.ClientName.setEnabled(False)
-                self.ui.toolButtonGUI.setEnabled(False)
-                self._gray_icon(True)
+        elif status is ray.ClientStatus.PRECOPY:
+            self.ui.startButton.setEnabled(False)
+            self.ui.stopButton.setEnabled(False)
+            self.ui.saveButton.setEnabled(False)
+            self.ui.closeButton.setEnabled(True)
+            self.ui.ClientName.setStyleSheet('QLabel {font-weight : normal}')
+            self.ui.ClientName.setEnabled(False)
+            self.ui.toolButtonGUI.setEnabled(False)
+            self._gray_icon(True)
 
-                if self._very_short:
-                    self.ui.startButton.setVisible(True)
-                    self.ui.stopButton.setVisible(False)
+            if self._very_short:
+                self.ui.startButton.setVisible(True)
+                self.ui.stopButton.setVisible(False)
 
-                self.ui.saveButton.setIcon(self._save_icon) # type:ignore
-                self.ui.stopButton.setIcon(self._stop_icon) # type:ignore
-                self._stop_is_kill = False
-                
-                self.ui.actionFindBoxesInPatchbay.setEnabled(False)
+            self.ui.saveButton.setIcon(self._save_icon)
+            self.ui.stopButton.setIcon(self._stop_icon)
+            self._stop_is_kill = False
 
-            case ray.ClientStatus.COPY:
-                self.ui.saveButton.setEnabled(False)
+        elif status is ray.ClientStatus.COPY:
+            self.ui.saveButton.setEnabled(False)
 
     def allow_kill(self):
         self._stop_is_kill = True
@@ -569,3 +493,158 @@ class ClientSlot(QFrame):
             self.client.session.patchbay_manager.select_client_box(
                 self.client.jack_client_name)
         super().mousePressEvent(event)
+
+
+class ClientItem(QListWidgetItem):
+    def __init__(self, parent: 'ListWidgetClients', client_data):
+        QListWidgetItem.__init__(self, parent, QListWidgetItem.ItemType.UserType + 1)
+
+        self.sort_number = 0
+        self.widget = ClientSlot(parent, self, client_data)
+        parent.setItemWidget(self, self.widget)
+        self.setSizeHint(QSize(100, 45))
+
+    def __lt__(self, other: 'ClientItem'):
+        return self.sort_number < other.sort_number
+
+    def __gt__(self, other: 'ClientItem'):
+        return self.sort_number > other.sort_number
+
+    def get_client_id(self):
+        return self.widget.get_client_id()
+
+
+class ListWidgetClients(QListWidget):
+    def __init__(self, parent):
+        QListWidget.__init__(self, parent)
+        self._last_n = 0
+        self.session = None
+
+    @classmethod
+    def to_daemon(cls, *args):
+        server = GuiServerThread.instance()
+        if server:
+            server.to_daemon(*args)
+
+    @Slot()
+    def _launch_favorite(self):
+        template_name, factory = self.sender().data() # type:ignore
+        self.to_daemon(
+            r.session.ADD_CLIENT_TEMPLATE,
+            int(factory),
+            template_name,
+            'start',
+            '')
+
+    def create_client_widget(self, client_data):
+        item = ClientItem(self, client_data)
+        item.sort_number = self._last_n
+        self._last_n += 1
+
+        return item.widget
+
+    def remove_client_widget(self, client_id):
+        for i in range(self.count()):
+            item: ClientItem = self.item(i) # type:ignore
+            if item.get_client_id() == client_id:
+                widget = item.widget
+                self.takeItem(i)
+                del item
+                break
+
+    def client_properties_state_changed(self, client_id: str, visible: bool):
+        for i in range(self.count()):
+            item: ClientItem = self.item(i)
+            if item.get_client_id() == client_id:
+                widget = item.widget
+                widget.set_hack_button_state(visible)
+                break
+
+    def set_session(self, session: 'Session'):
+        self.session = session
+
+    def patchbay_is_shown(self, yesno: bool):
+        for i in range(self.count()):
+            item: ClientItem = self.item(i)
+            widget = item.widget
+            widget.patchbay_is_shown(yesno)
+
+    def item(self, index: int) -> ClientItem:
+        return super().item(index) # type:ignore
+
+    def currentItem(self) -> ClientItem:
+        return super().currentItem() # type:ignore
+
+    def dropEvent(self, event):
+        QListWidget.dropEvent(self, event)
+
+        client_ids_list = []
+
+        for i in range(self.count()):
+            item: ClientItem = self.item(i)
+            client_id = item.get_client_id()
+            client_ids_list.append(client_id)
+
+        server = GuiServerThread.instance()
+        if server:
+            server.to_daemon(r.session.REORDER_CLIENTS, *client_ids_list)
+
+    def mousePressEvent(self, event):
+        if not self.itemAt(event.pos()):
+            self.setCurrentRow(-1)
+
+        QListWidget.mousePressEvent(self, event)
+
+    def contextMenuEvent(self, event: QContextMenuEvent):
+        if not self.itemAt(event.pos()):
+            self.setCurrentRow(-1)
+
+            if (self.session is not None
+                    and not self.session.server_status in (
+                        ray.ServerStatus.OFF,
+                        ray.ServerStatus.CLOSE,
+                        ray.ServerStatus.OUT_SAVE,
+                        ray.ServerStatus.WAIT_USER,
+                        ray.ServerStatus.OUT_SNAPSHOT)):
+                menu = QMenu()
+                fav_menu = QMenu(_translate('menu', 'Favorites'), menu)
+                fav_menu.setIcon(resourcer.icon(scalables.breeze.STAR_YELLOW))
+
+                for favorite in self.session.favorite_list:
+                    act_app = fav_menu.addAction(
+                        get_app_icon(favorite.icon, self), favorite.display_name)
+                    act_app.setData([favorite.name, favorite.factory])
+                    act_app.triggered.connect(self._launch_favorite)
+
+                menu.addMenu(fav_menu)
+
+                menu.addAction(
+                    self.session.main_win.ui.actionAddApplication) # type:ignore
+                menu.addAction(
+                    self.session.main_win.ui.actionAddExecutable) # type:ignore
+
+                act_selected = menu.exec(self.mapToGlobal(event.pos()))
+            event.accept()
+            return
+
+    def resizeEvent(self, event):
+        QListWidget.resizeEvent(self, event)
+        for i in range(self.count()):
+            item: ClientItem = self.item(i) # type:ignore
+            widget: ClientSlot = self.itemWidget(item) # type:ignore
+            if widget is not None:
+                widget.update_layout()
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        super().keyPressEvent(event)
+        
+        # parse patchbay boxes of the selected client 
+        if event.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right):
+            client = self.currentItem().widget.client
+            if (client.status is not ray.ClientStatus.STOPPED
+                    and client.jack_client_name
+                    and self.currentItem().isSelected()
+                    and self.session is not None):
+                self.session.patchbay_manager.select_client_box(
+                    client.jack_client_name,
+                    previous=bool(event.key() == Qt.Key.Key_Left))

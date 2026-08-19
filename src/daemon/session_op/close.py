@@ -123,5 +123,5 @@ class Close(SessionOp):
 
         if self.clear_all_clients:
             session.set_path(None)
-            
+
         self.next()

@@ -569,7 +569,6 @@ class BookMarker:
         for picker in (self._gtk2, self._gtk3, self._fltk,
                        self._kde5, self._qt4, self._qt5):
             picker.remove_bookmark(spath)
-
         xml = self._get_xml()
         if not xml:
             return
