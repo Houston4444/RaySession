@@ -1,8 +1,10 @@
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QSize
 from qtpy.QtGui import QKeyEvent
 from qtpy.QtWidgets import QApplication, QListWidgetItem
 
 import ray
+
+import resourcer
 
 from .child_dialog import ChildDialog
 
@@ -18,6 +20,9 @@ class StartupDialog(ChildDialog):
         super().__init__(parent)
         self.ui = ui.startup_dialog.Ui_Dialog()
         self.ui.setupUi(self)
+
+        self.ui.labelMainIcon.setPixmap(
+            resourcer.main_icon().pixmap(QSize(48, 48)))
 
         self._clicked_action = self.ACTION_NO
 
