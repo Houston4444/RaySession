@@ -63,7 +63,8 @@ if True:
     # set logger handlers
     _log_handler = logging.StreamHandler()
     _log_handler.setFormatter(logging.Formatter(
-        f"%(levelname)s:%(name)s - %(message)s"))
+        f"%(levelname)s:%(name)s %(asctime)s.%(msecs)03d - %(message)s",
+        "%H:%M:%S"))
     _logger.addHandler(_log_handler)
 
     set_proc_name(ray.APP_TITLE.lower())

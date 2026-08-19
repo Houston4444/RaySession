@@ -54,7 +54,8 @@ if True:
     # set logger handlers
     _log_handler = LogStreamHandler()
     _log_handler.setFormatter(logging.Formatter(
-        f"%(levelname)s:%(name)s line %(lineno)d - %(message)s"))
+        "%(levelname)s:%(name)s %(asctime)s.%(msecs)03d - %(message)s",
+        "%H:%M:%S"))
     _logger.addHandler(_log_handler)
     
     # add RaySession/src/bin to $PATH
