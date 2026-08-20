@@ -379,24 +379,24 @@ class CanvasSaver(ServerSender):
         self.portgroups.save_portgroup(PortgroupMem.from_arg_list(args))
 
     def save_group_custom_name(
-            self, group_name: str, pretty_name: str, over_pretty: str):
+            self, group_name: str, custom_name: str, over_pretty: str):
         _logger.debug(
             f'save_group_custom_name {group_name=} '
-            f'{pretty_name=} {over_pretty=}')
+            f'{custom_name=} {over_pretty=}')
         self.custom_names_config.save_group(
-            group_name, pretty_name, over_pretty)
+            group_name, custom_name, over_pretty)
         self.custom_names_session.save_group(
-            group_name, pretty_name, over_pretty)
+            group_name, custom_name, over_pretty)
         
     def save_port_custom_name(
-            self, port_name: str, pretty_name: str, over_pretty: str):
+            self, port_name: str, custom_name: str, over_pretty: str):
         _logger.debug(
             f'save_port_custom_name {port_name=} '
-            f'{pretty_name=} {over_pretty=}')
+            f'{custom_name=} {over_pretty=}')
         self.custom_names_config.save_port(
-            port_name, pretty_name, over_pretty)
+            port_name, custom_name, over_pretty)
         self.custom_names_session.save_port(
-            port_name, pretty_name, over_pretty)
+            port_name, custom_name, over_pretty)
 
     def views_changed(self, *args):
         json_views_list = args[0]
