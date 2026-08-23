@@ -1,6 +1,6 @@
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from patch_engine import ALSA_LIB_OK
 from patshared import TransportWanted
@@ -46,20 +46,18 @@ class PatchbayDaemonServer(BunServer):
 
     @bun_manage(r.patchbay.CONNECT, 'ss')
     def _ray_patchbay_connect(self, osp: OscPack):
-        port_out_name, port_in_name = osp.args
-        # connect here
+        port_out_name, port_in_name = cast(tuple[str, str], osp.args)
         self.pe.connect_ports(port_out_name, port_in_name)
     
     @bun_manage(r.patchbay.DISCONNECT, 'ss')
     def _ray_patchbay_disconnect(self, osp: OscPack):
-        port_out_name, port_in_name = osp.args
-        # disconnect here
+        port_out_name, port_in_name = cast(tuple[str, str], osp.args)
         self.pe.connect_ports(
             port_out_name, port_in_name, disconnect=True)
 
     @bun_manage(r.patchbay.SET_BUFFER_SIZE, 'i')
     def _ray_patchbay_set_buffersize(self, osp: OscPack):
-        buffer_size = osp.args[0]
+        buffer_size = cast(int, osp.args[0])
         self.pe.set_buffer_size(buffer_size)
 
     @bun_manage(r.patchbay.REFRESH, '')
@@ -76,7 +74,7 @@ class PatchbayDaemonServer(BunServer):
     
     @bun_manage(r.patchbay.TRANSPORT_RELOCATE, 'i')
     def _ray_patchbay_transport_relocate(self, osp: OscPack):
-        self.pe.transport_relocate(osp.args[0])
+        self.pe.transport_relocate(cast(int, osp.args[0]))
 
     @bun_manage(r.patchbay.ACTIVATE_DSP_LOAD, 'i')
     def _ray_patchbay_activate_dsp_load(self, osp: OscPack):
@@ -91,29 +89,33 @@ class PatchbayDaemonServer(BunServer):
         self.pe.transport_wanted = transport_wanted
 
     @bun_manage(r.patchbay.GROUP_CUSTOM_NAME, 'sss*')
-    def _ray_patchbay_group_pretty_name(self, osp: OscPack):
-        if osp.args[0]:
-            self.pretty_names.save_group(*osp.args)
+    def _ray_patchbay_group_custom_name(self, osp: OscPack):
+        args = cast(tuple[str, ...], osp.args)
+        if args[0]:
+            self.pretty_names.save_group(*args)
 
     @bun_manage(r.patchbay.PORT_CUSTOM_NAME, 'sss*')
-    def _ray_patchbay_port_pretty_name(self, osp: OscPack):
-        if osp.args[0]:
-            self.pretty_names.save_port(*osp.args)
+    def _ray_patchbay_port_custom_name(self, osp: OscPack):
+        args = cast(tuple[str, ...], osp.args)
+        if args[0]:
+            self.pretty_names.save_port(*args)
         else:
             # empty string received,
             # listing is finished, lets apply pretty names to JACK
             self.pe.apply_pretty_names_export()
 
     @bun_manage(r.patchbay.SAVE_GROUP_CUSTOM_NAME, 'ssi')
-    def _ray_patchbay_save_group_pretty_name(self, osp: OscPack):
-        group_name, pretty_name, save_in_jack = osp.args
+    def _ray_patchbay_save_group_custom_name(self, osp: OscPack):
+        group_name, pretty_name, save_in_jack = \
+            cast(tuple[str, str, int], osp.args)
         self.pretty_names.save_group(group_name, pretty_name)
         if save_in_jack:
             self.pe.write_group_pretty_name(group_name, pretty_name)
     
     @bun_manage(r.patchbay.SAVE_PORT_CUSTOM_NAME, 'ssi')
-    def _ray_patchbay_save_port_pretty_name(self, osp: OscPack):
-        port_name, pretty_name, save_in_jack = osp.args
+    def _ray_patchbay_save_port_custom_name(self, osp: OscPack):
+        port_name, pretty_name, save_in_jack = \
+            cast(tuple[str, str, int], osp.args)
         self.pretty_names.save_port(port_name, pretty_name)
         if save_in_jack:
             self.pe.write_port_pretty_name(port_name, pretty_name)
@@ -161,7 +163,7 @@ class PatchbayDaemonServer(BunServer):
             ms_gui.add(rpm.UPDATE_PORT_CUSTOM_NAME, port_name, pretty_name)
             
         self.mega_send(self.daemon_port, ms)
-        self.mega_send(self.gui_list, ms_gui)
+        self.mega_send(self.gui_list, ms_gui) # type:ignore
 
     def set_tmp_gui_url(self, gui_url: str):
         self._tmp_gui_url = gui_url
@@ -215,7 +217,7 @@ class PatchbayDaemonServer(BunServer):
                 ms.add(rpm.CONNECTION_ADDED, *conn)
         
         ms.add(rpm.BIG_PACKETS, 1)
-        self.mega_send(src_addrs, ms)
+        self.mega_send(src_addrs, ms) # type:ignore
 
     def add_gui(self, gui_url: str):
         try:
