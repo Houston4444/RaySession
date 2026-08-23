@@ -781,6 +781,7 @@ class OperatingSession(Session):
         self.steps_osp = None
 
     def abort_done(self):
+        self.canvas_saver.unload_session()
         self._clean_expected()
         self.clients.clear()
         self._set_path(None)

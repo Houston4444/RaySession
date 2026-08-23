@@ -132,9 +132,11 @@ class CanvasSaver(ServerSender):
             self.views_config[replace_index] = \
                 self.views_config_at_load[replace_index]
 
-    def send_session_group_positions(self):
+    def send_session_group_positions(self, quit_session=False):
         if self.is_dummy:
             return
+        
+        _logger.debug('send_session_group_positions')
         
         mixed_views = (self.views_config.short_data_states()
                        | self.views_session.short_data_states())
@@ -153,6 +155,18 @@ class CanvasSaver(ServerSender):
 
         # we send config pretty names, for the case we are switching session
         # to be sure to clear pretty-names coming from previous session
+        if quit_session:
+            # If we are quitting session, clear all custom names not present
+            # in the config, to see them get back to their regular name.
+            for gp_name in self.custom_names_session.groups:
+                if gp_name not in self.custom_names_config.groups:
+                    ms_gui.add(rpm.UPDATE_GROUP_CUSTOM_NAME, gp_name, '')
+                    ms_pbay.add(r.patchbay.GROUP_CUSTOM_NAME, gp_name, '')
+            for pt_name in self.custom_names_session.ports:
+                if pt_name not in self.custom_names_config.ports:
+                    ms_gui.add(rpm.UPDATE_PORT_CUSTOM_NAME, pt_name, '')
+                    ms_pbay.add(r.patchbay.PORT_CUSTOM_NAME, pt_name, '')
+        
         for gp_name, ptov in self.custom_names_config.groups.items():
             ms_gui.add(rpm.UPDATE_GROUP_CUSTOM_NAME,
                        gp_name, ptov.custom)
@@ -165,20 +179,20 @@ class CanvasSaver(ServerSender):
             ms_pbay.add(r.patchbay.PORT_CUSTOM_NAME,
                         pt_name, *ptov.to_list())
 
-        for gp_name, ptov in self.custom_names_session.groups.items():
-            ms_gui.add(rpm.UPDATE_GROUP_CUSTOM_NAME,
-                       gp_name, ptov.custom)
-            ms_pbay.add(r.patchbay.GROUP_CUSTOM_NAME,
-                        gp_name, *ptov.to_list())
-        
+        if not quit_session:
+            for gp_name, ptov in self.custom_names_session.groups.items():
+                ms_gui.add(rpm.UPDATE_GROUP_CUSTOM_NAME,
+                        gp_name, ptov.custom)
+                ms_pbay.add(r.patchbay.GROUP_CUSTOM_NAME,
+                            gp_name, *ptov.to_list())
+
+            for pt_name, ptov in self.custom_names_session.ports.items():
+                ms_gui.add(rpm.UPDATE_PORT_CUSTOM_NAME,
+                           pt_name, ptov.custom)
+                ms_pbay.add(r.patchbay.PORT_CUSTOM_NAME,
+                            pt_name, *ptov.to_list())
+
         ms_pbay.add(r.patchbay.GROUP_CUSTOM_NAME, '', '')
-
-        for port_name, ptov in self.custom_names_session.ports.items():
-            ms_gui.add(rpm.UPDATE_PORT_CUSTOM_NAME,
-                       port_name, ptov.custom)
-            ms_pbay.add(r.patchbay.PORT_CUSTOM_NAME,
-                        port_name, *ptov.to_list())
-
         ms_pbay.add(r.patchbay.PORT_CUSTOM_NAME, '', '')
         ms_gui.add(rpm.VIEWS_CHANGED, mixed_views_str)
 
@@ -348,7 +362,7 @@ class CanvasSaver(ServerSender):
         self._clear_config_from_unused_views()
 
         # send to GUI the config poses to overwrite the session poses 
-        ms_gui = MegaSend('cfg group poss and custom names after unload')
+        ms_gui = MegaSend('cfg group poss after unload')
 
         for view_number in self.views_config.keys():
             for gpos in self.views_config.iter_group_poses(
@@ -360,9 +374,8 @@ class CanvasSaver(ServerSender):
         
         self.mega_send_gui(ms_gui)
         self.views_session.clear()
+        self.send_session_group_positions(quit_session=True)
         self.custom_names_session.clear()
-        
-        self.send_session_group_positions()
 
     def save_config_file(self):
         json_contents = {
