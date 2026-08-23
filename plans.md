@@ -7,9 +7,6 @@ Of course, the main objectives of RaySession are already achieved. There are sti
 
 Since tool bar is customizable, we could add optional actions for _recents sessions_, _session scripts_, maybe others.
 
-## Remove totally ray-proxy
-
-Done.
 
 ## add dialog for icon selection
 
