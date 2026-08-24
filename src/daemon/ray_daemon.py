@@ -37,7 +37,7 @@ import ray
 
 # Local imports
 from daemon_tools import (
-    get_code_root, init_daemon_tools, RS,
+    get_code_root, get_app_config_path, init_daemon_tools, RS,
     CommandLineArgs, ArgParser, LogStreamHandler)
 from osc_server_thread import OscServerThread
 import multi_daemon_file
@@ -95,6 +95,27 @@ if True:
             
             _mod_logger = logging.getLogger(module)
             _mod_logger.setLevel(log_level)
+
+    # When debug/info logging is requested, also write to a file so that
+    # output is captured even when the daemon is started detached from a
+    # terminal (the normal GUI launch path).
+    # The handler is attached directly to each requested module's logger
+    # rather than root, so records are captured without relying on
+    # propagation through the root logger's WARNING threshold.
+    if CommandLineArgs.dbg or CommandLineArgs.info:
+        _log_dir = get_app_config_path() / 'logs'
+        _log_dir.mkdir(exist_ok=True, parents=True)
+        _file_handler = logging.FileHandler(
+            _log_dir / 'patcher_debug.log', mode='w')
+        _file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s:%(name)s - %(message)s'))
+        for _mod_name in (CommandLineArgs.dbg + ':' + CommandLineArgs.info).split(':'):
+            if not _mod_name:
+                continue
+            if _mod_name in ('ray_daemon', 'daemon'):
+                _logger.addHandler(_file_handler)
+            else:
+                logging.getLogger(_mod_name).addHandler(_file_handler)
 
     # make session_root folder if needed
     if not CommandLineArgs.session_root.is_dir():

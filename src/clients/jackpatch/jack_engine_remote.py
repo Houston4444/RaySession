@@ -182,9 +182,11 @@ class JackEngine(ProtoEngine):
             connection_list.append(conn)                
 
     def connect_ports(self, port_out: str, port_in: str):
+        _logger.info(f"Requesting connect: '{port_out}' -> '{port_in}'")
         self.remote.send_patchbay(r.patchbay.CONNECT, port_out, port_in)
 
     def disconnect_ports(self, port_out: str, port_in: str):
+        _logger.info(f"Requesting disconnect: '{port_out}' -x '{port_in}'")
         self.remote.send_patchbay(r.patchbay.DISCONNECT, port_out, port_in)
 
     def quit(self):
