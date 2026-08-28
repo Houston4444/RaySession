@@ -1610,7 +1610,6 @@ Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.</stri
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>

@@ -689,7 +689,6 @@ Applications</string>
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>
