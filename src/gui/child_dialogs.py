@@ -12,7 +12,7 @@ from qtpy.QtWidgets import (
     QFileDialog, QApplication, QListWidgetItem)
 from qtpy.QtGui import (
     QIcon, QPixmap, QGuiApplication, QKeyEvent, QDesktopServices)
-from qtpy.QtCore import Qt, QTimer, QUrl
+from qtpy.QtCore import Qt, QTimer, QUrl, QSize
 
 # imports from HoustonPatchbay
 import resourcer
@@ -1304,6 +1304,8 @@ class StartupDialog(ChildDialog):
         ChildDialog.__init__(self, parent)
         self.ui = ui.startup_dialog.Ui_Dialog()
         self.ui.setupUi(self)
+        self.ui.labelMainIcon.setPixmap(
+            resourcer.main_icon().pixmap(QSize(64, 64)))
 
         self._clicked_action = self.ACTION_NO
 
