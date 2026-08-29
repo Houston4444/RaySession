@@ -1,9 +1,15 @@
-# ![RaySession Logo](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/main_icon/128x128/raysession.png) RaySession
+# ![RaySession Logo](https://codeberg.org/Houston4444/RaySession/raw/master/resources/main_icon/128x128/raysession.png) RaySession
+
+<div align="right">
+
+[![Donate using Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/Houston4444/donate)
+
+</div>
 
 What is RaySession ?
 ---------------------
 
-![Screenshot](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/screenshots/Screenshot_20211203_173011.png)
+![Screenshot](https://codeberg.org/Houston4444/RaySession/raw/master/resources/screenshots/Screenshot_20211203_173011.png)
 
 RaySession is a GNU/Linux session manager for audio programs such as Ardour, Carla, QTractor, Guitarix, Patroneo, Jack Mixer, etc...<br>
 The principle is to load together audio programs, then be able to save or close all documents together.<br>
@@ -31,7 +37,7 @@ Features
 * Many others...
 
 
-![Screenshot](https://raw.githubusercontent.com/Houston4444/RaySession/master/resources/screenshots/Screenshot_20211203_162333.png)
+![Screenshot](https://codeberg.org/Houston4444/RaySession/raw/master/resources/screenshots/Screenshot_20211203_162333.png)
 
 
 Install
