@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.18">
+<title>Manuel de RaySession</title>
+<style>
+/* Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
+
+@import url(//fonts.googleapis.com/css?family=Noto+Sans);
+@import url(https://cdn.jsdelivr.net/gh/asciidoctor/asciidoctor@2.0/data/stylesheets/asciidoctor-default.css); /* Default asciidoc style framework - important */
+
+/* CUSTOMISATIONS */
+/* Change the values in root for quick customisation. If you want even more fine grain... venture further. */
+
+:root{
+--maincolor:#cccccc;
+--primarycolor:#5E5E5E; /* Grey 500 */
+--secondarycolor:#ba3925;
+--tertiarycolor: #186d7a;
+--sidebarbackground:#232323; /* Grey 900 */
+--linkcolor:#663815; /* Brown */
+--linkhover: #9c5620;
+--linkcoloralternate: #9c5620;
+--white:#FFFFFF;
+--black:#000000;
+--gold:#ffd777;
+--brown:#4e2b10;
+}
+
+body{font-family: "Noto Sans",sans-serif;background-color: var(--maincolor);link-color: var(--gold)}
+
+#header{background-color:var(--brown); padding:25px;padding-top:0px;max-width: none;}
+#footer{background-color: var(--sidebarbackground);}
+/* h1{color:#ffd755 !important;font-family:"Noto Sans",sans-serif;} */
+h1{color:var(--white) !important;font-family:"Noto Sans",sans-serif;}
+h2{background-color:var(--brown);;color:var(--gold) !important;font-family:"Noto Sans",sans-serif;text-decoration:none;padding:10px;border-top-left-radius:10px;border-top-right-radius:10px;}
+h3{background-color:var(--primarycolor);color:white !important;font-family:"Noto Sans",sans-serif;text-decoration:none;padding:10px;border-top-left-radius:6px;border-top-right-radius:6px;}
+h4,h5,h6{color:var(--primarycolor);}
+.title{color:var(--sidebarbackground) !important;font-family:"Noto Sans",sans-serif;font-style: normal; font-weight: normal;}
+p{font-family: "Noto Sans",sans-serif ! important}
+#toc.toc2 a:link{color:#d0d0d0;font-family: "Noto Sans",sans-serif ! important;font-size:13px;}
+
+a {
+  text-decoration: none;
+  color: var(--linkcolor);
+}
+a:hover {
+  color: var(--linkhover);
+}
+.quoteblock blockquote::before {
+  color: var(--linkcoloralternate);
+}
+mark {
+  color: var(--white);
+  background-color: var(--linkcolor);
+}
+
+/* Card styling */
+.sect1{border-bottom:1px solid grey;border-radius:10px;}
+
+/* Table styles */
+th{background-color: var(--linkcolor);color:var(--white);}
+
+#toc.toc2{background-color:var(--sidebarbackground);color:var(--gold);}
+#toc a{color:var(--gold);}
+#toc a:visited{color: #999;}
+#toc a:active{color:var(--gold);}
+#toctitle{color:var(--gold); !important;background-color:var(--brown);font-size: 14px !important;padding:10px;border-radius:6px;}
+
+/* Responsiveness fixes */
+video {
+  max-width: 100%;
+}
+
+@media all and (max-width: 600px) {
+table {
+  width: 55vw!important;
+  font-size: 3vw;
+}
+
+</style>
+</head>
+<body class="book toc2 toc-left">
+<div id="header">
+<h1>Manuel de <strong>RaySession</strong></h1>
+<div id="toc" class="toc2">
+<div id="toctitle">Table des matières</div>
+<ul class="sectlevel1">
+<li><a href="#_introduction">Introduction</a></li>
+<li><a href="#_exemple_dutilisation_simple">Exemple d&#8217;utilisation simple</a></li>
+<li><a href="#_vue_densemble_des_outils_de_la_session">Vue d&#8217;ensemble des outils de la session</a></li>
+<li><a href="#_vue_densemble_dun_client">Vue d&#8217;ensemble d&#8217;un client</a></li>
+<li><a href="#ajout_application">Fenêtre d&#8217;ajout d&#8217;application</a></li>
+<li><a href="#ajout_executable">Fenêtre d&#8217;ajout d&#8217;exécutable</a></li>
+<li><a href="#patchbay">Baie de brassage</a></li>
+<li><a href="#proprietes_de_client">Fenêtre de propriétés d&#8217;un client</a></li>
+<li><a href="#_les_sessions_réseau">Les sessions réseau</a></li>
+<li><a href="#ajouter_un_programme_non_fourni">Ajouter un programme non fourni</a></li>
+<li><a href="#_importer_une_session_nsm">Importer une session NSM</a></li>
+<li><a href="#options_du_demon">Les options du démon</a></li>
+<li><a href="#cliches">Les clichés</a></li>
+<li><a href="#les_scripts_de_session">Les scripts de session</a></li>
+<li><a href="#memoire_de_la_configuration_de_jack">Mémoire de la configuration de JACK</a></li>
+<li><a href="#sous_le_capot">Sous le capot</a></li>
+<li><a href="#ray_control">Contrôler RaySession en ligne de commande</a></li>
+<li><a href="#_foire_aux_questions">Foire aux questions</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph text-right">
+<p><span class="image"><a class="image" href="../../en/raysession/index.html"><img src="../../images/raysession/common/flags/en.jpeg" alt="EN" width="30" height="20"></a></span> <span class="image"><a class="image" href="../../fr/raysession/index.html"><img src="../../images/raysession/common/flags/fr.jpeg" alt="FR" width="40" height="30"></a></span> <span class="image"><a class="image" href="../../de/raysession/index.html"><img src="../../images/raysession/common/flags/de.jpeg" alt="DE" width="30" height="20"></a></span></p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="../../images/raysession/common/raysession.svg" alt="icon" width="100" height="100"></span></p>
+</div>
+<div class="paragraph">
+<p><em>pour la version 0.14.1</em></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_introduction">Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>RaySession est un gestionnaire de session audio pour GNU/Linux. Il permet de démarrer dans une même session plusieurs programmes audio, de sauvegarder leurs projets ensemble et ainsi d’éviter de multiples manipulations pour retourner à une configuration donnée.</p>
+</div>
+<div class="paragraph">
+<p>Pour être lancés dans RaySession, il est très largement préférable que ces programmes audio soient compatibles avec le protocole NSM, et beaucoup le sont déjà, entre autres Ardour, Qtractor, Carla, Guitarix, Mamba, Patroneo, ZynAddSubFx&#8230;&#8203;</p>
+</div>
+<div class="paragraph">
+<p>RaySession part du principe que votre configuration audio est fonctionnelle pour de la production audio, si ce n’est pas le cas réglez d’abord ce problème et ne perdez pas votre temps à essayer d’utiliser RaySession.</p>
+</div>
+<div class="paragraph">
+<p>Maintenant voyons comment s’en servir.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exemple_dutilisation_simple">Exemple d&#8217;utilisation simple</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Pour la production audio sous GNU/linux, Il est largement conseillé d’utiliser le serveur JACK. Avant de créer ou de lancer une session, assurez-vous que le serveur JACK tourne, RaySession n’a aucun rapport direct avec JACK, toutefois les programmes que vous allez lancer dans votre session en auront besoin.</p>
+</div>
+<div class="paragraph">
+<p>Prenons un exemple où pour composer un morceau, nous aurons besoin des logiciels Ardour et Guitarix, assurez vous que ces 2 programmes soient installés.</p>
+</div>
+<div class="paragraph">
+<p>Pour créer une nouvelle session, cliquez en haut à gauche sur <strong>Nouvelle Session</strong> (<em>ou Ctrl+N</em>). Apparaît alors une fenêtre de dialogue.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/exemple_nouvelle_session.png" alt="Nouvelle session">
+</div>
+</div>
+<div class="paragraph">
+<p>En haut à droite vous apercevez le dossier racine des sessions, c’est là que les sessions seront sauvegardées (une session RaySession étant un dossier contenant un fichier <code>raysession.xml</code>).</p>
+</div>
+<div class="paragraph">
+<p>Rentrez le nom voulu pour cette nouvelle session dans le champ prévu à cet effet. Pour mettre votre nouvelle session dans un sous-dossier, tapez le nom de la manière suivante : <code>sous-dossier/ma session</code> .</p>
+</div>
+<div class="paragraph">
+<p>La boîte à choix multiples de modèles de session vous permet de choisir entre</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Un modèle de session vide</p>
+</li>
+<li>
+<p>Un modèle avec mémoire des connexions JACK</p>
+</li>
+<li>
+<p>Un modèle scripté avec mémoire de la configuration de JACK</p>
+</li>
+<li>
+<p>Un modèle avec les scripts de session de base (pour les utilisateurs avancées pourvus de connaissances en script shell)</p>
+</li>
+<li>
+<p>Tous les modèles de session que vous aurez vous-même créés.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Dans un premier temps, laissez le modèle sur <strong>Avec mémoire du patch de JACK</strong>, cliquez sur <strong>Ok</strong> pour lancer votre session.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="../../images/raysession/fr/exemple_session_lancee.png" alt="Session lancée"></span></p>
+</div>
+<div class="paragraph">
+<p>La partie session de la fenêtre devient active, en haut est écrit le nom de votre session, et votre session contient déjà un programme client qui s&#8217;appelle <strong>Connexions JACK</strong>. C&#8217;est lui qui sauvegardera et refera les connexions de la baie de brassage de JACK.</p>
+</div>
+<div class="paragraph">
+<p>Pour ajouter Ardour à votre session, cliquez sur le bouton <strong>Application</strong> (ou Ctrl+A), apparaît alors la fenêtre des applications (plus de détails à la rubrique <a href="#ajout_application">Fenêtre d&#8217;ajout d&#8217;application</a>). Dans la partie droite, cherchez Ardour (selon votre version d&#8217;ardour, il est possible qu&#8217;il s&#8217;appelle Ardour5 ou Ardour6) et double-cliquez dessus.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="../../images/raysession/fr/exemple_ajouter_ardour.png" alt="Ajouter Ardour à la session" width="640" height="480"></span></p>
+</div>
+<div class="paragraph">
+<p>Un client <strong>Ardour</strong> apparaît en dessous de <strong>Connexions JACK</strong> et Ardour démarre (normalement directement avec une session Ardour vide).</p>
+</div>
+<div class="paragraph">
+<p>Faites de même avec Guitarix.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="../../images/raysession/fr/exemple_session_prete.png" alt="Session prête avec Ardour et Guitarix"></span></p>
+</div>
+<div class="paragraph">
+<p>Dans Ardour, ajoutez une piste (Menu: Piste &#8594; Ajouter une piste), dans la fenêtre Ardour qui est apparue, nommez la piste <em>Guitare</em> et mettez la boîte à choix multiples <strong>configuration</strong> sur <em>Stereo</em>.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="../../images/raysession/fr/exemple_ardour_piste.png" alt="Ajouter une piste Ardour pour Guitarix" width="640" height="480"></span></p>
+</div>
+<div class="paragraph">
+<p>Servez-vous maintenant de la <a href="#patchbay">Baie de brassage</a> de JACK qui occupe la partie droite de la fenêtre de RaySession.
+Connectez l&#8217;entrée de Guitarix à une entrée matérielle et les sorties de Guitarix vers les entrées de cette nouvelle piste Ardour. Assurez vous que les entrées de votre piste <strong>Guitare</strong> ne sont pas connectées aux entrées matérielles.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<a class="image" href="../../images/raysession/common/example_patchbay.png"><img src="../../images/raysession/common/example_patchbay.png" alt="Baie de brassage de ma session"></a>
+</div>
+</div>
+<div class="paragraph">
+<p>Voilà, vous avez une configuration où vous pouvez enregistrer directement le son de votre guitare traité par Guitarix dans Ardour. Si vous n&#8217;avez pas de guitare, vous n&#8217;avez qu&#8217;à chanter faux dans un micro ou taper sur un coussin, ce n&#8217;est ici qu&#8217;un exemple.</p>
+</div>
+<div class="paragraph">
+<p>Sauvegardez la session en cours en cliquant sur le bouton en forme de disquette vers le haut à droite de la partie Session (<em>ou Ctrl+S</em>). Il est vivement recommandé car très pratique d&#8217;affecter un raccourci clavier global de votre système à la sauvegarde de la session en cours. Celà dependra de votre environnement de bureau, mais il suffit d&#8217;affecter le raccourci <em>Ctrl+Meta+S</em> à la commande <code>ray_control save</code> (Meta est la touche Windows), ainsi vous n&#8217;aurez pas à retourner à la fenêtre de RaySession pour sauvegarder la session.</p>
+</div>
+<div class="paragraph">
+<p>Maintenant, fermez la session en cliquant sur la croix rouge en haut à droite de la partie Session(<em>ou Ctrl+W</em>).</p>
+</div>
+<div class="paragraph">
+<p>Une fois la session fermée, cliquez sur <strong>Ouvrir une session</strong> (<em>ou Ctrl+O</em>), double-cliquez sur la session que vous venez de créer pour la ré-ouvrir.</p>
+</div>
+<div class="paragraph">
+<p>Vous devez retrouver les programmes et leur projet ainsi que les connexions de JACK telles qu&#8217;elles étaient quand vous avez fermé la session, et tout fonctionne donc sans aucune autre manipulation.<br>
+Un des avantages de la modularité dans ce cas précis, c&#8217;est qu&#8217;une fois qu&#8217;on aura terminé les prises de guitare, on pourra arrêter Guitarix pour ne pas surcharger le processeur inutilement, et il sera tout de même facile de le redémarrer si besoin.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_vue_densemble_des_outils_de_la_session">Vue d&#8217;ensemble des outils de la session</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_ligne_du_haut">Ligne du haut</h3>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/session_ligne_du_haut.png" alt="Ligne du haut de la trame de session">
+</div>
+</div>
+<div class="paragraph">
+<p>De gauche à droite:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>le bouton menu vous donne accès à</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong><em>sauvegarder la session en cours comme modèle</em></strong><br>
+Le modèle de session créé apparaîtra alors dans la boîte à choix multiples de modèles de session dans la fenêtre de dialogue <strong>Nouvelle Session</strong>. Attention toutefois, L&#8217;ensemble des fichiers de la session seront sauvegardés dans le modèle, il ne faut donc pas le faire si la session contient beaucoup de fichiers audios. D&#8217;une part la copie sera longue, d&#8217;autre part vous risquez de multi-copier inutilement des fichiers qui prendront beaucoup de place.</p>
+</li>
+<li>
+<p><strong><em>Dupliquer la session en cours</em></strong><br>
+C&#8217;est l&#8217;équivalent du bien connu "Sauvegarder sous&#8230;&#8203;", sauf que RaySession est obligé d&#8217;arrêter et de redémarrer la plupart des programmes pour passer d&#8217;une session à l&#8217;autre. Évitez de dupliquer une session avec beaucoup de fichiers audios, celà pourrait être long, mais fort heureusement une telle opération peut être annulée.</p>
+</li>
+<li>
+<p><strong><em>Renommer la session</em></strong><br>
+Il faudra alors arrêter tous les clients.<br>
+Alternativement, vous pouvez renommer une session en la dupliquant puis en supprimant le dossier de la session initiale.<br>
+Vous pouvez aussi renommer une session en renommant son dossier, mais ATTENTION, cette session ne doit surtout pas être chargée !</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>le bouton en forme de crayon vous donne accès aux notes de session.<br>
+Écrivez ici des informations dont vous avez besoin, des réglages physiques, les paroles d&#8217;une chanson, la recette du cassoulet de mamie&#8230;&#8203;toutefois n&#8217;y écrivez pas un roman en 3 tomes, d&#8217;autres outils sont bien plus adaptés, et les notes sont limitées à 65000 caractères pour des raisons techniques.<br>
+Le crayon est vert quand des notes existent, il est orange quand la fenêtre de notes est ouverte, sinon il est transparent.</p>
+</li>
+<li>
+<p>le nom de la session chargée (ici <strong>ma session</strong>)</p>
+</li>
+<li>
+<p>le bouton <strong>Abandonner la session</strong> qui permet de fermer la session sans la sauvegarder</p>
+</li>
+<li>
+<p>le bouton <strong>Fermer la session</strong>, qui sauvegarde et ferme la session en cours.<br>
+Notez que vous n&#8217;avez pas besoin de fermer la session en cours pour en ouvrir une autre. Certains clients sont capables de basculer d&#8217;une session à l&#8217;autre et ça peut être beaucoup moins long que de tout fermer pour tout relancer.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ligne_du_bas">Ligne du bas</h3>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/session_ligne_du_bas.png" alt="Ligne du bas de la trame de session">
+</div>
+</div>
+<div class="paragraph">
+<p>De gauche à droite:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>le bouton en forme de dossier pour ouvrir le dossier de la session avec votre gestionnaire de fichiers</p>
+</li>
+<li>
+<p>le bouton en forme d&#8217;étoile jaune qui déroule un menu contenant vos applications favorites s&#8217;il y en a</p>
+</li>
+<li>
+<p>le bouton <strong>Application</strong> qui permet d&#8217;ajouter à la session un modèle d&#8217;application d&#8217;usine ou que vous aurez créé vous même. C&#8217;est la méthode conseillée pour ajouter un client. voir <a href="#ajout_application">Fenêtre d&#8217;ajout d&#8217;application</a>.</p>
+</li>
+<li>
+<p>le bouton <strong>Exécutable</strong> qui permet d&#8217;ajouter à la session un programme depuis son exécutable. Vous en aurez besoin si vous souhaiter ajouter un programme pour lequel il n&#8217;existe pas de modèle. voir <a href="#ajout_executable">Fenêtre d&#8217;ajout d&#8217;exécutable</a>.</p>
+</li>
+<li>
+<p>le bouton de marche arrière pour revenir à un état précédent de la session. Celà nécessite d&#8217;avoir le programme <code>git</code> installé, sinon ce bouton n&#8217;apparaîtra pas.<br>
+Voir <a href="#cliches">Les clichés</a> pour plus de détails.</p>
+</li>
+<li>
+<p>l&#8217;indicateur d&#8217;état du serveur.<br>
+Les états du serveur peuvent être en réalité très furtifs, mais ils sont affichés pendant un temps suffisament long pour que vous puissiez les voir.<br>
+L&#8217;état du serveur peut être:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>éteint</strong> : pas de session en cours</p>
+</li>
+<li>
+<p><strong>prêt</strong> : la session est en cours</p>
+</li>
+<li>
+<p><strong>lancement</strong> : lancement des programmes de la session</p>
+</li>
+<li>
+<p><strong>copie</strong> : une copie est en cours, pour une duplication de session ou une sauvegarde de la session comme modèle</p>
+</li>
+<li>
+<p><strong>fermeture</strong> : la session est en train de se fermer</p>
+</li>
+<li>
+<p><strong>cliché</strong> : un cliché de la session est en train d&#8217;être pris, donc vous pourrez revenir à l&#8217;état actuel la session.<br>
+voir <a href="#cliches">Les clichés</a>.</p>
+</li>
+<li>
+<p><strong>attente</strong> : Le serveur attend que vous fermiez vous-même des programmes non sauvegardables</p>
+</li>
+<li>
+<p><strong>script</strong> : un script est actionné</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Une fenêtre d&#8217;information ou de progression s&#8217;affiche si vous cliquez sur cet indicateur d&#8217;état s&#8217;il est sur <strong>copie</strong>, <strong>cliché</strong> ou <strong>attente</strong>.</p>
+</div>
+</li>
+<li>
+<p>le bouton de sauvegarde de la session</p>
+</li>
+<li>
+<p>la corbeille, vous trouverez ici les clients que vous avez supprimés. Vous pourrez alors les restaurer dans la session ou supprimer définitivement tous les fichiers qu&#8217;ils ont créé dans le dossier de la session.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_vue_densemble_dun_client">Vue d&#8217;ensemble d&#8217;un client</h2>
+<div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/client_carla.png" alt="trame d&#8217;un client">
+</div>
+</div>
+<div class="paragraph">
+<p>Un client contient de gauche à droite:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>L&#8217;icône du client sur laquelle vous pouvez cliquer pour faire apparaître un menu avec les actions suivantes</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Sauvegarder comme modèle d&#8217;application</strong><br>
+Le modèle créé apparaîtra alors dans la <a href="#ajout_application">Fenêtre d&#8217;ajout d&#8217;application</a>. Celà permet par la suite de lancer directement un client avec la configuration souhaitée (Ardour avec telles pistes, Hydrogen avec tel kit de batterie&#8230;&#8203;). Attention, celà copie tous les fichiers du client donc évitez de le faire si le client contient beaucoup de fichiers audio.</p>
+</li>
+<li>
+<p><strong>Renommer</strong><br>
+Changer le nom du client.<br>
+La fenêtre de dialogue qui s&#8217;ouvre alors contient la case <strong>Renommage de l&#8217;identifiant</strong>, si vous la cochez le nouveau nom sera appliqué à l&#8217;étiquette, à l&#8217;identifiant, aux clients JACK et aux fichiers dans le dossier de la session.<br>
+Sinon, ça ne modifiera que l&#8217;étiquette située à droite de l&#8217;icône du client, il s&#8217;agit d&#8217;un nom purement visuel qui peut vous aider à retrouver vos moutons</p>
+</li>
+<li>
+<p><strong>retourner à un état précédent</strong><br>
+Permet de faire revenir uniquement le client à un état antérieur de la session, voir <a href="#cliches">Les clichés</a>.<br>
+Vous ne pourrez toutefois pas revenir à un état antérieur à un renommage de la session, pour celà il faut faire revenir toute la session en arrière.</p>
+</li>
+<li>
+<p><strong>Propriétés</strong><br>
+Affiche la fenêtre des propriétés du client</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Ce menu est aussi accessible par clique droit n&#8217;importe où sur le client</p>
+</div>
+</li>
+<li>
+<p>Le nom du client (ici <strong>Carla</strong>), qui peut-être changé facilement par clique droit &#8594; renommer</p>
+</li>
+<li>
+<p>selon le type et les capacités du client vous pouvez voir ici</p>
+<div class="ulist">
+<ul>
+<li>
+<p>un oeil (éventuellement barré), celà signifie que le client est compatible NSM et qu&#8217;il est capable d&#8217;afficher ou cacher sa fenêtre en cliquant sur l&#8217;oeil.</p>
+</li>
+<li>
+<p>un bouton <strong>Hack</strong>, celà signifie que le client n&#8217;est pas compatible NSM, en tout cas qu&#8217;il n&#8217;est pas lancé avec ce protocole. Cliquer sur Hack permet de changer la façon dont il est lancé en ouvrant la fenêtre de propriétés du client sur l&#8217;onglet Ray-Hack</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Le bouton <strong>Démarrer</strong> qui est grisé si le client est déjà démarré</p>
+</li>
+<li>
+<p>le bouton <strong>Arrêté</strong> qui est grisé si le client n&#8217;est pas démarré. Si vous arrêtez le client et qu&#8217;il n&#8217;est toujours pas arrêté après un certain temps, le bouton devient rouge et vous pouvez cliquer dessus pour tuer le client. Mais restez détendus, et ne l&#8217;utilisez que si vraiment il vous semble complètement inerte, celà pourrait causer des problèmes, même si a priori personne ne vous enverra en prison.</p>
+</li>
+<li>
+<p>l&#8217;état du client qui peut être</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>arrêté</strong> : le client est arrêté</p>
+</li>
+<li>
+<p><strong>prêt</strong> : il est lancé et fonctionnel</p>
+</li>
+<li>
+<p><strong>ouverture</strong> : le programme est en train d&#8217;ouvrir son projet, patientez un peu</p>
+</li>
+<li>
+<p><strong>fermeture</strong> : le programme est en train de se fermer</p>
+</li>
+<li>
+<p><strong>lancé</strong> : s&#8217;il reste sur l&#8217;état lancé, celà signifie</p>
+<div class="ulist">
+<ul>
+<li>
+<p>si c&#8217;est un client Ray-Hack, qu&#8217;il n&#8217;a pas de fichier de configuration</p>
+</li>
+<li>
+<p>s&#8217;il est lancé comme un client NSM, qu&#8217;il n&#8217;est pas compatible NSM, et qu&#8217;ainsi toute sauvegarde est vaine. Il peut être pratique de lancer de cette façon certains programmes tels qu&#8217;une baie de brassage (Catia) ou un utilitaire dont on n&#8217;a pas besoin de sauvegarder l&#8217;état (Qrest).</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>bascule</strong> : le client change de projet pendant un changement de session</p>
+</li>
+<li>
+<p><strong>perdu</strong> : le client est arrêté mais le terminal qui le lance est toujours ouvert (si le client est lancé dans un terminal, voir <a href="#proprietes_de_client">Fenêtre de propriétés d&#8217;un client</a>.)</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>le bouton en forme de disquette qui permet de sauvegarder le client.<br>
+Si par dessus cette disquette vous voyez</p>
+<div class="ulist">
+<ul>
+<li>
+<p>trois points rouges: le client contient des changements non sauvegardés</p>
+</li>
+<li>
+<p>un V vert: le client ne contient pas de changements non sauvegardés</p>
+</li>
+<li>
+<p>un point d&#8217;exclamation orange: Ce n&#8217;est pas un client NSM, et il est impossible de sauvegarder son projet, vous devrez le faire vous même</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>la croix rouge qui permet d&#8217;envoyer le client à la corbeille</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="ajout_application">Fenêtre d&#8217;ajout d&#8217;application</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Le fenêtre d&#8217;ajout d&#8217;application se lance en cliquant sur le bouton <strong>Application</strong> (<em>ou Ctrl+A</em>).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/ajout_application.png" alt="Fenêtre d&#8217;ajout d&#8217;application">
+</div>
+</div>
+<div class="paragraph">
+<p>La liste des applications disponibles est à droite. Si le logiciel que vous souhaitez lancer n&#8217;est pas présent ici, regardez <a href="#ajouter_un_programme_non_fourni">Ajouter un programme non fourni</a>.</p>
+</div>
+<hr>
+<div class="paragraph">
+<p>En haut à gauche, c&#8217;est le bloc de filtres</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/ajout_application_filtre.png" alt="Bloc de filtre de la fenêtre d&#8217;ajout d&#8217;application">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>le champ de filtre permet de rentrer une chaîne de caractères, seuls les modèles contenant cette chaîne de caractères dans leur nom apparaîtront.</p>
+</li>
+<li>
+<p>la case à cocher <strong>Usine</strong> affiche les modèles intégrés à RaySession ou fournis par votre distribution</p>
+</li>
+<li>
+<p><strong>utilisateur</strong> affiche les modèles créés par l&#8217;utilisateur en faisant <strong>Sauvegarder comme modèle d&#8217;application</strong></p>
+</li>
+<li>
+<p><strong>NSM</strong> affiche les clients compatibles NSM, ou lancés comme tel (voir <a href="#ajouter_un_programme_non_fourni">Ajouter un programme non fourni</a>)</p>
+</li>
+<li>
+<p><strong>Ray-Hack</strong> affiche les clients lancés sans protocole NSM</p>
+</li>
+</ul>
+</div>
+<hr>
+<div class="paragraph">
+<p>En bas à gauche le bloc d&#8217;informations sur le modèle sélectionné à droite</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/ajout_application_infos.png" alt="Bloc d&#8217;informations sur le modèle sélectionné">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>en haut à droite de ce bloc, une étoile, cliquez dessus pour l&#8217;ajouter aux favoris ou l&#8217;enlever des favoris</p>
+</li>
+<li>
+<p>Si c&#8217;est un modèle utilisateur, un bouton <strong>Utilisateur</strong> vous permet de supprimer ce modèle</p>
+</li>
+<li>
+<p>le bouton en bas à droite de ce bloc vous permet d&#8217;accéder à toutes les propriétés du modèle, comme dans la <a href="#proprietes_de_client">Fenêtre de propriétés d&#8217;un client</a>, sauf que rien n&#8217;est éditable.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Astuce :</strong> Cette fenêtre est conçue pour un ajout d&#8217;application très rapide, et se comporter comme <em>Alt+F2</em> sur votre bureau.<br>
+Par exemple, depuis la fenêtre principale de RaySession, pour ajouter Carla tapez <em>Ctrl+A</em>, puis <code>carla</code>, sélectionnez le bon modèle avec les flèches Haut/Bas, puis Entrée.
+&#8230;&#8203;</p>
+</div>
+<div class="paragraph">
+<p>Tout en bas de la fenêtre figure le champ <strong>Identifiant unique</strong>.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/ajout_application_unique_id.png" alt="Champ de saisie de l&#8217;identifiant unique">
+</div>
+</div>
+<div class="paragraph">
+<p>Ce champ est utile si vous utilisez plusieurs instances du même programme (par exemple plusieurs fois Carla), pour les distinguer plus facilement dans la liste d&#8217;applications, dans la baie de brassage et dans les fichiers de la session.
+L&#8217;identifiant final du programme lancé ne contiendra ni espaces ni caractères spéciaux, mais ils peuvent être utilisés pour l&#8217;étiquette.</p>
+</div>
+<div class="paragraph">
+<p>Si vous ne savez pas quoi taper ici, ne tapez rien, ça devrait bien se passer.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="ajout_executable">Fenêtre d&#8217;ajout d&#8217;exécutable</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Le fenêtre d&#8217;ajout d&#8217;exécutable se lance en cliquant sur le bouton <strong>Exécutable</strong> (<em>ou Ctrl+E</em>).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/ajout_executable.png" alt="Fenêtre d&#8217;ajout d&#8217;exécutable">
+</div>
+</div>
+<div class="paragraph">
+<p>Vous aurez besoin de passer par cette fenêtre si vous voulez ajouter un client qui n&#8217;apparaît pas dans la liste de la fenêtre d&#8217;ajout d&#8217;application.
+Cette fenêtre se présente très simplement, un champ pour rentrer l&#8217;exécutable, une case <strong>Protocole NSM</strong>, un bouton d&#8217;options avancées.</p>
+</div>
+<div class="paragraph">
+<p>Laissez le protocole NSM coché si:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>le programme à lancer est compatible NSM (s&#8217;il n&#8217;est pas dans la liste d&#8217;applications, merci de le faire savoir !)</p>
+</li>
+<li>
+<p>le programme à lancer est un utilitaire dont on n&#8217;a aucun besoin de sauvegarder un quelconque projet (QRest, Catia&#8230;&#8203;).<br>
+L&#8217;état d&#8217;un tel programme restera sur <strong>lancé</strong> et ne sera jamais <strong>prêt</strong>, c&#8217;est sans importance vu qu&#8217;ils n&#8217;a pas de projet à sauvegarder.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Si vous laissez le protocole NSM coché il ne sera pas possible d&#8217;ajouter un exécutable vers un chemin absolu, l&#8217;exécutable doit se situer dans un emplacement prévu à cet effet (vous ne pourrez pas lancer <code>/usr/bin/mon_programme</code>, mais <code>mon_programme</code>). Vous ne pouvez pas rentrer d&#8217;arguments ici, avec ou sans le protocole NSM.</p>
+</div>
+<div class="paragraph">
+<p>Décocher la case <strong>Protocole NSM</strong> revient à lancer le programme avec le pseudo-protocole Ray-Hack.</p>
+</div>
+<div class="paragraph">
+<p>Si vous cliquez sur le bouton d&#8217;options avancées, un bloc options avancées apparaît avec</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/ajout_executable_plus.png" alt="Fenêtre d&#8217;ajout d&#8217;exécutable avancé">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>la case <strong>Démarrer le client</strong>, si vous la décochez le client sera ajouté mais non lancé</p>
+</li>
+<li>
+<p>la boîte à choix multiple <strong>Mode de préfixe</strong>, celà définit le préfixe du nom des fichiers du client</p>
+<div class="ulist">
+<ul>
+<li>
+<p>sur <strong>Nom de la session</strong>, les noms des fichiers commenceront par le nom de la session, c&#8217;est la valeur par défaut</p>
+</li>
+<li>
+<p>sur <strong>Nom du Client</strong>, les noms des fichiers commenceront par le nom fourni par le client lui-même, comme c&#8217;est le cas avec New Session Manager</p>
+</li>
+<li>
+<p>sur <strong>Personnalisé</strong>, les noms des fichiers commenceront par la valeur que vous inscrirez dans le champ <strong>Préfixe</strong> juste en dessous</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>le champ <strong>Préfixe</strong> qui n&#8217;est actif que si <strong>Mode de Préfixe</strong> est sur <strong>Personnalisé</strong></p>
+</li>
+<li>
+<p>le champ <strong>ID du client</strong> (identifiant du client). Ne rentrez ici que des caractères alphanumériques ou des '_'.<br>
+Celà est utile si vous voulez attraper et lancer des projets existants dans la session avec un exécutable. C&#8217;est pratique si vous voulez charger dans la session des projets créés en dehors d&#8217;une session. Aucune méthode ne permet de rendre la chose plus simple, celà dépend énormément du programme utilisé. RaySession vous insultera si vous rentrez un identifiant de client qui existe déjà dans la session.</p>
+</li>
+<li>
+<p>la case à cocher <strong>Longs noms de client JACK</strong>. Si cette case est cochée, les clients seront supposés utiliser <code>NomDuProgramme.Identifiant</code> comme motif pour leurs clients JACK, sinon ce sera <code>NomDuProgramme</code> éventuellement suivi de <code>_N</code> (ou N est un nombre). C&#8217;est tout à fait pratique si vous utilisez de multiples instances d&#8217;un même programme, et que vous souhaitez pouvoir facilement les reconnaître dans la baie de brassage.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="patchbay">Baie de brassage</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="../patchbay/index.html">Manuel de la baie de brassage</a></p>
+</div>
+<div class="paragraph">
+<p>la baie de brassage de JACK est affichée par défaut. Vous pouvez la cacher en cliquant sur <strong>Contrôle</strong> puis en décochant <strong>Afficher la baie de brassage de JACK</strong> (<em>ou Ctrl+J</em>). La baie de brassage contient tous les ports AUDIO et MIDI de JACK que vous pouvez interconnecter.</p>
+</div>
+<div class="paragraph">
+<p>Évidemment, si JACK n&#8217;est pas démarré, cette baie de brassage sera vide.</p>
+</div>
+<div class="paragraph">
+<p>Il est conseillé d&#8217;avoir le pont A2J lancé si vous voulez travailler correctement avec le MIDI. Vous pouvez configurer celà via <strong>Cadence</strong>, <strong>Studio Control</strong>, ou via l&#8217;utilitaire en ligne de commande <code>a2j_control</code>.</p>
+</div>
+<div class="paragraph">
+<p>RaySession n&#8217;inclut pas d&#8217;outils pour configurer le serveur JACK, <strong>QJackCtl</strong>, <strong>Studio Control</strong>, <strong>Cadence</strong>, ou l&#8217;utilitaire en ligne de commande <code>jack_control</code> font très bien ce travail. Notez que cette baie de brassage fonctionne également avec PipeWire.</p>
+</div>
+<div class="paragraph">
+<p>Beaucoup plus d&#8217;infos sur la baie de brassage sont sur <a href="../patchbay/index.html">Le manuel de la baie de brassage</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="proprietes_de_client">Fenêtre de propriétés d&#8217;un client</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>La fenêtre de propriétés d&#8217;un client s&#8217;ouvre depuis le menu du client, en cliquant sur <strong>Propriétés</strong>.</p>
+</div>
+<div class="paragraph">
+<p>La fenêtre des propriétés du client comprend 2 onglets, un onglet <strong>Général</strong> et un onglet spécifique au protocole utilisé par le client.
+Selon le protocole du client, le deuxième onglet s&#8217;appelle NSM, Ray-Hack ou Ray-Net.</p>
+</div>
+<div class="sect2">
+<h3 id="_onglet_général">Onglet <strong>Général</strong></h3>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/proprietes_general.png" alt="Propriétés d&#8217;un client">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Le premier bloc de l&#8217;onglet <strong>Général</strong> affiche l&#8217;identifiant, le protocole, l&#8217;étiquette, la description et l&#8217;icône du client.<br>
+Si vous ne les éditez pas, l&#8217;étiquette, la description et l&#8217;icône sont tirées du fichier .desktop associé à l&#8217;exécutable lancé, s&#8217;il a été trouvé.<br>
+Si vous tenez à connaître le fichier .desktop utilisé, tapez <code>ray_control client IDENTIFIANT get_properties</code> dans un terminal (en remplaçant IDENTIFIANT par l&#8217;identifiant du client).</p>
+</li>
+<li>
+<p>Ensuite vient le bloc des clichés, voir <a href="#cliches">Les clichés</a>.</p>
+</li>
+<li>
+<p>la case à cocher <strong>Empêcher l&#8217;arrêt sans sauvegarde récente ou possible</strong> concerne la fenêtre qui peut apparaître lorsque vous demandez à un client de s&#8217;arrêter.
+Si cette case est décochée, alors le client sera stoppé sans qu&#8217;une fenêtre ne vous prévienne.<br>
+Si la case est cochée, la fenêtre vous previendra lorsque</p>
+<div class="ulist">
+<ul>
+<li>
+<p>le client est non-sauvegardable depuis RaySession</p>
+</li>
+<li>
+<p>on sait que le client contient des changements non sauvegardés</p>
+</li>
+<li>
+<p>le client semble ne pas avoir été sauvegardé depuis plus d&#8217;une minute</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>cocher cette case ou non dépend seulement de l&#8217;importance de la sauvegarde de votre client, à vous de juger. Celà dit, si la fenêtre d&#8217;avertissement vous agace, vous n&#8217;aurez qu&#8217;à cocher la case <strong>Ne plus empêcher l&#8217;arrêt du client</strong> dans cette fenêtre et la case <strong>Empêcher l&#8217;arrêt sans sauvegarde récente ou possible</strong> sera décochée.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_onglet_nsm">Onglet <strong>NSM</strong></h3>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/proprietes_nsm.png" alt="Propriétés NSM d&#8217;un client">
+</div>
+</div>
+<div class="paragraph">
+<p>Le nom du client ici est fourni par le client lui-même.<br>
+Les capacités sont celle qui sont transmises par le client à son démarrage. Si le client n&#8217;a pas encore été démarré, ce champ est donc vide.</p>
+</div>
+<div class="paragraph">
+<p>Éditer l&#8217;exécutable permet de changer la commande qui lance le client. Ne le changez que pour un autre exécutable capable de charger le projet du client existant. C&#8217;est utile par exemple si vous avez deux versions d&#8217;Ardour, l&#8217;une se lançant avec la commande <code>ardour</code>, l&#8217;autre avec <code>Ardour6</code>, et que vous voulez changer la version à utiliser.</p>
+</div>
+<div class="paragraph">
+<p>Éditer les arguments est fortement déconseillé, et n&#8217;est surtout pas adapté au chargement d&#8217;un fichier comme argument.</p>
+</div>
+<div class="paragraph">
+<p>Vous pouvez éditer les variables d&#8217;environnement que vous voulez appliquer au programme en les séparant par des espaces, par exemple comme ceci:</p>
+</div>
+<div class="paragraph">
+<p><code>MA_VARIABLE=ma_valeur MA_VARIABLE2="autre valeur"</code></p>
+</div>
+<div class="paragraph">
+<p>Les variables d&#8217;environnement permettent d&#8217;annoncer au programme l&#8217;environnement dans lequel il évolue, par exemple:</p>
+</div>
+<div class="paragraph">
+<p><code>LANG=it_IT.UTF-8</code></p>
+</div>
+<div class="paragraph">
+<p>permet de lancer le programme en italien s&#8217;il en est capable.</p>
+</div>
+<div class="paragraph">
+<p>Cochez la case <strong>Lancer dans un terminal</strong> si vous souhaitez obtenir des informations de débogage sur le programme. Celà peut faire légèrement varier le comportement du client, notamment la façon dont il est arrêté. Pour choisir l&#8217;application de terminal qui exécute les programmes lancés dans un terminal, rendez-vous dans la fenêtre de préférences de RaySession.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_onglet_ray_hack">Onglet <strong>Ray-Hack</strong></h3>
+<div class="paragraph">
+<p>Si le client est de type Ray-Hack, ici moult champs s&#8217;offrent à vous. Ce n&#8217;est pas forcément une bonne nouvelle, l&#8217;idée est de pouvoir charger dans la session un programme qui n&#8217;est pas (encore) compatible NSM. S&#8217;il est bien implémenté dans le client, le protocole NSM sera toujours bien plus confortable à utiliser et plus fiable que cette bidouille. Ceçi dit, si l&#8217;on peut attendre l&#8217;implémentation NSM dans tous les programmes audio, ce n&#8217;est pas le cas des autres programmes qui peuvent tout de même avoir une utilité dans la session.</p>
+</div>
+<div class="paragraph">
+<p>Le pseudo-protocole Ray-Hack reprend les attributs des proxy (nsm-proxy ou ray-proxy), sauf que le client est lancé directement dans la session.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/proprietes_ray_hack.png" alt="Propriétés Ray-Hack d&#8217;un client">
+</div>
+</div>
+<div class="sect3">
+<h4 id="_bloc_de_lancement">Bloc de lancement</h4>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/ray_hack_lancement.png" alt="ray hack lancement">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>le <strong>Dossier</strong> est le nom du dossier de ce client, dans le dossier de la session. Le programme est lancé depuis ce dossier.</p>
+</li>
+<li>
+<p>L'<strong>Exécutable</strong> est la commande qui lance le programme</p>
+</li>
+<li>
+<p>Le <strong>Fichier de configuration</strong> sera le fichier du projet qu&#8217;on souhaitera ouvrir avec ce programme. Il plus que très recommandé de faire référence à un fichier dans le dossier du client.<br>
+La variable <code>$RAY_SESSION_NAME</code> sera automatiquement remplacée par le nom de la session.<br>
+Si ce champ est vide, le client restera toujours sur le statut <strong>lancé</strong> et jamais <strong>prêt</strong>. Dans certains cas, il peut donc être utile de taper n&#8217;importe quoi ici plutôt que rien.</p>
+</li>
+<li>
+<p>Le bouton <strong>Naviguer</strong> ouvre une boîte de dialogue pour aller chercher le fichier de projet et remplir le champ <strong>Fichier de configuration</strong></p>
+</li>
+<li>
+<p>Le champ <strong>Arguments</strong> comprend les arguments passés à la commande <strong>Exécutable</strong><br>
+les arguments sont découpés comme ils le seraient dans un terminal, n&#8217;oubliez pas les <strong>"</strong> ou les <strong>'</strong> si nécéssaire.<br>
+par exemple pour reproduire <code>ma_commande mon_argument_1 "mon argument 2"</code> rentrez <code>ma_commande</code> dans le champ <strong>Exécutable</strong> et `ma_commande mon_argument_1 "mon argument 2"``dans le champ <strong>Arguments</strong>.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_bloc_des_signaux">Bloc des signaux</h4>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/ray_hack_signaux.png" alt="ray hack signaux">
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Le <strong>Signal de sauvegarde</strong> ne peut être que rarement utilisé. Il peut être SIGUSR1 pour les programmes compatibles avec le vieux protocole LASH. Sinon laissez le sur <em>Aucun</em>, s&#8217;il n&#8217;y a pas de méthode de sauvegarde, on ne peut pas l&#8217;inventer.</p>
+</li>
+<li>
+<p>Le <strong>Signal d&#8217;extinction</strong> sera généralement <em>SIGTERM</em>. Ne le changez qu&#8217;au cas où ce signal ne ferme pas correctement le programme.</p>
+</li>
+<li>
+<p>si la case <strong>Attendre une fenêtre avant d&#8217;être considéré comme prêt</strong> est cochée, alors le statut du client ne passera sur <strong>prêt</strong> que lorqu&#8217;une fenêtre apparaitra.<br>
+Si <code>wmctrl</code> n&#8217;est pas installé, ou que le gestionnaire de fenêtres ne semble pas compatible avec, alors le client passera sur <strong>prêt</strong> une demi-seconde après son lancement.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Avec <code>ray_control</code> vous pouvez affecter d&#8217;autres signaux que ceux proposés dans les boîtes à choix multiple.
+Par exemple<br>
+<code>ray_control client CLIENT_ID set_properties save_sig:22</code><br>
+définira le signal <strong>SIGTTOU</strong> pour la sauvegarde du client CLIENT_ID.
+Tapez <code>kill -l</code> pour connaître les signaux disponibles et leurs numéros.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_bloc_de_gestion_des_non_sauvegardables">Bloc de gestion des non-sauvegardables</h4>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/ray_hack_non_sauvegarde.png" alt="ray hack non sauvegarde">
+</div>
+</div>
+<div class="paragraph">
+<p>Ce bloc n&#8217;est actif que si le <strong>Signal de sauvegarde</strong> est reglé sur <em>Aucun</em></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>si la case <strong>Demander à l&#8217;utilisateur de fermer lui-même le programme à la fermeture de la session</strong> est cochée, le client sera alors considéré comme non sauvegardable et un point d&#8217;exclamation orange apparaitra devant son icône de sauvegarde. À la fermeture de la session, RaySession attendra que vous fermiez vous-même le programme car il est impossible de savoir s&#8217;il contient des changements non sauvegardés.</p>
+</li>
+<li>
+<p>Si la case <strong>Essayer de fermer gracieusement la fenêtre</strong> est cochée, alors à la fermeture de la session, RaySession essaiera de fermer la fenêtre comme si vous fermiez la fenêtre du programme. C&#8217;est très pratique lorsque le programme réagit en se fermant s&#8217;il n&#8217;y a pas de changements non sauvegardés et en affichant une fenêtre de confirmation de fermeture dans le cas inverse (la plupart des programmes réagissent de la sorte). Si <code>wmctrl</code> n&#8217;est pas installé ou que le gestionnaire de fenêtres ne semble pas compatible, vous devrez fermer le programme vous même dans tous les cas.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_zone_de_test">Zone de test</h4>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/ray_hack_zone_test.png" alt="ray hack zone test">
+</div>
+</div>
+<div class="paragraph">
+<p>La zone de test vous permet de tester les réglages de lancement, d&#8217;arrêt et de sauvegarde réglés dans cette fenêtre sans avoir à <strong>Sauvegarder les changements</strong>.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_les_sessions_réseau">Les sessions réseau</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Une session réseau permet de lancer une autre session sur une autre machine en même temps que votre session. Ça peut être particulièrement utile si vous utilisez net-jack pour décharger votre machine d&#8217;une partie du DSP, si vous avez des effets gourmands qui tournent sur une autre machine par exemple.</p>
+</div>
+<div class="paragraph">
+<p>Les sessions réseau fonctionnent selon un rapport de maître à esclave. Une session est maîtresse et peut avoir plusieurs sessions esclaves elles-mêmes maîtresses d&#8217;autres esclaves, mais un tel scénario semble complètement farfelu. Organisez vous simplement: un maître, un ou des esclave(s).</p>
+</div>
+<div class="paragraph">
+<p>Pour lancer une session réseau (esclave donc), lancez le modèle d&#8217;application <strong>Network Session</strong> depuis la fenêtre des applications et suivez les instructions.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/session_reseau_modele.png" alt="Ajouter une session réseau">
+</div>
+</div>
+<div class="paragraph">
+<p>Vous devrez lancer un démon sur la machine distante avec la commande <code>ray-daemon -p 1234</code> (<code>1234</code> est un exemple, mettez le port que vous voulez). Ce démon vous affiche dans le terminal quelque chose sous cette forme:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>[ray-daemon]URL : osc.udp://192.168.1.00:1234/
+[ray-daemon]      osc.udp://nom-de-machine:1234/
+[ray-daemon]ROOT: /home/utilisateur/Ray Sessions reseau</code></pre>
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/session_reseau_invite.png" alt="Configurer une session réseau">
+</div>
+</div>
+<div class="paragraph">
+<p>Vous devrez copier dans la fenêtre d&#8217;invitation de la session réseau l&#8217;une des deux URLs. La première (qui commence par <code>osc.udp://192.168.</code>) doit fonctionner à coup sûr, la seconde ne fonctionnera que si le nom de la machine esclave est correctement renseigné dans le fichier <code>/etc/hosts</code> de la machine maître. Toutefois, renseigner le nom de la machine esclave dans <code>/etc/hosts</code> et utiliser la deuxième URL est préférable, parce que l&#8217;adresse en 192.168. bougera si vous branchez votre machine esclave différemment (en filaire, en wifi), ou si vous réinstallez la distribution.</p>
+</div>
+<div class="paragraph">
+<p>Vous avez à présent 2 fenêtres RaySession sur votre machine maître, l&#8217;une contrôle la session maître, l&#8217;autre l&#8217;esclave. Vous reconnaîtrez l&#8217;esclave au fait qu&#8217;elle n&#8217;a ni barre d&#8217;outils (<strong>Nouvelle Session</strong>, <strong>Ouvrir une session</strong>, <strong>Contrôle</strong>), ni boutons <strong>Abandonner la session</strong> et <strong>Fermer la session</strong>.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/session_reseau_fenetre_fille.png" alt="session reseau fenetre fille">
+</div>
+</div>
+<div class="paragraph">
+<p>La fenêtre esclave est cachable comme c&#8217;est le cas dans beaucoup de programmes NSM.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/session_reseau_client.png" alt="session reseau client">
+</div>
+</div>
+<div class="paragraph">
+<p>Si vous lancez <code>raysession -p 1234</code> sur votre machine esclave, vous aurez la fenêtre de la session esclave en double exemplaire, une sur chaque machine.</p>
+</div>
+<div class="paragraph">
+<p><strong>Conseil:</strong> Mettez ce <code>ray-daemon -p 1234</code> au démarrage de votre machine esclave.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="ajouter_un_programme_non_fourni">Ajouter un programme non fourni</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Si le programme que vous voulez ajouter ne gère pas de projet à enregistrer, cliquez sur <strong>Exécutable</strong>, rentrez le nom de l&#8217;exécutable et cliquez sur <strong>Ok</strong>. Sinon suivez cet exemple.</p>
+</div>
+<div class="paragraph">
+<p>Nous voulons ajouter ici Audacity à la session. Audacity est choisi à titre d&#8217;exemple parce qu&#8217;il est connu et généralement installé sur les distributions audio. Ce n&#8217;est pas forcément un programme très adapté à la modularité d&#8217;une session audio étant donné la façon dont il gère JACK.</p>
+</div>
+<div class="paragraph">
+<p>Cliquez sur <strong>Exécutable</strong> (<em>ou Ctrl+E</em>).<br>
+Dans la fenêtre d&#8217;ajout d&#8217;exécutable, Décochez la case <strong>Protocole NSM</strong>, tapez <code>audacity</code> dans le champ d&#8217;exécutable et cliquez sur <strong>Ok</strong>.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/audacity_executable.png" alt="Fenêtre d&#8217;ajout exécutable dûment remplie">
+</div>
+</div>
+<div class="paragraph">
+<p>Un nouveau client est créé, sa fenêtre de propriétés s&#8217;ouvre sur l&#8217;onglet Ray-Hack et Audacity se lance.</p>
+</div>
+<div class="paragraph">
+<p>Dans Audacity, nous allons directement sauvegarder un projet vide dans le dossier du client. Le dossier du client se trouve dans le dossier de la session et porte le nom donné après <strong>Dossier:</strong> tout en haut de l&#8217;onglet Ray-Hack. Nous allons appeler le projet EXACTEMENT comme la session RaySession en cours.
+Pour celà, dans Audacity, faites <em>Menu &#8594; Fichier &#8594; Sauvegarder le projet &#8594; Sauvegarder le projet</em>.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/audacity_sauver_projet.png" alt="Sauvegarder le projet vide d&#8217;audacity">
+</div>
+</div>
+<div class="paragraph">
+<p>Cliquez sur <strong>Valider</strong> à l&#8217;éventuelle fenêtre d&#8217;avertissement.<br>
+Dans la boîte de sauvegarde de fichiers qui s&#8217;ouvre, vous trouverez le dossier de la session en bas à gauche (voir <a href="#raccourcis_dossier_de_session">Fournir des raccourcis du dossier de la session</a>), cliquez dessus pour rentrer dedans. À l&#8217;intérieur de celui-ci vous devez voir le dossier du client tel qu&#8217;il figure en haut de l&#8217;onglet Ray-Hack, rentrez dans ce dossier. En haut à gauche de la boîte de sauvegarde, tapez le nom exact de votre session dans le champ <strong>Nom:</strong> puis validez.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<a class="image" href="../../images/raysession/fr/audacity_sauver_fichier.png"><img src="../../images/raysession/fr/audacity_sauver_fichier.png" alt="Où sauvegarder le projet Audacity" width="640" height="480"></a>
+</div>
+</div>
+<div class="paragraph">
+<p>Fermez Audacity.<br>
+En haut à droite de l&#8217;onglet Ray-Hack de la fenêtre de propriétés du client, cliquez sur <strong>Naviguer</strong>.<br></p>
+</div>
+<div class="imageblock">
+<div class="content">
+<a class="image" href="../../images/raysession/fr/audacity_charger_config_file.png"><img src="../../images/raysession/fr/audacity_charger_config_file.png" alt="Fenêtre de chargement du CONFIG_FILE" width="640" height="480"></a>
+</div>
+</div>
+<div class="paragraph">
+<p>sélectionnez le projet Audacity que vous venez de créer, son nom commence par le nom de la session et termine par <code>.aup</code>.</p>
+</div>
+<div class="paragraph">
+<p>Si tout s&#8217;est bien passé, le champ <strong>Fichier de configuration</strong> est devenu <code>$RAY_SESSION_NAME.aup</code> et le champ <strong>Arguments</strong> est devenu <code>"$CONFIG_FILE"</code>.<br>
+Cochez les cases <strong>Attendre une fenêtre avant d&#8217;être considéré comme prêt</strong>, <strong>Demander à l&#8217;utilisateur de fermer lui même le programme</strong> et <strong>Essayer de fermer gracieusement la fenêtre</strong>. Cliquez en bas à droite sur <strong>Sauvegarder les changements</strong>.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/audacity_ray_hack_final.png" alt="Onglet Ray-Hack du client audacity dûment rempli">
+</div>
+</div>
+<div class="paragraph">
+<p>Lancez le client Audacity et vérifiez que la fenêtre d&#8217;Audacity porte bien le nom de la session.<br>
+Cliquez sur l&#8217;icône du client Audacity, dans le menu déroulant choisissez <strong>Sauvegarder comme modèle d&#8217;application</strong>, et rentrez <code>Audacity</code> dans le champ de la boîte de dialogue qui est apparue.
+Maintenant lorsque vous voudrez lancer Audacity dans la session, vous n&#8217;aurez qu&#8217;à lancer le modèle Audacity depuis la fenêtre d&#8217;ajout d&#8217;applications.</p>
+</div>
+<div class="paragraph">
+<p>Notez que le bouton de sauvegarde du client est derrière un point d&#8217;exclamation orange, celà signifie que RaySession n&#8217;est pas en mesure de sauvegarder son projet et qu&#8217;il faudra le faire vous même.</p>
+</div>
+<div class="paragraph">
+<p>Selon le programme que vous souhaitez ajouter à la session, il est possible que ce ne soit pas toujours aussi facile. Certains programmes vont exiger un argument qui précède le fichier de configuration, dans ce cas tapez <code>mon_programme --help</code> ou <code>man mon_programme</code> pour savoir comment charger un projet au démarrage du programme, et adaptez celà dans le champ <strong>Arguments</strong>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_importer_une_session_nsm">Importer une session NSM</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Pour importer une session créée avec <strong>Non Session Manager</strong> ou <strong>New Session Manager</strong>, déplacez ou copiez le dossier de la session dans le dossier racine des sessions RaySession (par défaut ~/Ray Sessions). Ensuite cliquez sur <strong>Ouvrir une session</strong>, votre session doit apparaître dans la liste des sessions, double-cliquez dessus.</p>
+</div>
+<div class="paragraph">
+<p>RaySession ne ré-écrira pas les clients ajoutés ou supprimés dans la fichier session.nsm, à partir du moment où vous ouvrez une session NSM avec RaySession, vous devez continuer avec RaySession.</p>
+</div>
+<div class="paragraph">
+<p>Si jamais vous souhaitez utiliser un autre gestionnaire de sessions, vous trouverez dans le menu <strong>Fichier &#8594; Utilitaires &#8594; Convertir la session au format NSM</strong> qui - comme son nom l&#8217;indique - convertit la session en cours au format de session NSM. Évidemment, celà entraîne quelque modifications, tels que le mode de préfixe ou la façon dont seront nommés les clients JACK, mais rien qui empêche la session de fonctionner.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="options_du_demon">Les options du démon</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Les options du démon sont des services qui sont activables et désactivables via le bouton <strong>Contrôle</strong> en haut à droite de la fenêtre principale, ou via le menu <strong>options</strong> de la barre de menus.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/options_du_demon.png" alt="Options du démon">
+</div>
+</div>
+<div class="paragraph">
+<p>Voici le détail des différentes options:</p>
+</div>
+<div class="sect2">
+<h3 id="raccourcis_dossier_de_session">Fournir des raccourcis du dossier de la session</h3>
+<div class="paragraph">
+<p>En production audio, on a souvent recours au fait de créer un fichier audio ou midi avec un programme pour finalement le charger dans un autre. Cette option offre quelque chose de purement pratique: un raccourci vers le dossier de la session en cours dans votre gestionnaire de fichiers et dans les boîtes de dialogue prévues pour aller chercher ou sauvegarder les fichiers. Ça permet tout simplement d&#8217;éviter de perdre du temps à parcourir l&#8217;arborescence de son dossier personnel pour chercher un fichier que vous avez mis dans le dossier de votre session puisque c&#8217;est bien sa place.<br>
+Bien entendu, ce raccourci est supprimé lorsque la session est déchargée.<br>
+Techniquement, les raccourcis sont créés pour GTK2, GTK3, QT4, QT5, KDE et FLTK.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_cliché_automatique_à_la_sauvegarde">Cliché automatique à la sauvegarde</h3>
+<div class="paragraph">
+<p>Cette option est très loin d&#8217;être triviale, elle permet de prendre un cliché de la session après chaque sauvegarde. Celà signifie qu&#8217;en cas d&#8217;erreur technique ou artistique vous aurez la possibilité de retrouver la session dans l&#8217;état où elle se trouvait au moment du cliché.
+Cette option nécessite d&#8217;avoir le programme <code>git</code> installé.
+Voir <a href="#cliches">Les clichés</a> pour plus de détails.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mémoire_des_bureaux">Mémoire des bureaux</h3>
+<div class="paragraph">
+<p>Si cette option est enclenchée, RaySession sauvegardera (ou tentera de sauvegarder) le numéro du bureau virtuel sur lequel se trouvaient les fenêtres des clients à la sauvegarde de la session.<br>
+Ainsi lorsque vous relancerez la session ou les clients, les fenêtres seront redispatchées sur les bureaux sur lequels elles figuraient.<br>
+Cette option nécessite d&#8217;avoir le programme <code>wmctrl</code> installé pour fonctionner, et ne fonctionnera probablement pas avec Wayland.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="option_scripts_de_session">Scripts de session</h3>
+<div class="paragraph">
+<p>Désactiver cette option pour n&#8217;actionner aucun script de session, et ainsi ouvrir, sauvegarder ou fermer une session en ignorant totalement les scripts associés à ces actions.<br>
+Ces scripts sont utilisés par les sessions avec <a href="#memoire_de_la_configuration_de_jack">Mémoire de la configuration de JACK</a>.<br>
+Voir <a href="#les_scripts_de_session">Les scripts de session</a> pour plus de détails.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_se_souvenir_de_létat_des_igus">Se souvenir de l&#8217;état des IGUs</h3>
+<div class="paragraph">
+<p>Cette option ne concerne que les client NSM capables d&#8217;afficher/cacher leur interface graphique. Sans cette option, certains d&#8217;entre eux vont toujours démarrer cachés, d&#8217;autres vont se souvenir s&#8217;ils étaient visibles à leur dernière sauvegarde. Avec cette option enclenchée, les interfaces graphiques seront affichées au moment où la session est prête si elles étaient visibles lors de la dernière sauvegarde ou si le client n&#8217;a jamais été lancé.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="cliches">Les clichés</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Les clichés nécessitent d&#8217;avoir le programme <code>git</code> installé, si vous n&#8217;avez pas <code>git</code>, le bouton de marche arrière n&#8217;apparaît pas et il est impossible de prendre un cliché ou d&#8217;y revenir.</p>
+</div>
+<div class="paragraph">
+<p>Un cliché mémorise les fichiers et leurs contenu à un moment précis. Les fichiers volumineux et les fichiers ayant certaines extensions tels que les fichiers audio et video sont ignorés, sinon le processus de cliché serait trop long et celà doublerait inutilement la taille des dossiers de session. Celà n&#8217;est en fait pas très gênant, au contraire, puisque vos fichiers audio récents restent présents quand vous retournez à un cliché précédent.<br>
+Si malgré tout le processus de cliché s&#8217;avère long, une fenêtre apparaît et vous pouvez annuler sans aucun risque le cliché en cours. Si vous l&#8217;annulez, Le cliché automatique n&#8217;aura plus lieu pour cette session.</p>
+</div>
+<div class="paragraph">
+<p>L&#8217;intérêt des clichés réside dans le fait de pouvoir revenir à moment antérieur de la session, avant d&#8217;avoir eu cette idée artistique géniale qui s&#8217;est avérée nulle et non avenue, avant d&#8217;avoir tenté un redécoupage des échantillons au microcoscope qui a finalement tué toute forme de musicalité, avant qu&#8217;un programme plante pour une raison inconnue des services de police&#8230;&#8203;</p>
+</div>
+<div class="paragraph">
+<p>N&#8217;ayez crainte, revenir à un cliché ne vous empêchera pas de revenir là où vous en êtiez.</p>
+</div>
+<div class="paragraph">
+<p>Pour faire revenir la session à un cliché, cliquez sur le bouton de marche arrière situé à droite du bouton <strong>Exécutable</strong>.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="../../images/raysession/fr/cliche.png" alt="cliche">
+</div>
+</div>
+<div class="paragraph">
+<p>Sélectionnez le cliché vers lequel vous voulez revenir et cliquez sur <strong>Ok</strong>. Un nouveau cliché est pris, la session se ferme, le cliché voulu est rappelé et la session se ré-ouvre.</p>
+</div>
+<div class="paragraph">
+<p>Il est également possible de faire revenir uniquement un client à un état précédent de la session en faisant un clique droit sur le client, puis <strong>Retourner à un état précédent</strong>.<br>
+Si vous le souhaitez vous pouvez éditer pour chaque client les fichiers ignorés par les clichés dans la fenêtre de propriétés du client.</p>
+</div>
+<div class="paragraph">
+<p>Avec l&#8217;option <strong>Cliché automatique à la sauvegarde</strong>, un cliché est pris juste après chaque sauvegarde de la session, sauf s&#8217;il n&#8217;y a aucun changement depuis le cliché précédent. Pour prendre un cliché à un autre moment, cliquez sur l&#8217;icône de marche arrière à droite du bouton <strong>Exécutable</strong> et sur <strong>Prendre un cliché maintenant</strong>, celà présente l&#8217;avantage de pouvoir nommer le cliché et d&#8217;avoir ainsi un repère temporel plus parlant que la date et l&#8217;heure du cliché.<br></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="les_scripts_de_session">Les scripts de session</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Les scripts de session permettent de programmer des actions personnalisés à l&#8217;ouverture, à la sauvegarde et à la fermeture de la session. Ils sont notamment utilisés pour les sessions avec <a href="#memoire_de_la_configuration_de_jack">Mémoire de la configuration de JACK</a>.<br>
+Des connaissances en script shell sont nécessaires pour éditer ces scripts, mais tout un chacun peut les utiliser.</p>
+</div>
+<div class="paragraph">
+<p>Les scripts de session se trouvent dans un dossier <code>ray-scripts</code> situé soit dans un dossier de la session, soit dans un dossier parent.<br>
+Par exemple, pour une session étant dans:<br>
+<code>~/Ray Sessions/avec_script_de_foo/ma session</code></p>
+</div>
+<div class="paragraph">
+<p>le dossier des scripts de session peut-être<br>
+<code>~/Ray Sessions/avec_script_de_foo/ma session/ray-scripts</code><br>
+<code>~/Ray Sessions/avec_script_de_foo/ray-scripts</code><br>
+<code>~/Ray Sessions/ray-scripts</code><br>
+<code>~/ray-scripts</code></p>
+</div>
+<div class="paragraph">
+<p>L&#8217;intérêt d&#8217;un tel comportement est de pouvoir scripter un ensemble de sessions sans avoir à y recopier les scripts, mais surtout de livrer une session non scriptée lorsqu&#8217;on la transfère à quelqu&#8217;un d&#8217;autre pour un travail collectif.<br>
+Seul le dossier de scripts le plus près de la session dans l&#8217;arborescence sera considéré. Ainsi, un dossier <code>ray-scripts</code> vide dans une session désactivera les scripts pour cette session.</p>
+</div>
+<div class="paragraph">
+<p>Pour éditer les scripts, commencez par créer une session avec le modèle <strong>avec les scripts de base</strong>, il s&#8217;agit d&#8217;un modèle de session avec des scripts ne comprenant absolument aucune action particulière. Rendez-vous dans le dossier <code>ray-scripts</code> dans le dossier de la session, vous y trouverez les fichiers <code>load.sh</code>, <code>save.sh</code> et <code>close.sh</code>. Dans chacun de ces scripts, <code>ray_control run_step</code> correspond à l&#8217;action normale effectuée (selon le script: charger, sauvegarder ou fermer la session). Si un de ces trois scripts ne vous est d&#8217;aucune utilité, supprimez le, ce sera du temps gagné de ne pas passer par ce script.</p>
+</div>
+<div class="paragraph">
+<p>Les fichiers scripts doivent impérativement être exécutables pour fonctionner.</p>
+</div>
+<div class="paragraph">
+<p>Vous aurez probablement besoin de l&#8217;utilitaire en ligne de commande <code>ray_control</code> pour effectuer des actions en rapport avec tel ou tel client. tapez <code>ray_control --help</code> pour connaître toutes ses possibilités.</p>
+</div>
+<div class="paragraph">
+<p>Le modèle de session à mémoire de configuration de JACK utilise les scripts de session, mais on peut aussi imaginer moult actions possibles selon vos besoins et vos envies, par exemple :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>définir un ordre bien précis de lancement des clients à l&#8217;ouverture de la session (un exemple est fourni dans le code source)</p>
+</li>
+<li>
+<p>faire une copie de sauvegarde de la session sur un disque dur externe à chaque fermeture</p>
+</li>
+<li>
+<p>envoyer un raccourci <em>Ctrl+S</em> aux fenêtres des clients non sauvegardables à la sauvegarde de la session (un exemple est fourni dans le code source)</p>
+</li>
+<li>
+<p>Allumer la lumière rouge à l&#8217;entrée du studio à l&#8217;ouverture, l&#8217;éteindre à la fermeture</p>
+</li>
+<li>
+<p>Lancer la machine à café à la fermeture de la session (exemple débile, allez donc appuyer sur le bouton de la cafetière, de toutes façons faudra changer le filtre !)</p>
+</li>
+<li>
+<p>Faire beaucoup, beaucoup, beaucoup d&#8217;erreurs qui feront planter votre session, soyez prudents évidemment !</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="memoire_de_la_configuration_de_jack">Mémoire de la configuration de JACK</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Il est possible grâce aux scripts de session de rappeler automatiquement la configuration de JACK spécifique à une session avant de la charger.
+Ce comportement pourra rappeler à certains le fonctionnement des studios LADISH, en beaucoup mieux fait, du moins c&#8217;est ce qui est espéré.</p>
+</div>
+<div class="sect2">
+<h3 id="_dans_quels_cas_lutiliser">Dans quels cas l&#8217;utiliser</h3>
+<div class="paragraph">
+<p>Celà peut s&#8217;avérer utile:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Si vous avez besoin d&#8217;utiliser une interface audio spécifique pour la session</p>
+</li>
+<li>
+<p>Si vous travaillez sur de multiple projets avec des fréquences d&#8217;échantillonage différentes (telle session sur 44100 Hz, telle autre sur 48000 Hz).<br>
+Ainsi celà vous évitera d&#8217;avoir à reconfigurer, arrêter et redémarrer JACK vous même, ou encore d&#8217;éviter d&#8217;oublier de le faire et de se faire insulter par certains programmes.</p>
+</li>
+<li>
+<p>Si vous voulez éviter de charger une session très gourmande en DSP (par exemple en phase de mixage) avec un tampon trop petit (128 par exemple).<br>
+Notez que sur la plupart des interfaces audio, il est possible de changer la taille du tampon à chaud (sans redémarrer JACK).</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_utilisation">Utilisation</h3>
+<div class="paragraph">
+<p>Il est nécessaire que l&#8217;option <a href="#option_scripts_de_session">Scripts de session</a> soit enclenchée (Cette option est enclenchée par défaut).</p>
+</div>
+<div class="paragraph">
+<p>Pour utiliser le mémoire de configuration de JACK, créez une nouvelle session à partir du modèle <strong>Avec mémoire de la configuration de JACK</strong>.<br>
+Il s&#8217;agit en fait d&#8217;une session scriptée (voir <a href="#les_scripts_de_session">Les scripts de session</a>) qui lance un script fourni avec RaySession, mais qui lui est complètement externe, ainsi RaySession n&#8217;a toujours aucun rapport direct avec JACK.</p>
+</div>
+<div class="paragraph">
+<p>Lisez la fenêtre d&#8217;informations à ce sujet puis validez. JACK redémarre puis votre session se lance.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_principe_de_fonctionnement">Principe de fonctionnement</h3>
+<div class="paragraph">
+<p>À chaque fois que la session est sauvegardée, la configuration de JACK est sauvegardée dans la session, dans le fichier <code>jack_parameters</code>.<br>
+Avant l&#8217;ouverture de la session, JACK est redémarré si la configuration de la session est différente de la configuration actuelle de JACK.<br>
+Après la fermeture de la session, JACK est si nécessaire redémarré avec la configuration en cours avant l&#8217;ouverture.</p>
+</div>
+<div class="paragraph">
+<p>La configuration des ponts <strong>PulseAudio &#8594; JACK</strong> est également sauvegardée et restaurée avec la configuration de JACK.</p>
+</div>
+<div class="paragraph">
+<p>Si vous ouvrez cette session après l&#8217;avoir copiée sur un autre ordinateur, la configuration de JACK ne sera pas rappellée mais sera écrasée lors de la sauvegarde. Seule la fréquence d&#8217;échantillonage de la session sera utilisée.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_cas_particuliers">Cas particuliers</h3>
+<hr>
+<div class="paragraph">
+<p><strong>Pour ouvrir une session sans recharger sa configuration de JACK:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>désactivez l&#8217;option <a href="#option_scripts_de_session">Scripts de session</a></p>
+</li>
+<li>
+<p>ouvrez la session</p>
+</li>
+</ul>
+</div>
+<hr>
+<div class="paragraph">
+<p><strong>Pour changer la configuration de JACK d&#8217;une session:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Démarrez JACK avec la configuration désirée</p>
+</li>
+<li>
+<p>Désactivez l&#8217;option <a href="#option_scripts_de_session">Scripts de session</a></p>
+</li>
+<li>
+<p>Ouvrez la session</p>
+</li>
+<li>
+<p>Ré-activez l&#8217;option <a href="#option_scripts_de_session">Scripts de session</a></p>
+</li>
+<li>
+<p>Sauvegardez la session</p>
+</li>
+</ul>
+</div>
+<hr>
+<div class="paragraph">
+<p><strong>Pour rendre une ancienne session sensible à la configuration de JACK</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>copiez le dossier <code>ray-scripts</code> d&#8217;une session avec mémoire de la configuration de JACK dans le dossier de la session</p>
+</li>
+<li>
+<p>Activez l&#8217;option <a href="#option_scripts_de_session">Scripts de session</a></p>
+</li>
+<li>
+<p>Ouvrez la session</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>ou</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>déplacez la session dans un sous-dossier contenant le dossier <code>ray-scripts</code> adhoc</p>
+</li>
+<li>
+<p>Ouvrez la session</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sous_le_capot">Sous le capot</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>RaySession n&#8217;est en réalité qu&#8217;une interface graphique pour ray-daemon. Lorsque vous lancez RaySession, l&#8217;interface graphique lance le démon et s&#8217;y connecte, et elle arrête le démon lorsqu&#8217;on la ferme. L&#8217;interface graphique et le démon communiquent entre eux par messages OSC (Open Sound Control), comme c&#8217;est le cas entre le démon et les clients NSM. Ainsi, vous pouvez connecter plusieurs interfaces graphiques à un démon, même à distance. Tapez <code>raysession --help</code> pour voir comment faire.</p>
+</div>
+<div class="paragraph">
+<p>Il n&#8217;est pas interdit d&#8217;avoir plusieurs instances de démon lancés simultanément, ainsi si vous lancez RaySession alors qu&#8217;une instance est déjà lancée, celle-ci lancera un nouveau démon. Toutefois, cette façon de travailler étant peu commune, l&#8217;utilisation d&#8217;un seul démon est favorisée. Ainsi, si un démon tourne et qu&#8217;il n&#8217;a aucune interface graphique attachée, raysession se connectera à ce démon par défaut.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="ray_control">Contrôler RaySession en ligne de commande</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>la commande <code>ray_control</code> vous permet de faire a peu près tout ce qu&#8217;il est possible de faire avec l&#8217;interface graphique, et même un peu plus. tapez <code>ray_control --help-all</code> pour connaître l&#8217;ensemble des possibilités.</p>
+</div>
+<div class="paragraph">
+<p>Au cas où il y a plusieurs démons lancés (voir <a href="#sous_le_capot">Sous le capot</a>), <code>ray_control</code> ne considerera que celui qui a été lancé en premier, sauf si vous spécifiez son port OSC avec l&#8217;option <code>--port</code> ou la variable d&#8217;environnement RAY_CONTROL_PORT.</p>
+</div>
+<div class="paragraph">
+<p>On pourrait penser qu&#8217;il n&#8217;y a pas d&#8217;intérêt à utiliser <code>ray_control</code> puisque la commande <code>oscsend</code> permet d&#8217;envoyer un message OSC au démon, c&#8217;est faux.<br>
+D&#8217;une part, parce que <code>oscsend</code> permet d&#8217;envoyer des messages mais pas d&#8217;obtenir des informations de manière simple (quels sont les clients actifs ? quel est l&#8217;executable de tel client ? &#8230;&#8203;), d&#8217;autre part parce que la commande <code>ray_control</code> se terminera lorsque l&#8217;action demandée sera effectuée, par exemple <code>ray_control open_session ma_session</code> se terminera lorsque la session sera chargée.</p>
+</div>
+<div class="paragraph">
+<p>Pensez à affecter <code>ray_control save</code> à un raccourci global de votre environnement de bureau (<em>Ctrl+Meta+S</em>), celà vous fera gagner un temps fou !</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_foire_aux_questions">Foire aux questions</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Est-il toujours intéressant de lancer Ardour (ou un autre DAW compatible NSM) directement plutôt que dans RaySession ?</strong></p>
+<div class="paragraph">
+<p>Sauf pour un projet vraiment tout petit, Non.<br>
+Si vous utilisez Ardour, lancez le toujours depuis RaySession, d&#8217;une part le cliché automatique à la sauvegarde peut vous être d&#8217;un secours inespéré, d&#8217;autre part, vous n&#8217;êtes pas à l&#8217;abri d&#8217;avoir besoin d&#8217;un autre programme même si vous ne l&#8217;aviez pas prévu.</p>
+</div>
+</li>
+<li>
+<p><strong>Puis-je lancer dans une session RaySession un projet Ardour déjà existant ?</strong></p>
+<div class="paragraph">
+<p>Vous trouverez dans le menu <strong>Fichier &#8594; Utilitaires &#8594; Convertir une session Ardour en session Ray</strong>, celà crée et lance une session RaySession à partir d&#8217;une session Ardour. Il n&#8217;est pas surfait de faire une copie de sauvegarde de votre session Ardour avant de lancer ce script. Bien évidemment, il ne faut pas que Ardour soit ouvert avec cette session pendant l&#8217;execution de ce script, mais ça vous l&#8217;aviez déjà compris.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-09-04 07:35:14 +0200
+</div>
+</div>
+</body>
+</html>

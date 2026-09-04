@@ -795,21 +795,22 @@ class MainWindow(QMainWindow):
             short_locale = locale_str[:2]
 
         QDesktopServices.openUrl(
-            QUrl('http://raysession.tuxfamily.org/%s/manual.html'
-                 % short_locale))
+            QUrl('https://houston4444.codeberg.page/raysession'))
 
     def _internal_manual(self):
         short_locale = 'en'
         manual_dir = get_code_root() / 'manual'
         locale_str = QLocale.system().name()
-        manual_file = manual_dir / locale_str[:2] / 'manual.html'
+        manual_file = (manual_dir / locale_str[:2]
+                       / ray.APP_TITLE.lower() / 'index.html')
         
         if (len(locale_str) > 2 and '_' in locale_str
                 and manual_file.is_file()):
             short_locale = locale_str[:2]
 
         QDesktopServices.openUrl(
-            QUrl(str(manual_dir / short_locale / 'manual.html')))
+            QUrl(str(manual_dir / short_locale
+                     / ray.APP_TITLE.lower() / 'index.html')))
 
     def _save_session(self):
         self.to_daemon(r.session.SAVE)

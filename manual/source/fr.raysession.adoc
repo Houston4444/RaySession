@@ -2,13 +2,13 @@
 :toc: left
 :toc-title: Table des matières
 :toclevels: 1
-:imagesdir: images
-:stylesheet: ../../patchbay/en/patchbay_manual.css
+:imagesdir: XXX_IMAGES_XXX/common
+:stylesheet: patchbay_manual.css
 
 [.text-right]
-image:../../en/images/flags/en.jpeg[EN, 30, 20, link=../en/manual.html] image:../../en/images/flags/fr.jpeg[FR, 40, 30, link=../fr/manual.html] image:../../en/images/flags/de.jpeg[DE, 30, 20, link=../de/manual.html]
+image:flags/en.jpeg[EN, 30, 20, link=XXX_LANG_SWITCH_en_XXX] image:flags/fr.jpeg[FR, 40, 30, link=XXX_LANG_SWITCH_fr_XXX] image:flags/de.jpeg[DE, 30, 20, link=XXX_LANG_SWITCH_de_XXX]
 
-image::../../en/images/raysession.svg["icon", 100, 100]
+image:raysession.svg["icon", 100, 100]
 
 _pour la version 0.14.1_
 
@@ -31,7 +31,7 @@ Prenons un exemple où pour composer un morceau, nous aurons besoin des logiciel
 
 Pour créer une nouvelle session, cliquez en haut à gauche sur *Nouvelle Session* (_ou Ctrl+N_). Apparaît alors une fenêtre de dialogue.
 
-image::exemple_nouvelle_session.png[Nouvelle session]
+image::../fr/exemple_nouvelle_session.png[Nouvelle session]
 
 En haut à droite vous apercevez le dossier racine des sessions, c’est là que les sessions seront sauvegardées (une session RaySession étant un dossier contenant un fichier `raysession.xml`).
 
@@ -47,31 +47,31 @@ La boîte à choix multiples de modèles de session vous permet de choisir entre
 
 Dans un premier temps, laissez le modèle sur *Avec mémoire du patch de JACK*, cliquez sur *Ok* pour lancer votre session.
 
-image::exemple_session_lancee.png[Session lancée]
+image:../fr/exemple_session_lancee.png[Session lancée]
 
 La partie session de la fenêtre devient active, en haut est écrit le nom de votre session, et votre session contient déjà un programme client qui s'appelle *Connexions JACK*. C'est lui qui sauvegardera et refera les connexions de la baie de brassage de JACK.
 
 Pour ajouter Ardour à votre session, cliquez sur le bouton *Application* (ou Ctrl+A), apparaît alors la fenêtre des applications (plus de détails à la rubrique <<ajout_application>>). Dans la partie droite, cherchez Ardour (selon votre version d'ardour, il est possible qu'il s'appelle Ardour5 ou Ardour6) et double-cliquez dessus.
 
-image::exemple_ajouter_ardour.png[Ajouter Ardour à la session, 640, 480]
+image:../fr/exemple_ajouter_ardour.png[Ajouter Ardour à la session, 640, 480]
 
 Un client *Ardour* apparaît en dessous de *Connexions JACK* et Ardour démarre (normalement directement avec une session Ardour vide).
 
 Faites de même avec Guitarix.
 
-image::exemple_session_prete.png[Session prête avec Ardour et Guitarix]
+image:../fr/exemple_session_prete.png[Session prête avec Ardour et Guitarix]
 
 Dans Ardour, ajoutez une piste (Menu: Piste -> Ajouter une piste), dans la fenêtre Ardour qui est apparue, nommez la piste _Guitare_ et mettez la boîte à choix multiples *configuration* sur _Stereo_.
 
-[caption="Figure 1: ",link=images/exemple_ardour_piste.png]
-image::exemple_ardour_piste.png[Ajouter une piste Ardour pour Guitarix, 640, 480]
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/fr/exemple_ardour_piste.png]
+image:../fr/exemple_ardour_piste.png[Ajouter une piste Ardour pour Guitarix, 640, 480]
 
 
 Servez-vous maintenant de la <<patchbay>> de JACK qui occupe la partie droite de la fenêtre de RaySession.
 Connectez l'entrée de Guitarix à une entrée matérielle et les sorties de Guitarix vers les entrées de cette nouvelle piste Ardour. Assurez vous que les entrées de votre piste *Guitare* ne sont pas connectées aux entrées matérielles.
 
-[caption="Figure 1: ",link=../en/images/example_patchbay.png]
-image::../../en/images/example_patchbay.png[Baie de brassage de ma session]
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/common/example_patchbay.png]
+image::example_patchbay.png[Baie de brassage de ma session]
 
 Voilà, vous avez une configuration où vous pouvez enregistrer directement le son de votre guitare traité par Guitarix dans Ardour. Si vous n'avez pas de guitare, vous n'avez qu'à chanter faux dans un micro ou taper sur un coussin, ce n'est ici qu'un exemple.
 
@@ -89,7 +89,7 @@ Un des avantages de la modularité dans ce cas précis, c'est qu'une fois qu'on 
 
 === Ligne du haut
 
-image::session_ligne_du_haut.png[Ligne du haut de la trame de session]
+image::../fr/session_ligne_du_haut.png[Ligne du haut de la trame de session]
 
 De gauche à droite:
 
@@ -117,7 +117,7 @@ Notez que vous n'avez pas besoin de fermer la session en cours pour en ouvrir un
 
 === Ligne du bas
 
-image::session_ligne_du_bas.png[Ligne du bas de la trame de session]
+image::../fr/session_ligne_du_bas.png[Ligne du bas de la trame de session]
 
 De gauche à droite:
 
@@ -154,7 +154,7 @@ Une fenêtre d'information ou de progression s'affiche si vous cliquez sur cet i
 
 == Vue d'ensemble d'un client
 
-image::client_carla.png[trame d'un client]
+image::../fr/client_carla.png[trame d'un client]
 
 Un client contient de gauche à droite:
 
@@ -207,7 +207,7 @@ Ce menu est aussi accessible par clique droit n'importe où sur le client
 
 Le fenêtre d'ajout d'application se lance en cliquant sur le bouton *Application* (_ou Ctrl+A_).
 
-image::ajout_application.png[Fenêtre d'ajout d'application]
+image::../fr/ajout_application.png[Fenêtre d'ajout d'application]
 
 La liste des applications disponibles est à droite. Si le logiciel que vous souhaitez lancer n'est pas présent ici, regardez <<ajouter_un_programme_non_fourni>>.
 
@@ -215,7 +215,7 @@ La liste des applications disponibles est à droite. Si le logiciel que vous sou
 
 En haut à gauche, c'est le bloc de filtres
 
-image::ajout_application_filtre.png[Bloc de filtre de la fenêtre d'ajout d'application]
+image::../fr/ajout_application_filtre.png[Bloc de filtre de la fenêtre d'ajout d'application]
 
 
 * le champ de filtre permet de rentrer une chaîne de caractères, seuls les modèles contenant cette chaîne de caractères dans leur nom apparaîtront.
@@ -228,7 +228,7 @@ image::ajout_application_filtre.png[Bloc de filtre de la fenêtre d'ajout d'appl
 
 En bas à gauche le bloc d'informations sur le modèle sélectionné à droite
 
-image::ajout_application_infos.png[Bloc d'informations sur le modèle sélectionné]
+image::../fr/ajout_application_infos.png[Bloc d'informations sur le modèle sélectionné]
 
 * en haut à droite de ce bloc, une étoile, cliquez dessus pour l'ajouter aux favoris ou l'enlever des favoris
 * Si c'est un modèle utilisateur, un bouton *Utilisateur* vous permet de supprimer ce modèle
@@ -240,7 +240,7 @@ Par exemple, depuis la fenêtre principale de RaySession, pour ajouter Carla tap
 
 Tout en bas de la fenêtre figure le champ *Identifiant unique*.
 
-image::ajout_application_unique_id.png[Champ de saisie de l'identifiant unique]
+image::../fr/ajout_application_unique_id.png[Champ de saisie de l'identifiant unique]
 
 Ce champ est utile si vous utilisez plusieurs instances du même programme (par exemple plusieurs fois Carla), pour les distinguer plus facilement dans la liste d'applications, dans la baie de brassage et dans les fichiers de la session.
 L'identifiant final du programme lancé ne contiendra ni espaces ni caractères spéciaux, mais ils peuvent être utilisés pour l'étiquette.
@@ -252,7 +252,7 @@ Si vous ne savez pas quoi taper ici, ne tapez rien, ça devrait bien se passer.
 
 Le fenêtre d'ajout d'exécutable se lance en cliquant sur le bouton *Exécutable* (_ou Ctrl+E_).
 
-image::ajout_executable.png[Fenêtre d'ajout d'exécutable]
+image::../fr/ajout_executable.png[Fenêtre d'ajout d'exécutable]
 
 Vous aurez besoin de passer par cette fenêtre si vous voulez ajouter un client qui n'apparaît pas dans la liste de la fenêtre d'ajout d'application.
 Cette fenêtre se présente très simplement, un champ pour rentrer l'exécutable, une case *Protocole NSM*, un bouton d'options avancées.
@@ -269,7 +269,7 @@ Décocher la case *Protocole NSM* revient à lancer le programme avec le pseudo-
 
 Si vous cliquez sur le bouton d'options avancées, un bloc options avancées apparaît avec
 
-image::ajout_executable_plus.png[Fenêtre d'ajout d'exécutable avancé]
+image::../fr/ajout_executable_plus.png[Fenêtre d'ajout d'exécutable avancé]
 
 * la case *Démarrer le client*, si vous la décochez le client sera ajouté mais non lancé
 * la boîte à choix multiple *Mode de préfixe*, celà définit le préfixe du nom des fichiers du client
@@ -285,7 +285,7 @@ image::ajout_executable_plus.png[Fenêtre d'ajout d'exécutable avancé]
 [#patchbay]
 == Baie de brassage
 
-link:../../patchbay/fr/manual.html[Manuel de la baie de brassage]
+link:../patchbay/index.html[Manuel de la baie de brassage]
 
 la baie de brassage de JACK est affichée par défaut. Vous pouvez la cacher en cliquant sur *Contrôle* puis en décochant *Afficher la baie de brassage de JACK* (__ou Ctrl+J__). La baie de brassage contient tous les ports AUDIO et MIDI de JACK que vous pouvez interconnecter.
 
@@ -295,7 +295,7 @@ Il est conseillé d'avoir le pont A2J lancé si vous voulez travailler correctem
 
 RaySession n'inclut pas d'outils pour configurer le serveur JACK, *QJackCtl*, *Studio Control*, *Cadence*, ou l'utilitaire en ligne de commande `jack_control` font très bien ce travail. Notez que cette baie de brassage fonctionne également avec PipeWire.
 
-Beaucoup plus d'infos sur la baie de brassage sont sur link:../../patchbay/fr/manual.html[Le manuel de la baie de brassage].
+Beaucoup plus d'infos sur la baie de brassage sont sur link:../patchbay/index.html[Le manuel de la baie de brassage].
 
     
 [#proprietes_de_client]
@@ -308,7 +308,7 @@ Selon le protocole du client, le deuxième onglet s'appelle NSM, Ray-Hack ou Ray
 
 === Onglet *Général*
 
-image::proprietes_general.png[Propriétés d'un client]
+image::../fr/proprietes_general.png[Propriétés d'un client]
 
 * Le premier bloc de l'onglet *Général* affiche l'identifiant, le protocole, l'étiquette, la description et l'icône du client. +
 Si vous ne les éditez pas, l'étiquette, la description et l'icône sont tirées du fichier .desktop associé à l'exécutable lancé, s'il a été trouvé. +
@@ -327,7 +327,7 @@ cocher cette case ou non dépend seulement de l'importance de la sauvegarde de v
 
 === Onglet *NSM*
 
-image::proprietes_nsm.png[Propriétés NSM d'un client]
+image::../fr/proprietes_nsm.png[Propriétés NSM d'un client]
 
 Le nom du client ici est fourni par le client lui-même. +
 Les capacités sont celle qui sont transmises par le client à son démarrage. Si le client n'a pas encore été démarré, ce champ est donc vide.
@@ -356,11 +356,11 @@ Si le client est de type Ray-Hack, ici moult champs s'offrent à vous. Ce n'est 
 
 Le pseudo-protocole Ray-Hack reprend les attributs des proxy (nsm-proxy ou ray-proxy), sauf que le client est lancé directement dans la session.
 
-image::proprietes_ray_hack.png[Propriétés Ray-Hack d'un client]
+image::../fr/proprietes_ray_hack.png[Propriétés Ray-Hack d'un client]
 
 ==== Bloc de lancement
 
-image::ray_hack_lancement.png[]
+image::../fr/ray_hack_lancement.png[]
 
 * le *Dossier* est le nom du dossier de ce client, dans le dossier de la session. Le programme est lancé depuis ce dossier.
 * L'**Exécutable** est la commande qui lance le programme
@@ -374,7 +374,7 @@ par exemple pour reproduire `ma_commande mon_argument_1 "mon argument 2"` rentre
 
 ==== Bloc des signaux
 
-image::ray_hack_signaux.png[]
+image::../fr/ray_hack_signaux.png[]
 
 * Le *Signal de sauvegarde* ne peut être que rarement utilisé. Il peut être SIGUSR1 pour les programmes compatibles avec le vieux protocole LASH. Sinon laissez le sur _Aucun_, s'il n'y a pas de méthode de sauvegarde, on ne peut pas l'inventer.
 * Le *Signal d'extinction* sera généralement _SIGTERM_. Ne le changez qu'au cas où ce signal ne ferme pas correctement le programme.
@@ -389,7 +389,7 @@ Tapez `kill -l` pour connaître les signaux disponibles et leurs numéros.
 
 ==== Bloc de gestion des non-sauvegardables
 
-image::ray_hack_non_sauvegarde.png[]
+image::../fr/ray_hack_non_sauvegarde.png[]
 
 Ce bloc n'est actif que si le *Signal de sauvegarde* est reglé sur _Aucun_
 
@@ -398,7 +398,7 @@ Ce bloc n'est actif que si le *Signal de sauvegarde* est reglé sur _Aucun_
 
 ==== Zone de test
 
-image::ray_hack_zone_test.png[]
+image::../fr/ray_hack_zone_test.png[]
 
 La zone de test vous permet de tester les réglages de lancement, d'arrêt et de sauvegarde réglés dans cette fenêtre sans avoir à *Sauvegarder les changements*.
 
@@ -410,7 +410,7 @@ Les sessions réseau fonctionnent selon un rapport de maître à esclave. Une se
 
 Pour lancer une session réseau (esclave donc), lancez le modèle d'application *Network Session* depuis la fenêtre des applications et suivez les instructions.
 
-image::session_reseau_modele.png[Ajouter une session réseau]
+image::../fr/session_reseau_modele.png[Ajouter une session réseau]
 
 Vous devrez lancer un démon sur la machine distante avec la commande `ray-daemon -p 1234` (`1234` est un exemple, mettez le port que vous voulez). Ce démon vous affiche dans le terminal quelque chose sous cette forme:
 ```
@@ -419,17 +419,17 @@ Vous devrez lancer un démon sur la machine distante avec la commande `ray-daemo
 [ray-daemon]ROOT: /home/utilisateur/Ray Sessions reseau
 ```
 
-image::session_reseau_invite.png[Configurer une session réseau]
+image::../fr/session_reseau_invite.png[Configurer une session réseau]
 
 Vous devrez copier dans la fenêtre d'invitation de la session réseau l'une des deux URLs. La première (qui commence par `osc.udp://192.168.`) doit fonctionner à coup sûr, la seconde ne fonctionnera que si le nom de la machine esclave est correctement renseigné dans le fichier `/etc/hosts` de la machine maître. Toutefois, renseigner le nom de la machine esclave dans `/etc/hosts` et utiliser la deuxième URL est préférable, parce que l'adresse en 192.168. bougera si vous branchez votre machine esclave différemment (en filaire, en wifi), ou si vous réinstallez la distribution.
 
 Vous avez à présent 2 fenêtres RaySession sur votre machine maître, l'une contrôle la session maître, l'autre l'esclave. Vous reconnaîtrez l'esclave au fait qu'elle n'a ni barre d'outils (*Nouvelle Session*, *Ouvrir une session*, *Contrôle*), ni boutons *Abandonner la session* et *Fermer la session*.
 
-image::session_reseau_fenetre_fille.png[]
+image::../fr/session_reseau_fenetre_fille.png[]
 
 La fenêtre esclave est cachable comme c'est le cas dans beaucoup de programmes NSM.
 
-image::session_reseau_client.png[]
+image::../fr/session_reseau_client.png[]
 
 Si vous lancez `raysession -p 1234` sur votre machine esclave, vous aurez la fenêtre de la session esclave en double exemplaire, une sur chaque machine.
 
@@ -448,33 +448,33 @@ Nous voulons ajouter ici Audacity à la session. Audacity est choisi à titre d'
 Cliquez sur *Exécutable* (_ou Ctrl+E_). +
 Dans la fenêtre d'ajout d'exécutable, Décochez la case *Protocole NSM*, tapez `audacity` dans le champ d'exécutable et cliquez sur *Ok*.
 
-image::audacity_executable.png[Fenêtre d'ajout exécutable dûment remplie]
+image::../fr/audacity_executable.png[Fenêtre d'ajout exécutable dûment remplie]
 
 Un nouveau client est créé, sa fenêtre de propriétés s'ouvre sur l'onglet Ray-Hack et Audacity se lance.
 
 Dans Audacity, nous allons directement sauvegarder un projet vide dans le dossier du client. Le dossier du client se trouve dans le dossier de la session et porte le nom donné après *Dossier:* tout en haut de l'onglet Ray-Hack. Nous allons appeler le projet EXACTEMENT comme la session RaySession en cours.
 Pour celà, dans Audacity, faites _Menu -> Fichier -> Sauvegarder le projet -> Sauvegarder le projet_.
 
-image::audacity_sauver_projet.png[Sauvegarder le projet vide d'audacity]
+image::../fr/audacity_sauver_projet.png[Sauvegarder le projet vide d'audacity]
 
 Cliquez sur *Valider* à l'éventuelle fenêtre d'avertissement. +
 Dans la boîte de sauvegarde de fichiers qui s'ouvre, vous trouverez le dossier de la session en bas à gauche (voir <<raccourcis_dossier_de_session>>), cliquez dessus pour rentrer dedans. À l'intérieur de celui-ci vous devez voir le dossier du client tel qu'il figure en haut de l'onglet Ray-Hack, rentrez dans ce dossier. En haut à gauche de la boîte de sauvegarde, tapez le nom exact de votre session dans le champ *Nom:* puis validez.
 
-[caption="Figure 1: ",link=images/audacity_sauver_fichier.png]
-image::audacity_sauver_fichier.png[Où sauvegarder le projet Audacity, 640, 480]
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/fr/audacity_sauver_fichier.png]
+image::../fr/audacity_sauver_fichier.png[Où sauvegarder le projet Audacity, 640, 480]
 
 Fermez Audacity. +
 En haut à droite de l'onglet Ray-Hack de la fenêtre de propriétés du client, cliquez sur *Naviguer*. +
 
-[caption="Figure 1: ",link=images/audacity_charger_config_file.png]
-image::audacity_charger_config_file.png[Fenêtre de chargement du CONFIG_FILE, 640, 480]
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/fr/audacity_charger_config_file.png]
+image::../fr/audacity_charger_config_file.png[Fenêtre de chargement du CONFIG_FILE, 640, 480]
 
 sélectionnez le projet Audacity que vous venez de créer, son nom commence par le nom de la session et termine par `.aup`.
 
 Si tout s'est bien passé, le champ *Fichier de configuration* est devenu `$RAY_SESSION_NAME.aup` et le champ *Arguments* est devenu `"$CONFIG_FILE"`. +
 Cochez les cases *Attendre une fenêtre avant d'être considéré comme prêt*, *Demander à l'utilisateur de fermer lui même le programme* et *Essayer de fermer gracieusement la fenêtre*. Cliquez en bas à droite sur *Sauvegarder les changements*.
 
-image::audacity_ray_hack_final.png[Onglet Ray-Hack du client audacity dûment rempli]
+image::../fr/audacity_ray_hack_final.png[Onglet Ray-Hack du client audacity dûment rempli]
 
 Lancez le client Audacity et vérifiez que la fenêtre d'Audacity porte bien le nom de la session. +
 Cliquez sur l'icône du client Audacity, dans le menu déroulant choisissez *Sauvegarder comme modèle d'application*, et rentrez `Audacity` dans le champ de la boîte de dialogue qui est apparue.
@@ -498,7 +498,7 @@ Si jamais vous souhaitez utiliser un autre gestionnaire de sessions, vous trouve
 
 Les options du démon sont des services qui sont activables et désactivables via le bouton *Contrôle* en haut à droite de la fenêtre principale, ou via le menu *options* de la barre de menus.
 
-image::options_du_demon.png[Options du démon]
+image::../fr/options_du_demon.png[Options du démon]
 
 Voici le détail des différentes options:
 
@@ -546,7 +546,7 @@ N'ayez crainte, revenir à un cliché ne vous empêchera pas de revenir là où 
 
 Pour faire revenir la session à un cliché, cliquez sur le bouton de marche arrière situé à droite du bouton *Exécutable*.
 
-image::cliche.png[]
+image::../fr/cliche.png[]
 
 Sélectionnez le cliché vers lequel vous voulez revenir et cliquez sur *Ok*. Un nouveau cliché est pris, la session se ferme, le cliché voulu est rappelé et la session se ré-ouvre.
 

@@ -1,11 +1,11 @@
 = RaySession Manual
 :toc: left
 :toclevels: 1
-:imagesdir: ../en/images
-:stylesheet: ../../patchbay/en/patchbay_manual.css
+:imagesdir: XXX_IMAGES_XXX/common
+:stylesheet: patchbay_manual.css
 
 [.text-right]
-image:flags/en.jpeg[EN, 30, 20, link=../en/manual.html] image:flags/fr.jpeg[FR, 30, 20, link=../fr/manual.html] image:flags/de.jpeg[DE, 40, 30, link=../de/manual.html]
+image:flags/en.jpeg[EN, 30, 20, link=XXX_LANG_SWITCH_en_XXX] image:flags/fr.jpeg[FR, 30, 20, link=XXX_LANG_SWITCH_fr_XXX] image:flags/de.jpeg[DE, 40, 30, link=XXX_LANG_SWITCH_de_XXX]
 
 image::raysession.svg["icon", 100, 100]
 _für Version 0.13.1_
@@ -30,7 +30,7 @@ sollten also installiert sein.
 
 Um eine neue Session zu starten, klicken Sie oben links auf New Session (_oder Strg+N_). Ein Dialog Fenster wird sich öffnen.
 
-image::example_new_session.png[New session]
+image::../en/example_new_session.png[New session]
 
 Oben rechts ist der Root Ordner der Session zu sehen. Hier wird die neue Session gespeichert (eine RaySession ist ein Ordner, der die
 Datei `raysession.xml`, enthält).
@@ -52,7 +52,7 @@ Belassen sie es zunächst bei der Standard Vorlage *With JACK
 patch memory*, und klicken Sie auf *Ok*, um die
 Session zu starten.
 
-image::example_session_launched.png[Session launched]
+image::../en/example_session_launched.png[Session launched]
 
 Das Session Fenster wird aktiviert, die Fensterleiste enthält den Namen ihrer Session und eine Klient Anwendung mit dem Namen
 *JACK Connections* ist bereits aktiviert. Dieser Klient wird die Verbindungen der JACK Patchbay speichern und wiederherstellen.
@@ -60,24 +60,24 @@ Das Session Fenster wird aktiviert, die Fensterleiste enthält den Namen ihrer S
 Um Ardour zu ihrer Session hinzuzufügen, klicken Sie auf *Application*/Anwendung (_oder Strg+A_), und das Anwendungs
 Dialogfenster wird sich öffnen (mehr hierzu unter <<add_application>>). Finden Sie auf der rechten Seite Ardour (je nach Version unter Umständen Ardour5 oder Ardour6 genannt) und Doppelklicken Sie darauf.
 
-image::example_add_ardour.png[Add Ardour to the session, 640, 480]
+image::../en/example_add_ardour.png[Add Ardour to the session, 640, 480]
 
 Ein Ardour Klient wird unter dem JACK Connections Klienten erscheinen und Ardour wird gestartet (normalerweise direkt mit einer leeren Ardour Session).
 
 Gehen Sie für Guitarix auf die gleiche Weise vor.
 
-image::example_session_ready.png[Session ready with Ardour and Guitarix]
+image::../en/example_session_ready.png[Session ready with Ardour and Guitarix]
 
 Fügen Sie in Ardour eine Spur hinzu (Menu: Spur → Füge Spur hinzu). In dem sich öffnenden Fenster, nennen sie die Spur *Guitar* und setzen Sie die Kanaleinstellungen auf _Stereo_.
 
-[caption="Figure 1: ",link=../en/images/example_ardour_track.png]
-image::example_ardour_track.png[Add a track in Ardour for Guitarix, 640, 480]
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/en/example_ardour_track.png]
+image::../en/example_ardour_track.png[Add a track in Ardour for Guitarix, 640, 480]
 
 Now use JACK's <<patchbay>> which occupies the right side of the RaySession window.
 
 Connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.
 
-[caption="Figure 1: ",link=../en/images/example_patchbay.png]
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/common/example_patchbay.png]
 image::example_patchbay.png[My session patchbay]
 
 Dies ist ein Beispiel, in dem der Gitarrensound durch Guitarix verarbeitet direkt in Ardour aufgenommen wird. Falls Sie über keine Gitarre verfügen, können Sie auch in ein Mikrofon singen, es handelt sich lediglich um ein Beispiel.
@@ -94,7 +94,7 @@ Sie werden alle Programme und JACK Connections so vorfinden, wie sie waren, als 
 
 === Obere Zeile
 
-image::session_top_line.png[Top line of the session frame]
+image::../en/session_top_line.png[Top line of the session frame]
 
 Von links nach rechts:
 
@@ -126,7 +126,7 @@ Die laufende Session muss nicht geschlossen werden, um eine weitere zu starten. 
 
 === Untere Zeile
 
-image::session_bottom_line.png[Bottom line of the session frame]
+image::../en/session_bottom_line.png[Bottom line of the session frame]
 
 Von links nach rechts:
 
@@ -161,7 +161,7 @@ Falls der Status des Indikators *copy*, *snapshot*, oder *wait* ist, wird durch 
 
 == Überblick Klient
 
-image::client_carla.png[trame d'un client]
+image::../en/client_carla.png[trame d'un client]
 
 Von links nach rechts:
 
@@ -215,7 +215,7 @@ Ist die Maus über diesem Symbol gehalten, ist das Folgende zu sehen
 == Anwendung hinzufügen Fenster
 Durch Klicken auf das  *Application* Feld (oder _Strg+A_) öffnet sich das Fenster, um eine Anwendung hinzuzufügen.
 
-image::add_application.png[Add Application window]
+image::../en/add_application.png[Add Application window]
 
 Die Liste mit den verfügbaren Anwendungen ist auf der rechten Seite. Falls die Software, die sie hinzufügen wollen, hier nicht zu finden ist, siehe <<add_program_not_provided>> Nicht verfügbare Anwendung hinzufügen.
 
@@ -224,7 +224,7 @@ Die Liste mit den verfügbaren Anwendungen ist auf der rechten Seite. Falls die 
 
 Oben links ist das  Filter Feld
 
-image::add_application_filter.png[Filter block of Add Application window]
+image::../en/add_application_filter.png[Filter block of Add Application window]
 
 * tDas Filter Feld erlaubt Ihnen, durch einen Teil des Namens der Anwendung nur die Anwendungen anzuzeigen, die diesen Teil enthalten.
 * Die *Factory* Checkbox zeigt die in RaySession integrierten oder durch die Distribution verfügbaren Vorlagen.
@@ -236,7 +236,7 @@ image::add_application_filter.png[Filter block of Add Application window]
 
 Unten links ist das Informations Feld zu der gewählten  Vorlage auf der rechten Seite.
 
-image::add_application_infos.png[Informations block of Add Application window]
+image::../en/add_application_infos.png[Informations block of Add Application window]
 
 * Oben rechts in diesem Feld ist ein Stern Symbol, mit welchem die Vorlage zu den Favoriten hinzugefügt werden kann.
 * Falls es eine durch den User erstellte Vorlage ist, kann durch ein *User* Feld die Vorlage gelöscht werden.
@@ -254,7 +254,7 @@ Um zum Beispiel aus dem Hauptfenster der RaySession Carla hinzuzufügen, benutze
 == Kommando hinzufügen Fenster
 Das Fenster, mit dem ein ausführbares Kommando hinzugefügt werden kann, öffnet sich durch Klicken auf das  *Executable* Feld (_oder Ctrl+E_).
 
-image::add_executable.png[Add Executable window]
+image::../en/add_executable.png[Add Executable window]
 
 Dieses Fenster muss benutzt werden, falls der Klient sich nicht in der Liste vom <<add_application>> findet. Dieses Fenster ist sehr übersichtlich: ein Fenster, in dem das ausführbare Kommando eingegeben wird, eine Checkbox für das *NSM Protocol* und das Pfeil-nach-unten-Symbol für erweiterte Optionen.
 
@@ -271,7 +271,7 @@ Ist in der Checkbox das *NSM Protocol* deaktiviert, gleicht dies dem Starten ein
 
 Wenn Sie auf das *advanced options* (erweiterte Optionen) Feld klicken, wird sich ein Block mit den erweiterten Optionen öffnen
 
-image::add_executable_plus.png[Advanced Add Executable window]
+image::../en/add_executable_plus.png[Advanced Add Executable window]
 
 * Die *Start the client* Checkbox. Ist sie nicht aktiviert, wird der Klient lediglich hinzugefügt und nicht automatisch direkt gestartet.
 * Die Multiple Choice Box *Prefix Mode*, welche das Präfix der Klienten Dateien bestimmt
@@ -293,7 +293,7 @@ Dies ist nützlich, wenn Sie in der Session bestehende Projekte bestimmen und st
 [#patchbay]
 == Patchbay
 
-link:../../patchbay/en/manual.html[Patchbay Manual]
+link:../patchbay/index.html[Patchbay Manual]
 
 The JACK patchbay is displayed by default. You can hide it by clicking on *Control* and then uncheck *Show JACK Patchbay* (__or Ctrl+J__). The patchbay contains all the JACK AUDIO and MIDI ports that you can interconnect.
 
@@ -303,7 +303,7 @@ It is advisable to have the A2J bridge running if you want to work properly with
 
 RaySession does not include tools to configure the JACK server, *QJackCtl*, *Studio Control*, *Cadence*, or the command line utility `jack_control` do this job very well. Note that this patchbay also works with PipeWire.
 
-Learn more about the patchbay in the link:../../patchbay/manual.html[Patchbay Manual].
+Learn more about the patchbay in the link:../patchbay/index.html[Patchbay Manual].
 
 
 == Klient Eigenschaften/Properties Fenster
@@ -312,7 +312,7 @@ Das Eigenschaften Fenster lässt sich öffnen, indem sie im Menu des Klienten (�
 Das Eigenschaften Fenster hat 2 Tabs, "General" (Allgemein) und einen Tab für das genutzte Protokoll. Dieser hängt von dem vom Klienten genutzten Protokoll ab und kann NSM, Ray-Hack oder Ray-Net heissen.
 
 === *General* Tab
-image::properties_general.png[Client properties]
+image::../en/properties_general.png[Client properties]
 
 Der obere Block des General Tab zeigt ID, Protokoll, Label,
 Beschreibung/description und das Iconsymbol des Klienten. +
@@ -333,7 +333,7 @@ Schliessen *Don't prevent to stop this client again* (nicht nochmals die Schlies
 
 === *NSM* Tab
 
-image::properties_nsm.png[NSM Client properties]
+image::../en/properties_nsm.png[NSM Client properties]
 
 Der hier genutzte  *Name* für den Klienten wird durch ihn selbst bestimmt. +
 *capabilities* (Kapazitäten) sind jene, die der Klient übermittelt, während er startet. Entsprechend ist dieses Feld bei nicht gestartetem Klienten leer.
@@ -349,11 +349,11 @@ Falls der Klient vom Typ Ray-Hack ist, stehen Ihnen hier viele Felder zur Verfü
 
 Das Ray-Hack Pseudo-Protokoll nutzt die Attribute von Proxies (nsm-proxy oder ray-proxy), aber der Klient wird direkt in der Session gestartet.
 
-image::properties_ray_hack.png[Ray-Hack Client properties]
+image::../en/properties_ray_hack.png[Ray-Hack Client properties]
 
 ==== Launch block
 
-image::ray_hack_launch.png[]
+image::../en/ray_hack_launch.png[]
 
 * *Folder* ist der Ordner Name für diesen Klienten im
 Session Ordner.
@@ -370,7 +370,7 @@ Um zum Beispiel das Kommando  `my_command my_argument_1 "my argument 2"` zu repr
 
 ==== Signals block
 
-image::ray_hack_signals.png[]
+image::../en/ray_hack_signals.png[]
 
 * *Save Signal* kann nur sehr selten genutzt werde. Für Anwendungen, die mit dem alten LASH Protokoll kompatibel sind, kann es SIGUSR1 sein. Ansonsten lassen Sie es auf _None_, wenn keine Speichermethode vorhanden ist, können wir sie nicht aus dem Ärmel zaubern.
 
@@ -387,7 +387,7 @@ Das Kommando `kill -l` zeigt Ihnen im Terminal-Emulator die möglichen Signale u
 
 ==== Non-saveable management block
 
-image::ray_hack_non_saveable.png[]
+image::../en/ray_hack_non_saveable.png[]
 
 Dieser Block ist nur aktiv, falls *Save Signal* auf _None_ gestellt ist.
 
@@ -396,7 +396,7 @@ Dieser Block ist nur aktiv, falls *Save Signal* auf _None_ gestellt ist.
 
 ==== Test area
 
-image::ray_hack_test_zone.png[]
+image::../en/ray_hack_test_zone.png[]
 
 Das Areal gibt Ihnen die Möglichkeit Start, Stop und Einstellungen speichern zu testen, ohne vorher *Save the changes* (Änderungen Speichern) auszuführen.
 
@@ -407,7 +407,7 @@ Network Sesssions arbeiten nach dem Master-Slave Prinzip. Eine Session ist der M
 
 Um eine Network Session (also einen Slave) zu starten, nutzen Sie die *Network Session* Anwendungs Vorlage aus dem Anwendungs Fenster und folgen Sie den Anweisungen.
 
-image::network_session_template.png[Add a network session]
+image::../en/network_session_template.png[Add a network session]
 
 Starten sie auf dem Remote Computer durch den Befehl `ray-daemon -p 1234` (`1234` ist lediglich ein Beispiel, Sie könne dies frei wählen) einen Dämon. Dieser wird etwas entsprechendes im Terminal anzeigen:
 
@@ -417,17 +417,17 @@ Starten sie auf dem Remote Computer durch den Befehl `ray-daemon -p 1234` (`1234
 [ray-daemon]ROOT: /home/utilisateur/Ray Sessions reseau
 ```
 
-image::network_session_invitation.png[Configure a network session]
+image::../en/network_session_invitation.png[Configure a network session]
 
 Kopieren Sie eine der beiden URLs in das network session invitation window. Die erste Variante (startend mit osc.udp://192.168.) muss mit Sicherheit funktionieren, die zweite wird nur funktioneren, wenn `/etc/hosts` vom  dem Master Computer einen Eintrag für den Slave Computer enthält. Den Namen des Slave Computers in `/etc/hosts` einzutragen und die zweite Variante der URL zu nutzen ist aber vorzuziehen, da sich die Addresse 192.168 ändern kann falls sich der Remote Computer durch den Wechsel von wired zu wifi oder durch eine Neuinstallation der Distribution ändern kann.
 
 Auf dem Master Computer haben Sie nun 2 RaySession Fenster, eines kontrolliert die Master Session, das andere die Slave Session. Sie erkennen die Slave Session daran, dass das Fenster weder die Toolbar mit  *New Session*, *Open Session*, *Control*, noch *Abort session* oder *Close session* Felder hat.
 
-image::network_session_child.png[]
+image::../en/network_session_child.png[]
 
 Wie viele andere NSM Anwendungen kann das Slave Fenster verborgen werden.
 
-image::network_session_client.png[]
+image::../en/network_session_client.png[]
 
 Wenn Sie auf dem Slave Computer das Kommando `raysession -p 1234` nutzen, haben Sie das Slave Fenster doppelt, eines auf jedem Computer.
 
@@ -442,32 +442,32 @@ Wir werden als Beispiel Audacity zu der bestehenden Session hinzufügen. Diese A
 Klicken Sie auf  *Executable* (_oder nutzen Sie Ctrl+E_).
 In dem sich öffnenden Fenster <<add_executable>> (auführbare Anwendung hinzufügen), entfernen Sie die Auswahl für das *NSM Protocol*, fügen Sie `audacity` in das  *Executable* Feld ein und klicken auf *Ok*.
 
-image::audacity_executable.png[Add Executable window well done]
+image::../en/audacity_executable.png[Add Executable window well done]
 
 Ein neuer Klient wird erstellt, sein Eigenschaften Fenster öffnet sich im  *Ray-Hack* Tab und Audacity wird gestartet.
 
 Wir werden nun sofort ein leeres Projekt von Audacity im Ordner des Klienten speichern. Dieser befindet sich im Ordner der Session und hat den Namen, den Sie ihm im *Folder:* Feld im *Ray-Hack* Tab oben gelegen gegeben haben. Wir werden dieses Projekt GENAU so nennen, wie die aktuelle RaySession. Nutzen Sie in Audacity hierfür:  _Menu → File → Save project → Save project_ (Menu, Datei, Projekt Sichern, Sichern).
 
-image::audacity_save project.png[Save empty Audacity project]
+image::../en/audacity_save project.png[Save empty Audacity project]
 
 Klicken Sie auf *Validate* (Bestätigen) falls sich ein Warnfenster öffnet. +
 In der sich öffnenden Box um die Datei zu speichern, finden Sie den Session Ordner unten links (siehe <<session_folder_shortcuts>>). Klicken Sie darauf, um ihn zu öffnen. Darin sollten Sie den Ordner des Klienten mit dem Namen, der ihm im RayHack Tab gegeben wurde,finden. Nutzen Sie diesen. Fügen Sie in der Speicherbox den genauen Namen, den sie der Session im  *Name:* Feld gegeben haben und bestätigen Sie.
 
-[caption="Figure 1: ",link=../en/imagesages/audacity_save_file.png]
-image::audacity_save_file.png[Where to save Audacity project, 640, 480]
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/en/audacity_save_file.png]
+image::../en/audacity_save_file.png[Where to save Audacity project, 640, 480]
 
 Schliessen Sie Audacity. +
 Klicken Sie oben rechts im *Ray-Hack* Tab vom Eigenschaftern Fenster des Klienten auf *Browse*.
 
-[caption="Figure 1: ",link=../en/imagesages/audacity_load_config_file.png]
-image::audacity_load_config_file.png[Load CONFIG_FILE window, 640, 480]
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/en/audacity_load_config_file.png]
+image::../en/audacity_load_config_file.png[Load CONFIG_FILE window, 640, 480]
 
 wählen Sie das gerade erstellte Audacity Projekt mit dem Session Namen und mit .aup endend.
 
 Das *Configuration File* Feld sollte nun `$RAY_SESSION_NAME.aup` und das *Arguments* Feld `"$CONFIG_FILE"` enthalten. +
 Aktivieren Sie *Wait for a window before being considered ready*, *Ask the user to close the program himself* und *Try to close the window gracefully*. Klicken Sie dann unten rechts auf *Save Changes*.
 
-image::audacity_ray_hack_final.png[Ray-Hack tab of Audacity client well done]
+image::../en/audacity_ray_hack_final.png[Ray-Hack tab of Audacity client well done]
 
 Starten Sie den Audacity Klienten und versichern Sie sich, dass das Audacity Fenster den Namen der Session hat.. +
 Klicken Sie auf das Symbol für den Audacity Klienten, wählen Sie im Drop-Down Menü *Save as an application template*, und geben Sie in der sich öffnenden Dialog Box `Audacity` ein. Nun müssen Sie lediglich Audacity wie in <<add_application>> beschrieben wählen, um Audacity in der Session zu starten.
@@ -486,7 +486,7 @@ If ever you want to use another session manager, you will find in the menu *File
 == Die Dämon Optionen
 Die Dämon Optionen sind Services, die durch Klicken auf das *Control* Feld oben rechts im Hauptfenster im Untermenü aktiviert oder deaktiviert werden können. Das Untermenü findet sich ebenso unter options in der Menübar.
 
-image::daemon_options.png[Daemon options]
+image::../en/daemon_options.png[Daemon options]
 
 Die Details zu den jeweiligen Optionen sind die folgenden:
 
@@ -525,7 +525,7 @@ Seien Sie aber sorglos, zu einem Snapshot zurückzukehren heisst nicht, dass Sie
 
 Um die Session zu einem Snapshot zurückzusetzen, klicken Sie auf das Reverse Symbol rechts vom *Executable* Feld.
 
-image::snapshots.png[]
+image::../en/snapshots.png[]
 
 Wählen Sie in der Auswahl den Snapshot, zu dem Sie zurücksetzen möchten und klicken Sie auf *Ok*. Zunächst wird ein neuer Snapshot erstellt, dann schliesst sich die aktuelle Session, es wird zum Snapshot zurückgekehrt und die Session öffnet sich wieder.
 
