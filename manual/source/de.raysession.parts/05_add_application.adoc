@@ -1,0 +1,38 @@
+[#add_application]
+== Anwendung hinzufügen Fenster
+Durch Klicken auf das  *Application* Feld (oder _Strg+A_) öffnet sich das Fenster, um eine Anwendung hinzuzufügen.
+
+image::../en/add_application.png[Add Application window]
+
+Die Liste mit den verfügbaren Anwendungen ist auf der rechten Seite. Falls die Software, die sie hinzufügen wollen, hier nicht zu finden ist, siehe <<add_program_not_provided>> Nicht verfügbare Anwendung hinzufügen.
+
+
+'''
+
+Oben links ist das  Filter Feld
+
+image::../en/add_application_filter.png[Filter block of Add Application window]
+
+* tDas Filter Feld erlaubt Ihnen, durch einen Teil des Namens der Anwendung nur die Anwendungen anzuzeigen, die diesen Teil enthalten.
+* Die *Factory* Checkbox zeigt die in RaySession integrierten oder durch die Distribution verfügbaren Vorlagen.
+* *User* zeigt die durch den User durch *Save as application template* erstellten Vorlagen.
+* *NSM* zeigt die NSM kompatiblen oder als solche gestartete Klienten
+* *Ray-Hack* zeigt die ohne NSM Protokoll startbaren Klienten
+
+'''
+
+Unten links ist das Informations Feld zu der gewählten  Vorlage auf der rechten Seite.
+
+image::../en/add_application_infos.png[Informations block of Add Application window]
+
+* Oben rechts in diesem Feld ist ein Stern Symbol, mit welchem die Vorlage zu den Favoriten hinzugefügt werden kann.
+* Falls es eine durch den User erstellte Vorlage ist, kann durch ein *User* Feld die Vorlage gelöscht werden.
+* Das Symbol unten rechts in diesem Feld ermöglicht Ihnen, das Fenster mit allen Eigenschaften dieser Vorlage zu öffnen. Siehe auch <<client_properties>>. Dies dient lediglich der Information.
+
+|===
+
+|*Tip:* Dieses Fenster verhält sich wie _Alt+F2_ auf dem Desktop, und Vorlagen können
+schnell hinzugefügt werden. +
+Um zum Beispiel aus dem Hauptfenster der RaySession Carla hinzuzufügen, benutzen sie die Keyboard Kombination _Ctrl+A_, tippen Sie im Suchfeld dann `carla`, und wählen Sie die entsprechende Vorlage durch die Pfeil-oben/unten Taste aus, und bestätigen das Hinzufügen durch die Enter Taste.
+
+|===

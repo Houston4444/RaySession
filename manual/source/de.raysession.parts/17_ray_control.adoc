@@ -1,0 +1,11 @@
+[#ray_control]
+== RaySession von der Kommandozeile steuern
+Mit dem Kommando `ray_control` können Sie alles tun, was Sie auch mit in GUI tun können, und ein wenig mehr. Tippen Sie  `ray_control --help-all` in einem Terminal-Emulator, um alle Möglichkeiten kennezulernen.
+
+Falls mehrere Dämonen gestartet sind (siehe <<under_the_hood>>), wird `ray_control` den zuerst gestarteten in Betracht ziehen, ausser sie bestimmen den OSC Port mit der Option `--port` oder durch die Umgebungsvariable `RAY_CONTROL_PORT`.
+
+Anzunehmen, `ray_control` wäre überflüssig, da das Kommando `oscsend` OSC Mitteilungen an den Dämon schicken kann, ist falsch. +
+Zum einen kann `oscsend` zwar Mitteilungen senden, aber keine Informationen auf einfache Weise empfangen (welches sind die aktiven Klienten? Was ist der ausführbare Befehl von einem bestimmenten Clienten? ...); und zum anderen, weil `ray_control` nach dem Ausführen der verlangten Aktion sauber beendet wird. z.B. `ray_control open_session "my session"` wird beendet, sobald die Session geladen ist.
+
+Seien Sie hier noch einmal daran erinnert, einen globalen Keyboard-Shortcut für den Befehl`ray_control save` zuzuweisen (_Ctrl+Meta+S_). Dies wird Ihnen viel Arbeit ersparen.
+

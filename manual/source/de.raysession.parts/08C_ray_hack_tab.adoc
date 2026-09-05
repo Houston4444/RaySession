@@ -1,0 +1,56 @@
+=== *Ray-Hack* Tab
+
+Falls der Klient vom Typ Ray-Hack ist, stehen Ihnen hier viele Felder zur Verfügung. Das sind aber nicht unbedingt gute Nachrichten. Die Grundidee ist es zu ermöglichen, eine Anwendung, die (noch) nicht mit dem NSM Protokoll kompatibel ist, in der Session laden zu können. Das NSM Protokoll ist, falls sauber im Klienten implementiert, wesentlich komfortabler und verlässlicher als dieser Hack. Dies im Hinterkopf lässt sich dennoch sagen, dass wir zwar in allen Audio Programmen das NSM Protokoll erwarten können, es aber auch nützliche Programme gibt, bei denen dies nicht der Fall ist.
+
+Das Ray-Hack Pseudo-Protokoll nutzt die Attribute von Proxies (nsm-proxy oder ray-proxy), aber der Klient wird direkt in der Session gestartet.
+
+image::../en/properties_ray_hack.png[Ray-Hack Client properties]
+
+==== Launch block
+
+image::../en/ray_hack_launch.png[]
+
+* *Folder* ist der Ordner Name für diesen Klienten im
+Session Ordner.
+* *Executable* ist das Kommando, mit dem die Anwendung gestartet wird.
+* *Config file* ist die Projekt Datei, die wir mit dieser Anwendung öffnen wollen. Es ist sehr zu empfehlen, eine Datei zu benennen, die sich im Klienten Ordner befindet. +
+Die Variable `$RAY_SESSION_NAME` wird automatisch durch den Namen der Session ersetzt. +
+Falls dieses Feld leer ist, wird der Status des Klienten immer auf *launch* bleiben und nicht zu *ready* wechseln. In manchen Fällen mag es besser sein, einen beliebigen Wert einzugeben anstatt ihn leer zu lassen.
+
+* Das *Browse* Feld öffnet ein Dialogfenster, um die Projekt Datei zu finden und im *Configuration file* Feld einzufügen.
+* Das *Arguments* Feld enthält etwaige Argumente für das Kommando. +
+Die Argumente werden wie in der Kommandozeile getrennt, vergessen Sie
+also falls nötig nicht " und '. +
+Um zum Beispiel das Kommando  `my_command my_argument_1 "my argument 2"` zu reproduzieren, geben Sie `my_command` im  *Executable* Feld und `my_command my_argument_1 "my argument 2 "` im *Arguments* Feld ein.
+
+==== Signals block
+
+image::../en/ray_hack_signals.png[]
+
+* *Save Signal* kann nur sehr selten genutzt werde. Für Anwendungen, die mit dem alten LASH Protokoll kompatibel sind, kann es SIGUSR1 sein. Ansonsten lassen Sie es auf _None_, wenn keine Speichermethode vorhanden ist, können wir sie nicht aus dem Ärmel zaubern.
+
+* *Stop Signal* wird normalerweise SIGTERM sein. Ändern Sie dies nur, wenn die Anwendung sich nicht korrekt schliesst.
+
+* Falls die *Wait for a window before considered it ready* (auf Fenster warten) Checkbox aktiviert ist, wechselt der Status des Klienten erst zu  *ready* sobald das Anwendungsfenster sich geöffnet hat. +
+Falls `wmctrl` nicht installiert ist oder der WindowManager ihn aus Kompatibilitätsgründen nicht nutzen kann, wird der Status sonst zu schnell, eine halbe Sekunde, nach dem Starten auf  *ready* wechseln.
+
+Mit `ray_control` können andere Signale als die der
+Multiple Choice Box zugewiesen werden.
+`ray_control client CLIENT_ID set_properties save_sig:22`
+wird zum Beispiel das SIGTTOU Signal für das Sichern des Klienten mit CLIENT_ID zuweisen. +
+Das Kommando `kill -l` zeigt Ihnen im Terminal-Emulator die möglichen Signale und ensprechenden Nummern.
+
+==== Non-saveable management block
+
+image::../en/ray_hack_non_saveable.png[]
+
+Dieser Block ist nur aktiv, falls *Save Signal* auf _None_ gestellt ist.
+
+* Falls *Tell user to close program himself at session close* (Nutzer informieren, dass er die Anwendung selbst schliessen muss) gewählt ist, gilt der Klient als nicht speicherbar und ein orangenes Ausrufezeichen ist vor dem Save Symbol sichtbar. Wird die Session beendet, wird RaySession warten, bis Sie die Anwendung selbst geschlossen haben, da es unklar ist, ob Sie ungespeicherte Änderungen haben.
+* Falls *Try to close window gracefully* (Fenster elegant schliessen) gewählt ist, wird RaySession beim Beenden der Session versuchen, die Anwendung so zu schliessen, als würden Sie es tun. Dies ist sehr nützlich, falls die Anwendung auch im Fall von keinen nicht gespeicherten Änderungen einen Bestätigungsdialog erfordert (was oft der Fall ist). Falls `wmctrl` nicht installiert oder mit dem WindowManager nicht kompatibel ist, müssen Sie die Anwendung in jedem Fall selbst schliessen.
+
+==== Test area
+
+image::../en/ray_hack_test_zone.png[]
+
+Das Areal gibt Ihnen die Möglichkeit Start, Stop und Einstellungen speichern zu testen, ohne vorher *Save the changes* (Änderungen Speichern) auszuführen.

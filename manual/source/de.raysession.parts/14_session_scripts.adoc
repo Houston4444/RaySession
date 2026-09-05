@@ -1,0 +1,34 @@
+[#session_scripts]
+== Session Skripte
+Session Skripte ermöglicht Ihnen, beim Öffnen, Speichern oder Schliessen der Session eigene Aktionen auszuführen. Im Besonderen für die Möglichkeit <<jack_configuration_memory>> ist dies nützlich. +
+Um diese Skripte zu bearbeiten, sind zwar Kenntnisse in Shell Skripting nötig, nutzen kann sie aber jeder.
+
+Die Session Skripte befinden sich in dem Ordner `ray-scripts`, entweder im Session folder oder einem Parent Ordner von diesem. +
+Eine Session, die sich im Ordner : +
+`~/Ray Sessions/mit_meinen_skripten/meine session`
+
+findet, kann der Skript Ordner folgende Pfade haben:
+```
+~/Ray Sessions/mit_meinen_skripten/meine session/ray-scripts
+~/Ray Sessions/mit_meinen_skripten/ray-scripts
+~/Ray Sessions/ray-scripts
+~/ray-scripts
+```
+
+Der Vorteil, die Skripte in diesen möglichen Pfaden zu haben liegt darin, dass mehrere Sessions diese nutzen können, ohne die Skripte in den jeweiligen Ordner kopieren zu müssen. Ebenso eröffnet dies die  Möglichkeit, jemandem eine nicht geskriptete Session für mögliches Teamwork einfach zu kopieren. +
+Es wird lediglich der Skript Ordner genutzt werden, der im Pfad dem Session Ordner am nächsten ist. Ein leerer  `ray-scripts` innerhalb des Ordners der Session selbst wird also alle sonstigen Skripte leicht deaktivieren.
+
+Um die Skripte zu bearbeiten, erstellen Sie zunächst eine Session aus der Vorlage mit den Basisskripten. Die Vorlage enthält Skripte, die keine besondere Aktion ausführen werden. Gehen Sie im Session Ordner in den Ordner `ray-scripts`. Hier finden Sie die Dateien  `load.sh`, `save.sh` und `close.sh`. In jedem dieser Skripte bezieht sich `ray_control run_step` auf die gewöhnlich ausgeführte Aktion (je nach Skript: Laden, Sichern oder Schliessen der Session). Ist eines dieser Skripte für Sie ohne Nutzen, löschen sie das Skript einfach. Es ist unnötig, dies dann zu bearbeiten.
+
+Die Skripte müssen zwingend ausführbar sein, also die entsprechenden Rechte haben, um funktionieren zu können.
+
+Um einem Klienten eine bestimmte Aktion zuzusprechen, werden Sie vermutlich das Kommando `ray_control` nutzen. Geben sie in der Kommandozeile `ray_control --help` ein, um sich einen Überblick zu verschaffen. Mehr Informationen finden Sie unter  <<ray_control>> (RaySession von der Kommandozeile kontrollieren).
+
+Die Vorlage JACK memory configuration (JACK Konfiguration erinnern) nutzt Session Skripte, aber es sind viele Aktionen entsprechend ihren Bedürfnissen und Vorstellungen denkbar, z.B.:
+
+* die Reihenfolge festlegen, in der die Klienten gestartet werden sollen, sobald die Session geöffnet wird (ein Beispiel findet sich im Quellcode)
+* ein Backup der Session auf einem externen Datenträger erstellen, sobald die Session geschlossen wird
+* den Fenstern von nicht sicherbaren Klienten den Shortcut  _Ctrl+S_ senden, sobald die Session beendet wird (ein Beispiel findet sich im Quellcode)
+* Das rote Licht beim Betreten des Studios anschalten, und beim Verlassen ausschalten
+* Beim Beenden der Session die Kaffeemaschine einschalten (ein blödes Beispiel, müssen Sie doch den Filter immer noch selbst wechseln)
+* Viele, viele Fehler machen, die ihre Session abstürzen lassen. Seien Sie also entsprechend vorsichtig!

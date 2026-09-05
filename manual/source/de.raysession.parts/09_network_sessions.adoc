@@ -1,0 +1,33 @@
+== Network Sessions
+Durch eine Network Session kann auf einem weiteren Computer zeitgleich eine weitere Session gestartet werden. Durch eine Network Session kann auf einem weiteren Computer zeitgleich eine weitere Session gestartet werden. Dies ist besonders nützlich, wenn Sie net-jack nutzen um das DSP zu entlasten, z.B. um ressourcenintensive Effekte auf einer anderen Maschine zu starten.
+
+Network Sesssions arbeiten nach dem Master-Slave Prinzip. Eine Session ist der Master und kann mehrere Slave sessions haben, die wiederum Master von anderen Slave Sessions sein können, aber dies wäre eher ungewöhnlich. Organisieren Sie dies besser einfach: Ein Master und ein oder mehrere Slaves von diesem.
+
+Um eine Network Session (also einen Slave) zu starten, nutzen Sie die *Network Session* Anwendungs Vorlage aus dem Anwendungs Fenster und folgen Sie den Anweisungen.
+
+image::../en/network_session_template.png[Add a network session]
+
+Starten sie auf dem Remote Computer durch den Befehl `ray-daemon -p 1234` (`1234` ist lediglich ein Beispiel, Sie könne dies frei wählen) einen Dämon. Dieser wird etwas entsprechendes im Terminal anzeigen:
+
+```
+[ray-daemon]URL : osc.udp://192.168.1.00:1234/`
+[ray-daemon]      osc.udp://nom-de-machine:1234/`
+[ray-daemon]ROOT: /home/utilisateur/Ray Sessions reseau
+```
+
+image::../en/network_session_invitation.png[Configure a network session]
+
+Kopieren Sie eine der beiden URLs in das network session invitation window. Die erste Variante (startend mit osc.udp://192.168.) muss mit Sicherheit funktionieren, die zweite wird nur funktioneren, wenn `/etc/hosts` vom  dem Master Computer einen Eintrag für den Slave Computer enthält. Den Namen des Slave Computers in `/etc/hosts` einzutragen und die zweite Variante der URL zu nutzen ist aber vorzuziehen, da sich die Addresse 192.168 ändern kann falls sich der Remote Computer durch den Wechsel von wired zu wifi oder durch eine Neuinstallation der Distribution ändern kann.
+
+Auf dem Master Computer haben Sie nun 2 RaySession Fenster, eines kontrolliert die Master Session, das andere die Slave Session. Sie erkennen die Slave Session daran, dass das Fenster weder die Toolbar mit  *New Session*, *Open Session*, *Control*, noch *Abort session* oder *Close session* Felder hat.
+
+image::../en/network_session_child.png[]
+
+Wie viele andere NSM Anwendungen kann das Slave Fenster verborgen werden.
+
+image::../en/network_session_client.png[]
+
+Wenn Sie auf dem Slave Computer das Kommando `raysession -p 1234` nutzen, haben Sie das Slave Fenster doppelt, eines auf jedem Computer.
+
+*Tip:* Nutzen Sie auf dem Slave Computer `ray-daemon -p 1234` im Startup.
+

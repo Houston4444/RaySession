@@ -1,0 +1,60 @@
+[#jack_configuration_memory]
+== JACK Konfiguration erhalten
+Dank der Session Skripte ist es möglich, die für eine zu ladende Session erstellten Jack Konfigurationen zu erinnern, bzw. wiederherzustellen. Dieses Verhalten erinnert an einige Operationen von LADISH Studios, tut dies, zumindest unserer Meinung nach, aber viel besser.
+
+=== Anwendungsmöglichkeiten
+Dies kann nützlich sein wenn:
+
+* Sie ein bestimmtes Audio Interface in der Session müssen.
+* Sie an mehreren Projekten arbeiten, die unterschliedliche Sample Rates (Signalverarbeitungsraten) nutzen (eine Session mit 44100 Hz, eine andere mit 44800 Hz) +
+Sie müssen also JACK nicht selber neu konfigurieren, stoppen und wieder starten. Ausserdem verhindern Sie hierdurch, dies zu vergessen und von einigen Anwendungen entsprechend gewarnt zu werden.
+* Wenn Sie verhindern wollen, eine sehr DSP intensive Session (zB in der Phase des Mixens) mit einem zu kleinen Buffer (z.B. 128) zu laden +
+Die meisten Audio Interfaces sind aber durchaus in der Lage, die Buffergrösse ohne Neustart (also hot) von Jack zu wechseln.
+
+=== Anwendungsweise
+Die Session Skripte Option muss aktiviert sein (dies ist die Voreinstellung)
+
+Um Jack configuration memory (Jack Konfiguration erhalten) zu nutzen, erstellen Sie eine neue Session aus der *With JACK configuration memory* Vorlage.
+Es handelt sich de facto um eine geskriptete Session (see <<session_scripts>>) die ein Skript startet, das zwar mit RaySession vorhanden, zu diesem aber völlig extern ist, insofern hat RaySession noch immer keine direkte Beziehung zu JACK.
+
+Lesen Sie die Informationen im Fenster und bestätigen Sie dann. JACK wird neu gestartet und dann startet ihre Session.
+
+=== Funktionsweise
+Bei jedem Speichern der Session wird die aktuelle JACK Konfiguration in der Datei `jack_parameters` gespeichert. +
+Beim Öffnen der Session wird JACK neu gestartet, falls sich die gespeicherte Konfiguration von der aktuellen unterscheidet. +
+Wird die Session geschlossen, wird JACK abermals gestartet, diesmal mit der vorherigen Konfiguration. +
+
+PulseAudio → JACK Konfigurationen werden ebenso gespeichert und wiederhergestellt.
+
+Wird die Session auf einen anderen Computer kopiert und dort genutzt, wird die Konfiguration von JACK nicht erinnert und beim Speichern überschrieben werden. Lediglich die gespeicherte Samplerate wird genutzt werden.
+
+=== besondere Fälle
+'''
+*Die gespeicherte JACK Konfiguration einer Session nicht nutzen:*
+
+* deaktivieren Sie die *Session scripts* Option
+* Öffnen Sie die Session
+
+'''
+
+*Die JACK Konfiguration einer Session ändern:*
+
+* Starten Sie JACK mit der gewünschten Konfiguration.
+* Deaktivieren Sie die Option Session Skripte.
+* Starten Sie die Session.
+* Aktivieren Sie die Option Session Skripte wieder.
+* Speichern Sie die Session.
+
+'''
+
+*In einer bereits bestehenden Session JACK Konfiguration zu ermöglichen*
+
+* Kopieren Sie den Ordner `ray-scripts` aus einer Session mit erhaltener JACK konfiguration in den Session Ordner.
+* Aktivieren Sie die Option Session Skripte.
+* Starten Sie die Session.
+
+*oder*
+
+* Verschieben Sie den Session Ordner in einen Unterordner mit `ray-scripts` Ordner
+* Öffnen Sie die Session.
+

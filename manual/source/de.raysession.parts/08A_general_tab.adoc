@@ -1,0 +1,19 @@
+=== *General* Tab
+image::../en/properties_general.png[Client properties]
+
+Der obere Block des General Tab zeigt ID, Protokoll, Label,
+Beschreibung/description und das Iconsymbol des Klienten. +
+Falls Sie diese Eingaben nicht bearbeiten, werden die Werte aus der entsprechenden .desktop Datei der verwendeten Anwendung genutzt, falls vorhanden. +
+Falls Sie wissen möchten, welche .desktop Datei hierfür verwendet wird, nutzen sie den Befehl `ray_control client CLIENT_ID get_properties` in einem Terminal-Emulator (ersetzen Sie CLIENT_ID mit der ID des Klienten).
+
+Darunter liegt der Block Snapshots, siehe <<snapshots>>.
+
+Unter diesem Block ist die Checkbox  *Prevent stop without recent or possible save* (Stop ohne vorherige oder kürzliche Sicherung), die das Fenster beim stoppen eines Klienten betrifft +
+Ist die Checkbox deaktiviert, wird der Klient ohne ein Fenster mit entsprechender Warnung über Sicherungen gestoppt werden.
+
+* Der Klient kann nicht durch RaySession gespeichert werden
+* Der Klient enthält ungespeicherte Änderungen
+* Der Klient wurde länger als eine Minute nicht gespeichert
+
+Ob es sinnvoll ist, die Checkbox aktiviert oder deaktiviert zu haben, hängt davon ab, ob eine Speicherung wichtig ist; dies müssen Sie entscheiden. Falls Sie unschlüssig sind, können Sie im Warnfenster beim
+Schliessen *Don't prevent to stop this client again* (nicht nochmals die Schliessung des Klienten verhindern) aktivieren, und  *Prevent stop without recent or possible save* wird automatisch deaktiviert.

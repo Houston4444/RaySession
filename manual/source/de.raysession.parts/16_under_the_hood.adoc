@@ -1,0 +1,5 @@
+[#under_the_hood]
+== Unter der Haube
+RaySession ist lediglich eine grafische Oberfläche, GUI, für ray-daemon. Wenn sie RaySession starten, öffnet sich die grafische Oberfläche und verbindet sich mit dem Dämon, und sobald sie die Anwendung schliessen, stoppt diese den Dämon. Die grafische Oberfläche und der Dämon kommunizieren über OSC (Open Sound Control) Meldungen. Dasselbe gilt für den Dämon und die NSM Klienten. Dementsprechend können sie mehrere grafische Oberflächen mit dem Daemon verbinden, auch über das Netz. Tippen Sie `raysession --help` für die entsprechenden Informationen.
+
+Es können mehrere Dämonen gestartet werden. Falls Sie also RaySession starten, wenn bereits eine weitere Instanz gestartet ist, wird ein neuer Dämon gestartet werden. Trotzdem ist diese Vorgehensweise eher ungewöhnlich, die Nutzung nur eines Dämons ist zu bevorzugen. Falls ein Dämon bereits gestartet, ihm aber keine GUI zugewiesen ist, wird sich RaySession per Voreinstellung beim Start mit diesem Dämon verbinden.

@@ -1,0 +1,28 @@
+== Die Dämon Optionen
+Die Dämon Optionen sind Services, die durch Klicken auf das *Control* Feld oben rechts im Hauptfenster im Untermenü aktiviert oder deaktiviert werden können. Das Untermenü findet sich ebenso unter options in der Menübar.
+
+image::../en/daemon_options.png[Daemon options]
+
+Die Details zu den jeweiligen Optionen sind die folgenden:
+
+[#session_folder_shortcuts]
+=== Bookmarks für den Session Ordner erstellen
+In der Audioproduktion wird häufig eine Audio oder Midi Datei mit einem Program erstellt und dann von einem anderem Program genutzt. Die vorliegende Option bietet hiefür einen praktischen Nutzen: einen Shortcut für den aktuellen Session Folder (Ordner) im Dateimanager und in der Dialogbox, um Dateien zu laden oder zu speichern. Sie vermeiden also den unnötigen Zeitaufwand, sich durch ihren persönlichen Ordner im Dateimanager klicken zu müssen, um eine Datei zu finden, die in ihrem Session Ordner ist. +
+Dieser Shortcut wird entfernt, sobald die Session geschlossen wird. +
+Diese Option funktioniert technisch für  GTK2, GTK3, QT4, QT5, KDE and FLTK.
+
+=== Automatisch Snapshot beim Sichern erstellen
+Diese Option ist alles andere als unbedeutend. Sie ermöglicht Ihnen, bei jeder Speicherung einen Snapshot der Session zu erstellen. Im Falle eines technischen oder künstlerischen Fehlers steht Ihnen also der Snaphot zur Verfügung. Um diese Option zu nutzen, muss `git` installiert sein. Unter <<snapshots>> finden Sie weitere Details.
+
+=== Desktop Status
+Falls diese Option aktiviert ist, wird RaySession auch den virtuellen Desktop, auf dem sich ein Klient Fenster beim Schliessen der RaySession befindet, speichern (oder zumindest wird dies versucht).
+Falls Sie die Session oder den Klienten wieder starten, wird das entsprechende Fenster also auf dem Desktop gestartet, auf dem es beim Schliessen zu finden war.
+Für diese Option muss die Anwendung `wmctrl` installiert sein. Unter Wayland wird sie vermutlich nicht funktionieren
+
+=== Session Skripte
+Deaktivieren Sie diese Option, um beim Öffnen, Speichern oder Schliessen einer Session diese Skripte völlig zu ignorieren.
+Die Skripte werden für <<jack_configuration_memory>> genutzt.
+Unter <<session_scripts>> finden Sie weitere Details.
+
+=== Optionalen GUI Status erinnern
+Diese Option betrifft lediglich NSM Klienten, die ihre Fenster sowohl verbergen als auch anzeigen können. Einige Klienten starten immer verborgen, andere starten so, wie sie geschlossen wurden. Wird diese Option aktiviert, werden alle Clienten immer so gestartet, wie sie während der letzten Sicherung beendet wurden. Wurden sie noch nie gestartet, werden sie nicht verborgen gezeigt

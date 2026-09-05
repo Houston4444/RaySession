@@ -1,0 +1,10 @@
+=== *NSM* Tab
+
+image::../en/properties_nsm.png[NSM Client properties]
+
+Der hier genutzte  *Name* für den Klienten wird durch ihn selbst bestimmt. +
+*capabilities* (Kapazitäten) sind jene, die der Klient übermittelt, während er startet. Entsprechend ist dieses Feld bei nicht gestartetem Klienten leer.
+
+Wird das Feld executable (ausführbarer Befehl) bearbeitet, kann hierdurch geändert werden, wie der Klient gestartet wird. Die geänderte Startweise sollte in der Lage sein, das gegebene Projekt des Klienten auszuführen. Sinvoll ist die Bearbeitung des executable Felds zB falls Sie 2 verschiedene Version von Ardour installiert haben, eine wird durch `ardour`, die andere durch  `Ardour6` gestartet, und Sie wollen die genutzte Version ändern.
+
+Ansonsten wird dringend davon abgeraten, die genutzten Argumente zu ändern, und um Dateien als Argument zu laden ist es völlig unbrauchbar.

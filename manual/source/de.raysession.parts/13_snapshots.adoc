@@ -1,0 +1,21 @@
+[#snapshots]
+== Snapshots
+Für Snaphots muss das Programm `git` installiert sein. Falls es nicht installiert ist, wird das Reverse Symbol nicht zu sehen sein und es ist unmöglich, Snaphots zu machen oder den entsprechenden Status wieder herzustellen.
+
+Der Snapshot speichert Dateien und deren Inhalt zu einer gegebenen Zeit. Grosse Dateien und Dateien mit Dateiendungen für Audio und Video werden ignoriert, da dies zuviel Zeit in Anspruch nehmen würde und der Session Ordner zu gross werden würde. Dies ist kein grosses Problem, im Gegenteil, da ihre erst kürzlich erstellten Audiodateien erhalten bleiben, falls Sie zu einem vorherigen Snapshot zurückkehren. +
+Sollte trotz all dem der Snaphot Vorgang zu lange dauern, wird sich ein Fenster öffnen und Sie können den aktuellen Snapshot bedenkenlos abbrechen. Der automatische Snapshot wird dann für diese Session nicht mehr stattfinden.
+
+Der Nutzen von Snapshots liegt in der Tatsache, dass Sie zu dem Stand der Arbeit zurückehren könne, bevor Sie diese eine brilliante Idee gehabt haben, die sich dann als fruchtlos erwiesen hat, oder bevor sie die Samples neu geschnitten und dadurch alle Musikalität zerstört haben, oder bevor die Anwendung aus unbekannten Gründen anfing, abzustürzen.
+
+Seien Sie aber sorglos, zu einem Snapshot zurückzukehren heisst nicht, dass Sie den aktuellen Stand nicht ebenso wieder herstellen könnten.
+
+Um die Session zu einem Snapshot zurückzusetzen, klicken Sie auf das Reverse Symbol rechts vom *Executable* Feld.
+
+image::../en/snapshots.png[]
+
+Wählen Sie in der Auswahl den Snapshot, zu dem Sie zurücksetzen möchten und klicken Sie auf *Ok*. Zunächst wird ein neuer Snapshot erstellt, dann schliesst sich die aktuelle Session, es wird zum Snapshot zurückgekehrt und die Session öffnet sich wieder.
+
+Ebenso ist es möglich, lediglich einen Klienten in einen vorherigen Status zurückzusetzen. Wählen Sie nach einem Rechtsklick auf den Klienten im Menü hierfür *Return to a previous state* (zu vorherigem Status zurückkehren).
+Falls gewünscht können Sie für jeden Klienten die Dateien, die bei einem Snapshot ignoriert werden sollen, festlegen, indem Sie dies im <<client_properties>> unter "Snapshot ignored extensions" (bei Snapshots ignorierte Dateiendungen) entsprechend bearbeiten.
+
+Ist die Option *Automatic snapshot after save* (automatischer Snapshot beim Speichern) gewählt, wird nach jeder Speicherung der Session ein Snapshot erstellt, ausser es sind keine Änderungen vorhanden. Um Snapshots zu anderen Zeitpunkten zu erstellen, klicken Sie auf das Reverse Symbol rechts vom *Executable* und bestätigen Sie *Take a snapshot now*. Ein Vorteil dieser Methode liegt darin, dass Sie dem Snapshot aufschlussreichere Namen als lediglich Datum und Uhrzeit geben können.

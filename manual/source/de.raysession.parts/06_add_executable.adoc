@@ -1,0 +1,36 @@
+[#add_executable]
+== Kommando hinzufügen Fenster
+Das Fenster, mit dem ein ausführbares Kommando hinzugefügt werden kann, öffnet sich durch Klicken auf das  *Executable* Feld (_oder Ctrl+E_).
+
+image::../en/add_executable.png[Add Executable window]
+
+Dieses Fenster muss benutzt werden, falls der Klient sich nicht in der Liste vom <<add_application>> findet. Dieses Fenster ist sehr übersichtlich: ein Fenster, in dem das ausführbare Kommando eingegeben wird, eine Checkbox für das *NSM Protocol* und das Pfeil-nach-unten-Symbol für erweiterte Optionen.
+
+Lassen sie die Checkbox für das NSM Protokoll aktiviert, wenn:
+
+* das zu startende Programm NSM kompatibel ist (wenn es trotzdem nicht
+in der Liste zu finden ist, lassen Sie es uns wissen!)
+* Das Programm ein Werkzeug ist, welches Projekte nicht sichern muss (QRest, Catia…).
+Der Status eines solchen Programmes wird immer auf *launch* bleiben und nie zu *ready* wechseln, was unbedeutend ist, da kein Projekt gesichert werden muss.
+
+Falls in der Checkbox das *NSM protocol* aktiviert ist, kann nicht der volle Pfad wie `/usr/bin/my_program` genutzt werden, es muss  `my_program` genutzt werden. Ebenso können weder mit noch ohne aktiviertem NSM Protokoll Argumente von Kommandos genutzt werden.
+
+Ist in der Checkbox das *NSM Protocol* deaktiviert, gleicht dies dem Starten eines Programms durch das Ray-Hack Pseudo-Protokoll.
+
+Wenn Sie auf das *advanced options* (erweiterte Optionen) Feld klicken, wird sich ein Block mit den erweiterten Optionen öffnen
+
+image::../en/add_executable_plus.png[Advanced Add Executable window]
+
+* Die *Start the client* Checkbox. Ist sie nicht aktiviert, wird der Klient lediglich hinzugefügt und nicht automatisch direkt gestartet.
+* Die Multiple Choice Box *Prefix Mode*, welche das Präfix der Klienten Dateien bestimmt
+
+** *Session Name*, die Dateinamen beginnen mit dem Namen der Session, dies ist die default Voreinstellung
+** *Klient Name*, die Dateinamen beginnen mit dem Namen des Klienten, wie es auch beim Neue Session Manager der Fall ist.
+** *Custom*, die Dateinamen beginnen mit der Eingabe, die Sie im darunter liegenden Feld *Prefix* angeben.
+
+* Das *Prefix* Feld ist nur aktiv, wenn der *Prefix Mode* auf Custom gestellt wurde.
+
+* Das *Klient ID* Feld (der Klient Identifikator). Nutzen Sie lediglich alphanumerische Zeichen oder '_'. +
+Dies ist nützlich, wenn Sie in der Session bestehende Projekte bestimmen und starten wollen. Auch, wenn Sie Session Projekte ausserhalb der bestehenden Session laden wollen. Es gibt keine einfachere Weise, dies zu tun. Die Details hängen stark von der jeweilig genutzten Anwendung ab. Falls Sie eine in der Session bereits verwendete ID eingeben, wird RaySession darauf entsprechend lautstark hinweisen.
+
+* the *Long JACK naming* checkbox. If this box is checked, clients will be supposed to use `ProgramName.ClientId` as JACK client name, else it will be `ProgramName`, possibly followed by `_N` (where N is a number). This is very useful if you use many instances of the same program, and you want to identify them easily in the patchbay.

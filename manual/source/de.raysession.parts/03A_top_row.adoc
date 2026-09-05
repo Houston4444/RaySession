@@ -1,0 +1,31 @@
+=== Obere Zeile
+
+image::../en/session_top_line.png[Top line of the session frame]
+
+Von links nach rechts:
+
+* Das Menu Symbol ermöglicht:
+** *Save as Template: Die aktuelle Session als Vorlage speichern* +
+Die laufende Session wird dann als Vorlage in den Auswahlmöglichkeiten des New Session Dialogs zu finden sein. Da in dieser Vorglage alle Dateien der Session gespeichert werden, sollten Sessions, die viele Audio Dateien enthalten, nicht als Vorlage gespeichert werden. Erstens wäre die Kopie sehr gross und zweitens besteht die Gefahr, Dateien unnötig mehrfach zu kopieren, was viel Speicherplatz in Anspruch nehmen würde.
+
+** *Duplicate: Die aktuelle Session duplizieren* +
+Dies entspricht dem gut bekannten "Speichern als ...", im Unterschied dazu muss RaySession aber die meisten Anwendungen stoppen und  neu starten, um zwischen Sessions zu wechseln. 
+Sessions, die viele Audio Dateien enthalten, zu duplizieren, könnte sehr lange dauern, aber eine solche Aktion kann gestoppt werden.
+
+** *Rename: Session umbenennen* +
+Hierzu müssen alle Klienten gestoppt werden. +
+Alternativ kann eine Session auch dupliziert  und der Original Ordner der ursprünglichen Session gelöscht werden. +
+Eine Session kann auch umbenannt werden, indem der Ordner umbenannt wird, aber mit VORSICHT, die Session darf währenddessen nicht laufen.
+
+* Das Bleistift Symbol öffnet die  session notes/Anmerkungen. +
+Hier können Sie hilfreiche Informationen zB. über den Hardware Aufbau, Songtexte, und anderes, wie Grossmutter's Eintopf, aufschreiben. Belassen Sie es aber bei den notwendigen Informationen in der nötigen Kürze, da die notes/Anmerkungen aus technischen Gründen  auf 65,000 Buchstaben
+beschränkt sind. Andere Anwendungen sind für ausführlichere  Beschreibungen besser geeignet.
+
+* Der Name der laufenden Session (hier:  *my session*)
+
+* Das *Abort session* Symbol, welches die Session ohne
+Speicherung schliesst.
+
+* Das *Close session* Symbol, das die Session speichert
+und dann schliesst. +
+Die laufende Session muss nicht geschlossen werden, um eine weitere zu starten. Einige Klienten sind in der Lage, zwischen verschiedenen Sessions zu wechseln, was weniger Zeit in Anspruch nehmen kann, als sie alle zu schliessen und neu zu starten.

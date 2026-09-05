@@ -96,7 +96,7 @@ table {
 <li><a href="#add_application">Anwendung hinzufügen Fenster</a></li>
 <li><a href="#add_executable">Kommando hinzufügen Fenster</a></li>
 <li><a href="#patchbay">Patchbay</a></li>
-<li><a href="#_klient_eigenschaftenproperties_fenster">Klient Eigenschaften/Properties Fenster</a></li>
+<li><a href="#client_properties">Klient Eigenschaften/Properties Fenster</a></li>
 <li><a href="#_network_sessions">Network Sessions</a></li>
 <li><a href="#add_program_not_provided">Nicht verfügbare Anwendung hinzufügen</a></li>
 <li><a href="#_nsm_session_importieren">NSM Session importieren</a></li>
@@ -253,7 +253,7 @@ Dialogfenster wird sich öffnen (mehr hierzu unter <a href="#add_application">An
 <p>Dies ist ein Beispiel, in dem der Gitarrensound durch Guitarix verarbeitet direkt in Ardour aufgenommen wird. Falls Sie über keine Gitarre verfügen, können Sie auch in ein Mikrofon singen, es handelt sich lediglich um ein Beispiel.</p>
 </div>
 <div class="paragraph">
-<p>Now save the current session by clicking the floppy disk button to the top right  of the session part(<em>or Ctrl+S</em>). Es ist empfehlenswert, zur Sicherung der Session eine systemweite Tastenkombination zu erstellen. Es hängt von der jeweiligen Desktopumgebung ab, aber indem Sie zB. die Tastenkombiation <em>Ctrl+Meta+S</em> dem  Kommando <code>ray_control save</code> (Meta ist die Windows-Taste) zuweisen lässt es sich vermeiden, zum Sichern stets zum RaySession Fenster zurückkehren zu müssen.</p>
+<p>Now save the current session by clicking the floppy disk button to the top right of the session part(<em>or Ctrl+S</em>). Es ist empfehlenswert, zur Sicherung der Session eine systemweite Tastenkombination zu erstellen. Es hängt von der jeweiligen Desktopumgebung ab, aber indem Sie zB. die Tastenkombiation <em>Ctrl+Meta+S</em> dem  Kommando <code>ray_control save</code> (Meta ist die Windows-Taste) zuweisen lässt es sich vermeiden, zum Sichern stets zum RaySession Fenster zurückkehren zu müssen.</p>
 </div>
 <div class="paragraph">
 <p>Schliessen Sie nun die Session, indem Sie auf das Kreuz im roten Kreis oben rechts klicken (<em>oder Strg+W</em>).</p>
@@ -583,7 +583,7 @@ Ist die Maus über diesem Symbol gehalten, ist das Folgende zu sehen</p>
 <p>Falls es eine durch den User erstellte Vorlage ist, kann durch ein <strong>User</strong> Feld die Vorlage gelöscht werden.</p>
 </li>
 <li>
-<p>Das Symbol unten rechts in diesem Feld ermöglicht Ihnen, das Fenster mit allen Eigenschaften dieser Vorlage zu öffnen. Siehe auch <a href="#client_properties">[client_properties]</a>. Dies dient lediglich der Information.</p>
+<p>Das Symbol unten rechts in diesem Feld ermöglicht Ihnen, das Fenster mit allen Eigenschaften dieser Vorlage zu öffnen. Siehe auch <a href="#client_properties">Klient Eigenschaften/Properties Fenster</a>. Dies dient lediglich der Information.</p>
 </li>
 </ul>
 </div>
@@ -703,7 +703,7 @@ Dies ist nützlich, wenn Sie in der Session bestehende Projekte bestimmen und st
 </div>
 </div>
 <div class="sect1">
-<h2 id="_klient_eigenschaftenproperties_fenster">Klient Eigenschaften/Properties Fenster</h2>
+<h2 id="client_properties">Klient Eigenschaften/Properties Fenster</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Das Eigenschaften Fenster lässt sich öffnen, indem sie im Menu des Klienten (öffnet sich durch rechten Mausklick) auf Eigenschaften/Properties klicken</p>
@@ -1102,7 +1102,7 @@ Sollte trotz all dem der Snaphot Vorgang zu lange dauern, wird sich ein Fenster 
 </div>
 <div class="paragraph">
 <p>Ebenso ist es möglich, lediglich einen Klienten in einen vorherigen Status zurückzusetzen. Wählen Sie nach einem Rechtsklick auf den Klienten im Menü hierfür <strong>Return to a previous state</strong> (zu vorherigem Status zurückkehren).
-Falls gewünscht können Sie für jeden Klienten die Dateien, die bei einem Snapshot ignoriert werden sollen, festlegen, indem Sie dies im <a href="#client_properties">[client_properties]</a> unter "Snapshot ignored extensions" (bei Snapshots ignorierte Dateiendungen) entsprechend bearbeiten.</p>
+Falls gewünscht können Sie für jeden Klienten die Dateien, die bei einem Snapshot ignoriert werden sollen, festlegen, indem Sie dies im <a href="#client_properties">Klient Eigenschaften/Properties Fenster</a> unter "Snapshot ignored extensions" (bei Snapshots ignorierte Dateiendungen) entsprechend bearbeiten.</p>
 </div>
 <div class="paragraph">
 <p>Ist die Option <strong>Automatic snapshot after save</strong> (automatischer Snapshot beim Speichern) gewählt, wird nach jeder Speicherung der Session ein Snapshot erstellt, ausser es sind keine Änderungen vorhanden. Um Snapshots zu anderen Zeitpunkten zu erstellen, klicken Sie auf das Reverse Symbol rechts vom <strong>Executable</strong> und bestätigen Sie <strong>Take a snapshot now</strong>. Ein Vorteil dieser Methode liegt darin, dass Sie dem Snapshot aufschlussreichere Namen als lediglich Datum und Uhrzeit geben können.</p>
@@ -1119,15 +1119,15 @@ Um diese Skripte zu bearbeiten, sind zwar Kenntnisse in Shell Skripting nötig, 
 <div class="paragraph">
 <p>Die Session Skripte befinden sich in dem Ordner <code>ray-scripts</code>, entweder im Session folder oder einem Parent Ordner von diesem.<br>
 Eine Session, die sich im Ordner :<br>
-<code>~/Ray Sessions/avec_script_de_foo/ma session</code></p>
+<code>~/Ray Sessions/mit_meinen_skripten/meine session</code></p>
 </div>
 <div class="paragraph">
 <p>findet, kann der Skript Ordner folgende Pfade haben:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code>~/Ray Sessions/avec_script_de_foo/ma session/ray-scripts
-~/Ray Sessions/avec_script_de_foo/ray-scripts
+<pre class="highlight"><code>~/Ray Sessions/mit_meinen_skripten/meine session/ray-scripts
+~/Ray Sessions/mit_meinen_skripten/ray-scripts
 ~/Ray Sessions/ray-scripts
 ~/ray-scripts</code></pre>
 </div>
@@ -1352,7 +1352,7 @@ Falls Sie Ardour nutzen, starten Sie es immer in einer RaySession. Erstens könn
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-09-04 07:36:58 +0200
+Last updated 2026-09-05 08:49:14 +0200
 </div>
 </div>
 </body>

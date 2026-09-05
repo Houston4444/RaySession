@@ -1,0 +1,34 @@
+=== Untere Zeile
+
+image::../en/session_bottom_line.png[Bottom line of the session frame]
+
+Von links nach rechts:
+
+* Das Ordner Symbol öffnet den Sesssion Ordner im Dateimanager
+* Das gelbe Stern Symbol mit den favorisierten Anwendungen, falls sie vorhanden sind.
+* Das  *Application* (Anwendungen) Feld, mit welchem bereits vorhandene Anwendungsvorlagen oder selbst erstellte als Klient zur
+Session hinzugefügt werden können. Dies ist die empfohlene Methode, eine neue Klient-Anwendung hinzuzufügen. Siehe <<add_application>> Anwendung hinzufügen Fenster.
+* Das *Executable* Feld, durch welches eine Anwendung durch das entsprechende  Kommando hinzugefügt werden kann. Dies benötigen Sie, falls für die Anwendung keine Vorlage vorhanden ist. Siehe <<add_executable>> Kommando hinzufügen Fenster.
+
+* Das Reverse Symbol ermöglicht die Rückkehr zum vorherigen Status der Session. Die Anwendung  `git` muss installiert sein, ansonsten ist das Symbol nicht sichtbar. +
+Siehe <<snapshots>> für weitere Details.
+
+* Der Server Status Indikator. +
+Der Server Status kann sehr kurzfristig erscheinen, aber er wird lange genug bleiben, damit Sie ihn sehen können.
+Der Server Status kann folgende Anzeigen haben:
+
+** *off*: keine Session ist geladen
+** *ready*: die Session läuft
+** *launch*: die Anwendungen der Session werden geladen
+** *copy*: eine Kopie findet statt, entweder als Duplikat oder als Vorlage
+** *close*: die Session wird geschlossen
+** *snapshot*: Ein Snapshot der Session wird erstellt, so
+dass zum aktuellem Status der Session mit dem Reverse Symbol zurückgekehrt werden kann. +
+Siehe <<snapshots>>.
+** *wait*: der Server wartet, damit Sie nicht sicherbare Anwendungen selbst schliessen können.
+** *script*: ein Skript ist aktiviert
++
+Falls der Status des Indikators *copy*, *snapshot*, oder *wait* ist, wird durch ein Klicken auf ihn ein Fenster geöffnet, in dem der Fortschritt des Vorgangs gesehen werden kann.
+
+* Das *Save Session* Symbol.
+* Der Papierkorb, in welchem die entfernten Klienten zu finden sind. Diese können wiederhergestellt oder inklusive aller Dateien dauerhaft aus dem Session Ordner entfernt werden.

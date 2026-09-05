@@ -1,0 +1,11 @@
+[#client_properties]
+== Klient Eigenschaften/Properties Fenster
+Das Eigenschaften Fenster lässt sich öffnen, indem sie im Menu des Klienten (öffnet sich durch rechten Mausklick) auf Eigenschaften/Properties klicken
+
+Das Eigenschaften Fenster hat 2 Tabs, "General" (Allgemein) und einen Tab für das genutzte Protokoll. Dieser hängt von dem vom Klienten genutzten Protokoll ab und kann NSM, Ray-Hack oder Ray-Net heissen.
+
+include::08A_general_tab.adoc[]
+
+include::08B_nsm_tab.adoc[]
+
+include::08C_ray_hack_tab.adoc[]

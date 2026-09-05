@@ -1,0 +1,69 @@
+== Einfaches Nutzungs Beispiel
+Zur Audioproduktion unter GNU / Linux ist die Nutzung des JACK Server sehr empfehlenswert. Bevor eine Session gestartet oder geöffnet wird,
+sollte der Jack Server bereits laufen. RaySession hat keine direkte Verbindung zu JACK, er wird aber von den in einer Session laufenden
+Anwendungen benötigt.
+
+Nehmen wir ein Beispiel, in dem ein Song komponiert wird. Hiefür nutzen wir die Software Ardour und Guitarix, diese beiden Programme
+sollten also installiert sein.
+
+Um eine neue Session zu starten, klicken Sie oben links auf New Session (_oder Strg+N_). Ein Dialog Fenster wird sich öffnen.
+
+image::../en/example_new_session.png[New session]
+
+Oben rechts ist der Root Ordner der Session zu sehen. Hier wird die neue Session gespeichert (eine RaySession ist ein Ordner, der die
+Datei `raysession.xml`, enthält).
+
+Geben Sie den gewünschten Namen in das das Eingabefeld ein. Um die neue Session in einem Unterordner zu erstellen, geben Sie den Namen
+folgendermassen ein: `Unterordner/My Session`.
+
+Die Session Vorlage lässt Sie zwischen den folgenden Optionen wählen: 
+
+* Eine leere Session Vorlage
+* Eine Vorlage mit gespeicherten JACK Verbindungen
+* Eine durch Skript erstellte Vorlage mit gespeicherten JACK
+Konfiguration
+* Eine Vorlage mit grundlegenden Session Skripten (für fortgeschrittene
+Nutzer mit Kenntnissen in Shell Skripting)
+* Alle selbst erstellten Vorlagen
+
+Belassen sie es zunächst bei der Standard Vorlage *With JACK
+patch memory*, und klicken Sie auf *Ok*, um die
+Session zu starten.
+
+image::../en/example_session_launched.png[Session launched]
+
+Das Session Fenster wird aktiviert, die Fensterleiste enthält den Namen ihrer Session und eine Klient Anwendung mit dem Namen
+*JACK Connections* ist bereits aktiviert. Dieser Klient wird die Verbindungen der JACK Patchbay speichern und wiederherstellen.
+
+Um Ardour zu ihrer Session hinzuzufügen, klicken Sie auf *Application*/Anwendung (_oder Strg+A_), und das Anwendungs
+Dialogfenster wird sich öffnen (mehr hierzu unter <<add_application>>). Finden Sie auf der rechten Seite Ardour (je nach Version unter Umständen Ardour5 oder Ardour6 genannt) und Doppelklicken Sie darauf.
+
+image::../en/example_add_ardour.png[Add Ardour to the session, 640, 480]
+
+Ein Ardour Klient wird unter dem JACK Connections Klienten erscheinen und Ardour wird gestartet (normalerweise direkt mit einer leeren Ardour Session).
+
+Gehen Sie für Guitarix auf die gleiche Weise vor.
+
+image::../en/example_session_ready.png[Session ready with Ardour and Guitarix]
+
+Fügen Sie in Ardour eine Spur hinzu (Menu: Spur → Füge Spur hinzu). In dem sich öffnenden Fenster, nennen sie die Spur *Guitar* und setzen Sie die Kanaleinstellungen auf _Stereo_.
+
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/en/example_ardour_track.png]
+image::../en/example_ardour_track.png[Add a track in Ardour for Guitarix, 640, 480]
+
+Now use JACK's <<patchbay>> which occupies the right side of the RaySession window.
+
+Connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.
+
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/common/example_patchbay.png]
+image::example_patchbay.png[My session patchbay]
+
+Dies ist ein Beispiel, in dem der Gitarrensound durch Guitarix verarbeitet direkt in Ardour aufgenommen wird. Falls Sie über keine Gitarre verfügen, können Sie auch in ein Mikrofon singen, es handelt sich lediglich um ein Beispiel.
+
+Now save the current session by clicking the floppy disk button to the top right of the session part(_or Ctrl+S_). Es ist empfehlenswert, zur Sicherung der Session eine systemweite Tastenkombination zu erstellen. Es hängt von der jeweiligen Desktopumgebung ab, aber indem Sie zB. die Tastenkombiation _Ctrl+Meta+S_ dem  Kommando `ray_control save` (Meta ist die Windows-Taste) zuweisen lässt es sich vermeiden, zum Sichern stets zum RaySession Fenster zurückkehren zu müssen.
+
+Schliessen Sie nun die Session, indem Sie auf das Kreuz im roten Kreis oben rechts klicken (_oder Strg+W_).
+
+Nachdem sich die Session geschlossen hat, klicken Sie auf *Open Session* (_oder Strg+O_), und Doppelklicken Sie auf die Session, die Sie gerade erstellt und geschlossen haben, und diese wird sich wieder öffnen.
+
+Sie werden alle Programme und JACK Connections so vorfinden, wie sie waren, als die Session geschlossen wurde. Hierdurch wird alles ohne zusätzliche  Aktionen Ihrerseits wieder nutzbar sein. Ein weiterer Vorteil des modularen Ansatzes im gegebenen Fall ist, dass nachdem die Gitarre aufgenommen wurde, Guitarix gestoppt werden kann und nicht unnötig Prozessorkapazitäten verwendet, aber trotzdem bei Bedarf jederzeit wieder gestartet werden kann.

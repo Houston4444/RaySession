@@ -1,0 +1,51 @@
+== Überblick Klient
+
+image::../en/client_carla.png[trame d'un client]
+
+Von links nach rechts:
+
+* Das Symbol der Klient Anwendung enthält ein Menu mit den folgenden Aktionen
+
+** *Anwendung als Vorlage sichern* +
+Die Vorlage wird im <<add_application>> Anwendung hinzufügen Fenster erscheinen. Die gesicherte Vorlage ermöglicht, eine Anwendung direkt mit einer bestimmten Konfiguration zu starten (Ardour mit bestimmten Tracks, Hydrogen  mit bestimmten Drumkits ...). Seien Sie mit dieser Speicherung vorsichtig, falls der Klient viele Audio Dateien enthält, da alle Dateien des Klienten kopiert werden.
+** *Umbenennen* +
+Den Namen des Klienten, rechts vom Symbol sichtbar, ändern. Dieser Name dient lediglich ihrer Organisation.
+** *zum vorherigen Status zurückkehren* +
+Stellt den vorherigen Status des Klienten wieder her, siehe <<snapshots>>.
+Sie können aber nicht zu einem Status vor dem Umbenennen einer Session zurückkehren, in diesem Fall müssen sie den Status der gesamten Session wieder herstellen.
+** *Eigenschaften* +
+Öffnet das Eigenschaften Fenster des Klienten.
+
++
+Dieses Menü erscheint auch, indem Sie irgendwo in der Klientzeile den rechten Mausklick ausführen.
+
+* Der Name des Klienten (hier Carla), der durch rechter Mausklick → Rename (Umbenennen)  leicht geändert werden kann
+* Je nach Art und Möglichkeiten des Klienten sehen sie noch:
+
+** ein Auge (unter Umständen durchgestrichen), welches bedeutet, dass der Klient NSM kompatibel ist und durch Klicken auf das Symbol Auge gezeigt oder verborgen werden kann.
+** Das *Hack* Feld deutet an, dass der Klient entweder nicht NSM kompatibel ist oder bloss nicht mit dem NSM Protokoll gestartet wurde. Durch Mausklick auf *Hack* kann das Klient Eigenschaften Fenster geöffnet werden, in dem die Art, wie der Klient gestartet wird, geändert werden kann.
+
+* Das Start Symbol, welches ausgegraut ist, falls der Klient bereits gestartet ist.
+* Das Stop Symbol, welches ausgegraut ist, falls der Klient bereits gestoppt ist. +
+Falls der Klient nicht stoppt, wird das Symbol rot und Sie können den Klienten durch kill beenden. Seien Sie aber geduldig und nutzen Sie dies nur, wenn der Klient völlig eingefroren zu sein scheint. Ihn zu killen könnte zu Problemen führen, auch wenn Sie kaum dafür im  Gefängnis landen werden.
+* der Status des Klienten: 
+
+** *stopped*: Der Klient ist gestoppt
+** *ready*: der Klient ist gestartet und alles ist in Ordnung
+** *open*: Die Klient Anwendung  wird geöffnet und läd das Projekt, bitte gedulden Sie sich
+** *close*: Die Klient Anwendung wird geschlossen
+** *launch*: Falls der Status sich von launch nicht ändert, heisst dies:
+
+*** Es handelt sich um einen Ray-Hack Klienten ohne Konfigurations Datei
+*** es ist als NSM Klient gestartet, aber nicht NSM kompatibel, und kann deshalb nicht speichern. Bei manchen Anwendungen, wie einem Patchbay (z.B. Catia) oder eine Anwendung, die nicht gespeichert werden muss (Qrest), kann es sinnvoll sein, diese so zu starten.
+
+** *switch*: Der Klient wechselt das Projekt während die Session gewechselt wird.
+
+* Das Floppy Disk Symbol, mit welchem der Klient gespeichert werden kann. +
+Ist die Maus über diesem Symbol gehalten, ist das Folgende zu sehen
+
+** 3 rote Punkte: Der Klient enthält nicht gespeicherte Änderungen
+** ein grünes V: der Klient enthält keine nicht gespeicherten Änderungen
+** ein orangenes Ausfrufezeichen: es handelt sich nicht um einen NSM kompatiblen Klienten und damit ist es nicht möglich, das Projekt zu speichern.Sie müssen dies selbst tun.
+
+* Das rote Kreuz ermöglicht es Ihnen, den Klienten in den Papierkorb zu löschen.
