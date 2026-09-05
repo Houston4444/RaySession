@@ -1,0 +1,6 @@
+== Import an NSM session
+To import a session created with Non Session Manager or New Session Manager, move or copy the session folder to the RaySession root sessions folder (default ~/Ray Sessions). Then click *Open session*, your session should appear in the list of sessions, double-click on it.
+
+RaySession will not rewrite clients added or deleted to the `session.nsm` file, as long as you open an NSM session with RaySession you must continue with RaySession.
+
+If ever you want to use another session manager, you will find in the menu *File -> Utilities -> Convert the session to NSM file format*. Obviously this leads to some changes, such as prefix mode or the way the JACK clients will be named, but nothing that prevents the session from working.

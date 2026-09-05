@@ -1,0 +1,59 @@
+[#jack_configuration_memory]
+== JACK configuration memory
+It is possible thanks to session scripts to automatically recall the JACK configuration specific to a session before loading it. This behavior may remind some of the operation of LADISH studios, much better done, at least that's what is hoped.
+
+=== In which cases to use it
+This can be useful:
+
+* If you need to use a specific audio interface for the session
+* If you are working on multiple projects with different sample rates (such session at 44100 Hz, such session at 48000 Hz). +
+This will prevent you from having to reconfigure, stop and restart JACK yourself, or even avoid forgetting to do so and being insulted by certain programs.
+* If you want to avoid loading a very DSP-intensive session (for example in the mixing phase) with a too small buffer (128 for example). +
+Note that on most audio interfaces it is possible to change the buffer size hotly (without restarting JACK).
+
+=== Usage
+The Session scripts option must be enabled (This option is enabled by default).
+
+To use the JACK configuration memory, create a new session from the *With JACK configuration memory* template.
+It is in fact a scripted session (see <<session_scripts>>) which launches a script supplied with RaySession, but which is completely external to it, so RaySession still has no direct relation to JACK.
+
+Read the information window on this subject then validate. JACK restarts then your session starts.
+
+=== Working principle
+Each time the session is saved, the JACK configuration is saved in the session, in the `jack_parameters` file. +
+Before opening the session, JACK is restarted if the configuration of the session is different from the current configuration of JACK. +
+After closing the session, JACK is restarted if necessary with the current configuration before opening. +
+
+The configuration of the PulseAudio → JACK bridges is also saved and restored with the JACK configuration.
+
+If you open this session after having copied it to another computer, the JACK configuration will not be recalled but will be overwritten when saving. Only the sampling frequency of the session will be used.
+
+=== Special cases
+'''
+*To open a session without reloading its configuration from JACK:*
+
+* disable the *Session scripts* option
+* open the session
+
+'''
+
+*To change the JACK configuration of a session:*
+
+* Start JACK with the desired configuration
+* Disable the Session scripts option
+* Open the session
+* Re-enable the Session scripts option
+* Save the session
+
+'''
+
+*To make an old session sensitive to the configuration of JACK*
+
+* copy the folder `ray-scripts` of a session with memory from the JACK configuration to the session folder
+* Activate the Session scripts option
+* Open the session
+
+*or*
+
+* move the session to a sub-folder containing the good one `ray-scripts` folder
+* Open the session

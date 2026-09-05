@@ -1,0 +1,14 @@
+[#patchbay]
+== Patchbay
+
+link:../patchbay/index.html[Patchbay Manual]
+
+The JACK patchbay is displayed by default. You can hide it by clicking on *Control* and then uncheck *Show JACK Patchbay* (__or Ctrl+J__). The patchbay contains all the JACK AUDIO and MIDI ports that you can interconnect.
+
+Obviously, if JACK is not started, this patchbay will be empty.
+
+It is advisable to have the A2J bridge running if you want to work properly with MIDI. You can configure this via *Cadence*, *Studio Control*, or via the command line utility `a2j_control`.
+
+RaySession does not include tools to configure the JACK server, *QJackCtl*, *Studio Control*, *Cadence*, or the command line utility `jack_control` do this job very well. Note that this patchbay also works with PipeWire.
+
+Learn more about the patchbay in the link:../patchbay/index.html[Patchbay Manual].

@@ -1,0 +1,36 @@
+[#add_application]
+== Add application window
+The window for adding application is launched by clicking on the *Application* button (_or Ctrl+A_).
+
+image::../en/add_application.png[Add Application window]
+
+The list of available applications is on the right. If the software you want to add is not present here, see <<add_program_not_provided>>.
+
+'''
+
+Top left is the filter block
+
+image::../en/add_application_filter.png[Filter block of Add Application window]
+
+* the filter field allows you to enter a character string, only templates containing this character string in their name will appear.
+* the *Factory* checkbox displays the templates integrated into RaySession or provided by your distribution
+* *user* displays the templates created by the user by doing *Save as application template*
+* *NSM* displays the NSM compatible clients, or launched as such
+* *Ray-Hack* displays clients launched without NSM protocol
+
+'''
+
+Bottom left the information block on the selected template on the right
+
+image::../en/add_application_infos.png[Informations block of Add Application window]
+
+* at the top right of this block, a star, click on it to add it to favorites or remove it from favorites
+* If it is a user template, a *User* button allows you to delete this template
+* the button at the bottom right of this block allows you to access all the properties of the template, as in the <<client_properties>>, except that nothing is editable.
+
+|===
+
+|*Tip:* This window is designed for very fast app addition, and behaves like _Alt+F2_ on your desktop. +
+For example, from the main RaySession window, to add Carla type _Ctrl+A_ , then `carla`, select the correct template with the Up/Down arrows, then Enter.
+
+|===

@@ -1,0 +1,34 @@
+[#session_scripts]
+== Session scripts
+Session scripts allow you to program personalized actions when opening, saving and closing the session. They are used in particular for sessions with <<jack_configuration_memory>>. +
+Knowledge of shell scripting is required to edit these scripts, but anyone can use them.
+
+Session scripts are located in a folder `ray-scripts` located either in a session folder or in a parent folder. +
+For example, for a session being in: +
+`~/Ray Sessions/with_foo_script/my session`
+
+the session scripts folder may be
+```
+~/Ray Sessions/with_foo_script/my session/ray-scripts
+~/Ray Sessions/with_foo_script/ray-scripts
+~/Ray Sessions/ray-scripts
+~/ray-scripts
+```
+
+The advantage of such behavior is to be able to script a set of sessions without having to copy the scripts there, but above all to deliver an unscripted session when it is transferred to someone else for collective work. +
+Only the script folder closest to the session in the tree will be considered. Thus, a `ray-scripts` empty folder in a session will disable scripts for that session.
+
+To edit the scripts, start by creating a session with the template with the basic scripts, this is a template session with scripts that does not include any particular action. Go to the folder `ray-scripts` in the session folder, you will find the files `load.sh`, `save.sh` and `close.sh`. In each of these scripts, `ray_control run_step` corresponds to the normal action performed (depending on the script: load, save or close the session). If one of these three scripts is of no use to you, delete it, it will save time not to go through that script.
+
+The script files must imperatively be executable to work.
+
+You will probably need the command line utility `ray_control` to perform actions relating to a particular client. type `ray_control --help` to know all its possibilities, see also <<ray_control>>.
+
+JACK memory configuration session template uses session scripts, but we can also imagine many possible actions according to your needs and desires, for example:
+
+* define a specific order for launching clients when the session is opened (an example is provided in the source code)
+* make a backup copy of the session on an external hard drive each time you close it
+* send a _Ctrl+S_ shortcut to non-saveable client windows when saving the session (an example is provided in the source code)
+* Turn on the red light at the entrance to the studio when opening, turn it off when closing
+* Start the coffee machine at the end of the session (stupid example, go and press the button on the coffee maker, anyway you will have to change the filter!)
+* Make many, many, many mistakes that will crash your session, be careful of course!

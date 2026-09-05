@@ -1,0 +1,10 @@
+[#ray_control]
+== Control RaySession from the command line
+the command `ray_control` lets you do just about anything you can do with the GUI, and a little more. type `ray_control --help-all` to know all the possibilities.
+
+In case there are multiple daemons started (see <<under_the_hood>>), `ray_control` will only consider the one that was started first, unless you specify its OSC port with the `--port` option or `RAY_CONTROL_PORT` environment variable.
+
+One might think that there is no point in using `ray_control` since the command `oscsend` allows to send an OSC message to the daemon, but it is false. +
+Firstly, because `oscsend` allows you to send messages but not to obtain information in a simple way (which are the active clients? What is the executable of such and such client? ...), secondly, because the command `ray_control` will end when the requested action is taken, for example `ray_control open_session "my session"` will end when the session is loaded.
+
+Remember to assign `ray_control save` to a global shortcut of your desktop environment (_Ctrl+Meta+S_), this will save you a lot of time!

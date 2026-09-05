@@ -1,0 +1,51 @@
+== Overview of a client
+
+image::../en/client_carla.png[trame d'un client]
+
+A client contains from left to right:
+
+* The client icon that you can click to bring up a menu with the following actions
+
+** *Save as application template* +
+The created template will then appear in the <<add_application>>. This then allows you to directly launch a client with the desired configuration (Ardour with such tracks, Hydrogen with such drumkit…). Be careful, this copies all the client's files so avoid doing this if the client contains a lot of audio files.
+** *Rename* +
+Change the client name located to the right of its icon, it is a purely visual name that can help you organize yourself.
+** *return to a previous state* +
+Returns only the client to a previous session state, see <<snapshots>>. +
+However, you will not be able to go back to a state prior to a session renaming, so you must go back the entire session.
+** *Properties* +
+Displays the client properties window
+
++
+This menu is also accessible by right-clicking anywhere on the client.
+
+* The name of the client (here Carla), which can be easily changed by right-clicking → Rename
+* depending on the type and capacity of the client you can see here
+
+** an eye (possibly crossed out), this means that the client is NSM compatible and is capable to show or hide its window by clicking on the eye.
+** a *Hack* button, it means that the client is not NSM compatible, or at least that it is not launched with this protocol. Clicking on *Hack* allows to change the way it is launched by opening the client properties window on the Ray-Hack tab.
+
+* The Start button which is grayed out if the client is already started.
+* the Stop button which is grayed out if the client is not started. +
+If you stop the client and it is still not stopped after a while, the button turns red and you can click on it to kill the client. But stay relaxed, and only use it if it really seems completely inert, it could cause problems, even if nobody will send you to jail.
+* the state of the client which can be
+
+** *stopped*: the client is stopped
+** *ready*: the client is running and everything is ok
+** *open*: the program is opening its project, please wait a little bit.
+** *close*: the program is closing
+** *launch*: if it stays on the launched state, it means
+
+*** if it is a Ray-Hack client, that it does not have a configuration file
+*** if it is started as an NSM client, if it is not NSM compatible, and therefore any save is in vain. It may be practical to launch certain programs in this way, such as a patchbay (Catia) or a utility whose state you do not need to save (Qrest).
+
+** *switch*: the client changes projects during a session switch
+
+* the floppy disk button that allows you to save the client. +
+If over this floppy you see
+
+** three red dots: the client contains unsaved changes
+** a green V: the client does not contain unsaved changes
+** an orange exclamation mark: It is not an NSM client, and it is impossible to save its project, you will have to do it yourself
+
+* the red cross which allows you to send the client to the trash

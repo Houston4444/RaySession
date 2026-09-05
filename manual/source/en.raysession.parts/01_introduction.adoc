@@ -1,0 +1,8 @@
+== Introduction
+RaySession is an audio session manager for GNU / Linux. It allows you to start several audio programs in the same session, to save their projects together and thus to avoid multiple operations to return to a given configuration.
+
+To be launched in RaySession, it is very much preferable that these audio programs be compatible with the NSM protocol, and many are already, among others Ardour, Qtractor, Carla, Guitarix, Mamba, Patroneo, ZynAddSubFx ...
+
+RaySession assumes that your audio setup is working for audio production, if not, fix this first and don't waste your time trying to use RaySession.
+
+Now let's see how to use it.

@@ -1,0 +1,43 @@
+
+[#add_program_not_provided]
+== Add a program not provided
+If the program you want to add does not manage a project to save, click on *Executable*, enter the name of the executable and click on *Ok*. Otherwise follow this example.
+
+We want to add Audacity to the session here. Audacity is chosen as an example because it is known and generally installed on audio distributions. This is not necessarily a very suitable program for the modularity of an audio session given the way it handles JACK.
+
+Click *Executable* (_or Ctrl+E_).
+In the <<add_executable>>, Uncheck the *NSM Protocol* box, type `audacity` in the *Executable* field and click *Ok*.
+
+image::../en/audacity_executable.png[Add Executable window well done]
+
+A new client is created, its properties window opens on the *Ray-Hack* tab and Audacity is launched.
+
+In Audacity, we will directly save an empty project in the client's folder. The client's folder is located in the session folder and has the name given after *Folder:* at the top of the *Ray-Hack* tab. We will call the project EXACTLY like the current RaySession session. To do this, in Audacity, go to _Menu → File → Save project → Save project_.
+
+image::../en/audacity_save project.png[Save empty Audacity project]
+
+Click *Validate* at the possible warning window. +
+In the save files box that opens, you will find the session folder at the bottom left (see <<session_folder_shortcuts>>), click on it to enter it. Inside this you should see the client's folder as it appears at the top of the Ray-Hack tab, enter this folder. At the top left of the backup box, type the exact name of your session in the *Name:* field then validate.
+
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/en/audacity_save_file.png]
+image::../en/audacity_save_file.png[Where to save Audacity project, 640, 480]
+
+Close Audacity. +
+At the top right of the *Ray-Hack* tab of the client properties window, click *Browse*.
+
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/en/audacity_load_config_file.png]
+image::../en/audacity_load_config_file.png[Load CONFIG_FILE window, 640, 480]
+
+select the Audacity project you just created, its name starts with the session name and ends with .aup.
+
+If all went well, the *Configuration File* field became `$RAY_SESSION_NAME.aup` and the *Arguments* field became `"$CONFIG_FILE"`. +
+Check the boxes *Wait for a window before being considered ready*, *Ask the user to close the program himself* and *Try to close the window gracefully*. Click in the bottom right corner on *Save Changes*.
+
+image::../en/audacity_ray_hack_final.png[Ray-Hack tab of Audacity client well done]
+
+Launch the Audacity client and verify that the Audacity window has the name of the session. +
+Click on the Audacity client icon, in the drop-down menu choose *Save as an application template*, and enter `Audacity` the field of the dialog box that has appeared. Now when you want to launch Audacity in the session, all you have to do is launch the Audacity template from the <<add_application>>.
+
+Note that the client's save button is behind an orange exclamation point, this means that RaySession is not able to save its project and that you will have to do it yourself.
+
+Depending on what program you want to add to the session, it might not always be that easy. Some programs will require an argument that precedes the configuration file, in this case type `my_program --help` or `man my_program` to know how to load a project when the program starts, and adapt this in the *Arguments* field.

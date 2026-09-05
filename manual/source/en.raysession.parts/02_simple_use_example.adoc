@@ -1,0 +1,59 @@
+== Simple use example
+For audio production under GNU / linux, it is highly recommended to use the JACK server. Before creating or starting a session, make sure the JACK server is running, RaySession has no direct relation to JACK, however the programs you are going to launch in your session will need it.
+
+Let's take an example where to compose a song, we will need Ardour and Guitarix softwares, make sure that these 2 programs are installed.
+
+To create a new session, click at the top left on New Session (_or Ctrl+N_). A dialog window appears.
+
+image::../en/example_new_session.png[New session]
+
+At the top right you can see the root session folder, this is where the sessions will be saved (a RaySession session being a folder containing a file `raysession.xml`).
+
+Enter the name you want for this new session in the field provided. To put your new session in a sub-folder, type the name as follows: `sub-folder/my session`.
+
+The session template multiple choice box lets you choose between
+
+* An empty session template
+* A template with memory of JACK connections
+* A scripted template with memory of the JACK configuration
+* A template with basic session scripts (for advanced users with shell scripting knowledge)
+* All the session templates that you have created yourself.
+
+First, keep the template on *With JACK patch memory* , click *Ok* to start your session.
+
+image::../en/example_session_launched.png[Session launched]
+
+The session part of the window becomes active, at the top is written the name of your session, and your session already contains a client program called *JACK Connections*. This client will save and redo the connections of the JACK patchbay.
+
+To add Ardour to your session, click on the *Application* button (_or Ctrl+A_), the application dialog will appear (more details in the <<add_application>> section). On the right side, find Ardour (Depending on your version of ardour, it may be called Ardour5 or Ardour6) and double-click on it.
+
+image::../en/example_add_ardour.png[Add Ardour to the session, 640, 480]
+
+An Ardour client appears below JACK Connections and Ardour starts up (normally directly with an empty Ardour session).
+
+Do the same with Guitarix.
+
+image::../en/example_session_ready.png[Session ready with Ardour and Guitarix]
+
+In Ardour, add a track (Menu: Track → Add a track), in the Ardour window that has appeared, name the track *Guitar* and put the multiple choice box configuration on _Stereo_.
+
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/en/example_ardour_track.png]
+image::../en/example_ardour_track.png[Add a track in Ardour for Guitarix, 640, 480]
+
+Now use JACK's <<patchbay>> which occupies the right side of the RaySession window.
+
+Connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.
+
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/common/example_patchbay.png]
+image::example_patchbay.png[My session patchbay]
+
+Here you have a configuration where you can directly record the sound of your guitar processed by Guitarix in Ardour. If you don't have a guitar, all you have to do is sing out of tune into a mic or tap a cushion, this is just an example.
+
+Now save the current session by clicking the floppy disk button to the top right  of the session part(_or Ctrl+S_). It is highly recommended because it is very practical to assign a global keyboard shortcut of your system to the save of the current session. This will depend on your desktop environment, but just assign the _Ctrl+Meta+S_ shortcut to the command `ray_control save` (Meta is the Windows key), so you won't have to return to the RaySession window to save the session.
+
+Now close the session by clicking on the red cross at the top right of the session part (_or Ctrl+W_).
+
+Once the session is closed, click on *Open Session* (_or Ctrl+O_), double-click on the session you just created to re-open it.
+
+You will find the programs and their projects as well as the JACK connections as they were when you closed the session, and everything therefore works without any further manipulation.
+One of the advantages of modularity in this specific case is that once you have finished the guitar records, you can stop Guitarix so as not to overload the processor unnecessarily, and it will still be easy to restart it if necessary.

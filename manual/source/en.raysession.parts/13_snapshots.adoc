@@ -1,0 +1,21 @@
+[#snapshots]
+== Snapshots
+Snapshots require you to have the program `git` installed, if you don't have `git`, the reverse button does not appear and it is not possible to take or return to a snapshot.
+
+A snapshot stores files and their contents at a specific time. Large files and files with certain extensions such as audio and video files are ignored, otherwise the snapshot process will take too long and the size of the session folders will needlessly double. This is actually not very annoying, on the contrary, since your recent audio files remain present when you go back to a previous snapshot. +
+If despite everything the snapshot process turns out to be long, a window appears and you can safely cancel the current snapshot. If you cancel it, the automatic snapshot will no longer take place for this session.
+
+The interest of the snapshots lies in the fact of being able to return to the previous moment of the session, before having had this brilliant artistic idea which turned out to be null and void, before having attempted a recutting of the samples with the microcoscope which finally killed all forms of musicality, before a program crashes for some reason unknown to the police...
+
+Don't worry, going back to a snapshot won't stop you from getting back to where you were.
+
+To revert the session to a snapshot, click the reverse button located to the right of the *Executable* button.
+
+image::../en/snapshots.png[]
+
+Select the snapshot you want to revert to and click *Ok*. A new snapshot is taken, the session closes, the desired snapshot is recalled and the session reopens.
+
+It is also possible to return only a client to a previous state of the session by right-clicking on the client,then *Return to a previous state*.
+If you want you can edit for each client the files ignored by the snapshots in the <<client_properties>>.
+
+With the *Automatic snapshot after save* option, a snapshot is taken immediately after each backup of the session, unless there is no change since the previous snapshot. To take a snapshot at another time, click on the reverse icon to the right of the *Executable* button and on *Take a snapshot now*, this has the advantage of being able to name the snapshot and thus having a more meaningful time mark than the date and time of the snapshot.

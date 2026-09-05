@@ -1,0 +1,31 @@
+== Network Sessions
+A network session allows you to launch another session on another machine at the same time as your session. This can be particularly useful if you are using net-jack to unload your machine from part of the DSP, if you have greedy effects running on another machine for example.
+
+Network sessions operate on a master-to-slave basis. A session is master and can have several slave sessions which are themselves masters of other slaves, but such a scenario seems completely out of the ordinary. Organize yourself simply: one master, one or more slave(s).
+
+To launch a network session (therefore a slave), launch the *Network Session* application template from the applications window and follow the instructions.
+
+image::../en/network_session_template.png[Add a network session]
+You will have to start a daemon on the remote machine with the command `ray-daemon -p 1234` (`1234` is an example, put the port you want). This daemon displays something like this in the terminal:
+
+```
+[ray-daemon]URL : osc.udp://192.168.1.00:1234/`
+[ray-daemon]      osc.udp://nom-de-machine:1234/`
+[ray-daemon]ROOT: /home/utilisateur/Ray Sessions reseau
+```
+
+image::../en/network_session_invitation.png[Configure a network session]
+
+You will need to copy one of the two URLs into the network session invitation window. The first (which begins with osc.udp://192.168.) must work for sure, the second will work only if the name of the slave machine is correctly entered in the file `/etc/hosts` of the master machine. However, entering the name of the slave machine in `/etc/hosts` and using the second URL is preferable, because the address in 192.168. will move if you connect your slave machine differently (wired, wifi), or if you reinstall the distribution.
+
+You now have 2 RaySession windows on your master machine, one controls the master session, the other the slave. You will recognize the slave by the fact that it does not have a toolbar (*New Session*, *Open Session*, *Control*), nor *Abort session* and *Close session* buttons.
+
+image::../en/network_session_child.png[]
+
+The slave window is hideable as is the case in many NSM programs.
+
+image::../en/network_session_client.png[]
+
+If you run `raysession -p 1234` on your slave machine, you will have the slave session window in duplicate, one on each machine.
+
+*Tip:* Put this `ray-daemon -p 1234` in your slave machine startup.

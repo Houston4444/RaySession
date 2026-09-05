@@ -1,0 +1,35 @@
+[#add_executable]
+== Add executable window
+The window for adding an executable is launched by clicking on the *Executable* button (_or Ctrl+E_).
+
+image::../en/add_executable.png[Add Executable window]
+
+You will need to go through this window if you want to add a client that does not appear in the list of the <<add_application>>. This window is very simple, a field to enter the executable, an *NSM Protocol* box, an advanced options button.
+
+Leave the NSM protocol checked if:
+
+* the program to launch is NSM compatible (if it is not in the list of applications, please let us know!)
+* the program to run is a utility for which there is no need to save any project (QRest, Catia…).
+The state of such a program will remain on *launch* and will never be *ready*, it is irrelevant since they do not have a project to save.
+
+If you leave the *NSM protocol* checked, it will not be possible to use the absolute path of an executable to add it, the executable must be located in a location provided for this purpose (you will not be able to launch `/usr/bin/my_program`, but `my_program`). You cannot enter arguments here, with or without the NSM protocol.
+
+Unchecking *NSM Protocol* is equivalent to launching the program with the Ray-Hack pseudo-protocol.
+
+If you click on the *advanced options* button, an advanced options block appears with
+
+image::../en/add_executable_plus.png[Advanced Add Executable window]
+
+* the *Start the client* checkbox , if you uncheck it the client will be added but not launched
+* the multiple choice box *Prefix Mode*, this defines the prefix of the name of the client's files
+
+** on *Session Name*, the file names will start with the session name, this is the default value
+** on *Client Name*, the file names will begin with the name provided by the client itself, as is the case with New Session Manager
+** on *Custom*, the file names will start with the value you enter in the *Prefix* field just below.
+
+* the *Prefix* field which is only active if *Prefix Mode* is set to Custom.
+
+* the *Client ID* field (client identifier). Enter only alphanumeric characters or '_'. +
+This is useful if you want to catch and launch existing projects in the session with an executable. This is useful if you want to load in the session projects created outside a session. There is no method to make it easier, it depends a lot on the program you are using. RaySession will insult you if you enter a client ID that already exists in the session.
+
+* the *Long JACK naming* checkbox. If this box is checked, clients will be supposed to use `ProgramName.ClientId` as JACK client name, else it will be `ProgramName`, possibly followed by `_N` (where N is a number). This is very useful if you use many instances of the same program, and you want to identify them easily in the patchbay.

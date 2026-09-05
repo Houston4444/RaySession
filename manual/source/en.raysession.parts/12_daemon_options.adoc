@@ -1,0 +1,28 @@
+== The daemon's options
+Daemon options are services which can be activated and deactivated via the *Control* button at the top right of the main window, or via the options menu in the menu bar.
+
+image::../en/daemon_options.png[Daemon options]
+
+Here are the details of the different options:
+
+[#session_folder_shortcuts]
+=== Provide bookmarks for session folder
+In audio production, creating audio or midi file with one program and load it into another is an usual case. This option offers something purely practical: a shortcut to the current session folder in your file manager and in the dialog boxes provided for fetching or saving files. It simply avoids wasting time browsing through your personal folder tree to find a file that you have put in your session folder, since that is where it belongs. +
+Of course, this shortcut is deleted when the session is unloaded. +
+Technically, shortcuts are created for GTK2, GTK3, QT4, QT5, KDE and FLTK.
+
+=== Auto Snapshot at Save
+This option is far from being trivial, it allows you to take a snapshot of the session after each session save. This means that in case of a technical or artistic error you will be able to find the session in the state it was in at the moment of the snapshot. This option requires that you have the `git` program installed. See <<snapshots>> for more details.
+
+=== Desktops Memory
+If this option is activated, RaySession will save (or attempt to save) the number of the virtual desktop on which the client windows were located when the session was saved.
+So when you restart the session or the clients, the windows will be redispatched to the desktops on which they appeared.
+This option requires you to have the program `wmctrl` installed to work, and probably will not work with Wayland.
+
+=== Session scripts
+Disable this option to not activate any session script, and thus open, save or close a session completely ignoring the scripts associated with these actions.
+These scripts are used by sessions with <<jack_configuration_memory>>.
+See <<session_scripts>> for more details.
+
+=== Remember optional GUI states
+This option only concerns NSM clients capable of showing/hiding their graphical interface. Without this option, some of them will always start hidden, others will remember if they were visible when they were last saved. With this option enabled, the graphical interfaces will be displayed when the session is ready if they were visible during the last save or if the client has never been launched.
