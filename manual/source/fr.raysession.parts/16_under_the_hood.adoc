@@ -1,0 +1,6 @@
+[#sous_le_capot]
+== Sous le capot
+
+RaySession n'est en réalité qu'une interface graphique pour ray-daemon. Lorsque vous lancez RaySession, l'interface graphique lance le démon et s'y connecte, et elle arrête le démon lorsqu'on la ferme. L'interface graphique et le démon communiquent entre eux par messages OSC (Open Sound Control), comme c'est le cas entre le démon et les clients NSM. Ainsi, vous pouvez connecter plusieurs interfaces graphiques à un démon, même à distance. Tapez `raysession --help` pour voir comment faire.
+
+Il n'est pas interdit d'avoir plusieurs instances de démon lancés simultanément, ainsi si vous lancez RaySession alors qu'une instance est déjà lancée, celle-ci lancera un nouveau démon. Toutefois, cette façon de travailler étant peu commune, l'utilisation d'un seul démon est favorisée. Ainsi, si un démon tourne et qu'il n'a aucune interface graphique attachée, raysession se connectera à ce démon par défaut.

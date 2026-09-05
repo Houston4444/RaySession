@@ -1,0 +1,38 @@
+[#options_du_demon]
+== Les options du démon
+
+Les options du démon sont des services qui sont activables et désactivables via le bouton *Contrôle* en haut à droite de la fenêtre principale, ou via le menu *options* de la barre de menus.
+
+image::../fr/options_du_demon.png[Options du démon]
+
+Voici le détail des différentes options:
+
+[#raccourcis_dossier_de_session]
+=== Fournir des raccourcis du dossier de la session
+
+En production audio, on a souvent recours au fait de créer un fichier audio ou midi avec un programme pour finalement le charger dans un autre. Cette option offre quelque chose de purement pratique: un raccourci vers le dossier de la session en cours dans votre gestionnaire de fichiers et dans les boîtes de dialogue prévues pour aller chercher ou sauvegarder les fichiers. Ça permet tout simplement d'éviter de perdre du temps à parcourir l'arborescence de son dossier personnel pour chercher un fichier que vous avez mis dans le dossier de votre session puisque c'est bien sa place. +
+Bien entendu, ce raccourci est supprimé lorsque la session est déchargée. +
+Techniquement, les raccourcis sont créés pour GTK2, GTK3, QT4, QT5, KDE et FLTK.
+
+=== Cliché automatique à la sauvegarde
+
+Cette option est très loin d'être triviale, elle permet de prendre un cliché de la session après chaque sauvegarde. Celà signifie qu'en cas d'erreur technique ou artistique vous aurez la possibilité de retrouver la session dans l'état où elle se trouvait au moment du cliché.
+Cette option nécessite d'avoir le programme `git` installé.
+Voir <<cliches>> pour plus de détails.
+
+=== Mémoire des bureaux
+
+Si cette option est enclenchée, RaySession sauvegardera (ou tentera de sauvegarder) le numéro du bureau virtuel sur lequel se trouvaient les fenêtres des clients à la sauvegarde de la session. +
+Ainsi lorsque vous relancerez la session ou les clients, les fenêtres seront redispatchées sur les bureaux sur lequels elles figuraient. +
+Cette option nécessite d'avoir le programme `wmctrl` installé pour fonctionner, et ne fonctionnera probablement pas avec Wayland.
+
+[#option_scripts_de_session]
+=== Scripts de session
+
+Désactiver cette option pour n'actionner aucun script de session, et ainsi ouvrir, sauvegarder ou fermer une session en ignorant totalement les scripts associés à ces actions. +
+Ces scripts sont utilisés par les sessions avec <<memoire_de_la_configuration_de_jack>>. +
+Voir <<les_scripts_de_session>> pour plus de détails.
+    
+=== Se souvenir de l'état des IGUs
+
+Cette option ne concerne que les client NSM capables d'afficher/cacher leur interface graphique. Sans cette option, certains d'entre eux vont toujours démarrer cachés, d'autres vont se souvenir s'ils étaient visibles à leur dernière sauvegarde. Avec cette option enclenchée, les interfaces graphiques seront affichées au moment où la session est prête si elles étaient visibles lors de la dernière sauvegarde ou si le client n'a jamais été lancé.

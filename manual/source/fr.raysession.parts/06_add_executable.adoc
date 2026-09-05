@@ -1,0 +1,34 @@
+[#ajout_executable]
+== Fenêtre d'ajout d'exécutable
+
+Le fenêtre d'ajout d'exécutable se lance en cliquant sur le bouton *Exécutable* (_ou Ctrl+E_).
+
+image::../fr/ajout_executable.png[Fenêtre d'ajout d'exécutable]
+
+Vous aurez besoin de passer par cette fenêtre si vous voulez ajouter un client qui n'apparaît pas dans la liste de la fenêtre d'ajout d'application.
+Cette fenêtre se présente très simplement, un champ pour rentrer l'exécutable, une case *Protocole NSM*, un bouton d'options avancées.
+
+Laissez le protocole NSM coché si:
+
+    * le programme à lancer est compatible NSM (s'il n'est pas dans la liste d'applications, merci de le faire savoir !)
+    * le programme à lancer est un utilitaire dont on n'a aucun besoin de sauvegarder un quelconque projet (QRest, Catia...). +
+    L'état d'un tel programme restera sur *lancé* et ne sera jamais *prêt*, c'est sans importance vu qu'ils n'a pas de projet à sauvegarder.
+
+Si vous laissez le protocole NSM coché il ne sera pas possible d'ajouter un exécutable vers un chemin absolu, l'exécutable doit se situer dans un emplacement prévu à cet effet (vous ne pourrez pas lancer `/usr/bin/mon_programme`, mais `mon_programme`). Vous ne pouvez pas rentrer d'arguments ici, avec ou sans le protocole NSM.
+
+Décocher la case *Protocole NSM* revient à lancer le programme avec le pseudo-protocole Ray-Hack.
+
+Si vous cliquez sur le bouton d'options avancées, un bloc options avancées apparaît avec
+
+image::../fr/ajout_executable_plus.png[Fenêtre d'ajout d'exécutable avancé]
+
+* la case *Démarrer le client*, si vous la décochez le client sera ajouté mais non lancé
+* la boîte à choix multiple *Mode de préfixe*, celà définit le préfixe du nom des fichiers du client
+
+    ** sur *Nom de la session*, les noms des fichiers commenceront par le nom de la session, c'est la valeur par défaut
+    ** sur *Nom du Client*, les noms des fichiers commenceront par le nom fourni par le client lui-même, comme c'est le cas avec New Session Manager
+    ** sur *Personnalisé*, les noms des fichiers commenceront par la valeur que vous inscrirez dans le champ *Préfixe* juste en dessous
+* le champ *Préfixe* qui n'est actif que si *Mode de Préfixe* est sur *Personnalisé*
+* le champ *ID du client* (identifiant du client). Ne rentrez ici que des caractères alphanumériques ou des '_'. +
+    Celà est utile si vous voulez attraper et lancer des projets existants dans la session avec un exécutable. C'est pratique si vous voulez charger dans la session des projets créés en dehors d'une session. Aucune méthode ne permet de rendre la chose plus simple, celà dépend énormément du programme utilisé. RaySession vous insultera si vous rentrez un identifiant de client qui existe déjà dans la session.
+* la case à cocher *Longs noms de client JACK*. Si cette case est cochée, les clients seront supposés utiliser `NomDuProgramme.Identifiant` comme motif pour leurs clients JACK, sinon ce sera `NomDuProgramme` éventuellement suivi de `_N` (ou N est un nombre). C'est tout à fait pratique si vous utilisez de multiples instances d'un même programme, et que vous souhaitez pouvoir facilement les reconnaître dans la baie de brassage.

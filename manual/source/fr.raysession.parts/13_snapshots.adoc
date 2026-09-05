@@ -1,0 +1,22 @@
+[#cliches]
+== Les clichés
+
+Les clichés nécessitent d'avoir le programme `git` installé, si vous n'avez pas `git`, le bouton de marche arrière n'apparaît pas et il est impossible de prendre un cliché ou d'y revenir.
+
+Un cliché mémorise les fichiers et leurs contenu à un moment précis. Les fichiers volumineux et les fichiers ayant certaines extensions tels que les fichiers audio et video sont ignorés, sinon le processus de cliché serait trop long et celà doublerait inutilement la taille des dossiers de session. Celà n'est en fait pas très gênant, au contraire, puisque vos fichiers audio récents restent présents quand vous retournez à un cliché précédent. +
+Si malgré tout le processus de cliché s'avère long, une fenêtre apparaît et vous pouvez annuler sans aucun risque le cliché en cours. Si vous l'annulez, Le cliché automatique n'aura plus lieu pour cette session.
+
+L'intérêt des clichés réside dans le fait de pouvoir revenir à moment antérieur de la session, avant d'avoir eu cette idée artistique géniale qui s'est avérée nulle et non avenue, avant d'avoir tenté un redécoupage des échantillons au microcoscope qui a finalement tué toute forme de musicalité, avant qu'un programme plante pour une raison inconnue des services de police...
+
+N'ayez crainte, revenir à un cliché ne vous empêchera pas de revenir là où vous en êtiez.
+
+Pour faire revenir la session à un cliché, cliquez sur le bouton de marche arrière situé à droite du bouton *Exécutable*.
+
+image::../fr/cliche.png[]
+
+Sélectionnez le cliché vers lequel vous voulez revenir et cliquez sur *Ok*. Un nouveau cliché est pris, la session se ferme, le cliché voulu est rappelé et la session se ré-ouvre.
+
+Il est également possible de faire revenir uniquement un client à un état précédent de la session en faisant un clique droit sur le client, puis *Retourner à un état précédent*. +
+Si vous le souhaitez vous pouvez éditer pour chaque client les fichiers ignorés par les clichés dans la fenêtre de propriétés du client.
+
+Avec l'option *Cliché automatique à la sauvegarde*, un cliché est pris juste après chaque sauvegarde de la session, sauf s'il n'y a aucun changement depuis le cliché précédent. Pour prendre un cliché à un autre moment, cliquez sur l'icône de marche arrière à droite du bouton *Exécutable* et sur *Prendre un cliché maintenant*, celà présente l'avantage de pouvoir nommer le cliché et d'avoir ainsi un repère temporel plus parlant que la date et l'heure du cliché. +

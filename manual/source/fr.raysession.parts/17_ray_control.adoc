@@ -1,0 +1,11 @@
+[#ray_control]
+== Contrôler RaySession en ligne de commande
+
+la commande `ray_control` vous permet de faire a peu près tout ce qu'il est possible de faire avec l'interface graphique, et même un peu plus. tapez `ray_control --help-all` pour connaître l'ensemble des possibilités.
+
+Au cas où il y a plusieurs démons lancés (voir <<sous_le_capot>>), `ray_control` ne considerera que celui qui a été lancé en premier, sauf si vous spécifiez son port OSC avec l'option `--port` ou la variable d'environnement RAY_CONTROL_PORT.
+
+On pourrait penser qu'il n'y a pas d'intérêt à utiliser `ray_control` puisque la commande `oscsend` permet d'envoyer un message OSC au démon, c'est faux. +
+D'une part, parce que `oscsend` permet d'envoyer des messages mais pas d'obtenir des informations de manière simple (quels sont les clients actifs ? quel est l'executable de tel client ? ...), d'autre part parce que la commande `ray_control` se terminera lorsque l'action demandée sera effectuée, par exemple `ray_control open_session ma_session` se terminera lorsque la session sera chargée.
+
+Pensez à affecter `ray_control save` à un raccourci global de votre environnement de bureau (_Ctrl+Meta+S_), celà vous fera gagner un temps fou !

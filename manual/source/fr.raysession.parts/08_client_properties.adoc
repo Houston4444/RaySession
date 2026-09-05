@@ -1,0 +1,13 @@
+[#proprietes_de_client]
+== Fenêtre de propriétés d'un client
+
+La fenêtre de propriétés d'un client s'ouvre depuis le menu du client, en cliquant sur *Propriétés*.
+
+La fenêtre des propriétés du client comprend 2 onglets, un onglet *Général* et un onglet spécifique au protocole utilisé par le client.
+Selon le protocole du client, le deuxième onglet s'appelle NSM, Ray-Hack ou Ray-Net.
+
+include::08A_general_tab.adoc[]
+
+include::08B_nsm_tab.adoc[]
+
+include::08C_ray_hack_tab.adoc[]

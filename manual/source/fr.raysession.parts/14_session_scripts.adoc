@@ -1,0 +1,33 @@
+[#les_scripts_de_session]
+== Les scripts de session
+
+Les scripts de session permettent de programmer des actions personnalisés à l'ouverture, à la sauvegarde et à la fermeture de la session. Ils sont notamment utilisés pour les sessions avec <<memoire_de_la_configuration_de_jack>>. +
+Des connaissances en script shell sont nécessaires pour éditer ces scripts, mais tout un chacun peut les utiliser.
+
+Les scripts de session se trouvent dans un dossier `ray-scripts` situé soit dans un dossier de la session, soit dans un dossier parent. +
+Par exemple, pour une session étant dans: +
+`~/Ray Sessions/avec_script_de_foo/ma session`
+
+le dossier des scripts de session peut-être +
+`~/Ray Sessions/avec_script_de_foo/ma session/ray-scripts` +
+`~/Ray Sessions/avec_script_de_foo/ray-scripts` +
+`~/Ray Sessions/ray-scripts` +
+`~/ray-scripts`
+
+L'intérêt d'un tel comportement est de pouvoir scripter un ensemble de sessions sans avoir à y recopier les scripts, mais surtout de livrer une session non scriptée lorsqu'on la transfère à quelqu'un d'autre pour un travail collectif. +
+Seul le dossier de scripts le plus près de la session dans l'arborescence sera considéré. Ainsi, un dossier `ray-scripts` vide dans une session désactivera les scripts pour cette session.
+
+Pour éditer les scripts, commencez par créer une session avec le modèle *avec les scripts de base*, il s'agit d'un modèle de session avec des scripts ne comprenant absolument aucune action particulière. Rendez-vous dans le dossier `ray-scripts` dans le dossier de la session, vous y trouverez les fichiers `load.sh`, `save.sh` et `close.sh`. Dans chacun de ces scripts, `ray_control run_step` correspond à l'action normale effectuée (selon le script: charger, sauvegarder ou fermer la session). Si un de ces trois scripts ne vous est d'aucune utilité, supprimez le, ce sera du temps gagné de ne pas passer par ce script.
+
+Les fichiers scripts doivent impérativement être exécutables pour fonctionner.
+
+Vous aurez probablement besoin de l'utilitaire en ligne de commande `ray_control` pour effectuer des actions en rapport avec tel ou tel client. tapez `ray_control --help` pour connaître toutes ses possibilités.
+
+Le modèle de session à mémoire de configuration de JACK utilise les scripts de session, mais on peut aussi imaginer moult actions possibles selon vos besoins et vos envies, par exemple :
+
+* définir un ordre bien précis de lancement des clients à l'ouverture de la session (un exemple est fourni dans le code source)
+* faire une copie de sauvegarde de la session sur un disque dur externe à chaque fermeture
+* envoyer un raccourci _Ctrl+S_ aux fenêtres des clients non sauvegardables à la sauvegarde de la session (un exemple est fourni dans le code source)
+* Allumer la lumière rouge à l'entrée du studio à l'ouverture, l'éteindre à la fermeture
+* Lancer la machine à café à la fermeture de la session (exemple débile, allez donc appuyer sur le bouton de la cafetière, de toutes façons faudra changer le filtre !)
+* Faire beaucoup, beaucoup, beaucoup d'erreurs qui feront planter votre session, soyez prudents évidemment !

@@ -1,0 +1,22 @@
+=== Onglet *NSM*
+
+image::../fr/proprietes_nsm.png[Propriétés NSM d'un client]
+
+Le nom du client ici est fourni par le client lui-même. +
+Les capacités sont celle qui sont transmises par le client à son démarrage. Si le client n'a pas encore été démarré, ce champ est donc vide.
+
+Éditer l'exécutable permet de changer la commande qui lance le client. Ne le changez que pour un autre exécutable capable de charger le projet du client existant. C'est utile par exemple si vous avez deux versions d'Ardour, l'une se lançant avec la commande `ardour`, l'autre avec `Ardour6`, et que vous voulez changer la version à utiliser.
+
+Éditer les arguments est fortement déconseillé, et n'est surtout pas adapté au chargement d'un fichier comme argument.
+
+Vous pouvez éditer les variables d'environnement que vous voulez appliquer au programme en les séparant par des espaces, par exemple comme ceci:
+
+`MA_VARIABLE=ma_valeur MA_VARIABLE2="autre valeur"`
+
+Les variables d'environnement permettent d'annoncer au programme l'environnement dans lequel il évolue, par exemple:
+
+`LANG=it_IT.UTF-8`
+
+permet de lancer le programme en italien s'il en est capable. 
+
+Cochez la case *Lancer dans un terminal* si vous souhaitez obtenir des informations de débogage sur le programme. Celà peut faire légèrement varier le comportement du client, notamment la façon dont il est arrêté. Pour choisir l'application de terminal qui exécute les programmes lancés dans un terminal, rendez-vous dans la fenêtre de préférences de RaySession.

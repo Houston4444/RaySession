@@ -1,0 +1,14 @@
+[#patchbay]
+== Baie de brassage
+
+link:../patchbay/index.html[Manuel de la baie de brassage]
+
+la baie de brassage de JACK est affichée par défaut. Vous pouvez la cacher en cliquant sur *Contrôle* puis en décochant *Afficher la baie de brassage de JACK* (__ou Ctrl+J__). La baie de brassage contient tous les ports AUDIO et MIDI de JACK que vous pouvez interconnecter.
+
+Évidemment, si JACK n'est pas démarré, cette baie de brassage sera vide.
+
+Il est conseillé d'avoir le pont A2J lancé si vous voulez travailler correctement avec le MIDI. Vous pouvez configurer celà via *Cadence*, *Studio Control*, ou via l'utilitaire en ligne de commande `a2j_control`.
+
+RaySession n'inclut pas d'outils pour configurer le serveur JACK, *QJackCtl*, *Studio Control*, *Cadence*, ou l'utilitaire en ligne de commande `jack_control` font très bien ce travail. Notez que cette baie de brassage fonctionne également avec PipeWire.
+
+Beaucoup plus d'infos sur la baie de brassage sont sur link:../patchbay/index.html[Le manuel de la baie de brassage].

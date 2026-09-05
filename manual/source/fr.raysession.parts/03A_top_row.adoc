@@ -1,0 +1,26 @@
+=== Ligne du haut
+
+image::../fr/session_ligne_du_haut.png[Ligne du haut de la trame de session]
+
+De gauche à droite:
+
+* le bouton menu vous donne accès à 
+    ** *_sauvegarder la session en cours comme modèle_* +
+    Le modèle de session créé apparaîtra alors dans la boîte à choix multiples de modèles de session dans la fenêtre de dialogue *Nouvelle Session*. Attention toutefois, L'ensemble des fichiers de la session seront sauvegardés dans le modèle, il ne faut donc pas le faire si la session contient beaucoup de fichiers audios. D'une part la copie sera longue, d'autre part vous risquez de multi-copier inutilement des fichiers qui prendront beaucoup de place.
+
+    ** *_Dupliquer la session en cours_* +
+    C'est l'équivalent du bien connu "Sauvegarder sous...", sauf que RaySession est obligé d'arrêter et de redémarrer la plupart des programmes pour passer d'une session à l'autre. Évitez de dupliquer une session avec beaucoup de fichiers audios, celà pourrait être long, mais fort heureusement une telle opération peut être annulée.
+
+    ** *_Renommer la session_* +
+    Il faudra alors arrêter tous les clients. +
+    Alternativement, vous pouvez renommer une session en la dupliquant puis en supprimant le dossier de la session initiale. +
+    Vous pouvez aussi renommer une session en renommant son dossier, mais ATTENTION, cette session ne doit surtout pas être chargée !
+
+* le bouton en forme de crayon vous donne accès aux notes de session. +
+Écrivez ici des informations dont vous avez besoin, des réglages physiques, les paroles d'une chanson, la recette du cassoulet de mamie...toutefois n'y écrivez pas un roman en 3 tomes, d'autres outils sont bien plus adaptés, et les notes sont limitées à 65000 caractères pour des raisons techniques. +
+Le crayon est vert quand des notes existent, il est orange quand la fenêtre de notes est ouverte, sinon il est transparent.
+
+* le nom de la session chargée (ici *ma session*)
+* le bouton *Abandonner la session* qui permet de fermer la session sans la sauvegarder
+* le bouton *Fermer la session*, qui sauvegarde et ferme la session en cours. +
+Notez que vous n'avez pas besoin de fermer la session en cours pour en ouvrir une autre. Certains clients sont capables de basculer d'une session à l'autre et ça peut être beaucoup moins long que de tout fermer pour tout relancer.

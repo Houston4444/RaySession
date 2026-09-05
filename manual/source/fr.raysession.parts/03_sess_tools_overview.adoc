@@ -1,0 +1,5 @@
+== Vue d'ensemble des outils de la session
+
+include::03A_top_row.adoc[]
+
+include::03B_bottom_row.adoc[]

@@ -1,0 +1,45 @@
+[#ajouter_un_programme_non_fourni]
+== Ajouter un programme non fourni
+
+Si le programme que vous voulez ajouter ne gère pas de projet à enregistrer, cliquez sur *Exécutable*, rentrez le nom de l'exécutable et cliquez sur *Ok*. Sinon suivez cet exemple.
+
+Nous voulons ajouter ici Audacity à la session. Audacity est choisi à titre d'exemple parce qu'il est connu et généralement installé sur les distributions audio. Ce n'est pas forcément un programme très adapté à la modularité d'une session audio étant donné la façon dont il gère JACK.
+
+Cliquez sur *Exécutable* (_ou Ctrl+E_). +
+Dans la fenêtre d'ajout d'exécutable, Décochez la case *Protocole NSM*, tapez `audacity` dans le champ d'exécutable et cliquez sur *Ok*.
+
+image::../fr/audacity_executable.png[Fenêtre d'ajout exécutable dûment remplie]
+
+Un nouveau client est créé, sa fenêtre de propriétés s'ouvre sur l'onglet Ray-Hack et Audacity se lance.
+
+Dans Audacity, nous allons directement sauvegarder un projet vide dans le dossier du client. Le dossier du client se trouve dans le dossier de la session et porte le nom donné après *Dossier:* tout en haut de l'onglet Ray-Hack. Nous allons appeler le projet EXACTEMENT comme la session RaySession en cours.
+Pour celà, dans Audacity, faites _Menu -> Fichier -> Sauvegarder le projet -> Sauvegarder le projet_.
+
+image::../fr/audacity_sauver_projet.png[Sauvegarder le projet vide d'audacity]
+
+Cliquez sur *Valider* à l'éventuelle fenêtre d'avertissement. +
+Dans la boîte de sauvegarde de fichiers qui s'ouvre, vous trouverez le dossier de la session en bas à gauche (voir <<raccourcis_dossier_de_session>>), cliquez dessus pour rentrer dedans. À l'intérieur de celui-ci vous devez voir le dossier du client tel qu'il figure en haut de l'onglet Ray-Hack, rentrez dans ce dossier. En haut à gauche de la boîte de sauvegarde, tapez le nom exact de votre session dans le champ *Nom:* puis validez.
+
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/fr/audacity_sauver_fichier.png]
+image::../fr/audacity_sauver_fichier.png[Où sauvegarder le projet Audacity, 640, 480]
+
+Fermez Audacity. +
+En haut à droite de l'onglet Ray-Hack de la fenêtre de propriétés du client, cliquez sur *Naviguer*. +
+
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/fr/audacity_charger_config_file.png]
+image::../fr/audacity_charger_config_file.png[Fenêtre de chargement du CONFIG_FILE, 640, 480]
+
+sélectionnez le projet Audacity que vous venez de créer, son nom commence par le nom de la session et termine par `.aup`.
+
+Si tout s'est bien passé, le champ *Fichier de configuration* est devenu `$RAY_SESSION_NAME.aup` et le champ *Arguments* est devenu `"$CONFIG_FILE"`. +
+Cochez les cases *Attendre une fenêtre avant d'être considéré comme prêt*, *Demander à l'utilisateur de fermer lui même le programme* et *Essayer de fermer gracieusement la fenêtre*. Cliquez en bas à droite sur *Sauvegarder les changements*.
+
+image::../fr/audacity_ray_hack_final.png[Onglet Ray-Hack du client audacity dûment rempli]
+
+Lancez le client Audacity et vérifiez que la fenêtre d'Audacity porte bien le nom de la session. +
+Cliquez sur l'icône du client Audacity, dans le menu déroulant choisissez *Sauvegarder comme modèle d'application*, et rentrez `Audacity` dans le champ de la boîte de dialogue qui est apparue.
+Maintenant lorsque vous voudrez lancer Audacity dans la session, vous n'aurez qu'à lancer le modèle Audacity depuis la fenêtre d'ajout d'applications.
+
+Notez que le bouton de sauvegarde du client est derrière un point d'exclamation orange, celà signifie que RaySession n'est pas en mesure de sauvegarder son projet et qu'il faudra le faire vous même.
+
+Selon le programme que vous souhaitez ajouter à la session, il est possible que ce ne soit pas toujours aussi facile. Certains programmes vont exiger un argument qui précède le fichier de configuration, dans ce cas tapez `mon_programme --help` ou `man mon_programme` pour savoir comment charger un projet au démarrage du programme, et adaptez celà dans le champ *Arguments*.

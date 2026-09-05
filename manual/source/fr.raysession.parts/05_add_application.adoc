@@ -1,0 +1,44 @@
+[#ajout_application]
+== Fenêtre d'ajout d'application
+
+Le fenêtre d'ajout d'application se lance en cliquant sur le bouton *Application* (_ou Ctrl+A_).
+
+image::../fr/ajout_application.png[Fenêtre d'ajout d'application]
+
+La liste des applications disponibles est à droite. Si le logiciel que vous souhaitez lancer n'est pas présent ici, regardez <<ajouter_un_programme_non_fourni>>.
+
+'''
+
+En haut à gauche, c'est le bloc de filtres
+
+image::../fr/ajout_application_filtre.png[Bloc de filtre de la fenêtre d'ajout d'application]
+
+
+* le champ de filtre permet de rentrer une chaîne de caractères, seuls les modèles contenant cette chaîne de caractères dans leur nom apparaîtront.
+* la case à cocher *Usine* affiche les modèles intégrés à RaySession ou fournis par votre distribution
+* *utilisateur* affiche les modèles créés par l'utilisateur en faisant *Sauvegarder comme modèle d'application*
+* *NSM* affiche les clients compatibles NSM, ou lancés comme tel (voir <<ajouter_un_programme_non_fourni>>)
+* *Ray-Hack* affiche les clients lancés sans protocole NSM
+
+'''
+
+En bas à gauche le bloc d'informations sur le modèle sélectionné à droite
+
+image::../fr/ajout_application_infos.png[Bloc d'informations sur le modèle sélectionné]
+
+* en haut à droite de ce bloc, une étoile, cliquez dessus pour l'ajouter aux favoris ou l'enlever des favoris
+* Si c'est un modèle utilisateur, un bouton *Utilisateur* vous permet de supprimer ce modèle
+* le bouton en bas à droite de ce bloc vous permet d'accéder à toutes les propriétés du modèle, comme dans la <<proprietes_de_client>>, sauf que rien n'est éditable.
+
+*Astuce :* Cette fenêtre est conçue pour un ajout d'application très rapide, et se comporter comme _Alt+F2_ sur votre bureau. +
+Par exemple, depuis la fenêtre principale de RaySession, pour ajouter Carla tapez _Ctrl+A_, puis `carla`, sélectionnez le bon modèle avec les flèches Haut/Bas, puis Entrée.
+...
+
+Tout en bas de la fenêtre figure le champ *Identifiant unique*.
+
+image::../fr/ajout_application_unique_id.png[Champ de saisie de l'identifiant unique]
+
+Ce champ est utile si vous utilisez plusieurs instances du même programme (par exemple plusieurs fois Carla), pour les distinguer plus facilement dans la liste d'applications, dans la baie de brassage et dans les fichiers de la session.
+L'identifiant final du programme lancé ne contiendra ni espaces ni caractères spéciaux, mais ils peuvent être utilisés pour l'étiquette.
+
+Si vous ne savez pas quoi taper ici, ne tapez rien, ça devrait bien se passer. 

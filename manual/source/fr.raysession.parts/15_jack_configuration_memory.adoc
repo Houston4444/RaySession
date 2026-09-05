@@ -1,0 +1,65 @@
+[#memoire_de_la_configuration_de_jack]
+== Mémoire de la configuration de JACK
+
+Il est possible grâce aux scripts de session de rappeler automatiquement la configuration de JACK spécifique à une session avant de la charger.
+Ce comportement pourra rappeler à certains le fonctionnement des studios LADISH, en beaucoup mieux fait, du moins c'est ce qui est espéré.
+
+=== Dans quels cas l'utiliser
+
+Celà peut s'avérer utile:
+
+* Si vous avez besoin d'utiliser une interface audio spécifique pour la session
+* Si vous travaillez sur de multiple projets avec des fréquences d'échantillonage différentes (telle session sur 44100 Hz, telle autre sur 48000 Hz). +
+Ainsi celà vous évitera d'avoir à reconfigurer, arrêter et redémarrer JACK vous même, ou encore d'éviter d'oublier de le faire et de se faire insulter par certains programmes.
+* Si vous voulez éviter de charger une session très gourmande en DSP (par exemple en phase de mixage) avec un tampon trop petit (128 par exemple). +
+Notez que sur la plupart des interfaces audio, il est possible de changer la taille du tampon à chaud (sans redémarrer JACK).
+
+=== Utilisation
+Il est nécessaire que l'option <<option_scripts_de_session>> soit enclenchée (Cette option est enclenchée par défaut).
+
+Pour utiliser le mémoire de configuration de JACK, créez une nouvelle session à partir du modèle *Avec mémoire de la configuration de JACK*. +
+Il s'agit en fait d'une session scriptée (voir <<les_scripts_de_session>>) qui lance un script fourni avec RaySession, mais qui lui est complètement externe, ainsi RaySession n'a toujours aucun rapport direct avec JACK.
+
+Lisez la fenêtre d'informations à ce sujet puis validez. JACK redémarre puis votre session se lance.
+
+=== Principe de fonctionnement
+
+À chaque fois que la session est sauvegardée, la configuration de JACK est sauvegardée dans la session, dans le fichier `jack_parameters`. +
+Avant l'ouverture de la session, JACK est redémarré si la configuration de la session est différente de la configuration actuelle de JACK. +
+Après la fermeture de la session, JACK est si nécessaire redémarré avec la configuration en cours avant l'ouverture.
+
+La configuration des ponts *PulseAudio -> JACK* est également sauvegardée et restaurée avec la configuration de JACK.
+
+Si vous ouvrez cette session après l'avoir copiée sur un autre ordinateur, la configuration de JACK ne sera pas rappellée mais sera écrasée lors de la sauvegarde. Seule la fréquence d'échantillonage de la session sera utilisée.
+
+=== Cas particuliers
+
+'''
+
+*Pour ouvrir une session sans recharger sa configuration de JACK:*
+
+* désactivez l'option <<option_scripts_de_session>>
+* ouvrez la session
+
+'''
+
+*Pour changer la configuration de JACK d'une session:*
+
+* Démarrez JACK avec la configuration désirée
+* Désactivez l'option <<option_scripts_de_session>>
+* Ouvrez la session
+* Ré-activez l'option <<option_scripts_de_session>>
+* Sauvegardez la session
+
+'''
+
+*Pour rendre une ancienne session sensible à la configuration de JACK*
+
+* copiez le dossier `ray-scripts` d'une session avec mémoire de la configuration de JACK dans le dossier de la session
+* Activez l'option <<option_scripts_de_session>>
+* Ouvrez la session
+
+*ou*
+
+* déplacez la session dans un sous-dossier contenant le dossier `ray-scripts` adhoc
+* Ouvrez la session

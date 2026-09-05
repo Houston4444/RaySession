@@ -1,0 +1,18 @@
+=== Onglet *Général*
+
+image::../fr/proprietes_general.png[Propriétés d'un client]
+
+* Le premier bloc de l'onglet *Général* affiche l'identifiant, le protocole, l'étiquette, la description et l'icône du client. +
+Si vous ne les éditez pas, l'étiquette, la description et l'icône sont tirées du fichier .desktop associé à l'exécutable lancé, s'il a été trouvé. +
+Si vous tenez à connaître le fichier .desktop utilisé, tapez `ray_control client IDENTIFIANT get_properties` dans un terminal (en remplaçant IDENTIFIANT par l'identifiant du client).
+* Ensuite vient le bloc des clichés, voir <<cliches>>.
+* la case à cocher *Empêcher l'arrêt sans sauvegarde récente ou possible* concerne la fenêtre qui peut apparaître lorsque vous demandez à un client de s'arrêter.
+    Si cette case est décochée, alors le client sera stoppé sans qu'une fenêtre ne vous prévienne. +
+    Si la case est cochée, la fenêtre vous previendra lorsque
+
+        ** le client est non-sauvegardable depuis RaySession
+        ** on sait que le client contient des changements non sauvegardés
+        ** le client semble ne pas avoir été sauvegardé depuis plus d'une minute
+
++    
+cocher cette case ou non dépend seulement de l'importance de la sauvegarde de votre client, à vous de juger. Celà dit, si la fenêtre d'avertissement vous agace, vous n'aurez qu'à cocher la case *Ne plus empêcher l'arrêt du client* dans cette fenêtre et la case *Empêcher l'arrêt sans sauvegarde récente ou possible* sera décochée.

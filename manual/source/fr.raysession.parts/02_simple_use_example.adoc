@@ -1,0 +1,60 @@
+== Exemple d'utilisation simple
+
+Pour la production audio sous GNU/linux, Il est largement conseillé d’utiliser le serveur JACK. Avant de créer ou de lancer une session, assurez-vous que le serveur JACK tourne, RaySession n’a aucun rapport direct avec JACK, toutefois les programmes que vous allez lancer dans votre session en auront besoin.
+
+Prenons un exemple où pour composer un morceau, nous aurons besoin des logiciels Ardour et Guitarix, assurez vous que ces 2 programmes soient installés.
+
+Pour créer une nouvelle session, cliquez en haut à gauche sur *Nouvelle Session* (_ou Ctrl+N_). Apparaît alors une fenêtre de dialogue.
+
+image::../fr/exemple_nouvelle_session.png[Nouvelle session]
+
+En haut à droite vous apercevez le dossier racine des sessions, c’est là que les sessions seront sauvegardées (une session RaySession étant un dossier contenant un fichier `raysession.xml`).
+
+Rentrez le nom voulu pour cette nouvelle session dans le champ prévu à cet effet. Pour mettre votre nouvelle session dans un sous-dossier, tapez le nom de la manière suivante : `sous-dossier/ma session` .
+
+La boîte à choix multiples de modèles de session vous permet de choisir entre
+
+* Un modèle de session vide
+* Un modèle avec mémoire des connexions JACK
+* Un modèle scripté avec mémoire de la configuration de JACK
+* Un modèle avec les scripts de session de base (pour les utilisateurs avancées pourvus de connaissances en script shell)
+* Tous les modèles de session que vous aurez vous-même créés.
+
+Dans un premier temps, laissez le modèle sur *Avec mémoire du patch de JACK*, cliquez sur *Ok* pour lancer votre session.
+
+image:../fr/exemple_session_lancee.png[Session lancée]
+
+La partie session de la fenêtre devient active, en haut est écrit le nom de votre session, et votre session contient déjà un programme client qui s'appelle *Connexions JACK*. C'est lui qui sauvegardera et refera les connexions de la baie de brassage de JACK.
+
+Pour ajouter Ardour à votre session, cliquez sur le bouton *Application* (ou Ctrl+A), apparaît alors la fenêtre des applications (plus de détails à la rubrique <<ajout_application>>). Dans la partie droite, cherchez Ardour (selon votre version d'ardour, il est possible qu'il s'appelle Ardour5 ou Ardour6) et double-cliquez dessus.
+
+image:../fr/exemple_ajouter_ardour.png[Ajouter Ardour à la session, 640, 480]
+
+Un client *Ardour* apparaît en dessous de *Connexions JACK* et Ardour démarre (normalement directement avec une session Ardour vide).
+
+Faites de même avec Guitarix.
+
+image:../fr/exemple_session_prete.png[Session prête avec Ardour et Guitarix]
+
+Dans Ardour, ajoutez une piste (Menu: Piste -> Ajouter une piste), dans la fenêtre Ardour qui est apparue, nommez la piste _Guitare_ et mettez la boîte à choix multiples *configuration* sur _Stereo_.
+
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/fr/exemple_ardour_piste.png]
+image:../fr/exemple_ardour_piste.png[Ajouter une piste Ardour pour Guitarix, 640, 480]
+
+
+Servez-vous maintenant de la <<patchbay>> de JACK qui occupe la partie droite de la fenêtre de RaySession.
+Connectez l'entrée de Guitarix à une entrée matérielle et les sorties de Guitarix vers les entrées de cette nouvelle piste Ardour. Assurez vous que les entrées de votre piste *Guitare* ne sont pas connectées aux entrées matérielles.
+
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/common/example_patchbay.png]
+image::example_patchbay.png[Baie de brassage de ma session]
+
+Voilà, vous avez une configuration où vous pouvez enregistrer directement le son de votre guitare traité par Guitarix dans Ardour. Si vous n'avez pas de guitare, vous n'avez qu'à chanter faux dans un micro ou taper sur un coussin, ce n'est ici qu'un exemple.
+
+Sauvegardez la session en cours en cliquant sur le bouton en forme de disquette vers le haut à droite de la partie Session (_ou Ctrl+S_). Il est vivement recommandé car très pratique d'affecter un raccourci clavier global de votre système à la sauvegarde de la session en cours. Celà dependra de votre environnement de bureau, mais il suffit d'affecter le raccourci _Ctrl+Meta+S_ à la commande `ray_control save` (Meta est la touche Windows), ainsi vous n'aurez pas à retourner à la fenêtre de RaySession pour sauvegarder la session.
+
+Maintenant, fermez la session en cliquant sur la croix rouge en haut à droite de la partie Session(_ou Ctrl+W_).
+
+Une fois la session fermée, cliquez sur *Ouvrir une session* (_ou Ctrl+O_), double-cliquez sur la session que vous venez de créer pour la ré-ouvrir.
+
+Vous devez retrouver les programmes et leur projet ainsi que les connexions de JACK telles qu'elles étaient quand vous avez fermé la session, et tout fonctionne donc sans aucune autre manipulation. +
+Un des avantages de la modularité dans ce cas précis, c'est qu'une fois qu'on aura terminé les prises de guitare, on pourra arrêter Guitarix pour ne pas surcharger le processeur inutilement, et il sera tout de même facile de le redémarrer si besoin.

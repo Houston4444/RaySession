@@ -1,0 +1,52 @@
+=== Onglet *Ray-Hack*
+
+Si le client est de type Ray-Hack, ici moult champs s'offrent à vous. Ce n'est pas forcément une bonne nouvelle, l'idée est de pouvoir charger dans la session un programme qui n'est pas (encore) compatible NSM. S'il est bien implémenté dans le client, le protocole NSM sera toujours bien plus confortable à utiliser et plus fiable que cette bidouille. Ceçi dit, si l'on peut attendre l'implémentation NSM dans tous les programmes audio, ce n'est pas le cas des autres programmes qui peuvent tout de même avoir une utilité dans la session.
+
+Le pseudo-protocole Ray-Hack reprend les attributs des proxy (nsm-proxy ou ray-proxy), sauf que le client est lancé directement dans la session.
+
+image::../fr/proprietes_ray_hack.png[Propriétés Ray-Hack d'un client]
+
+==== Bloc de lancement
+
+image::../fr/ray_hack_lancement.png[]
+
+* le *Dossier* est le nom du dossier de ce client, dans le dossier de la session. Le programme est lancé depuis ce dossier.
+* L'**Exécutable** est la commande qui lance le programme
+* Le *Fichier de configuration* sera le fichier du projet qu'on souhaitera ouvrir avec ce programme. Il plus que très recommandé de faire référence à un fichier dans le dossier du client. +
+La variable `$RAY_SESSION_NAME` sera automatiquement remplacée par le nom de la session. +
+Si ce champ est vide, le client restera toujours sur le statut *lancé* et jamais *prêt*. Dans certains cas, il peut donc être utile de taper n'importe quoi ici plutôt que rien.
+* Le bouton *Naviguer* ouvre une boîte de dialogue pour aller chercher le fichier de projet et remplir le champ *Fichier de configuration*
+* Le champ *Arguments* comprend les arguments passés à la commande *Exécutable* +
+les arguments sont découpés comme ils le seraient dans un terminal, n'oubliez pas les *"* ou les *'* si nécéssaire. +
+par exemple pour reproduire `ma_commande mon_argument_1 "mon argument 2"` rentrez `ma_commande` dans le champ *Exécutable* et `ma_commande mon_argument_1 "mon argument 2"``dans le champ *Arguments*.
+
+==== Bloc des signaux
+
+image::../fr/ray_hack_signaux.png[]
+
+* Le *Signal de sauvegarde* ne peut être que rarement utilisé. Il peut être SIGUSR1 pour les programmes compatibles avec le vieux protocole LASH. Sinon laissez le sur _Aucun_, s'il n'y a pas de méthode de sauvegarde, on ne peut pas l'inventer.
+* Le *Signal d'extinction* sera généralement _SIGTERM_. Ne le changez qu'au cas où ce signal ne ferme pas correctement le programme.
+* si la case *Attendre une fenêtre avant d'être considéré comme prêt* est cochée, alors le statut du client ne passera sur *prêt* que lorqu'une fenêtre apparaitra. +
+Si `wmctrl` n'est pas installé, ou que le gestionnaire de fenêtres ne semble pas compatible avec, alors le client passera sur *prêt* une demi-seconde après son lancement.
+
+Avec `ray_control` vous pouvez affecter d'autres signaux que ceux proposés dans les boîtes à choix multiple.
+Par exemple +
+`ray_control client CLIENT_ID set_properties save_sig:22` +
+définira le signal *SIGTTOU* pour la sauvegarde du client CLIENT_ID.
+Tapez `kill -l` pour connaître les signaux disponibles et leurs numéros.
+
+==== Bloc de gestion des non-sauvegardables
+
+image::../fr/ray_hack_non_sauvegarde.png[]
+
+Ce bloc n'est actif que si le *Signal de sauvegarde* est reglé sur _Aucun_
+
+* si la case *Demander à l'utilisateur de fermer lui-même le programme à la fermeture de la session* est cochée, le client sera alors considéré comme non sauvegardable et un point d'exclamation orange apparaitra devant son icône de sauvegarde. À la fermeture de la session, RaySession attendra que vous fermiez vous-même le programme car il est impossible de savoir s'il contient des changements non sauvegardés.
+* Si la case *Essayer de fermer gracieusement la fenêtre* est cochée, alors à la fermeture de la session, RaySession essaiera de fermer la fenêtre comme si vous fermiez la fenêtre du programme. C'est très pratique lorsque le programme réagit en se fermant s'il n'y a pas de changements non sauvegardés et en affichant une fenêtre de confirmation de fermeture dans le cas inverse (la plupart des programmes réagissent de la sorte). Si `wmctrl` n'est pas installé ou que le gestionnaire de fenêtres ne semble pas compatible, vous devrez fermer le programme vous même dans tous les cas.
+
+==== Zone de test
+
+image::../fr/ray_hack_zone_test.png[]
+
+La zone de test vous permet de tester les réglages de lancement, d'arrêt et de sauvegarde réglés dans cette fenêtre sans avoir à *Sauvegarder les changements*.
+

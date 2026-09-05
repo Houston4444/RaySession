@@ -1,0 +1,12 @@
+== Foire aux questions
+
+- *Est-il toujours intéressant de lancer Ardour (ou un autre DAW compatible NSM) directement plutôt que dans RaySession ?*
+
++
+Sauf pour un projet vraiment tout petit, Non. +
+Si vous utilisez Ardour, lancez le toujours depuis RaySession, d'une part le cliché automatique à la sauvegarde peut vous être d'un secours inespéré, d'autre part, vous n'êtes pas à l'abri d'avoir besoin d'un autre programme même si vous ne l'aviez pas prévu.
+
+- *Puis-je lancer dans une session RaySession un projet Ardour déjà existant ?*
+
++
+Vous trouverez dans le menu *Fichier -> Utilitaires -> Convertir une session Ardour en session Ray*, celà crée et lance une session RaySession à partir d'une session Ardour. Il n'est pas surfait de faire une copie de sauvegarde de votre session Ardour avant de lancer ce script. Bien évidemment, il ne faut pas que Ardour soit ouvert avec cette session pendant l'execution de ce script, mais ça vous l'aviez déjà compris.

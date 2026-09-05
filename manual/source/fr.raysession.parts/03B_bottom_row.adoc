@@ -1,0 +1,35 @@
+=== Ligne du bas
+
+image::../fr/session_ligne_du_bas.png[Ligne du bas de la trame de session]
+
+De gauche à droite:
+
+* le bouton en forme de dossier pour ouvrir le dossier de la session avec votre gestionnaire de fichiers
+* le bouton en forme d'étoile jaune qui déroule un menu contenant vos applications favorites s'il y en a
+* le bouton *Application* qui permet d'ajouter à la session un modèle d'application d'usine ou que vous aurez créé vous même. C'est la méthode conseillée pour ajouter un client. voir <<ajout_application>>.
+
+* le bouton *Exécutable* qui permet d'ajouter à la session un programme depuis son exécutable. Vous en aurez besoin si vous souhaiter ajouter un programme pour lequel il n'existe pas de modèle. voir <<ajout_executable>>.
+
+* le bouton de marche arrière pour revenir à un état précédent de la session. Celà nécessite d'avoir le programme `git` installé, sinon ce bouton n'apparaîtra pas. +
+Voir <<cliches>> pour plus de détails.
+
+* l'indicateur d'état du serveur. +
+    Les états du serveur peuvent être en réalité très furtifs, mais ils sont affichés pendant un temps suffisament long pour que vous puissiez les voir. +
+    L'état du serveur peut être:
+
+    ** *éteint* : pas de session en cours
+    ** *prêt* : la session est en cours
+    ** *lancement* : lancement des programmes de la session
+    ** *copie* : une copie est en cours, pour une duplication de session ou une sauvegarde de la session comme modèle
+    ** *fermeture* : la session est en train de se fermer
+    ** *cliché* : un cliché de la session est en train d'être pris, donc vous pourrez revenir à l'état actuel la session. +
+        voir <<cliches>>.
+    ** *attente* : Le serveur attend que vous fermiez vous-même des programmes non sauvegardables
+    ** *script* : un script est actionné
+
++
+Une fenêtre d'information ou de progression s'affiche si vous cliquez sur cet indicateur d'état s'il est sur *copie*, *cliché* ou *attente*.
+    
+    
+* le bouton de sauvegarde de la session
+* la corbeille, vous trouverez ici les clients que vous avez supprimés. Vous pourrez alors les restaurer dans la session ou supprimer définitivement tous les fichiers qu'ils ont créé dans le dossier de la session.

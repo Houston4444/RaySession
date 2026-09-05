@@ -1,0 +1,49 @@
+== Vue d'ensemble d'un client
+
+image::../fr/client_carla.png[trame d'un client]
+
+Un client contient de gauche à droite:
+
+* L'icône du client sur laquelle vous pouvez cliquer pour faire apparaître un menu avec les actions suivantes
+    ** *Sauvegarder comme modèle d'application* +
+        Le modèle créé apparaîtra alors dans la <<ajout_application>>. Celà permet par la suite de lancer directement un client avec la configuration souhaitée (Ardour avec telles pistes, Hydrogen avec tel kit de batterie...). Attention, celà copie tous les fichiers du client donc évitez de le faire si le client contient beaucoup de fichiers audio.
+    ** *Renommer* +
+        Changer le nom du client. +
+        La fenêtre de dialogue qui s'ouvre alors contient la case *Renommage de l'identifiant*, si vous la cochez le nouveau nom sera appliqué à l'étiquette, à l'identifiant, aux clients JACK et aux fichiers dans le dossier de la session. +
+        Sinon, ça ne modifiera que l'étiquette située à droite de l'icône du client, il s'agit d'un nom purement visuel qui peut vous aider à retrouver vos moutons
+    ** *retourner à un état précédent* +
+        Permet de faire revenir uniquement le client à un état antérieur de la session, voir <<cliches>>. +
+        Vous ne pourrez toutefois pas revenir à un état antérieur à un renommage de la session, pour celà il faut faire revenir toute la session en arrière.
+    ** *Propriétés* +
+        Affiche la fenêtre des propriétés du client
+
++    
+Ce menu est aussi accessible par clique droit n'importe où sur le client
+    
+* Le nom du client (ici *Carla*), qui peut-être changé facilement par clique droit -> renommer
+
+* selon le type et les capacités du client vous pouvez voir ici
+    ** un oeil (éventuellement barré), celà signifie que le client est compatible NSM et qu'il est capable d'afficher ou cacher sa fenêtre en cliquant sur l'oeil.
+    ** un bouton *Hack*, celà signifie que le client n'est pas compatible NSM, en tout cas qu'il n'est pas lancé avec ce protocole. Cliquer sur Hack permet de changer la façon dont il est lancé en ouvrant la fenêtre de propriétés du client sur l'onglet Ray-Hack
+    
+
+* Le bouton *Démarrer* qui est grisé si le client est déjà démarré
+* le bouton *Arrêté* qui est grisé si le client n'est pas démarré. Si vous arrêtez le client et qu'il n'est toujours pas arrêté après un certain temps, le bouton devient rouge et vous pouvez cliquer dessus pour tuer le client. Mais restez détendus, et ne l'utilisez que si vraiment il vous semble complètement inerte, celà pourrait causer des problèmes, même si a priori personne ne vous enverra en prison.
+* l'état du client qui peut être
+    ** *arrêté* : le client est arrêté
+    ** *prêt* : il est lancé et fonctionnel
+    ** *ouverture* : le programme est en train d'ouvrir son projet, patientez un peu
+    ** *fermeture* : le programme est en train de se fermer
+    ** *lancé* : s'il reste sur l'état lancé, celà signifie
+        *** si c'est un client Ray-Hack, qu'il n'a pas de fichier de configuration
+        *** s'il est lancé comme un client NSM, qu'il n'est pas compatible NSM, et qu'ainsi toute sauvegarde est vaine. Il peut être pratique de lancer de cette façon certains programmes tels qu'une baie de brassage (Catia) ou un utilitaire dont on n'a pas besoin de sauvegarder l'état (Qrest).
+    ** *bascule* : le client change de projet pendant un changement de session
+    ** *perdu* : le client est arrêté mais le terminal qui le lance est toujours ouvert (si le client est lancé dans un terminal, voir <<proprietes_de_client>>.)
+    
+* le bouton en forme de disquette qui permet de sauvegarder le client. +
+    Si par dessus cette disquette vous voyez
+    ** trois points rouges: le client contient des changements non sauvegardés
+    ** un V vert: le client ne contient pas de changements non sauvegardés
+    ** un point d'exclamation orange: Ce n'est pas un client NSM, et il est impossible de sauvegarder son projet, vous devrez le faire vous même
+    
+* la croix rouge qui permet d'envoyer le client à la corbeille
