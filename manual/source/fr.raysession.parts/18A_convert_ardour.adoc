@@ -1,0 +1,4 @@
+- *Puis-je lancer dans une session RaySession un projet Ardour déjà existant ?*
+
++
+Vous trouverez dans le menu *Fichier -> Utilitaires -> Convertir une session Ardour en session Ray*, celà crée et lance une session RaySession à partir d'une session Ardour. Il n'est pas surfait de faire une copie de sauvegarde de votre session Ardour avant de lancer ce script. Bien évidemment, il ne faut pas que Ardour soit ouvert avec cette session pendant l'execution de ce script, mais ça vous l'aviez déjà compris.

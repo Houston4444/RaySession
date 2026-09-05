@@ -1,0 +1,6 @@
+Now use JACK's <<patchbay>> which occupies the right side of the RaySession window.
+
+Connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.
+
+[caption="Figure 1: ",link=XXX_IMAGES_XXX/common/example_patchbay.png]
+image::example_patchbay.png[My session patchbay]

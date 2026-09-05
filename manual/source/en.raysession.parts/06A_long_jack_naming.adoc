@@ -1,0 +1,1 @@
+* the *Long JACK naming* checkbox. If this box is checked, clients will be supposed to use `ProgramName.ClientId` as JACK client name, else it will be `ProgramName`, possibly followed by `_N` (where N is a number). This is very useful if you use many instances of the same program, and you want to identify them easily in the patchbay.

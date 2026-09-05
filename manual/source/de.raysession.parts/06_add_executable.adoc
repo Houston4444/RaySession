@@ -33,4 +33,4 @@ image::../en/add_executable_plus.png[Advanced Add Executable window]
 * Das *Klient ID* Feld (der Klient Identifikator). Nutzen Sie lediglich alphanumerische Zeichen oder '_'. +
 Dies ist nützlich, wenn Sie in der Session bestehende Projekte bestimmen und starten wollen. Auch, wenn Sie Session Projekte ausserhalb der bestehenden Session laden wollen. Es gibt keine einfachere Weise, dies zu tun. Die Details hängen stark von der jeweilig genutzten Anwendung ab. Falls Sie eine in der Session bereits verwendete ID eingeben, wird RaySession darauf entsprechend lautstark hinweisen.
 
-* the *Long JACK naming* checkbox. If this box is checked, clients will be supposed to use `ProgramName.ClientId` as JACK client name, else it will be `ProgramName`, possibly followed by `_N` (where N is a number). This is very useful if you use many instances of the same program, and you want to identify them easily in the patchbay.
+include::../en.raysession.parts/06A_long_jack_naming.adoc[]

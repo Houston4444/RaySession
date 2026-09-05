@@ -32,4 +32,4 @@ image::../en/add_executable_plus.png[Advanced Add Executable window]
 * the *Client ID* field (client identifier). Enter only alphanumeric characters or '_'. +
 This is useful if you want to catch and launch existing projects in the session with an executable. This is useful if you want to load in the session projects created outside a session. There is no method to make it easier, it depends a lot on the program you are using. RaySession will insult you if you enter a client ID that already exists in the session.
 
-* the *Long JACK naming* checkbox. If this box is checked, clients will be supposed to use `ProgramName.ClientId` as JACK client name, else it will be `ProgramName`, possibly followed by `_N` (where N is a number). This is very useful if you use many instances of the same program, and you want to identify them easily in the patchbay.
+include::06A_long_jack_naming.adoc[]

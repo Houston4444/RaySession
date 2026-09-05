@@ -51,12 +51,7 @@ Fügen Sie in Ardour eine Spur hinzu (Menu: Spur → Füge Spur hinzu). In dem s
 [caption="Figure 1: ",link=XXX_IMAGES_XXX/en/example_ardour_track.png]
 image::../en/example_ardour_track.png[Add a track in Ardour for Guitarix, 640, 480]
 
-Now use JACK's <<patchbay>> which occupies the right side of the RaySession window.
-
-Connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.
-
-[caption="Figure 1: ",link=XXX_IMAGES_XXX/common/example_patchbay.png]
-image::example_patchbay.png[My session patchbay]
+include::../en.raysession.parts/02A_patchbay_connect.adoc[]
 
 Dies ist ein Beispiel, in dem der Gitarrensound durch Guitarix verarbeitet direkt in Ardour aufgenommen wird. Falls Sie über keine Gitarre verfügen, können Sie auch in ein Mikrofon singen, es handelt sich lediglich um ein Beispiel.
 

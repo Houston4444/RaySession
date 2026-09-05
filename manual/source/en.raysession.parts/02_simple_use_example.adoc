@@ -40,12 +40,7 @@ In Ardour, add a track (Menu: Track → Add a track), in the Ardour window that 
 [caption="Figure 1: ",link=XXX_IMAGES_XXX/en/example_ardour_track.png]
 image::../en/example_ardour_track.png[Add a track in Ardour for Guitarix, 640, 480]
 
-Now use JACK's <<patchbay>> which occupies the right side of the RaySession window.
-
-Connect the Guitarix input to a hardware input and the Guitarix outputs to the inputs of this new Ardour track. Make sure your Guitar track inputs are not connected to the hardware inputs.
-
-[caption="Figure 1: ",link=XXX_IMAGES_XXX/common/example_patchbay.png]
-image::example_patchbay.png[My session patchbay]
+include::02A_patchbay_connect.adoc[]
 
 Here you have a configuration where you can directly record the sound of your guitar processed by Guitarix in Ardour. If you don't have a guitar, all you have to do is sing out of tune into a mic or tap a cushion, this is just an example.
 

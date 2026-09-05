@@ -1,0 +1,4 @@
+- *Can I launch an Ardour session launched normally into a RaySession session ?*
+
++
+You will find in the menu *File -> Utililies -> Convert an Ardour session to a Ray session*, it creates and launch a RaySession session from an ardour session. It is adviced to backup your ardour session first. Obviously, Ardour must not be open with this session during the execution of this script, but you already knew that.

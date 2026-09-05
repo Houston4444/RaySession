@@ -5,7 +5,4 @@
 Ausser für wirklich winzige Projekte, eher nein.
 Falls Sie Ardour nutzen, starten Sie es immer in einer RaySession. Erstens können Ihnen die automatisierten Snapshots unerwartet von grossem Nutzen sein, zweitens ist es möglich, dass Sie später noch eine weitere Anwendung nutzen wollen, auch wenn Sie dies bisher noch nicht geplant haben.
 
-- *Can I launch an Ardour session launched normally into a RaySession session ?*
-
-+
-You will find in the menu *File -> Utililies -> Convert an Ardour session to a Ray session*, it creates and launch a RaySession session from an ardour session. It is adviced to backup your ardour session first. Obviously, Ardour must not be open with this session during the execution of this script, but you already knew that.
+include::../en.raysession.parts/18A_convert_ardour.adoc[]
