@@ -1,0 +1,28 @@
+=== Top row
+
+image::../en/session_top_line.png[Top line of the session frame]
+
+From left to right:
+
+* the menu button gives you access to
+** *save the current session as a template* +
+The created session template will then appear in the multiple choice of session templates in the New Session dialog window. Be careful, however, all the files of the session will be saved in the template, so you should not do this if the session contains a lot of audio files. firstly, the copy will be long, secondly, you run the risk of unnecessarily multi-copying files which will take up a lot of space.
+
+** *Duplicate the current session* +
+This is the equivalent of the well-known "Save As ...", except that RaySession has to stop and restart most programs to switch between sessions. Avoid duplicating a session with a lot of audio files, it could take a long time, but fortunately such an operation can be stopped.
+
+** *Rename the session* +
+It will then be necessary to stop all the clients. +
+Alternatively, you can rename a session by duplicating it and then deleting the folder from the initial session. +
+You can also rename a session by renaming its folder, but BE CAREFUL, this session must not be loaded!
+
+* the pencil-shaped button gives you access to the session notes. +
+Write here the information you need, the physical settings, the lyrics of a song, the recipe for granny's cassoulet ... however do not write a novel in 3 volumes, other tools are much more suitable, and notes are limited to 65,000 characters for technical reasons.
+The pencil is green when notes exist, it is orange when the notes window is open, otherwise it is transparent.
+
+* the name of the loaded session (here *my session*)
+
+* the *Abort session* button which allows you to close the session without saving it
+
+* the *Close session* button ,which saves and closes the current session. +
+Note that you do not need to close the current session to start another. Some clients are able to switch from one session to another and it may take a lot less time than closing everything and restarting everything.

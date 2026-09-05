@@ -1,0 +1,10 @@
+=== *NSM* tab
+
+image::../en/properties_nsm.png[NSM Client properties]
+
+The *Name* of the client here is provided by the client himself. +
+The *capabilities* are those which are transmitted by the client at its start-up. If the client has not yet been started, this field is therefore empty.
+
+Editing the executable allows you to change the command that launches the client. Only change it to another executable capable of loading the existing client's project. This is useful for example if you have two versions of Ardour, one running with the command `ardour`, the other with `Ardour6`, and you want to change which version to use.
+
+Editing the arguments is strongly discouraged, and is especially not suitable for loading a file as an argument.

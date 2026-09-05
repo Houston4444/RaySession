@@ -1,0 +1,33 @@
+=== Bottom row
+
+image::../en/session_bottom_line.png[Bottom line of the session frame]
+
+From left to right:
+
+* the folder-shaped button to open the session folder with your file manager
+* the yellow star-shaped button that pulls down a menu containing your favorite applications if there are any
+* the *Application* button which allows you to add to the session a factory application template or that you have created yourself. This is the recommended method for adding a client. see <<add_application>>.
+* the *Executable* button which allows a program to be added to the session from its executable. You will need it if you want to add a program for which there is no template. see <<add_executable>>.
+
+* the reverse button to return to a previous state of the session. This requires having the program `git` installed, else this button will not appears. +
+See <<snapshots>> for more details.
+
+* the server status indicator. +
+Server states can actually be very stealthy, but they are displayed for a long enough time that you can see them.
+The server status can be:
+
+** *off*: no session loaded
+** *ready*: the session is running
+** *launch*: launch of the session's programs
+** *copy*: a copy is in progress, for a session duplication or to save the session as a template
+** *close*: the session is closing
+** *snapshot*: A snapshot of the session is being taken, so you can revert to the current session state. +
+see <<snapshots>>.
+** *wait*: The server waits for you to close yourself non-saveable programs
+** *script*: a script is activated
+
++
+An information or progress window is displayed if you click this status indicator if it is on *copy* , *snapshot*, or *wait*.
+
+* the *Save Session* button
+* the trash, here you will find the clients that you have deleted. You can then restore them in the session or permanently delete all the files they created in the session folder.

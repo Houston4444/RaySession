@@ -1,0 +1,17 @@
+=== *General* tab
+image::../en/properties_general.png[Client properties]
+
+The first block of the General tab displays the client ID, protocol, label, description and icon. +
+If you do not edit them, the label, description and icon are taken from the .desktop file associated with the launched executable, if found. +
+If you want to know the .desktop file used, type `ray_control client CLIENT_ID get_properties` in a terminal (replacing CLIENT_ID with the client identifier).
+
+Then comes the block of snapshots, see <<snapshots>>.
+
+The checkbox *Prevent stop without recent or possible save* concerns the window that may appear when you ask a client to stop. If this box is unchecked, then the client will be stopped without a window warning you. +
+If the box is checked, the window will warn you when
+
+* the client is unsaveable from RaySession
+* we know that the client contains unsaved changes
+* the client appears not to have been saved for more than a minute
+
+Whether or not to check this box depends only on the importance of your client's save, it's up to you to judge. That said, if the warning is annoying, just check  *Don't prevent to stop this client again* in the warning window and *Prevent stop without recent or possible save* will be unchecked.

@@ -4,86 +4,8 @@ A client's properties window opens from the client menu by clicking Properties.
 
 The client properties window has 2 tabs, a General tab and a tab specific to the protocol used by the client. Depending on the client protocol, the second tab is called NSM, Ray-Hack or Ray-Net.
 
-=== *General* tab
-image::../en/properties_general.png[Client properties]
+include::08A_general_tab.adoc[]
 
-The first block of the General tab displays the client ID, protocol, label, description and icon. +
-If you do not edit them, the label, description and icon are taken from the .desktop file associated with the launched executable, if found. +
-If you want to know the .desktop file used, type `ray_control client CLIENT_ID get_properties` in a terminal (replacing CLIENT_ID with the client identifier).
+include::08B_nsm_tab.adoc[]
 
-Then comes the block of snapshots, see <<snapshots>>.
-
-The checkbox *Prevent stop without recent or possible save* concerns the window that may appear when you ask a client to stop. If this box is unchecked, then the client will be stopped without a window warning you. +
-If the box is checked, the window will warn you when
-
-* the client is unsaveable from RaySession
-* we know that the client contains unsaved changes
-* the client appears not to have been saved for more than a minute
-
-Whether or not to check this box depends only on the importance of your client's save, it's up to you to judge. That said, if the warning is annoying, just check  *Don't prevent to stop this client again* in the warning window and *Prevent stop without recent or possible save* will be unchecked.
-
-=== *NSM* tab
-
-image::../en/properties_nsm.png[NSM Client properties]
-
-The *Name* of the client here is provided by the client himself. +
-The *capabilities* are those which are transmitted by the client at its start-up. If the client has not yet been started, this field is therefore empty.
-
-Editing the executable allows you to change the command that launches the client. Only change it to another executable capable of loading the existing client's project. This is useful for example if you have two versions of Ardour, one running with the command `ardour`, the other with `Ardour6`, and you want to change which version to use.
-
-Editing the arguments is strongly discouraged, and is especially not suitable for loading a file as an argument.
-
-
-=== *Ray-Hack* tab
-
-If the client is a Ray-Hack type, here many fields are available to you. This is not necessarily good news, the idea is to be able to load a program into the session that is not (yet) compatible with NSM. If properly implemented in the client, the NSM protocol will always be much more comfortable to use and more reliable than this hack. That said, if we can expect the NSM implementation in all audio programs, this is not the case for other programs which can still be useful in the session.
-
-The Ray-Hack pseudo-protocol uses the attributes of proxies (nsm-proxy or ray-proxy), except that the client is launched directly in the session.
-
-image::../en/properties_ray_hack.png[Ray-Hack Client properties]
-
-==== Launch block
-
-image::../en/ray_hack_launch.png[]
-
-* the *Folder* is the folder name of this client in the session folder. The program is launched from this folder.
-* the *Executable* is the command that starts the program
-* The *Config file* will be the project file that we want to open with this program. It is more than highly recommended to reference a file in the client folder. +
-The variable `$RAY_SESSION_NAME` will be automatically replaced by the name of the session. +
-If this field is empty, the client status will always remain *launch* and will never be *ready*. In some cases, therefore, it may be useful to type anything here rather than nothing.
-
-* The *Browse* button opens a dialog box to find the project file and fill in the *Configuration file* field
-* The *Arguments* field includes the arguments passed to the Executable command +
-the arguments are split as they would be in a terminal, don't forget the " or ' if necessary. +
-For example to reproduce `my_command my_argument_1 "my argument 2"` enter `my_command` in the *Executable* field and `my_command my_argument_1 "my argument 2 "` in the *Arguments* field.
-
-==== Signals block
-
-image::../en/ray_hack_signals.png[]
-
-* *Save Signal* can be only rarely used. It can be SIGUSR1 for programs compatible with the old LASH protocol. Otherwise leave it on _None_, if there is no save method, we cannot invent it.
-
-* *Stop Signal* will usually be SIGTERM. Only change it if this signal does not close the program correctly.
-
-* If *Wait for a window before considered it ready* box is checked, then the client status will only change to *ready* when a window appears. +
-If `wmctrl` is not installed, or the window manager does not seem to be compatible with it, then the client status will be *ready* half a second after it is launched.
-
-With `ray_control` you can assign signals other than those offered in the multiple choice boxes. For example
-`ray_control client CLIENT_ID set_properties save_sig:22`
-will define the SIGTTOU signal for the client CLIENT_ID save. +
-Type `kill -l` to see the available signals and their numbers.
-
-==== Non-saveable management block
-
-image::../en/ray_hack_non_saveable.png[]
-
-This block is active only if the *Save Signal* is set to _None_.
-
-* if *Tell user to close program himself at session close* is checked, the client will be considered as not saveable and an orange exclamation mark will appear in front of its save icon. When closing the session, RaySession will wait for you to close the program yourself because it is impossible to know if it contains unsaved changes.
-* If *Try to close window gracefully* is checked, then at session close, RaySession will try to close the window as if you were closing the program window. This is very useful when the program reacts by closing if there are no unsaved changes and displaying a close confirmation window in the opposite case (most programs react in this way). If `wmctrl` is not installed or the window manager does not seem to be compatible, you will have to close the program yourself in any case.
-
-==== Test area
-
-image::../en/ray_hack_test_zone.png[]
-
-The test area allows you to test the start, stop, and save settings set in this window without having to *Save the changes*.
+include::08C_ray_hack_tab.adoc[]
