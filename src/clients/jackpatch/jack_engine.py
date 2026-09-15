@@ -97,9 +97,11 @@ class JackEngine(ProtoEngine):
 
         try:
             self._client.connect(port_out, port_in)
-        except jack.JackErrorCode:
-            # Connection already exists
-            pass
+        except jack.JackErrorCode as e:
+            # Most common reason is "already connected"; log at DEBUG so
+            # unexpected PipeWire-JACK errors are visible with -l DEBUG.
+            _logger.debug(
+                f"JackErrorCode connecting '{port_out}' to '{port_in}': {e}")
         except BaseException as e:
             _logger.warning(
                 f"Failed to connect '{port_out}' to '{port_in}'\n{str(e)}")

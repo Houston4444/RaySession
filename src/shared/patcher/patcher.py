@@ -35,6 +35,7 @@ class Patcher:
         self.connection_list = list[tuple[FullPortName, FullPortName]]()
         self.saved_connections = list[tuple[FullPortName, FullPortName]]()
         self.to_disc_connections = list[tuple[FullPortName, FullPortName]]()
+        self.disconnected_connections = set[tuple[FullPortName, FullPortName]]()
         self.jack_ports = dict[PortMode, list[JackPort]]()
         for port_mode in (PortMode.NULL, PortMode.INPUT, PortMode.OUTPUT):
             self.jack_ports[port_mode] = list[JackPort]()
@@ -181,16 +182,40 @@ class Patcher:
         
     def connection_added(self, port_str_a: str, port_str_b: str):
         self.connection_list.append((port_str_a, port_str_b))
+        self.disconnected_connections.discard((port_str_a, port_str_b))
 
         if self.glob.pending_connection:
             self.may_make_one_connection()
 
         if (port_str_a, port_str_b) not in self.saved_connections:
             self.timer_dirty_check.start()
-            
+
     def connection_removed(self, port_str_a: str, port_str_b: str):
         if (port_str_a, port_str_b) in self.connection_list:
             self.connection_list.remove((port_str_a, port_str_b))
+            self.disconnected_connections.add((port_str_a, port_str_b))
+
+            if (port_str_a, port_str_b) in self.saved_connections:
+                # A saved connection was removed unexpectedly (e.g. a client
+                # transiently disconnecting while reloading its state). Mark
+                # both ports as new so may_make_one_connection can retry even
+                # if neither port is freshly added.
+                # Also discard from disconnected_connections so that a
+                # save_file call during the retry window doesn't prune this
+                # connection from the XML before the retry succeeds.
+                self._logger.info(
+                    f'saved connection removed, will retry: '
+                    f'{debug_conn_str((port_str_a, port_str_b))}')
+                self.disconnected_connections.discard((port_str_a, port_str_b))
+                for port in self.jack_ports[PortMode.OUTPUT]:
+                    if port.name == port_str_a:
+                        port.is_new = True
+                        break
+                for port in self.jack_ports[PortMode.INPUT]:
+                    if port.name == port_str_b:
+                        port.is_new = True
+                        break
+                self.timer_connect_check.start()
 
         if self.to_disc_connections:
             self.may_make_one_connection()
@@ -229,13 +254,22 @@ class Patcher:
 
                 self._logger.info(f'connect ports: {sv_con}')
                 self.engine.connect_ports(*sv_con)
+                # Schedule a retry: if connect_ports fails silently the
+                # CONNECTION_ADDED callback never fires, leaving pending_connection
+                # stuck and no further attempt made.
+                self.timer_connect_check.start()
                 one_connected = True
         else:
             self.glob.pending_connection = False
 
-            for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
-                for port in self.jack_ports[port_mode]:
-                    port.is_new = False
+            # Only clear is_new when no connection was attempted this round.
+            # If we called connect_ports at least once, keep is_new True so
+            # the retry timer (started above) can re-check whether the
+            # connection was actually confirmed.
+            if not one_connected:
+                for port_mode in (PortMode.INPUT, PortMode.OUTPUT):
+                    for port in self.jack_ports[port_mode]:
+                        port.is_new = False
 
     # ---- NSM callbacks ----
 
@@ -243,6 +277,15 @@ class Patcher:
                   full_client_id: str) -> tuple[Err, str]:
         _logger.info(f'Open file "{project_path}"')
         self.saved_connections.clear()
+        self.disconnected_connections.clear()
+        # brothers_dict is stale from the previous session at this point.
+        # Clear it and reset monitor_states_done so that:
+        # - late 'removed' events for the old session's clients don't match
+        #   any entry and silently strip connections from saved_connections.
+        # - the filter below doesn't drop connections whose NSM clients
+        #   haven't been announced yet for the new session.
+        self.glob.monitor_states_done = MonitorStates.NEVER_DONE
+        self.brothers_dict.clear()
 
         file_path = project_path + '.xml'
         self.glob.file_path = file_path
@@ -339,6 +382,10 @@ class Patcher:
                 self.glob.allow_disconnections = True
 
             self.may_make_one_connection()
+            # Start the retry timer so connections are re-attempted 200 ms later
+            # even when all ports were already present and the first attempt
+            # failed silently (e.g. a transient PipeWire-JACK JackErrorCode).
+            self.timer_connect_check.start()
 
         self.glob.is_dirty = False
         self.glob.open_done_once = True
@@ -349,16 +396,35 @@ class Patcher:
         if not self.glob.file_path:
             return
 
+        # connection_list is updated asynchronously via JACK callbacks queued
+        # in ev_handler. Flush pending events now so connection_list reflects
+        # the real JACK state before we decide what to prune.
+        for event, args in self.engine.ev_handler.new_events():
+            match event:
+                case Event.PORT_ADDED:
+                    self.port_added(*args)
+                case Event.PORT_REMOVED:
+                    self.port_removed(*args)
+                case Event.PORT_RENAMED:
+                    self.port_renamed(*args)
+                case Event.CONNECTION_ADDED:
+                    self.connection_added(*args)
+                case Event.CONNECTION_REMOVED:
+                    self.connection_removed(*args)
+
         for connection in self.connection_list:
             if not connection in self.saved_connections:
                 self.saved_connections.append(connection)
 
-        # delete from saved connected all connections 
-        # when there ports are present and not currently connected    
+        # Forget a saved connection only when the user explicitly disconnected it
+        # (it was established at some point and then removed). Connections that
+        # were never successfully made — e.g. because a non-NSM client's ports
+        # weren't ready yet — must not be pruned here.
         del_list = list[tuple[str, str]]()
 
         for sv_con in self.saved_connections:
             if (not sv_con in self.connection_list
+                    and sv_con in self.disconnected_connections
                     and sv_con[0] in [
                         p.name for p in self.jack_ports[PortMode.OUTPUT]]
                     and sv_con[1] in [
